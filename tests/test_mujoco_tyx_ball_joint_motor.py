@@ -219,6 +219,8 @@ def negative_source(case):
     if case == "affine-ball": return text.replace('gainprm="1"', 'gainprm="1" biastype="affine" biasprm="0 -.2 -.1"')
     if case == "parent": return text.replace('joint="ball"', 'jointinparent="ball"')
     if case == "tail-gear": return text.replace('gear="1 0 0"', 'gear="1 0 0 .1 0 0"')
+    if case == "tiny-y": return text.replace('gear="1 0 0"', 'gear="1 1e-45 0"')
+    if case == "tiny-z": return text.replace('gear="1 0 0"', 'gear="1 0 1e-45"')
     if case == "contact":
         return text.replace('<worldbody>', '<worldbody><geom type="plane" size="1 1 .1"/>').replace('contype="0" conaffinity="0"', 'contype="1" conaffinity="1"')
     if case == "limit": return text.replace('name="ball" type="ball"', 'name="ball" type="ball" limited="true" range="0 .5"')
@@ -237,6 +239,7 @@ NEGATIVES = {
     "contact":"joint-motor-contact", "limit":"ball-constraint-domain",
     "dry":"ball-constraint-domain", "spring":"ball-spring",
     "capacity":"ball-actuator-capacity", "free":"joint-domain",
+    "tiny-y":"fp32-range", "tiny-z":"fp32-range",
 }
 
 

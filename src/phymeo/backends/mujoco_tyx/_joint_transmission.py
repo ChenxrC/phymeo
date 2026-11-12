@@ -41,6 +41,8 @@ def compile_joint_transmission(mj, model):
     The mechanical compiler separately checks the complete model/law domain.
     All capacity/address/representability checks here precede output allocation.
     """
+    from ._model import fp32
+
     def reject(code, detail):
         raise MuJoCoTyxUnsupported((MuJoCoTyxIssue(code, detail),))
 
@@ -66,8 +68,8 @@ def compile_joint_transmission(mj, model):
         gear = model.actuator_gear[actor]
         if not np.isfinite(gear).all() or np.any(gear[width:]):
             reject("joint-transmission-gear", f"actor {actor} requires finite native-width gear")
-        if np.any(np.abs(gear[:width]) > np.finfo(np.float32).max):
-            reject("joint-transmission-gear", f"actor {actor} moment cannot be stored in FP32")
+        # Reuse the original normal-or-zero representation gate on ALL columns.
+        fp32(gear[:width], f"actor {actor} native joint moments")
         rows.append((actor, joint, kind, qa, dof, width))
         nnz += width
     if nnz > MAX_MOMENTS:

@@ -80,3 +80,10 @@ direct hinge motor retargeted to BALL. The NEW file preserves each exact XML/def
 entry and checks two native steps in both modes (4 extra nodes). Parent alone retires
 the corresponding old negative parameters. BALL-C's contact+BALL-motor negative remains.
 Updated authored enumeration: 45 nodes; not a collection or execution result.
+
+Parent text review found that the initial new helper only rejected FP32 overflow.
+The existing scalar representation contract also rejects every nonzero coefficient whose
+FP32 conversion is subnormal/zero. The helper now calls the same fp32 gate on every
+complete native moment row before allocating final tables; the local import avoids a module
+initialization cycle. Fixed y/z tiny-gear negatives (1e-45 with x=1) exercise the previously
+uncovered columns before device allocation. No numerical gate changes. Authored count is now47.

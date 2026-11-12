@@ -145,7 +145,9 @@ D6 phase原硬门、完整FP32弹性算术核、连续参考及共同发布要�
 - run112：旧弹性重建速度2e-5门失败。
 
 因此应记录为**限定功能资格＋已知严格精度失败**，不能写成全部原精度门通过。
-源码外安装仍待验；当前没有持续稳态支撑通过结论，也没有将原D4失败改写为成功。
+源码外第二包的解释/CUDA消费者现均为 FUNCTIONAL_PASS，同时保留
+strict_elastic_precision=FAIL_RECORDED。当前没有持续稳态支撑通过结论，
+也没有将原D4失败改写为成功。
 
 细节见[设计合同](../superpowers/specs/2026-11-13-distance-dissipation-design.md)、
 [作者接口与资源报告](p65-distance-dissipation-report.md)。

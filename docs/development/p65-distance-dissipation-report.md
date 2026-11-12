@@ -1,4 +1,7 @@
-# D6-A 距离材料耗散：独立源码交付
+# D6-A 距离材料耗散：接口与有限资格
+
+当前裁定：**源码及包外 FUNCTIONAL_PASS，原 strict 精度失败保留**。
+下文作者 UNEXECUTED 段保留为历史；当前以文末父资格记录为准。
 
 状态：CODE_READY_TESTS_PENDING / UNEXECUTED。本文是原固定
 [设计合同](../superpowers/specs/2026-11-13-distance-dissipation-design.md)
@@ -199,3 +202,25 @@ identity and carry complete damping phases through common step/query staleness/
 checkpoint/restore. Run120 was a test reference metadata omission before the
 first step (root_initial), repaired by binding the original asset root state.
 Source and installed qualification remain distinct; no full old suite rerun.
+
+## Parent installed qualification, 2026-11-13
+
+Product ec0e2997, outside wheel-02: run127 compared all532 product members
+source/wheel/installed with zero mismatch. Wheel SHA256
+48cc7e3938a7ba511ebce7e2efe04dfbc5b9b4d8163ab71edb6f91ba1932fb14.
+
+Runs128/129 (interpret/CUDA) each completed22 calls /44 worldsteps,20 checked
+contact sites,4 restores,4 resets and2 stale rejections. Both return
+FUNCTIONAL_PASS with strict_elastic_precision=FAIL_RECORDED:20 original
+same-entry elastic reconstruction violations per mode, maximum velocity error
+0.00012538650431448417 /0.0001253864511099323 m/s respectively.
+The independently checked new damping phase, complete stored arithmetic,
+continuous engineering gates and common publication remain hard requirements.
+No old strict threshold or result is rewritten.
+
+The installed consumer exercises D1 pair/chain and D3 sphere/inclined-capsule.
+Dedicated damped D5 declarations passed source121/122 (two cases per mode);
+the ordinary D5 installed compatibility runs132/133 are distinct and do not
+constitute an additional installed damped-D5 matrix. This is a reusable
+material operator, not yet a successful long loaded membrane application.
+The separately declared D6-B application is being evaluated at this checkpoint.

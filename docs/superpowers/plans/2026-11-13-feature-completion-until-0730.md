@@ -156,3 +156,29 @@ stored-arithmetic, long-window drift, oriented-side, penetration, peak and
 support/unload/recontact requirement remains active. No input, damping, h,
 statistics window or state is altered; this diagnoses real functional behavior
 without pretending the original precision qualification passed.
+### 04:00 functional checkpoint and remaining queue
+
+D5-A, R3-N, R3-P and G2a have their bounded source/installed qualifications.
+The original undamped D4 N1 full3-second windows both completed but failed
+the predeclared steady-support means/RMS. They remain FAIL; other original
+D4 cells were not launched merely to accumulate steps.
+
+D6-A adds an explicitly declared axial velocity-dissipation material, with
+source and second-wheel functional qualification and retained strict elastic
+precision limits. Its API/operator does not imply D4 steady support.
+The new [D6-B application](../../development/p65-damped-normal-load-application-20261113.md)
+predeclared c=4096 N s/m from a separate dimensional estimate, unchanged
+original four-case geometry/load/h/windows, and separate case identities.
+New short contracts140/141 passed14 interpret and1 CUDA node respectively.
+First package launch142 failed before construction (0 steps) because the
+outside helper directory was not in PYTHONPATH. Launch143 adds only that
+explicit outside helper directory and runs the full coarse N1 interpret
+window under predeclared diagnostic-short-state mode.
+
+Next: inspect that complete fixed window; if functional support is achieved,
+continue the remaining fixed cells/backend qualification. If the actual
+functional gate fails, retain the result and diagnose the model/observer
+once before assigning another independent feature; do not scan c or alter
+time windows, masses or acceptance gates. All project work remains root's
+single guarded execution queue. Architecture and qualification documents
+are being updated independently in the original author worktrees.

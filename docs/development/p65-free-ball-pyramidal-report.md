@@ -155,7 +155,7 @@ tests-first 62004f0a；有限准入82b7b83e；输入绑定45ee0bb5；
 
 ## Parent source qualification (2026-11-13)
 
-SOURCE_VERIFIED_LIMITED; installed qualification for this pyramidal increment is still pending.
+LIMITED_ACCEPTED for the declared source and installed domain. The original author-pending sections above remain historical.
 Parent route performs the complete FREE+BALL structural validation first, then sends any actual mixed condim3 pair to the existing constraint compiler; otherwise the original normal/no-contact path remains. Capability family is explicit.
 
 The first run86 returned a real step but the new consumer read normal_geometry_launches, a capability absent from the constraint route. The consumer now checks the source-confirmed seven launches for these plane/sphere and sphere/sphere declarations. Run87 then passed37 and exposed a HOST test premise: changing only the ground priority left the toe-to-toe potential pair at inherited condim3. That route correctly remained pyramidal. The new priority-only fixture now declares both toes' intended dimensions, with the higher-priority toe3 branch unchanged. Original continuous source/physical parameters and numerical gates were not altered.
@@ -165,3 +165,20 @@ Run89: four affected original routing controls (normal feet and no-contact mixed
 Ruff82/90 passed; first format83/91 failed, formatting84/92 and final85/93 passed. Run94 independently confirms the post-test formatted test AST equals its tested run88 snapshot. Product source was not changed after run88.
 
 Evidence: artifacts/p65-feature-until-0730-20261113-01, exact command/environment/before-after source snapshots and first failure logs. This is bounded FREE+BALL stateless joint-motor primitive condim1/3 support. The continuous positives use condim3; mixed1/3 is currently compile-route qualification only. No claim of activation, joint limits/dry, long human support/dance, G1 closure or performance.
+
+## Parent installed acceptance, 2026-11-13
+
+Product ec0e2997; source/wheel/installed532 product members BYTE_IDENTICAL
+(run127). Runs130 interpret and131 CUDA both completed PASS, RAW_EXIT0.
+Each actually returned56 calls /112 worldsteps: feet48, siblings48 and
+lifecycle16. Each complete compressed journal contains232 events, with
+same-entry native and independently continued reference, controls, actual
+contact/constraint rows, state, checkpoint/clone/restore/reset successors.
+Both finalization-error lists are empty; actual Phymeo imports originate at
+the fresh source-external wheel-02 site.
+
+This accepts only the already declared FREE+BALL/R/P NONE-JOINT primitive
+condim1/3 route. Mixed1/3 remains compile-route coverage, not an additional
+continuous positive. No activation, limits/dry, condim4/6, long dance or
+performance claim follows. Evidence is in the batch artifact directory
+and wheel-02 results130/131; original86/87 failures remain intact.

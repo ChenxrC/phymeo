@@ -174,3 +174,13 @@ Source08/09:26 passed per backend (12.16s interpret,10.43s CUDA). A first invali
 Package113629b3: source/wheel/installed530 product members BYTE_IDENTICAL. Installed81 interpret and74 CUDA each report PASS with38 returned/checked calls,57 accepted worldsteps,6 explicit current queries and57 checked contact sites; cpu_physics_calls=0. Run73 failed before consumer construction because bootstrap argument parsing consumed a duplicate --expected-install-root; raw error retained, then consumer alias --installed-root used. No physical source or gate changed for this CLI repair.
 
 Full commands, raw failures and exact source snapshots live in artifacts/p65-feature-until-0730-20261113-01. This acceptance includes public initial controls, partial reset/restore, common publishing and actual source-external calls. Long steady-support D4 remains separately FAIL, as documented in the continuous-load protocol.
+
+## Compatibility with the optional dissipation product
+
+Product ec0e2997's second wheel includes D6 changes to the shared D1/D3 owner.
+Affected public D5 consumers132 interpret and133 CUDA both passed outside
+the source checkout:38 returned/checked calls,57 worldsteps,6 queries and
+57 checked sites each; cpu_physics_calls remains0. These are ordinary D5
+compatibility windows, not newly claimed long support or damped-D5 installed
+windows. The dedicated damped public-scene source cases121/122 each passed2.
+The complete532-member product parity belongs to run127 and was not rerun.

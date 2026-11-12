@@ -1,4 +1,5 @@
 """Owned buffers for the bounded D1 node producer (no contact response)."""
+
 from contextlib import contextmanager
 
 import numpy as np
@@ -9,6 +10,7 @@ from .mujoco_tyx._resources import DeviceResources
 def create_runtime(mode, cache_root):
     # Deliberately lazy: registration/resource rejection never initializes TYX.
     import tyx as tx
+
     options = {"backend": "cuda" if mode == "cuda" else "cpu"}
     if cache_root is not None:
         options["cache_root"] = cache_root
@@ -31,6 +33,7 @@ class DeformableBuffers:
             self.runtime = create_runtime(mode, cache_root)
             self.resources.set_runtime(self.runtime)
             import tyx as tx
+
             self.tx = tx
             with self.context():
                 for key, model in worlds.items():
@@ -43,9 +46,13 @@ class DeformableBuffers:
                         arrays[f"tick{bank}"] = self.allocate(np.zeros(1, np.int32))
                     for name in ("predicted_x", "predicted_v", "force"):
                         arrays[name] = self.allocate(np.zeros((n, 3), np.float32))
-                    for name, value in (("weights", model.weights), ("gravity", model.gravity),
-                                        ("edges", model.edges), ("rest", model.rest),
-                                        ("compliance", model.compliance)):
+                    for name, value in (
+                        ("weights", model.weights),
+                        ("gravity", model.gravity),
+                        ("edges", model.edges),
+                        ("rest", model.rest),
+                        ("compliance", model.compliance),
+                    ):
                         arrays[name] = self.allocate(value)
                     for name in ("alpha_tmp", "alpha", "zero", "multipliers"):
                         arrays[name] = self.allocate(np.zeros(p, np.float32))
@@ -58,8 +65,9 @@ class DeformableBuffers:
             try:
                 self.resources.close()
             except BaseException as cleanup:
-                error = BaseExceptionGroup("deformable construction and cleanup failed",
-                                           [primary, cleanup])
+                error = BaseExceptionGroup(
+                    "deformable construction and cleanup failed", [primary, cleanup]
+                )
                 error.resource_owner = self
                 raise error
             raise

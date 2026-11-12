@@ -3,13 +3,14 @@
 D1 publishes real changing vertex states. It does not implement collision queries,
 self contact, contact response, cloth bending, or a general soft-body material.
 """
+
+import json
+from collections.abc import Mapping
 from contextlib import contextmanager
 from dataclasses import dataclass
 from hashlib import sha256
-import json
 from threading import RLock
 from types import MappingProxyType
-from collections.abc import Mapping
 
 import numpy as np
 
@@ -165,11 +166,11 @@ class _World:
 
     @property
     def indices(self):
-        return self.edges[:self.e]
+        return self.edges[: self.e]
 
     @property
     def rest_length(self):
-        return self.rest[:self.e]
+        return self.rest[: self.e]
 
 
 def _geometry(model, position):
@@ -204,7 +205,9 @@ def _compile(worlds, settings, trace):
         key = _integer(source.key, "world")
         if key in compiled:
             raise ValueError("duplicate world identity")
-        if not isinstance(source.model, ParticleModel) or not isinstance(source.initial_state, ParticleState):
+        if not isinstance(source.model, ParticleModel) or not isinstance(
+            source.initial_state, ParticleState
+        ):
             raise TypeError("expected ParticleModel and ParticleState")
         if not isinstance(source.constraints, DistanceConstraints):
             raise TypeError("D1 accepts DistanceConstraints only")
@@ -266,8 +269,21 @@ def _compile(worlds, settings, trace):
             if len(set(canonical)) != len(canonical):
                 raise ValueError("duplicate facet topology")
             surfaces.append(DeformableSurfaceBinding(surface_key, ids, points, _owned(native)))
-        model = _World(key, n, e, p, x, v, weights, gravity, _owned(edges), _owned(rest),
-                       _owned(compliance), point_ids, tuple(surfaces))
+        model = _World(
+            key,
+            n,
+            e,
+            p,
+            x,
+            v,
+            weights,
+            gravity,
+            _owned(edges),
+            _owned(rest),
+            _owned(compliance),
+            point_ids,
+            tuple(surfaces),
+        )
         _geometry(model, x)
         compiled[key] = model
         device += 88 * n + 32 * p + 40 + (72 * p if trace else 0)
@@ -279,31 +295,62 @@ def _compile(worlds, settings, trace):
 
 def _binding(worlds, settings, trace, mode):
     digest = sha256()
-    digest.update(json.dumps({"schema": "tyx-deformable-bank-v1", "mode": mode,
-                              "settings": vars(settings), "trace": trace},
-                             sort_keys=True, separators=(",", ":")).encode())
+    digest.update(
+        json.dumps(
+            {
+                "schema": "tyx-deformable-bank-v1",
+                "mode": mode,
+                "settings": vars(settings),
+                "trace": trace,
+            },
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode()
+    )
     for key, world in worlds.items():
         digest.update(str(key).encode() + b":")
-        for array in (world.initial_position, world.initial_velocity, world.weights, world.gravity,
-                      world.edges, world.rest, world.compliance, world.point_ids):
+        for array in (
+            world.initial_position,
+            world.initial_velocity,
+            world.weights,
+            world.gravity,
+            world.edges,
+            world.rest,
+            world.compliance,
+            world.point_ids,
+        ):
             digest.update(str((array.dtype.str, array.shape)).encode())
             digest.update(array.tobytes())
         for surface in world.surfaces:
             digest.update(str(surface.key).encode() + b":")
             for array in (surface.facet_ids, surface.oriented_point_ids, surface.native_indices):
+                digest.update(str((array.dtype.str, array.shape)).encode())
                 digest.update(array.tobytes())
     return digest.hexdigest()
 
 
 def _checkpoint_hash(binding, states, last_step):
     digest = sha256(binding.encode())
+
     def array_bytes(array):
         digest.update(str((array.dtype.str, array.shape)).encode())
         digest.update(array.tobytes())
+
     if last_step is not None:
-        digest.update(str((last_step.schema, last_step.binding_sha256, last_step.source_revision,
-                           last_step.destination_revision, last_step.active_bank, last_step.accepted,
-                           tuple(last_step.worlds), tuple(last_step.states))).encode())
+        digest.update(
+            str(
+                (
+                    last_step.schema,
+                    last_step.binding_sha256,
+                    last_step.source_revision,
+                    last_step.destination_revision,
+                    last_step.active_bank,
+                    last_step.accepted,
+                    tuple(last_step.worlds),
+                    tuple(last_step.states),
+                )
+            ).encode()
+        )
     else:
         digest.update(b"no-batch-receipt")
     for key, state in states.items():
@@ -313,10 +360,21 @@ def _checkpoint_hash(binding, states, last_step):
         row = state.last_step
         digest.update(b"none" if row is None else b"step")
         if row is not None:
-            digest.update(str((row.world, row.input_tick, row.h, row.sweeps,
-                               row.residual, row.max_constraint)).encode())
-            for array in (row.input_position, row.input_velocity, row.input_clock, row.force,
-                          row.predicted_position, row.predicted_velocity, row.alpha, row.multipliers):
+            digest.update(
+                str(
+                    (row.world, row.input_tick, row.h, row.sweeps, row.residual, row.max_constraint)
+                ).encode()
+            )
+            for array in (
+                row.input_position,
+                row.input_velocity,
+                row.input_clock,
+                row.force,
+                row.predicted_position,
+                row.predicted_velocity,
+                row.alpha,
+                row.multipliers,
+            ):
                 array_bytes(array)
             for frame in row.trace:
                 array_bytes(frame)
@@ -325,6 +383,7 @@ def _checkpoint_hash(binding, states, last_step):
 
 class _VertexLoan:
     """Scoped source descriptor, protocol-read-only (not hardware write protection)."""
+
     def __init__(self, owner):
         self._owner = owner
         self._live = True
@@ -388,8 +447,16 @@ class _VertexLoan:
 class TyxDeformableBatch:
     """A bounded, all-world atomic device producer with explicit CAS operations."""
 
-    def __init__(self, worlds, *, mode="interpret", settings=None, trace=False,
-                 memory_limit_bytes=256 * 1024 * 1024, cache_root=None):
+    def __init__(
+        self,
+        worlds,
+        *,
+        mode="interpret",
+        settings=None,
+        trace=False,
+        memory_limit_bytes=256 * 1024 * 1024,
+        cache_root=None,
+    ):
         self._lock = RLock()
         self._busy = False
         self._loan = None
@@ -404,12 +471,15 @@ class TyxDeformableBatch:
         self._models, self.memory_requirements = _compile(worlds, settings, trace)
         limit = _integer(memory_limit_bytes, "memory_limit_bytes")
         if self.memory_requirements.total_bytes > limit:
-            raise MemoryError("D1 owned device plus HOST array reservation exceeds memory_limit_bytes")
+            raise MemoryError(
+                "D1 owned device plus HOST array reservation exceeds memory_limit_bytes"
+            )
         self.mode, self.settings, self.trace = mode, settings, trace
         self.world_keys = tuple(self._models)
         self.binding_sha256 = _binding(self._models, settings, trace, mode)
-        self._states = MappingProxyType({key: self._initial_state(model)
-                                        for key, model in self._models.items()})
+        self._states = MappingProxyType(
+            {key: self._initial_state(model) for key, model in self._models.items()}
+        )
         self.last_step = None
         self._buffers = DeformableBuffers(self._models, mode, trace, cache_root)
         self._state_uploaded_bytes = sum(2 * (24 * model.n + 12) for model in self._models.values())
@@ -421,14 +491,18 @@ class TyxDeformableBatch:
             try:
                 self._buffers.close()
             except BaseException as cleanup:
-                error = BaseExceptionGroup("D1 allocation table and cleanup failed", [primary, cleanup])
+                error = BaseExceptionGroup(
+                    "D1 allocation table and cleanup failed", [primary, cleanup]
+                )
                 error.resource_owner = self
                 raise error
             raise primary
 
     @staticmethod
     def requirements(worlds, *, settings=None, trace=False):
-        return _compile(worlds, StepSettings(substeps=1) if settings is None else settings, trace)[1]
+        return _compile(worlds, StepSettings(substeps=1) if settings is None else settings, trace)[
+            1
+        ]
 
     @property
     def revision(self):
@@ -443,12 +517,21 @@ class TyxDeformableBatch:
 
     @staticmethod
     def _initial_state(model):
-        return DeformableAcceptedState(model.key, model.initial_position, model.initial_velocity,
-                                       _owned(np.zeros(2, np.float32)), 0, 0.0, None)
+        return DeformableAcceptedState(
+            model.key,
+            model.initial_position,
+            model.initial_velocity,
+            _owned(np.zeros(2, np.float32)),
+            0,
+            0.0,
+            None,
+        )
 
     def _require_open(self):
         if self.resource_state != "OPEN" or self._poisoned:
-            raise RuntimeError("deformable owner is closed, close-only, or synchronization-poisoned")
+            raise RuntimeError(
+                "deformable owner is closed, close-only, or synchronization-poisoned"
+            )
 
     def _ready(self, expected_revision):
         self._require_open()
@@ -470,8 +553,10 @@ class TyxDeformableBatch:
                     self._buffers.sync()
                 except BaseException as synchronization:
                     self._poisoned = True
-                    raise BaseExceptionGroup("deformable operation and recovery synchronization failed",
-                                             [primary, synchronization])
+                    raise BaseExceptionGroup(
+                        "deformable operation and recovery synchronization failed",
+                        [primary, synchronization],
+                    )
                 raise
             finally:
                 self._busy = False
@@ -485,23 +570,33 @@ class TyxDeformableBatch:
 
     def stats(self):
         with self._lock:
-            return MappingProxyType({
-                "allocations": self._buffers.allocations,
-                "native_buffer_bytes": self._buffers.native_bytes,
-                "host_reserved_bytes": self.memory_requirements.host_peak_bytes,
-                "state_uploaded_bytes": self._state_uploaded_bytes,
-                "force_uploaded_bytes": self._force_uploaded_bytes,
-                "uploaded_bytes": self._buffers.uploaded_bytes,
-                "downloaded_bytes": self._buffers.downloaded_bytes,
-                "kernels": self._buffers.kernels, "synchronizations": self._buffers.syncs,
-                "successful_steps": self._successful_steps, "replacements": self._replacements,
-            })
+            return MappingProxyType(
+                {
+                    "allocations": self._buffers.allocations,
+                    "native_buffer_bytes": self._buffers.native_bytes,
+                    "host_reserved_bytes": self.memory_requirements.host_peak_bytes,
+                    "state_uploaded_bytes": self._state_uploaded_bytes,
+                    "force_uploaded_bytes": self._force_uploaded_bytes,
+                    "uploaded_bytes": self._buffers.uploaded_bytes,
+                    "downloaded_bytes": self._buffers.downloaded_bytes,
+                    "kernels": self._buffers.kernels,
+                    "synchronizations": self._buffers.syncs,
+                    "successful_steps": self._successful_steps,
+                    "replacements": self._replacements,
+                }
+            )
 
     def _read_candidate(self, key, bank):
         model, arrays = self._models[key], self._buffers.worlds[key]
-        x = _native(self._buffers.read(arrays[f"x{bank}"]), (model.n, 3), "candidate position", exact=True)
-        v = _native(self._buffers.read(arrays[f"v{bank}"]), (model.n, 3), "candidate velocity", exact=True)
-        clock = _native(self._buffers.read(arrays[f"clock{bank}"]), (2,), "candidate clock", exact=True)
+        x = _native(
+            self._buffers.read(arrays[f"x{bank}"]), (model.n, 3), "candidate position", exact=True
+        )
+        v = _native(
+            self._buffers.read(arrays[f"v{bank}"]), (model.n, 3), "candidate velocity", exact=True
+        )
+        clock = _native(
+            self._buffers.read(arrays[f"clock{bank}"]), (2,), "candidate clock", exact=True
+        )
         tick_array = self._buffers.read(arrays[f"tick{bank}"])
         if tick_array.dtype != np.dtype(np.int32) or tick_array.shape != (1,) or tick_array[0] < 0:
             raise ValueError("candidate tick is invalid")
@@ -513,15 +608,23 @@ class TyxDeformableBatch:
         return x, v, clock, int(tick_array[0])
 
     def _make_receipt(self, rows, states, bank):
-        return DeformableStepReceipt("tyx-deformable-step-v1", self.binding_sha256,
-                                     self._revision, self._revision + 1, bank, True,
-                                     MappingProxyType(dict(rows)), MappingProxyType(dict(states)))
+        return DeformableStepReceipt(
+            "tyx-deformable-step-v1",
+            self.binding_sha256,
+            self._revision,
+            self._revision + 1,
+            bank,
+            True,
+            MappingProxyType(dict(rows)),
+            MappingProxyType(dict(states)),
+        )
 
     def step(self, inputs, h, *, expected_revision):
+        from ._tyx_deformable_state import advance_clock, begin_candidate
         from ._tyx_kernels import integrate_particles
         from ._tyx_math_kernels import axpy_kernel
         from ._tyx_node_kernels import project_node_distances, reconstruct_nodes
-        from ._tyx_deformable_state import begin_candidate, advance_clock
+
         with self._transaction(expected_revision):
             if not isinstance(inputs, Mapping) or set(inputs) != set(self.world_keys):
                 raise ValueError("one explicit StepInputs force packet is required for every world")
@@ -545,19 +648,48 @@ class TyxDeformableBatch:
                 entry = self._states[key]
                 self._buffers.upload(a["force"], packets[key])
                 self._force_uploaded_bytes += packets[key].nbytes
-                self._buffers.call(integrate_particles, model.n, native_h,
-                                   a[f"x{self._active}"], a[f"v{self._active}"], a["force"],
-                                   a["weights"], a["gravity"], a["predicted_x"], a["predicted_v"])
-                self._buffers.call(begin_candidate, model.n, model.p, a["predicted_x"],
-                                   a[f"x{bank}"], a["multipliers"], a["status"])
+                self._buffers.call(
+                    integrate_particles,
+                    model.n,
+                    native_h,
+                    a[f"x{self._active}"],
+                    a[f"v{self._active}"],
+                    a["force"],
+                    a["weights"],
+                    a["gravity"],
+                    a["predicted_x"],
+                    a["predicted_v"],
+                )
+                self._buffers.call(
+                    begin_candidate,
+                    max(model.n, model.p),
+                    model.n,
+                    model.p,
+                    a["predicted_x"],
+                    a[f"x{bank}"],
+                    a["multipliers"],
+                    a["status"],
+                )
                 # Preserve the original two native axpy evaluations of compliance / h / h.
-                self._buffers.call(axpy_kernel, model.p, factor, a["zero"],
-                                   a["compliance"], a["alpha_tmp"])
-                self._buffers.call(axpy_kernel, model.p, factor, a["zero"], a["alpha_tmp"], a["alpha"])
+                self._buffers.call(
+                    axpy_kernel, model.p, factor, a["zero"], a["compliance"], a["alpha_tmp"]
+                )
+                self._buffers.call(
+                    axpy_kernel, model.p, factor, a["zero"], a["alpha_tmp"], a["alpha"]
+                )
                 self._buffers.sync()
-                px = _native(self._buffers.read(a["predicted_x"]), (model.n, 3), "predictor", exact=True)
-                pv = _native(self._buffers.read(a["predicted_v"]), (model.n, 3), "predictor velocity", exact=True)
-                alpha = _native(self._buffers.read(a["alpha"])[:model.e], (model.e,), "alpha", exact=True)
+                px = _native(
+                    self._buffers.read(a["predicted_x"]), (model.n, 3), "predictor", exact=True
+                )
+                pv = _native(
+                    self._buffers.read(a["predicted_v"]),
+                    (model.n, 3),
+                    "predictor velocity",
+                    exact=True,
+                )
+                alpha = _native(
+                    self._buffers.read(a["alpha"])[: model.e], (model.e,), "alpha", exact=True
+                )
                 frames = []
                 residual = maximum = 0.0
                 sweeps = 0
@@ -566,42 +698,105 @@ class TyxDeformableBatch:
                     for sweep in range(self.settings.position_iterations):
                         if self.trace:
                             from ._tyx_distance_trace import project_node_distances_traced
-                            self._buffers.call(project_node_distances_traced, model.e, a["edges"],
-                                               a["rest"], a["alpha"], a["weights"], a[f"x{bank}"],
-                                               a["multipliers"], a["trace"])
+
+                            self._buffers.call(
+                                project_node_distances_traced,
+                                model.e,
+                                a["edges"],
+                                a["rest"],
+                                a["alpha"],
+                                a["weights"],
+                                a[f"x{bank}"],
+                                a["multipliers"],
+                                a["trace"],
+                            )
                         else:
-                            self._buffers.call(project_node_distances, model.e, a["edges"], a["rest"],
-                                               a["alpha"], a["weights"], a[f"x{bank}"], a["multipliers"])
+                            self._buffers.call(
+                                project_node_distances,
+                                model.e,
+                                a["edges"],
+                                a["rest"],
+                                a["alpha"],
+                                a["weights"],
+                                a[f"x{bank}"],
+                                a["multipliers"],
+                            )
                         self._buffers.sync()
-                        candidate_x = _native(self._buffers.read(a[f"x{bank}"]), (model.n, 3),
-                                              "projected position", exact=True)
-                        multipliers = _native(self._buffers.read(a["multipliers"])[:model.e],
-                                              (model.e,), "multipliers", exact=True)
+                        candidate_x = _native(
+                            self._buffers.read(a[f"x{bank}"]),
+                            (model.n, 3),
+                            "projected position",
+                            exact=True,
+                        )
+                        multipliers = _native(
+                            self._buffers.read(a["multipliers"])[: model.e],
+                            (model.e,),
+                            "multipliers",
+                            exact=True,
+                        )
                         if self.trace:
-                            frames.append(_native(self._buffers.read(a["trace"])[:model.e],
-                                                  (model.e, 18), "ordered trace", exact=True))
-                        residual, maximum = distance_residual(candidate_x, model, alpha, multipliers,
-                                                              self.settings.reference_length)
+                            frames.append(
+                                _native(
+                                    self._buffers.read(a["trace"])[: model.e],
+                                    (model.e, 18),
+                                    "ordered trace",
+                                    exact=True,
+                                )
+                            )
+                        residual, maximum = distance_residual(
+                            candidate_x, model, alpha, multipliers, self.settings.reference_length
+                        )
                         sweeps = sweep + 1
                         if not np.isfinite(residual) or not np.isfinite(maximum):
                             raise ValueError("nonfinite distance audit")
                         if residual <= self.settings.tolerance:
                             break
                     if residual > self.settings.tolerance:
-                        raise RuntimeError("D1 ordered projection exhausted the original iteration budget")
-                self._buffers.call(reconstruct_nodes, model.n, native_h, a["predicted_x"],
-                                   a["predicted_v"], a[f"x{bank}"], a["weights"], a[f"v{bank}"])
-                self._buffers.call(advance_clock, native_h, a[f"clock{self._active}"],
-                                   a[f"tick{self._active}"], a[f"clock{bank}"], a[f"tick{bank}"], a["status"])
+                        raise RuntimeError(
+                            "D1 ordered projection exhausted the original iteration budget"
+                        )
+                self._buffers.call(
+                    reconstruct_nodes,
+                    model.n,
+                    native_h,
+                    a["predicted_x"],
+                    a["predicted_v"],
+                    a[f"x{bank}"],
+                    a["weights"],
+                    a[f"v{bank}"],
+                )
+                self._buffers.call(
+                    advance_clock,
+                    native_h,
+                    a[f"clock{self._active}"],
+                    a[f"tick{self._active}"],
+                    a[f"clock{bank}"],
+                    a[f"tick{bank}"],
+                    a["status"],
+                )
                 self._buffers.sync()
                 if np.any(self._buffers.read(a["status"])):
                     raise ValueError("D1 clock/tick publication failed")
                 x, v, clock, tick = self._read_candidate(key, bank)
                 if tick != entry.tick + 1:
                     raise ValueError("candidate tick is not the immediate successor")
-                row = DeformableWorldStep(key, entry.position, entry.velocity, entry.clock, entry.tick,
-                                          packets[key], float(native_h), px, pv, alpha, multipliers,
-                                          sweeps, float(residual), float(maximum), tuple(frames))
+                row = DeformableWorldStep(
+                    key,
+                    entry.position,
+                    entry.velocity,
+                    entry.clock,
+                    entry.tick,
+                    packets[key],
+                    float(native_h),
+                    px,
+                    pv,
+                    alpha,
+                    multipliers,
+                    sweeps,
+                    float(residual),
+                    float(maximum),
+                    tuple(frames),
+                )
                 rows[key] = row
                 states[key] = DeformableAcceptedState(key, x, v, clock, tick, float(clock[0]), row)
             receipt = self._make_receipt(rows, states, bank)
@@ -616,9 +811,15 @@ class TyxDeformableBatch:
             self._require_open()
             if self._busy or self._loan is not None:
                 raise RuntimeError("checkpoint cannot reenter a transaction or vertex loan")
-            return DeformableCheckpoint("tyx-deformable-checkpoint-v1", self.binding_sha256,
-                                        self._owner_id, self._active, self._states, self.last_step,
-                                        _checkpoint_hash(self.binding_sha256, self._states, self.last_step))
+            return DeformableCheckpoint(
+                "tyx-deformable-checkpoint-v1",
+                self.binding_sha256,
+                self._owner_id,
+                self._active,
+                self._states,
+                self.last_step,
+                _checkpoint_hash(self.binding_sha256, self._states, self.last_step),
+            )
 
     @staticmethod
     def _is_owned(array):
@@ -635,20 +836,27 @@ class TyxDeformableBatch:
             raise ValueError("checkpoint state identity mismatch")
         frozen = []
         unchanged = True
-        for value, shape, name in ((state.position, (model.n, 3), "position"),
-                                   (state.velocity, (model.n, 3), "velocity"),
-                                   (state.clock, (2,), "clock")):
+        for value, shape, name in (
+            (state.position, (model.n, 3), "position"),
+            (state.velocity, (model.n, 3), "velocity"),
+            (state.clock, (2,), "clock"),
+        ):
             safe = _native(value, shape, "checkpoint " + name, exact=True)
             trusted = self._is_owned(value)
             frozen.append(value if trusted else safe)
             unchanged = unchanged and trusted
-        if _integer(state.tick, "checkpoint tick") > np.iinfo(np.int32).max or state.time != float(frozen[2][0]):
+        if _integer(state.tick, "checkpoint tick") > np.iinfo(np.int32).max or state.time != float(
+            frozen[2][0]
+        ):
             raise ValueError("checkpoint clock/tick mismatch")
         row = state.last_step
         if row is not None:
             if not isinstance(row, DeformableWorldStep) or row.world != key:
                 raise ValueError("checkpoint step identity mismatch")
-            if row.input_tick + 1 != state.tick or not 0 <= row.sweeps <= self.settings.position_iterations:
+            if (
+                row.input_tick + 1 != state.tick
+                or not 0 <= row.sweeps <= self.settings.position_iterations
+            ):
                 raise ValueError("checkpoint step/tick/count mismatch")
             if len(row.trace) != (row.sweeps if self.trace else 0):
                 raise ValueError("checkpoint trace count mismatch")
@@ -656,10 +864,16 @@ class TyxDeformableBatch:
                 raise ValueError("checkpoint step scalars invalid")
             values = []
             row_owned = True
-            for name, shape in (("input_position", (model.n, 3)), ("input_velocity", (model.n, 3)),
-                                ("input_clock", (2,)), ("force", (model.n, 3)),
-                                ("predicted_position", (model.n, 3)), ("predicted_velocity", (model.n, 3)),
-                                ("alpha", (model.e,)), ("multipliers", (model.e,))):
+            for name, shape in (
+                ("input_position", (model.n, 3)),
+                ("input_velocity", (model.n, 3)),
+                ("input_clock", (2,)),
+                ("force", (model.n, 3)),
+                ("predicted_position", (model.n, 3)),
+                ("predicted_velocity", (model.n, 3)),
+                ("alpha", (model.e,)),
+                ("multipliers", (model.e,)),
+            ):
                 value = getattr(row, name)
                 safe = _native(value, shape, "checkpoint " + name, exact=True)
                 trusted = self._is_owned(value)
@@ -672,32 +886,58 @@ class TyxDeformableBatch:
                 frames.append(frame if trusted else safe)
                 row_owned = row_owned and trusted
             if not row_owned:
-                row = DeformableWorldStep(key, values[0], values[1], values[2], row.input_tick,
-                                          values[3], row.h, values[4], values[5], values[6], values[7],
-                                          row.sweeps, row.residual, row.max_constraint, tuple(frames))
+                row = DeformableWorldStep(
+                    key,
+                    values[0],
+                    values[1],
+                    values[2],
+                    row.input_tick,
+                    values[3],
+                    row.h,
+                    values[4],
+                    values[5],
+                    values[6],
+                    values[7],
+                    row.sweeps,
+                    row.residual,
+                    row.max_constraint,
+                    tuple(frames),
+                )
             unchanged = unchanged and row_owned
         if not unchanged:
             raise ValueError("D1 checkpoints require their original immutable array payloads")
         return state
 
     def _validate_checkpoint(self, checkpoint):
-        if not isinstance(checkpoint, DeformableCheckpoint) or checkpoint.schema != "tyx-deformable-checkpoint-v1":
+        if (
+            not isinstance(checkpoint, DeformableCheckpoint)
+            or checkpoint.schema != "tyx-deformable-checkpoint-v1"
+        ):
             raise TypeError("expected a D1 in-memory checkpoint")
         if checkpoint.owner_id is not self._owner_id:
             raise ValueError("checkpoint belongs to another owner")
-        if checkpoint.binding_sha256 != self.binding_sha256 or tuple(checkpoint.worlds) != self.world_keys:
+        if (
+            checkpoint.binding_sha256 != self.binding_sha256
+            or tuple(checkpoint.worlds) != self.world_keys
+        ):
             raise ValueError("checkpoint model/layout/backend binding mismatch")
         if checkpoint.active_bank not in (0, 1):
             raise ValueError("invalid checkpoint bank")
-        states = {key: self._checkpoint_state(key, state) for key, state in checkpoint.worlds.items()}
+        states = {
+            key: self._checkpoint_state(key, state) for key, state in checkpoint.worlds.items()
+        }
         receipt = checkpoint.last_step
         if receipt is not None:
-            if (not isinstance(receipt, DeformableStepReceipt)
-                    or receipt.schema != "tyx-deformable-step-v1"
-                    or receipt.binding_sha256 != self.binding_sha256 or receipt.accepted is not True
-                    or tuple(receipt.worlds) != self.world_keys or tuple(receipt.states) != self.world_keys
-                    or receipt.destination_revision != receipt.source_revision + 1
-                    or receipt.active_bank not in (0, 1)):
+            if (
+                not isinstance(receipt, DeformableStepReceipt)
+                or receipt.schema != "tyx-deformable-step-v1"
+                or receipt.binding_sha256 != self.binding_sha256
+                or receipt.accepted is not True
+                or tuple(receipt.worlds) != self.world_keys
+                or tuple(receipt.states) != self.world_keys
+                or receipt.destination_revision != receipt.source_revision + 1
+                or receipt.active_bank not in (0, 1)
+            ):
                 raise ValueError("checkpoint batch receipt binding mismatch")
             for key, state in checkpoint.worlds.items():
                 if receipt.states[key] is not state or receipt.worlds[key] is not state.last_step:
@@ -713,24 +953,39 @@ class TyxDeformableBatch:
                 raise ValueError("replacement device tick differs")
             for actual, wanted in ((x, state.position), (v, state.velocity), (clock, state.clock)):
                 if actual.tobytes() != wanted.tobytes():
-                    raise ValueError("replacement device state differs from its exact requested bytes")
+                    raise ValueError(
+                        "replacement device state differs from its exact requested bytes"
+                    )
 
     def _replace(self, selected, expected, last_step=None):
         from ._tyx_deformable_state import copy_state
+
         bank = 1 - self._active
         for key, model in self._models.items():
             a = self._buffers.worlds[key]
             if key in selected:
                 state = expected[key]
-                for name, value in ((f"x{bank}", state.position), (f"v{bank}", state.velocity),
-                                    (f"clock{bank}", state.clock),
-                                    (f"tick{bank}", np.asarray([state.tick], np.int32))):
+                for name, value in (
+                    (f"x{bank}", state.position),
+                    (f"v{bank}", state.velocity),
+                    (f"clock{bank}", state.clock),
+                    (f"tick{bank}", np.asarray([state.tick], np.int32)),
+                ):
                     self._buffers.upload(a[name], value)
                     self._state_uploaded_bytes += value.nbytes
             else:
-                self._buffers.call(copy_state, model.n, a[f"x{self._active}"], a[f"v{self._active}"],
-                                   a[f"clock{self._active}"], a[f"tick{self._active}"],
-                                   a[f"x{bank}"], a[f"v{bank}"], a[f"clock{bank}"], a[f"tick{bank}"])
+                self._buffers.call(
+                    copy_state,
+                    model.n,
+                    a[f"x{self._active}"],
+                    a[f"v{self._active}"],
+                    a[f"clock{self._active}"],
+                    a[f"tick{self._active}"],
+                    a[f"x{bank}"],
+                    a[f"v{bank}"],
+                    a[f"clock{bank}"],
+                    a[f"tick{bank}"],
+                )
         self._buffers.sync()
         self._verify_replacement(expected, bank)
         publication = MappingProxyType(dict(expected))
@@ -762,8 +1017,28 @@ class TyxDeformableBatch:
             loan = _VertexLoan(self)
             self._loan = loan
             try:
-                self._buffers.sync()
-                yield loan
+                try:
+                    self._buffers.sync()
+                except BaseException:
+                    self._poisoned = True
+                    raise
+                primary = None
+                try:
+                    yield loan
+                except BaseException as error:
+                    primary = error
+                    raise
+                finally:
+                    try:
+                        self._buffers.sync()
+                    except BaseException as synchronization:
+                        self._poisoned = True
+                        if primary is not None:
+                            raise BaseExceptionGroup(
+                                "vertex consumer and completion synchronization failed",
+                                [primary, synchronization],
+                            )
+                        raise
             finally:
                 loan._live = False
                 self._loan = None
@@ -787,6 +1062,8 @@ class TyxDeformableBatch:
             self.close()
         except BaseException as cleanup:
             if value is not None:
-                raise BaseExceptionGroup("deformable operation and cleanup both failed", [value, cleanup])
+                raise BaseExceptionGroup(
+                    "deformable operation and cleanup both failed", [value, cleanup]
+                )
             raise
         return False

@@ -55,6 +55,15 @@ from .backends.tyx_articulated import (
     make_tyx_articulated_runtime,
 )
 from .backends.tyx_coupled import TyxCoupledXPBDSolver
+from .backends.tyx_deformable_batch import (
+    DeformableAcceptedState,
+    DeformableCheckpoint,
+    DeformableMemoryRequirements,
+    DeformableNodeWorld,
+    DeformableStepReceipt,
+    DeformableSurface,
+    TyxDeformableBatch,
+)
 from .backends.tyx_multiface_contact import TyxMultifaceContactBatch
 from .backends.tyx_normal_layer import TyxNormalLayer
 from .backends.tyx_participants import (
@@ -411,6 +420,13 @@ from .validation.terminal_impulse import TerminalImpulseLedger
 from .validation.thick_contact_mapping import ThickContactMappingLedger
 
 __all__ = [
+    "DeformableAcceptedState",
+    "DeformableCheckpoint",
+    "DeformableMemoryRequirements",
+    "DeformableNodeWorld",
+    "DeformableStepReceipt",
+    "DeformableSurface",
+    "TyxDeformableBatch",
     "ResidentBoundaryDistances",
     "ResidentBoundaryNarrowPacket",
     "ResidentBoundaryQueryAttempt",

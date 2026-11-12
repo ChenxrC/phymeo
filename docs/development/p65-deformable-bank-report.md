@@ -270,3 +270,12 @@ sync completion followed by an injected known Python exit failure, live lease at
 the sync boundary, revocation, close-only behavior and both exception identities.
 The final manual node count above includes these two cases. This author did not
 modify the three frozen product files for either parent-owned lease correction.
+
+
+## Parent source qualification — 2026-11-12
+
+The integrated final producer passed 44 interpretation nodes (run 036) and 33 CUDA nodes (run 033, with the 11 backend-independent admission/budget cases excluded because they were already exercised). Both RAW_EXIT values are 0. The parent added public exports, entry/exit lease synchronization with close-only behavior on synchronization uncertainty, and explicit surface-array dtype/shape tags in the source binding.
+
+Run 030 first exposed an incorrect test expectation: the unloaded analytic edge was required to retain more than 1e-6 strain at the twelfth frame. Its independent recurrence has eigenvalue modulus 1/sqrt(3), so it can relax and cross rest length. The test and installed consumer now require the same 1e-6 change over the complete original 12-step trajectory, preserving the first-step h/24 check, all per-step old-device/FP64 comparisons, and all physical inputs and thresholds. Run 032 then exposed a real CUDA scheduling limitation in the NEW state helpers: multiple root parallel loops. The helper now uses one bounded parallel loop with independent node/multiplier/status lanes; copy_state uses the existing node loop for its single clock lane. Original integrate/project/reconstruct kernels and their arithmetic were unchanged. Run 031's earlier interpretation pass is historical; the final helper version is covered by run 036. Its recorded 4463.03-second elapsed time is not a performance benchmark.
+
+Full return/independent-oracle evidence is now written before comparisons, and failed entry/exit synchronization tests preserve both consumer and synchronization exceptions. All first failures and snapshots are in `artifacts/p65-three-track-a-20261112-01`. Source-external wheel validation is still pending. The qualification remains D1/M2-P only; no collision query, contact force, cloth bending, portable checkpoint, maximum-capacity or throughput claim is added.

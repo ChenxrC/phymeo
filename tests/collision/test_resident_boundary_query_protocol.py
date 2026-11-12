@@ -226,6 +226,9 @@ def test_actual_source_loan_blocks_callback_mutation(operation,tyx_mode,tmp_path
                 called.append(label)
                 with pytest.raises(RuntimeError,match="boundary source loan"):
                     actions[operation]()
+                if operation=="close":
+                    with pytest.raises(RuntimeError,match="boundary source loan"):
+                        plan.close()
             return original(array,label)
         monkeypatch.setattr(plan,"_download",callback)
         with m1.saved(tmp_path,"reentry-"+operation,tyx_mode,plan=plan) as record:
@@ -362,12 +365,14 @@ def test_host_unknown_retains_real_plan_lease_and_batch(phase,first,monkeypatch,
         with monkeypatch.context() as patch:
             events,buffers=[],[]
             batch=ph.TyxWorldBatch((),mode="interpret")
+            plan=batch.prepare_boundary_query(ph.CollisionModel(()),(),
+                limits=ph.BoundaryDistanceLimits(),memory_limit_bytes=1024)
             batch._runtime=FakeRuntime(events)
             batch._resources.callback(batch._runtime.close)
             batch._resources.callback(events.append,"parent-owned")
-            plan=batch.prepare_boundary_query(ph.CollisionModel(()),(),
-                limits=ph.BoundaryDistanceLimits(),memory_limit_bytes=1024)
             plan._mode="cuda"
+            plan._runtime=batch._runtime
+            plan._tx=tx
             def allocate(shape,dtype):
                 del shape,dtype
                 buffer=FakeArray("buffer-"+str(len(buffers)),events,

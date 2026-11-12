@@ -88,10 +88,14 @@ def dissipate_distances(
                         denominator = _add(1.0, _mul(_mul(b, total_weight), g2))
                         impulse = _div(-_mul(b, rate), denominator)
                         if (
-                            not tx.isfinite(length) or length <= 0.0
-                            or not tx.isfinite(g2) or g2 <= 0.0
-                            or not tx.isfinite(rate) or not tx.isfinite(b)
-                            or not tx.isfinite(denominator) or denominator < 1.0
+                            not tx.isfinite(length)
+                            or length <= 0.0
+                            or not tx.isfinite(g2)
+                            or g2 <= 0.0
+                            or not tx.isfinite(rate)
+                            or not tx.isfinite(b)
+                            or not tx.isfinite(denominator)
+                            or denominator < 1.0
                             or not tx.isfinite(impulse)
                         ):
                             status[0] = 1

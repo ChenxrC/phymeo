@@ -67,6 +67,12 @@ class DeformableBuffers:
                     arrays["status"] = self.allocate(np.zeros(1, np.int32))
                     if trace:
                         arrays["trace"] = self.allocate(np.zeros((p, 18), np.float32))
+                    if model.dissipative:
+                        arrays["damping_coefficients"] = self.allocate(model.damping_coefficients)
+                        arrays["damping_reconstructed_v"] = self.allocate(
+                            np.zeros((n, 3), np.float32)
+                        )
+                        arrays["damping_trace"] = self.allocate(np.zeros((p, 32), np.float32))
                     self.worlds[key] = arrays
             self.sync()
         except BaseException as primary:

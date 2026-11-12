@@ -38,6 +38,7 @@ from .backends._resident_floating_tree import (
 from .backends._resident_revolute_binding import ResidentRevoluteBinding
 from .backends._resident_slider_binding import ResidentSliderBinding
 from .backends._resident_tree_binding import ResidentTreeBinding
+from .backends.deformable_dissipation import DistanceDissipation, DistanceDissipationStep
 from .backends.mujoco_heterogeneous import (
     MuJoCoTyxHeterogeneousBatch,
     MuJoCoTyxHeterogeneousBoundaryReceipt,
@@ -71,6 +72,7 @@ from .backends.tyx_coupled import TyxCoupledXPBDSolver
 from .backends.tyx_deformable_batch import (
     DeformableAcceptedState,
     DeformableCheckpoint,
+    DeformableDissipatedWorldStep,
     DeformableMemoryRequirements,
     DeformableNodeWorld,
     DeformableStepReceipt,
@@ -449,6 +451,9 @@ __all__ = [
     "DeformableCheckpoint",
     "DeformableMemoryRequirements",
     "DeformableNodeWorld",
+    "DistanceDissipation",
+    "DistanceDissipationStep",
+    "DeformableDissipatedWorldStep",
     "DeformableStepReceipt",
     "DeformableSurface",
     "TyxDeformableBatch",

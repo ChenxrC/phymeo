@@ -8,10 +8,11 @@ general soft-body material is implied.
 import json
 from collections.abc import Mapping
 from contextlib import contextmanager
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from hashlib import sha256
 from threading import RLock
 from types import MappingProxyType
+from typing import TYPE_CHECKING
 
 import numpy as np
 
@@ -21,6 +22,22 @@ from phymeo.core.scene import StepSettings
 from phymeo.core.state import ParticleState, StepInputs
 
 from ._tyx_deformable_buffers import DeformableBuffers
+
+if TYPE_CHECKING:
+    from .deformable_dissipation import DistanceDissipation, DistanceDissipationStep
+
+_DISSIPATION_ARRAYS = (
+    "ordered_point_ids",
+    "coefficients_ns_per_m",
+    "reconstructed_velocity",
+    "dissipated_velocity",
+    "trace",
+    "node_impulse",
+    "node_velocity_impulse",
+    "kinetic_change",
+    "ideal_work",
+    "rounding_work",
+)
 
 _BOUNDARY_QUARANTINE = {}
 _BOUNDARY_QUARANTINE_LOCK = RLock()
@@ -80,6 +97,7 @@ class DeformableNodeWorld:
     constraints: DistanceConstraints
     point_ids: np.ndarray
     surfaces: tuple[DeformableSurface, ...] = ()
+    dissipation: "DistanceDissipation | None" = field(default=None, kw_only=True)
 
 
 @dataclass(frozen=True, eq=False)
@@ -116,6 +134,13 @@ class DeformableWorldStep:
     residual: float
     max_constraint: float
     trace: tuple[np.ndarray, ...]
+
+
+@dataclass(frozen=True, eq=False)
+class DeformableDissipatedWorldStep(DeformableWorldStep):
+    """Explicit velocity phase after the original elastic reconstruction."""
+
+    dissipation: "DistanceDissipationStep"
 
 
 @dataclass(frozen=True, eq=False)
@@ -177,6 +202,12 @@ class _World:
     compliance: np.ndarray
     point_ids: np.ndarray
     surfaces: tuple[DeformableSurfaceBinding, ...]
+    dissipation: "DistanceDissipation | None"
+    damping_coefficients: np.ndarray | None
+
+    @property
+    def dissipative(self):
+        return self.damping_coefficients is not None
 
     @property
     def indices(self):
@@ -252,6 +283,26 @@ def _compile(worlds, settings, trace):
         compliance[:e] = _native(source.constraints.compliance, (e,), "compliance")
         if np.any(rest < 0) or np.any(compliance < 0):
             raise ValueError("rest/compliance must be nonnegative")
+        damping = source.dissipation
+        coefficients = None
+        if damping is not None:
+            from .deformable_dissipation import DistanceDissipation
+
+            if type(damping) is not DistanceDissipation:
+                raise TypeError("expected DistanceDissipation")
+            # Bind all original ordered edges, including zero coefficients.
+            if not np.array_equal(damping.ordered_point_ids, point_ids[source_edges]):
+                raise ValueError("dissipation ordered point IDs differ from material edges")
+            native = _native(damping.coefficients_ns_per_m, (e,), "dissipation coefficient")
+            if np.any(native < 0):
+                raise ValueError("dissipation coefficients must be nonnegative")
+            if np.any(native):
+                padded = np.zeros(p, np.float32)
+                padded[:e] = native
+                coefficients = _owned(padded)
+                active_edges = source_edges[native > 0]
+                if np.any(np.all(x[active_edges[:, 0]] == x[active_edges[:, 1]], axis=1)):
+                    raise ValueError("nonzero dissipation requires nonzero edge length")
         lookup = {int(stable): row for row, stable in enumerate(point_ids)}
         surfaces = []
         surface_keys = set()
@@ -297,12 +348,23 @@ def _compile(worlds, settings, trace):
             _owned(compliance),
             point_ids,
             tuple(surfaces),
+            damping,
+            coefficients,
         )
         _geometry(model, x)
         compiled[key] = model
         device += 88 * n + 32 * p + 40 + (72 * p if trace else 0)
         constant += 36 * n + 16 * p + 44 * total_facets + 12
         receipt += 84 * n + 8 * e + 16 + (72 * e * settings.position_iterations if trace else 0)
+        if damping is not None:
+            constant += 24 * e
+        if coefficients is not None:
+            device += 12 * n + 132 * p
+            constant += 4 * p
+            # Two velocities, requested/actual impulses, full trace, energies,
+            # original parameters; reserve observer scratch without using RSS.
+            receipt += 72 * n + 176 * e
+            constant += 128 * n + 1024 * e + 1024
     host = constant + 3 * receipt + 2 * device
     return compiled, DeformableMemoryRequirements(device, host, device + host)
 
@@ -338,6 +400,14 @@ def _binding(worlds, settings, trace, mode):
         for surface in world.surfaces:
             digest.update(str(surface.key).encode() + b":")
             for array in (surface.facet_ids, surface.oriented_point_ids, surface.native_indices):
+                digest.update(str((array.dtype.str, array.shape)).encode())
+                digest.update(array.tobytes())
+        if world.dissipation is not None:
+            digest.update(b"distance-dissipation-v1")
+            for array in (
+                world.dissipation.ordered_point_ids,
+                world.dissipation.coefficients_ns_per_m,
+            ):
                 digest.update(str((array.dtype.str, array.shape)).encode())
                 digest.update(array.tobytes())
     return digest.hexdigest()
@@ -392,6 +462,10 @@ def _checkpoint_hash(binding, states, last_step):
                 array_bytes(array)
             for frame in row.trace:
                 array_bytes(frame)
+            if type(row) is DeformableDissipatedWorldStep:
+                digest.update(row.dissipation.schema.encode())
+                for name in _DISSIPATION_ARRAYS:
+                    array_bytes(getattr(row.dissipation, name))
     return digest.hexdigest()
 
 
@@ -913,6 +987,36 @@ class TyxDeformableBatch:
                     a["weights"],
                     a[f"v{bank}"],
                 )
+                if model.dissipative:
+                    from ._tyx_distance_dissipation import (
+                        copy_dissipation_velocity,
+                        dissipate_distances,
+                    )
+
+                    self._buffers.call(
+                        copy_dissipation_velocity,
+                        model.n,
+                        a[f"v{bank}"],
+                        a["damping_reconstructed_v"],
+                    )
+                    self._buffers.upload(a["damping_trace"], np.zeros((model.p, 32), np.float32))
+                    self._buffers.call(
+                        dissipate_distances,
+                        model.e,
+                        native_h,
+                        a["edges"],
+                        a["damping_coefficients"],
+                        a["weights"],
+                        a[f"x{bank}"],
+                        a[f"v{bank}"],
+                        a["damping_trace"],
+                        a["status"],
+                    )
+                    self._buffers.sync()
+                    if np.any(self._buffers.read(a["status"])):
+                        raise ValueError(
+                            "D6 axial dissipation rejected candidate geometry/arithmetic"
+                        )
                 self._buffers.call(
                     advance_clock,
                     native_h,
@@ -928,7 +1032,7 @@ class TyxDeformableBatch:
                 x, v, clock, tick = self._read_candidate(key, bank)
                 if tick != entry.tick + 1:
                     raise ValueError("candidate tick is not the immediate successor")
-                row = DeformableWorldStep(
+                row_values = (
                     key,
                     entry.position,
                     entry.velocity,
@@ -945,6 +1049,20 @@ class TyxDeformableBatch:
                     float(maximum),
                     tuple(frames),
                 )
+                if model.dissipative:
+                    from .deformable_dissipation import make_dissipation_step
+
+                    phase = make_dissipation_step(
+                        model.dissipation,
+                        model.edges[: model.e],
+                        model.weights,
+                        self._buffers.read(a["damping_reconstructed_v"]),
+                        v,
+                        self._buffers.read(a["damping_trace"])[: model.e],
+                    )
+                    row = DeformableDissipatedWorldStep(*row_values, phase)
+                else:
+                    row = DeformableWorldStep(*row_values)
                 rows[key] = row
                 states[key] = DeformableAcceptedState(key, x, v, clock, tick, float(clock[0]), row)
             receipt = self._make_receipt(rows, states, bank)
@@ -998,7 +1116,10 @@ class TyxDeformableBatch:
             raise ValueError("checkpoint clock/tick mismatch")
         row = state.last_step
         if row is not None:
-            if not isinstance(row, DeformableWorldStep) or row.world != key:
+            expected_type = (
+                DeformableDissipatedWorldStep if model.dissipative else DeformableWorldStep
+            )
+            if type(row) is not expected_type or row.world != key:
                 raise ValueError("checkpoint step identity mismatch")
             if (
                 row.input_tick + 1 != state.tick
@@ -1032,6 +1153,42 @@ class TyxDeformableBatch:
                 trusted = self._is_owned(frame)
                 frames.append(frame if trusted else safe)
                 row_owned = row_owned and trusted
+            if model.dissipative:
+                from .deformable_dissipation import DistanceDissipationStep
+
+                phase = row.dissipation
+                if (
+                    type(phase) is not DistanceDissipationStep
+                    or phase.schema != "distance-dissipation-step-v1"
+                ):
+                    raise ValueError("checkpoint dissipation phase identity mismatch")
+                layouts = (
+                    ("ordered_point_ids", (model.e, 2), np.int64),
+                    ("coefficients_ns_per_m", (model.e,), np.float64),
+                    ("reconstructed_velocity", (model.n, 3), np.float32),
+                    ("dissipated_velocity", (model.n, 3), np.float32),
+                    ("trace", (model.e, 32), np.float32),
+                    ("node_impulse", (model.n, 3), np.float64),
+                    ("node_velocity_impulse", (model.n, 3), np.float64),
+                    ("kinetic_change", (model.e,), np.float64),
+                    ("ideal_work", (model.e,), np.float64),
+                    ("rounding_work", (model.e,), np.float64),
+                )
+                for name, shape, dtype in layouts:
+                    value = getattr(phase, name)
+                    if (
+                        not isinstance(value, np.ndarray)
+                        or value.shape != shape
+                        or value.dtype != np.dtype(dtype)
+                        or not np.all(np.isfinite(value))
+                        or not self._is_owned(value)
+                    ):
+                        raise ValueError("checkpoint dissipation array invalid: " + name)
+                for name in ("ordered_point_ids", "coefficients_ns_per_m"):
+                    if getattr(phase, name).tobytes() != getattr(model.dissipation, name).tobytes():
+                        raise ValueError("checkpoint dissipation parameter binding mismatch")
+                if phase.dissipated_velocity.tobytes() != state.velocity.tobytes():
+                    raise ValueError("checkpoint dissipation does not bind accepted velocity")
             if not row_owned:
                 row = DeformableWorldStep(
                     key,

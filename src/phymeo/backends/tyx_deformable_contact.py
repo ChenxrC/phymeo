@@ -25,7 +25,7 @@ from ._resident_participant_layout import ResidentParticipant
 from ._world_step_layout import as_fp32
 from .mujoco_tyx._resources import DeviceResources
 from .resident_scene import ResidentSceneBatch
-from .tyx_deformable_batch import TyxDeformableBatch
+from .tyx_deformable_batch import DeformableDissipatedWorldStep, TyxDeformableBatch
 
 
 @dataclass(frozen=True, eq=False)
@@ -700,6 +700,8 @@ class TyxDeformableContactBatch:
             fixed = np.zeros_like(material)
             mask = model.weights == 0
             fixed[mask] = -h * row.force[mask].astype(np.float64) - material[mask]
+            if type(row) is DeformableDissipatedWorldStep:
+                fixed[mask] -= row.dissipation.node_impulse[mask]
             selected = tuple(site for site in payload["sites"] if site["world"] == world)
             work = before_potential = after_potential = dissipation = 0.0
             for site in selected:
@@ -761,6 +763,11 @@ class TyxDeformableContactBatch:
                     before["external"] @ np.asarray(before["state"].velocity)
                 ),
             )
+            if type(row) is DeformableDissipatedWorldStep:
+                world_record.update(
+                    damping_impulse=row.dissipation.node_impulse,
+                    damping_step=row.dissipation,
+                )
             worlds[world] = freeze(world_record)
             states[world] = DeformableContactState(world, state, rigid_states[world])
         rigid_publication = freeze(

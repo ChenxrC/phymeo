@@ -7,11 +7,13 @@ flat/deflected five-node membrane instantaneous coefficient.
 """
 
 import gzip
+import importlib.util
 import json
 import math
 from collections.abc import Mapping
 from contextlib import contextmanager
 from dataclasses import fields, is_dataclass
+from pathlib import Path
 
 import numpy as np
 
@@ -37,8 +39,7 @@ def make_world(kind="pair", *, key=7, sign=1, damping="positive", permuted=False
         surfaces = ()
     elif kind in ("chain", "mixed", "fixed_chain"):
         x = np.array(((-0.5, 0, 0), (0.5, 0, 0), (0.5, 0.75, 0.25)), np.float32)
-        v = np.array(((0.25, 0, 0.0625), (-0.125, 0.0625, 0), (0, -0.125, -0.0625)),
-                     np.float32)
+        v = np.array(((0.25, 0, 0.0625), (-0.125, 0.0625, 0), (0, -0.125, -0.0625)), np.float32)
         weights = np.array((1, 0.5, 2), np.float32)
         if kind == "fixed_chain":
             weights[0], v[0] = 0, 0
@@ -71,10 +72,15 @@ def make_world(kind="pair", *, key=7, sign=1, damping="positive", permuted=False
         raise ValueError("unknown damping declaration")
     parameters = None if damping is None else DistanceDissipation(ids[edges], coefficients)
     return DeformableNodeWorld(
-        key, ParticleModel(weights, np.zeros(3, np.float32)), ParticleState(x, v),
-        DistanceConstraints(edges, np.asarray(rest, np.float64),
-                            np.full(len(edges), 1 / 64, np.float64)),
-        ids, surfaces, dissipation=parameters,
+        key,
+        ParticleModel(weights, np.zeros(3, np.float32)),
+        ParticleState(x, v),
+        DistanceConstraints(
+            edges, np.asarray(rest, np.float64), np.full(len(edges), 1 / 64, np.float64)
+        ),
+        ids,
+        surfaces,
+        dissipation=parameters,
     )
 
 
@@ -96,9 +102,18 @@ def ordered_damping(position, velocity, inverse_mass, edges, coefficients, h):
     for (i, j), coefficient in zip(edges, coefficients, strict=True):
         before_i, before_j = v[i].copy(), v[j].copy()
         if coefficient == 0:
-            rows.append(dict(normal=np.zeros(3), impulse=np.zeros(3), scalar=0.0,
-                             before_i=before_i, before_j=before_j,
-                             after_i=before_i, after_j=before_j, work=0.0))
+            rows.append(
+                dict(
+                    normal=np.zeros(3),
+                    impulse=np.zeros(3),
+                    scalar=0.0,
+                    before_i=before_i,
+                    before_j=before_j,
+                    after_i=before_i,
+                    after_j=before_j,
+                    work=0.0,
+                )
+            )
             continue
         d = x[i] - x[j]
         length = math.sqrt(float(d @ d))
@@ -106,19 +121,30 @@ def ordered_damping(position, velocity, inverse_mass, edges, coefficients, h):
             raise ValueError("reference positive damping has no edge direction")
         n = d / length
         rate = float(n @ (v[i] - v[j]))
-        scalar = -h * coefficient * rate / (
-            1 + h * coefficient * (weights[i] + weights[j]) * float(n @ n)
+        scalar = (
+            -h
+            * coefficient
+            * rate
+            / (1 + h * coefficient * (weights[i] + weights[j]) * float(n @ n))
         )
         vector = scalar * n
         v[i] += weights[i] * vector
         v[j] -= weights[j] * vector
         impulse[i] += vector
         impulse[j] -= vector
-        rows.append(dict(normal=n, impulse=vector, scalar=scalar,
-                         before_i=before_i, before_j=before_j,
-                         after_i=v[i].copy(), after_j=v[j].copy(),
-                         work=scalar * rate + 0.5 * (weights[i] + weights[j]) *
-                         float(n @ n) * scalar * scalar))
+        rows.append(
+            dict(
+                normal=n,
+                impulse=vector,
+                scalar=scalar,
+                before_i=before_i,
+                before_j=before_j,
+                after_i=v[i].copy(),
+                after_j=v[j].copy(),
+                work=scalar * rate
+                + 0.5 * (weights[i] + weights[j]) * float(n @ n) * scalar * scalar,
+            )
+        )
     return v, impulse, tuple(rows)
 
 
@@ -143,8 +169,10 @@ def elastic_reference(spec, position, velocity, force, h, sweeps):
             denominator = w[i] + w[j] + alpha[k]
             if denominator == 0:
                 continue
-            increment = -(length - spec.constraints.rest_length[k] +
-                          alpha[k] * multipliers[k]) / denominator
+            increment = (
+                -(length - spec.constraints.rest_length[k] + alpha[k] * multipliers[k])
+                / denominator
+            )
             multipliers[k] += increment
             x[i] += w[i] * increment * n
             x[j] -= w[j] * increment * n
@@ -184,16 +212,25 @@ def phase_checks(spec, state, row):
     phase = row.dissipation
     assert phase.schema == "distance-dissipation-step-v1"
     np.testing.assert_array_equal(phase.ordered_point_ids, spec.point_ids[spec.constraints.indices])
-    np.testing.assert_array_equal(phase.coefficients_ns_per_m,
-                                  spec.dissipation.coefficients_ns_per_m)
+    np.testing.assert_array_equal(
+        phase.coefficients_ns_per_m, spec.dissipation.coefficients_ns_per_m
+    )
     np.testing.assert_array_equal(phase.dissipated_velocity, state.velocity)
     assert phase.trace.dtype == np.float32
     assert phase.trace.shape == (len(spec.constraints.indices), 32)
     np.testing.assert_array_equal(phase.trace[:, 28:], 0)
-    for value in (phase.ordered_point_ids, phase.coefficients_ns_per_m,
-                  phase.reconstructed_velocity, phase.dissipated_velocity, phase.trace,
-                  phase.node_impulse, phase.node_velocity_impulse, phase.kinetic_change,
-                  phase.ideal_work, phase.rounding_work):
+    for value in (
+        phase.ordered_point_ids,
+        phase.coefficients_ns_per_m,
+        phase.reconstructed_velocity,
+        phase.dissipated_velocity,
+        phase.trace,
+        phase.node_impulse,
+        phase.node_velocity_impulse,
+        phase.kinetic_change,
+        phase.ideal_work,
+        phase.rounding_work,
+    ):
         assert not value.flags.writeable
         try:
             value.setflags(write=True)
@@ -202,8 +239,12 @@ def phase_checks(spec, state, row):
         else:
             raise AssertionError("phase array has mutable backing")
     reference, reference_impulse, _ = ordered_damping(
-        state.position, phase.reconstructed_velocity, spec.model.inverse_mass,
-        spec.constraints.indices, spec.dissipation.coefficients_ns_per_m, row.h,
+        state.position,
+        phase.reconstructed_velocity,
+        spec.model.inverse_mass,
+        spec.constraints.indices,
+        spec.dissipation.coefficients_ns_per_m,
+        row.h,
     )
     np.testing.assert_allclose(state.velocity, reference, atol=ATOL, rtol=RTOL)
     np.testing.assert_allclose(phase.node_impulse, reference_impulse, atol=ATOL, rtol=RTOL)
@@ -215,11 +256,18 @@ def phase_checks(spec, state, row):
     for k, ((i, j), raw) in enumerate(zip(spec.constraints.indices, phase.trace, strict=True)):
         np.testing.assert_array_equal(raw[6:9], running[i])
         np.testing.assert_array_equal(raw[9:12], running[j])
-        np.testing.assert_array_equal(raw[18:22], np.asarray(
-            (row.h, spec.dissipation.coefficients_ns_per_m[k], weights[i], weights[j]),
-            np.float32))
+        np.testing.assert_array_equal(
+            raw[18:22],
+            np.asarray(
+                (row.h, spec.dissipation.coefficients_ns_per_m[k], weights[i], weights[j]),
+                np.float32,
+            ),
+        )
         n, scalar = raw[:3].astype(float), float(raw[4])
-        before, after = raw[6:12].astype(float).reshape(2, 3), raw[12:18].astype(float).reshape(2, 3)
+        before, after = (
+            raw[6:12].astype(float).reshape(2, 3),
+            raw[12:18].astype(float).reshape(2, 3),
+        )
         if raw[19] == 0:
             np.testing.assert_array_equal(raw[:6], 0)
             np.testing.assert_array_equal(raw[22:], np.r_[0, 1, np.zeros(8)])
@@ -234,8 +282,9 @@ def phase_checks(spec, state, row):
             np.testing.assert_allclose(raw[27], n @ n, atol=ATOL, rtol=RTOL)
             denominator = 1 + row.h * float(raw[19]) * (weights[i] + weights[j]) * float(raw[27])
             np.testing.assert_allclose(raw[23], denominator, atol=ATOL, rtol=RTOL)
-            np.testing.assert_allclose(scalar, -row.h * float(raw[19]) * float(raw[3]) /
-                                       denominator, atol=ATOL, rtol=RTOL)
+            np.testing.assert_allclose(
+                scalar, -row.h * float(raw[19]) * float(raw[3]) / denominator, atol=ATOL, rtol=RTOL
+            )
         np.testing.assert_allclose(raw[24:27], scalar * n, atol=ATOL, rtol=RTOL)
         accumulated[i] += raw[24:27].astype(float)
         accumulated[j] -= raw[24:27].astype(float)
@@ -246,14 +295,23 @@ def phase_checks(spec, state, row):
                 continue
             signed_scalar = scalar if endpoint == 0 else -scalar
             exact_after = before[endpoint] + weight * signed_scalar * n
-            error = endpoint_update_bound(before[endpoint], weight, signed_scalar, n, after[endpoint])
-            arithmetic_slack = 16 * np.finfo(float).eps * (
-                np.abs(before[endpoint]) + np.abs(weight * signed_scalar * n) + 1e-300)
+            error = endpoint_update_bound(
+                before[endpoint], weight, signed_scalar, n, after[endpoint]
+            )
+            arithmetic_slack = (
+                16
+                * np.finfo(float).eps
+                * (np.abs(before[endpoint]) + np.abs(weight * signed_scalar * n) + 1e-300)
+            )
             assert np.all(np.abs(after[endpoint] - exact_after) <= error + arithmetic_slack)
-            actual_work += float((after[endpoint] @ after[endpoint] -
-                                  before[endpoint] @ before[endpoint]) / (2 * weight))
+            actual_work += float(
+                (after[endpoint] @ after[endpoint] - before[endpoint] @ before[endpoint])
+                / (2 * weight)
+            )
             update_bound += float(np.sum(np.abs(exact_after) * error + 0.5 * error**2) / weight)
-        ideal = scalar * float(raw[3]) + 0.5 * (weights[i] + weights[j]) * float(raw[27]) * scalar**2
+        ideal = (
+            scalar * float(raw[3]) + 0.5 * (weights[i] + weights[j]) * float(raw[27]) * scalar**2
+        )
         # Include stored dot-product rounding; never cancel another edge's work.
         dot_term = abs(scalar * (float(n @ (before[0] - before[1])) - float(raw[3])))
         norm_term = 0.5 * (weights[i] + weights[j]) * scalar**2 * abs(float(n @ n) - float(raw[27]))
@@ -261,8 +319,9 @@ def phase_checks(spec, state, row):
         bound = update_bound + dot_term + norm_term + fp64_slack
         np.testing.assert_allclose(phase.kinetic_change[k], actual_work, atol=fp64_slack, rtol=0)
         np.testing.assert_allclose(phase.ideal_work[k], ideal, atol=fp64_slack, rtol=0)
-        np.testing.assert_allclose(phase.rounding_work[k], actual_work - ideal,
-                                  atol=fp64_slack, rtol=0)
+        np.testing.assert_allclose(
+            phase.rounding_work[k], actual_work - ideal, atol=fp64_slack, rtol=0
+        )
         assert abs(actual_work - ideal) <= bound
         assert actual_work <= bound
         energy_bounds.append(bound)
@@ -271,12 +330,39 @@ def phase_checks(spec, state, row):
     np.testing.assert_allclose(phase.node_impulse, accumulated, atol=1e-15, rtol=0)
     actual_impulse = np.zeros_like(running, dtype=float)
     free = weights > 0
-    actual_impulse[free] = (state.velocity[free].astype(float) -
-                            phase.reconstructed_velocity[free]) / weights[free, None]
+    actual_impulse[free] = (
+        state.velocity[free].astype(float) - phase.reconstructed_velocity[free]
+    ) / weights[free, None]
     np.testing.assert_allclose(phase.node_velocity_impulse, actual_impulse, atol=1e-15, rtol=0)
     np.testing.assert_array_equal(state.velocity[~free], 0)
-    return dict(reference_velocity=reference, reference_impulse=reference_impulse,
-                per_edge_rounding_bound=np.asarray(energy_bounds))
+    return dict(
+        reference_velocity=reference,
+        reference_impulse=reference_impulse,
+        per_edge_rounding_bound=np.asarray(energy_bounds),
+    )
+
+
+def elastic_rounding_audit(spec, state, row):
+    """Reuse the independent saved-arithmetic observer, never a product solver."""
+    path = Path(__file__).parents[2] / "examples" / "deformable_impulse_audit.py"
+    module_spec = importlib.util.spec_from_file_location("d6_saved_elastic_audit", path)
+    module = importlib.util.module_from_spec(module_spec)
+    module_spec.loader.exec_module(module)
+    return module.audit_deformable_impulse(
+        input_position=row.input_position,
+        input_velocity=row.input_velocity,
+        force=row.force,
+        inverse_mass=np.asarray(spec.model.inverse_mass, np.float32),
+        gravity=np.asarray(spec.model.gravity, np.float32),
+        h=row.h,
+        predicted_position=row.predicted_position,
+        predicted_velocity=row.predicted_velocity,
+        trace=row.trace,
+        edges=spec.constraints.indices,
+        final_position=state.position,
+        final_velocity=row.dissipation.reconstructed_velocity,
+        sweeps=row.sweeps,
+    )
 
 
 def encode(value):
@@ -303,12 +389,18 @@ def encode(value):
 def saved(path, name, **declaration):
     with gzip.open(path / (name + ".jsonl.gz"), "xt", encoding="utf-8") as stream:
         ordinal = 0
+
         def emit(event, **payload):
             nonlocal ordinal
-            stream.write(json.dumps(dict(ordinal=ordinal, event=event, payload=encode(payload)),
-                                    allow_nan=False) + "\n")
+            stream.write(
+                json.dumps(
+                    dict(ordinal=ordinal, event=event, payload=encode(payload)), allow_nan=False
+                )
+                + "\n"
+            )
             ordinal += 1
             stream.flush()
+
         emit("declaration", **declaration)
         try:
             yield emit
@@ -322,8 +414,15 @@ def saved(path, name, **declaration):
 def step_record(batch, specs, h, emit, *, inputs=None):
     inputs = packets(specs) if inputs is None else inputs
     entry = batch.snapshot()
-    emit("attempt", entry=entry, inputs=inputs, h=h, revision=batch.revision,
-         checkpoint=batch.checkpoint(), stats=batch.stats())
+    emit(
+        "attempt",
+        entry=entry,
+        inputs=inputs,
+        h=h,
+        revision=batch.revision,
+        checkpoint=batch.checkpoint(),
+        stats=batch.stats(),
+    )
     receipt = batch.step(inputs, h, expected_revision=batch.revision)
     emit("returned", receipt=receipt, stats=batch.stats())
     for spec in specs:

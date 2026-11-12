@@ -524,3 +524,50 @@ def test_plan_construction_failure_closes_allocated_public_owner(monkeypatch):
     with pytest.raises(RuntimeError, match="late prepare"):
         compile_participant_scene(declaration)
     assert calls == ["construct", "prepare", "close"]
+
+
+@pytest.mark.parametrize("restriction", ("mask", "source_exclusion"))
+def test_material_cannot_override_original_source_restrictions(restriction, monkeypatch):
+    declaration, _, _, _ = assembly("fixed", worlds=(91,))
+    row = declaration.articulations[0]
+    asset = row.asset
+    materials = dict(declaration.materials_by_pair)
+    if restriction == "mask":
+        original = asset.collisions[0]
+        altered = replace(original, shape=replace(original.shape, mask=0))
+        colliders = (altered, *asset.collisions[1:])
+        asset = replace(asset, collisions=colliders,
+                        collision_model=ph.CollisionModel(tuple(c.shape for c in colliders)))
+        intra = False
+    else:
+        pair = tuple(sorted(c.shape.key for c in asset.collisions))
+        asset = replace(asset, collision_model=ph.CollisionModel(asset.collision_model.shapes, (pair,)))
+        installed = tuple(sorted(row.collider_keys[k] for k in pair))
+        materials[installed] = ph.RobotContactMaterial(64, 0, 0)
+        intra = True
+    changed = replace(row, asset=asset)
+    bad = replace(declaration, articulations=(changed, *declaration.articulations[1:]),
+                  materials_by_pair=materials, intra_participant_pairs=intra)
+    called = []
+    monkeypatch.setattr(resident_scene, "ResidentSceneBatch", lambda *a, **kw: called.append(True))
+    with pytest.raises(ValueError, match="pairs"):
+        compile_participant_scene(bad)
+    assert not called
+
+
+def test_constructor_preserves_primary_and_cleanup_failure(monkeypatch):
+    declaration, _, _, _ = assembly("R01", worlds=(91,))
+    calls = []
+    class Owner:
+        def __init__(self, *args, **kwargs):
+            calls.append("construct")
+        def prepare_contacts(self, *args, **kwargs):
+            raise RuntimeError("primary assembly failure")
+        def close(self):
+            calls.append("close")
+            raise OSError("real cleanup failure")
+    monkeypatch.setattr(resident_scene, "ResidentSceneBatch", Owner)
+    with pytest.raises(BaseExceptionGroup) as captured:
+        compile_participant_scene(declaration)
+    assert [type(error) for error in captured.value.exceptions] == [RuntimeError, OSError]
+    assert calls == ["construct", "close"]

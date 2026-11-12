@@ -87,3 +87,20 @@ No commands below were run by author.
 
 Text checks completed: bounded original-source reads, complete product diff review, exact declared paths and git diff --check; no static/project execution. All numerical evidence and formal acceptance remain pending the parent.
 
+## Parent source execution (2026-11-12)
+
+After shared dispatch, receipt, checkpoint and legacy wrapper integration, the
+first full run of both new files (`22-r2-source`) completed **64 passed / 68.32 s,
+RAW_EXIT0**, including actual interpret/CUDA parameters and HOST admission
+negatives. Original independent native and physical gates remain unchanged.
+The author-only history above is retained. Narrow affected old-ABI compatibility
+and the two source-external consumers are pending at this checkpoint; no general
+FREE+BALL contact/activation, full robot task or scale/performance pass is claimed.
+
+`31-affected-compatibility` subsequently completed **16 passed / 69.82 s,
+RAW_EXIT0**: no-BALL mixed7 and offset-root dynamics, kind3 normal/constraint
+wrappers, legacy floating activation and stateless routes, fixed BALL activation,
+and the two retained FREE+BALL activation/contact admission rejections. Both
+device backends are covered by the functional nodes. This is the declared narrow
+compatibility selection, not a rerun or claim of the entire legacy suite.
+

@@ -37,11 +37,9 @@ TOL = {
     "integration_acceleration": (2e-3, 4e-3),
 }
 
+
 def body(name, kind="ball", child="", pos=".12 -.04 .23"):
-    joint = (
-        f'<joint name="{name}" type="{kind}" pos=".02 -.01 .03" '
-        'damping=".04" armature=".003"/>'
-    )
+    joint = f'<joint name="{name}" type="{kind}" pos=".02 -.01 .03" damping=".04" armature=".003"/>'
     if kind == "slide":
         joint = joint.replace('type="slide"', 'type="slide" axis=".3 -.4 .5"')
     elif kind == "hinge":
@@ -238,30 +236,29 @@ def initial(mj, model, slot=0, sign=False):
         qa = int(model.jnt_qposadr[joint])
         if kind in (mj.mjtJoint.mjJNT_FREE, mj.mjtJoint.mjJNT_BALL):
             adr = qa + (3 if kind == mj.mjtJoint.mjJNT_FREE else 0)
-            quat = np.array([1.0, .13 + .02 * joint, -.09, .07])
-            q[adr:adr + 4] = quat / np.linalg.norm(quat)
+            quat = np.array([1.0, 0.13 + 0.02 * joint, -0.09, 0.07])
+            q[adr : adr + 4] = quat / np.linalg.norm(quat)
             if sign and slot:
-                q[adr:adr + 4] *= -1
+                q[adr : adr + 4] *= -1
         else:
-            q[qa] = .03 * (joint + 1)
+            q[qa] = 0.03 * (joint + 1)
     if not sign:
-        q[:3] += slot * np.array([.04, -.02, .03])
-    velocity = np.linspace(-.13, .17, model.nv) * (1 if sign else 1 + .1 * slot)
-    return MuJoCoInitialState(q, velocity, time=.125)
+        q[:3] += slot * np.array([0.04, -0.02, 0.03])
+    velocity = np.linspace(-0.13, 0.17, model.nv) * (1 if sign else 1 + 0.1 * slot)
+    return MuJoCoInitialState(q, velocity, time=0.125)
 
 
 def control(model, tick, slot=0):
     from phymeo.backends.mujoco_runtime import MuJoCoControl
 
     phase = 1 if tick < 8 else (-1 if tick < 16 else 0)
-    ctrl = phase * np.array([(.18 + .01 * a) * (-1 if a % 2 else 1) for a in range(model.nu)])
+    ctrl = phase * np.array([(0.18 + 0.01 * a) * (-1 if a % 2 else 1) for a in range(model.nu)])
     qforce = np.zeros(model.nv)
-    qforce[:6] = phase * np.array([.3, -.2, .15, .08, -.06, .04])
-    qforce[6:] = phase * np.linspace(.025, .085, model.nv - 6)
+    qforce[:6] = phase * np.array([0.3, -0.2, 0.15, 0.08, -0.06, 0.04])
+    qforce[6:] = phase * np.linspace(0.025, 0.085, model.nv - 6)
     wrench = np.zeros((model.nbody, 6))
-    wrench[-1] = phase * (1 + .1 * slot) * np.array([.35, -.25, .4, .025, -.035, .015])
+    wrench[-1] = phase * (1 + 0.1 * slot) * np.array([0.35, -0.25, 0.4, 0.025, -0.035, 0.015])
     return MuJoCoControl(ctrl, qfrc_applied=qforce, xfrc_applied=wrench)
-
 
 
 def native_state(data):
@@ -465,6 +462,7 @@ def observations(runtime):
 def advance(runtime, mj, model, packets, references, journal, label):
     full_entry, entry = observations(runtime)
     from phymeo.backends.mujoco_runtime import MuJoCoControl
+
     stored = {
         key: MuJoCoControl(
             np.asarray(value.ctrl, np.float32),
@@ -473,7 +471,15 @@ def advance(runtime, mj, model, packets, references, journal, label):
         )
         for key, value in packets.items()
     }
-    journal.emit("request", label=label, full_entry=full_entry, entry=entry, requested=packets, stored=stored, h=H)
+    journal.emit(
+        "request",
+        label=label,
+        full_entry=full_entry,
+        entry=entry,
+        requested=packets,
+        stored=stored,
+        h=H,
+    )
     expected = {key: native_fields(mj, model, entry[key], stored[key]) for key in KEYS}
     for key in KEYS:
         set_control(references[key], stored[key])
@@ -495,7 +501,9 @@ def advance(runtime, mj, model, packets, references, journal, label):
 
     with patch.object(mj, "mj_step", forbidden), patch.object(mj, "mj_forward", forbidden):
         accepted = runtime.step(H)
-        journal.emit("physics-return", label=label, accepted=accepted, counters=dict(runtime.counters))
+        journal.emit(
+            "physics-return", label=label, accepted=accepted, counters=dict(runtime.counters)
+        )
         integration_only = runtime.integration_snapshot()
         journal.emit("accepted-integration", label=label, state=integration_only)
     full_output, output = observations(runtime)
@@ -509,12 +517,16 @@ def advance(runtime, mj, model, packets, references, journal, label):
         counters=dict(runtime.counters),
     )
     require(dict(accepted) == dict.fromkeys(KEYS, True), "whole-batch acceptance")
-    require(runtime.counters["completed_kernels"] == launches + 3, "FREE+BALL original three stages")
+    require(
+        runtime.counters["completed_kernels"] == launches + 3, "FREE+BALL original three stages"
+    )
     for key in KEYS:
         row, before, after, oracle = output[key].last_step, entry[key], output[key], expected[key]
         require(row.tick == after.tick == before.tick + 1, "one logical successor")
         require(row.input_time == before.time and row.output_time == after.time, "receipt time")
-        require(row.h == H and row.contacts == () and row.constraints == (), "FREE+BALL phase/domain")
+        require(
+            row.h == H and row.contacts == () and row.constraints == (), "FREE+BALL phase/domain"
+        )
         exact(row.input_q, before.q, "actual input q")
         exact(row.input_v, before.v, "actual input v")
         exact(row.dynamics.input_q, row.input_q, "dynamics input q")
@@ -546,7 +558,9 @@ def advance(runtime, mj, model, packets, references, journal, label):
             require(abs(after.time - native["time"]) <= TIME_ATOL, "continuous/native clock")
         for joint in range(model.njnt):
             if model.jnt_type[joint] in (mj.mjtJoint.mjJNT_FREE, mj.mjtJoint.mjJNT_BALL):
-                qa = int(model.jnt_qposadr[joint]) + (3 if model.jnt_type[joint] == mj.mjtJoint.mjJNT_FREE else 0)
+                qa = int(model.jnt_qposadr[joint]) + (
+                    3 if model.jnt_type[joint] == mj.mjtJoint.mjJNT_FREE else 0
+                )
                 require(
                     abs(np.dot(after.q[qa : qa + 4], after.q[qa : qa + 4]) - 1)
                     <= 8 * np.finfo(np.float32).eps,
@@ -566,7 +580,9 @@ def run(case, mode, output_path, journal, installed_root):
     source_xml = source(case)
     model = mj.MjModel.from_xml_string(source_xml)
     require(
-        (model.nq, model.nv, model.nu, model.na) == {"mixed": (13, 11, 3, 0), "branches": (15, 12, 2, 0)}[case], "declared FREE/BALL/R/P dimensions"
+        (model.nq, model.nv, model.nu, model.na)
+        == {"mixed": (13, 11, 3, 0), "branches": (15, 12, 2, 0)}[case],
+        "declared FREE/BALL/R/P dimensions",
     )
     initials = {key: initial(mj, model, slot) for slot, key in enumerate(KEYS)}
     compiled = compile_mujoco_xml(source_xml, require_asset=False)
@@ -647,13 +663,17 @@ def run(case, mode, output_path, journal, installed_root):
         successor = advance(runtime, mj, model, held, references, journal, f"{case}/successor")
         main_calls += 1
         clone_references = {key: copy.copy(value) for key, value in saved_references.items()}
-        clone_result = advance(clone, mj, model, held, clone_references, journal, f"{case}/clone-successor")
+        clone_result = advance(
+            clone, mj, model, held, clone_references, journal, f"{case}/clone-successor"
+        )
         clone_calls += 1
         exact(clone_result, successor, "clone real successor")
         runtime.restore(capsule, expected_revision=runtime.checkpoint_revision)
         exact(runtime.integration_snapshot(), saved, "restored accepted state")
         references = {key: copy.copy(value) for key, value in saved_references.items()}
-        repeated = advance(runtime, mj, model, held, references, journal, f"{case}/restored-successor")
+        repeated = advance(
+            runtime, mj, model, held, references, journal, f"{case}/restored-successor"
+        )
         main_calls += 1
         exact(repeated, successor, "restored real successor")
         before_reset = runtime.integration_snapshot()
@@ -677,7 +697,9 @@ def run(case, mode, output_path, journal, installed_root):
         journal.emit(
             "partial-original-reset", selected=(KEYS[-1],), before=before_reset, after=after_reset
         )
-        final = advance(runtime, mj, model, held, references, journal, f"{case}/partial-reset-successor")
+        final = advance(
+            runtime, mj, model, held, references, journal, f"{case}/partial-reset-successor"
+        )
         main_calls += 1
         counts, clone_counts = dict(runtime.counters), dict(clone.counters)
         require(main_calls == 27 and clone_calls == 1, "actual calls not rewound ticks")
@@ -714,10 +736,16 @@ def run(case, mode, output_path, journal, installed_root):
             clone_counters=clone_counts,
             final_provenance=paths,
         )
-    except BaseException:
+    except BaseException as primary_error:
         # Keep the original failure even if its optional state capture fails.
         original_traceback = traceback.format_exc()
-        (output_path / f"{case}-run-failure.txt").write_text(original_traceback, encoding="utf-8")
+        capture_errors = []
+        try:
+            (output_path / f"{case}-run-failure.txt").write_text(
+                original_traceback, encoding="utf-8"
+            )
+        except BaseException as error:
+            capture_errors.append(error)
         try:
             journal.emit(
                 "run-failure-state",
@@ -727,9 +755,11 @@ def run(case, mode, output_path, journal, installed_root):
                 clone_calls=clone_calls,
                 traceback=original_traceback,
             )
-        except BaseException:
-            (output_path / f"{case}-failure-capture.txt").write_text(
-                traceback.format_exc(), encoding="utf-8"
+        except BaseException as error:
+            capture_errors.append(error)
+        if capture_errors:
+            raise BaseExceptionGroup(
+                "FREE+BALL run/evidence failures", [primary_error, *capture_errors]
             )
         raise
     finally:
@@ -742,7 +772,13 @@ def run(case, mode, output_path, journal, installed_root):
                 except BaseException as error:
                     cleanup.append(error)
         try:
-            journal.emit("closed", case=case, main_calls=main_calls, clone_calls=clone_calls, cleanup_errors=[repr(error) for error in cleanup])
+            journal.emit(
+                "closed",
+                case=case,
+                main_calls=main_calls,
+                clone_calls=clone_calls,
+                cleanup_errors=[repr(error) for error in cleanup],
+            )
         except BaseException as error:
             cleanup.append(error)
         if cleanup:
@@ -767,6 +803,20 @@ def main():
         scope="installed single FREE + BALL/R/P, direct JOINT NONE motors; na0",
         excluded="activation/contact/limits/dry, BALL affine bias/springs, multiple FREE roots, G1 and training",
     )
+    errors = []
+
+    def remember(stage, error):
+        errors.append(error)
+        summary["status"] = "FAIL"
+        summary.setdefault("errors", []).append(
+            dict(
+                stage=stage,
+                type=type(error).__name__,
+                message=str(error),
+                traceback=traceback.format_exc(),
+            )
+        )
+
     try:
         require(args.installed_root.is_absolute(), "installed-root must be absolute")
         installed_root = args.installed_root.resolve(strict=True)
@@ -775,26 +825,50 @@ def main():
         summary["cases"] = {}
         for case in ("mixed", "branches"):
             summary["cases"][case] = run(case, args.mode, output, journal, installed_root)
-        summary["accepted_world_steps"] = sum(value["accepted_world_steps"] for value in summary["cases"].values())
+        summary["accepted_world_steps"] = sum(
+            value["accepted_world_steps"] for value in summary["cases"].values()
+        )
         require(summary["accepted_world_steps"] == 112, "two declared installed cases")
         summary["status"] = "PASS"
     except BaseException as error:
-        summary["status"] = "FAIL"
+        remember("run", error)
         summary["exception"] = dict(
             type=type(error).__name__, message=str(error), traceback=traceback.format_exc()
         )
-        (output / "failure.txt").write_text(summary["exception"]["traceback"], encoding="utf-8")
-        journal.emit("failure", summary=summary)
-        raise
+        for stage, callback in (
+            (
+                "failure-text",
+                lambda: (output / "failure.txt").write_text(
+                    summary["exception"]["traceback"], encoding="utf-8"
+                ),
+            ),
+            ("failure-event", lambda: journal.emit("failure", summary=summary)),
+        ):
+            try:
+                callback()
+            except BaseException as secondary:
+                remember(stage, secondary)
     finally:
-        journal.emit("summary", summary=summary)
-        summary["trace"] = journal.close()
-        (output / "summary.json").write_text(
-            json.dumps(summary, indent=2, allow_nan=False), encoding="utf-8"
-        )
-        print(json.dumps(summary, allow_nan=False))
+        for stage, callback in (
+            ("summary-event", lambda: journal.emit("summary", summary=summary)),
+            ("journal-close", lambda: summary.update(trace=journal.close())),
+            (
+                "summary-write",
+                lambda: (output / "summary.json").write_text(
+                    json.dumps(summary, indent=2, allow_nan=False), encoding="utf-8"
+                ),
+            ),
+        ):
+            try:
+                callback()
+            except BaseException as error:
+                remember(stage, error)
+    print(json.dumps(summary, allow_nan=False))
+    if len(errors) == 1:
+        raise errors[0]
+    if errors:
+        raise BaseExceptionGroup("FREE+BALL execution/finalization failures", errors)
 
 
 if __name__ == "__main__":
     main()
-

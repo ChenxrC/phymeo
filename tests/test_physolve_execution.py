@@ -10,6 +10,55 @@ from phymeo.builders.mujoco_compiler import compile_mujoco_xml
 
 payload = payload_fixture
 
+
+@pytest.mark.cuda
+@pytest.mark.parametrize('nworld', [1, 8, 64])
+def test_free_body_per_body_components_atomic_rejection(payload, nworld, monkeypatch):
+    import tyx as tx
+    from phymeo import PhySolveInputError
+
+    with PhySolveRuntime(compile_mujoco_xml(FREE_OFFSET, require_asset=False), payload=payload,
+                        nworld=nworld, body_observations=True) as runtime:
+        bindings = runtime.prepare_free_body_updates()
+        storage = runtime.storage_binding()
+        initial = runtime.snapshot()
+        values = np.zeros((nworld, 2, 13), np.float32)
+        values[:, 0, :3] = [-2., .25, 3.]
+        values[:, 1, 7:10] = [.2, -.3, .4]
+        selected = np.zeros((nworld, 2), bool)
+        selected[::2] = True
+        device_values = tx.Array(values, device=storage.device)
+        device_selected = tx.Array(selected, device=storage.device)
+        flags = tx.Array(np.array([1, 4], np.int32), device=storage.device)
+        extra = tx.Array(np.arange(nworld) % 3 == 0, device=storage.device)
+        def forbidden(*args, **kwargs):
+            raise AssertionError('hot free-body allocation or full readback')
+        with monkeypatch.context() as patch:
+            patch.setattr(tx, 'empty', forbidden)
+            patch.setattr(tx.Array, 'numpy', forbidden)
+            ticket = runtime.begin_execution()
+            runtime.enqueue_free_body_update(ticket, device_values, selected_bodies=device_selected,
+                components=None, component_flags=flags, selected_worlds=extra)
+            runtime.complete_execution(ticket)
+            runtime.accept_execution(ticket)
+        after = runtime.snapshot()
+        expected_q, expected_v = initial['qpos'].copy(), initial['qvel'].copy()
+        qa, va = bindings[0][2], bindings[1][3]
+        expected_q[::2, qa:qa+3] = values[::2, 0, :3]
+        expected_v[::2, va:va+3] = values[::2, 1, 7:10]
+        np.testing.assert_array_equal(after['qpos'], expected_q)
+        np.testing.assert_array_equal(after['qvel'], expected_v)
+        flags.assign(np.array([16, 4], np.int32))
+        ticket = runtime.begin_execution()
+        runtime.enqueue_free_body_update(ticket, device_values, selected_bodies=device_selected,
+            components=None, component_flags=flags)
+        with pytest.raises(PhySolveInputError):
+            runtime.complete_execution(ticket)
+        runtime.discard_execution(ticket)
+        for name, value in runtime.snapshot().items():
+            np.testing.assert_array_equal(value, after[name])
+        runtime.step()
+
 FREE_OFFSET = '''<mujoco><option gravity="0 0 -9.81" timestep=".002" jacobian="dense"/>
 <worldbody>
 <body name="a" pos="-2 0 2"><freejoint name="root_a"/>

@@ -37,14 +37,22 @@ class PreparedValidation:
             )
             capacity = tuple(
                 (getattr(bank, name).view(tx.i32).flatten(), limit)
-                for name, limit in (("nacon", bank.naconmax), ("ncollision", bank.naconmax),
-                                    ("nefc", bank.njmax))
+                for name, limit in (
+                    ("nacon", bank.naconmax),
+                    ("ncollision", bank.naconmax),
+                    ("nefc", bank.njmax),
+                )
             )
             self.plans.append((finite, capacity))
         if extra_banks is not None:
             names = tuple(extra_banks[0])
-            self.extra_plans = [tuple((name, bank[name].flatten(), 1 << (i + 1 + len(self.finite_fields)))
-                                     for i, name in enumerate(names)) for bank in extra_banks]
+            self.extra_plans = [
+                tuple(
+                    (name, bank[name].flatten(), 1 << (i + 1 + len(self.finite_fields)))
+                    for i, name in enumerate(names)
+                )
+                for bank in extra_banks
+            ]
             self.finite_fields = (*self.finite_fields, *names)
 
     def prepare(self, stream):
@@ -82,9 +90,19 @@ class PreparedValidation:
         if bits & 131072:
             raise RuntimeError("non-finite PhySolve contact measurement; not published")
         if bits & 262144:
-            raise RuntimeError("PhySolve mixed contact observation capacity exceeded; not published")
+            raise RuntimeError(
+                "PhySolve mixed contact observation capacity exceeded; not published"
+            )
         if bits & 524288:
-            raise RuntimeError("invalid PhySolve free-body input or converted coordinates; not published")
+            if bits == 524288:
+                from .physolve_runtime import PhySolveInputError
+
+                raise PhySolveInputError(
+                    "invalid PhySolve free-body input or converted coordinates; not published"
+                )
+            raise RuntimeError(
+                "invalid PhySolve free-body input or converted coordinates; not published"
+            )
         names = [name for i, name in enumerate(self.finite_fields) if bits & (1 << (i + 1))]
         if names:
             raise RuntimeError(f"non-finite PhySolve {', '.join(names)}; not published")

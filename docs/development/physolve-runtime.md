@@ -651,3 +651,14 @@ PhySolve qpos/qvel。一次冷准备、一次候选更新与原生 forward；不
 begin/enqueue_step(steps=4)/complete/accept；前面的坐标/速度检查已通过，原日志保留。
 独立只读复审无剩余生产阻断。未执行完整库、Graph、P2PE body C ABI 或 GUI；
 证据为配套实验根 evidence/b3m-{free-final,free-selected,free-negative}.log。
+
+## B3o：逐 body 组件与输入错误分类
+
+新增 free_body_component v1，保持原 free_body_update v1 调用可用；各 body 可用
+不同组件，额外 selected worlds 与 body mask 合并，使混合字段只执行一次 forward。
+PhySolveInputError 仅表示独立输入转换失败，未发布候选可丢弃；其他错误仍保留
+执行失败分类。公开语义集中在[FREE body update](../architecture/engine-integration.md#free-body-update-v1)。
+原生 CUDA free-body 9 项通过，含 N=1/8/64 逐 body 组件、非法 flags/原子恢复、
+非零 COM、未选分量保持及既有负例。Host、TYX、六 CUBIN 与容差不变；没有新增
+原生工作区容量，未扩充排序或微小数值诊断。配套证据为 evidence/b3o-native.log；
+实际 DLL 由 P2PE 另行验证，不表示独立安装、Graph 或 GUI 资格。

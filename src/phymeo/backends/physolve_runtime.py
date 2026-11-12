@@ -38,6 +38,10 @@ def _positive(value, name):
     return int(value)
 
 
+class PhySolveInputError(RuntimeError):
+    """Only input conversion failed; the unpublished candidate can be discarded."""
+
+
 class PhySolveRuntime:
     """Own model/banks/handles/stream; borrow the immutable compilation source.
 
@@ -51,6 +55,7 @@ class PhySolveRuntime:
     selected_update_contract_version = 1
     device_reset_contract_version = 1
     free_body_update_contract_version = 1
+    free_body_component_contract_version = 1
 
     def __init__(
         self,
@@ -520,13 +525,18 @@ class PhySolveRuntime:
             return self._free_body_updates.bindings
 
     def enqueue_free_body_update(self, ticket, values, *, selected_bodies,
-                                 components=('position', 'rotation', 'linear_velocity', 'angular_velocity')):
+                                 components=('position', 'rotation', 'linear_velocity', 'angular_velocity'),
+                                 component_flags=None, selected_worlds=None, compose_controls=False):
         """Borrow device [N,F,13] origin XYZ/XYZW/world-COM twist and bool[N,F].
 
         Unspecified components retain world pose/COM velocity, including when
         rotation changes. Inputs must remain unchanged until transaction end.
         Device validation precedes all candidate writes; one native forward
         follows. Completion rejects invalid values before publication.
+        Additive per-body mode uses components=None and device int32[F] bits
+        position=1, rotation=2, COM linear=4, world angular=8. Selected bodies
+        require bits 1..15. Additional selected worlds are unioned for mixed
+        state/control edits; compose_controls applies once in the same forward.
         """
         with self._scope():
             index = self._require_ticket(ticket, 'prepared')
@@ -534,16 +544,20 @@ class PhySolveRuntime:
             if plan is None or not plan.ready:
                 raise RuntimeError('prepare_free_body_updates is required before execution')
             mapping = dict(position=1, rotation=2, linear_velocity=4, angular_velocity=8)
-            if (not isinstance(components, (tuple, list)) or not components or
+            if component_flags is not None and components is not None:
+                raise ValueError('component_flags requires components=None')
+            if component_flags is None and (not isinstance(components, (tuple, list)) or not components or
                     any(not isinstance(c, str) or c not in mapping for c in components) or
                     len(set(components)) != len(components)):
                 raise ValueError('free-body components must be unique declared field names')
-            plan.check(values, selected_bodies)
-            self._pending['free_body_inputs'] = (values, selected_bodies)
+            plan.check(values, selected_bodies, component_flags, selected_worlds)
+            self._pending['free_body_inputs'] = (values, selected_bodies, component_flags, selected_worlds)
             try:
                 plan.enqueue(index, values.flatten(), selected_bodies.flatten(),
-                             sum(mapping[c] for c in components), self._stream)
-                self.enqueue_update(ticket, refresh_state=True, selected_worlds=plan.worlds)
+                             -1 if component_flags is not None else sum(mapping[c] for c in components),
+                             self._stream, component_flags, selected_worlds)
+                self.enqueue_update(ticket, refresh_state=True, selected_worlds=plan.worlds,
+                                    compose_controls=compose_controls)
             except Exception:
                 self._pending['phase'] = 'failed'
                 raise

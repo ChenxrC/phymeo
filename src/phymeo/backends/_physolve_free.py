@@ -27,9 +27,17 @@ def _rotate(
 
 
 @tx.kernel(gradient="unsupported")
-def _world_mask(selected: tx.Array[tx.bool1], worlds: tx.Array[tx.bool1], count: tx.i32):
+def _world_mask(
+    selected: tx.Array[tx.bool1],
+    worlds: tx.Array[tx.bool1],
+    count: tx.i32,
+    extra: tx.Array[tx.bool1],
+    has_extra: tx.i32,
+):
     for world in tx.range(worlds.shape[0]):
         value = False
+        if has_extra != 0:
+            value = extra[world]
         for body in range(count):
             value = value or selected[world * count + body]
         worlds[world] = value
@@ -48,6 +56,7 @@ def _convert(
     nq: tx.i32,
     nv: tx.i32,
     fields: tx.i32,
+    per_body: tx.Array[tx.i32],
 ):
     for lane in tx.range(selected.shape[0]):
         if selected[lane]:
@@ -56,19 +65,22 @@ def _convert(
             qa = world * nq + addresses[body * 2]
             va = world * nv + addresses[body * 2 + 1]
             base = lane * 13
-            valid = True
+            enabled_fields = fields
+            if fields < 0:
+                enabled_fields = per_body[body]
+            valid = enabled_fields > 0 and enabled_fields <= 15
             for c in range(13):
                 enabled = (
-                    (c < 3 and (fields & 1) != 0)
-                    or (c >= 3 and c < 7 and (fields & 2) != 0)
-                    or (c >= 7 and c < 10 and (fields & 4) != 0)
-                    or (c >= 10 and (fields & 8) != 0)
+                    (c < 3 and (enabled_fields & 1) != 0)
+                    or (c >= 3 and c < 7 and (enabled_fields & 2) != 0)
+                    or (c >= 7 and c < 10 and (enabled_fields & 4) != 0)
+                    or (c >= 10 and (enabled_fields & 8) != 0)
                 )
                 if enabled and not tx.isfinite(values[base + c]):
                     valid = False
             x, y, z, w = q[qa + 4], q[qa + 5], q[qa + 6], q[qa + 3]
             nx, ny, nz, nw = x, y, z, w
-            if (fields & 2) != 0:
+            if (enabled_fields & 2) != 0:
                 nx, ny, nz, nw = (
                     values[base + 3],
                     values[base + 4],
@@ -100,16 +112,16 @@ def _convert(
                 vx = v[va] + wy * rz - wz * ry
                 vy = v[va + 1] + wz * rx - wx * rz
                 vz = v[va + 2] + wx * ry - wy * rx
-                if (fields & 4) != 0:
+                if (enabled_fields & 4) != 0:
                     vx, vy, vz = values[base + 7], values[base + 8], values[base + 9]
-                if (fields & 8) != 0:
+                if (enabled_fields & 8) != 0:
                     wx, wy, wz = values[base + 10], values[base + 11], values[base + 12]
                 rx = _rotate(nx, ny, nz, nw, cx, cy, cz, 0)
                 ry = _rotate(nx, ny, nz, nw, cx, cy, cz, 1)
                 rz = _rotate(nx, ny, nz, nw, cx, cy, cz, 2)
                 for c in range(3):
                     scratch[base + c] = q[qa + c]
-                    if (fields & 1) != 0:
+                    if (enabled_fields & 1) != 0:
                         scratch[base + c] = values[base + c]
                 scratch[base + 3], scratch[base + 4], scratch[base + 5], scratch[base + 6] = (
                     nw,
@@ -123,10 +135,10 @@ def _convert(
                 scratch[base + 10] = _rotate(-nx, -ny, -nz, nw, wx, wy, wz, 0)
                 scratch[base + 11] = _rotate(-nx, -ny, -nz, nw, wx, wy, wz, 1)
                 scratch[base + 12] = _rotate(-nx, -ny, -nz, nw, wx, wy, wz, 2)
-                if (fields & 14) == 0:
+                if (enabled_fields & 14) == 0:
                     for c in range(6):
                         scratch[base + 7 + c] = v[va + c]
-                elif (fields & 10) == 0:
+                elif (enabled_fields & 10) == 0:
                     for c in range(3):
                         scratch[base + 10 + c] = v[va + 3 + c]
                 for c in range(13):
@@ -222,12 +234,18 @@ class PreparedFreeBodies:
         stream.synchronize()
         self.ready = True
 
-    def check(self, values, selected):
-        for array, shape, dtype in (
+    def check(self, values, selected, per_body=None, extra=None):
+        inputs = [
             (values, (self.nworld, self.count, 13), tx.f32),
             (selected, (self.nworld, self.count), tx.bool1),
-        ):
-            itemsize = 4 if dtype == tx.f32 else 1
+        ]
+        if per_body is not None:
+            inputs.append((per_body, (self.count,), tx.i32))
+        if extra is not None:
+            inputs.append((extra, (self.nworld,), tx.bool1))
+        spans = []
+        for array, shape, dtype in inputs:
+            itemsize = 1 if dtype == tx.bool1 else 4
             strides = tuple(
                 np.prod(shape[i + 1 :], dtype=int) * itemsize for i in range(len(shape))
             )
@@ -239,18 +257,26 @@ class PreparedFreeBodies:
                 or str(array.device) != str(self.device)
             ):
                 raise ValueError(
-                    "free-body input requires canonical-device contiguous float32[N,F,13] and bool[N,F]"
+                    "free-body input requires canonical-device contiguous float32[N,F,13], bool[N,F], int32[F] components or bool[N] worlds"
                 )
             span = (array.ptr, array.ptr + array.size * itemsize)
             if array.size and any(max(span[0], a) < min(span[1], b) for a, b in self.protected):
                 raise ValueError("free-body input aliases runtime storage")
-        if values.size and max(values.ptr, selected.ptr) < min(
-            values.ptr + values.size * 4, selected.ptr + selected.size
-        ):
-            raise ValueError("free-body values and selection alias")
+            if array.size and any(max(span[0], a) < min(span[1], b) for a, b in spans):
+                raise ValueError("free-body input arrays alias")
+            if array.size:
+                spans.append(span)
 
-    def enqueue(self, bank, values, selected, fields, stream):
-        _world_mask(selected, self.worlds, self.count, mode="cuda", stream=stream)
+    def enqueue(self, bank, values, selected, fields, stream, per_body=None, extra=None):
+        _world_mask(
+            selected,
+            self.worlds,
+            self.count,
+            self.worlds if extra is None else extra,
+            int(extra is not None),
+            mode="cuda",
+            stream=stream,
+        )
         if self.count:
             _convert(
                 values,
@@ -263,6 +289,7 @@ class PreparedFreeBodies:
                 self.nq,
                 self.nv,
                 fields,
+                self.addresses if per_body is None else per_body,
                 mode="cuda",
                 stream=stream,
             )
@@ -280,4 +307,6 @@ class PreparedFreeBodies:
 
     @property
     def allocated_bytes(self):
-        return sum(array.size * np.dtype(array.dtype.numpy_dtype).itemsize for array in self.resources)
+        return sum(
+            array.size * np.dtype(array.dtype.numpy_dtype).itemsize for array in self.resources
+        )

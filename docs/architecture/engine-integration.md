@@ -169,8 +169,14 @@ COM 线速度及角速度；mask 是 bool[N,F]。F 和列序来自本次冷绑�
 支持 position/rotation/linear_velocity/angular_velocity 的非空无重复子集；忽略
 未请求分量，未选 body 不写，未选世界的派生观测保持。调用方持有并保持输入不变到
 完成或丢弃；runtime 留存借用，拒绝与原生公开存储或彼此重叠的输入。
-本入口的观测发布范围由 body mask 的 world 并集决定；同一 ticket 的其他原生
-字段写入不得影响该并集之外的世界，消费层应合并选择范围或分别完成事务。
+本入口的观测发布范围由 body mask 的 world 并集决定。增量
+`free_body_component_contract_version=1` 允许 components=None，借用 int32[F]
+component_flags（position=1、rotation=2、COM linear=4、world angular=8），选中
+body 须为 1..15；未选 body 的 flags 不消费。可选 bool[N] selected_worlds 与 body
+世界并集合并，供同 ticket 的其他字段写入发布；compose_controls 在同次 forward
+组合控制。新增输入均须 canonical/连续、彼此及与原生存储不重叠，借用到事务结束。
+只有单独输入转换错误抛 PhySolveInputError，调用者可 discard 后继续；混合其他
+设备错误仍是 RuntimeError，不将求解/容量故障伪装成可恢复输入错误。
 
 旋转改变时保留未写的世界 COM twist，原生 qvel 转换为 origin/world 线速度和
 body-local 角速度。位置单独修改直接保留原生 qvel，不增加无用的往返误差。

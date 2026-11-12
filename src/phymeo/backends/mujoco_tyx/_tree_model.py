@@ -70,7 +70,11 @@ def compile_tree_model(
 
     has_ball = bool(np.any(model.jnt_type == mj.mjtJoint.mjJNT_BALL))
     ball_target = has_ball_transmission(mj, model)
-    if ball_target and (model.na or np.any(model.actuator_dyntype != mj.mjtDyn.mjDYN_NONE)):
+    if (
+        ball_target
+        and not allow_activation
+        and (model.na or np.any(model.actuator_dyntype != mj.mjtDyn.mjDYN_NONE))
+    ):
         issue("joint-motor-activation", "direct BALL motors require every actor to be stateless")
     allowed = (mj.mjtJoint.mjJNT_HINGE, mj.mjtJoint.mjJNT_SLIDE, mj.mjtJoint.mjJNT_BALL)
     if (

@@ -19,8 +19,6 @@ class TyxTreeDevice(TyxDevice):
             raise ValueError("fixed-tree native DOF mapping is required")
         self.activation_enabled = _actuator_device.validate(plan, activation, len(q))
         self.transmission_enabled = plan.joint_transmission is not None
-        if self.transmission_enabled and self.activation_enabled:
-            raise ValueError("direct BALL transmission does not admit activation")
         self.tx, self.mode, self.plan = tx, mode, plan
         self.nbody, self.nworld, self.h = nbody, len(q), float(h)
         self.active = 0

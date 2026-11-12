@@ -24,6 +24,11 @@ def update(
     actuator: tx.ndarray(tx.f32, 2),
     applied: tx.ndarray(tx.f32, 2),
     status: tx.ndarray(tx.i32, 1),
+    transmission_enabled: tx.i32,
+    transmission_offsets: tx.ndarray(tx.i32, 1),
+    transmission_dofs: tx.ndarray(tx.i32, 1),
+    transmission_moment: tx.ndarray(tx.f32, 1),
+    transmission_fields: tx.ndarray(tx.f32, 3),
 ):
     for w in tx.range(count):
         for index in range(na):
@@ -74,13 +79,22 @@ def update(
                     status[w] = 2
             raw_force = 0.0
             gear = values[actor, 0]
+            row_width = 1
+            if transmission_enabled != 0:
+                row_width = transmission_offsets[actor + 1] - transmission_offsets[actor]
             if ids[actor, 5] == 0:
-                raw_force = (
-                    values[actor, 1] * force_input
-                    + values[actor, 2]
-                    + values[actor, 3] * gear * q[w, qa]
-                    + values[actor, 4] * gear * v[w, dof]
-                )
+                if row_width == 3:
+                    # BALL has three native moment columns, never qpos length.
+                    # The compiler admits BIAS_NONE for this target only.
+                    raw_force = values[actor, 1] * force_input
+                else:
+                    # Original scalar expression and order, including AFFINE.
+                    raw_force = (
+                        values[actor, 1] * force_input
+                        + values[actor, 2]
+                        + values[actor, 3] * gear * q[w, qa]
+                        + values[actor, 4] * gear * v[w, dof]
+                    )
             force = raw_force
             if ids[actor, 8] != 0:
                 force = tx.min(values[actor, 8], tx.max(values[actor, 7], force))
@@ -88,7 +102,17 @@ def update(
             fields[w, actor, 1] = force_input
             fields[w, actor, 2] = raw_force
             fields[w, actor, 3] = force
-            actuator[w, dof] = actuator[w, dof] + gear * force
+            if transmission_enabled != 0:
+                transmission_fields[w, actor, 0] = ctrl
+                transmission_fields[w, actor, 1] = raw_force
+                transmission_fields[w, actor, 2] = force
+                for slot in range(transmission_offsets[actor], transmission_offsets[actor + 1]):
+                    column = transmission_dofs[slot]
+                    actuator[w, column] = (
+                        actuator[w, column] + transmission_moment[slot] * force
+                    )
+            else:
+                actuator[w, dof] = actuator[w, dof] + gear * force
             if (
                 not tx.isfinite(ctrl)
                 or not tx.isfinite(force_input)

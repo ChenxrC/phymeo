@@ -1,6 +1,6 @@
 # Copyright 2026 Phymeo contributors
 # Native actuator semantics follow MuJoCo 3.3.7 (Apache-2.0).
-"""Bounded scalar activation composition over original mechanical/contact routes."""
+"""Bounded native JOINT activation over original mechanical/contact routes."""
 
 from dataclasses import dataclass, fields
 
@@ -81,10 +81,16 @@ def compile_activation_model(mj, model):
         if (
             model.actuator_trntype[actor] != mj.mjtTrn.mjTRN_JOINT
             or not 0 <= joint < model.njnt
-            or model.jnt_type[joint] not in (mj.mjtJoint.mjJNT_HINGE, mj.mjtJoint.mjJNT_SLIDE)
+            or model.jnt_type[joint]
+            not in (mj.mjtJoint.mjJNT_HINGE, mj.mjtJoint.mjJNT_SLIDE, mj.mjtJoint.mjJNT_BALL)
         ):
-            issue("activation-transmission", f"actor {actor} has no scalar joint target")
+            issue("activation-transmission", f"actor {actor} requires a scalar or BALL JOINT target")
             continue
+        if (
+            model.jnt_type[joint] == mj.mjtJoint.mjJNT_BALL
+            and model.actuator_biastype[actor] != mj.mjtBias.mjBIAS_NONE
+        ):
+            issue("activation-ball-bias", f"BALL actor {actor} requires BIAS_NONE")
         ids[actor] = (
             int(model.jnt_qposadr[joint]),
             int(model.jnt_dofadr[joint]),
@@ -139,7 +145,14 @@ def compile_activation_model(mj, model):
         else:
             base = compile_tree_model(mj, model, allow_activation=True)
     layout = TyxActuatorLayout(
-        int(model.na), _immutable(ids), _immutable(fp32(values, "activation parameters"))
+        int(model.na),
+        _immutable(ids),
+        _immutable(fp32(values, "activation parameters")),
+        schema=(
+            "native-joint-filterexact-v1"
+            if getattr(base, "joint_transmission", None) is not None
+            else "native-scalar-filterexact-v1"
+        ),
     )
     # Preserve the accepted fixed T1 plan type and checkpoint identity.
     if type(base) is TyxTreeModel:

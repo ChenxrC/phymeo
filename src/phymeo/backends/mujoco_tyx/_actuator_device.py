@@ -1,6 +1,6 @@
 """Shared activation bank/stage transport for T1/T2/T3/T4.
 
-The mathematical kernel is the accepted native-scalar-filterexact stage. This
+The kernel preserves the accepted filter law and composes native JOINT moments. This
 module only validates/allocates its banks and composes it with each existing
 mechanical route; it never advances mechanical state or publishes a bank.
 """
@@ -63,6 +63,11 @@ def advance(device, old, new):
         device.actuator,
         device.applied,
         device.status,
+        int(getattr(device, "transmission_enabled", False)),
+        getattr(device, "transmission_offsets", device.status),
+        getattr(device, "transmission_dofs", device.status),
+        getattr(device, "transmission_moment", device.gravity),
+        getattr(device, "transmission_fields", device.actuator_fields),
         mode=device.mode,
     )
     device.counts["completed_kernels"] += 1

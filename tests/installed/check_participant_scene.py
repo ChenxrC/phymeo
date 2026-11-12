@@ -199,7 +199,6 @@ def step(scene, sign, oracle, journal):
 
 
 def run(mode, journal):
-    import phymeo as ph
     from phymeo.builders.participant_scene_compiler import compile_participant_scene
     from phymeo.runtime.scene_stepper import SceneStepper
     from phymeo.solvers import floating_tree
@@ -230,10 +229,14 @@ def run(mode, journal):
                 result = step(scene, sign, current, journal)
                 completed += 1
                 return result
-            except BaseException:
-                journal.emit("first-failure", requested_force_sign=sign, attempted_ordinal=completed,
-                             states=scene.snapshot(), receipts=scene.last_accepted,
-                             status=scene.last_status, stats=scene.stats(), traceback=traceback.format_exc())
+            except BaseException as primary:
+                original_traceback = traceback.format_exc()
+                try:
+                    journal.emit("first-failure", requested_force_sign=sign, attempted_ordinal=completed,
+                                 states=scene.snapshot(), receipts=scene.last_accepted,
+                                 status=scene.last_status, stats=scene.stats(), traceback=original_traceback)
+                except BaseException as capture_error:
+                    raise BaseExceptionGroup("physical consumer and failure capture failed", [primary, capture_error]) from None
                 raise
         for _ in range(4):
             oracle = advance(1, oracle)

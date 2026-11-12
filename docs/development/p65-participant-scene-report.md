@@ -62,3 +62,11 @@ R03 is excluded from the positive matrix because its earlier independent acceler
 | tests/installed/check_participant_scene.py | 19ace6ed45698d91c2825692a59dbaaae7aca7014e20bdaaf5dcbb7518a71433 | 16273 |
 
 This report's own hash is handed off separately after its final write to avoid a recursive manifest.
+
+## Parent source qualification — 2026-11-12
+
+Authoring history above remains historical. The parent imported the five author commits without old solver edits, exposed CompiledParticipantScene/ParticipantArticulation/ParticipantSceneDeclaration/compile_participant_scene at the public phymeo entry, and made both new tests and the installed consumer use it (f53fea4e).
+
+Actual source results under artifacts/p65-parity-m1-assembly-20261112-01: run 023 HOST **19 passed / 1.19s**, run 024 interpret **19 passed / 124.40s**, run 025 CUDA **19 passed / 133.14s**, all RAW_EXIT 0. HOST was run once; each backend selected the same 19 physical/transaction nodes, with the complementary 19 deliberately deselected by the predeclared marker split. No skipped backend or physical fallback. The original physics and resource gates were unchanged; no functional failure or numerical repair occurred.
+
+Runs 015/016 preserve initial import/format failures; 017/018 performed import sorting/formatting, 019/020 passed. Independent installed-consumer review also required saving the complete attempt before stepping and raw outcome before assertions. Parent added these plus attempted/physics_returned/checked counters and failure progress, without changing a physical input or gate; 021/022 qualified that edit. The actual outside-source installed consumer remains pending the one combined wheel. This is not new device contact sampling, M1/M2, CCD, BALL import, R03 qualification or a whole-project completion claim.

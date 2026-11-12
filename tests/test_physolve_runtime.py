@@ -138,6 +138,85 @@ def test_scalar_drive_parameter_capture_and_derived_overflow_admission(payload, 
 
 
 @pytest.mark.parametrize('nworld', [1, 8, 64])
+@pytest.mark.parametrize('graph', [False, True])
+def test_staged_updates_share_candidate_masks_reset_and_step(payload, tmp_path, nworld, graph, monkeypatch):
+    import tyx as tx
+    with _drive_binding(tmp_path, nworld).create_runtime(payload=payload) as runtime:
+        if graph:
+            runtime.prepare_step_graph(steps=4)
+        runtime.step()
+        before = runtime.snapshot()
+        storage = runtime.storage_binding()
+        selected = np.zeros(nworld, np.bool_)
+        selected[-1] = True
+        mask = tx.Array(selected, device=storage.device)
+        costs = runtime.execution_costs()
+        original_forward = runtime._native._forward_runtime
+        calls = []
+        def forward(handle):
+            calls.append(handle)
+            return original_forward(handle)
+        monkeypatch.setattr(runtime._native, '_forward_runtime', forward)
+        ticket = runtime.begin_execution()
+        bank = runtime.writable_bank
+        storage.borrow('target_position', bank, write=True).assign(
+            np.full((nworld, 1), .6, np.float32), stream=storage.stream)
+        runtime.enqueue_update(ticket, compose_controls=True, defer_refresh=True)
+        # Only state-edit worlds may refresh solve-time observations.
+        q = before['qpos'].copy()
+        q[-1, 0] = .1
+        storage.borrow('qpos', bank, write=True).assign(q, stream=storage.stream)
+        runtime.enqueue_update(ticket, refresh_state=True, selected_worlds=mask, defer_refresh=True)
+        mask.zero_(stream=storage.stream)  # The union must not borrow this last caller mask.
+        assert runtime.writable_bank == bank and runtime.active_bank != bank
+        assert not calls
+        assert runtime.execution_costs()['validation_readbacks'] == costs['validation_readbacks']
+        runtime.complete_execution(ticket)
+        runtime.accept_execution(ticket)
+        assert len(calls) == 1
+        after = runtime.snapshot()
+        np.testing.assert_array_equal(after['qpos'], q)
+        for field in ('qacc', 'qfrc_actuator', 'qfrc_constraint'):
+            np.testing.assert_array_equal(after[field][~selected], before[field][~selected])
+        np.testing.assert_allclose(after['qfrc_actuator'][selected], 5., rtol=0, atol=1e-6)
+        # Ordered reset restores selected integration, then a later edit wins.
+        ticket = runtime.begin_execution()
+        runtime.enqueue_reset(ticket, selected_worlds=mask, defer_refresh=True)
+        mask.assign(selected, stream=storage.stream)
+        runtime.enqueue_reset(ticket, selected_worlds=mask, defer_refresh=True)
+        target = np.full((nworld, 1), .4, np.float32)
+        storage.borrow('target_position', runtime.writable_bank, write=True).assign(target, stream=storage.stream)
+        runtime.enqueue_update(ticket, compose_controls=True, defer_refresh=True)
+        calls.clear()
+        runtime.enqueue_step(ticket, steps=4, execution_mode='cuda_graph' if graph else 'direct')
+        assert not calls  # step consumes the composed controls without an extra forward
+        runtime.complete_execution(ticket)
+        runtime.accept_execution(ticket)
+        assert np.all(runtime.snapshot()['qvel'] > 0)
+        assert runtime.execution_costs()['staged_update_materializations'] == 1
+
+
+def test_staged_updates_preparation_failure_keeps_launched_mask_owner(payload, monkeypatch):
+    from phymeo.backends._physolve_updates import PreparedUpdates
+    native = payload.load()
+    with monkeypatch.context() as patch:
+        def prepare(plan, stream):
+            plan.worlds.zero_(stream=stream)
+            raise RuntimeError('injected staged update initialization')
+        def close(*args):
+            raise RuntimeError('injected native close')
+        patch.setattr(PreparedUpdates, 'prepare', prepare)
+        patch.setattr(native, '_close_runtime', close)
+        with pytest.raises(RuntimeError, match='staged update initialization') as caught:
+            PhySolveRuntime(compile_mujoco_xml(FREE, require_asset=False), payload=payload)
+        retained = caught.value.runtime
+        assert retained._updates is not None and retained._updates.worlds.ptr
+        assert retained._stream is not None and retained._banks
+    retained.close()
+    assert retained._closed and retained._updates is None
+
+
+@pytest.mark.parametrize('nworld', [1, 8, 64])
 def test_capacity_metadata_is_owned_and_requires_no_device_work(payload, nworld, monkeypatch):
     import tyx as tx
     from dataclasses import fields

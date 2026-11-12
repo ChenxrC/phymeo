@@ -841,3 +841,26 @@ Graph N=1/8/64、实际 actuator 输出、原位 Graph、局部 reset、失败�
 独立只读复审后补齐捕获拒绝、派生ctrl预检及失败gate清除；消费方另验证
 Stage回滚及立即host/D2D读取，不以snapshot替代正式字段执行门禁。
 六CUBIN及Host散列相同。既有TYX AST弃用警告保留；未修改求解器数值容差或排序。
+
+## Staged updates v1
+
+`staged_update_contract_version=1` 在同一 prepared ticket 内允许多次
+`enqueue_update`、`enqueue_free_body_update`、`enqueue_reset`，显式传入
+`defer_refresh=True`。写入、自由根转换和 reset 按 canonical stream 顺序立即执行；
+仅控制合成、forward 和派生观测推迟。调用方复用输入 buffer 时须在同一 stream
+上排序。Runtime 保留借用数组引用至 ticket 结束，不接管 caller buffer 所有权。
+
+`flush_updates(ticket)` 刷新一次观测但不等待/发布；`complete_execution` 自动
+flush。`enqueue_step`/`enqueue_forward` 直接消费 prepared 编辑，step 不额外
+forward。materialized/enqueued 后不再追加编辑，须 complete/accept 或 discard。
+只有状态/reset 涉及的 world 加入刷新 mask，command-only world 保留求解时刻观测。
+reset 仍恢复原初态和控制，之后同 ticket 的写入按顺序覆盖，不重新复制接受 bank。
+
+非有限派生 ctrl 设置输入错误且保留原有限 ctrl；候选不得发布。纯 free-body 和
+scalar-control 输入错误（包括组合）可 discard 后恢复，其他原生错误保持 fatal。
+新增一个 Runtime-owned bool[N] mask；每批清零一次，每个状态编辑做一次 mask union，
+无新增物理状态副本、host 快照或隐式同步。execution_costs 分列批次、编辑、刷新次数
+与 mask 字节；borrowed_inputs 保留本 ticket 的不同对象，空间随实际借用对象数增长。
+
+正式测试在 `tests/test_physolve_runtime.py`；配套实际 C ABI 测试与记录见实验根
+`evidence/b8q-*`。六 CUBIN、原生 Host、TYX/codedev 与既有数值容差保持不变。

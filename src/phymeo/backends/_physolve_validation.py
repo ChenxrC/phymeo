@@ -95,16 +95,16 @@ class PreparedValidation:
             )
         if bits & 1048576:
             raise RuntimeError('non-finite PhySolve body measurement; not published')
-        if bits & 524288:
-            if bits == 524288:
-                from .physolve_runtime import PhySolveInputError
-
-                raise PhySolveInputError(
-                    "invalid PhySolve free-body input or converted coordinates; not published"
-                )
-            raise RuntimeError(
-                "invalid PhySolve free-body input or converted coordinates; not published"
-            )
+        input_bits = 2097152 | 524288
+        if bits & input_bits:
+            from .physolve_runtime import PhySolveInputError
+            error = PhySolveInputError if not bits & ~input_bits else RuntimeError
+            labels = []
+            if bits & 524288:
+                labels.append('invalid PhySolve free-body input or converted coordinates')
+            if bits & 2097152:
+                labels.append('non-finite derived PhySolve scalar control')
+            raise error('; '.join(labels) + '; not published')
         names = [name for i, name in enumerate(self.finite_fields) if bits & (1 << (i + 1))]
         if names:
             raise RuntimeError(f"non-finite PhySolve {', '.join(names)}; not published")

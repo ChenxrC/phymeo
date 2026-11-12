@@ -67,6 +67,7 @@ class PhySolveRuntime:
     capacity_info_contract_version = 1
     body_wrench_contract_version = 1
     scalar_drive_parameter_contract_version = 1
+    staged_update_contract_version = 1
 
     def __init__(
         self,
@@ -135,6 +136,7 @@ class PhySolveRuntime:
         self._graph_captures = 0
         self._graph_replays = 0
         self._reset = None
+        self._updates = None
         self._controls_binding = None
         self._body_observations = None
         self._contact_observations = None
@@ -200,6 +202,9 @@ class PhySolveRuntime:
                         self._banks, self.nworld, selected, OBSERVATION_FIELDS
                     )
                     self._reset.prepare(self._stream)
+                    from ._physolve_updates import PreparedUpdates
+                    self._updates = PreparedUpdates(self.nworld, selected)
+                    self._updates.prepare(self._stream)
                     if body_observations:
                         from ._physolve_bodies import PreparedBodyObservations
 
@@ -227,7 +232,8 @@ class PhySolveRuntime:
                     if scalar_controls:
                         from ._physolve_controls import PreparedControls
                         self._controls_binding = PreparedControls(
-                            scalar_controls, self._banks, cpu, self.nworld, device
+                            scalar_controls, self._banks, cpu, self.nworld, device,
+                            self._validation.flags,
                         )
                         self._controls_binding.prepare(self._stream)
                     if body_measurements:
@@ -596,6 +602,10 @@ class PhySolveRuntime:
                     "drive_parameter_updates": self._drive_parameter_updates,
                     "drive_parameter_rollbacks": self._drive_parameter_rollbacks,
                     "drive_parameter_upload_bytes": self._drive_parameter_upload_bytes,
+                    "staged_update_batches": self._updates.batches,
+                    "staged_update_edits": self._updates.edits,
+                    "staged_update_materializations": self._updates.materializations,
+                    "staged_update_mask_bytes": self._updates.worlds.size,
                     "native_direct_conditional_sync": True}
 
     @property
@@ -651,6 +661,7 @@ class PhySolveRuntime:
                 raise RuntimeError('fixed four-step Graph must be prepared before replay')
             self._pending["phase"] = "enqueued"
             try:
+                self._updates.compose_for_execution(self, index)
                 if execution_mode == 'cuda_graph':
                     self._step_graphs.replay(index)
                 else:
@@ -691,6 +702,7 @@ class PhySolveRuntime:
             index = self._require_ticket(ticket, "prepared")
             self._pending["phase"] = "enqueued"
             try:
+                self._updates.compose_for_execution(self, index)
                 self._native._forward_runtime(self._handles[index])
                 if self._body_observations is not None:
                     self._body_observations.update(index, self._stream, integrated=False)
@@ -703,8 +715,14 @@ class PhySolveRuntime:
                 self._pending["phase"] = "failed"
                 raise
 
+    def flush_updates(self, ticket):
+        """Materialize accumulated edits without completion or publication."""
+        with self._scope():
+            self._require_ticket(ticket)
+            self._updates.flush(self, ticket)
+
     def enqueue_update(self, ticket, *, refresh_state=False, compose_controls=False,
-                       selected_worlds=None):
+                       selected_worlds=None, defer_refresh=False):
         """Accept prepared field edits without advancing time.
 
         Command-only updates retain existing solve-time observations using D2D
@@ -717,6 +735,8 @@ class PhySolveRuntime:
         """
         with self._scope():
             index = self._require_ticket(ticket, "prepared")
+            if not defer_refresh and 'updates' in self._pending:
+                raise RuntimeError('flush_updates is required for accumulated edits')
             if selected_worlds is not None:
                 import tyx as tx
                 if (not isinstance(selected_worlds, tx.Array) or
@@ -727,6 +747,16 @@ class PhySolveRuntime:
                     raise ValueError("selected_worlds requires canonical-device bool[nworld]")
                 # Keep caller-owned selection alive through complete/accept/discard.
                 self._pending['selected_worlds'] = selected_worlds
+                self._pending.setdefault('borrowed_inputs', {})[id(selected_worlds)] = selected_worlds
+            if defer_refresh:
+                try:
+                    self._updates.add(self, refresh_state=refresh_state,
+                                      compose_controls=compose_controls,
+                                      selected_worlds=selected_worlds)
+                except Exception:
+                    self._pending['phase'] = 'failed'
+                    raise
+                return
             self._pending["phase"] = "enqueued"
             try:
                 if compose_controls:
@@ -787,7 +817,8 @@ class PhySolveRuntime:
 
     def enqueue_free_body_update(self, ticket, values, *, selected_bodies,
                                  components=('position', 'rotation', 'linear_velocity', 'angular_velocity'),
-                                 component_flags=None, selected_worlds=None, compose_controls=False):
+                                 component_flags=None, selected_worlds=None, compose_controls=False,
+                                 defer_refresh=False):
         """Borrow device [N,F,13] origin XYZ/XYZW/world-COM twist and bool[N,F].
 
         Unspecified components retain world pose/COM velocity, including when
@@ -813,19 +844,24 @@ class PhySolveRuntime:
                 raise ValueError('free-body components must be unique declared field names')
             plan.check(values, selected_bodies, component_flags, selected_worlds)
             self._pending['free_body_inputs'] = (values, selected_bodies, component_flags, selected_worlds)
+            self._pending.setdefault('borrowed_inputs', {}).update(
+                (id(array), array) for array in (values, selected_bodies, component_flags, selected_worlds)
+                if array is not None)
             try:
                 plan.enqueue(index, values.flatten(), selected_bodies.flatten(),
                              -1 if component_flags is not None else sum(mapping[c] for c in components),
                              self._stream, component_flags, selected_worlds)
                 self.enqueue_update(ticket, refresh_state=True, selected_worlds=plan.worlds,
-                                    compose_controls=compose_controls)
+                                    compose_controls=compose_controls, defer_refresh=defer_refresh)
             except Exception:
                 self._pending['phase'] = 'failed'
                 raise
 
-    def enqueue_reset(self, ticket, mask=None, *, selected_worlds=None):
+    def enqueue_reset(self, ticket, mask=None, *, selected_worlds=None, defer_refresh=False):
         with self._scope():
             index = self._require_ticket(ticket, "prepared")
+            if not defer_refresh and 'updates' in self._pending:
+                raise RuntimeError('accumulated edits require a deferred reset or completion')
             if selected_worlds is not None:
                 import tyx as tx
                 if mask is not None:
@@ -837,11 +873,13 @@ class PhySolveRuntime:
                     str(selected_worlds.device) != str(self._storage.device)):
                     raise ValueError('selected_worlds requires canonical-device bool[nworld]')
                 self._pending['selected_worlds'] = selected_worlds
+                self._pending.setdefault('borrowed_inputs', {})[id(selected_worlds)] = selected_worlds
             if mask is not None:
                 mask = np.asarray(mask)
                 if mask.dtype != np.bool_ or mask.shape != (self.nworld,):
                     raise ValueError("reset mask must be bool[nworld]")
-            self._pending["phase"] = "enqueued"
+            if not defer_refresh:
+                self._pending["phase"] = "enqueued"
             try:
                 selector = self._reset.restore(index, mask, self._stream, device_mask=selected_worlds)
                 partial = selected_worlds is not None or (mask is not None and not mask.all())
@@ -849,7 +887,14 @@ class PhySolveRuntime:
                     self._controls_binding.reset(
                         index, selector,
                         self._stream,
+                        compose=not defer_refresh,
                     )
+                if defer_refresh:
+                    self._updates.add(self, refresh_state=True,
+                                      compose_controls=(self._controls_binding is not None
+                                          and self._controls_binding.recompose_reset),
+                                      selected_worlds=selector)
+                    return
                 self._native._forward_runtime(self._handles[index])
                 if self._body_observations is not None:
                     self._body_observations.update(index, self._stream, integrated=False)
@@ -873,6 +918,7 @@ class PhySolveRuntime:
     def complete_execution(self, ticket):
         """Wait for the canonical stream and check 4 bytes; do not publish."""
         with self._scope():
+            self.flush_updates(ticket)
             index = self._require_ticket(ticket, "enqueued")
             try:
                 self._validate(self._banks[index])
@@ -951,6 +997,7 @@ class PhySolveRuntime:
             self._storage = self._validation = self._pending = None
             self._storage_generation += 1
             self._reset = None
+            self._updates = None
             self._controls_binding = None
             self._body_observations = None
             self._contact_observations = None

@@ -14,19 +14,26 @@ def _compose(
     actuators: tx.Array[tx.i32],
     ctrl: tx.Array[tx.f32],
     native_width: tx.i32,
+    error: tx.Array[tx.i32],
 ):
     for i in tx.range(position.shape[0]):
         joint = i % actuators.shape[0]
         world = i // actuators.shape[0]
-        ctrl[world * native_width + actuators[joint]] = (
+        value = (
             coefficients[2 * joint] * position[i] + coefficients[2 * joint + 1] * velocity[i]
         )
+        if tx.isfinite(value):
+            ctrl[world * native_width + actuators[joint]] = value
+        else:
+            # Reject the input; retain finite candidate ctrl for native work.
+            tx.atomic_or(error[0], 2097152)
 
 
 class PreparedControls:
     """Two command banks and reset baseline, owned only by the physical runtime."""
 
-    def __init__(self, rows, banks, model, nworld, device):
+    def __init__(self, rows, banks, model, nworld, device, error):
+        self.error = error
         self.names = tuple(row[0] for row in rows)
         ids = [row[1] for row in rows]
         self.native_actuators = tuple(ids)
@@ -83,6 +90,7 @@ class PreparedControls:
             self.actuators,
             scratch,
             self.native_width,
+            self.error,
             mode="cuda",
             stream=stream,
         )
@@ -100,16 +108,17 @@ class PreparedControls:
             self.actuators,
             self.native[index],
             self.native_width,
+            self.error,
             mode="cuda",
             stream=stream,
         )
 
-    def reset(self, index, mask, stream):
+    def reset(self, index, mask, stream, *, compose=True):
         for name, array in self.flat[index].items():
             _restore_float(
                 mask, self.initial_flat[name], array, self.width, mode="cuda", stream=stream
             )
-        if self.recompose_reset:
+        if self.recompose_reset and compose:
             # Model gain edits persist across reset. Initial targets are still
             # authoritative, whereas the original compiled ctrl is now stale.
             self.compose(index, stream)

@@ -217,7 +217,7 @@ def continuous(case, mode, steps, monkeypatch, tmp_path):
                 assert abs(result[key].time - references[key].time) <= TIME_ATOL
                 assert result[key].tick == tick + 1
         assert runtime.counters["completed_kernels"] == steps * 3
-        assert runtime.counters["failed_steps"] == 0
+        assert runtime.counters["failed_batches"] == 0
     except BaseException as error:
         payload.update(failure=repr(error), retained=runtime.integration_snapshot())
         raise
@@ -251,8 +251,10 @@ NEGATIVES = {
     "joint-in-parent": "actuator-domain",
     "actors33": "free-ball-actuator-capacity",
     "nv36": "joint-domain",
-    "tiny-y": "joint",
-    "tiny-z": "joint",
+    "tiny-y": "fp32-range",
+    "tiny-z": "fp32-range",
+    "multiple-free": "joint-domain",
+    "ball-same-body": "ball-same-body",
 }
 
 
@@ -275,9 +277,13 @@ def negative_source(case):
     if case == "joint-in-parent":
         return text.replace('joint="ball"', 'jointinparent="ball"')
     if case == "actors33":
-        return text.replace("</actuator>", motor("extra", "ball", "1 0 0") * 0 + "".join(motor(f"extra{i}", "ball", "1 0 0") for i in range(32)) + "</actuator>")
+        return text.replace("</actuator>", "".join(motor(f"extra{i}", "ball", "1 0 0") for i in range(32)) + "</actuator>")
     if case == "nv36":
         return source("capacity").replace("</worldbody>", body("extra", "hinge") + "</worldbody>")
+    if case == "multiple-free":
+        return text.replace("</worldbody>", '<body name="second-free"><freejoint/><geom size=".03" contype="0" conaffinity="0"/></body></worldbody>')
+    if case == "ball-same-body":
+        return text.replace('<joint name="ball"', '<joint name="pre-ball" type="slide"/><joint name="ball"')
     if case == "tiny-y":
         return text.replace('gear="1 -2 .5"', 'gear="1 1e-45 .5"')
     if case == "tiny-z":
@@ -312,3 +318,77 @@ def test_joint_csr_rejects_unregistered_capacity(capacity):
     model = mj.MjModel.from_xml_string(source("oblique"))
     with pytest.raises((MuJoCoTyxUnsupported, ValueError, TypeError), match="capacity"):
         compile_joint_transmission(mj, model, capacity=capacity)
+
+
+@pytest.mark.parametrize("mode", MODES)
+@pytest.mark.parametrize("legacy", ("floating-ball", "fixed-free-ball", "motor-free"))
+def test_exact_previous_free_ball_negative_now_has_native_successor(mode, legacy, monkeypatch, tmp_path):
+    from test_mujoco_tyx_ball import body as old_body, joint as old_joint, xml as old_xml
+    from test_mujoco_tyx_ball_joint_motor import negative_source as old_motor
+    from test_mujoco_tyx_floating import BALL_XML
+
+    text = {
+        "floating-ball": BALL_XML,
+        "fixed-free-ball": old_xml("free-and-ball", old_body("free", "<freejoint/>", old_body("ball-child", old_joint("ball")))),
+        "motor-free": old_motor("free"),
+    }[legacy]
+    mj = _deps()
+    model = mj.MjModel.from_xml_string(text)
+    compiled = compile_mujoco_xml(text, require_asset=False)
+    payload = dict(legacy=legacy, source=text, default_entry=True, steps=[])
+    with MuJoCoRuntime(compiled, implementation="tyx", mode=mode) as runtime:
+        key = runtime.world_keys[0]
+        reference = mj.MjData(model)
+        entry = runtime.integration_snapshot()[key]
+        reference.qpos[:], reference.qvel[:], reference.time = entry.q, entry.v, entry.time
+        packet = MuJoCoControl(np.zeros(model.nu), qfrc_applied=np.zeros(model.nv), xfrc_applied=np.zeros((model.nbody, 6)))
+        try:
+            for tick in range(2):
+                entry = runtime.integration_snapshot()[key]
+                expected = native(mj, model, entry, packet)
+                analytic = transmission_oracle(mj, model, entry, packet)
+                record = dict(tick=tick, entry=entry, native=expected, analytic=analytic, control=packet)
+                payload["steps"].append(record)
+                runtime.set_controls({key: packet})
+                with monkeypatch.context() as patch:
+                    def forbidden(*args, **kwargs):
+                        raise AssertionError("native step in TYX")
+                    patch.setattr(mj, "mj_step", forbidden)
+                    runtime.step(H)
+                state = runtime.integration_snapshot()[key]
+                record["result"] = state
+                compare(model, entry, state, expected, analytic)
+                _set_control(reference, packet)
+                mj.mj_step(model, reference)
+                record["continuous_native"] = dict(q=reference.qpos.copy(), v=reference.qvel.copy(), time=reference.time)
+                np.testing.assert_allclose(state.q, reference.qpos, atol=Q_ATOL, rtol=0)
+                np.testing.assert_allclose(state.v, reference.qvel, atol=V_ATOL, rtol=0)
+                assert abs(state.time - reference.time) <= TIME_ATOL
+        except BaseException as error:
+            payload["failure"] = repr(error)
+            raise
+        finally:
+            save(tmp_path / "legacy-positive.json.gz", payload)
+
+
+@pytest.mark.parametrize("mode", MODES)
+@pytest.mark.parametrize("location", ("root", "child"))
+@pytest.mark.parametrize("bad", ("zero", "nonunit"))
+def test_free_ball_invalid_quaternion_rejected_before_device(mode, location, bad, monkeypatch):
+    mj = _deps()
+    text = source("mixed")
+    model = mj.MjModel.from_xml_string(text)
+    start = initial(mj, model)
+    q = start.q.copy()
+    qa = 3 if location == "root" else int(model.jnt_qposadr[1])
+    q[qa:qa + 4] = (0, 0, 0, 0) if bad == "zero" else (2, 0, 0, 0)
+    compiled = compile_mujoco_xml(text, require_asset=False)
+    import phymeo.backends._mujoco_tyx_runtime as implementation
+    calls = []
+    def forbidden(*args, **kwargs):
+        calls.append(True)
+        raise AssertionError("invalid quaternion allocated a device")
+    monkeypatch.setattr(implementation.MuJoCoTyxRuntime, "_build_device", forbidden)
+    with pytest.raises(ValueError, match="quaternion"):
+        MuJoCoRuntime(compiled, implementation="tyx", mode=mode, initial_states={0: MuJoCoInitialState(q, start.v)})
+    assert not calls

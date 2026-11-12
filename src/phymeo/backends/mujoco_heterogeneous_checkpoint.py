@@ -46,7 +46,9 @@ def _invalid_constant(value):
 
 
 def _json(value):
-    return json.dumps(_plain(value), sort_keys=True, allow_nan=False, separators=(",", ":")).encode()
+    return json.dumps(
+        _plain(value), sort_keys=True, allow_nan=False, separators=(",", ":")
+    ).encode()
 
 
 @dataclass(frozen=True, init=False)
@@ -64,16 +66,21 @@ class MuJoCoTyxHeterogeneousCheckpoint:
         owned = bytes(raw)
         if not owned.startswith(MAGIC):
             raise ValueError("heterogeneous checkpoint header")
-        digest, separator, body = owned[len(MAGIC):].partition(b"\n")
+        digest, separator, body = owned[len(MAGIC) :].partition(b"\n")
         if not separator or digest != hashlib.sha256(body).hexdigest().encode():
             raise ValueError("heterogeneous checkpoint checksum")
         object.__setattr__(self, "_bytes", owned)
         self._payload()
 
     def _payload(self):
-        body = self._bytes[len(MAGIC) + 65:]
+        body = self._bytes[len(MAGIC) + 65 :]
         value = json.loads(body, object_pairs_hook=_unique, parse_constant=_invalid_constant)
-        if type(value) is not dict or set(value) != {"binding", "revision", "leaves", "publication"}:
+        if type(value) is not dict or set(value) != {
+            "binding",
+            "revision",
+            "leaves",
+            "publication",
+        }:
             raise ValueError("heterogeneous checkpoint schema")
         if type(value["revision"]) is not int or value["revision"] < 0:
             raise ValueError("heterogeneous checkpoint revision")
@@ -83,25 +90,45 @@ class MuJoCoTyxHeterogeneousCheckpoint:
         if type(leaves) is not list or not 1 <= len(leaves) <= MAX_BUCKETS:
             raise ValueError("heterogeneous checkpoint leaf count")
         for leaf in leaves:
-            if type(leaf) is not dict or set(leaf) != {"sha256", "bytes"} or type(leaf["bytes"]) is not str:
+            if (
+                type(leaf) is not dict
+                or set(leaf) != {"sha256", "bytes"}
+                or type(leaf["bytes"]) is not str
+            ):
                 raise ValueError("heterogeneous checkpoint leaf schema")
         publication = value["publication"]
         if publication is not None:
             if type(publication) is not dict or set(publication) != {
-                "schema", "revision_before", "revision_after", "bucket_revisions", "world_keys"
+                "schema",
+                "revision_before",
+                "revision_after",
+                "bucket_revisions",
+                "world_keys",
             }:
                 raise ValueError("heterogeneous checkpoint publication schema")
             if publication["schema"] != "mujoco-tyx-heterogeneous-step-v1":
                 raise ValueError("heterogeneous checkpoint publication kind")
             before, after = publication["revision_before"], publication["revision_after"]
-            if type(before) is not int or type(after) is not int or before < 0 or after != before + 1 or after > value["revision"]:
+            if (
+                type(before) is not int
+                or type(after) is not int
+                or before < 0
+                or after != before + 1
+                or after > value["revision"]
+            ):
                 raise ValueError("heterogeneous checkpoint publication revision")
             if publication["world_keys"] != value["binding"].get("world_keys"):
                 raise ValueError("heterogeneous checkpoint publication world binding")
             revisions = publication["bucket_revisions"]
             if type(revisions) is not list or len(revisions) != len(leaves):
                 raise ValueError("heterogeneous checkpoint publication bucket count")
-            if any(type(row) is not list or len(row) != 2 or any(type(x) is not int or x < 0 for x in row) or row[1] != row[0] + 1 for row in revisions):
+            if any(
+                type(row) is not list
+                or len(row) != 2
+                or any(type(x) is not int or x < 0 for x in row)
+                or row[1] != row[0] + 1
+                for row in revisions
+            ):
                 raise ValueError("heterogeneous checkpoint publication bucket revision")
         return value
 
@@ -148,8 +175,15 @@ def _capture(binding, revision, leaves, publication):
         total += 4 * ((len(raw) + 2) // 3)
         if total > MAX_BYTES:
             raise ValueError("heterogeneous checkpoint encoded leaves exceed size limit")
-        rows.append({"sha256": hashlib.sha256(raw).hexdigest(), "bytes": base64.b64encode(raw).decode("ascii")})
+        rows.append(
+            {
+                "sha256": hashlib.sha256(raw).hexdigest(),
+                "bytes": base64.b64encode(raw).decode("ascii"),
+            }
+        )
     body = _json(dict(binding=binding, revision=revision, leaves=rows, publication=publication))
     if len(MAGIC) + 65 + len(body) > MAX_BYTES:
         raise ValueError("heterogeneous checkpoint exceeds size limit")
-    return MuJoCoTyxHeterogeneousCheckpoint(MAGIC + hashlib.sha256(body).hexdigest().encode() + b"\n" + body)
+    return MuJoCoTyxHeterogeneousCheckpoint(
+        MAGIC + hashlib.sha256(body).hexdigest().encode() + b"\n" + body
+    )

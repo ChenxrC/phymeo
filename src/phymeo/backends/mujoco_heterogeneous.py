@@ -18,7 +18,14 @@ import numpy as np
 from ..builders.mujoco_compiler import MuJoCoCompilation
 from ..training.resident_stepper import PhysicsStepFailure
 from .mujoco_heterogeneous_checkpoint import MuJoCoTyxHeterogeneousCheckpoint, _capture
-from .mujoco_runtime import MuJoCoInitialState, MuJoCoRuntime, _frozen, _mujoco, _world_key, _world_keys
+from .mujoco_runtime import (
+    MuJoCoInitialState,
+    MuJoCoRuntime,
+    _frozen,
+    _mujoco,
+    _world_key,
+    _world_keys,
+)
 from .mujoco_tyx_state import MuJoCoTyxIntegrationState
 
 MAX_MODELS, MAX_WORLDS = 8, 16
@@ -66,7 +73,11 @@ class MuJoCoTyxWorldSpec:
             state = MuJoCoInitialState()
         if type(state) is not MuJoCoInitialState:
             raise TypeError("world spec requires MuJoCoInitialState")
-        object.__setattr__(self, "initial_state", MuJoCoInitialState(state.q, state.v, act=state.act, time=state.time))
+        object.__setattr__(
+            self,
+            "initial_state",
+            MuJoCoInitialState(state.q, state.v, act=state.act, time=state.time),
+        )
 
 
 @dataclass(frozen=True)
@@ -112,8 +123,13 @@ class MuJoCoTyxHeterogeneousBoundaryReceipt:
 def _signature(spec, mode):
     source = spec.compilation.source
     return (
-        source.primary_xml, source.archive_bytes, source.model_binary,
-        source.mujoco_version, mode, spec.contact_capacity, spec.constraint_capacity,
+        source.primary_xml,
+        source.archive_bytes,
+        source.model_binary,
+        source.mujoco_version,
+        mode,
+        spec.contact_capacity,
+        spec.constraint_capacity,
     )
 
 
@@ -177,18 +193,28 @@ class MuJoCoTyxHeterogeneousBatch:
         self._counter_errors = ()
         self._observed, self._device_totals = WeakKeyDictionary(), {}
         self._stats = dict(
-            completed_steps=0, accepted_world_steps=0, failed_batches=0,
-            control_submissions=0, control_refusals=0, boundary_operations=0,
-            boundary_refusals=0, boundary_clones=0, bucket_physics_prepares=0,
+            completed_steps=0,
+            accepted_world_steps=0,
+            failed_batches=0,
+            control_submissions=0,
+            control_refusals=0,
+            boundary_operations=0,
+            boundary_refusals=0,
+            boundary_clones=0,
+            bucket_physics_prepares=0,
         )
         built = []
         try:
             for spec, rows in zip(representatives, members, strict=True):
                 owner = MuJoCoRuntime(
-                    spec.compilation, world_keys=tuple(row.world for row in rows),
+                    spec.compilation,
+                    world_keys=tuple(row.world for row in rows),
                     initial_states={row.world: row.initial_state for row in rows},
-                    mode=mode, implementation="tyx", contact_capacity=spec.contact_capacity,
-                    constraint_capacity=spec.constraint_capacity, cache_root=cache_root,
+                    mode=mode,
+                    implementation="tyx",
+                    contact_capacity=spec.contact_capacity,
+                    constraint_capacity=spec.constraint_capacity,
+                    cache_root=cache_root,
                 )
                 built.append(owner)
                 self._observe_owner(owner)
@@ -200,7 +226,9 @@ class MuJoCoTyxHeterogeneousBatch:
                 spec = by_key[world.model_key]
                 source = spec.compilation.source
                 layout[world.world] = MuJoCoTyxWorldLayout(
-                    world.world, world.model_key, bucket,
+                    world.world,
+                    world.model_key,
+                    bucket,
                     tuple(row.world for row in members[bucket]).index(world.world),
                     *metadata[world.model_key][1],
                     hashlib.sha256(source.model_binary).hexdigest(),
@@ -209,36 +237,69 @@ class MuJoCoTyxHeterogeneousBatch:
                     owner.capabilities["domain"],
                 )
             self._layout = MappingProxyType(layout)
-            self._capabilities = MappingProxyType(dict(
-                backend="mujoco-tyx-heterogeneous-" + mode, mode=mode, implementation="tyx",
-                bucket_count=len(built), world_count=len(worlds), max_models=MAX_MODELS,
-                max_worlds=MAX_WORLDS, publication="whole-heterogeneous-batch-atomic",
-                scheduling="exact-source-homogeneous-buckets", fused_kernel=False,
-                host_diagnostics=True, cross_world_contacts=False, scale_qualified=False,
-                models=MappingProxyType({spec.key: self._buckets[model_bucket[spec.key]].capabilities for spec in models}),
-            ))
-            self._binding = MappingProxyType(dict(
-                schema="mujoco-tyx-heterogeneous-checkpoint-v1", mode=mode, timestep=h,
-                world_keys=world_keys,
-                worlds=tuple((key, layout[key].model_key, layout[key].bucket, layout[key].row) for key in world_keys),
-                buckets=tuple(MappingProxyType(dict(
-                    world_keys=owner.world_keys,
-                    model_sha256=layout[owner.world_keys[0]].model_sha256,
-                    archive_sha256=layout[owner.world_keys[0]].archive_sha256,
-                    primary_sha256=layout[owner.world_keys[0]].primary_sha256,
-                    mujoco_version=representatives[i].compilation.source.mujoco_version,
-                    capacities=(representatives[i].contact_capacity, representatives[i].constraint_capacity),
-                    dimensions=metadata[representatives[i].key][1],
-                    domain=owner.capabilities["domain"],
-                )) for i, owner in enumerate(self._buckets)),
-            ))
+            self._capabilities = MappingProxyType(
+                dict(
+                    backend="mujoco-tyx-heterogeneous-" + mode,
+                    mode=mode,
+                    implementation="tyx",
+                    bucket_count=len(built),
+                    world_count=len(worlds),
+                    max_models=MAX_MODELS,
+                    max_worlds=MAX_WORLDS,
+                    publication="whole-heterogeneous-batch-atomic",
+                    scheduling="exact-source-homogeneous-buckets",
+                    fused_kernel=False,
+                    host_diagnostics=True,
+                    cross_world_contacts=False,
+                    scale_qualified=False,
+                    models=MappingProxyType(
+                        {
+                            spec.key: self._buckets[model_bucket[spec.key]].capabilities
+                            for spec in models
+                        }
+                    ),
+                )
+            )
+            self._binding = MappingProxyType(
+                dict(
+                    schema="mujoco-tyx-heterogeneous-checkpoint-v1",
+                    mode=mode,
+                    timestep=h,
+                    world_keys=world_keys,
+                    worlds=tuple(
+                        (key, layout[key].model_key, layout[key].bucket, layout[key].row)
+                        for key in world_keys
+                    ),
+                    buckets=tuple(
+                        MappingProxyType(
+                            dict(
+                                world_keys=owner.world_keys,
+                                model_sha256=layout[owner.world_keys[0]].model_sha256,
+                                archive_sha256=layout[owner.world_keys[0]].archive_sha256,
+                                primary_sha256=layout[owner.world_keys[0]].primary_sha256,
+                                mujoco_version=representatives[i].compilation.source.mujoco_version,
+                                capacities=(
+                                    representatives[i].contact_capacity,
+                                    representatives[i].constraint_capacity,
+                                ),
+                                dimensions=metadata[representatives[i].key][1],
+                                domain=owner.capabilities["domain"],
+                            )
+                        )
+                        for i, owner in enumerate(self._buckets)
+                    ),
+                )
+            )
         except BaseException as primary:
             self._buckets = ()
             failures = self._close_owners(built)
             self._closed = True
             if failures:
                 _CONSTRUCTION_QUARANTINE.append(self)
-                raise BaseExceptionGroup("heterogeneous construction and cleanup failed; owner retained", [primary, *failures]) from None
+                raise BaseExceptionGroup(
+                    "heterogeneous construction and cleanup failed; owner retained",
+                    [primary, *failures],
+                ) from None
             raise
 
     def _check(self):
@@ -342,14 +403,20 @@ class MuJoCoTyxHeterogeneousBatch:
         with self._lock:
             if self._busy:
                 raise RuntimeError("heterogeneous batch transaction is active")
-            snapshots = () if self._closed else tuple(self._observe_owner(owner) for owner in self._buckets)
-            return MappingProxyType({
-                **self._device_totals, **self._stats, "bucket_counters": snapshots,
-                "observed_device_counters": MappingProxyType(dict(self._device_totals)),
-                "retained_cleanup_owners": len(self._retired),
-                "counter_observation_errors": self._counter_errors,
-                "counter_scope": "public-runtime-observed; boundary constructors may replace internal owners",
-            })
+            snapshots = (
+                () if self._closed else tuple(self._observe_owner(owner) for owner in self._buckets)
+            )
+            return MappingProxyType(
+                {
+                    **self._device_totals,
+                    **self._stats,
+                    "bucket_counters": snapshots,
+                    "observed_device_counters": MappingProxyType(dict(self._device_totals)),
+                    "retained_cleanup_owners": len(self._retired),
+                    "counter_observation_errors": self._counter_errors,
+                    "counter_scope": "public-runtime-observed; boundary constructors may replace internal owners",
+                }
+            )
 
     def set_controls(self, mapping):
         with self._transaction():
@@ -359,12 +426,19 @@ class MuJoCoTyxHeterogeneousBatch:
             drafts = []
             try:
                 for owner in self._buckets:
-                    drafts.append(owner._prepare_controls_locked({key: mapping[key] for key in owner.world_keys}))
+                    drafts.append(
+                        owner._prepare_controls_locked(
+                            {key: mapping[key] for key in owner.world_keys}
+                        )
+                    )
                 self._before_commit("controls", tuple(drafts))
                 for owner, draft in zip(self._buckets, drafts, strict=True):
                     owner._validate_controls_draft_locked(draft)
                 revision = self._revision + 1
-                counters = {**self._stats, "control_submissions": self._stats["control_submissions"] + 1}
+                counters = {
+                    **self._stats,
+                    "control_submissions": self._stats["control_submissions"] + 1,
+                }
             except BaseException:
                 for owner in self._buckets:
                     owner._discard_controls_draft_locked()
@@ -388,10 +462,17 @@ class MuJoCoTyxHeterogeneousBatch:
         for key in owner.world_keys:
             data, row = draft.data[key], draft.receipts[key]
             result[key] = MuJoCoTyxIntegrationState(
-                world=key, q=_frozen(data.qpos), v=_frozen(data.qvel), act=_frozen(data.act),
-                ctrl=_frozen(data.ctrl), time=float(data.time), tick=draft.ticks[key],
-                qfrc_applied=_frozen(data.qfrc_applied), xfrc_applied=_frozen(data.xfrc_applied),
-                held_control=row.control, last_step=row,
+                world=key,
+                q=_frozen(data.qpos),
+                v=_frozen(data.qvel),
+                act=_frozen(data.act),
+                ctrl=_frozen(data.ctrl),
+                time=float(data.time),
+                tick=draft.ticks[key],
+                qfrc_applied=_frozen(data.qfrc_applied),
+                xfrc_applied=_frozen(data.xfrc_applied),
+                held_control=row.control,
+                last_step=row,
             )
         return result
 
@@ -411,17 +492,24 @@ class MuJoCoTyxHeterogeneousBatch:
                     states.update(self._draft_states(owner, draft))
                 accepted = MappingProxyType(dict.fromkeys(self._world_keys, True))
                 publication = MuJoCoTyxHeterogeneousStepReceipt(
-                    "mujoco-tyx-heterogeneous-step-v1", self._revision, self._revision + 1,
-                    self._world_keys, tuple((draft.revision, draft.revision + 1) for draft in drafts),
+                    "mujoco-tyx-heterogeneous-step-v1",
+                    self._revision,
+                    self._revision + 1,
+                    self._world_keys,
+                    tuple((draft.revision, draft.revision + 1) for draft in drafts),
                     MappingProxyType({key: receipts[key] for key in self._world_keys}),
-                    MappingProxyType({key: states[key] for key in self._world_keys}), accepted,
+                    MappingProxyType({key: states[key] for key in self._world_keys}),
+                    accepted,
                 )
                 self._before_commit("step", publication)
                 for owner, draft in zip(self._buckets, drafts, strict=True):
                     owner._validate_step_draft_locked(draft)
-                counters = {**self._stats,
+                counters = {
+                    **self._stats,
                     "completed_steps": self._stats["completed_steps"] + 1,
-                    "accepted_world_steps": self._stats["accepted_world_steps"] + len(self._world_keys)}
+                    "accepted_world_steps": self._stats["accepted_world_steps"]
+                    + len(self._world_keys),
+                }
             except BaseException as error:
                 failures = []
                 for owner in self._buckets:
@@ -435,7 +523,9 @@ class MuJoCoTyxHeterogeneousBatch:
                         self._counter_errors += (repr(observation),)
                 self._stats["failed_batches"] += 1
                 if failures:
-                    error = BaseExceptionGroup("heterogeneous preparation and discard failed", [error, *failures])
+                    error = BaseExceptionGroup(
+                        "heterogeneous preparation and discard failed", [error, *failures]
+                    )
                 if not isinstance(error, Exception):
                     raise error
                 raise PhysicsStepFailure(
@@ -444,7 +534,11 @@ class MuJoCoTyxHeterogeneousBatch:
                 ) from error
             for owner, draft in zip(self._buckets, drafts, strict=True):
                 owner._commit_step_draft_locked(draft)
-            self._last_step, self._revision, self._stats = publication, publication.revision_after, counters
+            self._last_step, self._revision, self._stats = (
+                publication,
+                publication.revision_after,
+                counters,
+            )
             return accepted
 
     def _snapshot(self, keys, full):
@@ -455,7 +549,9 @@ class MuJoCoTyxHeterogeneousBatch:
             for owner in self._buckets:
                 subset = tuple(key for key in owner.world_keys if key in selected)
                 if subset:
-                    gathered.update(owner.snapshot(subset) if full else owner.integration_snapshot(subset))
+                    gathered.update(
+                        owner.snapshot(subset) if full else owner.integration_snapshot(subset)
+                    )
                     self._observe_owner(owner)
             return MappingProxyType({key: gathered[key] for key in selected})
 
@@ -469,8 +565,13 @@ class MuJoCoTyxHeterogeneousBatch:
         row = self._last_step
         if row is None:
             return None
-        return dict(schema=row.schema, revision_before=row.revision_before, revision_after=row.revision_after,
-                    world_keys=row.world_keys, bucket_revisions=row.bucket_revisions)
+        return dict(
+            schema=row.schema,
+            revision_before=row.revision_before,
+            revision_after=row.revision_after,
+            world_keys=row.world_keys,
+            bucket_revisions=row.bucket_revisions,
+        )
 
     def checkpoint(self):
         with self._transaction():
@@ -486,10 +587,19 @@ class MuJoCoTyxHeterogeneousBatch:
 
     def _boundary(self, operation, selected, leaves=None, publication=None):
         replacements, pending = {}, []
-        indices = tuple(i for i, owner in enumerate(self._buckets) if operation == "restore" or set(owner.world_keys).intersection(selected))
+        indices = tuple(
+            i
+            for i, owner in enumerate(self._buckets)
+            if operation == "restore" or set(owner.world_keys).intersection(selected)
+        )
         if not indices:
             return MuJoCoTyxHeterogeneousBoundaryReceipt(
-                "mujoco-tyx-heterogeneous-boundary-v1", operation, self._revision, self._revision, (), ()
+                "mujoco-tyx-heterogeneous-boundary-v1",
+                operation,
+                self._revision,
+                self._revision,
+                (),
+                (),
             )
         try:
             for i in indices:
@@ -503,7 +613,9 @@ class MuJoCoTyxHeterogeneousBatch:
                     candidate.reset(tuple(key for key in owner.world_keys if key in selected))
                 self._observe_owner(candidate)
                 replacements[i] = candidate
-            replacement_buckets = tuple(replacements.get(i, owner) for i, owner in enumerate(self._buckets))
+            replacement_buckets = tuple(
+                replacements.get(i, owner) for i, owner in enumerate(self._buckets)
+            )
             restored_publication = None
             if publication is not None:
                 states = {}
@@ -513,26 +625,41 @@ class MuJoCoTyxHeterogeneousBatch:
                     raise ValueError("checkpoint publication lacks a complete leaf receipt")
                 # Held controls may have changed after the saved last step. The
                 # historical aggregate retains the control from its actual step.
-                states = {key: replace(value, held_control=value.last_step.control) for key, value in states.items()}
+                states = {
+                    key: replace(value, held_control=value.last_step.control)
+                    for key, value in states.items()
+                }
                 restored_publication = MuJoCoTyxHeterogeneousStepReceipt(
-                    publication["schema"], publication["revision_before"], publication["revision_after"],
-                    self._world_keys, tuple(tuple(row) for row in publication["bucket_revisions"]),
+                    publication["schema"],
+                    publication["revision_before"],
+                    publication["revision_after"],
+                    self._world_keys,
+                    tuple(tuple(row) for row in publication["bucket_revisions"]),
                     MappingProxyType({key: states[key].last_step for key in self._world_keys}),
                     MappingProxyType({key: states[key] for key in self._world_keys}),
                     MappingProxyType(dict.fromkeys(self._world_keys, True)),
                 )
             result = MuJoCoTyxHeterogeneousBoundaryReceipt(
-                "mujoco-tyx-heterogeneous-boundary-v1", operation, self._revision,
-                self._revision + 1, tuple(selected), indices,
+                "mujoco-tyx-heterogeneous-boundary-v1",
+                operation,
+                self._revision,
+                self._revision + 1,
+                tuple(selected),
+                indices,
             )
             retired = tuple(self._buckets[i] for i in indices)
-            counters = {**self._stats, "boundary_operations": self._stats["boundary_operations"] + 1}
+            counters = {
+                **self._stats,
+                "boundary_operations": self._stats["boundary_operations"] + 1,
+            }
             self._before_commit(operation, result)
         except BaseException as primary:
             self._stats["boundary_refusals"] += 1
             failures = self._close_owners(pending)
             if failures:
-                raise BaseExceptionGroup("heterogeneous boundary preparation and cleanup failed", [primary, *failures]) from None
+                raise BaseExceptionGroup(
+                    "heterogeneous boundary preparation and cleanup failed", [primary, *failures]
+                ) from None
             raise
         self._buckets, self._last_step = replacement_buckets, restored_publication
         self._revision, self._stats = result.revision_after, counters
@@ -577,5 +704,7 @@ class MuJoCoTyxHeterogeneousBatch:
             self.close()
         except BaseException as cleanup:
             if exc_value is not None:
-                raise BaseExceptionGroup("heterogeneous body and cleanup failed", [exc_value, cleanup]) from None
+                raise BaseExceptionGroup(
+                    "heterogeneous body and cleanup failed", [exc_value, cleanup]
+                ) from None
             raise

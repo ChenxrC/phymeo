@@ -22,9 +22,11 @@ from unittest.mock import patch
 
 import numpy as np
 
+
 def require(condition, message):
     if not condition:
         raise AssertionError(message)
+
 
 def encode(value):
     if isinstance(value, np.ndarray):
@@ -55,6 +57,7 @@ def encode(value):
         return value
     raise TypeError("unhandled evidence value " + type(value).__name__)
 
+
 def exact(left, right, label):
     # Checkpoint JSON may reorder mappings. Keep all typed keys, values and
     # sequence order; journal encoding still retains the original saved order.
@@ -70,6 +73,7 @@ def exact(left, right, label):
         return value
 
     require(canonical(encode(left)) == canonical(encode(right)), label)
+
 
 class Journal:
     def __init__(self, path):
@@ -100,6 +104,7 @@ class Journal:
             compressed_sha256=hashlib.sha256(self.path.read_bytes()).hexdigest(),
         )
 
+
 def modules():
     return {
         name: str(Path(module.__file__).resolve())
@@ -107,9 +112,11 @@ def modules():
         if (name == "phymeo" or name.startswith("phymeo.")) and getattr(module, "__file__", None)
     }
 
+
 def set_control(data, packet):
     for name in ("ctrl", "qfrc_applied", "xfrc_applied"):
         getattr(data, name)[:] = np.asarray(getattr(packet, name), np.float32)
+
 
 def provenance(installed_root, *, preflight=False):
     """Fail on checkout discovery without rewriting the caller's environment."""
@@ -161,6 +168,7 @@ def provenance(installed_root, *, preflight=False):
         loaded=loaded,
     )
 
+
 def control(model, tick, slot):
     from phymeo.backends.mujoco_runtime import MuJoCoControl
 
@@ -174,6 +182,7 @@ def control(model, tick, slot):
         force.fill(0)
         wrench.fill(0)
     return MuJoCoControl(u, qfrc_applied=force, xfrc_applied=wrench)
+
 
 def analytic(model, entry, packet):
     """Independent MuJoCo 3.3.7 filter law and complete native JOINT moments."""
@@ -272,6 +281,7 @@ def analytic(model, entry, packet):
         generalized_force=generalized,
     )
 
+
 def dense_native_moment(model, data):
     dense = np.zeros((model.nu, model.nv))
     for actor in range(model.nu):
@@ -280,6 +290,7 @@ def dense_native_moment(model, data):
             start : start + count
         ]
     return dense
+
 
 def check_transmission(row, entry, native):
     tr, expected = row.transmission, native["analytic"]
@@ -323,6 +334,7 @@ def check_transmission(row, entry, native):
         else:
             raise AssertionError("transmission permits mutable reenable " + name)
 
+
 def check_activation(row, entry, after, native):
     from phymeo.backends.mujoco_joint_transmission import MuJoCoTyxJointActivationStepReceipt
 
@@ -349,6 +361,7 @@ def check_activation(row, entry, after, native):
                 pass
             else:
                 raise AssertionError("activation permits mutable reenable " + field.name)
+
 
 def native_state(data):
     return dict(
@@ -395,11 +408,13 @@ HEADER = """<mujoco><compiler angle="radian" fusestatic="false"/>
  iterations="128" tolerance="1e-10" jacobian="dense"/>
 <default><geom friction=".4 .01 .001" solref=".02 1" solimp=".8 .9 .002 .5 2"/></default>"""
 
+
 def motor(name, target, gear, extra="", gain="1"):
     return (
         f'<general name="{name}" joint="{target}" gear="{gear}" '
         f'dyntype="none" gaintype="fixed" gainprm="{gain}" {extra}/>'
     )
+
 
 def _mechanical_source(name):
     """Predeclared original BALL-C geometry plus stateless direct JOINT motors."""
@@ -480,6 +495,7 @@ BASE_CASES = {
     "r8-disabled": "mc6-disabled",
 }
 
+
 def source(name):
     """Only declared actuator laws change; the accepted mechanical fixtures remain."""
     root = ET.fromstring(_mechanical_source(BASE_CASES[name]))
@@ -509,6 +525,7 @@ def source(name):
             actor.set("ctrllimited", "true")
             actor.set("ctrlrange", "-.45 .45")
     return ET.tostring(root, encoding="unicode")
+
 
 def initial(mj, model, name, slot):
     from phymeo.backends.mujoco_runtime import MuJoCoInitialState
@@ -546,6 +563,7 @@ def initial(mj, model, name, slot):
     )
     return MuJoCoInitialState(q, v.astype(np.float32), act=activation, time=0.125)
 
+
 def references(mj, model, states):
     result = {}
     for key, state in states.items():
@@ -553,6 +571,7 @@ def references(mj, model, states):
         data.qpos[:], data.qvel[:], data.act[:], data.time = state.q, state.v, state.act, state.time
         result[key] = data
     return result
+
 
 def native_fields(mj, model, entry, packet):
     data = references(mj, model, {0: entry})[0]
@@ -636,6 +655,7 @@ def native_fields(mj, model, entry, packet):
     expected["native_successor"] = native_state(data)
     return expected
 
+
 def match_contacts(actual, native):
     require(len(actual) == len(native), "complete contact count")
     unused = set(range(len(native)))
@@ -655,8 +675,10 @@ def match_contacts(actual, native):
     require(not unused, "all native contacts consumed")
     return result
 
+
 def no_contact(row):
     return row.numerical_solver not in ("normal-dual-active-set-v1", "pyramidal-box-active-set-v1")
+
 
 def compare(row, before, after, packet, expected, model):
     require(
@@ -867,6 +889,7 @@ def compare(row, before, after, packet, expected, model):
         after.v, before.v + float(np.float32(H)) * row.integration_acceleration, rtol=0, atol=3e-6
     )
 
+
 H = 0.001
 free_KEYS = (3, 29)
 free_Q_ATOL, free_V_ATOL, free_TIME_ATOL = 1e-4, 1e-3, 2e-6
@@ -901,18 +924,22 @@ def free_body(name, kind="ball", child="", pos=".12 -.04 .23"):
         + "</body>"
     )
 
+
 def free_motor(name, target, gear, extra="", gain="1"):
     return (
         f'<general name="{name}" joint="{target}" gear="{gear}" dyntype="none" '
         f'gaintype="fixed" gainprm="{gain}" {extra}/>'
     )
 
+
 def free_source(case):
     actors = free_motor("drive", "ball", "1 -2 .5", gain=".8")
     if case == "mixed":
         child = free_body("ball", child=free_body("hinge", "hinge", free_body("slide", "slide")))
         actors += free_motor("hinge-drive", "hinge", "-.5")
-        actors += free_motor("slide-drive", "slide", "-2", 'biastype="affine" biasprm=".01 -.3 -.04"')
+        actors += free_motor(
+            "slide-drive", "slide", "-2", 'biastype="affine" biasprm=".01 -.3 -.04"'
+        )
     elif case == "branches":
         child = free_body("ball") + free_body("other", pos="-.18 .07 .16")
         actors += free_motor("other-drive", "other", "-.3 .4 .2")
@@ -929,6 +956,7 @@ def free_source(case):
  mass="2.6" diaginertia=".13 .19 .23"/>
 <geom type="sphere" size=".06" contype="0" conaffinity="0"/>
 {child}</body></worldbody><actuator>{actors}</actuator></mujoco>"""
+
 
 def free_initial(mj, model, slot=0, sign=False):
     from phymeo.backends.mujoco_runtime import MuJoCoInitialState
@@ -949,6 +977,7 @@ def free_initial(mj, model, slot=0, sign=False):
     velocity = np.linspace(-0.13, 0.17, model.nv) * (1 if sign else 1 + 0.1 * slot)
     return MuJoCoInitialState(q, velocity, time=0.125)
 
+
 def free_control(model, tick, slot=0):
     from phymeo.backends.mujoco_runtime import MuJoCoControl
 
@@ -960,6 +989,7 @@ def free_control(model, tick, slot=0):
     wrench = np.zeros((model.nbody, 6))
     wrench[-1] = phase * (1 + 0.1 * slot) * np.array([0.35, -0.25, 0.4, 0.025, -0.035, 0.015])
     return MuJoCoControl(ctrl, qfrc_applied=qforce, xfrc_applied=wrench)
+
 
 def free_native_state(data):
     return dict(
@@ -975,6 +1005,7 @@ def free_native_state(data):
         qfrc_constraint=data.qfrc_constraint.copy(),
     )
 
+
 def free_native_fields(mj, model, entry, packet):
     data = mj.MjData(model)
     data.qpos[:], data.qvel[:], data.time = entry.q, entry.v, entry.time
@@ -986,7 +1017,9 @@ def free_native_fields(mj, model, entry, packet):
     jac = np.zeros((model.nbody, 6, model.nv))
     applied = data.qfrc_applied.copy() + data.qfrc_actuator
     for free_body in range(model.nbody):
-        mj.mj_jac(model, data, jac[free_body, :3], jac[free_body, 3:], data.xipos[free_body], free_body)
+        mj.mj_jac(
+            model, data, jac[free_body, :3], jac[free_body, 3:], data.xipos[free_body], free_body
+        )
         applied += jac[free_body].T @ packet.xfrc_applied[free_body]
     rhs = applied + data.qfrc_passive - data.qfrc_bias
     smooth = np.linalg.solve(mass, rhs)
@@ -1017,6 +1050,7 @@ def free_native_fields(mj, model, entry, packet):
     mj.mj_step(model, data)  # Independent same-input native successor, outside TYX guard.
     expected["native_successor"] = free_native_state(data)
     return expected
+
 
 def free_transmission_oracle(mj, model, state, packet):
     """Independent native-address table and scalar-force law; no product helper."""
@@ -1069,6 +1103,7 @@ def free_transmission_oracle(mj, model, state, packet):
         generalized_force=generalized,
     )
 
+
 def free_dense_native_moment(mj, model, data):
     dense = np.zeros((model.nu, model.nv))
     for a in range(model.nu):
@@ -1077,6 +1112,7 @@ def free_dense_native_moment(mj, model, data):
             start : start + count
         ]
     return dense
+
 
 def free_check_transmission(row, entry, native, analytic):
     tr = row.transmission
@@ -1125,6 +1161,7 @@ def free_check_transmission(row, entry, native, analytic):
             rejected = True
         require(rejected, "bytes-backed " + name)
 
+
 def scalar_source(case="hinge", *, early=False, tau=0.004, disabled=False):
     kind = "slide" if case == "slide" else "hinge"
     child = ""
@@ -1161,6 +1198,7 @@ def scalar_source(case="hinge", *, early=False, tau=0.004, disabled=False):
        <geom size=".04" contype="0" conaffinity="0"/>{child}
       </body></worldbody><actuator>{actors}</actuator></mujoco>'''
 
+
 def scalar_control(model, tick, slot=0):
     from phymeo.backends.mujoco_runtime import MuJoCoControl
 
@@ -1172,6 +1210,7 @@ def scalar_control(model, tick, slot=0):
         qfrc_applied=np.full(model.nv, 0.012),
         xfrc_applied=wrench,
     )
+
 
 def scalar_analytic(model, state, packet):
     # Independent native field interpretation, not a call into product lowering.
@@ -1227,19 +1266,32 @@ WORLD_KEYS = (41, 7, 305, 11, 203, 59)
 FAMILIES = {41: "scalar", 7: "ball", 305: "free", 11: "scalar", 203: "ball", 59: "free"}
 SLOTS = {41: 0, 7: 0, 305: 0, 11: 1, 203: 1, 59: 1}
 SCALAR_TOL = {
-    "mass_matrix": (2e-4, 3e-5), "bias": (3e-4, 2e-4),
-    "passive": (3e-4, 2e-4), "applied": (3e-4, 2e-4),
+    "mass_matrix": (2e-4, 3e-5),
+    "bias": (3e-4, 2e-4),
+    "passive": (3e-4, 2e-4),
+    "applied": (3e-4, 2e-4),
     "smooth_acceleration": (5e-4, 8e-4),
 }
 
 
 def scalar_compare(row, before, after, expected):
     for field, (rtol, atol) in SCALAR_TOL.items():
-        np.testing.assert_allclose(getattr(row.dynamics, field), expected[field], rtol=rtol, atol=atol)
-    np.testing.assert_allclose(row.dynamics.jacobian_com, expected["jacobian_com"], rtol=3e-5, atol=4e-5)
+        np.testing.assert_allclose(
+            getattr(row.dynamics, field), expected[field], rtol=rtol, atol=atol
+        )
+    np.testing.assert_allclose(
+        row.dynamics.jacobian_com, expected["jacobian_com"], rtol=3e-5, atol=4e-5
+    )
     act = row.actuation
-    channels = (act.output_act, act.activation_derivative, act.clamped_control,
-                act.force_input, act.raw_force, act.scalar_force, act.generalized_force)
+    channels = (
+        act.output_act,
+        act.activation_derivative,
+        act.clamped_control,
+        act.force_input,
+        act.raw_force,
+        act.scalar_force,
+        act.generalized_force,
+    )
     for i, (got, want) in enumerate(zip(channels, expected["scalar_analytic"], strict=True)):
         np.testing.assert_allclose(got, want, **(ACT if i < 2 else FORCE))
         require(not got.flags.writeable, "complete immutable scalar activation")
@@ -1255,8 +1307,14 @@ def scalar_compare(row, before, after, expected):
 
 def free_compare(row, before, after, expected, model):
     for field, (rtol, atol) in free_TOL.items():
-        got = row.integration_acceleration if field == "integration_acceleration" else getattr(row.dynamics, field)
-        require(got.shape == expected[field].shape and not got.flags.writeable, "complete FREE dynamics")
+        got = (
+            row.integration_acceleration
+            if field == "integration_acceleration"
+            else getattr(row.dynamics, field)
+        )
+        require(
+            got.shape == expected[field].shape and not got.flags.writeable, "complete FREE dynamics"
+        )
         np.testing.assert_allclose(got, expected[field], rtol=rtol, atol=atol)
     np.testing.assert_allclose(row.qacc, expected["smooth_acceleration"], rtol=2e-3, atol=4e-3)
     np.testing.assert_allclose(row.qfrc_actuator, expected["qfrc_actuator"], **free_FORCE)
@@ -1271,21 +1329,32 @@ def free_compare(row, before, after, expected, model):
         kind = int(model.jnt_type[joint])
         if kind in (0, 1):
             qa = int(model.jnt_qposadr[joint]) + (3 if kind == 0 else 0)
-            require(abs(np.dot(after.q[qa:qa + 4], after.q[qa:qa + 4]) - 1) <= 8 * np.finfo(np.float32).eps, "native root/child quaternion")
+            require(
+                abs(np.dot(after.q[qa : qa + 4], after.q[qa : qa + 4]) - 1)
+                <= 8 * np.finfo(np.float32).eps,
+                "native root/child quaternion",
+            )
 
 
 def reference_states(mj, models, states):
     result = {}
     for key, state in states.items():
         native = mj.MjData(models[FAMILIES[key]])
-        native.qpos[:], native.qvel[:], native.act[:], native.time = state.q, state.v, state.act, state.time
+        native.qpos[:], native.qvel[:], native.act[:], native.time = (
+            state.q,
+            state.v,
+            state.act,
+            state.time,
+        )
         result[key] = native
     return result
 
 
 def commands(models, tick):
     funcs = {"scalar": scalar_control, "ball": control, "free": free_control}
-    return {key: funcs[FAMILIES[key]](models[FAMILIES[key]], tick, SLOTS[key]) for key in WORLD_KEYS}
+    return {
+        key: funcs[FAMILIES[key]](models[FAMILIES[key]], tick, SLOTS[key]) for key in WORLD_KEYS
+    }
 
 
 def advance_heterogeneous(batch, mj, models, refs, packets, journal, progress, label):
@@ -1296,17 +1365,30 @@ def advance_heterogeneous(batch, mj, models, refs, packets, journal, progress, l
     for key in WORLD_KEYS:
         name, model = FAMILIES[key], models[FAMILIES[key]]
         packet = packets[key]
-        actual = MuJoCoControl(np.asarray(packet.ctrl, np.float32),
+        actual = MuJoCoControl(
+            np.asarray(packet.ctrl, np.float32),
             qfrc_applied=np.asarray(packet.qfrc_applied, np.float32),
-            xfrc_applied=np.asarray(packet.xfrc_applied, np.float32))
-        expected[key] = (free_native_fields if name == "free" else native_fields)(mj, model, entry[key], actual)
+            xfrc_applied=np.asarray(packet.xfrc_applied, np.float32),
+        )
+        expected[key] = (free_native_fields if name == "free" else native_fields)(
+            mj, model, entry[key], actual
+        )
         if name == "scalar":
             expected[key]["scalar_analytic"] = scalar_analytic(model, entry[key], actual)
         set_control(refs[key], actual)
         mj.mj_step(model, refs[key])
         expected[key]["continuous"] = native_state(refs[key])
     batch.set_controls(packets)
-    journal.emit("attempt", label=label, full_entry=full_entry, entry=entry, requested=packets, native=expected, h=H, revision=batch.checkpoint_revision)
+    journal.emit(
+        "attempt",
+        label=label,
+        full_entry=full_entry,
+        entry=entry,
+        requested=packets,
+        native=expected,
+        h=H,
+        revision=batch.checkpoint_revision,
+    )
     progress["attempted_calls"] += 1
 
     def forbidden(*args, **kwargs):
@@ -1320,21 +1402,48 @@ def advance_heterogeneous(batch, mj, models, refs, packets, journal, progress, l
         output = batch.integration_snapshot()
         journal.emit("accepted-integration", label=label, output=output, receipt=batch.last_step)
     full = batch.snapshot()
-    journal.emit("step", label=label, full_output=full, output=output, receipt=batch.last_step, counters=batch.counters)
-    require(tuple(output) == WORLD_KEYS and dict(accepted) == dict.fromkeys(WORLD_KEYS, True), "all world identity/acceptance")
+    journal.emit(
+        "step",
+        label=label,
+        full_output=full,
+        output=output,
+        receipt=batch.last_step,
+        counters=batch.counters,
+    )
+    require(
+        tuple(output) == WORLD_KEYS and dict(accepted) == dict.fromkeys(WORLD_KEYS, True),
+        "all world identity/acceptance",
+    )
     require(tuple(batch.last_step.receipts) == WORLD_KEYS, "complete aggregate receipt")
     for key in WORLD_KEYS:
         row, before, after = output[key].last_step, entry[key], output[key]
         require(row.world == key and row.tick == after.tick == before.tick + 1, "world/tick")
-        require(row.input_time == before.time and row.output_time == after.time and row.h == H, "clock")
+        require(
+            row.input_time == before.time and row.output_time == after.time and row.h == H, "clock"
+        )
         exact(row.input_q, before.q, "input q")
         exact(row.input_v, before.v, "input v")
         exact(row.control, packets[key], "requested controls")
         for field in ("ctrl", "qfrc_applied", "xfrc_applied"):
-            np.testing.assert_array_equal(getattr(row.stored_control, field), np.asarray(getattr(packets[key], field), np.float32))
+            np.testing.assert_array_equal(
+                getattr(row.stored_control, field),
+                np.asarray(getattr(packets[key], field), np.float32),
+            )
         exact(batch.last_step.receipts[key], row, "full aggregate force/activation/contact receipt")
         exact(batch.last_step.states[key], after, "same force and motion publication")
-        for field in ("world", "q", "v", "act", "ctrl", "time", "tick", "qfrc_applied", "xfrc_applied", "held_control", "last_step"):
+        for field in (
+            "world",
+            "q",
+            "v",
+            "act",
+            "ctrl",
+            "time",
+            "tick",
+            "qfrc_applied",
+            "xfrc_applied",
+            "held_control",
+            "last_step",
+        ):
             exact(getattr(full[key], field), getattr(after, field), "observer state " + field)
         if FAMILIES[key] == "ball":
             compare(row, before, after, packets[key], expected[key], models["ball"])
@@ -1348,28 +1457,61 @@ def advance_heterogeneous(batch, mj, models, refs, packets, journal, progress, l
 
 def run(mode, output, installed_root, journal, progress):
     import mujoco as mj
-    from phymeo.backends.mujoco_heterogeneous import MuJoCoTyxHeterogeneousBatch, MuJoCoTyxModelSpec, MuJoCoTyxWorldSpec
+
+    from phymeo.backends.mujoco_heterogeneous import (
+        MuJoCoTyxHeterogeneousBatch,
+        MuJoCoTyxModelSpec,
+        MuJoCoTyxWorldSpec,
+    )
     from phymeo.backends.mujoco_heterogeneous_checkpoint import MuJoCoTyxHeterogeneousCheckpoint
     from phymeo.backends.mujoco_runtime import MuJoCoInitialState
     from phymeo.builders.mujoco_compiler import compile_mujoco_xml
 
     require(mj.__version__ == "3.3.7", "fixed independent native")
-    xml = {"scalar": scalar_source("coupled", early=True), "ball": source("r4-pyramid"), "free": free_source("mixed")}
+    xml = {
+        "scalar": scalar_source("coupled", early=True),
+        "ball": source("r4-pyramid"),
+        "free": free_source("mixed"),
+    }
     models = {name: mj.MjModel.from_xml_string(value) for name, value in xml.items()}
-    specs = tuple(MuJoCoTyxModelSpec(name, compile_mujoco_xml(value, require_asset=False)) for name, value in xml.items())
+    specs = tuple(
+        MuJoCoTyxModelSpec(name, compile_mujoco_xml(value, require_asset=False))
+        for name, value in xml.items()
+    )
     starts = {}
     for key in WORLD_KEYS:
         model, slot, family = models[FAMILIES[key]], SLOTS[key], FAMILIES[key]
         if family == "scalar":
-            starts[key] = MuJoCoInitialState(model.qpos0 + 0.06, np.full(model.nv, -0.035),
-                act=np.full(model.na, 0.34 + slot * 0.01), time=0.125)
+            starts[key] = MuJoCoInitialState(
+                model.qpos0 + 0.06,
+                np.full(model.nv, -0.035),
+                act=np.full(model.na, 0.34 + slot * 0.01),
+                time=0.125,
+            )
         elif family == "ball":
             starts[key] = initial(mj, model, "r4-pyramid", slot)
         else:
             starts[key] = free_initial(mj, model, slot)
     worlds = tuple(MuJoCoTyxWorldSpec(key, FAMILIES[key], starts[key]) for key in WORLD_KEYS)
-    journal.emit("declaration", xml=xml, source_sha256={key: hashlib.sha256(value.encode()).hexdigest() for key, value in xml.items()},
-                 worlds=worlds, mode=mode, h=H, progress=dict(progress), numerical_gates=dict(ball=TOL, free=free_TOL, scalar=SCALAR_TOL, ACT=ACT, FORCE=FORCE, CONTACT_FORCE=CONTACT_FORCE))
+    journal.emit(
+        "declaration",
+        xml=xml,
+        source_sha256={
+            key: hashlib.sha256(value.encode()).hexdigest() for key, value in xml.items()
+        },
+        worlds=worlds,
+        mode=mode,
+        h=H,
+        progress=dict(progress),
+        numerical_gates=dict(
+            ball=TOL,
+            free=free_TOL,
+            scalar=SCALAR_TOL,
+            ACT=ACT,
+            FORCE=FORCE,
+            CONTACT_FORCE=CONTACT_FORCE,
+        ),
+    )
     batch = None
     primary = None
     result = None
@@ -1378,11 +1520,26 @@ def run(mode, output, installed_root, journal, progress):
         original = batch.integration_snapshot()
         refs = reference_states(mj, models, original)
         initial_refs = {key: copy.copy(value) for key, value in refs.items()}
-        journal.emit("binding", layout=batch.layout, capabilities=batch.capabilities, initial=original, provenance=provenance(installed_root))
+        journal.emit(
+            "binding",
+            layout=batch.layout,
+            capabilities=batch.capabilities,
+            initial=original,
+            provenance=provenance(installed_root),
+        )
         require(batch.capabilities["bucket_count"] == 3, "three actual heterogeneous buckets")
         contact_seen, motor_seen = False, False
         for tick in range(24):
-            current = advance_heterogeneous(batch, mj, models, refs, commands(models, tick), journal, progress, f"continuous-{tick}")
+            current = advance_heterogeneous(
+                batch,
+                mj,
+                models,
+                refs,
+                commands(models, tick),
+                journal,
+                progress,
+                f"continuous-{tick}",
+            )
             contact_seen |= bool(np.any(current[7].last_step.qfrc_constraint != 0))
             motor_seen |= bool(np.any(current[305].last_step.qfrc_actuator != 0))
         require(contact_seen and motor_seen, "actual contact load and direct motor load")
@@ -1391,26 +1548,46 @@ def run(mode, output, installed_root, journal, progress):
         raw = saved.to_bytes()
         (output / "heterogeneous-checkpoint.bin").write_bytes(raw)
         saved_refs = {key: copy.copy(value) for key, value in refs.items()}
-        successor = advance_heterogeneous(batch, mj, models, refs, commands(models, 24), journal, progress, "successor")
+        successor = advance_heterogeneous(
+            batch, mj, models, refs, commands(models, 24), journal, progress, "successor"
+        )
         revision = batch.checkpoint_revision
-        restored = batch.restore(MuJoCoTyxHeterogeneousCheckpoint.from_bytes(raw), expected_revision=revision)
+        restored = batch.restore(
+            MuJoCoTyxHeterogeneousCheckpoint.from_bytes(raw), expected_revision=revision
+        )
         refs = {key: copy.copy(value) for key, value in saved_refs.items()}
-        journal.emit("restore", receipt=restored, checkpoint_sha256=hashlib.sha256(raw).hexdigest(), state=batch.integration_snapshot())
-        repeated = advance_heterogeneous(batch, mj, models, refs, commands(models, 24), journal, progress, "restored-successor")
+        journal.emit(
+            "restore",
+            receipt=restored,
+            checkpoint_sha256=hashlib.sha256(raw).hexdigest(),
+            state=batch.integration_snapshot(),
+        )
+        repeated = advance_heterogeneous(
+            batch, mj, models, refs, commands(models, 24), journal, progress, "restored-successor"
+        )
         exact(repeated, successor, "exact restored successor")
         before_reset = batch.integration_snapshot()
         reset = batch.reset((41, 7))
         reset_state = batch.integration_snapshot()
         for key in WORLD_KEYS:
             if key in (41, 7):
-                require(reset_state[key].tick == 0 and reset_state[key].last_step is None, "original selective reset")
+                require(
+                    reset_state[key].tick == 0 and reset_state[key].last_step is None,
+                    "original selective reset",
+                )
                 for field in ("q", "v", "act", "time"):
-                    exact(getattr(reset_state[key], field), getattr(original[key], field), "original reset " + field)
+                    exact(
+                        getattr(reset_state[key], field),
+                        getattr(original[key], field),
+                        "original reset " + field,
+                    )
                 refs[key] = copy.copy(initial_refs[key])
             else:
                 exact(reset_state[key], before_reset[key], "unselected full state/receipt")
         journal.emit("reset", receipt=reset, before=before_reset, after=reset_state)
-        final = advance_heterogeneous(batch, mj, models, refs, commands(models, 25), journal, progress, "reset-successor")
+        final = advance_heterogeneous(
+            batch, mj, models, refs, commands(models, 25), journal, progress, "reset-successor"
+        )
         held = batch.checkpoint().to_bytes()
         bad = dict(commands(models, 25))
         bad[999999] = bad.pop(59)
@@ -1428,10 +1605,26 @@ def run(mode, output, installed_root, journal, progress):
         else:
             raise AssertionError("stale restore accepted")
         require(batch.checkpoint().to_bytes() == held, "bad restore retains all worlds")
-        require(progress == dict(attempted_calls=27, physics_returned_calls=27, checked_calls=27, accepted_world_steps=162), "bounded complete actual calls")
-        result = dict(mode=mode, progress=dict(progress), counters=batch.counters,
-                      checkpoint_sha256=hashlib.sha256(raw).hexdigest(), final=final,
-                      layout=batch.layout, capabilities=batch.capabilities, provenance=provenance(installed_root))
+        require(
+            progress
+            == dict(
+                attempted_calls=27,
+                physics_returned_calls=27,
+                checked_calls=27,
+                accepted_world_steps=162,
+            ),
+            "bounded complete actual calls",
+        )
+        result = dict(
+            mode=mode,
+            progress=dict(progress),
+            counters=batch.counters,
+            checkpoint_sha256=hashlib.sha256(raw).hexdigest(),
+            final=final,
+            layout=batch.layout,
+            capabilities=batch.capabilities,
+            provenance=provenance(installed_root),
+        )
         journal.emit("final", **result)
     except BaseException as error:
         primary = error
@@ -1446,7 +1639,9 @@ def run(mode, output, installed_root, journal, progress):
                 cleanup.append(error)
         if primary is not None:
             if cleanup:
-                raise BaseExceptionGroup("heterogeneous consumer and cleanup failed", [primary, *cleanup]) from None
+                raise BaseExceptionGroup(
+                    "heterogeneous consumer and cleanup failed", [primary, *cleanup]
+                ) from None
             raise primary
         if cleanup:
             raise BaseExceptionGroup("heterogeneous consumer cleanup failed", cleanup)
@@ -1459,18 +1654,29 @@ def main():
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--installed-root", type=Path, required=True)
     args = parser.parse_args()
-    require(args.output.is_absolute() and args.installed_root.is_absolute(), "absolute output/install paths")
+    require(
+        args.output.is_absolute() and args.installed_root.is_absolute(),
+        "absolute output/install paths",
+    )
     output, root = args.output.resolve(), args.installed_root.resolve(strict=True)
     require(not output.exists(), "fresh output required")
     output.mkdir(parents=True)
     journal = Journal(output / "trajectory.jsonl.gz")
-    summary, progress = {"status": "FAIL", "mode": args.mode}, dict(attempted_calls=0, physics_returned_calls=0, checked_calls=0, accepted_world_steps=0)
+    summary, progress = (
+        {"status": "FAIL", "mode": args.mode},
+        dict(attempted_calls=0, physics_returned_calls=0, checked_calls=0, accepted_world_steps=0),
+    )
     primary = None
     try:
         summary["preflight"] = provenance(root, preflight=True)
         result = run(args.mode, output, root, journal, progress)
-        summary.update(status="PASS", progress=dict(progress), checkpoint_sha256=result["checkpoint_sha256"],
-                       counters=encode(result["counters"]), provenance=result["provenance"])
+        summary.update(
+            status="PASS",
+            progress=dict(progress),
+            checkpoint_sha256=result["checkpoint_sha256"],
+            counters=encode(result["counters"]),
+            provenance=result["provenance"],
+        )
     except BaseException as error:
         primary = error
         summary.update(error=repr(error), traceback=traceback.format_exc(), progress=dict(progress))
@@ -1483,7 +1689,9 @@ def main():
             else:
                 primary = BaseExceptionGroup("consumer and trace close failed", [primary, cleanup])
             summary["trace_error"] = repr(cleanup)
-        (output / "summary.json").write_text(json.dumps(summary, allow_nan=False, indent=2), encoding="utf-8")
+        (output / "summary.json").write_text(
+            json.dumps(summary, allow_nan=False, indent=2), encoding="utf-8"
+        )
     if primary is not None:
         raise primary
     print(json.dumps(summary, allow_nan=False))

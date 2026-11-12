@@ -54,6 +54,14 @@ qfrc_applied，不受 actuator cap 限制。被动 damping、armature、friction
 
 ### 标准 dynamics 与 mimic（B3e）
 
+B8e 的 `NativeJointInput.lower_limit/upper_limit` 是原生位置约束的有限覆盖值，
+平动用 m、转动用 rad；省略保留源值，已有有界 joint 可以只覆盖一侧。无界 joint
+需提供完整有限区间，lower 必须小于 upper。`joint_limits` 以 public name 保存
+编译后的界限和声明速度；没有第二套可写 solver 状态。velocity_limit 是非负声明，
+不增加速度裁剪，未强制执行的信息进入 import_diagnostics。mimic follower 可重申
+与 URDF 相同的 effort rating，明确没有独立 actuator；改变 follower cap、独立目标
+或增益仍拒绝。P2PE 的 null 解除限位不能映射成这里的 None/保留，须另行资格化。
+
 NativeJointInput 的可选增益、被动参数和速度以 None 表示未提供；解析优先级为
 逐关节显式值 → asset.joint_defaults → 源 URDF 标准 damping/friction → profile
 缺省（kp=500、kd=50、armature=.01、damping=0、frictionloss=1e-5）。源中明确

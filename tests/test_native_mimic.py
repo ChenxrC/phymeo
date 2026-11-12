@@ -105,6 +105,52 @@ def test_passive_follower_accepts_external_force_without_a_motor(tmp_path):
     np.testing.assert_array_equal(data.qfrc_applied, [0, 3])
 
 
+def test_explicit_limits_and_mimic_rating_do_not_create_another_actuator(tmp_path):
+    value = asset(tmp_path)
+    rows = (replace(value.joints[0], lower_limit=-.8, upper_limit=.9, velocity_limit=.4),
+            NativeJointInput("follower", lower_limit=-1., upper_limit=1., effort_limit=10,
+                             velocity_limit=.6))
+    result = compile_asset(replace(value, joints=rows))
+    model = result.compilation.fresh_native_model()
+    assert model.nu == 1 and model.neq == 1
+    np.testing.assert_array_equal(model.jnt_range, [[-.8, .9], [-1., 1.]])
+    assert result.joint_limits == (("arm::driver", -.8, .9, .4),
+                                   ("arm::follower", -1., 1., .6))
+    assert any("does not clamp velocity" in x for x in result.import_diagnostics)
+    assert any("no actuator" in x for x in result.import_diagnostics)
+    with pytest.raises(ValueError, match="no actuator"):
+        compile_asset(replace(value, joints=(*value.joints,
+                      NativeJointInput("follower", effort_limit=11))))
+
+
+@pytest.mark.parametrize("kwargs", [dict(lower_limit=1., upper_limit=0.),
+    dict(lower_limit=0., upper_limit=0.), dict(velocity_limit=-1.),
+    dict(velocity_limit=float("nan")), dict(upper_limit=float("inf"))])
+def test_invalid_joint_limit_inputs_rejected(kwargs):
+    with pytest.raises(ValueError):
+        NativeJointInput("j", **kwargs)
+
+
+def test_partial_limits_preserve_other_bound_and_unlimited_requires_pair(tmp_path):
+    value = asset(tmp_path)
+    result = compile_asset(replace(value, joints=(replace(value.joints[0], upper_limit=.8),)))
+    np.testing.assert_array_equal(result.compilation.mj_model.jnt_range[0], [-2, .8])
+    path = Path(value.path)
+    path.write_text(path.read_text().replace('type="prismatic"', 'type="continuous"')
+                    .replace('lower="-2" upper="2" ', ''))
+    with pytest.raises(ValueError, match="both finite"):
+        compile_asset(replace(value, joints=(replace(value.joints[0], upper_limit=.8),)))
+
+
+def test_revolute_limits_keep_radian_units(tmp_path):
+    value = asset(tmp_path)
+    path = Path(value.path)
+    path.write_text(path.read_text().replace('type="prismatic"', 'type="revolute"'))
+    result = compile_asset(replace(value, joints=(replace(value.joints[0],
+                          lower_limit=-.4, upper_limit=.7),)))
+    np.testing.assert_array_equal(result.compilation.mj_model.jnt_range[0], [-.4, .7])
+
+
 def test_panda_original_dynamics_and_mimic_preserved():
     import phymeo.builders
 

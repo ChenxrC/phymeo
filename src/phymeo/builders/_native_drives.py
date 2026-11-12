@@ -55,14 +55,51 @@ def prepare_scalar_drives(mj, spec, asset, input_type, root):
         if joint.type not in (mj.mjtJoint.mjJNT_HINGE, mj.mjtJoint.mjJNT_SLIDE):
             raise NotImplementedError("scalar_pd admits scalar hinge/slide joints only")
         row = supplied.get(name, input_type(name))
+        limit = xml[name].find("limit")
+        rating = 0.0 if limit is None else float(limit.get("effort", "0"))
+        if not np.isfinite(rating) or rating < 0:
+            raise ValueError("invalid asset motor rating")
         if name in followers and (
             any(value not in (None, 0) for value in (row.kp, row.kd))
-            or any(
-                value is not None
-                for value in (row.target_position, row.target_velocity, row.effort_limit)
-            )
+            or any(value is not None for value in (row.target_position, row.target_velocity))
         ):
             raise ValueError("mimic follower cannot own a drive or target command")
+        if name in followers and row.effort_limit is not None:
+            if row.effort_limit != rating:
+                raise ValueError(
+                    "mimic follower has no actuator; effort limit override unsupported"
+                )
+            diagnostics.append(
+                f"{asset.name}::{name}: mimic effort rating {rating} restated; no actuator"
+            )
+        if row.lower_limit is not None or row.upper_limit is not None:
+            # MjSpec stores AUTO as 2; unlike the compiled bool, it is also
+            # truthy for a zero/default range that has no active constraint.
+            limited = int(joint.limited) == 1 or (
+                int(joint.limited) == 2 and joint.range[0] < joint.range[1]
+            )
+            if not limited and (row.lower_limit is None or row.upper_limit is None):
+                raise ValueError("an unlimited joint requires both finite position limits")
+            lower = float(joint.range[0]) if row.lower_limit is None else row.lower_limit
+            upper = float(joint.range[1]) if row.upper_limit is None else row.upper_limit
+            if lower >= upper:
+                raise ValueError("native position limits require lower < upper")
+            joint.range[:] = [lower, upper]
+            joint.limited = True
+        velocity_rating = (
+            (
+                None
+                if limit is None or "velocity" not in limit.attrib
+                else float(limit.attrib["velocity"])
+            )
+            if row.velocity_limit is None
+            else row.velocity_limit
+        )
+        row = replace(row, velocity_limit=velocity_rating)
+        if row.velocity_limit is not None:
+            diagnostics.append(
+                f"{asset.name}::{name}: velocity_limit={row.velocity_limit} is declared metadata; native solver does not clamp velocity"
+            )
         dynamics = xml[name].find("dynamics")
         if dynamics is not None:
             extra = sorted(set(dynamics.attrib) - {"damping", "friction"})
@@ -91,8 +128,6 @@ def prepare_scalar_drives(mj, spec, asset, input_type, root):
         joint.armature, joint.frictionloss = row.armature, row.frictionloss
         joint.damping[:] = [row.damping, 0.0, 0.0]
         if name not in followers:
-            limit = xml[name].find("limit")
-            rating = 0.0 if limit is None else float(limit.get("effort", "0"))
             cap = rating if row.effort_limit is None else row.effort_limit
             if not np.isfinite(cap) or cap < 0:
                 raise ValueError("invalid asset motor rating")

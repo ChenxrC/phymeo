@@ -38,6 +38,9 @@ class NativeJointInput:
     # None keeps URDF motor rating; explicit zero means unlimited in this
     # *native profile*. ArticulationWorld's zero-cap semantics do not change.
     effort_limit: float | None = None
+    lower_limit: float | None = None
+    upper_limit: float | None = None
+    velocity_limit: float | None = None
 
     def __post_init__(self):
         if not isinstance(self.name, str) or not self.name or "::" in self.name:
@@ -52,10 +55,22 @@ class NativeJointInput:
             ):
                 raise ValueError(f"joint {self.name}.{key} requires a finite scalar")
             if (
-                key in {"kp", "kd", "armature", "damping", "frictionloss", "effort_limit"}
+                key
+                in {
+                    "kp",
+                    "kd",
+                    "armature",
+                    "damping",
+                    "frictionloss",
+                    "effort_limit",
+                    "velocity_limit",
+                }
                 and value < 0
             ):
                 raise ValueError(f"joint {self.name}.{key} must be nonnegative")
+        if self.lower_limit is not None and self.upper_limit is not None:
+            if self.lower_limit >= self.upper_limit:
+                raise ValueError("native position limits require lower < upper")
 
 
 @dataclass(frozen=True)
@@ -203,6 +218,9 @@ class NativeTemplate:
     target_bindings: tuple = ()
     target_contract_version: int = 1
     import_diagnostics: tuple = ()
+    # Immutable declarations, not another solver state. Velocity is not clamped.
+    # (public scalar joint, lower or None, upper or None, velocity rating or None).
+    joint_limits: tuple = ()
     # Widths aligned with joint_bindings; native FREE coordinates are not scalar joints.
     joint_dimensions: tuple = ()
     coordinate_contract_version: int = 1
@@ -449,8 +467,17 @@ def compile_native_template(
     data = mj.MjData(model)
     actuator_ids = {}
     scalar_controls = []
+    joint_limits = []
     for prefix, row in pending:
         joint = model.joint(prefix + row.name)
+        joint_limits.append(
+            (
+                prefix + row.name,
+                float(joint.range[0]) if joint.limited else None,
+                float(joint.range[1]) if joint.limited else None,
+                row.velocity_limit,
+            )
+        )
         qa, va = int(joint.qposadr[0]), int(joint.dofadr[0])
         if row.position is not None:
             data.qpos[qa] = row.position
@@ -516,6 +543,7 @@ def compile_native_template(
         scalar_controls=tuple(scalar_controls),
         target_bindings=target_bindings,
         import_diagnostics=tuple(diagnostics),
+        joint_limits=tuple(joint_limits),
         joint_dimensions=tuple(
             (
                 int(

@@ -164,3 +164,13 @@ Authored SHA256 before parent formatting:
 
 Hashes identify unexecuted author files. Parent modifications, tested identities
 and actual results must be recorded separately.
+
+## Parent source and installed acceptance, 2026-11-13
+
+LIMITED_ACCEPTED. Shared participant declarations/lowering, asset provenance and current-query revision are connected to the existing single D3 common owner. This is the declared sphere/capsule plus D1 zero-friction domain, not arbitrary articulated rigid/deformable coupling.
+
+Source08/09:26 passed per backend (12.16s interpret,10.43s CUDA). A first invalid helper import in run07 was corrected to the existing FiniteStaticShape path before qualification. Runs10/11 passed five affected old controls per backend. After the independently diagnosed D3 witness-frame repair, affected asset windows56/57 passed two per backend; no complete old suite was repeated.
+
+Package113629b3: source/wheel/installed530 product members BYTE_IDENTICAL. Installed81 interpret and74 CUDA each report PASS with38 returned/checked calls,57 accepted worldsteps,6 explicit current queries and57 checked contact sites; cpu_physics_calls=0. Run73 failed before consumer construction because bootstrap argument parsing consumed a duplicate --expected-install-root; raw error retained, then consumer alias --installed-root used. No physical source or gate changed for this CLI repair.
+
+Full commands, raw failures and exact source snapshots live in artifacts/p65-feature-until-0730-20261113-01. This acceptance includes public initial controls, partial reset/restore, common publishing and actual source-external calls. Long steady-support D4 remains separately FAIL, as documented in the continuous-load protocol.

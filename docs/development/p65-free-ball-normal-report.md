@@ -180,3 +180,8 @@ Run31 then passed all seven selected affected compatibility nodes in15.65s:
 FREE+BALL without contact, fixed BALL motor normal contact, original FREE/scalar
 two-foot normal contact (both modes), and the unchanged old pyramidal FREE
 negative. This does not rerun or broaden the old accepted full suites.
+## First installed package acceptance, 2026-11-13
+
+LIMITED_ACCEPTED for R3-N. Package113629b3 contains530 source/wheel/installed byte-identical product members. Runs75 interpret and76 CUDA execute the source-external self-contained normal consumer: each56 actual calls /112 accepted worldsteps (feet48, siblings48, lifecycle16), with complete native reference and installed module provenance. Original complete55-node source result and seven affected compatibility results are retained, not rerun.
+
+The later independent R3-P increment deliberately supersedes the former blanket pyramidal rejection; see p65-free-ball-pyramidal-report.md for its separate qualification. R3-N's original positive physical inputs and numerical gates remain unchanged. Neither report claims long humanoid support/dance or a general robot solver.

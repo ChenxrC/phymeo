@@ -166,4 +166,3 @@ There is no public child runtime, dynamic insertion, multirate stepping, shared
 contact graph across worlds, training tensor ABI or per-step boundary clone.
 Failures before common publication are atomic; retired-resource cleanup after
 a committed boundary is separately reported rather than undoing accepted physics.
-

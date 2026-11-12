@@ -373,7 +373,14 @@ def check_transmission(row, entry, native, analytic):
     for name in ("clamped_control", "raw_force", "scalar_force", "generalized_force"):
         np.testing.assert_allclose(getattr(tr, name), analytic[name], **FORCE)
     np.testing.assert_allclose(tr.scalar_force, native["scalar_force"], **FORCE)
-    exact(tr.generalized_force, row.qfrc_actuator, "same-stage generalized actuator force")
+    # Device forces are FP32; the public step receipt is their exact FP64 lift.
+    require(tr.generalized_force.dtype == np.dtype(np.float32), "device force dtype")
+    require(row.qfrc_actuator.dtype == np.dtype(np.float64), "public force dtype")
+    exact(
+        tr.generalized_force.astype(np.float64),
+        row.qfrc_actuator,
+        "same-stage generalized actuator force",
+    )
     exact(tr.input_control, row.control.ctrl, "original control binding")
     np.testing.assert_allclose(analytic["dense_moment"], native["dense_moment"], rtol=0, atol=2e-12)
     np.testing.assert_allclose(

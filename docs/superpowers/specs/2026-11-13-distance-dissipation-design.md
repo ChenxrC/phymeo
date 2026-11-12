@@ -81,3 +81,9 @@ No 3s N1-damped run until module/short-coupled acceptance and an independently d
 - audit agent: NEW tests/installed/check_deformable_dissipation.py and NEW tests/collision/test_deformable_dissipation_contact.py; self-contained D3/reference/installed path. No source/shared modifications.
 - root only shared D1 batch/buffers, D3 contact, exports and new subtype; integration, all serial tests/build/install.
 All use original isolated worktrees, based on current parent; preserve prior branches/WIP. No helper agents, no import/collection/probe/static/formatter/build by children. Any incompatible API/math issue report before changing this contract.
+
+### Pre-execution clarifications at parent integration
+
+- Observer masses are the registered stored FP32 inverse masses actually used by D1, not unrounded FP64 declarations.
+- An additional pure device copy_dissipation_velocity(n, velocity, saved_velocity) kernel preserves the reconstructed velocity before the single damping pass. Both launches and their buffers are counted; no HOST-generated velocity is uploaded.
+- The 2e-6 / 2e-5 gate applies to each same-candidate damping phase. For the independent continuous FP64 split oscillator trajectory, use absolute position2e-3m and velocity1e-2m/s, the already-declared D4 long-window engineering scale. Preserve every step/max error. The continuous analytic oscillator error is diagnostic, since the declared integrator is a first-order split. This clarification precedes every D6 execution; no case result has selected a threshold.

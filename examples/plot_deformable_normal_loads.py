@@ -17,14 +17,24 @@ import math
 from pathlib import Path
 
 SAMPLE_FIELDS = (
-    "step", "time", "support_force", "gap", "oriented_side",
-    "rigid_normal_speed", "center_normal_speed", "outside", "positive",
+    "step",
+    "time",
+    "support_force",
+    "gap",
+    "oriented_side",
+    "rigid_normal_speed",
+    "center_normal_speed",
+    "outside",
+    "positive",
 )
 WINDOWS = ((0.75, 1.0), (2.75, 3.0))
 # Original N1 declaration and protocol; not new acceptance thresholds.
 ORIGINAL_GATES = {
-    "support": [12.8, 19.2], "RMS": 0.1, "peak": 128.0,
-    "minimum_gap": -0.0625, "event_duration": 0.0078125,
+    "support": [12.8, 19.2],
+    "RMS": 0.1,
+    "peak": 128.0,
+    "minimum_gap": -0.0625,
+    "event_duration": 0.0078125,
 }
 LAYER_WIDTH = 0.0625
 LOAD = 16.0
@@ -38,8 +48,9 @@ def require(condition, message):
 
 def mapping(value):
     """Decode only one string-keyed Mapping layer; never array bytes."""
-    require(isinstance(value, dict) and set(value) == {"mapping_entries"},
-            "expected encoded Mapping")
+    require(
+        isinstance(value, dict) and set(value) == {"mapping_entries"}, "expected encoded Mapping"
+    )
     result = {}
     for pair in value["mapping_entries"]:
         require(isinstance(pair, list) and len(pair) == 2, "invalid Mapping entry")
@@ -97,8 +108,10 @@ def load_window(directory):
     progress = summary["progress"]
     for key in ("steps_attempted", "steps_returned", "steps_checked", "worldsteps"):
         require(type(progress[key]) is int and progress[key] == steps, "incomplete " + key)
-    require(progress["construct_returned"] == progress["close_returned"] == 1,
-            "window is not successfully constructed and closed")
+    require(
+        progress["construct_returned"] == progress["close_returned"] == 1,
+        "window is not successfully constructed and closed",
+    )
     require(progress["control_submissions"] == 3, "changed control schedule")
     require(summary["observations"]["steps"] == steps, "summary observation count")
     windows = summary["observations"]["windows"]
@@ -122,8 +135,10 @@ def load_window(directory):
             digest.update(raw)
             logical_bytes += len(raw)
             record = json.loads(raw)
-            require(type(record["ordinal"]) is int and record["ordinal"] == records,
-                    "noncontiguous journal ordinal")
+            require(
+                type(record["ordinal"]) is int and record["ordinal"] == records,
+                "noncontiguous journal ordinal",
+            )
             records += 1
             event = record["event"]
             require(type(event) is str and embedded is None, "record after final summary")
@@ -133,8 +148,11 @@ def load_window(directory):
                 payload = mapping(record["payload"])
                 declared, gates = mapping(payload["case"]), mapping(payload["gates"])
                 require(payload["mode"] == summary["mode"], "declaration backend mismatch")
-                require((declared["name"], declared["h"], declared["steps"])
-                        == (summary["case"], h, steps), "declaration/window mismatch")
+                require(
+                    (declared["name"], declared["h"], declared["steps"])
+                    == (summary["case"], h, steps),
+                    "declaration/window mismatch",
+                )
                 for key, expected in ORIGINAL_GATES.items():
                     require(gates[key] == expected, "changed original gate " + key)
             elif event == "control-attempt":
@@ -144,14 +162,20 @@ def load_window(directory):
                 payload = mapping(record["payload"])
                 sample = mapping(payload["sample"])
                 require(set(sample) == set(SAMPLE_FIELDS), "changed observation schema")
-                require(type(sample["step"]) is int and sample["step"] == len(samples),
-                        "missing/duplicate/out-of-order observation")
-                require(sample["step"] < steps and sample["time"] == sample["step"] * h,
-                        "observation time differs from the saved step")
+                require(
+                    type(sample["step"]) is int and sample["step"] == len(samples),
+                    "missing/duplicate/out-of-order observation",
+                )
+                require(
+                    sample["step"] < steps and sample["time"] == sample["step"] * h,
+                    "observation time differs from the saved step",
+                )
                 for key in SAMPLE_FIELDS[1:7]:
                     require(finite(sample[key]), "nonfinite observation " + key)
-                require(type(sample["outside"]) is bool and type(sample["positive"]) is bool,
-                        "invalid saved event flags")
+                require(
+                    type(sample["outside"]) is bool and type(sample["positive"]) is bool,
+                    "invalid saved event flags",
+                )
                 samples.append(dict(journal_ordinal=record["ordinal"], **sample))
             elif event == "terminal-geometry":
                 terminal_geometries += 1
@@ -161,24 +185,37 @@ def load_window(directory):
                 embedded = decode_mappings(mapping(record["payload"])["summary"])
 
     require(declared is not None and gates is not None, "missing declaration")
-    require(len(samples) == steps and samples[-1]["time"] + h == duration,
-            "truncated observation trajectory")
-    require(controls == [(0, 0.0), (int(1 / h), 1.0), (int(1.125 / h), 1.125)],
-            "changed saved control boundaries")
+    require(
+        len(samples) == steps and samples[-1]["time"] + h == duration,
+        "truncated observation trajectory",
+    )
+    require(
+        controls == [(0, 0.0), (int(1 / h), 1.0), (int(1.125 / h), 1.125)],
+        "changed saved control boundaries",
+    )
     require(close_returns == 1 and terminal_geometries == 1, "missing close/terminal evidence")
     require(last_event == "summary" and embedded is not None, "missing final summary")
     # emit("summary") measures its own save time after serializing the journal
     # record. Only this already documented timing value changes before JSON close.
     inside_save, outside_save = embedded["costs"]["save_seconds"], summary["costs"]["save_seconds"]
-    require(finite(inside_save) and finite(outside_save) and outside_save >= inside_save >= 0,
-            "invalid closing save timing")
+    require(
+        finite(inside_save) and finite(outside_save) and outside_save >= inside_save >= 0,
+        "invalid closing save timing",
+    )
     comparable = {key: value for key, value in summary.items() if key != "trace"}
     comparable["costs"] = dict(summary["costs"], save_seconds=inside_save)
     require(embedded == comparable, "closed summary differs beyond its own save timing")
     trace = summary["trace"]
-    require((records, logical_bytes, digest.hexdigest(), trace_path.stat().st_size)
-            == (trace["records"], trace["logical_bytes"], trace["logical_sha256"],
-                trace["compressed_bytes"]), "trace bytes/hash/count mismatch")
+    require(
+        (records, logical_bytes, digest.hexdigest(), trace_path.stat().st_size)
+        == (
+            trace["records"],
+            trace["logical_bytes"],
+            trace["logical_sha256"],
+            trace["compressed_bytes"],
+        ),
+        "trace bytes/hash/count mismatch",
+    )
     require(summary_path.read_bytes() == summary_raw, "summary changed during extraction")
     source = {
         "directory": str(directory),
@@ -211,8 +248,14 @@ def write_csv(path, runs):
         for source, samples in runs:
             summary = source["source_summary"]
             for sample in samples:
-                writer.writerow(dict(mode=summary["mode"], case=summary["case"],
-                                     source_status=summary["status"], **sample))
+                writer.writerow(
+                    dict(
+                        mode=summary["mode"],
+                        case=summary["case"],
+                        source_status=summary["status"],
+                        **sample,
+                    )
+                )
 
 
 def render(path, runs):
@@ -225,8 +268,13 @@ def render(path, runs):
     try:
         for axis in axes:
             for index, (begin, end) in enumerate(WINDOWS):
-                axis.axvspan(begin, end, color="#86b89b", alpha=0.16,
-                             label="Original support windows" if index == 0 else None)
+                axis.axvspan(
+                    begin,
+                    end,
+                    color="#86b89b",
+                    alpha=0.16,
+                    label="Original support windows" if index == 0 else None,
+                )
             axis.axvspan(*UNLOAD, color="#e6b971", alpha=0.18, label="Unloading command")
             for boundary in UNLOAD:
                 axis.axvline(boundary, color="#9c6c27", linewidth=0.8, linestyle=":")
@@ -236,34 +284,74 @@ def render(path, runs):
             summary, color = source["source_summary"], ("#175b96", "#bf5638")[index]
             mode, style = summary["mode"], ("-", "--")[index]
             times = [sample["time"] for sample in samples]
-            axes[0].plot(times, [s["support_force"] for s in samples],
-                         label=mode + " entry support", color=color, linestyle=style)
-            axes[1].plot(times, [s["gap"] for s in samples],
-                         label=mode + " entry gap", color=color, linestyle=style)
-            axes[2].plot(times, [s["rigid_normal_speed"] for s in samples],
-                         label=mode + " rigid", color=color, linestyle=style)
-            axes[2].plot(times, [s["center_normal_speed"] for s in samples],
-                         label=mode + " free center", color=color, linestyle=":", alpha=0.85)
+            axes[0].plot(
+                times,
+                [s["support_force"] for s in samples],
+                label=mode + " entry support",
+                color=color,
+                linestyle=style,
+            )
+            axes[1].plot(
+                times,
+                [s["gap"] for s in samples],
+                label=mode + " entry gap",
+                color=color,
+                linestyle=style,
+            )
+            axes[2].plot(
+                times,
+                [s["rigid_normal_speed"] for s in samples],
+                label=mode + " rigid",
+                color=color,
+                linestyle=style,
+            )
+            axes[2].plot(
+                times,
+                [s["center_normal_speed"] for s in samples],
+                label=mode + " free center",
+                color=color,
+                linestyle=":",
+                alpha=0.85,
+            )
             for window in summary["observations"]["windows"]:
-                axes[0].hlines(window["mean_force"], window["begin"], window["end"],
-                               colors=color, linestyles=style, linewidth=2.8)
+                axes[0].hlines(
+                    window["mean_force"],
+                    window["begin"],
+                    window["end"],
+                    colors=color,
+                    linestyles=style,
+                    linewidth=2.8,
+                )
         axes[0].axhline(LOAD, color="#383838", linewidth=1, label="Target load 16 N")
-        axes[0].axhline(ORIGINAL_GATES["peak"], color="#9c2436", linestyle=":",
-                       label="Instantaneous peak limit 128 N")
+        axes[0].axhline(
+            ORIGINAL_GATES["peak"],
+            color="#9c2436",
+            linestyle=":",
+            label="Instantaneous peak limit 128 N",
+        )
         for begin, end in WINDOWS:
-            axes[0].fill_between([begin, end], *ORIGINAL_GATES["support"],
-                                 color="#43805c", alpha=0.25)
+            axes[0].fill_between(
+                [begin, end], *ORIGINAL_GATES["support"], color="#43805c", alpha=0.25
+            )
         axes[0].set_ylabel("Support force (N)")
         axes[0].set_title("Saved entry force; shaded 12.8-19.2 N gate applies to WINDOW MEAN")
         axes[1].axhline(LAYER_WIDTH, color="#575757", linestyle=":", label="Layer width 1/16 m")
         axes[1].axhline(0, color="#888888", linewidth=0.8, label="Zero geometric gap")
-        axes[1].axhline(ORIGINAL_GATES["minimum_gap"], color="#9c2436", linestyle="--",
-                       label="Minimum gap -1/16 m")
+        axes[1].axhline(
+            ORIGINAL_GATES["minimum_gap"],
+            color="#9c2436",
+            linestyle="--",
+            label="Minimum gap -1/16 m",
+        )
         axes[1].set_ylabel("Gap (m)")
         axes[2].axhline(0, color="#888888", linewidth=0.7)
         for sign in (-1, 1):
-            axes[2].axhline(sign * ORIGINAL_GATES["RMS"], color="#9c2436", linestyle="--",
-                           label="RMS gate 0.1 m/s (not a pointwise gate)" if sign == 1 else None)
+            axes[2].axhline(
+                sign * ORIGINAL_GATES["RMS"],
+                color="#9c2436",
+                linestyle="--",
+                label="RMS gate 0.1 m/s (not a pointwise gate)" if sign == 1 else None,
+            )
         axes[2].set_ylabel("Normal velocity (m/s)")
         axes[2].set_xlabel("Accepted-entry time (s); unload +16 N from 1 to 1.125 s")
         for axis in axes:
@@ -278,8 +366,11 @@ def render(path, runs):
                 for w in summary["observations"]["windows"]
             )
             lines.append(f"{summary['mode']}: {stats}")
-        figure.suptitle("D4-N N1: interpret FAIL / CUDA FAIL — complete trajectory, steady support FAILED",
-                         fontsize=14, color="#8f1e2b")
+        figure.suptitle(
+            "D4-N N1: interpret FAIL / CUDA FAIL — complete trajectory, steady support FAILED",
+            fontsize=14,
+            color="#8f1e2b",
+        )
         footer = "\n".join(lines) + (
             "\nOriginal DIAGNOSTIC_ONLY / FAIL retained. Full 3 s windows; observations are t=0..T-h. "
             "No terminal sample invented.\nPlot/CSV extraction does not requalify physics or recompute forces."
@@ -302,8 +393,10 @@ def main(argv=None):
     require(all(window.is_absolute() for window in args.windows), "input windows must be absolute")
     inputs = [window.resolve(strict=True) for window in args.windows]
     require(len(set(inputs)) == 2, "two distinct input windows required")
-    require(not any(output == path or path in output.parents for path in inputs),
-            "output must not be placed inside original window evidence")
+    require(
+        not any(output == path or path in output.parents for path in inputs),
+        "output must not be placed inside original window evidence",
+    )
     output.mkdir(parents=True, exist_ok=False)
     receipt = {
         "schema": "d4-normal-load-plot-v1",
@@ -319,12 +412,16 @@ def main(argv=None):
             source, samples = load_window(path)
             receipt["sources"].append(source)
             runs.append((source, samples))
-        require({source["source_summary"]["mode"] for source, _ in runs}
-                == {"interpret", "cuda"}, "require one interpret and one CUDA window")
+        require(
+            {source["source_summary"]["mode"] for source, _ in runs} == {"interpret", "cuda"},
+            "require one interpret and one CUDA window",
+        )
         runs.sort(key=lambda run: run[0]["source_summary"]["mode"] != "interpret")
         first, second = (source["source_summary"] for source, _ in runs)
-        require(all(first[key] == second[key] for key in ("case", "h", "T", "planned_steps")),
-                "overlay inputs have different physical windows")
+        require(
+            all(first[key] == second[key] for key in ("case", "h", "T", "planned_steps")),
+            "overlay inputs have different physical windows",
+        )
         csv_path, png_path = output / "observations.csv", output / "normal-loads.png"
         write_csv(csv_path, runs)
         receipt["render_status"] = "RENDERING"
@@ -333,16 +430,28 @@ def main(argv=None):
             render_status="RENDERED",
             original_statuses=[source["source_summary"]["status"] for source, _ in runs],
             csv_rows=sum(len(samples) for _, samples in runs),
-            outputs={path.name: {"bytes": path.stat().st_size, "sha256": sha256(path)}
-                     for path in (csv_path, png_path)},
+            outputs={
+                path.name: {"bytes": path.stat().st_size, "sha256": sha256(path)}
+                for path in (csv_path, png_path)
+            },
         )
     except BaseException as error:
-        receipt.update(render_status="FAILED", error={"type": type(error).__name__, "message": str(error)})
+        receipt.update(
+            render_status="FAILED", error={"type": type(error).__name__, "message": str(error)}
+        )
         raise
     finally:
         json_write(output / "plot-receipt.json", receipt)
-    print(json.dumps({"render_status": receipt["render_status"], "output": str(output),
-                      "original_statuses": receipt["original_statuses"]}, allow_nan=False))
+    print(
+        json.dumps(
+            {
+                "render_status": receipt["render_status"],
+                "output": str(output),
+                "original_statuses": receipt["original_statuses"],
+            },
+            allow_nan=False,
+        )
+    )
 
 
 if __name__ == "__main__":

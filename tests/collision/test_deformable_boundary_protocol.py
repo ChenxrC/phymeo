@@ -145,7 +145,9 @@ def test_loan_exit_sync_failure_never_publishes(body_fault, tyx_mode, tmp_path, 
         with pytest.raises(RuntimeError):
             batch.step(q.forces(specs), q.H, expected_revision=batch.revision)
         with q.saved(tmp_path, specs, model, bindings) as events:
-            events.append(dict(old=old, attempt=plan.last_attempt, stats=plan.stats(), state=batch.snapshot()))
+            # Poison intentionally denies snapshot as well; retain the prior complete state.
+            events.append(dict(old=old, attempt=plan.last_attempt, stats=plan.stats(),
+                               publication_blocked=True, producer_revision=batch.revision))
     finally:
         monkeypatch.undo()
         plan.close()
@@ -170,6 +172,32 @@ def test_no_current_position_upload_and_scoped_source(tyx_mode, tmp_path, monkey
             with pytest.raises(RuntimeError):
                 plan._validate_source(view)
             with q.saved(tmp_path, specs, model, bindings) as events:
+                q.check(batch, plan, specs, model, rounds, events)
+
+
+@pytest.mark.parametrize("corruption", ["ticks", "points"])
+def test_actual_source_readback_corruption_retains_publication(corruption, tyx_mode, tmp_path, monkeypatch):
+    specs = (q.world(),)
+    model, bindings, rounds = q.scene(specs)
+    with TyxDeformableBatch(specs, mode=tyx_mode, settings=q.SETTINGS) as batch:
+        with closing(batch.prepare_boundary_query(model, bindings)) as plan:
+            with q.saved(tmp_path, specs, model, bindings) as events:
+                old = q.check(batch, plan, specs, model, rounds, events)
+                original = plan._download
+                changed = []
+                def download(array, label):
+                    value = original(array, label)
+                    if label == "source/" + corruption:
+                        value.flat[0] += 1
+                        changed.append(value.copy())
+                    return value
+                monkeypatch.setattr(plan, "_download", download)
+                with pytest.raises(RuntimeError):
+                    plan.query(margin=q.MARGIN)
+                events.append(dict(corruption=corruption, mutated_readback=changed,
+                                   attempt=plan.last_attempt, publication=plan.last_result))
+                assert changed and plan.last_result is old and batch.revision == 0
+                monkeypatch.setattr(plan, "_download", original)
                 q.check(batch, plan, specs, model, rounds, events)
 
 

@@ -293,6 +293,9 @@ class DeformableBoundaryAdapter:
         self.validate_source(plan, view)
         if ticks.dtype != np.int32 or ticks.shape != (len(plan._world_keys),) or np.any(ticks < 0):
             raise RuntimeError("D2 accepted ticks are malformed")
+        accepted = self.batch.snapshot()
+        if any(int(ticks[i]) != accepted[world].tick for i, world in enumerate(plan._world_keys)):
+            raise RuntimeError("D2 device tick differs from the current accepted publication")
         return [int(t) for t in ticks]
 
     def source_prepass_bytes(self, plan):

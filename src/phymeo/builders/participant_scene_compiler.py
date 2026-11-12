@@ -387,7 +387,12 @@ class CompiledParticipantScene:
             try:
                 self._batch.close()
             except BaseException as cleanup:
-                raise BaseExceptionGroup("participant assembly and owner cleanup failed", [primary, cleanup]) from None
+                failure = BaseExceptionGroup("participant assembly and owner cleanup failed", [primary, cleanup])
+                # Keep explicit ownership reachable without relying on traceback or GC.
+                # Unresolved does not authorize an automatic retry of an unknown cleanup.
+                failure.resident_owner = self._batch
+                failure.cleanup_state = "unresolved"
+                raise failure from None
             self._closed = True
             raise
 

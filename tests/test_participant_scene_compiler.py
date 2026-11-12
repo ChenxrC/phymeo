@@ -557,17 +557,24 @@ def test_material_cannot_override_original_source_restrictions(restriction, monk
 
 def test_constructor_preserves_primary_and_cleanup_failure(monkeypatch):
     declaration, _, _, _ = assembly("R01", worlds=(91,))
-    calls = []
+    calls, owners = [], []
+    primary, cleanup = RuntimeError("primary assembly failure"), OSError("real cleanup failure")
     class Owner:
         def __init__(self, *args, **kwargs):
             calls.append("construct")
+            owners.append(self)
+            self.released = False
         def prepare_contacts(self, *args, **kwargs):
-            raise RuntimeError("primary assembly failure")
+            raise primary
         def close(self):
             calls.append("close")
-            raise OSError("real cleanup failure")
+            raise cleanup  # fails before any actual release
     monkeypatch.setattr(resident_scene, "ResidentSceneBatch", Owner)
     with pytest.raises(BaseExceptionGroup) as captured:
         compile_participant_scene(declaration)
-    assert [type(error) for error in captured.value.exceptions] == [RuntimeError, OSError]
-    assert calls == ["construct", "close"]
+    assert captured.value.exceptions[0] is primary
+    assert captured.value.exceptions[1] is cleanup
+    assert captured.value.resident_owner is owners[0]
+    assert captured.value.cleanup_state == "unresolved"
+    assert not captured.value.resident_owner.released
+    assert calls == ["construct", "close"]  # no implicit second close or GC reliance

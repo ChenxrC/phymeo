@@ -233,9 +233,10 @@ def rotate_step(q, omega, h):
 
 
 def fixture(case="P", *, world=7):
+    from types import SimpleNamespace
+
     from phymeo.builders._robot_asset import LinkCollision
     from phymeo.builders.floating_urdf import FloatingRobotAsset
-    from types import SimpleNamespace
 
     x = np.array(((0, 0, 0), (1, 0, 0), (1, 1, 0), (0, 1, 0)), np.float32)
     if case == "C":
@@ -244,58 +245,97 @@ def fixture(case="P", *, world=7):
     if case == "E":
         weights[1] = 0
     nodes = ph.DeformableNodeWorld(
-        world, ph.ParticleModel(weights, np.zeros(3, np.float32)),
+        world,
+        ph.ParticleModel(weights, np.zeros(3, np.float32)),
         ph.ParticleState(x, np.zeros_like(x)),
-        ph.DistanceConstraints(EDGES, REST, np.full(5, COMPLIANCE)), IDS,
+        ph.DistanceConstraints(EDGES, REST, np.full(5, COMPLIANCE)),
+        IDS,
         (ph.DeformableSurface(23, FACETS, IDS[FACES]),),
     )
-    center = np.array((3/4, 1/8, 5/32), float)
+    center = np.array((3 / 4, 1 / 8, 5 / 32), float)
     local = np.zeros((1, 3))
-    velocity = np.array((0, 0, -1/16, 0, 0, 0), float)
+    velocity = np.array((0, 0, -1 / 16, 0, 0, 0), float)
     kind = "sphere"
     if case == "E":
-        center[0], local[0, 0] = 1/2, 1/4
+        center[0], local[0, 0] = 1 / 2, 1 / 4
     elif case == "C":
-        center = np.array((5/32, 7/8, 1/8), float)
-        local = np.array(((0, -1/8, 0), (1/8, 1/8, 0)), float)
-        velocity = np.array((-1/16, 1/8, 0, 0, 0, 0), float)
+        center = np.array((5 / 32, 7 / 8, 1 / 8), float)
+        local = np.array(((0, -1 / 8, 0), (1 / 8, 1 / 8, 0)), float)
+        velocity = np.array((-1 / 16, 1 / 8, 0, 0, 0, 0), float)
         kind = "capsule"
     key = ph.ResidentParticipantKey(world, 19)
     surface, installed = ph.CollisionKey(world, 101, 0), ph.CollisionKey(world, 202, 0)
     source = ph.CollisionKey(0, 42, 71)
-    shape = ph.CollisionShape(source, kind, tuple(range(41, 41+len(local))), RADIUS, revision=3)
+    shape = ph.CollisionShape(source, kind, tuple(range(41, 41 + len(local))), RADIUS, revision=3)
     collider = LinkCollision(
-        "original-" + case, "root", -1, (0., 0., 0.), (0., 0., 0., 1.), shape,
-        tuple(tuple(float(v) for v in row) for row in local), True,
+        "original-" + case,
+        "root",
+        -1,
+        (0.0, 0.0, 0.0),
+        (0.0, 0.0, 0.0, 1.0),
+        shape,
+        tuple(tuple(float(v) for v in row) for row in local),
+        True,
     )
     model = ph.FloatingRobotModel(
-        ph.RigidBodyModel(np.array((.5,)), np.full((1, 3), .25), np.zeros(3)), np.zeros(3),
+        ph.RigidBodyModel(np.array((0.5,)), np.full((1, 3), 0.25), np.zeros(3)),
+        np.zeros(3),
     )
-    initial = ph.FloatingRobotState(np.r_[center, (0., 0., 0., 1.)], velocity)
+    initial = ph.FloatingRobotState(np.r_[center, (0.0, 0.0, 0.0, 1.0)], velocity)
     asset = FloatingRobotAsset(
-        "d5-" + case, "root", model, (), (), (), (), (), (), (collider,),
+        "d5-" + case,
+        "root",
+        model,
+        (),
+        (),
+        (),
+        (),
+        (),
+        (),
+        (collider,),
         ph.CollisionModel((shape,)),
     )
-    external = np.array((0., 1/32, 0., 0., 0., 1/64))
+    external = np.array((0.0, 1 / 32, 0.0, 0.0, 0.0, 1 / 64))
     command = ph.FloatingRobotCommand(
-        None, ph.FloatingRobotInputs(np.zeros(0), external[None, :3], external[None, 3:]),
+        None,
+        ph.FloatingRobotInputs(np.zeros(0), external[None, :3], external[None, 3:]),
     )
     row = ph.ParticipantArticulation(
-        key, asset, initial, kp=np.zeros(0), kd=np.zeros(0), effort_limit=np.zeros(0),
-        body_ids=(202,), collider_keys={source: installed}, initial_control=command,
+        key,
+        asset,
+        initial,
+        kp=np.zeros(0),
+        kd=np.zeros(0),
+        effort_limit=np.zeros(0),
+        body_ids=(202,),
+        collider_keys={source: installed},
+        initial_control=command,
     )
     return dict(
-        case=case, world=world, factor=1, node=nodes, row=row,
-        participant=SimpleNamespace(key=key), surface=surface, round=installed,
-        original_source=source, local=local, mass=2., inertia=.25,
+        case=case,
+        world=world,
+        factor=1,
+        node=nodes,
+        row=row,
+        participant=SimpleNamespace(key=key),
+        surface=surface,
+        round=installed,
+        original_source=source,
+        local=local,
+        mass=2.0,
+        inertia=0.25,
         materials={(surface, installed): ph.NormalLayer(WIDTH, STIFFNESS, DAMPING)},
-        root_initial=initial, root_model=model, external=external, command=command,
+        root_initial=initial,
+        root_model=model,
+        external=external,
+        command=command,
     )
 
 
 def declaration(items):
     return ph.ParticipantSceneDeclaration(
-        tuple(item["row"] for item in items), contact_response="deformable_normal",
+        tuple(item["row"] for item in items),
+        contact_response="deformable_normal",
         deformable=ph.ParticipantDeformable(
             tuple(item["node"] for item in items),
             tuple(ph.DeformableBoundarySurface(item["surface"], 23) for item in items),
@@ -307,10 +347,25 @@ def declaration(items):
 
 
 def manifest(item):
-    return {key: item[key] for key in (
-        "case", "world", "node", "row", "surface", "round", "original_source", "local",
-        "mass", "inertia", "materials", "external", "root_initial", "root_model",
-    )}
+    return {
+        key: item[key]
+        for key in (
+            "case",
+            "world",
+            "node",
+            "row",
+            "surface",
+            "round",
+            "original_source",
+            "local",
+            "mass",
+            "inertia",
+            "materials",
+            "external",
+            "root_initial",
+            "root_model",
+        )
+    }
 
 
 def forces(items):
@@ -319,7 +374,6 @@ def forces(items):
 
 def root_state(state, item):
     return state.rigid.participants[item["participant"].key]
-
 
 
 def reference_load(item, x, v, q, speed):
@@ -664,20 +718,29 @@ def advance(batch, items, references, journal, progress, identity):
             world = item["world"]
             same_root = root_state(entry[world], item)
             same_force, same_wrench, same_rows = reference_load(
-                item, entry[world].node.position.astype(float),
+                item,
+                entry[world].node.position.astype(float),
                 entry[world].node.velocity.astype(float),
-                np.asarray(same_root.position), np.asarray(same_root.velocity),
+                np.asarray(same_root.position),
+                np.asarray(same_root.velocity),
             )
             x, v, q, rv = references[world]
             load, wrench, rows = reference_load(item, x, v, q, rv)
             x, v, _ = material_step(item, x, v, load, H)
             q, rv = rigid_step(item, q, rv, wrench, H)
             continued[world] = (x, v, q, rv)
-            journal.emit("independent-reference-before-assert", identity=identity, world=world,
-                         same_entry_force=same_force, same_entry_wrench=same_wrench,
-                         same_entry_geometry=same_rows, continuous_geometry=rows,
-                         continuous_force=load, continuous_wrench=wrench,
-                         continuous_state=continued[world])
+            journal.emit(
+                "independent-reference-before-assert",
+                identity=identity,
+                world=world,
+                same_entry_force=same_force,
+                same_entry_wrench=same_wrench,
+                same_entry_geometry=same_rows,
+                continuous_geometry=rows,
+                continuous_force=load,
+                continuous_wrench=wrench,
+                continuous_state=continued[world],
+            )
             audits[world] = audit_step(item, entry[world], after[world], receipt, H)
             actual = root_state(after[world], item)
             close(after[world].node.position, x, atol=2e-4, rtol=0)
@@ -723,8 +786,10 @@ def query(scene, journal, progress):
     result = scene.query(expected_revision=revision)
     progress["queries_returned"] += 1
     journal.emit("query-return", revision=revision, result=result)
-    require(scene.require_query_current(result, expected_revision=revision) is result,
-            "current dual-source query")
+    require(
+        scene.require_query_current(result, expected_revision=revision) is result,
+        "current dual-source query",
+    )
     return result
 
 
@@ -738,21 +803,34 @@ def run_case(items, mode, journal, progress):
         import phymeo.constraints.distance as material
         import phymeo.dynamics.floating_robot as floating
         import phymeo.solvers.collision_loads as loads
+
         def forbidden(*args, **kwargs):
             progress["cpu_physics_calls"] += 1
             raise AssertionError("unexpected HOST current-state physics producer")
-        for module, name in ((material, "project_distances"), (floating, "floating_kinematics"),
-                             (loads, "_host_law")):
+
+        for module, name in (
+            (material, "project_distances"),
+            (floating, "floating_kinematics"),
+            (loads, "_host_law"),
+        ):
             guards.append((module, name, getattr(module, name)))
             setattr(module, name, forbidden)
 
         initial = scene.snapshot()
-        journal.emit("constructed", identity=scene.identity, source_map=scene.source_map,
-                     state=initial, stats=scene.stats())
+        journal.emit(
+            "constructed",
+            identity=scene.identity,
+            source_map=scene.source_map,
+            state=initial,
+            stats=scene.stats(),
+        )
         require(scene.identity == decl.identity, "declaration identity")
         for item in items:
-            require(scene.source_map["participants"][item["row"].key][item["original_source"]]
-                    == item["round"], "original asset-to-installed ownership")
+            require(
+                scene.source_map["participants"][item["row"].key][item["original_source"]]
+                == item["round"],
+                "original asset-to-installed ownership",
+            )
             surface = scene.source_map["surfaces"][item["surface"]]
             np.testing.assert_array_equal(surface["facet_ids"], FACETS)
             np.testing.assert_array_equal(surface["oriented_point_ids"], IDS[FACES])
@@ -781,7 +859,8 @@ def run_case(items, mode, journal, progress):
         before_reset = scene.snapshot()
         current_query = query(scene, journal, progress)
         mutation = ph.FloatingRobotCommand(
-            None, ph.FloatingRobotInputs(np.zeros(0), np.ones((1, 3)), np.zeros((1, 3))),
+            None,
+            ph.FloatingRobotInputs(np.zeros(0), np.ones((1, 3)), np.zeros((1, 3))),
         )
         scene.set_controls({selected["row"].key: mutation}, expected_revision=scene.revision)
         journal.emit("controls-return", checkpoint=scene.checkpoint())
@@ -793,8 +872,12 @@ def run_case(items, mode, journal, progress):
             raise AssertionError("control commit must invalidate prior query identity")
         scene.reset((selected["world"],), expected_revision=scene.revision)
         reset_state = scene.snapshot()
-        journal.emit("reset-return", selected=(selected["world"],), state=reset_state,
-                     checkpoint=scene.checkpoint())
+        journal.emit(
+            "reset-return",
+            selected=(selected["world"],),
+            state=reset_state,
+            checkpoint=scene.checkpoint(),
+        )
         state_equal(initial, reset_state, (selected,))
         state_equal(before_reset, reset_state, items[1:])
         after_b[selected["world"]] = reference_initial(selected)
@@ -802,8 +885,12 @@ def run_case(items, mode, journal, progress):
     except BaseException as error:
         primary = error
         try:
-            journal.emit("case-failure", error=error, traceback=traceback.format_exc(),
-                         last_attempt=None if scene is None else scene.last_attempt)
+            journal.emit(
+                "case-failure",
+                error=error,
+                traceback=traceback.format_exc(),
+                last_attempt=None if scene is None else scene.last_attempt,
+            )
         except BaseException as capture:
             cleanup.append(capture)
     finally:
@@ -828,8 +915,13 @@ def run_case(items, mode, journal, progress):
 def run(mode, journal, progress):
     run_case((fixture("E", world=31), fixture("P", world=7)), mode, journal, progress)
     run_case((fixture("C", world=103),), mode, journal, progress)
-    require(progress["steps_attempted"] == progress["steps_returned"] == progress["steps_checked"]
-            == 38, "two 16-step windows plus replay/reset successors")
+    require(
+        progress["steps_attempted"]
+        == progress["steps_returned"]
+        == progress["steps_checked"]
+        == 38,
+        "two 16-step windows plus replay/reset successors",
+    )
     require(progress["worldsteps"] == 57, "W2 sphere and W1 capsule worldsteps")
     require(progress["queries_returned"] == 6, "three explicit accepted queries per scene")
 
@@ -844,16 +936,27 @@ def main():
     require(args.output.is_absolute(), "absolute fresh output required")
     require(args.expected_install_root.is_absolute(), "absolute install root required")
     args.output.mkdir(parents=True, exist_ok=False)
-    summary = dict(status="FAIL", mode=args.mode,
-                   consumer_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
-                   scope="D5-A asset assembly; original D3 entry-sampled normal response")
-    progress = dict(steps_attempted=0, steps_returned=0, steps_checked=0, worldsteps=0,
-                    sites_checked=0, queries_returned=0, cpu_physics_calls=0)
+    summary = dict(
+        status="FAIL",
+        mode=args.mode,
+        consumer_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+        scope="D5-A asset assembly; original D3 entry-sampled normal response",
+    )
+    progress = dict(
+        steps_attempted=0,
+        steps_returned=0,
+        steps_checked=0,
+        worldsteps=0,
+        sites_checked=0,
+        queries_returned=0,
+        cpu_physics_calls=0,
+    )
     journal, primary, cleanup = None, None, []
     guards = []
     try:
         summary["origins_before"] = provenance(args.expected_install_root.resolve(), preflight=True)
         import phymeo as product
+
         ph = product
         SETTINGS = ph.StepSettings(substeps=1, position_iterations=200, tolerance=2e-6)
         journal = Journal(args.output / "trace.jsonl.gz")
@@ -862,8 +965,9 @@ def main():
         summary["status"] = "PASS"
     except BaseException as error:
         primary = error
-        summary["failure"] = dict(type=type(error).__name__, message=str(error),
-                                  traceback=traceback.format_exc())
+        summary["failure"] = dict(
+            type=type(error).__name__, message=str(error), traceback=traceback.format_exc()
+        )
         if journal is not None:
             try:
                 journal.emit("failure", error=error, traceback=summary["failure"]["traceback"])
@@ -887,11 +991,13 @@ def main():
         summary["progress"] = progress
         if cleanup:
             summary["status"] = "FAIL"
-            summary["finalization_errors"] = [dict(type=type(e).__name__, message=str(e))
-                                               for e in cleanup]
+            summary["finalization_errors"] = [
+                dict(type=type(e).__name__, message=str(e)) for e in cleanup
+            ]
         try:
             (args.output / "summary.json").write_text(
-                json.dumps(summary, indent=2, sort_keys=True, allow_nan=False), encoding="utf-8")
+                json.dumps(summary, indent=2, sort_keys=True, allow_nan=False), encoding="utf-8"
+            )
         except BaseException as error:
             cleanup.append(error)
         if primary is not None:

@@ -198,4 +198,3 @@ validation, rather than attributing the observed oscillation to roundoff.
 Run58 additionally passed the eight declaration/statistics-negative/observer
 nodes. The observer negative records the already committed physical prefix;
 it does not pretend a post-return observation failure rolled physics back.
-

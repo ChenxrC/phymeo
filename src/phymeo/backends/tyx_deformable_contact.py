@@ -243,6 +243,10 @@ class TyxDeformableContactBatch:
             raise ValueError("D3 requires exactly one ordinary free body in every world")
         if tuple(sorted(w.key for w in node_worlds)) != worlds:
             raise ValueError("D3 node and rigid worlds differ")
+        # Both owners use the same stable world order, independently of the
+        # caller's interleaving of node and rigid declarations.
+        node_worlds = tuple(sorted(node_worlds, key=lambda item: item.key))
+        participants = tuple(sorted(participants, key=lambda item: item.key.world))
         if any(len(p.compiled.topology) == 0 for p in participants):
             raise ValueError("D3 needs complete physical topology")
         preflight_counts = [len(w.initial_state.position) for w in node_worlds]

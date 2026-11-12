@@ -364,7 +364,7 @@ def test_unknown_release_retains_dependencies_and_never_retries(side_effect, tyx
         ledger.add_buffer(owner)
         for _ in range(2):
             with pytest.raises(
-                BaseExceptionGroup, match="UNKNOWN_RELEASE|cleanup|release"
+                BaseExceptionGroup, match="D3 close retains unresolved owners"
             ) as error:
                 batch.close()
             evidence.setdefault("close_failures", []).append(str(error.value))
@@ -406,7 +406,7 @@ def test_cuda_successful_free_then_throw_is_still_unknown(tyx_mode, tmp_path):
         ledger._buffers[-1] = replace(original, callback=actual_then_throw)
         for _ in range(2):
             with pytest.raises(
-                BaseExceptionGroup, match="UNKNOWN_RELEASE|cleanup|release"
+                BaseExceptionGroup, match="D3 close retains unresolved owners"
             ) as error:
                 batch.close()
             evidence.setdefault("close_failures", []).append(str(error.value))

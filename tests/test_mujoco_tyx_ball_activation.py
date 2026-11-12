@@ -74,15 +74,20 @@ def test_ball_activation_rejected_before_device(negative, monkeypatch, tmp_path)
 
 
 @pytest.mark.parametrize("mode", MODES)
-@pytest.mark.parametrize("old_negative", ("activation", "scalar-activation"))
+@pytest.mark.parametrize("old_negative", ("joint-motor", "activation", "scalar-activation"))
 def test_exact_previous_motor_contact_activation_rejection_now_supported(
     old_negative, mode, tmp_path
 ):
     # Exact previous MC XML and native default entry, not another changed fixture.
     pytest.importorskip("mujoco")
-    from test_mujoco_tyx_ball_motor_contacts import case as previous
+    if old_negative == "joint-motor":
+        from test_mujoco_tyx_ball_joint_motor import negative_source
 
-    xml = previous.negative_source(old_negative)
+        xml = negative_source("activation")
+    else:
+        from test_mujoco_tyx_ball_motor_contacts import case as previous
+
+        xml = previous.negative_source(old_negative)
     journal = case.Journal(tmp_path / "legacy-activation.jsonl.gz")
     try:
         case.legacy_default(xml, mode, journal)

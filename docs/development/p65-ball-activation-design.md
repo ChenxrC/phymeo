@@ -61,7 +61,8 @@ BALL gears with mixed NONE/FILTEREXACT; MC5 two moving BALL branches plus slides
 MC6 disabled BALL with positive force lower clamp. Original contact geometry,
 mass, damping, h and entry configurations remain. FILTEREXACT tau=.004 except
 shared zero actor tau=.007; early cases explicitly selected in source.
-Each filter has ctrlrange [-.45,.45], actrange [-.3,.3], initial act
+Each newly filtered actor has ctrlrange [-.45,.45] unless an original scalar
+ctrlrange [-.4,.4] already exists; all have actrange [-.3,.3] and initial act
 (-1)^address*(.34+.01*worldslot+.005*address). Native disabled integration
 still applies the original subsequent act clamp.
 
@@ -100,3 +101,8 @@ MuJoCo 3.3.7 Apache-2.0:
 [native JOINT transmission](https://github.com/google-deepmind/mujoco/blob/3.3.7/src/engine/engine_core_smooth.c).
 The existing accepted local _joint_transmission.py, scalar activation stage and
 BALL-MC native tests are implementation evidence, not the independent oracle.
+
+Exact legacy upgrades: BALL-M1 negative_source('activation') and BALL-MC
+negative_source('activation'/'scalar-activation') each retain the complete old
+XML/default entry for two actual steps. Old ROB2a feature=ball and BALL-A
+ball-target-filter retain AFFINE BALL bias and remain unsupported.

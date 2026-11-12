@@ -126,11 +126,11 @@ def prepare_deformable_scene(declaration, rigid_prepared):
         raise ValueError("D5-A site_capacity requires one integer in [0,128]")
     participants = rigid_prepared["participants"]
     worlds = tuple(w.key for w in spec.worlds)
-    if tuple(sorted(p.key.world for p in participants)) != worlds or any(
+    if tuple(sorted({p.key.world for p in participants})) != worlds or any(
         p.family != "floating" or p.body_count != 1 for p in participants
     ):
         raise ValueError(
-            "D5-A requires one ordinary single-body floating participant per node world"
+            "D5-A requires ordinary single-body floating participants in every node world"
         )
     if any(type(row.asset) is not FloatingRobotAsset for row in declaration.articulations):
         raise ValueError("D5-A requires ordinary non-folded FloatingRobotAsset sources")
@@ -175,8 +175,9 @@ def prepare_deformable_scene(declaration, rigid_prepared):
     response_bytes = (
         116 * max(1, declaration.site_capacity)
         + 12 * sum(w.model.particle_count for w in spec.worlds)
-        + 28 * len(worlds)
-        + 4 * (len(worlds) + 1)
+        + 24 * len(participants)
+        + 4 * len(worlds)
+        + (8 if len(participants) > len(worlds) else 4) * (len(worlds) + 1)
     )
     if response_bytes >= spec.memory_limit_bytes:
         raise MemoryError("response leaves no boundary query reservation")

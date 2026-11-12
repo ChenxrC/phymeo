@@ -1,7 +1,8 @@
 """Persistent, transactional FP32 node banks using the existing ordered TYX solver.
 
-D1 publishes real changing vertex states. It does not implement collision queries,
-self contact, contact response, cloth bending, or a general soft-body material.
+D1 publishes real changing vertex states; an opt-in adapter borrows them for
+finite boundary queries. No self contact, contact response, cloth bending, or
+general soft-body material is implied.
 """
 
 import json
@@ -20,6 +21,9 @@ from phymeo.core.scene import StepSettings
 from phymeo.core.state import ParticleState, StepInputs
 
 from ._tyx_deformable_buffers import DeformableBuffers
+
+_BOUNDARY_QUARANTINE = {}
+_BOUNDARY_QUARANTINE_LOCK = RLock()
 
 
 def _owned(value, dtype=None):
@@ -435,6 +439,10 @@ class _VertexLoan:
         self._check()
         return self._owner._buffers.worlds[world][f"v{self._bank}"]
 
+    def tick(self, world):
+        self._check()
+        return self._owner._buffers.worlds[world][f"tick{self._bank}"]
+
     def point_ids(self, world):
         self._check()
         return self._owner._models[world].point_ids
@@ -464,7 +472,14 @@ class TyxDeformableBatch:
         self._poisoned = False
         self._revision = 0
         self._owner_id = object()
+        self._collision_owner = self._owner_id
         self._active = 0
+        self._topology_generation = 0
+        self._boundary_plans = set()
+        self._boundary_runtime_leases = {}
+        self._boundary_unknown = {}
+        self._boundary_closing = False
+        self._boundary_close_pending = False
         if mode not in ("interpret", "cuda"):
             raise ValueError("D1 mode must be interpret or cuda")
         settings = StepSettings(substeps=1) if settings is None else settings
@@ -482,6 +497,9 @@ class TyxDeformableBatch:
         )
         self.last_step = None
         self._buffers = DeformableBuffers(self._models, mode, trace, cache_root)
+        self._mode = mode
+        self._tx = self._buffers.tx
+        self._runtime = self._buffers.runtime
         self._state_uploaded_bytes = sum(2 * (24 * model.n + 12) for model in self._models.values())
         self._force_uploaded_bytes = 0
         self._successful_steps = 0
@@ -509,9 +527,13 @@ class TyxDeformableBatch:
         return self._revision
 
     @property
+    def _state_epoch(self):
+        return self._revision
+
+    @property
     def resource_state(self):
         state = self._buffers.resources.state
-        if state == "OPEN" and self._close_pending:
+        if state == "OPEN" and (self._close_pending or self._boundary_close_pending):
             return "PENDING_CLOSE"
         return state
 
@@ -539,6 +561,88 @@ class TyxDeformableBatch:
             raise RuntimeError("deformable mutation cannot reenter a transaction or vertex loan")
         if _integer(expected_revision, "expected_revision") != self._revision:
             raise ValueError("stale deformable revision")
+
+    def _check_open(self):
+        self._require_open()
+        if self._busy or self._loan is not None:
+            raise RuntimeError("boundary query cannot reenter an operation or vertex loan")
+
+    def _device(self):
+        return self._buffers.context()
+
+    def _register_boundary_runtime_lease(self, lease):
+        with self._lock:
+            self._require_open()
+            if self._busy or getattr(lease, "runtime", None) is not self._runtime:
+                raise ValueError("boundary lease must borrow this idle node runtime")
+            if any(value is lease for value in self._boundary_runtime_leases.values()):
+                raise ValueError("boundary runtime lease is already registered")
+            token = object()
+            self._boundary_runtime_leases[token] = lease
+            return token
+
+    def _release_boundary_runtime_lease(self, token):
+        with self._lock:
+            if token in self._boundary_unknown:
+                raise RuntimeError("boundary UNKNOWN_RELEASE token cannot be unregistered")
+            if token not in self._boundary_runtime_leases:
+                raise ValueError("unknown boundary runtime lease token")
+            del self._boundary_runtime_leases[token]
+
+    def _quarantine_boundary_runtime_lease(self, token, ledger):
+        with self._lock:
+            if token not in self._boundary_runtime_leases:
+                raise ValueError("unknown boundary runtime lease token")
+            if ledger.state != "UNKNOWN_RELEASE":
+                raise ValueError("only UNKNOWN_RELEASE may quarantine the node runtime")
+            previous = self._boundary_unknown.get(token)
+            if previous is not None and previous is not ledger:
+                raise ValueError("boundary token already belongs to another unknown ledger")
+            self._boundary_unknown[token] = ledger
+            self._poisoned = True
+            with _BOUNDARY_QUARANTINE_LOCK:
+                _BOUNDARY_QUARANTINE[id(self)] = self
+
+    def _close_boundary_resources(self):
+        if self._boundary_closing:
+            raise RuntimeError("recursive boundary cleanup")
+        self._boundary_closing = True
+        self._boundary_close_pending = True
+        try:
+            errors = []
+            for plan in tuple(self._boundary_plans):
+                try:
+                    plan.close()
+                except BaseException as error:
+                    errors.append(error)
+            if errors:
+                raise BaseExceptionGroup(
+                    "boundary cleanup incomplete; node runtime retained", errors
+                )
+            if self._boundary_unknown or self._boundary_runtime_leases:
+                raise RuntimeError("boundary runtime dependencies retained; owner cannot close")
+            self._boundary_plans.clear()
+        finally:
+            self._boundary_closing = False
+
+    def prepare_boundary_query(
+        self, model, bindings=(), *, limits=None, memory_limit_bytes=64 * 1024 * 1024
+    ):
+        """Prepare finite static round-shape queries over real accepted node surfaces."""
+        from ..geometry._triangle_distance_dispatch import BoundaryDistanceLimits
+        from ._deformable_boundary_source import DeformableBoundaryAdapter
+        from ._resident_boundary_query import ResidentBoundaryQueryPlan
+
+        with self._lock:
+            self._check_open()
+            return ResidentBoundaryQueryPlan(
+                self,
+                model,
+                bindings,
+                limits=BoundaryDistanceLimits() if limits is None else limits,
+                memory_limit_bytes=memory_limit_bytes,
+                source_adapter=DeformableBoundaryAdapter(self),
+            )
 
     @contextmanager
     def _transaction(self, expected_revision):
@@ -583,6 +687,9 @@ class TyxDeformableBatch:
                     "synchronizations": self._buffers.syncs,
                     "successful_steps": self._successful_steps,
                     "replacements": self._replacements,
+                    "boundary_plans": len(self._boundary_plans),
+                    "boundary_runtime_leases": len(self._boundary_runtime_leases),
+                    "boundary_unknown_releases": len(self._boundary_unknown),
                 }
             )
 
@@ -1050,6 +1157,7 @@ class TyxDeformableBatch:
             if self.resource_state == "CLOSED":
                 return
             self._close_pending = True
+            self._close_boundary_resources()
             self._buffers.close()
 
     def __enter__(self):

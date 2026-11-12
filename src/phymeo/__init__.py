@@ -1,5 +1,9 @@
 """Explicit physical models and independently implemented simulation solvers."""
 
+from .backends._deformable_boundary_source import (
+    DeformableBoundaryModel,
+    DeformableBoundarySurface,
+)
 from .backends._device_convex_query import ConvexQueryCapacityExceeded
 from .backends._resident_affine_binding import ResidentAffineTreeBinding
 from .backends._resident_affine_tree import AffineRobotTree
@@ -420,6 +424,8 @@ from .validation.terminal_impulse import TerminalImpulseLedger
 from .validation.thick_contact_mapping import ThickContactMappingLedger
 
 __all__ = [
+    "DeformableBoundaryModel",
+    "DeformableBoundarySurface",
     "DeformableAcceptedState",
     "DeformableCheckpoint",
     "DeformableMemoryRequirements",

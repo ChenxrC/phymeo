@@ -477,15 +477,25 @@ class ResidentBoundaryQueryPlan:
 
     def _prepass_bytes(self):
         s, n = len(self._shape_keys), int(self._offsets[-1])
-        result = self._counts["persistent_bytes"] + 64 * s + 36 * n
-        if self._source_adapter is not None:
-            result += 48 * s  # retain actual native poses before common-frame translation
+        source_budget = getattr(self._source_adapter, "source_prepass_bytes", None)
+        if source_budget is None:
+            source_bytes = 64 * s + 36 * n
+            if self._source_adapter is not None:
+                source_bytes += 48 * s  # native poses before common-frame translation
+        else:
+            source_bytes = source_budget(self)
+            if type(source_bytes) is not int or source_bytes < 0:
+                raise ValueError("boundary source scratch budget must be a nonnegative int")
+        result = self._counts["persistent_bytes"] + source_bytes
         for group in self._templates:
             f, r = len(group["facets"]), len(group["items"])
             result += 40 * f + 48 * (2 * f - 1) + (52 + 4 * ((f + 29) // 30)) * r
         return result
 
     def _gather(self, view, ledger):
+        gather = getattr(self._source_adapter, "gather", None)
+        if gather is not None:
+            return gather(self, view, ledger)
         from ._tyx_boundary_source import gather_boundary_points
 
         s, n = len(self._shape_keys), int(self._offsets[-1])
@@ -676,6 +686,9 @@ class ResidentBoundaryQueryPlan:
         )
 
     def _source_record(self, raw, ticks, view):
+        record = getattr(self._source_adapter, "source_record", None)
+        if record is not None:
+            return record(self, raw, ticks, view)
         points, axes = {}, {}
         for index, shape in enumerate(self._model.shapes):
             begin, end = map(int, self._offsets[index : index + 2])
@@ -958,6 +971,11 @@ class ResidentBoundaryQueryPlan:
                                 global_buffers, source_raw, accepted_ticks = self._gather(
                                     view, ledger
                                 )
+                            elif getattr(self._source_adapter, "empty_source", None) is not None:
+                                ledger = None
+                                global_buffers, source_raw, accepted_ticks = (
+                                    self._source_adapter.empty_source(self, view)
+                                )
                             else:
                                 ledger = None
                                 global_buffers = {}
@@ -1087,12 +1105,15 @@ class ResidentBoundaryQueryPlan:
                     attempt = replace(
                         self._attempt("COMPLETED", source_stamp), counters=final_evidence
                     )
-                    self._layouts = pending
-                    self._last_result = packet
-                    self._sequence = packet.sequence
-                    self._counts.update(final_counts)
-                    self._last_attempt = attempt
-                    return packet
+                # A source owner may synchronize when its loan exits. Publish
+                # only after that final dependency succeeds, with the batch
+                # lock still held. Failed exit must retain the previous query.
+                self._layouts = pending
+                self._last_result = packet
+                self._sequence = packet.sequence
+                self._counts.update(final_counts)
+                self._last_attempt = attempt
+                return packet
             except BaseException as error:
                 self._counts["failed_queries"] += 1
                 if self._query_resources is not None and self._query_resources.state != "CLOSED":

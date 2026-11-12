@@ -40,7 +40,11 @@ def gather_deformable_points(
                             value = position[index, a]
                             lower = value
                             upper = value
-                        if not tx.isfinite(value) or not tx.isfinite(lower) or not tx.isfinite(upper):
+                        if (
+                            not tx.isfinite(value)
+                            or not tx.isfinite(lower)
+                            or not tx.isfinite(upper)
+                        ):
                             valid = 0
                         points[point, a] = value
                         point_bounds[point, a] = lower

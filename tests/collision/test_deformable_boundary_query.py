@@ -36,8 +36,12 @@ MARGIN = 1 / 4
 
 def world(key=7, square=False, fixed=False, reverse=False):
     # Exact D1 declarations; changing device state is produced by original kernels.
-    x = np.array(((0, 0, 0), (1, 0, 0), (1, 1, 0), (0, 1, 0))
-                 if square else ((0, 0, 0), (1, 0, 0), (0, 1, 0)), np.float32)
+    x = np.array(
+        ((0, 0, 0), (1, 0, 0), (1, 1, 0), (0, 1, 0))
+        if square
+        else ((0, 0, 0), (1, 0, 0), (0, 1, 0)),
+        np.float32,
+    )
     v = np.zeros_like(x)
     if square:
         v[2:, 0] = 1 / 16
@@ -61,8 +65,11 @@ def world(key=7, square=False, fixed=False, reverse=False):
         x, v, weights, ids, edges = x[order], v[order], weights[order], ids[order], inverse[edges]
         faces, facets = faces[::-1], facets[::-1]
     return DeformableNodeWorld(
-        key, ParticleModel(weights, np.zeros(3, np.float32)), ParticleState(x, v),
-        DistanceConstraints(edges, rest, np.full(len(edges), H * H)), ids,
+        key,
+        ParticleModel(weights, np.zeros(3, np.float32)),
+        ParticleState(x, v),
+        DistanceConstraints(edges, rest, np.full(len(edges), H * H)),
+        ids,
         (DeformableSurface(23, facets, faces),),
     )
 
@@ -83,13 +90,17 @@ def scene(specs, *, reverse=False, masked=False, excluded=False):
     for spec in specs:
         surface = ph.CollisionKey(spec.key, 101, 0)
         shapes.append(DeformableBoundarySurface(surface, 23, mask=0 if masked else 2**31 - 1))
-        for ordinal, (kind, points) in enumerate((
-            ("sphere", ((.25, .25, .125),)),
-            ("capsule", ((.375, .375, .25), (.625, .625, .25))),
-            ("sphere", ((8., 8., 8.),)),
-        )):
+        for ordinal, (kind, points) in enumerate(
+            (
+                ("sphere", ((0.25, 0.25, 0.125),)),
+                ("capsule", ((0.375, 0.375, 0.25), (0.625, 0.625, 0.25))),
+                ("sphere", ((8.0, 8.0, 8.0),)),
+            )
+        ):
             key = ph.CollisionKey(spec.key, 202, ordinal)
-            shapes.append(ph.CollisionShape(key, kind, tuple(range(11, 11 + len(points))), radius=.125))
+            shapes.append(
+                ph.CollisionShape(key, kind, tuple(range(11, 11 + len(points))), radius=0.125)
+            )
             bindings.append(ph.ResidentStaticBinding(key, ph.CollisionMotion(np.asarray(points))))
             rounds[key] = np.asarray(points, np.float64)
             if excluded and ordinal == 1:
@@ -102,12 +113,18 @@ def scene(specs, *, reverse=False, masked=False, excluded=False):
 
 def encode(value):
     if isinstance(value, np.ndarray):
-        return dict(dtype=value.dtype.str, shape=value.shape,
-                    bytes_b64=base64.b64encode(value.tobytes()).decode())
+        return dict(
+            dtype=value.dtype.str,
+            shape=value.shape,
+            bytes_b64=base64.b64encode(value.tobytes()).decode(),
+        )
     if isinstance(value, np.generic):
         return value.item()
     if is_dataclass(value):
-        return dict(type=type(value).__name__, fields={f.name: encode(getattr(value, f.name)) for f in fields(value)})
+        return dict(
+            type=type(value).__name__,
+            fields={f.name: encode(getattr(value, f.name)) for f in fields(value)},
+        )
     if isinstance(value, Mapping):
         return dict(mapping_entries=[[encode(k), encode(v)] for k, v in value.items()])
     if isinstance(value, (tuple, list)):
@@ -119,8 +136,14 @@ def encode(value):
 
 @contextmanager
 def saved(path, specs, model, bindings):
-    payload = dict(schema="D2-complete-query-evidence-v1", declarations=specs,
-                   model=model, bindings=bindings, events=[], complete=False)
+    payload = dict(
+        schema="D2-complete-query-evidence-v1",
+        declarations=specs,
+        model=model,
+        bindings=bindings,
+        events=[],
+        complete=False,
+    )
     try:
         yield payload["events"]
         payload["complete"] = True
@@ -160,22 +183,32 @@ def check(batch, plan, specs, model, rounds, events):
             surface = spec.surfaces[0]
             ids = tuple(map(int, spec.point_ids))
             current = before[spec.key].position.astype(np.float64)
-            faces = tuple(tuple(ids.index(int(v)) for v in face) for face in surface.oriented_point_ids)
+            faces = tuple(
+                tuple(ids.index(int(v)) for v in face) for face in surface.oriented_point_ids
+            )
             axes = [reference().axis(rounds[key]) for key in group.round_keys]
             radii = [shape_map[key].radius for key in group.round_keys]
             wanted = reference().aabb_candidates(current, faces, axes, radii, MARGIN)
             assert tuple(map(tuple, group.candidates.tolist())) == wanted
             declaration = result.source["surfaces"][group.surface]
             np.testing.assert_array_equal(declaration["facet_ids"], surface.facet_ids)
-            np.testing.assert_array_equal(declaration["oriented_point_ids"], surface.oriented_point_ids)
-            assert tuple(map(tuple, group.facet_vertices)) == tuple(map(tuple, surface.oriented_point_ids))
-            for i, (row, (segment, facet)) in enumerate(zip(group.packet.rows, wanted, strict=True)):
+            np.testing.assert_array_equal(
+                declaration["oriented_point_ids"], surface.oriented_point_ids
+            )
+            assert tuple(map(tuple, group.facet_vertices)) == tuple(
+                map(tuple, surface.oriented_point_ids)
+            )
+            for i, (row, (segment, facet)) in enumerate(
+                zip(group.packet.rows, wanted, strict=True)
+            ):
                 assert (row.segment_id, row.facet_id) == (segment, facet)
                 assert tuple(row.vertex_ids) == tuple(surface.oriented_point_ids[facet])
                 # Packet facet IDs are local ordinals; the source maps them to actual IDs.
                 assert int(declaration["facet_ids"][row.facet_id]) == int(surface.facet_ids[facet])
                 origin = group.packet.origin_m
-                reference().assert_row(row, current[list(faces[facet])], axes[segment], radii[segment], origin)
+                reference().assert_row(
+                    row, current[list(faces[facet])], axes[segment], radii[segment], origin
+                )
                 assert group.packet.raw["candidates"].shape[1:] == (18, 11)
                 assert group.packet.packed["owners"][i].tolist() == [segment, facet]
             total += len(wanted)
@@ -183,7 +216,9 @@ def check(batch, plan, specs, model, rounds, events):
         plan.require_current(result)
         assert plan.stats()["live_bytes"] == plan.stats()["persistent_bytes"]
         assert plan.stats()["native_owned_limit"] == plan.stats()["memory_limit_bytes"]
-        assert result.source["material_delta_host_bytes"] == 24 * len(result.source["stamps"]["material_reconstruction_delta"])
+        assert result.source["material_delta_host_bytes"] == 24 * len(
+            result.source["stamps"]["material_reconstruction_delta"]
+        )
         return result
     finally:
         event.update(after=batch.snapshot(), attempt=plan.last_attempt, stats=plan.stats())
@@ -211,8 +246,15 @@ def test_twelve_real_deformations(square, fixed, tyx_mode, tmp_path):
                     result = check(batch, plan, specs, model, rounds, events)
                     current = batch.snapshot()[7].position
                     edge = specs[0].constraints.indices[0]
-                    deformation.append(abs(np.linalg.norm(current[edge[1]] - current[edge[0]]) - np.linalg.norm(initial[edge[1]] - initial[edge[0]])))
-                    bounds_change.append(float(np.max(np.abs(result.groups[0].leaf_bounds - initial_bounds))))
+                    deformation.append(
+                        abs(
+                            np.linalg.norm(current[edge[1]] - current[edge[0]])
+                            - np.linalg.norm(initial[edge[1]] - initial[edge[0]])
+                        )
+                    )
+                    bounds_change.append(
+                        float(np.max(np.abs(result.groups[0].leaf_bounds - initial_bounds)))
+                    )
                     if fixed:
                         np.testing.assert_array_equal(current[0], initial[0])
                 assert max(deformation) > 1e-6
@@ -239,7 +281,9 @@ def test_two_worlds_identity_restore_and_successor(reverse, tyx_mode, tmp_path):
                 batch.restore(capsule, expected_revision=batch.revision)
                 restored = check(batch, plan, specs, model, rounds, events)
                 for old, new in zip(first.groups, restored.groups, strict=True):
-                    np.testing.assert_array_equal(old.packet.raw["summary"], new.packet.raw["summary"])
+                    np.testing.assert_array_equal(
+                        old.packet.raw["summary"], new.packet.raw["summary"]
+                    )
                 receipt = batch.step(forces(specs), H, expected_revision=batch.revision)
                 events.append(dict(receipt=receipt))
                 check(batch, plan, specs, model, rounds, events)

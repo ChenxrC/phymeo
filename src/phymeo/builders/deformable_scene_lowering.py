@@ -4,12 +4,16 @@ This optional compiler creates no independent rigid runtime, integrator, contact
 law or collision kernel. Default participant and original scene routes are
 unchanged. Array declarations are owned; checkpoint capsules remain owner-bound.
 """
+
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from threading import RLock
 from types import MappingProxyType
 
-from ..backends._deformable_boundary_source import DeformableBoundaryModel, DeformableBoundarySurface
+from ..backends._deformable_boundary_source import (
+    DeformableBoundaryModel,
+    DeformableBoundarySurface,
+)
 from ..backends._resident_floating_binding import compile_floating_tree_binding
 from ..backends.tyx_deformable_batch import DeformableNodeWorld, TyxDeformableBatch
 from ..backends.tyx_deformable_contact import TyxDeformableContactBatch
@@ -25,8 +29,12 @@ _SCHEMA = "phymeo-deformable-participant-v1"
 
 def _source(deformable):
     return (
-        deformable.worlds, deformable.surfaces, deformable.settings, deformable.limits,
-        deformable.memory_limit_bytes, deformable.node_memory_limit_bytes,
+        deformable.worlds,
+        deformable.surfaces,
+        deformable.settings,
+        deformable.limits,
+        deformable.memory_limit_bytes,
+        deformable.node_memory_limit_bytes,
     )
 
 
@@ -38,6 +46,7 @@ class ParticipantDeformable:
     node_memory_limit_bytes retains D1's separate device plus HOST array budget.
     Neither number is a process-RSS or caller-held historical evidence bound.
     """
+
     worlds: tuple[DeformableNodeWorld, ...]
     surfaces: tuple[DeformableBoundarySurface, ...]
     settings: StepSettings | None = field(default=None, kw_only=True)
@@ -78,8 +87,10 @@ class ParticipantDeformable:
         if len(installed) != len(surfaces) or installed != set(declared):
             raise ValueError("installed surfaces must cover each original D1 surface exactly once")
         for name, value in (
-            ("worlds", worlds), ("surfaces", tuple(sorted(surfaces, key=lambda s: s.key))),
-            ("settings", settings), ("limits", limits),
+            ("worlds", worlds),
+            ("surfaces", tuple(sorted(surfaces, key=lambda s: s.key))),
+            ("settings", settings),
+            ("limits", limits),
         ):
             object.__setattr__(self, name, _asset_snapshot(value))
         object.__setattr__(self, "_identity", _digest(_source(self)))
@@ -99,10 +110,17 @@ def prepare_deformable_scene(declaration, rigid_prepared):
         raise TypeError("deformable lowering requires ParticipantSceneDeclaration")
     declaration.assert_unchanged()
     spec = declaration.deformable
-    if declaration.contact_response != "deformable_normal" or type(spec) is not ParticipantDeformable:
+    if (
+        declaration.contact_response != "deformable_normal"
+        or type(spec) is not ParticipantDeformable
+    ):
         raise ValueError("deformable_normal requires ParticipantDeformable")
     spec.assert_unchanged()
-    if declaration.static_shapes or declaration.static_body_ids or declaration.intra_participant_pairs:
+    if (
+        declaration.static_shapes
+        or declaration.static_body_ids
+        or declaration.intra_participant_pairs
+    ):
         raise ValueError("D5-A supports no static installation or intra-participant response")
     if type(declaration.site_capacity) is not int or not 0 <= declaration.site_capacity <= 128:
         raise ValueError("D5-A site_capacity requires one integer in [0,128]")
@@ -111,7 +129,9 @@ def prepare_deformable_scene(declaration, rigid_prepared):
     if tuple(sorted(p.key.world for p in participants)) != worlds or any(
         p.family != "floating" or p.body_count != 1 for p in participants
     ):
-        raise ValueError("D5-A requires one ordinary single-body floating participant per node world")
+        raise ValueError(
+            "D5-A requires one ordinary single-body floating participant per node world"
+        )
     if any(type(row.asset) is not FloatingRobotAsset for row in declaration.articulations):
         raise ValueError("D5-A requires ordinary non-folded FloatingRobotAsset sources")
     rigid_model = rigid_prepared["model"]
@@ -132,28 +152,31 @@ def prepare_deformable_scene(declaration, rigid_prepared):
         compile_floating_tree_binding(
             shapes[wrapper.binding.key], wrapper.binding, participant.compiled
         )
-    model = DeformableBoundaryModel(
-        (*spec.surfaces, *rigid_model.shapes), rigid_model.excluded
-    )
+    model = DeformableBoundaryModel((*spec.surfaces, *rigid_model.shapes), rigid_model.excluded)
     expected = {
         tuple(sorted((surface.key, shape.key)))
-        for surface in spec.surfaces for shape in rigid_model.shapes
+        for surface in spec.surfaces
+        for shape in rigid_model.shapes
         if surface.key.world == shape.key.world
         and surface.key.body != shape.key.body
-        and surface.group & shape.mask and shape.group & surface.mask
+        and surface.group & shape.mask
+        and shape.group & surface.mask
         and tuple(sorted((surface.key, shape.key))) not in model.excluded
     }
     if len(expected) > declaration.candidate_capacity:
         raise ValueError("complete deformable candidate domain exceeds candidate_capacity")
     if set(declaration.materials_by_pair) != expected:
         raise ValueError("deformable materials must completely cover eligible original pairs")
-    if any(law is not None and (type(law) is not NormalLayer or law.friction != 0)
-           for law in declaration.materials_by_pair.values()):
+    if any(
+        law is not None and (type(law) is not NormalLayer or law.friction != 0)
+        for law in declaration.materials_by_pair.values()
+    ):
         raise ValueError("D5-A requires NormalLayer with zero friction or explicit None")
     response_bytes = (
         116 * max(1, declaration.site_capacity)
         + 12 * sum(w.model.particle_count for w in spec.worlds)
-        + 28 * len(worlds) + 4 * (len(worlds) + 1)
+        + 28 * len(worlds)
+        + 4 * (len(worlds) + 1)
     )
     if response_bytes >= spec.memory_limit_bytes:
         raise MemoryError("response leaves no boundary query reservation")
@@ -162,18 +185,27 @@ def prepare_deformable_scene(declaration, rigid_prepared):
         world = next(w for w in spec.worlds if w.key == surface.key.world)
         native = next(s for s in world.surfaces if s.key == surface.surface_key)
         source_surfaces[surface.key] = dict(
-            world=world.key, surface_key=surface.surface_key, point_ids=world.point_ids,
-            facet_ids=native.facet_ids, oriented_point_ids=native.oriented_point_ids,
+            world=world.key,
+            surface_key=surface.surface_key,
+            point_ids=world.point_ids,
+            facet_ids=native.facet_ids,
+            oriented_point_ids=native.oriented_point_ids,
         )
     result = dict(rigid_prepared)
     result.update(
-        node_worlds=spec.worlds, deformable_model=model, laws=declaration.materials_by_pair,
-        settings=spec.settings, limits=spec.limits,
+        node_worlds=spec.worlds,
+        deformable_model=model,
+        laws=declaration.materials_by_pair,
+        settings=spec.settings,
+        limits=spec.limits,
         memory_limit_bytes=spec.memory_limit_bytes,
         node_memory_limit_bytes=spec.node_memory_limit_bytes,
-        source_map=_asset_snapshot(dict(
-            participants=rigid_prepared["source_map"], surfaces=source_surfaces,
-        )),
+        source_map=_asset_snapshot(
+            dict(
+                participants=rigid_prepared["source_map"],
+                surfaces=source_surfaces,
+            )
+        ),
     )
     return result
 
@@ -185,6 +217,7 @@ class CompiledDeformableParticipantScene:
     instead describes that response's input. Checkpoints are owner-bound, and
     reset restores declared initial controls as well as both physical states.
     """
+
     def __init__(self, declaration, *, mode="cuda", cache_root=None):
         from .participant_scene_compiler import ParticipantSceneDeclaration, _input, _prepare
 
@@ -202,15 +235,23 @@ class CompiledDeformableParticipantScene:
         self._specs = prepared["specs"]
         self._source_map = prepared["source_map"]
         self._world_keys = tuple(w.key for w in prepared["node_worlds"])
-        initial = {key: _input(row, self._specs[key], row.initial_control)
-                   for key, row in self._rows.items()}
+        initial = {
+            key: _input(row, self._specs[key], row.initial_control)
+            for key, row in self._rows.items()
+        }
         self._response = TyxDeformableContactBatch(
-            prepared["node_worlds"], prepared["participants"], prepared["deformable_model"],
-            prepared["bindings"], prepared["laws"], mode=mode,
-            settings=prepared["settings"], limits=prepared["limits"],
+            prepared["node_worlds"],
+            prepared["participants"],
+            prepared["deformable_model"],
+            prepared["bindings"],
+            prepared["laws"],
+            mode=mode,
+            settings=prepared["settings"],
+            limits=prepared["limits"],
             contact_capacity=declaration.site_capacity,
             memory_limit_bytes=prepared["memory_limit_bytes"],
-            node_memory_limit_bytes=prepared["node_memory_limit_bytes"], cache_root=cache_root,
+            node_memory_limit_bytes=prepared["node_memory_limit_bytes"],
+            cache_root=cache_root,
         )
         try:
             self._response.set_controls(initial)
@@ -287,10 +328,14 @@ class CompiledDeformableParticipantScene:
             self._check(expected_revision)
             if not isinstance(controls, Mapping) or any(key not in self._rows for key in controls):
                 raise ValueError("controls must map registered participant identities")
-            owned = {key: _validated_control(self._rows[key]._world, value)
-                     for key, value in controls.items()}
-            native = {key: _input(self._rows[key], self._specs[key], value)
-                      for key, value in owned.items()}
+            owned = {
+                key: _validated_control(self._rows[key]._world, value)
+                for key, value in controls.items()
+            }
+            native = {
+                key: _input(self._rows[key], self._specs[key], value)
+                for key, value in owned.items()
+            }
             return self._response.set_controls(native)
 
     def step(self, inputs, h, *, expected_revision):
@@ -321,20 +366,28 @@ class CompiledDeformableParticipantScene:
     def restore(self, checkpoint, *, expected_revision, worlds=None):
         with self._lock:
             self._check(expected_revision)
-            return self._response.restore(checkpoint, expected_revision=expected_revision, worlds=worlds)
+            return self._response.restore(
+                checkpoint, expected_revision=expected_revision, worlds=worlds
+            )
 
     def reset(self, worlds=None, *, expected_revision):
         with self._lock:
             self._check(expected_revision)
-            return self._response.restore(self._initial, expected_revision=expected_revision, worlds=worlds)
+            return self._response.restore(
+                self._initial, expected_revision=expected_revision, worlds=worlds
+            )
 
     def stats(self):
         with self._lock:
             self._check()
-            return MappingProxyType(dict(
-                self._response.stats(), assembly_schema=_SCHEMA,
-                assembly_identity=self.identity, contact_response="deformable_normal",
-            ))
+            return MappingProxyType(
+                dict(
+                    self._response.stats(),
+                    assembly_schema=_SCHEMA,
+                    assembly_identity=self.identity,
+                    contact_response="deformable_normal",
+                )
+            )
 
     def close(self):
         with self._lock:

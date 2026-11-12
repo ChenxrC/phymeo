@@ -23,7 +23,10 @@ from ._resident_boundary_source import (
     stored_interval,
 )
 from ._resident_collision_plan import ResidentStaticBinding
-from ._resident_floating_binding import ResidentFloatingTreeBinding
+from ._resident_floating_binding import (
+    ResidentFloatingTreeBinding,
+    compile_floating_tree_binding,
+)
 from ._resident_participant_layout import ResidentParticipantBinding
 
 
@@ -94,16 +97,16 @@ class DeformableResponseBoundaryAdapter(DeformableBoundaryAdapter):
                 if entry is None or entry.family != "floating" or entry.body_count != 1:
                     raise ValueError("D3 supports one ordinary floating body per world")
                 if type(binding) is not ResidentFloatingTreeBinding or binding.group_index != 0:
-                    raise TypeError("D3 requires a direct root-body floating binding")
-                if getattr(binding, "_source_shape", None) is not None:
-                    raise ValueError("D3 asset lowering is a later composition")
+                    raise TypeError("D3 requires a root-body floating binding")
                 if self.scene.layout.body_owners.get((key.world, key.body)) != (participant, 0):
                     raise ValueError("D3 rigid material body ownership differs")
                 native = mechanical[participant]
                 source = sources[2]
                 spec = source.specs[native]
-                if binding.topology != spec.topology:
-                    raise ValueError("D3 direct binding topology differs")
+                # Asset bindings carry original shape and model provenance;
+                # direct bindings carry topology. Keep the established full
+                # validator for both paths before registering device sources.
+                compile_floating_tree_binding(rounds[key], binding, spec)
                 points = np.asarray(binding.local_points_m, np.float64)
                 if points.shape != (len(rounds[key].vertex_ids), 3):
                     raise ValueError("D3 round material point arity differs")

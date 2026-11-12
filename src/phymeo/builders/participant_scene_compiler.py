@@ -186,7 +186,7 @@ class ParticipantArticulation:
 
 
 def _scene_source(scene):
-    return (
+    source = (
         scene.schema,
         tuple(_row_source(row) for row in scene.articulations),
         scene.static_shapes,
@@ -197,6 +197,8 @@ def _scene_source(scene):
         scene.intra_participant_pairs,
         scene.contact_response,
     )
+    # Keep the established identity unchanged for the two existing modes.
+    return source + (scene.deformable,) if scene.deformable is not None else source
 
 
 @dataclass(frozen=True, eq=False)
@@ -206,6 +208,8 @@ class ParticipantSceneDeclaration:
     Default host_patch retains the complete material table and None exclusions.
     none requires an empty material table, keeps original geometry filters, and
     creates no contact forces. Boundary queries never imply a response law.
+    deformable_normal routes the declared node model and original asset to one
+    joint response owner; its material table contains explicit NormalLayer laws.
     """
 
     articulations: tuple[ParticipantArticulation, ...]
@@ -216,6 +220,7 @@ class ParticipantSceneDeclaration:
     site_capacity: object = field(default=128, kw_only=True)
     intra_participant_pairs: bool = field(default=False, kw_only=True)
     contact_response: str = field(default="host_patch", kw_only=True)
+    deformable: object = field(default=None, kw_only=True)
     schema: str = field(default=_SCHEMA, kw_only=True)
     identity: str = field(init=False)
 
@@ -225,8 +230,17 @@ class ParticipantSceneDeclaration:
         if type(self.contact_response) is not str or self.contact_response not in (
             "host_patch",
             "none",
+            "deformable_normal",
         ):
-            raise ValueError("contact_response must be host_patch or none")
+            raise ValueError("contact_response must be host_patch, none or deformable_normal")
+        if self.contact_response == "deformable_normal":
+            from .deformable_scene_lowering import ParticipantDeformable
+
+            if type(self.deformable) is not ParticipantDeformable:
+                raise TypeError("deformable_normal requires ParticipantDeformable")
+            self.deformable.assert_unchanged()
+        elif self.deformable is not None:
+            raise ValueError("deformable requires explicit deformable_normal response")
         rows = tuple(self.articulations)
         if not rows or any(type(row) is not ParticipantArticulation for row in rows):
             raise TypeError("scene requires nonempty ParticipantArticulation declarations")
@@ -269,7 +283,12 @@ class ParticipantSceneDeclaration:
                 or not pair[0] < pair[1]
             ):
                 raise ValueError("materials require canonical ordered collision pairs")
-            if law is not None and not isinstance(law, RobotContactMaterial):
+            if self.contact_response == "deformable_normal":
+                from ..solvers.collision_loads import NormalLayer
+
+                if law is not None and (type(law) is not NormalLayer or law.friction != 0):
+                    raise TypeError("deformable pair material must be NormalLayer(mu=0) or None")
+            elif law is not None and not isinstance(law, RobotContactMaterial):
                 raise TypeError("pair material must be RobotContactMaterial or explicit None")
             owned_laws[pair] = _asset_snapshot(law)
         capacity = _integer(self.candidate_capacity, "candidate capacity")
@@ -290,6 +309,10 @@ class ParticipantSceneDeclaration:
             caps = (site_capacity,)
         if any(cap > 4096 for cap in caps):
             raise ValueError("site capacity exceeds the original resident bound")
+        if self.contact_response == "deformable_normal" and (
+            type(site_capacity) is not int or site_capacity > 128
+        ):
+            raise ValueError("deformable_normal requires one integer site_capacity in [0,128]")
         for name, value in (
             ("articulations", rows),
             ("static_shapes", static),
@@ -304,6 +327,8 @@ class ParticipantSceneDeclaration:
     def assert_unchanged(self):
         for row in self.articulations:
             row.assert_unchanged()
+        if self.deformable is not None:
+            self.deformable.assert_unchanged()
         if _digest(_scene_source(self)) != self.identity:
             raise ValueError("participant scene declaration changed")
 
@@ -320,6 +345,11 @@ def _fixed_group(asset, collider):
 def _prepare(declaration):
     """Complete source/geometry/pair preflight before any resident allocation."""
     declaration.assert_unchanged()
+    if declaration.contact_response == "deformable_normal":
+        from .deformable_scene_lowering import prepare_deformable_scene
+
+        rigid = replace(declaration, contact_response="none", materials_by_pair={}, deformable=None)
+        return prepare_deformable_scene(declaration, _prepare(rigid))
     specs, participants, source_map = {}, [], {}
     for row in declaration.articulations:
         system = _world_spec(row._world)
@@ -483,6 +513,8 @@ class CompiledParticipantScene:
     def __init__(self, declaration, *, mode="cuda", cache_root=None):
         if type(declaration) is not ParticipantSceneDeclaration:
             raise TypeError("compile requires ParticipantSceneDeclaration")
+        if declaration.contact_response == "deformable_normal":
+            raise ValueError("use compile_participant_scene for the joint deformable owner")
         if mode not in ("interpret", "cuda"):
             raise ValueError("participant scene mode must be interpret or cuda")
         prepared = _prepare(declaration)
@@ -695,6 +727,13 @@ class CompiledParticipantScene:
 
 def compile_participant_scene(declaration, *, mode="cuda", cache_root=None):
     """Compile the explicit versioned asset assembly; no default-route override."""
+    if (
+        type(declaration) is ParticipantSceneDeclaration
+        and declaration.contact_response == "deformable_normal"
+    ):
+        from .deformable_scene_lowering import CompiledDeformableParticipantScene
+
+        return CompiledDeformableParticipantScene(declaration, mode=mode, cache_root=cache_root)
     return CompiledParticipantScene(declaration, mode=mode, cache_root=cache_root)
 
 

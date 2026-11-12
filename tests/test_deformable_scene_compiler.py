@@ -3,6 +3,7 @@
 New assembly qualification only; original D3 independent mechanics are reused
 as a test oracle, not as an implementation or a second product owner.
 """
+
 import importlib.util
 from contextlib import ExitStack
 from dataclasses import replace
@@ -24,6 +25,7 @@ from phymeo.builders.participant_scene_compiler import (
     ParticipantSceneDeclaration,
     compile_participant_scene,
 )
+from phymeo.builders.scene_compiler import FiniteStaticShape
 
 
 @lru_cache(maxsize=1)
@@ -41,24 +43,46 @@ def fixture(case="E", world=7):
     item["external"] = np.array((0, 1 / 32, 0, 0, 0, 1 / 64), float)
     tree = item["participant"].system
     source = ph.CollisionKey(0, 42, 71)
-    shape = replace(next(s for s in item["model"].shapes if type(s) is ph.CollisionShape),
-                    key=source)
+    shape = replace(
+        next(s for s in item["model"].shapes if type(s) is ph.CollisionShape), key=source
+    )
     collider = LinkCollision(
-        "original-" + case, "root", -1, (0., 0., 0.), (0., 0., 0., 1.),
-        shape, tuple(tuple(float(v) for v in row) for row in item["local"]), True,
+        "original-" + case,
+        "root",
+        -1,
+        (0.0, 0.0, 0.0),
+        (0.0, 0.0, 0.0, 1.0),
+        shape,
+        tuple(tuple(float(v) for v in row) for row in item["local"]),
+        True,
     )
     asset = FloatingRobotAsset(
-        "d5-" + case, "root", tree.model, (), (), (), (), (), (), (collider,),
+        "d5-" + case,
+        "root",
+        tree.model,
+        (),
+        (),
+        (),
+        (),
+        (),
+        (),
+        (collider,),
         ph.CollisionModel((shape,)),
     )
     command = ph.FloatingRobotCommand(
-        None, ph.FloatingRobotInputs(np.zeros(0), item["external"][None, :3],
-                                    item["external"][None, 3:]),
+        None,
+        ph.FloatingRobotInputs(np.zeros(0), item["external"][None, :3], item["external"][None, 3:]),
     )
     row = ParticipantArticulation(
-        item["participant"].key, asset, tree.state,
-        kp=np.zeros(0), kd=np.zeros(0), effort_limit=np.zeros(0),
-        body_ids=(202,), collider_keys={source: item["round"]}, initial_control=command,
+        item["participant"].key,
+        asset,
+        tree.state,
+        kp=np.zeros(0),
+        kd=np.zeros(0),
+        effort_limit=np.zeros(0),
+        body_ids=(202,),
+        collider_keys={source: item["round"]},
+        initial_control=command,
     )
     item.update(row=row, original_source=source, public_command=command)
     return item
@@ -73,9 +97,11 @@ def declaration(items, **options):
     )
     return ParticipantSceneDeclaration(
         tuple(i["row"] for i in items),
-        deformable=node, contact_response="deformable_normal",
+        deformable=node,
+        contact_response="deformable_normal",
         materials_by_pair={pair: law for i in items for pair, law in i["materials"].items()},
-        site_capacity=2 * len(items), **options,
+        site_capacity=2 * len(items),
+        **options,
     )
 
 
@@ -87,7 +113,9 @@ def assert_physical_equal(a, b, items):
     for item in items:
         world = item["world"]
         for name in ("position", "velocity", "clock"):
-            np.testing.assert_array_equal(getattr(a[world].node, name), getattr(b[world].node, name))
+            np.testing.assert_array_equal(
+                getattr(a[world].node, name), getattr(b[world].node, name)
+            )
         assert a[world].node.tick == b[world].node.tick
         assert a[world].rigid.tick == b[world].rigid.tick
         assert reference().root_state(a[world], item) == reference().root_state(b[world], item)
@@ -99,15 +127,16 @@ def test_asset_to_common_response_short_windows(cases, tyx_mode, tmp_path):
     ref = reference()
     items = tuple(fixture(case, world=7 + 24 * i) for i, case in enumerate(cases))
     decl = declaration(items)
-    with ref.saved(tmp_path, "assembly-" + "".join(cases), tyx_mode,
-                   declaration=decl) as evidence:
+    with ref.saved(tmp_path, "assembly-" + "".join(cases), tyx_mode, declaration=decl) as evidence:
         with compile_participant_scene(decl, mode=tyx_mode) as scene:
             assert isinstance(scene, CompiledDeformableParticipantScene)
             assert scene.identity == decl.identity
             assert scene.world_keys == tuple(sorted(i["world"] for i in items))
             for item in items:
-                assert scene.source_map["participants"][item["row"].key][
-                    item["original_source"]] == item["round"]
+                assert (
+                    scene.source_map["participants"][item["row"].key][item["original_source"]]
+                    == item["round"]
+                )
                 surface = scene.source_map["surfaces"][item["surface"]]
                 np.testing.assert_array_equal(surface["facet_ids"], ref.FACETS)
                 np.testing.assert_array_equal(surface["oriented_point_ids"], ref.IDS[ref.FACES])
@@ -117,7 +146,8 @@ def test_asset_to_common_response_short_windows(cases, tyx_mode, tmp_path):
                 continuous[item["world"]] = (
                     item["node"].initial_state.position.astype(float).copy(),
                     item["node"].initial_state.velocity.astype(float).copy(),
-                    initial.q.copy(), initial.v.copy(),
+                    initial.q.copy(),
+                    initial.v.copy(),
                 )
             for _ in range(16):
                 result, record = checked_step(scene, items, evidence)
@@ -138,8 +168,13 @@ def test_asset_to_common_response_short_windows(cases, tyx_mode, tmp_path):
                     ref.close(record["state"][w].node.velocity, v, atol=2e-4, rtol=0)
                     ref.close(current.position[:3], q[:3], atol=2e-4, rtol=0)
                     ref.close(current.velocity, rv, atol=2e-4, rtol=0)
-                    assert min(np.linalg.norm(np.asarray(current.position[3:]) - q[3:]),
-                               np.linalg.norm(np.asarray(current.position[3:]) + q[3:])) <= 2e-4
+                    assert (
+                        min(
+                            np.linalg.norm(np.asarray(current.position[3:]) - q[3:]),
+                            np.linalg.norm(np.asarray(current.position[3:]) + q[3:]),
+                        )
+                        <= 2e-4
+                    )
                 continuous = expected
                 assert result.query.source_kind == "deformable-floating-entry-device-v1"
 
@@ -166,8 +201,13 @@ def test_query_revision_control_restore_and_initial_held_reset(tyx_mode, tmp_pat
             with pytest.raises(ValueError, match="stale|current|revision|query"):
                 scene.require_query_current(scene.last_step.query, expected_revision=scene.revision)
             control_query = scene.query(expected_revision=scene.revision)
-            scene.set_controls({items[0]["row"].key: ph.FloatingRobotCommand(
-                None, ph.FloatingRobotInputs(np.zeros(0), np.ones((1, 3)), np.zeros((1, 3))))})
+            scene.set_controls(
+                {
+                    items[0]["row"].key: ph.FloatingRobotCommand(
+                        None, ph.FloatingRobotInputs(np.zeros(0), np.ones((1, 3)), np.zeros((1, 3)))
+                    )
+                }
+            )
             with pytest.raises(ValueError, match="stale|current|revision"):
                 scene.require_query_current(control_query, expected_revision=scene.revision)
             query = scene.query(expected_revision=scene.revision)
@@ -196,10 +236,12 @@ def test_late_common_failure_and_real_retry(seam, tyx_mode, tmp_path, monkeypatc
             before, old, revision = scene.checkpoint(), scene.last_step, scene.revision
             original = getattr(scene._response, seam)
             completed = []
+
             def late(*args, **kwargs):
                 value = original(*args, **kwargs)
                 completed.append(value)
                 raise RuntimeError("D5 after real candidate")
+
             with monkeypatch.context() as patch:
                 patch.setattr(scene._response, seam, late)
                 with pytest.raises(RuntimeError, match="D5 after real candidate"):
@@ -219,41 +261,76 @@ def test_old_modes_refuse_deformable_without_changing_defaults(mode):
         replace(decl, contact_response=mode, materials_by_pair={})
 
 
-@pytest.mark.parametrize("fault", (
-    "missing_layer", "extra_layer", "friction", "wrong_world", "unknown_surface",
-    "duplicate_world", "static_shape", "site_mapping", "capacity", "node_memory", "pair_capacity",
-))
+@pytest.mark.parametrize(
+    "fault",
+    (
+        "missing_layer",
+        "extra_layer",
+        "friction",
+        "wrong_world",
+        "unknown_surface",
+        "duplicate_world",
+        "static_shape",
+        "site_mapping",
+        "capacity",
+        "node_memory",
+        "pair_capacity",
+    ),
+)
 def test_full_static_admission_before_owner(fault, monkeypatch):
     from phymeo.builders import deformable_scene_lowering as lowering
+
     item = fixture()
     decl = declaration((item,))
     called = []
+
     def forbidden(*args, **kwargs):
         called.append(True)
         raise AssertionError("allocated before static rejection")
+
     monkeypatch.setattr(lowering, "TyxDeformableContactBatch", forbidden)
     with pytest.raises((ValueError, TypeError, MemoryError)):
         if fault == "missing_layer":
             decl = replace(decl, materials_by_pair={})
         elif fault == "extra_layer":
             extra = (item["surface"], ph.CollisionKey(7, 999, 0))
-            decl = replace(decl, materials_by_pair={**decl.materials_by_pair,
-                                                  extra: ph.NormalLayer(1/16, 128, .5)})
+            decl = replace(
+                decl,
+                materials_by_pair={
+                    **decl.materials_by_pair,
+                    extra: ph.NormalLayer(1 / 16, 128, 0.5),
+                },
+            )
         elif fault == "friction":
-            decl = replace(decl, materials_by_pair={
-                next(iter(decl.materials_by_pair)): ph.NormalLayer(1/16, 128, .5, friction=.1)})
+            decl = replace(
+                decl,
+                materials_by_pair={
+                    next(iter(decl.materials_by_pair)): ph.NormalLayer(
+                        1 / 16, 128, 0.5, friction=0.1
+                    )
+                },
+            )
         elif fault == "wrong_world":
-            decl = replace(decl, deformable=replace(decl.deformable, worlds=(
-                replace(item["node"], key=31),)))
+            decl = replace(
+                decl, deformable=replace(decl.deformable, worlds=(replace(item["node"], key=31),))
+            )
         elif fault == "unknown_surface":
-            decl = replace(decl, deformable=replace(decl.deformable, surfaces=(
-                ph.DeformableBoundarySurface(item["surface"], 24),)))
+            decl = replace(
+                decl,
+                deformable=replace(
+                    decl.deformable, surfaces=(ph.DeformableBoundarySurface(item["surface"], 24),)
+                ),
+            )
         elif fault == "duplicate_world":
-            decl = replace(decl, deformable=replace(decl.deformable,
-                                                  worlds=(item["node"], item["node"])))
+            decl = replace(
+                decl, deformable=replace(decl.deformable, worlds=(item["node"], item["node"]))
+            )
         elif fault == "static_shape":
-            decl = replace(decl, static_shapes=(ph.FiniteStaticShape.sphere(7, 999, (5,5,5), .1),),
-                           static_body_ids=((7, 999),))
+            decl = replace(
+                decl,
+                static_shapes=(FiniteStaticShape.sphere(7, 999, (5, 5, 5), 0.1),),
+                static_body_ids=((7, 999),),
+            )
         elif fault == "site_mapping":
             decl = replace(decl, site_capacity={7: 2})
         elif fault == "pair_capacity":
@@ -269,9 +346,11 @@ def test_full_static_admission_before_owner(fault, monkeypatch):
 def test_owned_model_surface_and_source_content():
     item = fixture()
     decl = declaration((item,))
-    arrays = (decl.deformable.worlds[0].initial_state.position,
-              decl.deformable.worlds[0].point_ids,
-              decl.deformable.worlds[0].surfaces[0].facet_ids)
+    arrays = (
+        decl.deformable.worlds[0].initial_state.position,
+        decl.deformable.worlds[0].point_ids,
+        decl.deformable.worlds[0].surfaces[0].facet_ids,
+    )
     for array in arrays:
         assert not array.flags.writeable
         with pytest.raises(ValueError):
@@ -284,11 +363,15 @@ def test_owned_model_surface_and_source_content():
 
 def test_source_mutation_is_rejected_before_allocation(monkeypatch):
     from phymeo.builders import deformable_scene_lowering as lowering
+
     item = fixture()
     decl = declaration((item,))
-    object.__setattr__(decl.articulations[0].asset.model, "root_com_m", np.array((.25, 0, 0)))
-    monkeypatch.setattr(lowering, "TyxDeformableContactBatch",
-                        lambda *a, **k: pytest.fail("allocation after source mutation"))
+    object.__setattr__(decl.articulations[0].asset.model, "root_com_m", np.array((0.25, 0, 0)))
+    monkeypatch.setattr(
+        lowering,
+        "TyxDeformableContactBatch",
+        lambda *a, **k: pytest.fail("allocation after source mutation"),
+    )
     with pytest.raises(ValueError, match="source|changed"):
         compile_participant_scene(decl, mode="interpret")
 
@@ -311,18 +394,23 @@ def test_wrong_checkpoint_owner_and_closed_lifecycle(tyx_mode):
 @pytest.mark.parametrize("cleanup_fails", (False, True))
 def test_constructor_control_failure_retains_cleanup_owner(monkeypatch, cleanup_fails):
     from phymeo.builders import deformable_scene_lowering as lowering
+
     primary, cleanup = RuntimeError("initial control rejected"), RuntimeError("release unknown")
     owners = []
+
     class FailedOwner:
         def __init__(self, *args, **kwargs):
             self.closed = 0
             owners.append(self)
+
         def set_controls(self, controls):
             raise primary
+
         def close(self):
             self.closed += 1
             if cleanup_fails:
                 raise cleanup
+
     monkeypatch.setattr(lowering, "TyxDeformableContactBatch", FailedOwner)
     with pytest.raises(BaseException) as failure:
         compile_participant_scene(declaration((fixture(),)), mode="interpret")
@@ -342,5 +430,7 @@ def test_direct_compiled_constructor_refuses_wrong_declaration(value):
         decl = object()
     else:
         decl = ParticipantSceneDeclaration((fixture()["row"],), contact_response=value)
-    with pytest.raises((TypeError, ValueError), match="ParticipantSceneDeclaration|deformable_normal"):
+    with pytest.raises(
+        (TypeError, ValueError), match="ParticipantSceneDeclaration|deformable_normal"
+    ):
         CompiledDeformableParticipantScene(decl, mode="interpret")

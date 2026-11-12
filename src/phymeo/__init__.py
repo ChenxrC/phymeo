@@ -112,6 +112,10 @@ from .backends.tyx_world_contact import (
 )
 from .backends.tyx_xpbd import TyxXPBDSolver
 from .builders.cloth import ClothPatch, cloth_grid
+from .builders.deformable_scene_lowering import (
+    CompiledDeformableParticipantScene,
+    ParticipantDeformable,
+)
 from .builders.floating_mimic_urdf import load_floating_mimic_urdf
 from .builders.floating_urdf import FloatingRobotAsset, load_floating_urdf
 from .builders.mimic_urdf import load_mimic_urdf
@@ -464,6 +468,8 @@ __all__ = [
     "ResidentBoundaryQueryAttempt",
     "ResidentBoundaryQueryPlan",
     "CompiledParticipantScene",
+    "CompiledDeformableParticipantScene",
+    "ParticipantDeformable",
     "ParticipantArticulation",
     "ParticipantSceneDeclaration",
     "compile_participant_scene",

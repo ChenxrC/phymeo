@@ -219,6 +219,7 @@ class TyxDeformableContactBatch:
         self._context = None
         self._prepared_attempt = self._prepared_expected = None
         self._scene = self._nodes = self._query = self._engine = None
+        self._public_query = None
         node_worlds, participants, bindings = (
             tuple(node_worlds),
             tuple(participants),
@@ -406,6 +407,35 @@ class TyxDeformableContactBatch:
             self._ready()
             self._scene.set_controls(controls)
             self._revision += 1
+
+    def query(self, *, expected_revision):
+        """Query the current accepted joint state without advancing physics.
+
+        The publication is bound to the common revision, including control
+        changes. A step's entry query is evidence for that step, not a current
+        accepted-state query after publication.
+        """
+        with self._locked():
+            if type(expected_revision) is not int:
+                raise TypeError("query requires an integer expected_revision")
+            self._ready(expected_revision)
+            result = self._query_entry()
+            self._public_query = (self._revision, result)
+            return result
+
+    def require_query_current(self, result, *, expected_revision):
+        """Validate this owner's latest explicit query and both state sources."""
+        with self._locked():
+            if type(expected_revision) is not int:
+                raise TypeError("query requires an integer expected_revision")
+            self._ready(expected_revision)
+            if (
+                self._public_query is None
+                or self._public_query[0] != self._revision
+                or self._public_query[1] is not result
+            ):
+                raise ValueError("query is not current for this D3 revision")
+            return self._query.require_current(result)
 
     def _query_entry(self):
         margin = max((law.width_m for law in self._laws.values() if law is not None), default=0.0)

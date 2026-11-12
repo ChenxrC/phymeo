@@ -59,3 +59,16 @@ M1的S0必须给可计算的注册/持久/query/暂存buffer字节式和失败�
 - Participant asset assembly: HOST19 + interpret19 + CUDA19 qualified (57 executions). Public phymeo entry, four original tree families, complete-world restore/reset and failed-world isolation are covered. See [scene qualification](../../development/p65-participant-scene-report.md).
 - M1: S0 contract/tests imported; existing author is implementing S1. Parent runtime lease protection qualified separately; prepare_boundary_query is now wired lazily, pending the new plan implementation and full M1 qualification. No device-query pass is claimed yet.
 - The first two installed consumers are authored and statically checked; final packaging remains one combined wheel after product qualification. No new training/G1/CI work or deadline.
+
+## 13:28 final checkpoint — this batch closed
+
+The earlier implementing/pending labels above are dated checkpoints. All three declared functional lanes are now SOURCE_AND_INSTALLED_QUALIFIED; see [actual combined report](../../development/p65-parity-m1-assembly-20261112.md).
+
+- [x] BALL-M1:47 new source nodes +9 affected compatibility nodes; installed interpret/CUDA each56worldsteps.
+- [x] Participant scene:HOST19 +interpret19 +CUDA19; installed each12batch steps /24worldsteps.
+- [x] M1:4HOST +67interpret +68CUDA distinct nodes, including actual native-free quarantine;20 exact old COL2/COL3 compatibility nodes; installed each6worldsteps /3queries /12rows.
+- [x] One combined wheel from product2f5f19d6:515members source/wheel/installed identical; six outside-source consumers passed.
+- [x] First failures/raw prefixes retained; new wheel/consumers/results72files copied and byte-verified; final reports/current continuation/panorama reconciled.
+- [ ] Whole-project Newton parity, broader robot combinations, M2/CCD/contact loads, J/R learning and G1 full action: outside this batch, remain open.
+
+Installed053 exposed a consumer dtype check, not a dynamics mismatch. Parent563e4798 explicitly checks original FP32 and public FP64 types and their exact lift; source product/wheel unchanged. Final061–066 allRAW0, full raw evidence and strict installed origins retained. No re-run of green full matrices, new training, CI, cleanup or release. Original authors are released; root owns no continuing project execution after closing this batch.

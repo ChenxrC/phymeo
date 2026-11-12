@@ -140,3 +140,11 @@ Actual serial results in `artifacts/p65-parity-m1-assembly-20261112-01`:
 - Runs 004/005 retain the first style failures. Import-only fixing and formatting gave final 008/009 clean checks. The transaction encoding edit passed 011/012. The standalone consumer's formatting is included in 015–020; its actual installed execution is still pending the combined wheel.
 
 This accepts the finite source domain and preserves the original unsupported combinations. It does not claim FREE+BALL, BALL activation/contact motors, joint limits, full MuJoCo coverage, a performance advantage, G1 success or completion of P6.5. Final combined packaging and source-outside consumers remain required.
+
+## Parent installed qualification — 2026-11-12 13:28
+
+SOURCE_AND_INSTALLED_QUALIFIED. The combined product2f5f19d6 wheel has515 source/wheel/installed-identical members. Runs061/062 passed interpret/CUDA outside the source checkout, each27 main calls plus1 clone call and56 accepted worldsteps. Full same-entry dynamics, original native transmission/force/power, continuous trajectory, checkpoint/restore/reset and all312 loaded package origins passed. Complete64-event traces per backend are retained.
+
+Run053's first consumer failure was the comparison of actual FP32 transmission bytes with the exact FP64 public receipt lift. Parent563e4798 changes only the consumer: require both declared dtypes, lift FP32 exactly to FP64, then compare exact encoded values. No numerical tolerance or product change. Runs059/060 static checks passed; original failed8-event trace remains. The wheel was not rebuilt because no product bytes changed.
+
+See [combined batch report](p65-parity-m1-assembly-20261112.md) and artifacts/p65-parity-m1-assembly-20261112-01/installed-close.json. All prior domain exclusions remain; direct BALL contact/activation motors and FREE+BALL are not qualified.

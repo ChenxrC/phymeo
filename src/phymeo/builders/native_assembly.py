@@ -224,6 +224,12 @@ class NativeTemplate:
 
         return bind_body_sites(self, sites)
 
+    def compile_ray_scene(self):
+        """Convert native geometry to named body-local public ray surfaces once."""
+        from .native_rays import compile_ray_scene
+
+        return compile_ray_scene(self)
+
 
 @dataclass(frozen=True)
 class HomogeneousNativeBinding:

@@ -391,6 +391,71 @@ Plans are prepared cold and reused, with no host snapshot or per-world dispatch.
 This contract qualifies the PhySolve path only; resident, ray sensors and mounted
 sensor runtime mutation require separate capabilities and tests.
 
+## Prepared selected ray queries v1
+
+`RaySurface` is an immutable named body-local geometry declaration, independent
+of MuJoCo and solver state. It admits plane, sphere, capsule, cylinder, ellipsoid,
+box and triangular mesh. Dimensions are metres (box half-extents, capsule/cylinder
+radius and half-length); local pose uses XYZW. Unsupported geometry is rejected.
+Dimensions and mesh triangles must remain valid after FP32 representation.
+
+`NativeTemplate.compile_ray_scene()` converts native geometry once into this
+public representation plus compilation-bound body indices (`NativeRayScene`).
+All public shape identities must be present. Mesh vertices/faces and geom pose
+come from the same compiled model, including native mesh preprocessing. This is
+an explicit PhySolve adapter, not a requirement for every PHYMEO solver to use
+MjModel. A returned label indexes the scene's named surface tuple, not a consumer
+public ID or a globally valid native geom ID.
+
+`PhySolveRuntime.prepare_ray_query(scene, max_rays=...)` returns a runtime-owned
+`PreparedRayQuery` and requires endpoint body observations. The plan borrows both
+body pose banks, owns static geometry, mesh BVHs and output/error scratch, and
+uses the current canonical stream. No state snapshot, extra FK or forward is
+performed. Geometry is not rebuilt or re-uploaded while stepping or sampling.
+
+`sample(selected, count, gate, origins, directions, rows=..., near=..., far=...)`
+accepts same-device contiguous int32 selection/count/gate and float32
+`[rows,rays_per_world,3]` origins/unit directions. Coordinates are physical-world
+coordinates without display/env-origin offsets. It emits only selected rays;
+there is no render-all-then-gather. Caller prevalidates unique selectors and
+count==rows, excludes alias with plan resources, retains inputs and prevents
+concurrent close/mutation. Capacity, layout and device are checked on host;
+world bounds, finite/unit directions and transform arithmetic are guarded on
+device. Nonzero errors must suppress downstream output publication. An existing
+external/native error gate suppresses query work.
+
+Output labels/hits are flattened selected-row then ray order. Hits have four
+float32 columns: range in metres and a world-space **ray-facing** unit normal.
+All surface kinds share that normal policy, including interior exits. Misses
+use label -1, range +inf and zero normal. Equal ranges keep the first declared
+surface. Clipping is closed [near,far], rounded inward to representable FP32
+limits. This prepared contract does not alter the older host query normal policy;
+consumer depth/miss conventions require explicit field conversion.
+
+Mesh BVHs are built cold in local coordinates and shared across worlds and
+identical geometry; dynamic rigid poses transform each ray instead of refitting
+triangles. Every ray still traverses the surface list: cost is
+O(selected worlds * rays * (surface count + mesh BVH traversal)). This is **not**
+a scene-level BVH or a claimed O(log surface count) query. Allocation and dispatch
+do not scale through per-world host calls. Persistent output is 20*N*max_rays
+bytes; geometry/indices/errors are separately owned. `costs()` reports explicit
+array bytes and shared mesh count; TYX internal Mesh/BVH storage is additional.
+Counters count host query submissions (including capture), not external Graph
+replays. Full throughput and peak-memory qualification remain pending.
+
+Preparation registers owners before async work, including nested TYX Mesh/BVH
+construction. Failed completion/close retains resources for retry. Consumers
+must destroy externally captured queries before closing/rebinding the runtime;
+captures bind one pose bank, input/output addresses, clip bounds and stream.
+After a published bank switch, use the corresponding bank's capture or recapture;
+a replay does not re-evaluate the Python bank selector. Fixed query Graph
+replay is tested, but dynamic bank selection inside an externally captured query
+is not implied. Closing invalidates storage; reusing a stale plan fails.
+
+Camera calibration, mounted-ray generation and P2PE SensorView dispatch are the
+next integration step. This prerequisite alone does not enable Camera/LiDAR in
+P2PE metadata, qualify resident rays, or qualify an installed SDK/GUI.
+
 ## Contact reference v1
 
 `contact_reference_contract_version=1` adds readonly borrowed storage

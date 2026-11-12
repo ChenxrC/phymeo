@@ -55,6 +55,7 @@ class PhySolveRuntime:
     contact_reference_contract_version = 1
     body_measurement_contract_version = 1
     site_measurement_contract_version = 1
+    prepared_ray_contract_version = 1
     selected_update_contract_version = 1
     device_reset_contract_version = 1
     free_body_update_contract_version = 1
@@ -130,6 +131,7 @@ class PhySolveRuntime:
         self._contact_observations = None
         self._body_measurements = None
         self._site_measurements = []
+        self._ray_queries = []
         self._free_body_updates = None
         self._validation = self._storage = None
         self._storage_generation = 1
@@ -265,6 +267,30 @@ class PhySolveRuntime:
                 # Retain even partial uploads until normal runtime cleanup completes.
                 if not plan.resources:
                     self._site_measurements.pop()
+                raise
+            return plan
+
+    def prepare_ray_query(self, scene, *, max_rays):
+        """Own a prepared device query over this compilation's endpoint geometry."""
+        from ..builders.native_rays import NativeRayScene
+        from .prepared_rays import PreparedRayQuery
+
+        with self._scope():
+            if self._pending is not None:
+                raise RuntimeError('ray preparation requires idle execution')
+            if (not isinstance(scene, NativeRayScene) or scene.contract_version != 1
+                    or scene.compilation is not self._compilation):
+                raise ValueError('ray scene belongs to another compilation or contract')
+            plan = PreparedRayQuery.__new__(PreparedRayQuery)
+            plan.resources, plan.meshes = [], []
+            plan.storage = self.storage_binding()
+            self._ray_queries.append(plan)
+            try:
+                plan.__init__(plan.storage, scene.surfaces, scene.bodies, max_rays,
+                              self.nworld, lambda: self.observation_bank)
+            except Exception:
+                if not plan.resources and not plan.meshes:
+                    self._ray_queries.pop()
                 raise
             return plan
 
@@ -471,6 +497,7 @@ class PhySolveRuntime:
                     "body_measurement_copies": 0 if self._body_measurements is None else self._body_measurements.copies,
                     "body_measurement_device_bytes": 0 if self._body_measurements is None else self._body_measurements.allocated_bytes,
                     "site_measurement_device_bytes": sum(plan.allocated_bytes for plan in self._site_measurements),
+                    "ray_queries": [plan.costs() for plan in self._ray_queries],
                     "free_body_update_device_bytes": 0 if self._free_body_updates is None else self._free_body_updates.allocated_bytes,
                     "stream_rebindings": self._stream_rebindings,
                     "step_graph_captures": self._graph_captures,
@@ -788,6 +815,9 @@ class PhySolveRuntime:
             for stream in self._stream_retained:
                 self._synchronize_stream(stream)
             self._release_step_graphs()
+            while self._ray_queries:
+                self._ray_queries[-1].close()
+                self._ray_queries.pop()
             while self._site_measurements:
                 self._site_measurements[-1].close()
                 self._site_measurements.pop()

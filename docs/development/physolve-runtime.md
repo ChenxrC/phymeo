@@ -738,3 +738,23 @@ codedev/TYX、六 CUBIN 与 Host 均不修改。
 既有 TYX AST 弃用警告保留。消费者 P2PE 的实际 DLL/host/D2D、错误与生命周期
 验证在其 `docs/phymeo-sensors.md` 记录，不能替代独立安装、GUI 或完整传感器资格。
 来源、载荷、最终提交及审查见配套实验根 `evidence/b6d-summary.json`。
+
+## B6e：预准备设备射线前置接口（部分验证）
+
+公开几何、编译绑定、借用与成本见
+[Prepared selected ray queries v1](../architecture/engine-integration.md#prepared-selected-ray-queries-v1)。
+复用已有解析求交与 TYX Mesh/BVH；没有新物理推进、forward、逐帧几何上传或快照。
+TYX 冷构造先注册嵌套资源 owner 再提交异步工作，异常后由 runtime 保留并重试关闭。
+
+原射线路径 21 项通过（14.19 s），新增 test_physolve_rays 9 通过、1 失败
+（271.44 s）；N=1/8/64、解析几何、FANUC mesh、固定 bank Graph、错误门禁和
+嵌套失败保活通过。Panda 原始命中 shape ID 与 CPU mj_ray 不同，未确认原因，
+保留原断言及失败，不授予其完整射线资格，也不归因为求解器缺陷。标准对象分配
+调整后嵌套构造/关闭 2 项复测通过（18.86 s）。TYX 配套 71 项回归通过（16.92 s）。
+
+独立复审明确 Graph 只捕获固定 bank；bank 发布切换后须由消费方选对应 Graph
+或重新捕获。当前逐 ray 遍历形状，mesh 内部用 BVH，不声称场景级加速结构。
+原生测试不是 Camera/LiDAR C ABI、安装或 GUI 验收。文档检查 479 个既有缺失目标
+未变；公共导入检查的 mujoco_task_workspace 既有违规未变；既有 AST 弃用告警保留。
+不改六 CUBIN、Host、现有容差或生产排序；不开展跨求解器微差调查。
+证据、来源与提交统一记录配套实验根 `evidence/b6e-summary.json`。

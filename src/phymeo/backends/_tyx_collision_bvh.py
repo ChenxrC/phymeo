@@ -63,7 +63,6 @@ class TreeBuffers:
             raise RuntimeError("incomplete device BVH traversal")
         return raw[:, :-1]
 
-
     def hits_device(self, tree, *, leaf_bounds, query_bounds, query_count, params, source_lease):
         """Refit/traverse already registered device boxes; no HOST geometry upload."""
         from ._tyx_spatial_kernels import bvh_candidates, refit_boxes
@@ -78,11 +77,28 @@ class TreeBuffers:
             self.layout = tree
         self.host_params[:] = params
         engine._spatial_upload(self.params, self.host_params)
-        engine._launch_device("refit", refit_boxes,
-            len(tree.nodes), self.nodes, self.order, leaf_bounds, self.node_boxes)
-        engine._launch_device("traverse", bvh_candidates,
-            query_count, self.words, 0, self.nodes, self.node_boxes, query_bounds,
-            self.params, self.params, self.output)
+        engine._launch_device(
+            "refit",
+            refit_boxes,
+            len(tree.nodes),
+            self.nodes,
+            self.order,
+            leaf_bounds,
+            self.node_boxes,
+        )
+        engine._launch_device(
+            "traverse",
+            bvh_candidates,
+            query_count,
+            self.words,
+            0,
+            self.nodes,
+            self.node_boxes,
+            query_bounds,
+            self.params,
+            self.params,
+            self.output,
+        )
         raw = engine._spatial_output(self.output)
         if raw.shape != (query_count, self.words + 3) or raw.dtype != np.int32:
             raise RuntimeError("device BVH output shape/type differs")

@@ -541,12 +541,7 @@ def validate_triangle_distance_rows(inputs, uploaded, raw, frames, scales, gener
         state, selected, mask, normal_defined, tag, si, fi = map(int, raw["meta"][i])
         if tag != generation or (si, fi) != tuple(map(int, uploaded["owners"][i])):
             raise RuntimeError("device row ownership or generation mismatch")
-        if (
-            state not in (1, 2, 3)
-            or normal_defined not in (0, 1)
-            or mask < 0
-            or mask >= 1 << 18
-        ):
+        if state not in (1, 2, 3) or normal_defined not in (0, 1) or mask < 0 or mask >= 1 << 18:
             raise RuntimeError("invalid device row status")
         valid = raw["valid"][i]
         if np.any((valid != 0) & (valid != 1)):
@@ -561,12 +556,7 @@ def validate_triangle_distance_rows(inputs, uploaded, raw, frames, scales, gener
                     raise RuntimeError("invalid slot has nonzero candidate data")
                 continue
             s, b0, b1, b2, d2 = map(float, values[c, :5])
-            if (
-                not 0 <= s <= 1
-                or min(b0, b1, b2) < 0
-                or abs(b0 + b1 + b2 - 1) > 8 * _U
-                or d2 < 0
-            ):
+            if not 0 <= s <= 1 or min(b0, b1, b2) < 0 or abs(b0 + b1 + b2 - 1) > 8 * _U or d2 < 0:
                 raise RuntimeError("invalid finite candidate address")
             ap = g[3] + s * (g[4] - g[3])
             tp = np.array((b0, b1, b2)) @ g[:3]
@@ -579,13 +569,7 @@ def validate_triangle_distance_rows(inputs, uploaded, raw, frames, scales, gener
             if abs(d2 - float(difference @ difference)) > 32 * _U * max(length * length, d2):
                 raise RuntimeError("candidate distance reconstruction mismatch")
         if selected == -1:
-            if (
-                np.any(valid)
-                or state == 1
-                or mask
-                or normal_defined
-                or np.any(summary[:15] != 0)
-            ):
+            if np.any(valid) or state == 1 or mask or normal_defined or np.any(summary[:15] != 0):
                 raise RuntimeError("missing selected candidate")
             ties = ()
             span = None
@@ -603,8 +587,7 @@ def validate_triangle_distance_rows(inputs, uploaded, raw, frames, scales, gener
             ties = tuple(c for c in range(18) if mask & (1 << c))
             tie_limit = float(
                 np.float32(
-                    np.float32(16 * _U)
-                    * np.float32(uploaded["scales"][i] * uploaded["scales"][i])
+                    np.float32(16 * _U) * np.float32(uploaded["scales"][i] * uploaded["scales"][i])
                 )
             )
             for c in range(18):

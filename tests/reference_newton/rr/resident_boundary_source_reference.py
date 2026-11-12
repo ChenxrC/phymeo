@@ -4,8 +4,8 @@ No Phymeo/TYX imports. This file is authored before the new producer exists.
 The Fraction oracle is the existing independent COL2 reference, never a product.
 """
 
-from functools import lru_cache
 import importlib.util
+from functools import lru_cache
 from pathlib import Path
 
 import numpy as np
@@ -15,7 +15,7 @@ WORLDS = (83, 17, 107, 31)
 H = 1 / 1024
 RADIUS = 1 / 8
 MARGIN = 1 / 2
-ASSET_Q = ((0, 0, 0, 1), (.5, .5, .5, .5), (0, .6, 0, .8), (0, 0, 1, 0))
+ASSET_Q = ((0, 0, 0, 1), (0.5, 0.5, 0.5, 0.5), (0, 0.6, 0, 0.8), (0, 0, 1, 0))
 TRIANGLE = ((0, 0, 0), (0, 2, 0), (0, 0, 2))
 ROUND = (-1 / 4, 1 / 2, 1 / 2)
 IDS = (11, 37, 91)
@@ -36,9 +36,11 @@ def rotation(quaternion):
     q = q / np.linalg.norm(q)
     x, y, z, w = q
     return np.array(
-        ((1 - 2*(y*y + z*z), 2*(x*y-z*w), 2*(x*z+y*w)),
-         (2*(x*y+z*w), 1-2*(x*x+z*z), 2*(y*z-x*w)),
-         (2*(x*z-y*w), 2*(y*z+x*w), 1-2*(x*x+y*y))),
+        (
+            (1 - 2 * (y * y + z * z), 2 * (x * y - z * w), 2 * (x * z + y * w)),
+            (2 * (x * y + z * w), 1 - 2 * (x * x + z * z), 2 * (y * z - x * w)),
+            (2 * (x * z - y * w), 2 * (y * z + x * w), 1 - 2 * (x * x + y * y)),
+        ),
         dtype=np.float64,
     )
 
@@ -60,7 +62,7 @@ def pose(checkpoint, layout, which):
 
 def local_round(kind):
     first = np.array(ROUND, dtype=np.float64)
-    return first[None] if kind == "sphere" else np.array((first, first + (1/4, 0, 0)))
+    return first[None] if kind == "sphere" else np.array((first, first + (1 / 4, 0, 0)))
 
 
 def world_points(checkpoint, layout, which, local):
@@ -71,7 +73,8 @@ def world_points(checkpoint, layout, which, local):
 def expected_moving(checkpoint, layout, static_triangle=None):
     triangle = (
         world_points(checkpoint, layout, "driver", TRIANGLE)
-        if static_triangle is None else np.asarray(static_triangle)
+        if static_triangle is None
+        else np.asarray(static_triangle)
     )
     return triangle, {
         kind: world_points(checkpoint, layout, "follower", local_round(kind))
@@ -104,86 +107,104 @@ def memory_layout(shapes, points, groups, candidate_counts):
 
 
 def plain_flat(case, kind):
-    triangle = np.array(((0,0,0),(2,0,0),(0,2,0)), dtype=np.float64)
+    triangle = np.array(((0, 0, 0), (2, 0, 0), (0, 2, 0)), dtype=np.float64)
     first = {
-        "front":(.5,.5,.25), "back":(.5,.5,-.25), "edge":(1,-.25,.25),
-        "vertex":(-.25,-.25,.25), "outside":(4,4,.25), "through":(.5,.5,0),
+        "front": (0.5, 0.5, 0.25),
+        "back": (0.5, 0.5, -0.25),
+        "edge": (1, -0.25, 0.25),
+        "vertex": (-0.25, -0.25, 0.25),
+        "outside": (4, 4, 0.25),
+        "through": (0.5, 0.5, 0),
     }[case]
     points = np.array((first,), dtype=np.float64)
     if kind == "capsule":
         points = np.repeat(points, 2, axis=0)
         if case == "through":
-            points[:,2] = (-.25,.25)
+            points[:, 2] = (-0.25, 0.25)
         else:
-            points[1,2] += -.25 if case == "back" else .25
-    return triangle, points, .01 if case == "outside" else .5
+            points[1, 2] += -0.25 if case == "back" else 0.25
+    return triangle, points, 0.01 if case == "outside" else 0.5
 
 
 def mesh(case):
     if case == "concave":
-        outline=((0,0),(2,0),(2,1),(1,1),(1,2),(0,2))
-        points=np.array([(x,y,z) for z in (0,1) for x,y in outline], dtype=np.float64)
-        n=6
-        caps=((0,1,3),(1,2,3),(0,3,5),(3,4,5))
-        faces=list(caps)+[tuple(v+n for v in face) for face in caps]
-        center, margin=(1.25,1.25,.5), .2
+        outline = ((0, 0), (2, 0), (2, 1), (1, 1), (1, 2), (0, 2))
+        points = np.array([(x, y, z) for z in (0, 1) for x, y in outline], dtype=np.float64)
+        n = 6
+        caps = ((0, 1, 3), (1, 2, 3), (0, 3, 5), (3, 4, 5))
+        faces = list(caps) + [tuple(v + n for v in face) for face in caps]
+        center, margin = (1.25, 1.25, 0.5), 0.2
     else:
-        points=np.array(((0,0,0),(2,0,0),(2,2,0),(0,2,0),
-                         (0,0,2),(2,0,2),(2,2,2),(0,2,2)), dtype=np.float64)
-        n=4
-        faces=[(0,1,2),(0,2,3),(4,6,5),(4,7,6)]
-        center, margin=((1,1,1),1.) if case=="closed_inside" else ((1,1,.25),.2)
+        points = np.array(
+            (
+                (0, 0, 0),
+                (2, 0, 0),
+                (2, 2, 0),
+                (0, 2, 0),
+                (0, 0, 2),
+                (2, 0, 2),
+                (2, 2, 2),
+                (0, 2, 2),
+            ),
+            dtype=np.float64,
+        )
+        n = 4
+        faces = [(0, 1, 2), (0, 2, 3), (4, 6, 5), (4, 7, 6)]
+        center, margin = ((1, 1, 1), 1.0) if case == "closed_inside" else ((1, 1, 0.25), 0.2)
     for i in range(n):
-        j=(i+1)%n
-        faces.extend(((i,j,j+n),(i,j+n,i+n)))
+        j = (i + 1) % n
+        faces.extend(((i, j, j + n), (i, j + n, i + n)))
     return points, np.asarray(faces, np.int64), np.asarray(center), margin
 
 
 def axis(points):
-    value=np.asarray(points, dtype=np.float64)
-    return np.repeat(value,2,axis=0) if len(value)==1 else value
+    value = np.asarray(points, dtype=np.float64)
+    return np.repeat(value, 2, axis=0) if len(value) == 1 else value
 
 
 def aabb_candidates(vertices, faces, axes, radii, margin):
     """Independent complete finite AABB pair set; not a product BVH."""
-    result=[]
+    result = []
     for si, segment in enumerate(axes):
-        lo=np.min(segment,axis=0)-radii[si]-margin
-        hi=np.max(segment,axis=0)+radii[si]+margin
+        lo = np.min(segment, axis=0) - radii[si] - margin
+        hi = np.max(segment, axis=0) + radii[si] + margin
         for fi, ids in enumerate(faces):
-            tri=vertices[ids]
-            if np.all(np.min(tri,axis=0)<=hi) and np.all(lo<=np.max(tri,axis=0)):
-                result.append((si,fi))
+            tri = vertices[ids]
+            if np.all(np.min(tri, axis=0) <= hi) and np.all(lo <= np.max(tri, axis=0)):
+                result.append((si, fi))
     return tuple(result)
 
 
 def assert_row(row, triangle, segment, radius, origin, *, state="RESOLVED"):
     """Independent exact oracle plus material address reconstruction."""
-    ref=distance_reference()
-    tri=np.asarray(triangle,dtype=np.float64)
-    seg=axis(segment)
-    length=ref.local_scale(tri,seg,radius)
-    assert row.status==state
-    if state!="RESOLVED":
+    ref = distance_reference()
+    tri = np.asarray(triangle, dtype=np.float64)
+    seg = axis(segment)
+    length = ref.local_scale(tri, seg, radius)
+    assert row.status == state
+    if state != "RESOLVED":
         assert row.normal is None
         return
-    ideal=ref.oracle(tri,seg)
-    distance=float(ideal["distance2"])**.5
-    assert abs(row.distance-distance)<=1e-4*length
-    assert abs(row.gap-(distance-radius))<=1e-4*length
-    bary=np.asarray(row.barycentric)
-    assert np.min(bary)>=0 and abs(float(sum(bary))-1)<=8*U
-    assert 0<=row.axis_parameter<=1
-    ap=seg[0]+row.axis_parameter*(seg[1]-seg[0])
-    tp=bary@tri
-    np.testing.assert_allclose(np.asarray(row.axis_point_relative_m)+origin,ap,
-                               atol=2e-4*length,rtol=0)
-    np.testing.assert_allclose(np.asarray(row.triangle_point_relative_m)+origin,tp,
-                               atol=2e-4*length,rtol=0)
-    assert abs(float(np.linalg.norm(tp-ap))-distance)<=2e-4*length
-    if distance<=32*U*length:
+    ideal = ref.oracle(tri, seg)
+    distance = float(ideal["distance2"]) ** 0.5
+    assert abs(row.distance - distance) <= 1e-4 * length
+    assert abs(row.gap - (distance - radius)) <= 1e-4 * length
+    bary = np.asarray(row.barycentric)
+    assert np.min(bary) >= 0 and abs(float(sum(bary)) - 1) <= 8 * U
+    assert 0 <= row.axis_parameter <= 1
+    ap = seg[0] + row.axis_parameter * (seg[1] - seg[0])
+    tp = bary @ tri
+    np.testing.assert_allclose(
+        np.asarray(row.axis_point_relative_m) + origin, ap, atol=2e-4 * length, rtol=0
+    )
+    np.testing.assert_allclose(
+        np.asarray(row.triangle_point_relative_m) + origin, tp, atol=2e-4 * length, rtol=0
+    )
+    assert abs(float(np.linalg.norm(tp - ap)) - distance) <= 2e-4 * length
+    if distance <= 32 * U * length:
         assert row.normal is None
     else:
-        expected=np.asarray(ideal["witnesses"][0][4],float)-np.asarray(
-            ideal["witnesses"][0][3],float)
-        assert np.linalg.norm(np.asarray(row.normal)-expected/distance)<=2e-3
+        expected = np.asarray(ideal["witnesses"][0][4], float) - np.asarray(
+            ideal["witnesses"][0][3], float
+        )
+        assert np.linalg.norm(np.asarray(row.normal) - expected / distance) <= 2e-3

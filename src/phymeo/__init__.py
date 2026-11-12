@@ -3,6 +3,12 @@
 from .backends._device_convex_query import ConvexQueryCapacityExceeded
 from .backends._resident_affine_binding import ResidentAffineTreeBinding
 from .backends._resident_affine_tree import AffineRobotTree
+from .backends._resident_boundary_query import (
+    ResidentBoundaryDistances,
+    ResidentBoundaryNarrowPacket,
+    ResidentBoundaryQueryAttempt,
+    ResidentBoundaryQueryPlan,
+)
 from .backends._resident_collision_plan import ResidentSphereBinding, ResidentStaticBinding
 from .backends._resident_contact_bundle import (
     ResidentContactBundle,
@@ -405,6 +411,10 @@ from .validation.terminal_impulse import TerminalImpulseLedger
 from .validation.thick_contact_mapping import ThickContactMappingLedger
 
 __all__ = [
+    "ResidentBoundaryDistances",
+    "ResidentBoundaryNarrowPacket",
+    "ResidentBoundaryQueryAttempt",
+    "ResidentBoundaryQueryPlan",
     "CompiledParticipantScene",
     "ParticipantArticulation",
     "ParticipantSceneDeclaration",

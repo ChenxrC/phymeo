@@ -205,3 +205,38 @@ Success means both source backends, affected compatibility and fresh installed
 public consumers with complete force/activation/motion and rollback evidence;
 it does not confer FREE+BALL limits, arbitrary robots, training, long support or
 G1 dance qualification. No original D4/D6 failure is superseded by this work.
+
+## Parent frozen authoring grant, 2026-11-13 04:15
+
+FROZEN_CODE_AUTHORING_ONLY. The source-researched contract above is accepted
+for the next functional slice R3-A; historical proposal wording is not execution
+authority. Root owns every project command and the five shared seams. Existing
+kernels/device ABI, native numerical gates, h, six sources and capacities stay.
+
+- Original audit author: only MOD mujoco_tyx/_floating_model.py and
+  mujoco_tyx/_actuator_model.py; NEW docs/development/p65-free-ball-activation-report.md.
+- Original source author: only NEW tests/test_mujoco_tyx_free_ball_activation.py
+  and tests/installed/check_free_ball_activation.py. Own the six fixed sources
+  and independent reference/continuous consumer; communicate helper functions to
+  the transaction author before writing duplicate cases.
+- Original tests author: after closing the already assigned saved-plot task,
+  only NEW tests/test_mujoco_tyx_free_ball_activation_transactions.py. Reuse the
+  authored source family's inputs and public expected schemas; no second fixture.
+- Root: MOD mujoco_tyx/_model.py, _mujoco_tyx_runtime.py, mujoco_actuation.py,
+  mujoco_joint_transmission.py and mujoco_checkpoint.py under src/phymeo/backends.
+  Root alone adjusts any now-supported exact old activation negative after
+  recording it as an exact-source positive; unrelated negatives remain.
+
+All authors work in their existing isolated trees with text/Git only. No imports,
+collection, numerical probe, pytest, lint/format, build/install or profile.
+Tests first, small commits, complete changed-file/limitation handoff and clean
+tracked tree. No reset/merge of parent, no pin changes, no helper/reviewer agents.
+A real missing kernel/ABI stops this scope for a new decision; no hidden expansion.
+
+Validation after parent source review: focused static checks; complete new source
+and transaction matrices in the root's sole guarded queue, two actual backends;
+only affected fixed-BALL stateful, scalar-FREE stateful and stateless-FREE+BALL
+controls. The exact old activation-rejected models must become separately
+verified two-step positives. Then one new product wheel/parity and the complete
+source-external consumer in both modes. No reuse of ec0e2997 as proof of changed
+product. The 06:15 feature cutoff and07:30 overall report still apply.

@@ -108,3 +108,11 @@ tyx 着色 XPBD 由 A 持有 runtime/缓冲/内核发布，B 持有着色互斥�
 ## 7. CI 结果判定
 
 没有 GPU 的宿主机允许明确 skip GPU 测试；专用 GPU gate 设置 require-device，缺硬件、零测试收集、全跳过都应失败。分开标注 source-lowering、编译成功和硬件执行。测试失败保留 JUnit、场景配置和种子；不得上传私钥、模型私密数据或训练集原始内容。
+
+## 外部接口 resident 接入验证
+
+`tests/scale/test_resident_publication.py` 固定单子步 publication v1 合同，复用既有
+resident 算法与双 bank。常规验收同时运行 `tests/scale/test_resident_step.py`，
+确认默认逐 world 行为未变。测试自身参数分别执行 interpret 与真实 CUDA；缺 CUDA
+硬失败，不降级为解释器通过。测试可用显式 PHYMEO_RESIDENT_CACHE 复用已有缓存。
+合同、HOST 成本和未接入边界见[公共集成](../architecture/engine-integration.md#resident-publication-v1)。

@@ -37,17 +37,32 @@ __all__ = [
     "SpherePlaneWorld",
     "TyxWorldBatch",
     "WorldCheckpoint",
+    "BatchStepRejected",
 ]
+
+
+class BatchStepRejected(RuntimeError):
+    """An all-world substep was rejected; no candidate state was published."""
+
+    def __init__(self, rejected_worlds):
+        self.rejected_worlds = tuple(rejected_worlds)
+        super().__init__(
+            f"resident batch rejected {len(self.rejected_worlds)} world(s): "
+            f"{self.rejected_worlds[:8]}; no worlds published"
+        )
 
 
 class TyxWorldBatch:
     """Device passes advance independent worlds using a pair of persistent state buffers.
 
     Controls stay held until changed. A step returns a compact per-world acceptance map.
-    Numeric rejection retains the affected world's physical state, tick and delayed packet.
+    By default rejection retains only the affected world's state, tick and delayed packet.
+    require_all=True retains every world's accepted state if any candidate is rejected.
     A failed batch submission leaves its input buffer current. Reading the committed state
     after a device loss requires a functioning driver or a previously saved checkpoint.
     """
+
+    publication_contract_version = 1
 
     def __init__(self, worlds, mode="cuda", *, cache_root=None):
         if mode not in ("cuda", "interpret"):
@@ -88,6 +103,7 @@ class TyxWorldBatch:
                 "accepted_world_steps",
                 "rejected_world_steps",
                 "failed_steps",
+                "aborted_batch_steps",
                 "recovery_sync_attempts",
                 "revolute_kernel_launches",
             ),
@@ -542,7 +558,7 @@ class TyxWorldBatch:
             device_patch_site_capacity=device_patch_site_capacity,
         )
 
-    def step_contacts(self, plan, h):
+    def step_contacts(self, plan, h, *, require_all=False):
         """Sample entry contact, solve full mechanics and publish one transaction."""
         from ._resident_contact_bundle import ResidentContactBundle
         from ._resident_contact_plan import ResidentContactPlan
@@ -551,15 +567,22 @@ class TyxWorldBatch:
             raise TypeError("expected a ResidentContactPlan or ResidentContactBundle")
         if plan._batch is not self:
             raise ValueError("contact plan belongs to a different owner")
-        return self._step(h, contacts=plan)
+        return self._step(h, contacts=plan, require_all=require_all)
 
-    def step(self, h):
-        """Advance one positive physical substep and return accepted worlds by key."""
-        return self._step(h)
+    def step(self, h, *, require_all=False):
+        """Advance one substep; optionally publish only if all worlds accept it.
 
-    def _step(self, h, *, contacts=None):
+        The default preserves per-world acceptance. With require_all=True, a
+        rejected candidate raises BatchStepRejected without swapping any bank.
+        Explicitly staged controls stay held; no state checkpoint is downloaded.
+        """
+        return self._step(h, require_all=require_all)
+
+    def _step(self, h, *, contacts=None, require_all=False):
         with self._lock:
             self._check_open()
+            if type(require_all) is not bool:
+                raise TypeError("require_all must be bool")
             if contacts is not None:
                 contacts._check_open()
             dt = float(as_fp32(h, "physical substep", ()))
@@ -636,6 +659,15 @@ class TyxWorldBatch:
                         candidate = contacts._read_candidate(attempt, dst)
                         contact_commit = contacts._finish_attempt(attempt, candidate, status)
                         contacts._check_attempt(attempt)
+                # Completion has already succeeded. Reject outside _device so
+                # ordinary numerical rejection adds no recovery synchronization.
+                if require_all and not np.all(status):
+                    self._counts["aborted_batch_steps"] += 1
+                    raise BatchStepRejected(
+                        b.world
+                        for b, value in zip(self._bindings, status, strict=True)
+                        if not value
+                    )
                 results = {
                     b.world: bool(value) for b, value in zip(self._bindings, status, strict=True)
                 }
@@ -854,6 +886,7 @@ class TyxWorldBatch:
             )
             return {
                 **self._counts,
+                "publication_contract_version": self.publication_contract_version,
                 "mode": self._mode,
                 "world_count": self._count,
                 "state_buffer_count": 2 if self._count else 0,

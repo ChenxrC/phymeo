@@ -44,8 +44,8 @@ CPU MuJoCo 3.8.0 仅作为本实验 solver profile 的模型编译、初始化�
 
 PhySolveRuntime 提供版本 1 的字段借用和候选执行入口；同步 step/forward/reset 复用
 同一事务，snapshot 仍为显式全量 D2H。执行阶段与限制见下节，不以快照包装高频接口。
-resident 公共入口的部分 world 发布行为同样必须补齐共同发布/恢复边界后才授予外部
-事务契约资格。不能由 P2PE 每步整批 host 快照补偿底层合同缺失。
+resident 的单子步共同发布见下方 publication v1；原有入口默认仍逐 world 接受。
+外部完整事务还需字段、生命周期及多子步验收，不能由 P2PE 整批 host 快照补偿。
 
 每个缓存/备份/bank 登记 owner、容量、用途、更新和失效条件。编译时冻结索引、缓冲
 和绑定；热循环不重复 FK/forward/接触响应，不逐 world 重新编译或跨层调度。
@@ -516,3 +516,31 @@ are per template, not per world; complexity and storage are O(visual vertices + 
 No per-step parsing, model copy, device allocation or synchronization is introduced.
 The native adapter's optional CPU MuJoCo dependency does not enter the geometry types.
 Textured display, generic resident export and installed/GUI qualification remain pending.
+
+## Resident publication v1
+
+`backends.tyx_world_batch.TyxWorldBatch.publication_contract_version=1` 声明
+`step(h, require_all=True)` 与 `step_contacts(plan, h, require_all=True)` 支持单子步
+共同发布。默认 False 保留原有逐 world 接受行为；非 bool 在执行前拒绝。
+
+已有 device 完成、状态摘要、tree 与 contact candidate 检查全部结束后，若有 world
+拒绝，抛出 `BatchStepRejected`，`rejected_worlds` 是实际拒绝 world 的注册顺序元组。
+所有 world 的权威 state bank、tick、延迟控制历史与 accepted contact receipt 均不
+发布候选，state_epoch 不变；已显式提交的 held controls 保留。恢复控制后可继续，
+无需 full reset。树的工作诊断仍按已有语义失效，不承诺保留失败尝试的诊断输出。
+
+该策略只覆盖一次 substep；连续多次调用不构成共同事务。它没有改变数学、排序、
+容差或接触律，也未增加物理 bank、checkpoint 下载、device allocation 或同步。
+新增 HOST 判断复用原有每 world int32 状态摘要，O(N)。数值拒绝不会额外触发
+设备异常恢复同步；异常计入 failed_steps，并单列 aborted_batch_steps。已有
+completed/accepted/rejected_world_steps 仍只统计已发布调用，含义不变。
+
+step_contacts 的原有 HOST 窄相、物理 candidate/诊断读取和成本仍存在；上述“无新增
+下载”不是该接触路径零传输承诺。此合同不使用 Newton、Warp、MuJoCo-Warp、
+MuJoCo 或 PhySolve 的运行 API，也不意味着两种 solver 的物理响应相同。
+
+正式 `tests/scale/test_resident_publication.py` 与既有 test_resident_step 共 31 项通过，
+覆盖 interpret/实际 CUDA、N=1/8/64、球/平面支撑冲量、失败恢复、局部 reset、默认
+语义、树接触与延迟控制历史。跨实现微差不在本批范围；证据见配套实验根
+`evidence/b7a-summary.json`。当前仍需公共 caller-buffer 字段读取、批量输入/reset
+准备、可重试清理及 P2PE 实际 C ABI；不能把本项算作 B7 完成。

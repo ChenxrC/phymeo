@@ -59,6 +59,7 @@ def test_ball_motor_contact_rejected_before_device(negative, monkeypatch, tmp_pa
     import phymeo.backends._mujoco_tyx_runtime as runtime_module
     from phymeo.backends.mujoco_runtime import MuJoCoRuntime
     from phymeo.builders.mujoco_compiler import compile_mujoco_xml
+    from phymeo.backends.mujoco_tyx import MuJoCoTyxUnsupported
 
     xml = case.negative_source(negative)
     model = mj.MjModel.from_xml_string(xml)
@@ -71,9 +72,27 @@ def test_ball_motor_contact_rejected_before_device(negative, monkeypatch, tmp_pa
         raise AssertionError("unsupported BALL-MC reached device allocation")
 
     monkeypatch.setattr(runtime_module.MuJoCoTyxRuntime, "_build_device", forbidden)
-    with pytest.raises((ValueError, NotImplementedError)) as caught:
+    with pytest.raises(MuJoCoTyxUnsupported) as caught:
         MuJoCoRuntime(compiled, mode="interpret", implementation="tyx")
     assert not calls
+    expected_codes = {
+        "activation": "joint-motor-activation",
+        "scalar-activation": "joint-motor-activation",
+        "free": "joint-domain",
+        "ball-limit": "ball-constraint-domain",
+        "scalar-limit": "ball-constraint-domain",
+        "dry": "ball-constraint-domain",
+        "ball-spring": "ball-spring",
+        "elliptic": "ball-contact-cone",
+        "condim4": "ball-contact-dimension",
+        "condim6": "ball-contact-dimension",
+        "affine-ball": "ball-actuator-domain",
+        "parent-transmission": "ball-actuator-domain",
+        "actor-overflow": "ball-actuator-capacity",
+        "pair-overflow": "ball-contact-capacity",
+        "slot-overflow": "ball-contact-capacity",
+    }
+    assert expected_codes[negative] in {issue.code for issue in caught.value.issues}
     (tmp_path / "source.xml").write_text(xml, encoding="utf-8")
     (tmp_path / "rejection.txt").write_text(repr(caught.value), encoding="utf-8")
 

@@ -5,7 +5,6 @@ single accepted-bank swap remain owned by TyxWorldBatch.
 """
 
 from collections.abc import Mapping
-from contextlib import ExitStack
 from dataclasses import dataclass
 from numbers import Integral
 from types import MappingProxyType
@@ -15,6 +14,7 @@ import numpy as np
 from ..constraints.robot_contact import RobotContactMaterial
 from ._resident_affine_binding import ResidentAffineTreeBinding
 from ._resident_affine_tree import AffineTreeKinematics
+from ._resident_cleanup import ReleaseStack, cleanup_failed_init
 from ._resident_collision_plan import ResidentCollisionPlan, ResidentStaticBinding
 from ._resident_contact_bridge import (
     ContactShapeFrame,
@@ -84,7 +84,7 @@ class _ResidentContactMechanics:
     """Shared one-entry/one-solve contact transaction for plans and page bundles."""
 
     def _initialize_contact_mechanics(self):
-        self._contact_resources = ExitStack()
+        self._contact_resources = ReleaseStack()
         self._contact_counts = dict(
             device_allocations=0,
             device_owned_bytes=0,
@@ -202,11 +202,15 @@ class _ResidentContactMechanics:
         if batch._mode == "interpret":
             return data.copy()
         result = batch._tx.cuda_array(data)
-        self._contact_resources.callback(result.free)
+        self._contact_resources.callback(self._free_contact_buffer, result, result.nbytes)
         self._contact_counts["device_allocations"] += 1
         self._contact_counts["device_owned_bytes"] += result.nbytes
         self._contact_counts["uploaded_bytes"] += data.nbytes
         return result
+
+    def _free_contact_buffer(self, buffer, size):
+        buffer.free()
+        self._contact_counts["device_owned_bytes"] -= size
 
     def _upload_contact(self, buffer, data):
         self._batch._upload(buffer, data, "contact")
@@ -757,9 +761,9 @@ class ResidentContactPlan(_ResidentContactMechanics, ResidentCollisionPlan):
                 from ._device_convex_query import ConvexQueryPlan
 
                 self._device_patch_query = ConvexQueryPlan(batch, self, site_capacity=capacity)
-        except BaseException:
+        except BaseException as error:
             if hasattr(self, "_closed"):
-                self.close()
+                cleanup_failed_init(self, error)
             else:
                 self._close_contact_mechanics()
             raise
@@ -819,8 +823,5 @@ class ResidentContactPlan(_ResidentContactMechanics, ResidentCollisionPlan):
             result.update({("device_patch_" + key): value for key, value in query.stats.items()})
         return result
 
-    def close(self):
-        try:
-            super().close()
-        finally:
-            self._close_contact_mechanics()
+    def _close_owned_scratch(self):
+        self._close_contact_mechanics()

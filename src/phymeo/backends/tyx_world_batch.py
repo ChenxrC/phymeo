@@ -1,13 +1,14 @@
 """Opt-in TYX batch of spheres, scalar joints, fixed and floating complete trees."""
 
 from collections.abc import Mapping
-from contextlib import ExitStack, contextmanager
+from contextlib import contextmanager
 from threading import RLock
 from types import MappingProxyType
 
 import numpy as np
 
 from ._resident_affine_tree import AffineRobotTree
+from ._resident_cleanup import ReleaseStack, cleanup_failed_init, close_dependencies
 from ._resident_floating_affine_tree import FloatingAffineRobotTree, FloatingAffineTreeInputs
 from ._resident_floating_tree import FloatingRobotTree, FloatingTreeInputs
 from ._resident_revolute_world import RevoluteRotor
@@ -70,8 +71,10 @@ class TyxWorldBatch:
         self._mode = mode
         self._lock = RLock()
         self._closed = False
+        self._closing = False
         self._unavailable = False
-        self._resources = ExitStack()
+        self._cleanup_drained = False
+        self._resources = ReleaseStack()
         self._readback_plans = set()
         self._collision_plans = set()
         self._contact_bundles = set()
@@ -284,8 +287,8 @@ class TyxWorldBatch:
                     self._floating_affine_trees = FloatingAffineTreeDeviceStorage(
                         self, self._floating_affine_specs
                     )
-        except BaseException:
-            self.close()
+        except BaseException as error:
+            cleanup_failed_init(self, error)
             raise
 
     def _tree_storages(self):
@@ -308,12 +311,23 @@ class TyxWorldBatch:
         if self._mode == "interpret":
             return np.empty(shape, dtype=dtype) if host is None else host.copy()
         dev = self._tx.cuda_empty(shape, dtype) if host is None else self._tx.cuda_array(host)
-        self._resources.callback(dev.free)
+        self._resources.callback(self._free_buffer, dev, dev.nbytes)
         self._counts["device_allocations"] += 1
         self._counts["device_owned_bytes"] += dev.nbytes
         if host is not None:
             self._counts[category + "_uploaded_bytes"] += host.nbytes
         return dev
+
+    def _free_buffer(self, buffer, size):
+        buffer.free()
+        self._counts["device_owned_bytes"] -= size
+
+    def _ensure_cleanup_ready(self):
+        # Only a failed recovery sync needs another completion attempt. Normal
+        # resident operations already complete before returning to the caller.
+        if self._unavailable and not self._cleanup_drained:
+            self._sync()
+            self._cleanup_drained = True
 
     def _upload(self, buffer, data, category):
         if self._mode == "cuda":
@@ -360,8 +374,8 @@ class TyxWorldBatch:
             raise
 
     def _check_open(self):
-        if self._closed:
-            raise RuntimeError("resident world batch is closed")
+        if self._closed or self._closing:
+            raise RuntimeError("resident world batch is closed or closing")
         if self._unavailable:
             raise RuntimeError("device cannot synchronize; rebuild from a saved checkpoint")
 
@@ -887,6 +901,8 @@ class TyxWorldBatch:
             return {
                 **self._counts,
                 "publication_contract_version": self.publication_contract_version,
+                "closed": self._closed,
+                "closing": self._closing,
                 "mode": self._mode,
                 "world_count": self._count,
                 "state_buffer_count": 2 if self._count else 0,
@@ -926,16 +942,15 @@ class TyxWorldBatch:
 
     def close(self):
         with self._lock:
-            if not self._closed:
-                self._closed = True
-                try:
-                    with ExitStack() as closing_plans:
-                        for plan in (
-                            *self._readback_plans,
-                            *self._collision_plans,
-                            *self._contact_bundles,
-                        ):
-                            closing_plans.callback(plan.close)
-                finally:
-                    self._resources.close()
-                    self._counts["device_owned_bytes"] = 0
+            if self._closed:
+                return
+            self._closing = True
+            self._ensure_cleanup_ready()
+            close_dependencies(self)
+            # Bundles depend on pages; pages depend on queries and batch storage.
+            for owners in (self._contact_bundles, self._collision_plans, self._readback_plans):
+                for plan in tuple(owners):
+                    plan.close()
+            self._resources.close()
+            self._closed = True
+            self._closing = False

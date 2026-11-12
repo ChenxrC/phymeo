@@ -637,7 +637,7 @@ def test_readback_plan_cli_selects_unwrapped_comparison_and_new_counter_namespac
 
 
 @pytest.mark.tyx
-def test_readback_plan_batch_close_failure_still_closes_all_plans(tyx_mode, tmp_path):
+def test_readback_plan_batch_close_failure_retains_owner_until_retry(tyx_mode, tmp_path):
     from phymeo.backends.tyx_world_batch import FreeSphere, TyxWorldBatch
 
     sphere = FreeSphere(2, 0.125, position=(0, 0, 2), gravity=(0, 0, -8))
@@ -657,13 +657,22 @@ def test_readback_plan_batch_close_failure_still_closes_all_plans(tyx_mode, tmp_
 
         def fail_close():
             callbacks.append("called")
-            raise RuntimeError("injected first-plan close callback failure")
+            if len(callbacks) == 1:
+                raise RuntimeError("injected first-plan close callback failure")
 
         first_to_close = tuple(batch._readback_plans)[0]
         first_to_close._resources.callback(fail_close)
         with pytest.raises(RuntimeError, match="injected first-plan close"):
             batch.close()
         assert callbacks == ["called"]
+        assert not first_to_close.stats()["closed"]
+        assert first_to_close in batch._readback_plans
+        assert batch.stats()["closing"] and not batch.stats()["closed"]
+        assert not batch._runtime.closed
+        with pytest.raises(RuntimeError, match="closed"):
+            first_to_close.read()
+        batch.close()
+        assert callbacks == ["called", "called"]
         assert all(plan.stats()["closed"] for plan in plans)
         assert all(plan.stats()["device_owned_bytes"] == 0 for plan in plans)
         assert all(plan.stats()["host_workspace_bytes"] == 0 for plan in plans)
@@ -679,7 +688,7 @@ def test_readback_plan_batch_close_failure_still_closes_all_plans(tyx_mode, tmp_
             with pytest.raises(RuntimeError, match="closed"):
                 batch.readback(plan)
         assert batch.stats() == after_close
-        assert callbacks == ["called"]
+        assert callbacks == ["called", "called"]
     finally:
         for plan in plans:
             plan.close()

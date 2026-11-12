@@ -544,3 +544,26 @@ MuJoCo 或 PhySolve 的运行 API，也不意味着两种 solver 的物理响应
 语义、树接触与延迟控制历史。跨实现微差不在本批范围；证据见配套实验根
 `evidence/b7a-summary.json`。当前仍需公共 caller-buffer 字段读取、批量输入/reset
 准备、可重试清理及 P2PE 实际 C ABI；不能把本项算作 B7 完成。
+
+## Resident cleanup retry
+
+B7b 收敛上述清理前置：batch、readback、collision/contact、contact bundle 与 convex
+query 开始 close 后拒绝继续执行；仅在全部释放成功后标记 closed。释放回调按依赖
+逆序执行，成功才移除；失败回调、剩余缓冲及其 runtime 保留给下一次 close。已经
+释放成功的缓冲不重复 free，owned bytes 只在成功后扣除。底层 TyxCollisionBatch
+自身的公共 query/prepare 入口也拒绝 closing 状态，不只依靠外层 plan。
+
+构造期间发生分配失败且清理也失败，抛出 ResidentCleanupError，其 cleanup_owner
+保留未返回的对象及嵌套失败依赖；调用方必须保留异常或该 owner 并重试 close。
+已有 batch 的失败子 plan 在首次分配前登记，仍可由 batch.close 统一回收。释放失败
+不自动丢弃 owner，不承诺 CUDA context 永久损坏后一定能回收。
+
+正常推进和关闭不新增显式同步。若既有设备异常恢复同步失败，关闭须先重试完成
+确认，成功前不得 free；这是故障清理边界，不能用于掩盖正常热路径同步成本。
+TYX 原有 runtime/module 关闭内部同步保持不变。无新物理 bank、设备分配、状态
+复制或求解计算；关闭复杂度 O(持有资源数)，失败停止后允许独立 owner 稍后重试。
+
+正式测试 test_resident_cleanup 覆盖真实 CUDA free、runtime.close、恢复同步与
+嵌套构造失败，N=1/8/64 的推进后清理，以及读回、凸查询、树接触和 bundle。
+原有关闭测试改为验证保留依赖和重试，数值断言与容差不变。测试/审查和源码身份
+见配套实验根 evidence/b7b-summary.json；这仍不是 resident 实际 C ABI 或安装资格。

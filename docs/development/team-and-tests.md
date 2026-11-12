@@ -116,3 +116,8 @@ resident 算法与双 bank。常规验收同时运行 `tests/scale/test_resident
 确认默认逐 world 行为未变。测试自身参数分别执行 interpret 与真实 CUDA；缺 CUDA
 硬失败，不降级为解释器通过。测试可用显式 PHYMEO_RESIDENT_CACHE 复用已有缓存。
 合同、HOST 成本和未接入边界见[公共集成](../architecture/engine-integration.md#resident-publication-v1)。
+
+resident 清理改动同时运行 `tests/scale/test_resident_cleanup.py`：真实 CUDA 释放失败
+不得由 mock 成功替代；成功释放继续使用真实驱动。选测既有 readback、collision、
+contact bundle 的构造/关闭用例与通用 collision pipeline，确认 owner 释放顺序和
+正常路径。合同见[清理重试](../architecture/engine-integration.md#resident-cleanup-retry)。

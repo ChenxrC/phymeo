@@ -1,10 +1,9 @@
 """Explicit tyx broad phase with model-owned, reusable scratch allocations."""
 
-from contextlib import ExitStack
-
 import numpy as np
 
 from ..constraints.collision_shapes import MAX_CONVEX_VERTICES
+from ._resident_cleanup import ReleaseStack, cleanup_failed_init, close_dependencies
 
 
 class TyxCollisionBatch:
@@ -35,6 +34,8 @@ class TyxCollisionBatch:
         )
         self._tx = tx
         self._mode = mode
+        self._closing = False
+        self._closed = False
         self._reduce, self._classify = reduce_bounds, classify_pairs
         self._count, self._pair_count = len(tags), len(pairs)
         self._entry_kernels = {
@@ -82,7 +83,7 @@ class TyxCollisionBatch:
             sweep_synchronizations=0,
         )
         self._heightfield_candidates = HeightfieldCandidateBuffer(self, offsets)
-        self._resources = ExitStack()
+        self._resources = ReleaseStack()
         self._counts = dict(
             allocations=0,
             static_uploads=0,
@@ -116,8 +117,8 @@ class TyxCollisionBatch:
                     self._tags = self._static(tags)
                     self._pairs = self._static(pairs)
                     self._flags = self._scratch((self._pair_count,), np.int32)
-        except BaseException:
-            self.close()
+        except BaseException as error:
+            cleanup_failed_init(self, error)
             raise
 
     def _static(self, array):
@@ -125,7 +126,7 @@ class TyxCollisionBatch:
         if self._mode != "cuda":
             return array.copy()
         device = self._tx.cuda_array(array)
-        self._resources.callback(device.free)
+        self._resources.callback(self._free_device, device)
         self._counts["static_uploads"] += 1
         self._counts["uploaded_bytes"] += array.nbytes
         return device
@@ -135,8 +136,11 @@ class TyxCollisionBatch:
         if self._mode != "cuda":
             return np.empty(shape, dtype=dtype)
         device = self._tx.cuda_empty(shape, dtype)
-        self._resources.callback(device.free)
+        self._resources.callback(self._free_device, device)
         return device
+
+    def _free_device(self, device):
+        device.free()
 
     def _read(self, array):
         if self._mode != "cuda":
@@ -170,6 +174,7 @@ class TyxCollisionBatch:
     def tree_hits(self, key, tree, leaves, queries, params, shape):
         from ._tyx_collision_bvh import TreeBuffers
 
+        self._check_open()
         with self._tx.use_runtime(self._runtime):
             if key not in self._tree_buffers:
                 self._tree_buffers[key] = TreeBuffers(self, tree, self._count, shape)
@@ -179,6 +184,7 @@ class TyxCollisionBatch:
         """Allocate reusable shape-tree storage without a bounds upload or launch."""
         from ._tyx_collision_bvh import TreeBuffers
 
+        self._check_open()
         if self._spatial is None or self._spatial.mode != "bvh":
             raise ValueError("shape tree preparation requires BVH spatial pairs")
         with self._tx.use_runtime(self._runtime):
@@ -187,6 +193,7 @@ class TyxCollisionBatch:
 
     def query_device_bounds(self, *, trees, pending):
         """Use already completed bounds from the borrowed runtime, with no HOST envelopes."""
+        self._check_open()
         if not self._count:
             return np.empty((0, 6), np.float32), np.empty(0, np.int32)
         if self._pair_count and (self._spatial is None or self._spatial.mode != "bvh"):
@@ -195,6 +202,7 @@ class TyxCollisionBatch:
             return self._spatial_query(trees, pending, count_reduce=False)
 
     def heightfield_face_candidates(self, terrain, sphere, rows, columns):
+        self._check_open()
         return self._heightfield_candidates.select(terrain, sphere, rows, columns)
 
     def _spatial_query(self, trees, pending, *, count_reduce=True):
@@ -228,6 +236,7 @@ class TyxCollisionBatch:
         return bounds, space.decode_sap(raw)
 
     def query(self, envelopes, *, trees=None, pending=None):
+        self._check_open()
         if not self._count:
             return np.empty((0, 6), np.float32), np.empty(0, np.int32)
         with self._tx.use_runtime(self._runtime):
@@ -261,6 +270,7 @@ class TyxCollisionBatch:
 
     def entry_times(self, features):
         """Batch all active features using fixed-size pages across queries."""
+        self._check_open()
         if not features:
             return []
         groups = {}
@@ -347,6 +357,7 @@ class TyxCollisionBatch:
 
     def hull_intervals(self, points, na, nb, directions):
         """Return one checked-format FP32 interval proposal for each SAT direction."""
+        self._check_open()
         counts = self._sweep_counts
         with self._tx.use_runtime(self._runtime):
             if self._hull_storage is None:
@@ -408,7 +419,19 @@ class TyxCollisionBatch:
             **self._spatial_counts,
             **self._heightfield_candidates.counts,
             "backend": self._mode,
+            "closing": self._closing,
+            "closed": self._closed,
         }
 
+    def _check_open(self):
+        if self._closing or self._closed:
+            raise RuntimeError("collision batch is closed or closing")
+
     def close(self):
+        if self._closed:
+            return
+        self._closing = True
+        close_dependencies(self)
         self._resources.close()
+        self._closed = True
+        self._closing = False

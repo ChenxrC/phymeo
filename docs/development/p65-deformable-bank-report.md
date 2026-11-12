@@ -182,8 +182,8 @@ readback, kernels and synchronization. They do not claim timings or Newton speed
 
 ## Predeclared cases and evidence
 
-Manual enumeration: **42 logical pytest nodes**: 11 HOST registration/budget nodes
-and 31 backend-selected nodes. This is not a collection result. Parent runs the
+Manual enumeration: **44 logical pytest nodes**: 11 HOST registration/budget nodes
+and 33 backend-selected nodes. This is not a collection result. Parent runs the
 new files under its single serial execution slot; no prior accepted suite is rerun.
 
 D1 is a three-node surface with one edge, nonzero opposed x velocity and compliance
@@ -251,3 +251,22 @@ runtime counts remain pending parent validation. The parent's entry-sync poison
 change and public exports are integration-owned differences. No physical capacity,
 maximum-scale throughput, rigid-soft contact loop, general fabric qualification
 or complete P6.5 acceptance follows from this authoring handoff.
+
+
+### Final text-review corrections
+
+The installed consumer now writes the actual returned receipt immediately after
+`step` returns and before the following `snapshot`. Each independently computed
+same-entry and continuous HOST result is saved before its first comparison, so a
+comparison failure preserves the actual diagnostic arrays. Inputs, physics calls,
+models, numeric gates and the 16/32 call counts are unchanged.
+
+The parent owns the final loan-exit synchronization change: synchronize while the
+loan and owner lock are still held, then revoke the loan. Exit synchronization
+failure poisons the owner; a simultaneous consumer failure preserves both original
+exceptions. Entry synchronization failure does not trigger a second sync attempt.
+Two new pre-execution cases cover normal and throwing loan bodies, actual entry/exit
+sync completion followed by an injected known Python exit failure, live lease at
+the sync boundary, revocation, close-only behavior and both exception identities.
+The final manual node count above includes these two cases. This author did not
+modify the three frozen product files for either parent-owned lease correction.

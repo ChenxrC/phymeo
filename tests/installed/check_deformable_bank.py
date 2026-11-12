@@ -178,6 +178,7 @@ def run(mode, journal, progress):
             with patch("phymeo.constraints.distance.project_distances",side_effect=forbidden):
                 receipt = owner.step(inputs,H,expected_revision=owner.revision)
             progress["returned"] += 1
+            journal.emit("raw-return",receipt=receipt,progress=dict(progress))
             after = owner.snapshot()
             journal.emit("accepted", receipt=receipt, state=after, stats=owner.stats())
             require(receipt.accepted and tuple(receipt.worlds)==KEYS,"complete atomic publication")
@@ -190,6 +191,8 @@ def run(mode, journal, progress):
                 same = host_step(before[key].position.astype(float),before[key].velocity.astype(float),
                                  spec.model,spec.constraints,inputs[key].force,row.sweeps)
                 continuous = host_step(*oracle[key],spec.model,spec.constraints,inputs[key].force,row.sweeps)
+                journal.emit("oracle-before-comparison",world=key,same_entry=same,continuous=continuous,
+                             actual=after[key],row=row)
                 np.testing.assert_allclose(after[key].position,same[0],rtol=2e-5,atol=2e-5)
                 np.testing.assert_allclose(after[key].velocity,same[1],rtol=3e-3,atol=3e-3)
                 np.testing.assert_allclose(row.multipliers,same[2],rtol=2e-5,atol=2e-5)

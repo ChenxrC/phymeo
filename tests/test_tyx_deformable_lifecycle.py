@@ -290,3 +290,47 @@ def test_borrow_entry_sync_failure_poison_releases_loan_and_allows_close(tyx_mod
     finally:
         batch.close()
     assert batch.resource_state == "CLOSED"
+
+
+@pytest.mark.parametrize("body_failure", [False, True])
+def test_borrow_exit_sync_holds_lease_then_poison_preserves_both_errors(body_failure, tyx_mode, monkeypatch, tmp_path):
+    specs = (world(),)
+    batch = TyxDeformableBatch(specs, mode=tyx_mode, settings=SETTINGS)
+    original = batch._buffers.sync
+    before = batch.snapshot()
+    calls = []
+    primary = ValueError("consumer failed inside the live loan")
+    synchronization = RuntimeError("known Python failure after actual exit sync")
+    def sync_then_fail_at_exit():
+        assert batch._loan is not None and batch._loan._live
+        original()
+        calls.append(True)
+        if len(calls) == 2:
+            raise synchronization
+    try:
+        with monkeypatch.context() as patch:
+            patch.setattr(batch._buffers, "sync", sync_then_fail_at_exit)
+            if body_failure:
+                with pytest.raises(BaseExceptionGroup) as caught:
+                    with batch.borrow_vertices(expected_revision=0) as loan:
+                        assert loan.position(7).shape == (3,3)
+                        raise primary
+                assert caught.value.exceptions == (primary, synchronization)
+            else:
+                with pytest.raises(RuntimeError) as caught:
+                    with batch.borrow_vertices(expected_revision=0) as loan:
+                        assert loan.position(7).shape == (3,3)
+                assert caught.value is synchronization
+        assert calls == [True, True] and batch._loan is None and not loan._live
+        assert batch._poisoned and batch.revision == 0
+        with pytest.raises(RuntimeError):
+            batch.step(forces(specs), H, expected_revision=0)
+        with pytest.raises(RuntimeError):
+            with batch.borrow_vertices(expected_revision=0):
+                pass
+        record(tmp_path,"exit-sync-poison",before=before,body_failure=body_failure,
+               sync_calls=len(calls),loan_revoked=batch._loan is None,
+               revision=batch.revision,poisoned=batch._poisoned,stats=batch.stats())
+    finally:
+        batch.close()
+    assert batch.resource_state == "CLOSED"

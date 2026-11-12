@@ -52,3 +52,10 @@ M1的S0必须给可计算的注册/持久/query/暂存buffer字节式和失败�
 父把同次 transmission 的 typed receipt 注册到现有 mujoco_checkpoint.py 白名单，恢复时绑定原静态 CSR/gear、原请求控制、accepted qfrc 和 receipt force；没有新 checkpoint 格式或激活状态。该文件是必要既有共享接缝，纳入父范围。原 tests/test_mujoco_tyx_ball.py 的 ball-motor 和 test_mujoco_tyx_ball_scalar_actuation.py 的 ball-target-none 两个 stateless 拒绝项由 NEW exact-source 两步两后端正控替代；含接触 BALL-C 的拒绝项保持。
 
 场景作者另增 tests/installed/check_participant_scene.py，自含资产级 W2、多步控制和 checkpoint/reset 后继，源码外消费公共API，不导入 tests/helper。没有新增算法域。
+
+## 12:40 source checkpoint
+
+- BALL-M1: 47 new source nodes and nine targeted compatibility nodes qualified; checkpoint byte-saving first failure retained and fixed without numerical changes. See [robot qualification](../../development/p65-ball-joint-motor-report.md).
+- Participant asset assembly: HOST19 + interpret19 + CUDA19 qualified (57 executions). Public phymeo entry, four original tree families, complete-world restore/reset and failed-world isolation are covered. See [scene qualification](../../development/p65-participant-scene-report.md).
+- M1: S0 contract/tests imported; existing author is implementing S1. Parent runtime lease protection qualified separately; prepare_boundary_query is now wired lazily, pending the new plan implementation and full M1 qualification. No device-query pass is claimed yet.
+- The first two installed consumers are authored and statically checked; final packaging remains one combined wheel after product qualification. No new training/G1/CI work or deadline.

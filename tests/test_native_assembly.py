@@ -52,6 +52,30 @@ def test_snapshot_is_authoritative_for_model_drive_visual_and_identity(urdf):
     assert again.compilation.fresh_native_model().body("arm::link").mass == 4
 
 
+def test_source_identity_preserves_renaming_slashes_and_multiple_instances(urdf):
+    text = URDF.replace('name="slider"', 'name="source_model"')
+    text = text.replace('"base"', '"/base"').replace('"link"', '"a/link"')
+    instances = tuple(NativeAssetInstance(name, urdf, urdf_xml=text)
+                      for name in ("renamed", "neighbor"))
+    template = compile_native_template(instances, timestep=.002, gravity=(0, 0, 0))
+    assert template.asset_identity_contract_version == 1
+    model = template.compilation.fresh_native_model()
+    assert len(template.asset_identities) == 2
+    indices = []
+    for identity, instance in zip(template.asset_identities, instances):
+        assert (identity.instance, identity.format, identity.model_name) == (
+            instance.name, "urdf", "source_model")
+        assert tuple(row[0] for row in identity.bodies) == ("/base", "a/link")
+        for source, compiled, index in identity.bodies:
+            assert compiled == instance.name + "::" + source
+            assert model.body(index).name == compiled
+            indices.append(index)
+    assert len(set(indices)) == 4
+    Path(urdf).unlink()
+    assert template.bind(64).template.asset_identities is template.asset_identities
+    assert template.compilation.fresh_native_model().nbody == 5
+
+
 @pytest.mark.parametrize(
     "strip,filename", [(False, "meshes/shape.obj"), (True, "ignored/shape.obj")]
 )

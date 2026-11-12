@@ -411,3 +411,17 @@ CPU审计确认只有指定候选对消失，非排除数值数组、option、�
 与原生地址偏移；实际 DLL 的四个新增用例覆盖 N=1/8/64 的落体、接触、浮根标量
 host/设备访问及空场景。独立只读复审无阻断。全文档检查仍为 479 条历史缺失链接，
 输出散列不变；没有重新构建或安装 wheel，不据源码消费结果宣称独立安装资格。
+
+## B8h：资产来源与编译身份
+
+`NativeTemplate.asset_identity_contract_version=1` 对应只读 `asset_identities`。
+每个 URDF 实例记录 instance、format、原始 robot model_name，以及 bodies 中的
+`(source_link_name, compiled_body_name, native_body_index)`。原始斜杠原样保存；
+实例改名不改来源名称。native 下标属于本次编译的 world-local 空间，不是稳定公共 ID。
+来源取自已冻结的文件或内存快照，绑定取自本次实际编译结果；查询不重新读资产。
+固定 body 当前不折叠，重新编译后必须消费新绑定，不能跨 generation 缓存旧下标。
+
+这只增加 O(资产 link 数) 的冷身份记录，不增加物理状态、逐 world 构建、设备复制或
+同步。无 URDF 的程序化模板保持空身份集；非 URDF 资产不伪造 URDF 身份。
+装配、visual、显式排除和 mimic 共74项通过；新增覆盖两个重命名实例、前导/内部
+斜杠、固定根、删除源文件后绑定64 world。安装及消费者结论由 P2PE 单独记录。

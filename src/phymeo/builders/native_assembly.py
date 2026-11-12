@@ -201,6 +201,17 @@ class NativeRigidShape(NativeStaticShape):
 
 
 @dataclass(frozen=True)
+class NativeAssetIdentity:
+    """Source names bound to one compiled instance, not global entity IDs."""
+
+    instance: str
+    format: str
+    model_name: str
+    # (original link name, scoped compiled body name, world-local native index).
+    bodies: tuple
+
+
+@dataclass(frozen=True)
 class NativeTemplate:
     compilation: object
     initial_state: NativeInitialState
@@ -226,6 +237,8 @@ class NativeTemplate:
     coordinate_contract_version: int = 1
     visual_scene: object = None
     visual_diagnostics: tuple = ()
+    asset_identities: tuple[NativeAssetIdentity, ...] = ()
+    asset_identity_contract_version: int = 1
     # Private cold compiler owner. XML serialization rounds native authoring
     # values; the public compilation.mj_spec is caller-mutable. Never expose or
     # edit this snapshot, only copy it for a newly requested rule compilation.
@@ -361,10 +374,14 @@ def compile_native_template(
     spec.option.solver = mj.mjtSolver.mjSOL_NEWTON
     spec.option.jacobian = mj.mjtJacobian.mjJAC_DENSE
     pending, sources, target_maps, diagnostics = [], [], {}, []
+    source_bodies = []
     captured_visuals = {}
     visual_diagnostics = []
     for asset in assets:
         child, source_root, source_digest = load_asset_source(asset)
+        if source_root.tag == "robot":
+            source_bodies.append((asset.name, source_root.get("name", ""),
+                                  tuple(link.attrib["name"] for link in source_root.findall("link"))))
         if capture_visuals:
             from .native_visuals import capture_urdf_visuals
 
@@ -462,6 +479,14 @@ def compile_native_template(
         )
     compilation = compile_mujoco_spec(spec, instance="assembly")
     model = compilation.fresh_native_model()
+    identities = []
+    for instance, model_name, links in source_bodies:
+        rows = []
+        for source_name in links:
+            compiled_name = instance + "::" + source_name
+            body = model.body(compiled_name)
+            rows.append((source_name, compiled_name, int(body.id)))
+        identities.append(NativeAssetIdentity(instance, "urdf", model_name, tuple(rows)))
     if model.nsensor or model.nplugin or model.nflex or model.nuserdata:
         raise NotImplementedError("PhySolve template excludes native sensors/plugins/flex/userdata")
     data = mj.MjData(model)
@@ -540,6 +565,7 @@ def compile_native_template(
         tuple((model.body(i).name, i) for i in range(1, model.nbody)),
         tuple((model.geom(i).name, i) for i in range(model.ngeom)),
         tuple(sources),
+        asset_identities=tuple(identities),
         scalar_controls=tuple(scalar_controls),
         target_bindings=target_bindings,
         import_diagnostics=tuple(diagnostics),

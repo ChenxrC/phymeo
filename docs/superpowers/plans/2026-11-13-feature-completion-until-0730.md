@@ -61,7 +61,7 @@
 | 项 | 本轮D4-N登记值 |
 | --- | --- |
 | 支承/材料 | 四角(±1,±1,0)固定、中心(0,0,0)自由；四个扇形facet与四条径向距离约束；中心质量0.5kg、刚体2kg；原柔度1/16384，N3为其两倍 |
-| 接触/初态 | 原逐facet法则：r=1/8m、width=1/16m、k=128N/m、d=0.5Ns/m；初始gap=width+1/128m、法向速度−1/16m/s；胶囊轴长1/4m，以最低轴端定义gap，COM比同gap球高1/8m |
+| 接触/初态 | 原逐facet法则：r=1/8m、width=1/16m、k=128N/m、d=0.5s/m（原乘法速率阻尼）；初始gap=width+1/128m、法向速度−1/16m/s；胶囊轴长1/4m，以最低轴端定义gap，COM比同gap球高1/8m |
 | 时序 | T=3s；h=1/1024s，N1另h=1/2048s；零gravity、COM外载[0,1)为−16N、[1,9/8)为+16N、[9/8,3]为−16N，均沿法向 |
 | 支撑窗 | [0.75,1)与[2.75,3)；总接触力的法向分量均值为L的0.8–1.2；刚体COM与自由中心法向速度各自RMS≤0.1m/s，不以相对速度小替代 |
 | 连续/工程门 | 入层、支撑、层外零力、再接触依序出现；事件至少持续1/128s（粗8步、细16步）；峰值≤8L、gap≥−r/2，并独立保持膜原侧。无符号距离不能把翻面认作再接触；不宣称CCD |
@@ -142,3 +142,17 @@ D5初始control与subset reset使用原公开checkpoint/restore共同事务；D3
 4. 下一步按剩余依赖排：摩擦/换面→更广D5；pyramid→activation；完整内存预算→扩容→公平性能。
 
 沿用[续作入口](../../development/p65-continuation.md)和[差异全景](../../development/phymeo-newton-panorama-2026-11-12.md)。禁止周期任务、remote CI、push/mainmerge或发包；不改用户环境，不清理旧证据Junction或三份无关草稿。实际结果另记，不能用本文件的安排宣称验证通过。
+
+### Functional diagnosis after the retained strict precision failure
+
+Run46 reached 301 actual returned steps, then failed the unchanged short
+same-entry velocity gate: 2.27667386e-5 m/s absolute discrepancy. This strict
+qualification stays FAIL. Following the user's functional-first direction,
+the runner now offers explicit --diagnose-short-state: it streams each original
+short position/velocity/multiplier assertion failure, with unchanged thresholds,
+actual and reference arrays, while continuing the same fixed trajectory.
+It can only return DIAGNOSTIC_COMPLETED, never PASS. Every force/geometry,
+stored-arithmetic, long-window drift, oriented-side, penetration, peak and
+support/unload/recontact requirement remains active. No input, damping, h,
+statistics window or state is altered; this diagnoses real functional behavior
+without pretending the original precision qualification passed.

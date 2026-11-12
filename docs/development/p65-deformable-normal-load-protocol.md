@@ -130,3 +130,72 @@ observations, not a Newton comparison or a native-kernel-only profile. If time
 runs out, whole remaining cases are PENDING; successful partial prefixes do not
 qualify continuous support. All authoring here used text/file IO/Git only;
 **CODE_READY_TESTS_PENDING / AUTHORING_SLOT_RELEASED** until parent validation.
+## Parent diagnosis before continuation (2026-11-13)
+
+The first full coarse sphere run (20) failed after 57 returned steps: D3 added
+pair_origins_relative_m to public query witnesses which already included that
+frame. The parent fixes the response consumer to add packet.origin_m once;
+raw kernel witnesses and public query production remain unchanged.
+
+Run21 on that fix reached 149 returned steps. Its original ideal momentum
+identity omitted FP32 position-update rounding. The saved-only run23 checked
+the complete predictor-to-row-to-final position chain without new physics:
+step148 z imbalance -6.5078076246635405e-6 N s decomposes into predictor
++8.149072527885437e-9 and ordered position -6.515956697191426e-6; reconstruction
+and exact closing difference are zero. This observation alone is not a bound.
+The new independent example auditor checks every stored primitive transition
+and a-priori binary32 half-ULP bounds, then explicitly records the predictor,
+ordered-position and reconstruction impulses in linear and angular accounting.
+Raw imbalance, original n*delta/h material impulse and fixed reaction stay
+separate. Neither contact state nor physical force is repaired by the audit.
+
+All original geometry, force, same-entry state, long-reference, support-window,
+peak, oriented-side and unload/recontact gates remain unchanged. Only the
+incorrect exact-arithmetic accounting identity receives its independently
+verified discrete arithmetic terms. The original failures remain recorded.
+The coordinate regression opts into the same auditor; old short controls keep
+their original default checks. Outside-source D4 use now copies the runner,
+case module AND deformable_impulse_audit.py together. No physical success is
+asserted until the fixed complete window actually passes.
+### Functional diagnosis after the retained strict precision failure
+
+Run46 reached 301 actual returned steps, then failed the unchanged short
+same-entry velocity gate: 2.27667386e-5 m/s absolute discrepancy. This strict
+qualification stays FAIL. Following the user's functional-first direction,
+the runner now offers explicit --diagnose-short-state: it streams each original
+short position/velocity/multiplier assertion failure, with unchanged thresholds,
+actual and reference arrays, while continuing the same fixed trajectory.
+It can only return DIAGNOSTIC_COMPLETED, never PASS. Every force/geometry,
+stored-arithmetic, long-window drift, oriented-side, penetration, peak and
+support/unload/recontact requirement remains active. No input, damping, h,
+statistics window or state is altered; this diagnoses real functional behavior
+without pretending the original precision qualification passed.
+# 2026-11-13 actual first full window
+
+Run50 completed all 3,072 real steps of the unchanged N1 sphere, interpret,
+3-second trajectory, with three control submissions and normal close. Entry,
+release and recontact events occurred. All per-step force, geometry, stored
+arithmetic, long independent trajectory, oriented-side, penetration and peak
+gates completed. This is not steady-support qualification: final window
+statistics failed, so the run status remains FAIL / DIAGNOSTIC_ONLY.
+
+The original windows [0.75,1) and [2.75,3) had mean support force
+24.8393461 N and 5.41425136 N, against the unchanged [12.8,19.2] N requirement.
+Rigid velocity RMS was 0.584440/0.477767 m/s and center RMS 0.340356/0.384283
+m/s, each above the 0.1 m/s requirement. Peak normal force was 69.546494 N;
+minimum gap -0.042032315 m and oriented side 0.082967685 m remained within
+their original gates. Ten short material-velocity comparisons failed, maximum
+2.69912155e-5 m/s; the original strict run46 remains separately FAIL.
+
+The full trajectory therefore distinguishes a working transient load/release
+pipeline from unqualified steady support. It does not justify changing the
+load, statistics windows, damping, h or tolerances to rewrite this result.
+The other three declared grids remain unexecuted. Follow-up steady-support
+work must explicitly investigate the existing undamped distance material and
+entry-sampled layer damping; a new damping model needs its own contract and
+validation, rather than attributing the observed oscillation to roundoff.
+
+Run58 additionally passed the eight declaration/statistics-negative/observer
+nodes. The observer negative records the already committed physical prefix;
+it does not pretend a post-return observation failure rolled physics back.
+

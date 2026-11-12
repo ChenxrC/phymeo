@@ -39,7 +39,6 @@ from fractions import Fraction
 
 import numpy as np
 
-
 _SCHEMA = "deformable-fp32-impulse-audit-v1"
 _METHOD = "a-priori-binary32-half-ulp/exact-rational-v1"
 _TINY = float.fromhex("0x1.0p-126")
@@ -200,8 +199,7 @@ def audit_deformable_impulse(
     if np.any(edges[:, 0] == edges[:, 1]):
         raise ValueError("self edges are not supported")
     frames = tuple(
-        _array(f"trace[{index}]", frame, (edge_count, 18))
-        for index, frame in enumerate(trace)
+        _array(f"trace[{index}]", frame, (edge_count, 18)) for index, frame in enumerate(trace)
     )
     # Local conversion cache retains no owner beyond this audit call.
     rationals = {}
@@ -295,11 +293,9 @@ def audit_deformable_impulse(
                             + _half_ulp(movement)
                             + _half_ulp(next_position[axis])
                         ) / (exact(weights[node]) * hq)
-                        error = (
-                            (exact(next_position[axis]) - exact(previous[axis]))
-                            / (exact(weights[node]) * hq)
-                            - exact_command
-                        )
+                        error = (exact(next_position[axis]) - exact(previous[axis])) / (
+                            exact(weights[node]) * hq
+                        ) - exact_command
                         _bounded(prefix + f".position[{node},{axis}]", error, bound)
                         row_error[node][axis] += error
                         row_bound[node][axis] += bound
@@ -322,14 +318,12 @@ def audit_deformable_impulse(
                 correction = _rn("div", displacement, step)
                 velocity = _rn("add", expected_pv[node, axis], correction)
                 bound = (
-                    _half_ulp(displacement) / hq
-                    + _half_ulp(correction)
-                    + _half_ulp(velocity)
+                    _half_ulp(displacement) / hq + _half_ulp(correction) + _half_ulp(velocity)
                 ) / exact(weights[node])
-                error = (
-                    (exact(velocity) - exact(expected_pv[node, axis])) / exact(weights[node])
-                    - (exact(current[node, axis]) - exact(expected_px[node, axis]))
-                    / (exact(weights[node]) * hq)
+                error = (exact(velocity) - exact(expected_pv[node, axis])) / exact(
+                    weights[node]
+                ) - (exact(current[node, axis]) - exact(expected_px[node, axis])) / (
+                    exact(weights[node]) * hq
                 )
                 _bounded(f"reconstruction[{node},{axis}]", error, bound)
                 reconstruction_error[node][axis] = error
@@ -349,25 +343,31 @@ def audit_deformable_impulse(
     for node in range(count):
         for axis in range(3):
             if weights[node] > 0:
-                actual[node][axis] = (
-                    exact(saved_fv[node, axis]) - exact(v0[node, axis])
-                ) / exact(weights[node])
+                actual[node][axis] = (exact(saved_fv[node, axis]) - exact(v0[node, axis])) / exact(
+                    weights[node]
+                )
                 external[node][axis] = hq * exact(loads[node, axis])
                 gravity_impulse[node][axis] = hq * exact(g[axis]) / exact(weights[node])
                 free_material[node][axis] = command[node][axis]
                 raw[node][axis] = (
-                    actual[node][axis] - external[node][axis]
-                    - gravity_impulse[node][axis] - command[node][axis]
+                    actual[node][axis]
+                    - external[node][axis]
+                    - gravity_impulse[node][axis]
+                    - command[node][axis]
                 )
                 remainder[node][axis] = (
-                    predictor_error[node][axis] + row_error[node][axis]
+                    predictor_error[node][axis]
+                    + row_error[node][axis]
                     + reconstruction_error[node][axis]
                 )
                 total_bound[node][axis] = (
-                    predictor_bound[node][axis] + row_bound[node][axis]
+                    predictor_bound[node][axis]
+                    + row_bound[node][axis]
                     + reconstruction_bound[node][axis]
                 )
-                _bounded(f"aggregate[{node},{axis}]", remainder[node][axis], total_bound[node][axis])
+                _bounded(
+                    f"aggregate[{node},{axis}]", remainder[node][axis], total_bound[node][axis]
+                )
                 closure[node][axis] = raw[node][axis] - remainder[node][axis]
                 if closure[node][axis] != 0:
                     raise ArithmeticError("complete saved chain does not close exactly")

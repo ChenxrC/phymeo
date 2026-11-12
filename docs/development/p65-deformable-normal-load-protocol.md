@@ -98,3 +98,35 @@ implementation/API/independent-oracle mistake separately from a bounded model
 that fails its support/recontact gates. No further solver mechanism is
 introduced just to enlarge test count. Friction, generic facet-history/CCD,
 closed solids and general deformable scene domains remain outside D4-N.
+## Authoring handoff and exact invocation
+
+Checkpoint b1ad9c05 fixes the declarations and independent reference;326e8338
+adds the streaming public runner. Both are frozen for parent review/execution.
+The new test wrapper declares four full TYX windows plus one short TYX
+observer-failure protocol; seven HOST-only declaration/oracle/statistic controls
+remain separate. These are hand-enumerated **5 common TYX +7 HOST** nodes,
+not collection or pass results. The observer fault occurs after a real returned
+step and is explicitly recorded as committed physics plus failed observation,
+not a fake rollback test. Existing D3 physical transaction tests remain reused.
+
+First full node, from the repository with the parent's fixed environment:
+
+```text
+<python> examples/run_deformable_normal_loads.py --case n1_sphere --mode interpret --output <fresh-absolute-directory>
+```
+
+Then the identical n1_sphere CUDA window and the remaining n2_capsule,n3_soft,
+n1_fine windows on each backend, or their exact pytest wrappers. A successful
+CLI window and its wrapper are the same case/runner and must not be rerun merely
+to obtain another test count. Source snapshots and full raw exits bind each
+actual invocation. There is no shorten-window, omit-reference or tune-tolerance
+flag. To use the runner outside the source, copy both public example files
+unchanged and pass `--expected-install-root <absolute-site-directory>`; every
+loaded Phymeo origin remains installation-bound.
+
+Each invocation owns one fresh gzip stream and summary. Timing distinguishes
+actual step, independent reference, save work and total elapsed; these are
+observations, not a Newton comparison or a native-kernel-only profile. If time
+runs out, whole remaining cases are PENDING; successful partial prefixes do not
+qualify continuous support. All authoring here used text/file IO/Git only;
+**CODE_READY_TESTS_PENDING / AUTHORING_SLOT_RELEASED** until parent validation.

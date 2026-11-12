@@ -110,3 +110,9 @@ python ABS_OUTSIDE/check_resident_boundary_assets.py --mode cuda --installed-roo
 原 direct/static 表示被共享 source 分支触及，建议仅旧 `test_four_layouts_three_real_steps` 的四 layout × static/dynamic 八节点/后端作为受影响接缝；旧 convex mesh 拒绝已由本批两个 HOST 覆盖。其余原几何核/BVH/资源全矩阵没有新行为，复用既有接受证据，不无条件重跑。任何父新增具体 finding 再定义有依据的受影响节点。
 
 完成 authoring 不是正式功能接受。ParticipantScene logical world/participant 多 bank、M2变形源、CCD、有限载荷响应、完整 closed-solid 判断均未由本片获得。父接线+原始运行/保存/包外检查最终通过后，才能按本合同有限来源范围接受。
+
+## 作者交接期间的父串行进度（消息回报，不由作者重跑）
+
+父已回报 HOST-only 两节点通过。首完整 interpret run024 在13节点通过后，固定根 MJCF capsule 的独立参考地址顺序发生首失败：原 fixed importer `_fromto` 使用 z=(start−end)/length，而 `_robot_asset` 以 center−/+half 生成顶点，因此其原 material IDs 对应 **end,start**；floating importer 直接保 fromto，对应 **start,end**。设备发布的两轴端点完整，不能把静态几何轴的相同集合误说成产品丢点或错误运动。
+
+父仅在 NEW reference 增加固定根显式 `FIXED_CAPSULE=((0,.5,.5),(-.25,.5,.5))`，固定根测试改用该原 importer 地址约定；floating/CAPSULE、原 XML、产品和原工程门不变。首失败原 raw 保存，已通过13节点不重跑；剩余24 interpret 和完整37 CUDA由父继续。此增量不在本报告上表作者历史 SHA 中，最终验证必须绑定父修后 commit。作者不编辑已移交的三源文件，不凭这条回报宣称完整矩阵通过。

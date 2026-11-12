@@ -230,6 +230,8 @@ def test_wrong_original_graph_rejected(layout,tyx_mode,tmp_path,monkeypatch):
     wrong,_,_=prepare(tmp_path/"wrong",layout,multiplier="-.5")
     shapes,bindings=install(wrong,layout,7)
     model=ph.CollisionModel(tuple(shapes))
+    reason=("boundary floating affine graph differs" if layout=="floating_affine"
+            else "boundary asset original affine graph differs")
     allocations=[]
     def denied(*args,**kwargs):
         allocations.append((args,kwargs))
@@ -238,8 +240,8 @@ def test_wrong_original_graph_rejected(layout,tyx_mode,tmp_path,monkeypatch):
     with ph.TyxWorldBatch([(7,tree)],tyx_mode,cache_root=tmp_path) as batch:
         before=batch.snapshot()
         with m1.saved(tmp_path,"asset-wrong-graph-"+layout,tyx_mode,
-                      inputs=dict(stage="registration",reason="original .*graph differs",model=model,bindings=bindings)) as record:
-            with pytest.raises(ValueError,match="original .*graph differs") as caught:
+                      inputs=dict(stage="registration",reason=reason,model=model,bindings=bindings)) as record:
+            with pytest.raises(ValueError,match=reason) as caught:
                 batch.prepare_boundary_query(model,bindings,
                     limits=ph.BoundaryDistanceLimits(),memory_limit_bytes=BUDGET)
             record["rejection"]=dict(stage="registration",error_type=type(caught.value).__name__,

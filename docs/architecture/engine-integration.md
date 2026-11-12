@@ -684,3 +684,38 @@ HOST NumPy 缓冲单列统计，另有 O(T) 的预备 metadata dict，不把它�
 控制历史、局部未选观测、双 plan、预检、kernel/完成/控制恢复/二次回滚失败、跨
 plan alias、分配/清理重试。证据见实验根 evidence/b7e-summary.json，历史跨 solver
 微差不重开调查。P2PE resident 模型/完整字段映射及实际 C ABI 仍待接，B7 未完成。
+
+## Resident endpoint body reads v1
+
+`TyxWorldBatch.prepare_body_read(keys=None, fields=("position", "rotation"))` 冷准备
+caller-buffer 观测。普通固定根树按 RobotModel moving link 顺序输出，不把 anchor
+参考 frame 当成有质量/COM 的 body；静态 root/资产 frame 须由编译绑定另行表达。
+FreeSphere/SpherePlaneWorld 是平移模型，单 body 的原点就是 COM，姿态恒 identity、
+角速度恒零，这是该模型的物理定义，不代表完整自由刚体旋转能力。标量专用模型、
+仿射/浮根树与不同 family/body_count 的混选明确拒绝；空选择不启动 kernel。
+
+可选字段为 position、com_position、rotation、linear_velocity、com_velocity 和
+angular_velocity。位置单位 m；原点/COM 线速度 m/s；世界角速度 rad/s；rotation
+是 body-to-world 的 row-major 3×3。所有字段对应 accepted endpoint，不是求解
+入口时刻。layout 给出 world_keys、body_count、body_order、family、各字段的
+offset/width/shape/unit/frame/reference/sample。packed float32 行按 fields 顺序，
+每字段内 body-major/component-major；公共 P2PE mat4 转换仍归其适配层。
+
+读取借用当前 accepted FK 和 qdot：直接读取原点/COM/旋转，速度在设备上收缩祖先
+轴与 qdot，不借上一步入口 Jacobian、不再运行完整 FK/forward/物理推进。使用既有
+read plan 的精确 dtype/shape/stride/writable 与 alias 检查、batch lock、双 bank、
+错误传播和可重试清理。read/step 不允许在同一 batch 并发交错；不同 batch 不共享锁。
+HOST caller buffer 在传输失败后可能部分写入，物理状态不变；完成及恢复完成均
+失败时沿原 runtime 锁定规则拒绝继续读/step，只允许清理/重建，不能强行恢复可用。
+
+每次 CUDA read 一次显式完成、一次 values D2H，可选 ticks 再增加一次 D2H；没有
+热 device 分配、全模型复制或逐 world HOST 读回。S 为所选世界、W 为 packed width，
+device scratch 为 `12*S + 8*W + 4*S*W` bytes（indices/columns/ticks/output）。
+普通树速度当前固定循环 J 次，全部 body 读取上界 O(S×B×J)，即链状树 O(S×J²)；
+只读 pose 为 O(S×W)。不把没有额外 FK 宣称为线性速度读取或性能已验收。
+
+正式 `tests/scale/test_resident_body_read.py` 用独立 FP64 homogeneous transform 与
+方向导数验证多分支 R/P、旋转 frame、偏心 COM 的步后语义；沿用树测试 ATOL/RTOL，
+覆盖 interpret/实际 CUDA、N=1/8/64、乱序选择、局部 reset、未选保持及执行/清理
+失败。证据见实验根 `evidence/b7g-summary.json`；这仍不是 resident 实际 C ABI、
+独立安装或 GUI 资格，P2PE 模型/控制/字段映射继续推进。

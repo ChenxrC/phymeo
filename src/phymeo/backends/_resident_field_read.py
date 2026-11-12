@@ -41,7 +41,7 @@ class ResidentFieldReadPlan:
 
     contract_version = 1
 
-    def __init__(self, batch, keys, fields):
+    def _initialize_owner(self, batch):
         self._batch = batch
         self._closed = self._closing = False
         self._resources = ReleaseStack()
@@ -49,6 +49,9 @@ class ResidentFieldReadPlan:
         self._reads = self._failed_reads = self._transfers = self._copied_bytes = 0
         self._indices = self._columns = self._output = self._ticks = self._kernels = None
         self._sources = ()
+
+    def __init__(self, batch, keys, fields):
+        self._initialize_owner(batch)
         with batch._lock:
             batch._check_open()
             selected = tuple(batch._slots) if keys is None else tuple(batch._keys(keys))
@@ -194,6 +197,25 @@ class ResidentFieldReadPlan:
             raise RuntimeError("resident field read plan is closed or closing")
         self._batch._check_open()
 
+    def _borrowed_arrays(self):
+        return (*self._sources, self._indices, self._columns, self._output, self._ticks)
+
+    def _launch_read(self, bank, output, ticks):
+        self._batch._launch(
+            self._kernels[bank],
+            *self._shape,
+            self._indices,
+            self._columns,
+            self._sources[bank],
+            self._batch._ticks[bank],
+            output,
+            ticks,
+        )
+
+    def _clear_bindings(self):
+        self._sources = ()
+        self._indices = self._columns = self._output = self._ticks = self._kernels = None
+
     def read_into(self, values, *, ticks=None):
         """Fill validated HOST arrays in frozen order; return the accepted state epoch."""
         batch = self._batch
@@ -207,12 +229,8 @@ class ResidentFieldReadPlan:
             if self._shape[0]:
                 borrowed = (
                     *batch._host_alias_arrays(),
-                    *self._sources,
                     *batch._ticks,
-                    self._indices,
-                    self._columns,
-                    self._output,
-                    self._ticks,
+                    *self._borrowed_arrays(),
                 )
                 for caller in (values, ticks):
                     if caller is not None and any(
@@ -224,13 +242,8 @@ class ResidentFieldReadPlan:
                     with batch._device():
                         bank = batch._active
                         device = batch._mode == "cuda"
-                        batch._launch(
-                            self._kernels[bank],
-                            *self._shape,
-                            self._indices,
-                            self._columns,
-                            self._sources[bank],
-                            batch._ticks[bank],
+                        self._launch_read(
+                            bank,
                             self._output if device else values,
                             self._ticks if device or ticks is None else ticks,
                         )
@@ -274,8 +287,7 @@ class ResidentFieldReadPlan:
             close_dependencies(self)
             self._resources.close()
             self._batch._readback_plans.discard(self)
-            self._sources = ()
-            self._indices = self._columns = self._output = self._ticks = self._kernels = None
+            self._clear_bindings()
             self._host_bytes = 0
             self._closed, self._closing = True, False
 

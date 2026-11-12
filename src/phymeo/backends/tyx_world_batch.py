@@ -824,6 +824,12 @@ class TyxWorldBatch:
 
         return ResidentFieldReadPlan(self, keys, fields)
 
+    def prepare_body_read(self, keys=None, *, fields=("position", "rotation")):
+        """Prepare accepted-endpoint body observations into caller-owned HOST arrays."""
+        from ._resident_body_read import ResidentBodyReadPlan
+
+        return ResidentBodyReadPlan(self, keys, fields)
+
     def readback(self, plan):
         """Read an owned frame from a plan bound to this exact batch instance."""
         from ._world_readback_plan import readback_for

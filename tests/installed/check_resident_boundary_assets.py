@@ -258,7 +258,16 @@ def closest_point(point,triangle):
     return distance,nearest,weights,(nearest-point)/distance
 
 
-def verify(packet,states,initial,tick,bindings):
+def public_model_identity(model):
+    """Decode the documented ordinary model-token fields from public source data."""
+    def nested(value):
+        return tuple(nested(item) for item in value) if isinstance(value,list) else value
+    return (tuple(int(value) for value in model.parents),tuple(model.joint_types),
+            *(nested(np.asarray(getattr(model,name)).tolist()) for name in
+              ("joint_position","joint_orientation","joint_axis","mass","com","inertia_diagonal","gravity")))
+
+
+def verify(packet,states,initial,tick,bindings,source_asset):
     import phymeo as ph
 
     require(packet.schema=="phymeo-resident-boundary-distances-v1","M1 aggregate schema")
@@ -272,6 +281,8 @@ def verify(packet,states,initial,tick,bindings):
     require(len(packet.source_binding)==64,"full source binding")
     immutable(packet)
     definitions={item["key"]:item for item in packet.source["bindings"]}
+    originals={collider.name:collider for collider in source_asset.collisions}
+    original_model=public_model_identity(source_asset.model)
     for binding in bindings:
         definition=definitions[binding.key]
         require(definition["admission"]=="asset","asset admission branch recorded")
@@ -279,13 +290,18 @@ def verify(packet,states,initial,tick,bindings):
         require(proof["schema"]=="phymeo-boundary-asset-admission-v1","asset source schema")
         require(proof["binding_family"]=="ordinary" and proof["graph_token"] is None,
                 "honest ordinary factory provenance")
-        require(proof["source_shape"]==binding._source_shape,"full original asset source")
+        name="surface" if binding.key.body==101 else "round"
+        original=originals[name]
+        require(proof["source_shape"]==original.shape,"full public original asset source")
         require(proof["source_shape"].key!=binding.key,"original and registered keys distinguished")
-        require(proof["model_token"]==binding._model_token,"original FP64 model binding")
+        require(proof["model_token"]==original_model,"full public original FP64 model identity")
         require(proof["physical_topology"]==definition["topology"] and definition["topology"] is not None,
                 "validated full physical topology, not original None")
-        require(proof["group_index"]==binding.group_index,"actual material owner group")
-        np.testing.assert_array_equal(proof["local_points_m"],binding.local_points_m)
+        require(proof["physical_topology"]==states[binding.world].topology,"actual accepted public topology")
+        require(proof["group_index"]==binding.group_index==(0 if name=="surface" else 1),
+                "declared F0 material owner group")
+        np.testing.assert_array_equal(proof["local_points_m"],original.local_vertices)
+        np.testing.assert_array_equal(binding.local_points_m,original.local_vertices)
     checks={}
     for group in packet.groups:
         world=group.surface.world
@@ -354,6 +370,8 @@ def run(mode, journal, installed_root, output):
         journal.emit(
             "fixture",
             asset=asset,
+            original_model=source_asset.model,
+            original_colliders=source_asset.collisions,
             initial=initial,
             worlds=WORLDS,
             surface=VERTICES,
@@ -380,17 +398,45 @@ def run(mode, journal, installed_root, output):
         last = None
         for tick in (1, 2, 3):
             before = batch.snapshot()
-            step_result = batch.step(H)
-            states = batch.snapshot()
-            journal.emit(
-                "physical-step",
-                tick=tick,
-                h=H,
-                before=before,
-                result=step_result,
-                after=states,
-                batch_stats=batch.stats(),
-            )
+            step_attempt = dict(kind="physical-step",tick=tick,h=H,before=before,
+                                before_stats=batch.stats())
+            attempts.append(step_attempt)
+            journal.emit("physical-step-attempt",**step_attempt)
+            step_error=None
+            capture_errors=[]
+            try:
+                step_result=batch.step(H)
+                step_attempt["result"]=step_result
+                step_attempt["returned_worlds"]=len(step_result)
+                step_attempt["accepted_worlds"]=sum(bool(value) for value in step_result.values())
+                try:
+                    journal.emit("physical-step-return",tick=tick,h=H,result=step_result,
+                                 returned_worlds=step_attempt["returned_worlds"],
+                                 accepted_worlds=step_attempt["accepted_worlds"])
+                except BaseException as error:
+                    capture_errors.append(error)
+            except BaseException as error:
+                step_error=error
+                step_attempt["step_error"]=dict(type=type(error).__name__,message=str(error),
+                                                traceback=traceback.format_exc())
+            for name,reader in (("after",batch.snapshot),("after_stats",batch.stats)):
+                try:
+                    step_attempt[name]=reader()
+                except BaseException as error:
+                    capture_errors.append(error)
+                    step_attempt[name+"_error"]=dict(type=type(error).__name__,message=str(error),
+                                                     traceback=traceback.format_exc())
+            try:
+                journal.emit("physical-step-outcome",**step_attempt)
+            except BaseException as error:
+                capture_errors.append(error)
+            if step_error is not None:
+                if capture_errors:
+                    raise BaseExceptionGroup("physical step and capture failed",[step_error,*capture_errors])
+                raise step_error
+            if capture_errors:
+                raise BaseExceptionGroup("physical step result capture failed",capture_errors)
+            states=step_attempt["after"]
             require(all(step_result.values()), "real accepted physical step")
             if last is not None:
                 rejection = dict(tick=tick, previous_sequence=last.sequence)
@@ -450,7 +496,7 @@ def run(mode, journal, installed_root, output):
                 raise BaseExceptionGroup("query outcome capture failed", capture_errors)
             exact(states, attempt["after"], "query cannot mutate accepted physical bank")
             require(plan.require_current(result) is result, "new current source accepted")
-            checks = verify(result, states, initial, tick, bindings)
+            checks = verify(result, states, initial, tick, bindings, source_asset)
             journal.emit("query-checks", tick=tick, checks=checks)
             last = result
         modules = provenance(installed_root)

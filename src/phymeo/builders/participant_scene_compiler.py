@@ -222,7 +222,10 @@ class ParticipantSceneDeclaration:
     def __post_init__(self):
         if self.schema != _SCHEMA:
             raise ValueError("unsupported participant scene schema")
-        if type(self.contact_response) is not str or self.contact_response not in ("host_patch", "none"):
+        if type(self.contact_response) is not str or self.contact_response not in (
+            "host_patch",
+            "none",
+        ):
             raise ValueError("contact_response must be host_patch or none")
         rows = tuple(self.articulations)
         if not rows or any(type(row) is not ParticipantArticulation for row in rows):
@@ -395,8 +398,11 @@ def _prepare(declaration):
         # triangle/mesh assets or reinterpret a material default as a filter.
         declaration.assert_unchanged()
         return dict(
-            participants=tuple(participants), specs=MappingProxyType(specs),
-            model=model, bindings=tuple(bindings), laws=MappingProxyType({}),
+            participants=tuple(participants),
+            specs=MappingProxyType(specs),
+            model=model,
+            bindings=tuple(bindings),
+            laws=MappingProxyType({}),
             source_map=MappingProxyType(source_map),
         )
     potential = []
@@ -486,7 +492,9 @@ class CompiledParticipantScene:
         self._rows = MappingProxyType({row.key: row for row in declaration.articulations})
         self._specs = prepared["specs"]
         self._source_map = prepared["source_map"]
-        self._boundary_model = prepared["model"] if prepared["model"] is not None else CollisionModel(())
+        self._boundary_model = (
+            prepared["model"] if prepared["model"] is not None else CollisionModel(())
+        )
         self._boundary_bindings = prepared["bindings"]
         self._boundary_plan = None
         # Initial command conversion also completes before allocating an owner.
@@ -594,8 +602,10 @@ class CompiledParticipantScene:
             if limits is None:
                 limits = BoundaryDistanceLimits()
             plan = self._batch.prepare_boundary_query(
-                self._boundary_model, self._boundary_bindings,
-                limits=limits, memory_limit_bytes=memory_limit_bytes,
+                self._boundary_model,
+                self._boundary_bindings,
+                limits=limits,
+                memory_limit_bytes=memory_limit_bytes,
             )
             self._boundary_plan = plan
             return plan
@@ -661,7 +671,9 @@ class CompiledParticipantScene:
                 assembly_schema=_SCHEMA,
                 assembly_identity=self.identity,
                 contact_response=self._declaration.contact_response,
-                narrow_phase="host_patch" if self._declaration.contact_response == "host_patch" else "none",
+                narrow_phase="host_patch"
+                if self._declaration.contact_response == "host_patch"
+                else "none",
                 sampling="discrete_entry",
                 assembly_closed=self._closed,
             )

@@ -174,8 +174,9 @@ def asset_files(output, anchor):
     obj = "".join("v " + " ".join(str(float(x)) for x in row) + "\n" for row in VERTICES)
     obj += "".join("f " + " ".join(str(i + 1) for i in row) + "\n" for row in FACES)
     (output / "surface.obj").write_text(obj, encoding="utf-8")
-    left, right = [" ".join(str(float(x)) for x in anchor + (offset, 0, 0))
-                   for offset in (-0.25, 0.25)]
+    left, right = [
+        " ".join(str(float(x)) for x in anchor + (offset, 0, 0)) for offset in (-0.25, 0.25)
+    ]
     tool_xml = f'''<robot name="public_affine_tool">
 <link name="base"><inertial><mass value="2"/><inertia ixx=".2" iyy=".3" izz=".4" ixy="0" ixz="0" iyz="0"/></inertial></link>
 <link name="left_jaw"><inertial><mass value="1"/><inertia ixx=".0625" iyy=".078125" izz=".09375" ixy="0" ixz="0" iyz="0"/></inertial></link>
@@ -184,10 +185,10 @@ def asset_files(output, anchor):
 <joint name="tool_fixed" type="fixed"><parent link="left_jaw"/><child link="tool"/><origin xyz="0 1.75 0" rpy="1.5707963267948966 0 0"/></joint>
 <link name="right_jaw"><inertial><mass value="2"/><inertia ixx=".09375" iyy=".109375" izz=".125" ixy="0" ixz="0" iyz="0"/></inertial><collision name="round"><origin xyz="-.25 .5 .5"/><geometry><sphere radius=".125"/></geometry></collision></link>
 <joint name="follower" type="prismatic"><parent link="base"/><child link="right_jaw"/><origin xyz="{right}"/><axis xyz="1 0 0"/><limit lower="-.1" upper=".1" effort=".125" velocity=".08"/><mimic joint="driver" multiplier="-1" offset=".004"/></joint></robot>'''
-    free_xml = '''<robot name="public_free_object"><link name="root">
+    free_xml = """<robot name="public_free_object"><link name="root">
 <inertial><mass value="2"/><inertia ixx=".125" iyy=".125" izz=".125" ixy="0" ixz="0" iyz="0"/></inertial>
 <collision name="free_round"><geometry><sphere radius=".125"/></geometry></collision>
-</link></robot>'''
+</link></robot>"""
     tool_path, free_path = output / "tool.urdf", output / "free.urdf"
     tool_path.write_text(tool_xml, encoding="utf-8")
     free_path.write_text(free_xml, encoding="utf-8")
@@ -196,11 +197,12 @@ def asset_files(output, anchor):
 
 TOOL_VERTICES = np.array(((0, 1.75, 0), (0, 1.75, 2), (0, -0.25, 0), (-1, 1.75, 0)))
 EFFORT = 1 / 64
-FORCE = np.array((1 / 64, 0., 0.))
+FORCE = np.array((1 / 64, 0.0, 0.0))
 
 
 def declaration(output):
     import phymeo as ph
+
     rows, sources, originals = [], {}, {}
     for index, world in enumerate(WORLDS):
         anchor = np.array((1 + 2 * index, -0.75, 0.125))
@@ -216,28 +218,56 @@ def declaration(output):
             mapping[collider.shape.key] = target
             local = TOOL_VERTICES if which == "driver" else ROUND
             np.testing.assert_allclose(collider.local_vertices, local, atol=1e-14, rtol=0)
-            originals[target] = dict(owner=tool_key, which=which, local=local,
-                                     source_shape=collider.shape)
+            originals[target] = dict(
+                owner=tool_key, which=which, local=local, source_shape=collider.shape
+            )
         q, v = np.array((1 / 512,)), np.array((1 / 1024,))
         command = ph.RobotCommand(q, np.zeros(1), feedforward=np.array((EFFORT,)))
-        rows.append(ph.ParticipantArticulation(tool_key, tool, ph.RobotState(q, v),
-            kp=np.zeros(1), kd=np.zeros(1), effort_limit=np.array((1 / 16,)),
-            body_ids=(700, 701), collider_keys=mapping, initial_control=command))
+        rows.append(
+            ph.ParticipantArticulation(
+                tool_key,
+                tool,
+                ph.RobotState(q, v),
+                kp=np.zeros(1),
+                kd=np.zeros(1),
+                effort_limit=np.array((1 / 16,)),
+                body_ids=(700, 701),
+                collider_keys=mapping,
+                initial_control=command,
+            )
+        )
         sources[tool_key] = dict(kind="affine-tool", anchor=anchor, asset=tool, authored=authored)
         source = free.collisions[0]
         target = ph.CollisionKey(world, 9700, 0)
         position = anchor + (0.125, 0.5, 0.5)
-        command = ph.FloatingRobotCommand(None,
-            ph.FloatingRobotInputs(np.zeros(0), FORCE[None], np.zeros((1, 3))))
-        rows.append(ph.ParticipantArticulation(free_key, free,
-            ph.FloatingRobotState(np.r_[position, (0., 0., 0., 1.)],
-                                 np.array((-1 / 64, 0., 0., 0., 0., 0.))),
-            kp=np.zeros(0), kd=np.zeros(0), effort_limit=np.zeros(0),
-            body_ids=(9700,), collider_keys={source.shape.key: target}, initial_control=command))
+        command = ph.FloatingRobotCommand(
+            None, ph.FloatingRobotInputs(np.zeros(0), FORCE[None], np.zeros((1, 3)))
+        )
+        rows.append(
+            ph.ParticipantArticulation(
+                free_key,
+                free,
+                ph.FloatingRobotState(
+                    np.r_[position, (0.0, 0.0, 0.0, 1.0)],
+                    np.array((-1 / 64, 0.0, 0.0, 0.0, 0.0, 0.0)),
+                ),
+                kp=np.zeros(0),
+                kd=np.zeros(0),
+                effort_limit=np.zeros(0),
+                body_ids=(9700,),
+                collider_keys={source.shape.key: target},
+                initial_control=command,
+            )
+        )
         sources[free_key] = dict(kind="free-object", anchor=position, asset=free, authored=authored)
-        originals[target] = dict(owner=free_key, which="root", local=np.zeros((1, 3)),
-                                 source_shape=source.shape)
-    return ph.ParticipantSceneDeclaration(tuple(reversed(rows)), contact_response="none"), sources, originals
+        originals[target] = dict(
+            owner=free_key, which="root", local=np.zeros((1, 3)), source_shape=source.shape
+        )
+    return (
+        ph.ParticipantSceneDeclaration(tuple(reversed(rows)), contact_response="none"),
+        sources,
+        originals,
+    )
 
 
 def actual_material(states, sources, originals):
@@ -261,7 +291,9 @@ def verify_motion(before, after, receipts, sources):
     for world in WORLDS:
         require(after[world].tick == before[world].tick + 1, "one real accepted step")
         receipt = receipts[world]
-        require(not receipt.sites and not receipt.candidate_pairs, "none mode creates no contact law")
+        require(
+            not receipt.sites and not receipt.candidate_pairs, "none mode creates no contact law"
+        )
         for key, entry in before[world].participants.items():
             end = after[world].participants[key]
             q, v = np.asarray(entry.position), np.asarray(entry.velocity)
@@ -275,12 +307,24 @@ def verify_motion(before, after, receipts, sources):
                 expected_q = q + H * expected_v
             np.testing.assert_allclose(end.velocity, expected_v, atol=1e-5, rtol=0)
             np.testing.assert_allclose(end.position, expected_q, atol=1e-5, rtol=0)
-            require(np.any(np.asarray(end.position) != q), "actual motion, not static source replay")
+            require(
+                np.any(np.asarray(end.position) != q), "actual motion, not static source replay"
+            )
             actual = receipt.participants[key]
-            np.testing.assert_array_equal(actual.law_wrench_fp64, np.zeros_like(actual.law_wrench_fp64))
-            np.testing.assert_array_equal(actual.uploaded_wrench_fp32, np.zeros_like(actual.uploaded_wrench_fp32))
-            checks.append(dict(participant=key, expected_position=expected_q, expected_velocity=expected_v,
-                               actual_receipt=actual))
+            np.testing.assert_array_equal(
+                actual.law_wrench_fp64, np.zeros_like(actual.law_wrench_fp64)
+            )
+            np.testing.assert_array_equal(
+                actual.uploaded_wrench_fp32, np.zeros_like(actual.uploaded_wrench_fp32)
+            )
+            checks.append(
+                dict(
+                    participant=key,
+                    expected_position=expected_q,
+                    expected_velocity=expected_v,
+                    actual_receipt=actual,
+                )
+            )
     return checks
 
 
@@ -294,22 +338,32 @@ def verify_query(scene, plan, packet, sources, originals):
     require(packet.world_keys == WORLDS and packet.state_epoch == scene.state_epoch, "world/epoch")
     np.testing.assert_array_equal(packet.ticks, [states[w].tick for w in WORLDS])
     require(packet.source["participant_keys"] == scene.participant_keys, "complete participants")
-    require(packet.source["scene_registry_fingerprint"] == scene.layout.fingerprint, "full registry")
+    require(
+        packet.source["scene_registry_fingerprint"] == scene.layout.fingerprint, "full registry"
+    )
     require(len(packet.source["participant_addresses"]) == 4, "two original participants per world")
     require(packet.source["stamps"]["native_poses"].shape == (6, 12), "actual native FK receipt")
     require(packet.source["anchor_shifts_exact"].shape == (6, 3), "full per-shape frame shifts")
     definitions = {row["key"]: row for row in packet.source["bindings"]}
     for key, original in originals.items():
         row = definitions[key]
-        require(row["participant"] == original["owner"] and row["admission"] == "asset",
-                "original declared installation")
+        require(
+            row["participant"] == original["owner"] and row["admission"] == "asset",
+            "original declared installation",
+        )
         proof = row["provenance"]
         require(proof["source_shape"] == original["source_shape"], "original shape identity")
         np.testing.assert_allclose(proof["local_points_m"], original["local"], atol=1e-14, rtol=0)
         require(proof["physical_topology"] == row["topology"], "full original topology")
-        length = max(1.0, float(np.max(np.linalg.norm(original["local"] - original["local"][0], axis=1))))
-        np.testing.assert_allclose(packet.source["gathered_points"][key],
-            material[key] - packet.source["world_anchors"][key.world], atol=2e-4 * length, rtol=0)
+        length = max(
+            1.0, float(np.max(np.linalg.norm(original["local"] - original["local"][0], axis=1)))
+        )
+        np.testing.assert_allclose(
+            packet.source["gathered_points"][key],
+            material[key] - packet.source["world_anchors"][key.world],
+            atol=2e-4 * length,
+            rtol=0,
+        )
     require(len(packet.groups) == 2 and len(packet.pairs) == 6, "complete logical geometry pairs")
     require(all(p.first.world == p.second.world for p in packet.pairs), "no world cross talk")
     checks, total = [], 0
@@ -327,12 +381,18 @@ def verify_query(scene, plan, packet, sources, originals):
                 tri = vertices[list(face)]
                 if np.all(tri.min(axis=0) <= hi) and np.all(lo <= tri.max(axis=0)):
                     candidates.append((si, fi))
-        require(tuple(map(tuple, group.candidates.tolist())) == tuple(candidates),
-                "complete independent finite AABB coverage")
+        require(
+            tuple(map(tuple, group.candidates.tolist())) == tuple(candidates),
+            "complete independent finite AABB coverage",
+        )
         require(group.bvh_raw.shape == (len(group.round_keys), 4), "K+3 shape")
         require(np.all(group.bvh_raw[:, -1] == 7), "full four-facet traversal")
-        bits = tuple((si, fi) for si in range(len(group.round_keys)) for fi in range(4)
-                     if int(group.bvh_raw[si, 0]) & (1 << fi))
+        bits = tuple(
+            (si, fi)
+            for si in range(len(group.round_keys))
+            for fi in range(4)
+            if int(group.bvh_raw[si, 0]) & (1 << fi)
+        )
         require(bits == tuple(candidates), "raw candidate membership")
         narrow = group.packet
         require(narrow.source_binding == packet.source_binding, "same accepted source")
@@ -340,13 +400,18 @@ def verify_query(scene, plan, packet, sources, originals):
         require(narrow.raw["candidates"].shape == (len(candidates), 18, 11), "raw candidates")
         require(narrow.raw["summary"].shape == (len(candidates), 16), "raw summary")
         for row, (si, fi) in zip(narrow.rows, candidates, strict=True):
-            require(row.status == "RESOLVED" and (row.segment_id, row.facet_id) == (si, fi),
-                    "resolved finite material row")
+            require(
+                row.status == "RESOLVED" and (row.segment_id, row.facet_id) == (si, fi),
+                "resolved finite material row",
+            )
             require(row.vertex_ids == group.facet_vertices[fi], "full facet material address")
             tri = vertices[list(faces[fi])]
             axis = np.repeat(material[group.round_keys[si]], 2, axis=0)
-            length = max(*(np.linalg.norm(tri[j] - tri[i]) for i, j in ((0, 1), (1, 2), (2, 0))),
-                         np.linalg.norm(axis[1] - axis[0]), RADIUS)
+            length = max(
+                *(np.linalg.norm(tri[j] - tri[i]) for i, j in ((0, 1), (1, 2), (2, 0))),
+                np.linalg.norm(axis[1] - axis[0]),
+                RADIUS,
+            )
             distance, p, q = segment_triangle(axis, tri)
             require(abs(row.distance - distance) <= DISTANCE_GATE * length, "finite distance")
             require(abs(row.gap - distance + RADIUS) <= DISTANCE_GATE * length, "radius gap")
@@ -355,32 +420,56 @@ def verify_query(scene, plan, packet, sources, originals):
             require(0 <= row.axis_parameter <= 1, "finite axis")
             ap = axis[0] + row.axis_parameter * (axis[1] - axis[0])
             tp = tri[0] + bary @ (tri - tri[0])
-            np.testing.assert_allclose(np.asarray(row.axis_point_relative_m) + narrow.origin_m,
-                                       ap, atol=WITNESS_GATE * length, rtol=0)
-            np.testing.assert_allclose(np.asarray(row.triangle_point_relative_m) + narrow.origin_m,
-                                       tp, atol=WITNESS_GATE * length, rtol=0)
-            require(abs(np.linalg.norm(tp - ap) - distance) <= WITNESS_GATE * length, "both witnesses")
+            np.testing.assert_allclose(
+                np.asarray(row.axis_point_relative_m) + narrow.origin_m,
+                ap,
+                atol=WITNESS_GATE * length,
+                rtol=0,
+            )
+            np.testing.assert_allclose(
+                np.asarray(row.triangle_point_relative_m) + narrow.origin_m,
+                tp,
+                atol=WITNESS_GATE * length,
+                rtol=0,
+            )
+            require(
+                abs(np.linalg.norm(tp - ap) - distance) <= WITNESS_GATE * length, "both witnesses"
+            )
             if distance > 32 * 2**-23 * length:
-                require(row.normal is not None and
-                        np.linalg.norm(np.asarray(row.normal) - (q - p) / distance) <= NORMAL_GATE,
-                        "normal direction")
+                require(
+                    row.normal is not None
+                    and np.linalg.norm(np.asarray(row.normal) - (q - p) / distance) <= NORMAL_GATE,
+                    "normal direction",
+                )
             else:
                 require(row.normal is None, "no invented zero-distance normal")
-            checks.append(dict(surface=group.surface, round=group.round_keys[si], facet=fi,
-                               distance=distance, axis=p, triangle=q, local_length=length))
+            checks.append(
+                dict(
+                    surface=group.surface,
+                    round=group.round_keys[si],
+                    facet=fi,
+                    distance=distance,
+                    axis=p,
+                    triangle=q,
+                    local_length=length,
+                )
+            )
         total += len(candidates)
     require(total > 0 and packet.required_candidates == total, "complete nonempty aggregate")
     require(plan.stats()["live_bytes"] == plan.stats()["persistent_bytes"], "scratch released")
     return checks
 
+
 def run(mode, journal, installed_root, output):
     import phymeo as ph
+
     declaration_value, sources, originals = declaration(output)
     journal.emit("declaration", declaration=declaration_value, sources=sources, originals=originals)
     scene = plan = None
     primary = None
     steps = queries = rows = stale = 0
     attempts = []
+
     def take_query(label):
         nonlocal queries, rows
         before = scene.snapshot()
@@ -388,8 +477,13 @@ def run(mode, journal, installed_root, output):
         try:
             packet = plan.query(margin=MARGIN)
         finally:
-            journal.emit("query-outcome", label=label, last_attempt=plan.last_attempt,
-                         last_result=plan.last_result, stats=plan.stats())
+            journal.emit(
+                "query-outcome",
+                label=label,
+                last_attempt=plan.last_attempt,
+                last_result=plan.last_result,
+                stats=plan.stats(),
+            )
         queries += 1
         journal.emit("query-return", label=label, packet=packet)
         checks = verify_query(scene, plan, packet, sources, originals)
@@ -397,6 +491,7 @@ def run(mode, journal, installed_root, output):
         require(encode(scene.snapshot()) == encode(before), "query cannot advance physics")
         journal.emit("query-oracle", label=label, checks=checks)
         return packet
+
     def take_step(label):
         nonlocal steps
         before = scene.snapshot()
@@ -406,8 +501,14 @@ def run(mode, journal, installed_root, output):
         result = scene.step(H)
         attempt["result"] = result
         steps += sum(bool(v) for v in result.values())
-        journal.emit("physical-return", label=label, result=result, logical_worldsteps=steps,
-                     receipts=scene.last_accepted, status=scene.last_status)
+        journal.emit(
+            "physical-return",
+            label=label,
+            result=result,
+            logical_worldsteps=steps,
+            receipts=scene.last_accepted,
+            status=scene.last_status,
+        )
         after = scene.snapshot()
         attempt["after"] = after
         journal.emit("physical-after", label=label, after=after)
@@ -415,6 +516,7 @@ def run(mode, journal, installed_root, output):
         checks = verify_motion(before, after, scene.last_accepted, sources)
         journal.emit("physical-oracle", label=label, checks=checks)
         return after
+
     def reject_stale(packet, label):
         nonlocal stale
         try:
@@ -424,14 +526,24 @@ def run(mode, journal, installed_root, output):
             journal.emit("stale-rejection", label=label, reason=str(error))
         else:
             raise AssertionError("stale compiled evidence accepted")
+
     try:
-        scene = ph.compile_participant_scene(declaration_value, mode=mode, cache_root=output / "cache")
+        scene = ph.compile_participant_scene(
+            declaration_value, mode=mode, cache_root=output / "cache"
+        )
         require(scene.declaration.contact_response == "none", "explicit no-response mode")
         require(scene.last_boundary_result is None, "no hidden query")
-        journal.emit("compiled", identity=scene.identity, source_map=scene.source_map,
-                     initial=scene.snapshot(), stats=scene.stats(), provenance=provenance(installed_root))
-        plan = scene.prepare_boundary_query(limits=ph.BoundaryDistanceLimits(),
-                                             memory_limit_bytes=64 * 1024 * 1024)
+        journal.emit(
+            "compiled",
+            identity=scene.identity,
+            source_map=scene.source_map,
+            initial=scene.snapshot(),
+            stats=scene.stats(),
+            provenance=provenance(installed_root),
+        )
+        plan = scene.prepare_boundary_query(
+            limits=ph.BoundaryDistanceLimits(), memory_limit_bytes=64 * 1024 * 1024
+        )
         last = None
         for index in range(3):
             take_step(str(index))
@@ -454,9 +566,12 @@ def run(mode, journal, installed_root, output):
         last = take_query("post-restore")
         physics = scene.snapshot()
         retained = plan
-        small = scene.prepare_boundary_query(limits=ph.BoundaryDistanceLimits(candidates=0),
-                                              memory_limit_bytes=64 * 1024 * 1024)
-        journal.emit("capacity-attempt", before=physics, limits=ph.BoundaryDistanceLimits(candidates=0))
+        small = scene.prepare_boundary_query(
+            limits=ph.BoundaryDistanceLimits(candidates=0), memory_limit_bytes=64 * 1024 * 1024
+        )
+        journal.emit(
+            "capacity-attempt", before=physics, limits=ph.BoundaryDistanceLimits(candidates=0)
+        )
         try:
             small.query(margin=MARGIN)
         except ph.BoundaryDistanceCapacityError as error:
@@ -464,32 +579,61 @@ def run(mode, journal, installed_root, output):
         else:
             raise AssertionError("zero candidate capacity was silently truncated")
         finally:
-            journal.emit("capacity-outcome", last_attempt=small.last_attempt,
-                         last_result=small.last_result, stats=small.stats())
+            journal.emit(
+                "capacity-outcome",
+                last_attempt=small.last_attempt,
+                last_result=small.last_result,
+                stats=small.stats(),
+            )
         require(small.last_result is None, "failed query published no packet")
-        require(encode(scene.snapshot()) == encode(physics), "failed independent query rolled physics")
-        require(retained.last_result is last and retained.require_current(last) is last,
-                "previous plan still owns its complete packet")
-        plan = scene.prepare_boundary_query(limits=ph.BoundaryDistanceLimits(),
-                                             memory_limit_bytes=64 * 1024 * 1024)
+        require(
+            encode(scene.snapshot()) == encode(physics), "failed independent query rolled physics"
+        )
+        require(
+            retained.last_result is last and retained.require_current(last) is last,
+            "previous plan still owns its complete packet",
+        )
+        plan = scene.prepare_boundary_query(
+            limits=ph.BoundaryDistanceLimits(), memory_limit_bytes=64 * 1024 * 1024
+        )
         take_query("retry")
-        journal.emit("final", snapshot=scene.snapshot(), scene_stats=scene.stats(),
-                     current_stats=plan.stats())
-        return dict(status="PASS", mode=mode, logical_worldsteps=steps, participant_steps=2 * steps,
-                    queries=queries, rows=rows, stale_rejections=stale, capacity_rejections=1,
-                    provenance=provenance(installed_root))
+        journal.emit(
+            "final",
+            snapshot=scene.snapshot(),
+            scene_stats=scene.stats(),
+            current_stats=plan.stats(),
+        )
+        return dict(
+            status="PASS",
+            mode=mode,
+            logical_worldsteps=steps,
+            participant_steps=2 * steps,
+            queries=queries,
+            rows=rows,
+            stale_rejections=stale,
+            capacity_rejections=1,
+            provenance=provenance(installed_root),
+        )
     except BaseException as error:
         primary = error
-        journal.emit("failure", type=type(error).__name__, message=str(error),
-                     traceback=traceback.format_exc(), attempts=attempts,
-                     last_attempt=None if plan is None else plan.last_attempt)
+        journal.emit(
+            "failure",
+            type=type(error).__name__,
+            message=str(error),
+            traceback=traceback.format_exc(),
+            attempts=attempts,
+            last_attempt=None if plan is None else plan.last_attempt,
+        )
         raise
     finally:
         if scene is not None:
             try:
                 scene.close()
-                journal.emit("closed", scene_stats=scene.stats(),
-                             current_plan=None if plan is None else plan.stats())
+                journal.emit(
+                    "closed",
+                    scene_stats=scene.stats(),
+                    current_plan=None if plan is None else plan.stats(),
+                )
             except BaseException as error:
                 journal.emit("close-failure", type=type(error).__name__, message=str(error))
                 if primary is None:

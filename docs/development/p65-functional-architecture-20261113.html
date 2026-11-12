@@ -47,7 +47,7 @@ table{width:100%;border-collapse:collapse;font-size:13px;margin:20px 0}td,th{tex
 <g><rect x="635" y="420" width="440" height="64" rx="6" fill="#0f172a" stroke="#34d399" stroke-width="1.5"/><text class="label" x="855" y="445" text-anchor="middle">R3-N / R3-P：已验组合</text><text class="sub" x="855" y="465" text-anchor="middle">FREE + BALL/R/P + NONE：condim1 / 3</text></g>
 <g><rect x="35" y="548" width="235" height="64" rx="6" fill="#0f172a" stroke="#34d399" stroke-width="1.5"/><text class="label" x="152.5" y="573" text-anchor="middle">原共同载荷与发布</text><text class="sub" x="152.5" y="593" text-anchor="middle">指定域响应；查询不等于通用响应</text></g>
 <g><rect x="300" y="548" width="235" height="64" rx="6" fill="#0f172a" stroke="#34d399" stroke-width="1.5"/><text class="label" x="417.5" y="573" text-anchor="middle">材料与双方共同候选</text><text class="sub" x="417.5" y="593" text-anchor="middle">弹性 → 重构速度 → 可选 D6 耗散</text></g>
-<g><rect x="635" y="548" width="440" height="64" rx="6" fill="#0f172a" stroke="#fbbf24" stroke-width="1.5"/><text class="label" x="855" y="573" text-anchor="middle">R3-A：有状态执行器组合</text><text class="sub" x="855" y="593" text-anchor="middle">FILTEREXACT：实现已合入，完整验证中</text></g>
+<g><rect x="635" y="548" width="440" height="64" rx="6" fill="#0f172a" stroke="#34d399" stroke-width="1.5"/><text class="label" x="855" y="573" text-anchor="middle">R3-A：有状态执行器组合</text><text class="sub" x="855" y="593" text-anchor="middle">FILTEREXACT：源码117＋安装各352 worldsteps</text></g>
 <g><rect x="35" y="676" width="500" height="64" rx="6" fill="#0f172a" stroke="#34d399" stroke-width="1.5"/><text class="label" x="285" y="701" text-anchor="middle">验证候选 → 一次共同发布</text><text class="sub" x="285" y="721" text-anchor="middle">力 / 运动 / 反力 / 身份一致；恢复与晚失败保留旧状态</text></g>
 <g><rect x="635" y="676" width="440" height="64" rx="6" fill="#0f172a" stroke="#34d399" stroke-width="1.5"/><text class="label" x="855" y="701" text-anchor="middle">独立 world → 来源分桶 → 聚合发布</text><text class="sub" x="855" y="721" text-anchor="middle">G2a：8 模型 / 16 world；无跨桶碰撞</text></g>
 <g><rect x="35" y="804" width="500" height="64" rx="6" fill="#0f172a" stroke="#fb7185" stroke-width="1.5"/><text class="label" x="285" y="829" text-anchor="middle">应用验收必须单列</text><text class="sub" x="285" y="849" text-anchor="middle">D4 与 D6-B 稳态支撑 FAIL；不被模块通过抵消</text></g>
@@ -58,7 +58,7 @@ table{width:100%;border-collapse:collapse;font-size:13px;margin:20px 0}td,th{tex
 <section class="cards">
 <div class="card"><h2 class="green">场景与碰撞入口已复用</h2><p>多参与者共享身份、状态与查询入口；D5 将节点模型和普通球/胶囊的双向响应装入公共场景。</p><p>下一结构缺口：多 body / 关节刚柔，完整 Jᵀ 载荷与共同发布。</p></div>
 <div class="card"><h2 class="rose">算子资格 ≠ 持续承载</h2><p>D6 可选轴向耗散的功能与安装验证完成，旧严格精度失败单列。原 D4 和新 D6-B 两个稳态窗均未通过。</p><p>停止扫描系数，先分辨形变模态与接触相对运动，另立可验证模型。</p></div>
-<div class="card"><h2 class="amber">机器人组合与 GPU 规模</h2><p>FREE＋BALL 法向/摩擦接触、原容量内异构矩阵已验；R3-A 有状态执行器正在补齐。</p><p>扩容前补完整内存与生命周期预算，再做同模型、同输出的性能比较。</p></div>
+<div class="card"><h2 class="amber">机器人组合与 GPU 规模</h2><p>FREE＋BALL 法向/摩擦接触、原容量内异构矩阵已验；R3-A 有状态执行器已通过限定源码与安装验证。</p><p>扩容前补完整内存与生命周期预算，再做同模型、同输出的性能比较。</p></div>
 </section>
 <table><thead><tr><th>大模块</th><th>下一项实质缺口</th><th>判断成功的依据</th></tr></thead><tbody>
 <tr><td>场景 / 机器人</td><td>标量限位＋DOF 干摩擦的 BALL 树组合；BALL 角限位单独开发</td><td>完整原生约束行、力与运动；多案例、双后端、晚失败与安装消费</td></tr>
@@ -69,7 +69,7 @@ table{width:100%;border-collapse:collapse;font-size:13px;margin:20px 0}td,th{tex
 </tbody></table>
 <footer>
 来源：<a href="p65-feature-acceptance-matrix-20261113.md">功能验收矩阵</a> · <a href="../architecture/unified-scene-compilation.md">统一编译架构</a> · <a href="phymeo-newton-panorama-2026-11-12.md">八方向差异全景</a> · <a href="p65-damped-normal-load-result-20261113.md">持续载荷失败</a>。<br>
-本图是连接说明，不替代实际结果。Newton 采用既有固定 1.7.0 参照；没有新增公平性能结论或整体完成百分比。07:30 收口时按实际结果更新黄色项目。
+本图是连接说明，不替代实际结果。Newton 采用既有固定 1.7.0 参照；没有新增公平性能结论或整体完成百分比。M-B1多独立刚体刚柔正在编码，尚未验证；07:30按实际结果收口。
 </footer></main></body></html>
 <!-- Template adaptation license:
 MIT License

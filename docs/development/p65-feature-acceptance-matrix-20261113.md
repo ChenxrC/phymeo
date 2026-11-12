@@ -1,7 +1,7 @@
 # 2026-11-13 功能验收矩阵：D5 / R3 / G2a / D6 与保留的 D4 失败
 
 本页是**当前事实截点**，按父任务实际源码结果、已结束命令及安装消费者的小摘要更新。
-父当前产品为 `ec0e2997246d7fbfd57c9ca10bdb5bf086d7a8d0`；本页作者仅文本/file IO/Git，
+最新已验安装产品为 `08d7a1b667b0803f95cd5caa484fd49fa5c0f383`；原ec0e2997资格按原结果复用。本文仅文本/file IO/Git，
 没有执行项目、读取大轨迹、重做保存审计或产品字节核对。以下结果引用原父收据，
 后续新应用不得自动继承。整个 P6.5 / Newton 功能对齐仍未完成。
 
@@ -15,7 +15,8 @@
 | --- | --- | --- | --- | --- | --- |
 | **D5-A 公共刚柔声明**：`ParticipantSceneDeclaration(contact_response="deformable_normal")`＋`ParticipantDeformable` → `compile_participant_scene` → 唯一 D3 owner → step/query/reset/restore | 新源码26节点/后端，旧受影响5/后端；坐标修复后资产短窗另各2通过 | 两后端源码及两批安装均通过 | 首包81/74，第二包132/133均 PASS；每次38 calls、57 worldsteps、6显式当前query | 资产球/程序胶囊两类短窗；每world仅一个节点模型＋一个ordinary单body运动球/胶囊，**不是任意关节机器人、多刚体刚柔或持续稳态支持** | 有HOST载荷/诊断往返；未比较Newton |
 | **R3-N FREE＋BALL法向接触**：原FREE根＋BALL/R/P、NONE JOINT motor、primitive condim1，完整M/J/积分与力运动共同发布 | 完整55节点＋7个原兼容节点通过 | 两后端包含在原固定源码矩阵；首包75/76均 PASS | 首包每后端56 calls /112 worldsteps；未冒称第二包重跑同一N消费者 | feet/siblings各24步非零速度、正反控制与卸载，另生命周期后继；非人形长时支撑/舞蹈 | 未做同模型同质量性能比较 |
-| **R3-P FREE＋BALL pyramidal接触**：复用原约束求解与CSR，primitive condim1/3 | run88完整69通过：31 HOST、19 interpret、19 CUDA；run89原路由兼容4通过 | 新源码及第二包130/131均 PASS | 第二包两后端各56 calls /112 worldsteps，完整native同入步＋独立连续参考 | 正控为condim3；mixed1/3仅编译路由资格。FREE＋BALL activation、limits/dry、condim4/6、elliptic3、更多shape仍未放行 | 无Newton对比；不是新求解算法 |
+| **R3-P FREE＋BALL pyramidal接触**：复用原约束求解与CSR，primitive condim1/3 | run88完整69通过：31 HOST、19 interpret、19 CUDA；run89原路由兼容4通过 | 新源码及第二包130/131均 PASS | 第二包两后端各56 calls /112 worldsteps，完整native同入步＋独立连续参考 | 正控为condim3；mixed1/3仅编译路由资格。本原R3-P批不含activation；R3-A另验。limits/dry、condim4/6、elliptic3、更多shape仍未放行 | 无Newton对比；不是新求解算法 |
+| **R3-A FREE＋BALL FILTEREXACT**：混合NONE/FILTEREXACT JOINT、no-contact/normal/pyramidal与同次act/force/motion | run160完整117通过，run153受影响兼容6通过 | 两后端完整新源码矩阵通过 | 第三包08d7a1b6/532成员同字节；164/165各176 calls/352 worldsteps PASS，cleanup空 | 六连续族＋四原精确XML＋恢复/reset/晚失败；仍无limits/dry、多FREE根或任意机器人组合 | 未比较Newton |
 | **G2a 原容量内异构功能规模**：完整来源分桶，同一次接受所有桶的力、运动及生命周期 | run37六个W1节点＋run51其余20节点全部通过；包含W8/B3、W16/B3、W16/B8、规模晚失败/retry及W17/model9前置拒绝 | 两后端完整源码格通过；包外仅指定W16格追加资格 | 首包77/78为W16/B3、79/80为W16/B8，四次均 PASS，各27 calls /432 worldsteps；**W1/W8只保源码资格，未新增包外运行** | cap仍8模型/16world，同h独立world；不是单异构kernel、跨桶碰撞或W32/128/256资格 | 分段walltime仅观察；live/peak设备内存UNKNOWN，未比较Newton |
 | **D6-A 可选轴向材料速度耗散**：elastic reconstruct后一次有序隐式速度pass，候选验证后共同发布；D1/D3/D5可声明 | 核：102解释33（11 HOST＋22 TYX）、103 CUDA22；D1共35唯一节点，解释公共＋HOST34分组通过，111 CUDA29含UNKNOWN边界；D3 116/117各4；D5 121/122各2 | 新耗散/算术/能量/事务与连续工程门均通过；**104原动量strict、112原elastic速度strict保留FAIL** | 第二包128/129均 **FUNCTIONAL_PASS**，各22 calls /44 worldsteps；同时 `strict_elastic_precision=FAIL_RECORDED`，每后端20项旧短门记录，最大速度差约1.253865e-4 m/s | pair/chain及sphere/斜capsule短窗，真实恢复/reset后继；轴向一阶分裂，有平膜法向零模，不是全网络BE、全局drag或D4稳态合格 | 无性能/全布模型结论 |
 | **D4 原无阻尼N1持续法向载荷**：完整入层→承载→卸载→离层→再接触 | 原strict run46第301步速度门FAIL；runner、独立算术审计及诊断路径可用 | run50解释、run69 CUDA均完成原3072步/3秒，但均 **FAIL / DIAGNOSTIC_ONLY** | 没有已通过的完整持续支撑安装资格；不把D5/D6包外短窗代替它 | 两预定稳态窗的支撑力与速度RMS不合格，**不是仅精度问题**；其余原三格未执行 | 原始两窗有计时和保存图；无公平性能比较 |
@@ -77,13 +78,13 @@ D6-B的c=4096 N·s/m是另行预登记的物理参数；NormalLayer接触damping
 | 范围 | 已验边界与未完成部分 |
 | --- | --- |
 | D5/D3刚柔 | 同world唯一ordinary单body浮体＋节点，sphere/capsule–triangle、入步facet NormalLayer；HOST载荷往返存在。多刚体/关节机器人刚柔、面积压力、摩擦/换面历史、CCD仍缺；查询不是响应 |
-| R3机器人 | 保nv≤35/nq≤45、body128、actor32、geom128/pair16/rawslot32及原solver预算；不以cap常量证明全部极限组合。FREE＋BALL activation、limits/dry、更多transmission/shape仍是后继 |
+| R3机器人 | 保nv≤35/nq≤45、body128、actor32、geom128/pair16/rawslot32及原solver预算；不以cap常量证明全部极限组合。FREE＋BALL FILTEREXACT已由R3-A另验；limits/dry、更多transmission/shape仍是后继 |
 | G2a异构 | 原完整来源分桶与末桶status/download/aggregate失败、retry及W17/model9前置拒绝已获源码资格；包外只公共正格和边界操作，不冒充重新注入私有故障 |
 | D6材料 | 参数/边序/模型身份、None/全零原路径、fixed反力、late candidate拒绝、真实恢复与UNKNOWN生命周期有对应源码资格；不能把轴向零模或未验应用藏到“已阻尼”中 |
 | 安装与资源 | 主错和cleanup错分开，UNKNOWN不宣称可盲重试；owned-array预算不是RSS，累计分配/上传不是live/peak；所有live/peak及公平Newton速度结论保持UNKNOWN/NOT_COMPARED |
 
 后续按真实缺口登记独立功能合同，不重跑同源已绿组：先完成新应用的既定资格，
-再扩多body/关节刚柔、摩擦/历史/CCD，或FREE＋BALL activation等通用组合；
+再扩多body/关节刚柔、摩擦/历史/CCD，或FREE＋BALL limits/dry等通用组合；
 异构扩容须完整生命周期预算后才进入W32/128/256，公平性能比较另立阶段。
 旧G1长舞、J/R学习、B-point表示及全布/体软体问题不会随本表关闭。
 
@@ -92,3 +93,5 @@ D6-B的c=4096 N·s/m是另行预登记的物理参数；NormalLayer接触damping
 [D6源码报告](p65-distance-dissipation-report.md)、[D6用法](p65-distance-dissipation-usage.md)、
 [D6-B协议](p65-damped-normal-load-application-20261113.md)。本轮原命令/快照/失败入口：
 `artifacts/p65-feature-until-0730-20261113-01`；本页不替代其完整证据。
+
+第三包R3-A正式范围详见[报告](p65-free-ball-activation-report.md#parent-acceptance-2026-11-13-0447)。M-B1多独立刚体刚柔依据[冻结合同](p65-multibody-deformable-implementation-20261113.md)正在编码，尚无执行资格，不填为已验。

@@ -87,3 +87,20 @@ qualification. No D4/D6 steady or strict precision result is changed.
 Original branch `codex/p65-d6-installed-20261113` and old untracked
 `docs/development/mujoco-tyx-t1-review.md` are preserved. Git diff checking is the
 only authored-source check here; it is not a project/static/physics execution.
+
+## Parent acceptance, 2026-11-13 04:47
+
+**SOURCE_AND_INSTALLED_QUALIFIED**, limited to the frozen R3-A scope. This section supersedes the historical author-only TESTS_PENDING labels above. Product source is `08d7a1b667b0803f95cd5caa484fd49fa5c0f383`; no numerical kernels, device ABI, original solver budgets or physical gates changed.
+
+The parent connected the five shared route/receipt/checkpoint seams and preserved the old fixed/scalar schemas. Four exact previously rejected activation XML sources (R2, R3-normal, R3-pyramidal, R1-free) are retained and verified as two-step positives, including exact source identity assertions. Unrelated negatives remain. A pre-execution consumer review corrected the clamp-count observer from nonexistent actuation.input_control to the same-attempt transmission.input_control; it did not change any model or returned state.
+
+- 149–152 integration style checks/format repair completed; first format check retained failure.
+- 153 affected compatibility: **6 passed in 31.55 s**, fixed BALL stateful, scalar FREE stateful and stateless FREE+BALL contact, interpret/CUDA. No repeated full old suite.
+- 154/155 first new-file lint/format failures retained; 156/157 only imports/format repaired; 158/159 passed.
+- 160 complete new source plus transaction matrices: **117 passed in 129.70 s**, no skips. Main 75 = 41 HOST +17/backend; transaction 42 =21/backend. Nineteen before/after source bindings were unchanged.
+- 161 build, 162 install, 163 source/wheel/installed parity: all RAW_EXIT0; **532 product members byte-identical**, issues empty. Wheel 1,722,017 bytes, SHA256 `183c320f6c5b8baf17e29bd9b133456e73e2811ba492344fa5e95ac852439b30`. Parity summary SHA256 `19f93d7c38ccb5b52e142ffcaa9dd10a790d61ed3874f41a346e116d8764655d`.
+- 164 installed interpret and 165 installed CUDA: both **PASS**, each 176 actual calls /352 accepted world-steps, 732 complete trace events, no finalization errors. Six continuous sources each24 calls/two worlds, three lifecycle groups each8 calls/two worlds, four exact old sources each2 calls/two worlds. The scripts/cwd/module roots were outside the checkout and bound to the fresh installed site.
+
+Interpret logical trace:102969087 bytes/SHA256 `7a5b6d124e366652428d71b2db7262f3f9518e20b6f0a940245dcf552935e5ac`; CUDA:102969653 bytes/SHA256 `c58fd0d5b4fa5883a1860b6abf7e7d1bb8b89dd5ee44664fe0e345181953c14e`. Compressed streams remain complete, respectively9549339 and9592986 bytes. No new decompression or producer replay was used to obtain these counters.
+
+Evidence: `artifacts/p65-feature-until-0730-20261113-01`, commands153/160/161–165 and `wheel-03-parity`; installed outputs under `C:/Users/38347/AppData/Local/Temp/phymeo-feature-wheel-20261113-03/results`. The result certifies the declared no-contact/normal/pyramidal FILTEREXACT composition, not limits/dry, multiple free roots, arbitrary contact geometry, G1 long dance, resident deformable coupling, performance superiority or all P6.5.

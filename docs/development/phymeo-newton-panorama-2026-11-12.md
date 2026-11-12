@@ -54,6 +54,7 @@ Phymeo已连接模型编译、受限机器人动力学、设备接触与约束�
 | G1异构功能首片 | 新源码42通过；统一包每后端27calls/162worldsteps。三种不同原支持域模型分桶，控制/完整力运动/恢复共同接受 | 原8模型16world上限，该首片正控3模型6world；G2a后继另验容量格，原不支持组合仍拒绝且无性能结论；不代表G1人形舞蹈完成 |
 | D5-A 公共刚柔声明 | 新26＋受影响5节点/后端；首包81/74、第二包132/133均PASS，各38calls/57worldsteps/6queries | 球资产/程序胶囊两类短窗与完整生命周期；每world单ordinary浮体，不是任意关节机器人或持续稳态支撑 |
 | R3-N FREE+BALL法向 | 源码55＋兼容7，首包75/76各112worldsteps；完整M/J、NONE JOINT、condim1力运动与恢复 | 原native坐标/容量保留；不代表activation、limits/dry或人形长时动作 |
+| R3-A FREE+BALL FILTEREXACT | 源码117＋兼容6；第三包532成员parity，164/165各352worldsteps；混合执行器、no-contact/normal/pyramidal同次act/force/motion | 限原direct JOINT/固定gain/BALL BIAS_NONE；无limits/dry、多FREE根/任意刚柔组合；不赋予G1长舞资格 |
 | R3-P FREE+BALL摩擦 | 源码69＋兼容4，第二包130/131各112worldsteps；primitive pyramidal condim3及原CSR/共同约束核 | 连续正控为condim3，mixed1/3只有编译路由资格；不扩activation、limits/dry、condim4/6、elliptic3或新shape |
 | G2a 原容量功能规模 | 完整W1/W8/W16源矩阵；首包77–80的W16B3/W16B8双端PASS，各27calls/432worldsteps | 上限仍8模型16world、同h；W1/W8未另做安装消费者。没有live/peak或公平Newton性能结论 |
 | D6-A 轴向材料耗散 | 原elastic/reconstruct后一次候选内耗散；源码功能门与D1/D3/D5接线通过；包外128/129各22calls/44worldsteps，FUNCTIONAL_PASS | 原strict_elastic_precision=FAIL_RECORDED，旧弹性重构最大速度差约1.253865e-4 m/s；不覆盖D4稳态FAIL，不是全网络隐式/全局drag |
@@ -68,7 +69,7 @@ Phymeo已连接模型编译、受限机器人动力学、设备接触与约束�
 
 | 用户方向 | Phymeo 已有基础与本轮变化 | 与固定 Newton 能力版图相比仍需补齐的模块 |
 | --- | --- | --- |
-| **01 场景与机器人** | URDF/MJCF/USD/程序场景、统一编译、PD/IK、四类resident树及新增显式多参与者装配；MuJoCo-TYX自由根标量树、BALL1/A/C、ROB2b、直接BALL JOINT电机/FILTEREXACT及原接触；新公共scene设备查询、D5单浮体刚柔及R3-N/P | 更广关节/闭环/传动、FREE+BALL的activation/limits/dry/condim4/6组合；S3/D5公共接线及R3-N/P已通，继续补多body/关节刚柔、多机器人/工具抓取释放库。单个Panda/G1不替代组合矩阵 |
+| **01 场景与机器人** | URDF/MJCF/USD/程序场景、统一编译、PD/IK、四类resident树及新增显式多参与者装配；MuJoCo-TYX自由根标量树、BALL1/A/C、ROB2b、直接BALL JOINT电机/FILTEREXACT及原接触；新公共scene设备查询、D5单浮体刚柔及R3-N/P | 更广关节/闭环/传动、FREE+BALL的limits/dry/condim4/6等组合；FILTEREXACT已由R3-A单独验收；S3/D5公共接线及R3-N/P已通，继续补多body/关节刚柔、多机器人/工具抓取释放库。单个Panda/G1不替代组合矩阵 |
 | **02 碰撞检测与响应** | 既有RR/RD/DD有限域、S/C/OBB/H设备patch与载荷、七形状support-map查询；COL2/COL3、M1与S1–S3真实设备来源；D1/D2真实变形查询、D5公共运动球/胶囊双向法向响应和D6可选材料耗散 | 斜平行胶囊仍有CONDITIONING。持续稳态支撑（原D4与新D6-B N1均FAIL）、摩擦换面历史、曲面patch、通用CCD响应及更广多刚体/变形组合；预计算SDF、SDF接触缩减和hydroelastic仍独立缺失 |
 | **03 GPU 与多场景** | TYX批量动力学/约束、W129/W256受载分页、设备action、真实GPU PPO；紧凑镜像、N7 S128/S256两模式；accepted设备FK/持久节点、G2a原cap内W1/8/16源矩阵和W16B3/B8安装资格 | 原cap之外的扩容与资源资格、更广异构资产/约束和变形耦合规模、HOST往返优化；live/peak资源与吞吐基线。尚无Newton同模型/精度/输出性能比较 |
 | **04 可微仿真与训练工具** | 实际 CUDA RSL PPO、MLP/GRU、组合 checkpoint、S 持续支撑学习成功、N5 随机状态重置、N6 控制频率窗口与 N7 组合规模资格 | J/R 仍未达学习门；更广机器人训练、模型/环境随机化、可复用任务库。多步物理梯度、辨识与梯度对照仍是独立能力，不能由 PPO 能运行推导已可微 |
@@ -87,7 +88,7 @@ Newton 本身也按 solver/backend 配置提供能力；上表不把所有 Newto
 | --- | --- | --- |
 | **1 / 高：统一场景到设备碰撞/响应** | S1–S3资产/控制/来源到当前查询，D5-A到单浮体＋节点的共同响应与生命周期，两类包外场景已过 | 多body/关节资产刚柔、更广多机器人/工具/物体组合；需明确完整载荷、稳定身份和共同失败发布，不能只放开构造guard或顺序调用两个step |
 | **2 / 高：真实变形到持续载荷** | D1持久bank→D2查询→D3响应→D5声明；D6-A轴向材料算子功能已资格且原strict失败保留 | D4无阻尼与D6-B c4096 N1稳态均FAIL；该系数停止扩跑，不凭更大阻尼或扫描参数追绿。后续须根据真实轨迹另立可辨别合同；摩擦/换面历史、CCD和更广材料/网格独立登记，轴向零模/未解析行/HOST往返仍明示 |
-| **3 / 中高至高：机器人组合与GPU规模** | FREE+BALL/NONE JOINT condim1及pyramidal3、原8模型16world异构源矩阵与指定W16安装已过 | activation、limits/dry等尚缺组合先独立多案例；异构W32/128/256须新增完整资源/生命周期资格，随后才做同硬件、同模型/输入/质量/完整输出的Newton1.7.0基线与热点优化 |
+| **3 / 中高至高：机器人组合与GPU规模** | FREE+BALL/NONE JOINT condim1及pyramidal3、原8模型16world异构源矩阵与指定W16安装已过 | limits/dry等尚缺组合先独立多案例；FILTEREXACT R3-A已完成；异构W32/128/256须新增完整资源/生命周期资格，随后才做同硬件、同模型/输入/质量/完整输出的Newton1.7.0基线与热点优化 |
 
 D6-B run143已结束，3072 attempted/returned/checked步、3 controls、close1完整；本次文档只引用父闭合结果，不另算轨迹。两稳态窗支撑均值21.46127079/19.36648514 N，刚体速度RMS .30439415/.21362712、中心RMS .16520125/.11754240 m/s，均未满足原支撑范围/0.1 m/s门。逐步law、耗散phase、算术与长参考通过，另7项旧弹性短精度记录（最大约3.56759e-5 m/s）仍保留；两类失败不互相掩盖。后续源码可以按不交叉owner并行编写，但项目import/测试/数值/build/install仍保持唯一串行。性能超越不是功能验收的替代条件；不可比模型格、live/peak未知项与保留失败必须单列。
 

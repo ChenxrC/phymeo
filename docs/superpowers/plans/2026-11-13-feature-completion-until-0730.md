@@ -201,3 +201,8 @@ matrix, affected old routes, then fresh wheel and installed consumers.
 No kernel/device ABI or capacity change is authorized by this slice. Two
 unsuccessful diagnoses of the same issue freeze that defect; the original
 06:15 feature cutoff and 07:30 result overview remain unchanged.
+
+## 05:00实际进度与下一批
+
+R3-A已完成完整117新源码节点＋6兼容节点、第三包532成员parity、164/165安装每后端352worldsteps，见正式报告。D6-B稳态FAIL保持，不继续扫描系数。
+下一批M-B1按[冻结合同](../../development/p65-multibody-deformable-implementation-20261113.md)仅补同一节点片多个独立浮体的稳定地址、逐body载荷与共同发布。三原作者纯编码，父共享接缝/唯一serial验证；M-B2关节树与BALL limits/dry仅提案。06:15冻结、07:30收口保持。

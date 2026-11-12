@@ -1,7 +1,7 @@
 # 2026-11-13 功能验收矩阵：D5 / R3 / G2a / D6 与保留的 D4 失败
 
 本页是**当前事实截点**，按父任务实际源码结果、已结束命令及安装消费者的小摘要更新。
-最新已验安装产品为 `08d7a1b667b0803f95cd5caa484fd49fa5c0f383`；原ec0e2997资格按原结果复用。本文仅文本/file IO/Git，
+最新已验安装产品为 `23757ae6a0d2a5ed3c6b15b0ec762bfd571e3b75`；原08d7a1b6/ec0e2997资格按原结果复用。本文仅文本/file IO/Git，
 没有执行项目、读取大轨迹、重做保存审计或产品字节核对。以下结果引用原父收据，
 后续新应用不得自动继承。整个 P6.5 / Newton 功能对齐仍未完成。
 
@@ -22,12 +22,15 @@
 | **D4 原无阻尼N1持续法向载荷**：完整入层→承载→卸载→离层→再接触 | 原strict run46第301步速度门FAIL；runner、独立算术审计及诊断路径可用 | run50解释、run69 CUDA均完成原3072步/3秒，但均 **FAIL / DIAGNOSTIC_ONLY** | 没有已通过的完整持续支撑安装资格；不把D5/D6包外短窗代替它 | 两预定稳态窗的支撑力与速度RMS不合格，**不是仅精度问题**；其余原三格未执行 | 原始两窗有计时和保存图；无公平性能比较 |
 | **D6-B 新c=4096持续载荷应用** | 短合同140解释14及141 CUDA单返回故障1通过 | 143解释完整3072步/3秒后 **FAIL / DIAGNOSTIC_ONLY**；其余格按协议停止 | 第二包完整N1解释失败，力/运动及连续参考逐步门完成，但稳态均值/RMS不合格 | 两窗21.4613/19.3665N，刚体RMS .3044/.2136m/s；不扫系数，不改原D4结果，详见[实际结果](p65-damped-normal-load-result-20261113.md) | 无Newton比较 |
 
-D5减少公共装配成本，D4检查持续功能，D6新增明确材料模型，三者不能互相替代。
+| **M-B1 多独立刚体—变形共同响应** | 186解释16＋187CUDA12＝28唯一节点；199/200容量各2；旧兼容171/172各8 | 两后端均通过，S8实测4world/8participants、M3混合1/2body world | 第四包191/192各44worldsteps/88participantsteps；201/202容量各24/44，全部PASS及关闭成功 | 每participant仍ordinary floating单body，sphere/capsule法向；不含关节树、RR新增响应、摩擦/CCD或稳态 | 未比较Newton |
+| **G2-R0 restore候选资源归属** | 178预期RED后185完整12GREEN | 两后端真实晚失败、保原发布、恢复重试与连续后继 | 第四包193源码外12通过；原异常＋cleanup聚合、保留owner并真实释放 | 不注入/重试UNKNOWN；不是完整资源预算或扩容 | 不改变数值核 |
+
+D5减少公共装配成本，M-B1扩多个独立刚体，D4检查持续功能，D6新增明确材料模型，不能互相替代。
 R3/G2a属于MuJoCo-TYX路径；其支持表不自动与resident刚柔路径作笛卡尔积。
 D6的D5带耗散声明已有源码资格；本轮D6安装消费者直接消费D1/D3，D5安装消费者
 验证原场景路径，**不额外声称专用带耗散D5包外矩阵已执行**。
 
-## 二、两批安装版本与实际消费范围
+## 二、分批安装版本与实际消费范围
 
 | 包 / 来源 | 原父字节资格 | 本页引用的已结束消费者 |
 | --- | --- | --- |
@@ -95,3 +98,7 @@ D6-B的c=4096 N·s/m是另行预登记的物理参数；NormalLayer接触damping
 `artifacts/p65-feature-until-0730-20261113-01`；本页不替代其完整证据。
 
 第三包R3-A正式范围详见[报告](p65-free-ball-activation-report.md#parent-acceptance-2026-11-13-0447)。M-B1多独立刚体刚柔依据[冻结合同](p65-multibody-deformable-implementation-20261113.md)正在编码，尚无执行资格，不填为已验。
+
+### 第三、第四包的后继范围
+
+第三包08d7a1b6/532成员、R3-A164/165各352worldsteps已接受。第四包23757ae6/534成员，190 parity BYTE_IDENTICAL/issues0；新M-B1及容量191/192/201/202、R0故障193已接受。第四包没有重新跑完整历史功能；旧资格按对应版本保留。详见[M-B1报告](p65-multibody-deformable-report-20261113.md)、[用法](p65-multibody-deformable-usage-20261113.md)、[恢复清理报告](p65-restore-cleanup-report-20261113.md)。完整canonical结果在本轮evidence的installed-closed-archive-04/wheel-04。

@@ -1,6 +1,6 @@
 # M-B1：多独立刚体与变形表面的共同响应
 
-状态：SOURCE_QUALIFIED / INSTALLED_PENDING。2026-11-13；父唯一串行执行，本报告仅读取已结束 stdout/final，不重跑或重审保存载荷。
+状态：SOURCE_AND_INSTALLED_QUALIFIED（父安装与容量更新见末节）。2026-11-13；父唯一串行执行，本报告仅读取已结束 stdout/final，不重跑或重审保存载荷。
 
 [实施合同](p65-multibody-deformable-implementation-20261113.md)限定的公共装配、逐体接触载荷与共同发布已通过两后端源码验证。安装消费者已交接，等待父 wheel04 的源码外验证；本报告不将源码运行当作安装通过。
 
@@ -65,6 +65,16 @@
 
 ## 安装与后继
 
-[独立安装消费者](../../tests/installed/check_deformable_multibody.py) 预登记每后端 A4步 + B双world16步 + 双world生命周期4步，共44 logical worldsteps /88 participant steps；完整来源、raw query/receipt、模块安装根与关闭收据均为包外必验项。当前 **PENDING**：未将预计步数写成已执行结果，等待父同源 wheel04 后补正式安装结果。
+[独立安装消费者](../../tests/installed/check_deformable_multibody.py) 预登记每后端 A4步 + B双world16步 + 双world生命周期4步，共44 logical worldsteps /88 participant steps；完整来源、raw query/receipt、模块安装根与关闭收据均为包外必验项。本段为作者交接时的预登记；父已完成的安装与容量结果见末节。
 
 本片支持多独立单体与柔性表面的共同法向响应。后继关节树参与者、刚体互碰或持续支撑须各自建立多案例与真实执行证据，不从本报告推定完成。
+
+## 父正式安装与容量接受（2026-11-13）
+
+状态更新：**SOURCE_AND_INSTALLED_QUALIFIED**。第四包产品 `23757ae6a0d2a5ed3c6b15b0ec762bfd571e3b75`；190核534产品成员 source/wheel/installed同字节，issues空。wheel1726331B，SHA256 `859825776bfd14467aa6e4f6ff2ecbaa6430a3a947f7029d16352eed9f06e3dd`。
+
+191 interpret /192 CUDA均RAW_EXIT0、PASS；每后端实际44 worldsteps /88 participant steps，全部owner关闭成功、无retained cleanup failure。每条完整trace166记录；原字节SHA分别545d86df08cf4eaa77bbb0848a095e13e8b938fd624bb1e2a9803981b3d37eed、da2d5c7f871afb99c0b6ff0652368393f407c010e79baaf0a26e129d28f82e93。模块来源全部在独立安装site。
+
+容量后继只增加测试，产品未改：S8为4world/8participants，M3为2world且分别1/2participants。只重标原A的world/安装身份，原几何、质量、初态、控制、h及所有门保持；199 interpret2passed8.47s、200 CUDA2passed6.69s。201/202源码外各实际24worldsteps/44participantsteps、PASS、全部关闭成功。S8授予最大8participants的这组四步物理资格，不是8world全占用、更多模型或吞吐资格。M3验证同一multibody布局中单体world也使用完整逐participant映射。
+
+本片及容量后继合计每后端安装68worldsteps/132participantsteps，四份独立运行的范围仍分列。所有实际返回、完整trace、原静态失败、源码绑定及安装provenance保留。新canonical归档为 `artifacts/p65-feature-until-0730-20261113-01/installed-closed-archive-04/wheel-04`，33文件4904941B；原件保留，归档无解压/物理重跑。归档receipt SHA256 `8295f7d5c8d0748fceea247740410946b92969789d7b64dbb15588da22232f30`。

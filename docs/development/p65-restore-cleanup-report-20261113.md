@@ -1,6 +1,6 @@
 # G2-R0：restore 失败候选清理所有权报告
 
-状态：**SOURCE_QUALIFIED；PACKAGE_PENDING**。本片只修 MuJoCo-TYX restore
+状态：**SOURCE_AND_INSTALLED_QUALIFIED**（父安装更新见末节）。本片只修 MuJoCo-TYX restore
 提交前失败的资源所有权与异常可见性，不扩世界容量、模型域或动力学。
 
 ## 修复与绑定
@@ -75,3 +75,9 @@ GREEN 每节点保存完整 packed candidate、mirror、异常链与 owner/ledge
 正常 restore 的物理结果与 checkpoint 格式未更改。安装包及源码外消费者
 **尚待父统一验收**，本报告不提前声明通过。报告作者只读取原日志/必要元数据并
 写文档，所有 RED/GREEN 项目执行均由父唯一串行槽完成。
+
+## 父安装资格更新（2026-11-13）
+
+**SOURCE_AND_INSTALLED_QUALIFIED**。第四包产品23757ae6、534产品成员同字节。193源码外仅运行本片的新12项，RAW_EXIT0，12passed5.67s；所有加载的phymeo模块均位于独立安装site。测试及两个固定helper复制到包外scripts；没有导入仓库tests路径或执行旧helper测试。
+
+安装资格覆盖相同两个晚失败位置、三种清理情况、两个backend及实际恢复重试/连续后继。原178 RED保留；不改变UNKNOWN语义，不从本次owner修复声称完整生命周期预算或W32已完成。完整12份压缩记录及bootstrap已保存在第四包canonical归档，见[M-B1父安装记录](p65-multibody-deformable-report-20261113.md)。

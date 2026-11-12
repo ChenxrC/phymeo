@@ -20,8 +20,16 @@
 - 默认保留 native 自碰撞和 pair/exclude 规则。显式 self_collision=false 在冷装配
   生成实例内 body exclude，保留外部相互作用；有显式原生 pair 时拒绝冲突请求。
   B1c 另接公共 CollisionKey 显式排除计划，限定转换范围见下文。
-- 静态形状目前是有限球、盒、胶囊和圆柱；size 使用原生半尺寸，支持显式
+- 静态形状包含有限球、盒、胶囊、圆柱及无限碰撞平面；有限实体 size 使用原生半尺寸，支持显式
   contact_dim=1/3/4/6，不能传入会被维度忽略的非零摩擦分量。
+- 静态 `plane` 使用局部 +Z 法向，position/XYZW 决定平面位置和朝向；size 三维
+  仅表达显示半宽、半高及正网格间距，前两维可同时为零表示无限显示，不能一零一正。
+  有限显示尺寸不裁剪碰撞；平面归属 world，`NativeRigidShape` 明确拒绝 plane。
+  接触摩擦与 condim 沿原生合同，不把恢复系数或刚度字段暗自换算成另一接触律。
+  B8c 依赖切片的装配/visual 36 项通过（含 CPU MuJoCo 非零高度与显示范围外接触、
+  动态 plane 拒绝）；证据为配套实验根 `evidence/b8c-plane-assembly-final.log`。
+  初跑缺 FANUC 来源的一项跳过已用冻结来源配置补跑通过。独立只读复审通过。
+  本切片尚未完成 P2PE add_ground 转换、GPU 或消费者 GUI 资格，不改变原载荷。
 - 完整 MJB 和 VFS 资源由原编译快照持有。主文件散列只描述该文件；完整编译身份
   使用 MJB/archive 散列，不把主文件散列冒充 mesh/include 依赖闭包。
 - public identity 是 `(world, scoped_name)`；body/joint/qpos/DOF/geom 下标仅对本次

@@ -123,11 +123,18 @@ class NativeStaticShape:
     contact_dim: int = 6
 
     def __post_init__(self):
-        widths = {"sphere": 1, "box": 3, "capsule": 2, "cylinder": 2}
+        widths = {"sphere": 1, "box": 3, "capsule": 2, "cylinder": 2, "plane": 3}
         if self.kind not in widths or not self.name or "::" in self.name:
-            raise ValueError("native static requires a named finite primitive")
+            raise ValueError("native static requires a named primitive or plane")
         object.__setattr__(self, "size", _vector(self.size, widths[self.kind], "size"))
-        if min(self.size) <= 0:
+        if self.kind == "plane":
+            # MuJoCo planes are infinite collision surfaces. The first two
+            # dimensions only bound display; the third is display grid spacing.
+            if min(self.size[:2]) < 0 or self.size[2] <= 0:
+                raise ValueError("plane display extents must be nonnegative and spacing positive")
+            if (self.size[0] == 0) != (self.size[1] == 0):
+                raise ValueError("partially infinite plane display is not qualified")
+        elif min(self.size) <= 0:
             raise ValueError("shape dimensions must be positive")
         object.__setattr__(self, "position", _vector(self.position, 3, "position"))
         q = _vector(self.orientation_xyzw, 4, "orientation")
@@ -153,6 +160,8 @@ class NativeRigidShape(NativeStaticShape):
 
     def __post_init__(self):
         super().__post_init__()
+        if self.kind == "plane":
+            raise ValueError("plane requires static world ownership")
         for name, value in (("mass", self.mass), ("density", self.density)):
             if value is not None and (
                 isinstance(value, (bool, np.bool_))

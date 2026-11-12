@@ -9,8 +9,8 @@ import pytest
 from phymeo.builders.native_assembly import (
     NativeAssetInstance,
     NativeJointInput,
-    NativeStaticShape,
     NativeRigidShape,
+    NativeStaticShape,
     compile_native_template,
 )
 
@@ -26,6 +26,44 @@ def urdf(tmp_path):
     path = tmp_path / "slider.urdf"
     path.write_text(URDF)
     return str(path)
+
+
+@pytest.mark.parametrize("size", [(0., 0., .1), (2., 3., .1)])
+def test_static_plane_compiles_infinite_contact_with_public_identity(size):
+    import mujoco
+
+    plane = NativeStaticShape("floor", "plane", size, position=(0., 0., .3),
+                              friction=(.6, .02, .003))
+    ball = NativeRigidShape("ball", "sphere", (.1,), position=(4., 0., .39), mass=1.)
+    template = compile_native_template((), timestep=.002, gravity=(0., 0., -9.81),
+                                       static_shapes=(plane,), rigid_shapes=(ball,),
+                                       capture_visuals=True)
+    model = template.compilation.fresh_native_model()
+    floor_id = model.geom("floor").id
+    assert model.geom_type[floor_id] == mujoco.mjtGeom.mjGEOM_PLANE
+    assert model.geom_bodyid[floor_id] == 0
+    np.testing.assert_array_equal(model.geom_size[floor_id], size)
+    np.testing.assert_array_equal(model.geom_friction[floor_id], plane.friction)
+    data = mujoco.MjData(model)
+    template.initial_state.apply(template.compilation, data)
+    mujoco.mj_forward(model, data)
+    # Contact beyond the finite visual rectangle still uses an infinite plane.
+    assert data.ncon == 1
+    np.testing.assert_allclose(data.contact[0].dist, -.01, atol=1e-12, rtol=0)
+    assert set(data.contact[0].geom) == {floor_id, model.geom("ball").id}
+    assert any(row[0] == "floor" for row in template.shape_bindings)
+
+
+@pytest.mark.parametrize("size", [(-1., 1., .1), (0., 1., .1), (1., 1., 0.),
+                                  (1., 1., float("nan"))])
+def test_static_plane_rejects_invalid_display(size):
+    with pytest.raises(ValueError):
+        NativeStaticShape("floor", "plane", size)
+
+
+def test_plane_cannot_be_dynamic():
+    with pytest.raises(ValueError, match="static world ownership"):
+        NativeRigidShape("floor", "plane", (0., 0., .1), mass=1.)
 
 
 def template(path):

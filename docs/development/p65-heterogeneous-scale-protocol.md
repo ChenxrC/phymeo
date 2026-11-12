@@ -125,3 +125,18 @@ no truncation argument. Status and timing are recorded per cell, not inferred
 from another cell or from previous G1. Authoring performed only text/file IO and
 Git checks; no imports, collection, numerical evaluations, static tools or tests
 were executed. Parent exclusively owns any subsequent execution and style repair.
+# Parent source qualification, 2026-11-13
+
+The fixed matrix is SOURCE_VERIFIED, installation pending. Run37 passed the
+six original W1 cells (12.76 s); run51 passed the remaining twenty nodes
+(147.85 s): W8/B3, W16/B3, W16/B8 on both backends, all six scaled failure/retry
+combinations on both backends, and W17/model9 preflight negatives. No prior
+green cell was repeated and no product capacity, model input or tolerance was
+changed. Each positive cell retains its complete 24-step sequence and three
+real boundary successors, for 1,161 accepted worldsteps per backend across
+the six source cells. Source evidence is under
+`artifacts/p65-feature-until-0730-20261113-01`.
+
+This adds original-capacity functional qualification. Live/peak device memory
+is still UNKNOWN and no Newton performance comparison has been performed.
+The fresh installed consumers remain a separate pending stage.

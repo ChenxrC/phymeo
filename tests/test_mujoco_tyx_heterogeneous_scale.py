@@ -46,14 +46,23 @@ def test_scaled_last_bucket_failure_retains_and_retries(mode, cell, fault, monke
         old_receipt = run.batch.last_step
         counters = dict(run.batch.counters)
         old_banks = tuple(bucket._device.active for bucket in run.batch._buckets)
-        run.emit("fault-attempt", fault=fault, entry=old_state, controls=packets,
-                 checkpoint=before, counters=counters, active_banks=old_banks)
+        run.emit(
+            "fault-attempt",
+            fault=fault,
+            entry=old_state,
+            controls=packets,
+            checkpoint=before,
+            counters=counters,
+            active_banks=old_banks,
+        )
         with monkeypatch.context() as scoped:
             if fault == "late-aggregate":
+
                 def broken(operation, pending):
                     if operation == "step":
                         run.emit("fault-actual-aggregate", pending=pending)
                         raise RuntimeError("G2a late complete aggregate")
+
                 scoped.setattr(run.batch, "_before_commit", broken)
             else:
                 target = run.batch._buckets[-1]._device
@@ -73,9 +82,13 @@ def test_scaled_last_bucket_failure_retains_and_retries(mode, cell, fault, monke
             with pytest.raises(PhysicsStepFailure) as caught:
                 with run.forbid_native_step():
                     run.batch.step(runner.H)
-        run.emit("fault-return", error=repr(caught.value),
-                 accepted=caught.value.accepted_worlds, counters=run.batch.counters,
-                 state=run.batch.integration_snapshot())
+        run.emit(
+            "fault-return",
+            error=repr(caught.value),
+            accepted=caught.value.accepted_worlds,
+            counters=run.batch.counters,
+            state=run.batch.integration_snapshot(),
+        )
         assert dict(caught.value.accepted_worlds) == dict.fromkeys(run.keys, False)
         assert run.batch.checkpoint().to_bytes() == before
         assert run.batch.last_step is old_receipt
@@ -83,8 +96,9 @@ def test_scaled_last_bucket_failure_retains_and_retries(mode, cell, fault, monke
         assert tuple(bucket._device.active for bucket in run.batch._buckets) == old_banks
         assert run.batch.counters["completed_steps"] == counters["completed_steps"]
         assert run.batch.counters["accepted_world_steps"] == counters["accepted_world_steps"]
-        assert (run.batch.counters["bucket_physics_prepares"] -
-                counters["bucket_physics_prepares"]) == run.bucket_count
+        assert (
+            run.batch.counters["bucket_physics_prepares"] - counters["bucket_physics_prepares"]
+        ) == run.bucket_count
         run.advance(1, "same-input-real-retry")
         assert run.progress["checked_calls"] == 2
         assert run.progress["accepted_world_steps"] == 2 * len(run.keys)
@@ -102,13 +116,17 @@ def test_scaled_limits_reject_before_preflight(limit, monkeypatch, tmp_path):
     first = declaration["worlds"][0]
     if limit == "world17":
         models = (model,)
-        worlds = tuple(product.MuJoCoTyxWorldSpec(100 + i, model.key, first.initial_state)
-                       for i in range(17))
+        worlds = tuple(
+            product.MuJoCoTyxWorldSpec(100 + i, model.key, first.initial_state) for i in range(17)
+        )
     else:
-        models = tuple(product.MuJoCoTyxModelSpec(f"too-many-{i}", model.compilation)
-                       for i in range(9))
-        worlds = tuple(product.MuJoCoTyxWorldSpec(100 + i, row.key, first.initial_state)
-                       for i, row in enumerate(models))
+        models = tuple(
+            product.MuJoCoTyxModelSpec(f"too-many-{i}", model.compilation) for i in range(9)
+        )
+        worlds = tuple(
+            product.MuJoCoTyxWorldSpec(100 + i, row.key, first.initial_state)
+            for i, row in enumerate(models)
+        )
 
     def forbidden(*args, **kwargs):
         raise AssertionError("capacity must reject before preflight or allocation")
@@ -119,7 +137,12 @@ def test_scaled_limits_reject_before_preflight(limit, monkeypatch, tmp_path):
         product.MuJoCoTyxHeterogeneousBatch(models, worlds, mode="interpret")
     trace = helper.Journal(tmp_path / "preflight.jsonl.gz")
     try:
-        trace.emit("preflight-rejection", limit=limit, models=len(models),
-                   worlds=len(worlds), error=repr(caught.value))
+        trace.emit(
+            "preflight-rejection",
+            limit=limit,
+            models=len(models),
+            worlds=len(worlds),
+            error=repr(caught.value),
+        )
     finally:
         trace.close()

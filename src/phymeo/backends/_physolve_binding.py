@@ -42,7 +42,7 @@ def bind_storage(owner, banks, stream, device, generation, controls=None, bodies
         for array, bank in zip(arrays, contacts.banks):
             array.update(bank)
         for name in contacts.banks[0]:
-            floating = name in contacts.float_fields or name == 'contact_sample_time'
+            floating = name in contacts.float_fields or name in ('contact_sample_time', 'contact_body_com_position')
             unit, frame = (contacts.float_fields[name][2:] if name in contacts.float_fields else
                            ("index/count", "native geom / 0-based world; rows are not persistent IDs"))
             space = 'native_contact'
@@ -52,6 +52,8 @@ def bind_storage(owner, banks, stream, device, generation, controls=None, bodies
                 space = 'global_count'
             if name == 'contact_sample_time':
                 unit, frame = 's', 'simulation clock of the retained solver evaluation'
+            elif name == 'contact_body_com_position':
+                unit, frame, space = 'm', 'world; body COM at retained contact solver evaluation', 'native_body'
             fields += (RuntimeField(name, tuple(arrays[0][name].shape),
                                     "float32" if floating else "int32", unit, frame,
                                     space, "solver evaluation; unselected reset worlds retain last sample"),)

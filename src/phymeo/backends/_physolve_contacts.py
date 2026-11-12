@@ -111,7 +111,7 @@ def _merge(old_values: tx.Array[tx.f32], old_ids: tx.Array[tx.i32], old_count: t
 
 
 class PreparedContacts:
-    """Two published banks plus one reset scratch; O(shared contact capacity + N).
+    """Two published banks plus reset scratch; O(shared contact capacity + N*B).
 
     Contact rows have no persistent identity or ordering contract. Atomic merge
     retains the exact unselected records, not their old global slot numbers.
@@ -132,6 +132,10 @@ class PreparedContacts:
         self.force_operation = frontend.contact_force
         self.capacity, self.nworld = banks[0].naconmax, banks[0].nworld
         self.sample_times = tuple(tx.empty(self.nworld, tx.f32, device=device) for _ in banks)
+        self.body_com = tuple(tx.empty((self.nworld, model.nbody, 3), tx.f32, device=device)
+                              for _ in banks)
+        self.native_com = tuple(bank.xipos.view(tx.f32).flatten() for bank in banks)
+        self.flat_com = tuple(array.flatten() for array in self.body_com)
         self.ids = tx.empty(self.capacity, tx.i32, device=device)
         self.force = tx.empty(self.capacity, tx.spatial_vector, device=device)
         self.force_flat = self.force.view(tx.f32).flatten()
@@ -146,6 +150,7 @@ class PreparedContacts:
             fields.update({name: identity[:, start:end] for name, (start, end) in self.int_fields.items()})
             fields.update(contact_count=count, contact_count_by_world=by_world)
             fields['contact_sample_time'] = self.sample_times[bank_index]
+            fields['contact_body_com_position'] = self.body_com[bank_index]
             self.banks.append(fields)
         self.inputs = tuple(tuple(getattr(bank.contact, name).view(dtype).flatten()
                                   for name, dtype in (("worldid", tx.i32), ("geom", tx.i32),
@@ -175,9 +180,10 @@ class PreparedContacts:
                  self.flags, mode="cuda", stream=stream)
         if record:
             self.extractions += 1
-        if not integrated:
-            _sample_time(native.time, self.sample_times[1-index], self.sample_times[index],
-                         self.all_mask if mask is None else mask, mode="cuda", stream=stream)
+        _sample_reference(native.time, self.sample_times[1-index], self.sample_times[index],
+                          self.native_com[index], self.flat_com[1-index], self.flat_com[index],
+                          self.all_mask if mask is None else mask, self.flags, self.model.nbody * 3,
+                          not integrated, mode="cuda", stream=stream)
         if mask is not None:
             self.raw[index][2].zero_(stream=stream)
             self.raw[index][3].zero_(stream=stream)
@@ -195,18 +201,30 @@ class PreparedContacts:
         for out, old in zip(self.raw[target], self.raw[source]):
             out.assign(old, stream=stream)
         self.sample_times[target].assign(self.sample_times[source], stream=stream)
+        self.body_com[target].assign(self.body_com[source], stream=stream)
         self.copies += 1
 
     @property
     def allocated_bytes(self):
-        return sum(a.size*4 for bank in self.raw for a in bank) + self.capacity*28 + self.nworld*8
+        return (sum(a.size*4 for bank in self.raw for a in bank) + self.capacity*28
+                + self.nworld*8 + sum(a.size*4 for a in self.body_com))
 
 
 @tx.kernel(gradient="unsupported")
-def _sample_time(time: tx.Array[tx.f32], previous: tx.Array[tx.f32], output: tx.Array[tx.f32],
-                 mask: tx.Array[tx.bool1]):
-    for world in tx.range(output.shape[0]):
+def _sample_reference(time: tx.Array[tx.f32], previous: tx.Array[tx.f32], output: tx.Array[tx.f32],
+                      com: tx.Array[tx.f32], previous_com: tx.Array[tx.f32],
+                      output_com: tx.Array[tx.f32], mask: tx.Array[tx.bool1],
+                      flags: tx.Array[tx.i32], width: tx.i32, refresh_time: tx.bool1):
+    for i in tx.range(output_com.shape[0]):
+        world = i // width
         if mask[world]:
-            output[world] = time[world]
+            output_com[i] = com[i]
+            if not tx.isfinite(com[i]):
+                tx.atomic_or(flags[0], 131072)
         else:
-            output[world] = previous[world]
+            output_com[i] = previous_com[i]
+        if refresh_time and i % width == 0:
+            if mask[world]:
+                output[world] = time[world]
+            else:
+                output[world] = previous[world]

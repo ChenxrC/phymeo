@@ -52,6 +52,7 @@ class PhySolveRuntime:
 
     body_observation_contract_version = 1
     contact_observation_contract_version = 1
+    contact_reference_contract_version = 1
     selected_update_contract_version = 1
     device_reset_contract_version = 1
     free_body_update_contract_version = 1

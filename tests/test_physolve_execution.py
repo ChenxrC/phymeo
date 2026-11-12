@@ -12,9 +12,116 @@ payload = payload_fixture
 
 
 @pytest.mark.cuda
+def test_contact_reference_nonfinite_rejects_and_discards(payload, monkeypatch):
+    import tyx as tx
+
+    from phymeo.backends._physolve_contacts import PreparedContacts
+
+    with PhySolveRuntime(compile_mujoco_xml(CONTACT, require_asset=False), payload=payload,
+                        nworld=2, body_observations=False, contact_observations=True) as runtime:
+        storage = runtime.storage_binding()
+        def read():
+            return storage.borrow('contact_body_com_position', runtime.observation_bank).numpy(stream=storage.stream).copy()
+        initial = read()
+        update = PreparedContacts.update
+        def inject(measurements, index, stream, **kwargs):
+            # Derived output after native forward, never a NaN input to CUBIN.
+            measurements.native[index].xipos.view(tx.f32)[1:].fill_(float('nan'), stream=stream)
+            return update(measurements, index, stream, **kwargs)
+        with monkeypatch.context() as patch:
+            patch.setattr(PreparedContacts, 'update', inject)
+            ticket = runtime.begin_execution()
+            runtime.enqueue_update(ticket, refresh_state=True)
+            with pytest.raises(RuntimeError, match='non-finite.*contact measurement'):
+                runtime.complete_execution(ticket)
+            with pytest.raises(RuntimeError, match='completed'):
+                runtime.accept_execution(ticket)
+            runtime.discard_execution(ticket)
+        np.testing.assert_array_equal(read(), initial)
+        # An ignored world must retain its old sample, even if new scratch is bad.
+        with monkeypatch.context() as patch:
+            patch.setattr(PreparedContacts, 'update', inject)
+            runtime.reset(np.array([True, False]))
+        np.testing.assert_array_equal(read(), initial)
+        runtime.forward()
+        np.testing.assert_array_equal(read(), initial)
+
+
+@pytest.mark.cuda
+@pytest.mark.parametrize('nworld', [1, 8, 64])
+def test_contact_reference_keeps_solve_time_com_and_masked_worlds(payload, nworld, monkeypatch):
+    import mujoco as mj
+    import tyx as tx
+
+    # Frozen SI reference: eccentric COM, moving free body and ground contact.
+    # The tolerance tests the same coordinates, not CPU/GPU trajectory equality.
+    xml = '''<mujoco><option timestep=".01" jacobian="dense" gravity="0 0 -9.81"/>
+    <worldbody><geom type="plane" size="0 0 1"/>
+    <body pos=".2 .1 .09"><freejoint/>
+    <inertial pos=".04 -.02 .03" mass="2" diaginertia=".1 .15 .2"/>
+    <geom type="sphere" size=".1"/></body></worldbody></mujoco>'''
+    record = compile_mujoco_xml(xml, require_asset=False)
+    cpu = record.fresh_native_model()
+    data = mj.MjData(cpu)
+    def get(runtime, field):
+        storage = runtime.storage_binding()
+        return storage.borrow(field, runtime.observation_bank).numpy(stream=storage.stream).copy()
+    with PhySolveRuntime(record, payload=payload, nworld=nworld, body_observations=True,
+                         contact_observations=True) as direct, \
+         PhySolveRuntime(record, payload=payload, nworld=nworld, body_observations=True,
+                         contact_observations=True) as graph:
+        assert graph.contact_reference_contract_version == 1
+        metadata = graph.storage_binding().fields['contact_body_com_position']
+        assert metadata.dtype == 'float32' and not metadata.writable
+        assert metadata.shape == (nworld, cpu.nbody, 3)
+        assert metadata.index_space == 'native_body' and 'solver evaluation' in metadata.sample
+        initial = get(graph, 'contact_body_com_position')
+        np.testing.assert_allclose(initial[:, 1], np.tile([.24, .08, .12], (nworld, 1)), atol=1e-6, rtol=0)
+        graph.prepare_step_graph()
+        for _ in range(3):
+            direct.step()
+        before_last = direct.snapshot()['qpos']
+        expected = np.empty((nworld, cpu.nbody, 3), np.float32)
+        for world in range(nworld):
+            data.qpos[:] = before_last[world]
+            mj.mj_kinematics(cpu, data)  # Geometry-only reference, no second contact solve.
+            expected[world] = data.xipos
+        direct.step()
+        with monkeypatch.context() as patch:
+            patch.setattr(tx, 'empty', lambda *a, **k: (_ for _ in ()).throw(AssertionError('hot allocation')))
+            patch.setattr(tx.Array, 'numpy', lambda *a, **k: (_ for _ in ()).throw(AssertionError('hot snapshot')))
+            ticket = graph.begin_execution()
+            graph.enqueue_step(ticket, steps=4, execution_mode='cuda_graph')
+            graph.complete_execution(ticket)
+            graph.accept_execution(ticket)
+        measured = get(graph, 'contact_body_com_position')
+        np.testing.assert_allclose(measured, expected, atol=1e-6, rtol=0)
+        np.testing.assert_allclose(measured, get(direct, 'contact_body_com_position'), atol=1e-6, rtol=0)
+        np.testing.assert_allclose(get(graph, 'contact_sample_time'), .03, atol=1e-7, rtol=0)
+        assert np.all(get(graph, 'time') > get(graph, 'contact_sample_time'))
+        # A command update copies retained measurement provenance without forward.
+        storage = graph.storage_binding()
+        ticket = graph.begin_execution()
+        storage.borrow('qfrc_applied', graph.writable_bank, write=True).zero_(stream=storage.stream)
+        graph.enqueue_update(ticket)
+        graph.complete_execution(ticket)
+        graph.accept_execution(ticket)
+        np.testing.assert_array_equal(get(graph, 'contact_body_com_position'), measured)
+        old_times = get(graph, 'contact_sample_time')
+        selected = np.arange(nworld) % 2 == 0
+        graph.reset(selected)
+        reset = get(graph, 'contact_body_com_position')
+        np.testing.assert_array_equal(reset[selected], initial[selected])
+        np.testing.assert_array_equal(reset[~selected], measured[~selected])
+        np.testing.assert_array_equal(get(graph, 'contact_sample_time')[~selected], old_times[~selected])
+        np.testing.assert_array_equal(get(graph, 'contact_sample_time')[selected], 0.)
+
+
+@pytest.mark.cuda
 @pytest.mark.parametrize('nworld', [1, 8, 64])
 def test_free_body_per_body_components_atomic_rejection(payload, nworld, monkeypatch):
     import tyx as tx
+
     from phymeo import PhySolveInputError
 
     with PhySolveRuntime(compile_mujoco_xml(FREE_OFFSET, require_asset=False), payload=payload,

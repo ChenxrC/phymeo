@@ -688,3 +688,15 @@ step_graph v1 定义见[固定 Graph 合同](../architecture/engine-integration.
 P2PE 正式输入测试验证 NaN 拒绝。两项后续均通过，见 b5a-native-gates-memory.log。
 8 次交替流捕获/重放的 free memory 均为 7240417280 字节（共享 GPU 观测）；
 此规模未观察到持续增长，不等同长期/机器人峰值显存或完整 Graph 资格。
+
+## B6a：接触参考点前置合同
+
+为附着体 COM 力矩提供与接触力同一求解时刻的公共借用位置；合同和成本集中在
+[Contact reference v1](../architecture/engine-integration.md#contact-reference-v1)。
+不混用步后姿态，不增加 forward，也不修改 TYX/codedev/Host/六 CUBIN。
+正式入口为 test_physolve_execution 的 contact_reference 两项（含三规模参数化）：
+偏心 COM 的 CPU 几何参照、direct/Graph 四步、命令保持、masked reset、非有限
+派生输出拒绝与 discard 恢复。CPU 只执行 mj_kinematics，不作跨求解器轨迹验收。
+新几何比较容差固定 1e-6 m，时间 1e-7 s，不改变已有测试容差。
+最终执行结果与审查统一保存配套实验根 evidence/b6a-summary.json；SensorView
+筛选、聚合、采样和安装 GUI 并未因本合同而完成。

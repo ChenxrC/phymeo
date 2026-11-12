@@ -297,3 +297,32 @@ Borrowed native writable inputs still require caller-validated finite values.
 Compact execution errors prevent publication, but arbitrary invalid raw input
 or a fatal CUDA context error does not promise in-process recovery. Consumers
 must prevalidate input; P2PE tests its finite-value rejection separately.
+
+## Contact reference v1
+
+`contact_reference_contract_version=1` adds readonly borrowed storage
+`contact_body_com_position: float32[nworld,native_body_count,3]` when contact
+observations are enabled. Units are metres, frame is the physical world's
+coordinates, and the COM positions belong to the same retained solver
+evaluation as `contact_sample_time` and the contact wrench. Native body 0 is
+included; consumers use the compilation identity mapping, not public body IDs
+as raw offsets. No rendering/environment display offset is applied here.
+
+This is not endpoint body pose. After integration it is copied from native
+solver `xipos`, which endpoint body kinematics never overwrite. Forward/reset
+capture their new evaluation; masked reset retains unselected COM and sample
+time together. Command-only updates copy the previous measurement provenance.
+Two runtime-owned banks keep the values alive for fixed Graph replay and share
+the original storage generation, error admission and close ordering.
+
+Nonfinite selected COM sets the existing contact measurement error bit 131072;
+completion rejects publication. Ignored worlds retain the accepted finite
+reference. This check does not replace caller input prevalidation.
+
+Added persistent storage is `24*nworld*native_body_count` bytes. One reference
+copy is O(N*B) per contact extraction (once after the final substep), and
+command-only copying adds `12*N*B` D2D bytes. Combined measurement storage is
+O(contact_capacity + N*B); the existing contact byte metric includes this
+allocation. No new collision solve, FK, host readback or per-world dispatch is
+introduced. The reference is a prerequisite for consumer sensor moments, not
+an implementation or qualification of SensorView itself.

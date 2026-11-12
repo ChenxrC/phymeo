@@ -200,7 +200,7 @@ def compile_tree_model(
             if (int(model.geom_contype[left]) & int(model.geom_conaffinity[right])) or (
                 int(model.geom_contype[right]) & int(model.geom_conaffinity[left])
             ):
-                if ball_target:
+                if ball_target and not allow_normal_contacts:
                     issue(
                         "joint-motor-contact",
                         f"direct BALL motor has a possible contact pair {left}/{right}",

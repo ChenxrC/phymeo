@@ -16,6 +16,7 @@ from ._deformable_boundary_source import (
     _Accepted,
 )
 from ._resident_boundary_source import (
+    LAYOUT,
     ResidentBoundarySourceView,
     freeze,
     owned,
@@ -45,6 +46,7 @@ class _DualLease:
         batch = self.scene._service._batch
         if (
             self.rigid.owner is not batch._collision_owner
+            or self.rigid.topology_generation != batch._topology_generation
             or self.rigid.state_epoch != batch._state_epoch
             or self.rigid.active != batch._active
             or self.rigid.runtime is not self.loan.runtime
@@ -62,7 +64,100 @@ class DeformableResponseBoundaryAdapter(DeformableBoundaryAdapter):
         self.scene = scene
         self._moving = {}
         self._world_rigid = {}
+        self._rigid_participants = {}
+        self._multibody = False
         self._registration = None
+
+    def _participant_sources(self, accepted, mechanical):
+        # Validate every registered body, including bodies with no collider or
+        # no current site. A moving-shape-only loop cannot establish ownership
+        # or synchronized ticks for the complete world transaction.
+        layout = self.scene.layout
+        layout.require_current()
+        batch = self.scene._service._batch
+        if (
+            accepted.owner is not batch._collision_owner
+            or accepted.topology_generation != batch._topology_generation
+            or accepted.state_epoch != batch._state_epoch
+            or accepted.active != batch._active
+            or accepted.runtime is not batch._runtime
+            or accepted.mode != batch._mode
+        ):
+            raise ValueError("D3 participant accepted bank is stale or foreign")
+        if not 1 <= len(layout.world_keys) <= 8 or not 1 <= len(layout.participant_keys) <= 8:
+            raise ValueError("D3 requires 1..8 worlds and 1..8 total participants")
+        if set(mechanical) != set(layout.participant_keys) or len(set(mechanical.values())) != len(
+            mechanical
+        ):
+            raise ValueError("D3 participant mechanical membership differs")
+        if set(accepted.slots) != set(mechanical.values()):
+            raise ValueError("D3 native bank contains different participants")
+        source = physical_sources(accepted)[2]
+        if (
+            source is None
+            or source.owner is not accepted.owner
+            or source.topology_generation != accepted.topology_generation
+            or source.state_epoch != accepted.state_epoch
+            or source.active != accepted.active
+        ):
+            raise ValueError("D3 floating participant source differs")
+        addresses = {}
+        for participant in layout.participants:
+            key = participant.key
+            entry = layout.entries[key]
+            if entry.family != "floating" or entry.body_count != 1:
+                raise ValueError("D3 supports one ordinary floating body per participant")
+            native = mechanical[key]
+            slot = accepted.slots[native]
+            if not 0 <= slot < len(accepted.bindings):
+                raise ValueError("D3 participant native slot differs")
+            binding = accepted.bindings[slot]
+            if LAYOUT.get(binding.kind) != 2 or binding.world != native:
+                raise ValueError("D3 participant physical layout differs")
+            if native not in source.rows or native not in source.specs:
+                raise ValueError("D3 participant is absent from the accepted source")
+            spec = source.specs[native]
+            original = participant.compiled
+            if (
+                binding.tree_spec is not spec
+                or spec.n != 0
+                or spec.topology != original.topology
+                or spec.model_token != entry.model_token
+                or getattr(binding.tree_spec, "graph_token", None) != entry.graph_token
+                or not np.array_equal(spec.anchor, original.anchor)
+                or int(source.rows[native]) != entry.storage_row
+            ):
+                raise ValueError("D3 participant physical model/graph/row differs")
+            addresses[key] = dict(
+                participant=key,
+                logical_world=key.world,
+                native=native,
+                slot=slot,
+                row=int(source.rows[native]),
+                group=0,
+                topology=spec.topology,
+                model_token=spec.model_token,
+                graph_token=getattr(binding.tree_spec, "graph_token", None),
+                anchor=spec.anchor,
+            )
+        return source, addresses
+
+    def _validate_rigid_readback(self, plan, view, ticks, rigid_ticks, fk):
+        rigid = view._lease.rigid
+        source = physical_sources(rigid)[2]
+        if (
+            rigid_ticks.shape != rigid.ticks.shape
+            or rigid_ticks.dtype != np.int32
+            or np.any(rigid_ticks < 0)
+            or fk.shape != source.fk.shape
+            or fk.dtype != np.float32
+            or not np.isfinite(fk).all()
+        ):
+            raise RuntimeError("D3 actual rigid source readback is malformed")
+        for i, world in enumerate(plan._world_keys):
+            for _, slot in self._world_rigid[world]:
+                if rigid_ticks[slot] != ticks[i]:
+                    raise RuntimeError("D3 node and rigid participant ticks differ")
 
     def compile_registration(self, plan, model, bindings):
         if type(model) is not DeformableBoundaryModel:
@@ -80,11 +175,16 @@ class DeformableResponseBoundaryAdapter(DeformableBoundaryAdapter):
         ) as (accepted, mechanical):
             if accepted.runtime is not plan._runtime or accepted.mode != plan._mode:
                 raise ValueError("D3 sources require the same real Runtime")
-            sources = physical_sources(accepted)
+            source, addresses = self._participant_sources(accepted, mechanical)
+            self._rigid_participants = freeze(addresses)
             self._world_rigid = {
-                p.key.world: (p.key, accepted.slots[mechanical[p.key]])
-                for p in self.scene.layout.participants
+                world: tuple(
+                    (key, addresses[key]["slot"])
+                    for key in self.scene.layout.worlds[world].participant_keys
+                )
+                for world in self.scene.layout.world_keys
             }
+            self._multibody = any(len(items) > 1 for items in self._world_rigid.values())
             for wrapper in wrappers:
                 if type(wrapper) is not ResidentParticipantBinding:
                     raise TypeError("D3 moving rounds require ResidentParticipantBinding")
@@ -95,13 +195,12 @@ class DeformableResponseBoundaryAdapter(DeformableBoundaryAdapter):
                 participant = wrapper.participant
                 entry = self.scene.layout.entries.get(participant)
                 if entry is None or entry.family != "floating" or entry.body_count != 1:
-                    raise ValueError("D3 supports one ordinary floating body per world")
+                    raise ValueError("D3 supports one ordinary floating body per participant")
                 if type(binding) is not ResidentFloatingTreeBinding or binding.group_index != 0:
                     raise TypeError("D3 requires a root-body floating binding")
                 if self.scene.layout.body_owners.get((key.world, key.body)) != (participant, 0):
                     raise ValueError("D3 rigid material body ownership differs")
                 native = mechanical[participant]
-                source = sources[2]
                 spec = source.specs[native]
                 # Asset bindings carry original shape and model provenance;
                 # direct bindings carry topology. Keep the established full
@@ -178,6 +277,11 @@ class DeformableResponseBoundaryAdapter(DeformableBoundaryAdapter):
             static_flags=owned(np.zeros(len(meta), bool)),
             uploaded_constants=plan._constants,
         )
+        if self._multibody:
+            plan._source_base.update(
+                rigid_participant_sources=self._rigid_participants,
+                world_rigid_participants=freeze(self._world_rigid),
+            )
         plan._counts["borrowed_device_bytes"] = (
             12 * sum(self.batch._models[w].n for w in plan._world_keys)
             + 4 * len(plan._world_keys)
@@ -240,7 +344,26 @@ class DeformableResponseBoundaryAdapter(DeformableBoundaryAdapter):
             or self.scene.layout.fingerprint != plan._source_base["rigid_registry_fingerprint"]
         ):
             raise ValueError("D3 rigid registration changed")
-        source = physical_sources(lease.rigid)[2]
+        source, addresses = self._participant_sources(lease.rigid, lease.mechanical)
+        if tuple(addresses) != tuple(self._rigid_participants):
+            raise ValueError("D3 participant source membership changed")
+        for key, actual in addresses.items():
+            expected = self._rigid_participants[key]
+            if any(
+                actual[name] != expected[name]
+                for name in (
+                    "participant",
+                    "logical_world",
+                    "native",
+                    "slot",
+                    "row",
+                    "group",
+                    "topology",
+                    "model_token",
+                    "graph_token",
+                )
+            ) or not np.array_equal(actual["anchor"], expected["anchor"]):
+                raise ValueError("D3 participant material source differs")
         for item in self._moving.values():
             native = lease.mechanical[item["participant"]]
             if (
@@ -261,10 +384,8 @@ class DeformableResponseBoundaryAdapter(DeformableBoundaryAdapter):
         outputs, raw, ticks = super().empty_source(plan, view)
         rigid = view._lease.rigid
         rigid_ticks = plan._download(rigid.ticks, "source/rigid_ticks")
-        for i, world in enumerate(plan._world_keys):
-            if rigid_ticks[self._world_rigid[world][1]] != ticks[i]:
-                raise RuntimeError("D3 empty source node/rigid tick mismatch")
         fk = plan._download(physical_sources(rigid)[2].fk, "source/actual_rigid_fk")
+        self._validate_rigid_readback(plan, view, ticks, rigid_ticks, fk)
         raw.update(
             rigid_ticks=rigid_ticks,
             actual_rigid_fk=fk,
@@ -349,9 +470,7 @@ class DeformableResponseBoundaryAdapter(DeformableBoundaryAdapter):
         self.logical_ticks(plan, view, ticks)
         rigid_ticks = plan._download(rigid.ticks, "source/rigid_ticks")
         fk = plan._download(source.fk, "source/actual_rigid_fk")
-        for i, world in enumerate(plan._world_keys):
-            if rigid_ticks[self._world_rigid[world][1]] != ticks[i]:
-                raise RuntimeError("D3 node and rigid world ticks differ")
+        self._validate_rigid_readback(plan, view, ticks, rigid_ticks, fk)
         actual = {
             world: plan._download(loan.position(world), "source/actual_node:" + str(world))
             for world in plan._world_keys
@@ -366,8 +485,6 @@ class DeformableResponseBoundaryAdapter(DeformableBoundaryAdapter):
             a = raw[name]
             if a.shape != shape or a.dtype != dtype or not np.isfinite(a).all():
                 raise RuntimeError("D3 gathered " + name + " is malformed")
-        if rigid_ticks.dtype != np.int32 or fk.dtype != np.float32 or not np.isfinite(fk).all():
-            raise RuntimeError("D3 actual rigid source readback is malformed")
         if np.any(raw["point_bounds"][:, :3] > raw["points"]) or np.any(
             raw["points"] > raw["point_bounds"][:, 3:]
         ):

@@ -3,6 +3,7 @@
 Tests-first authoring; only the parent may execute this matrix.
 """
 
+import ast
 import importlib.util
 from pathlib import Path
 
@@ -210,3 +211,40 @@ def test_free_ball_pyramidal_exact_static_capacity_real_step(capacity, mode, tmp
             assert runtime.counters["accepted_world_steps"] == len(case.KEYS)
     finally:
         journal.close()
+
+@pytest.mark.parametrize("name", CASES)
+def test_free_ball_pyramidal_inputs_only_change_condim(name):
+    """Text/AST identity guards the original inputs without importing the old suite."""
+    original_path = Path(__file__).parent / "installed" / "check_free_ball_normal.py"
+    candidate_path = Path(case.__file__)
+    original = ast.parse(original_path.read_text(encoding="utf-8"))
+    candidate = ast.parse(candidate_path.read_text(encoding="utf-8"))
+
+    def function(tree, key):
+        return next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == key)
+
+    def constant(tree, key):
+        return next(
+            ast.literal_eval(n.value)
+            for n in tree.body
+            if isinstance(n, ast.Assign)
+            and any(isinstance(t, ast.Name) and t.id == key for t in n.targets)
+        )
+
+    for key in ("source", "initial", "control", "motor"):
+        assert ast.dump(function(original, key)) == ast.dump(function(candidate, key))
+    assert constant(candidate, "ROOT_INERTIA") == constant(original, "ROOT_INERTIA")
+    assert constant(candidate, "HEADER") == constant(original, "HEADER").replace(
+        'condim="1"', 'condim="3"'
+    )
+    # Resolve only these authored pure XML functions; no project/native execution.
+    names = {"HEADER", "ROOT_INERTIA"}
+    nodes = [
+        n for n in original.body
+        if (isinstance(n, ast.FunctionDef) and n.name in ("motor", "source"))
+        or (isinstance(n, ast.Assign)
+            and any(isinstance(t, ast.Name) and t.id in names for t in n.targets))
+    ]
+    namespace = {}
+    exec(compile(ast.Module(body=nodes, type_ignores=[]), str(original_path), "exec"), namespace)
+    assert case.source(name) == namespace["source"](name).replace('condim="1"', 'condim="3"')

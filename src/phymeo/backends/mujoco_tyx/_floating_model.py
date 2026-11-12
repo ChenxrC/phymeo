@@ -155,8 +155,8 @@ def compile_floating_model(
     if np.any(model.jnt_actfrclimited):
         issue("joint-actuator-limits", "joint-wide summed force clamps are not migrated")
     if has_ball and allow_normal_contacts is True:
-        # A caller cannot use the wrapper's structural permission to admit
-        # pyramidal contacts or enlarge the existing normal geometry domain.
+        # A caller cannot use structural permission to admit higher contact
+        # dimensions or enlarge the existing primitive geometry domain.
         # Reuse the native pair predicate and the established raw slot table;
         # this pass creates no contact solver or configuration-dependent data.
         from ._constraint_model import PAIR_SLOTS
@@ -165,18 +165,23 @@ def compile_floating_model(
 
         pairs = possible_pairs(model)
         slots = 0
+        has_pyramidal = False
         for left, right in pairs:
             shape = tuple(map(int, model.geom_type[[left, right]]))
             if shape not in PAIR_SLOTS:
-                issue("contact-domain", f"FREE+BALL normal geometry pair {shape} is not migrated")
+                issue("contact-domain", f"FREE+BALL geometry pair {shape} is not migrated")
             else:
                 slots += PAIR_SLOTS[shape]
-            if _mix_contact(model, left, right, mj)[0] != 1:
-                issue("free-ball-contact", "FREE+BALL contacts require mixed condim=1")
+            dimension = _mix_contact(model, left, right, mj)[0]
+            if dimension not in (1, 3):
+                issue("free-ball-contact", "FREE+BALL contacts require mixed condim=1 or 3")
+            has_pyramidal = has_pyramidal or dimension == 3
+        if has_pyramidal and int(model.opt.cone) != int(mj.mjtCone.mjCONE_PYRAMIDAL):
+            issue("constraint-cone", "FREE+BALL mixed condim3 requires the pyramidal cone")
         if pairs and (model.ngeom > MAX_GEOMS or len(pairs) > MAX_PAIRS or slots > MAX_SLOTS):
             issue(
                 "contact-layout-capacity",
-                "FREE+BALL normal domain permits 128 geoms/16 pairs/32 raw candidate slots",
+                "FREE+BALL contact domain permits 128 geoms/16 pairs/32 raw candidate slots",
             )
     # Test potential pairs, not just collisions at the source initial pose.
     for left in range(model.ngeom):

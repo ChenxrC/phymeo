@@ -1,4 +1,5 @@
 """R3-N whole-batch normal/CSR force publication and actual successor recovery."""
+
 import sys
 from contextlib import ExitStack
 
@@ -39,8 +40,14 @@ def test_free_ball_normal_late_failure_retains_and_retries(
         capsule = runtime.checkpoint()
         raw, revision = capsule.to_bytes(), runtime.checkpoint_revision
         journal.emit(
-            "fault-attempt", name=name, fault=fault, source=case.source(name),
-            starts=starts, state=before, capsule=raw, revision=revision,
+            "fault-attempt",
+            name=name,
+            fault=fault,
+            source=case.source(name),
+            starts=starts,
+            state=before,
+            capsule=raw,
+            revision=revision,
             counters=dict(runtime.counters),
         )
         with runtime.clone() as clone:
@@ -61,7 +68,9 @@ def test_free_ball_normal_late_failure_retains_and_retries(
 
                         def refuse(plan, result, index, input_control):
                             value = original(plan, result, index, input_control)
-                            journal.emit("actual-publication-prefix", index=index, transmission=value)
+                            journal.emit(
+                                "actual-publication-prefix", index=index, transmission=value
+                            )
                             if index == len(case.KEYS) - 1:
                                 raise RuntimeError("R3-N final world publication refused")
                             return value
@@ -89,8 +98,10 @@ def test_free_ball_normal_late_failure_retains_and_retries(
                 for key in case.KEYS:
                     assert runtime.integration_snapshot()[key].last_step is before[key].last_step
                 journal.emit(
-                    "rejected-retained", state=runtime.integration_snapshot(),
-                    capsule=runtime.checkpoint().to_bytes(), revision=runtime.checkpoint_revision,
+                    "rejected-retained",
+                    state=runtime.integration_snapshot(),
+                    capsule=runtime.checkpoint().to_bytes(),
+                    revision=runtime.checkpoint_revision,
                     counters=dict(runtime.counters),
                 )
             held = {k: s.held_control for k, s in before.items()}
@@ -110,7 +121,9 @@ def test_free_ball_normal_late_failure_retains_and_retries(
             except BaseException as error:
                 errors.append(error)
         if errors:
-            raise BaseExceptionGroup("R3-N failure evidence cleanup", ([primary] if primary else []) + errors)
+            raise BaseExceptionGroup(
+                "R3-N failure evidence cleanup", ([primary] if primary else []) + errors
+            )
 
 
 @pytest.mark.parametrize("mode", MODES)
@@ -125,21 +138,38 @@ def test_free_ball_normal_bad_control_and_foreign_checkpoint_are_atomic(mode, tm
             _, _, _, _, other = case.fixture("siblings", mode)
             owners.callback(other.close)
             packets = {k: case.control(model, 0, i) for i, k in enumerate(case.KEYS)}
-            case.advance(runtime, mj, model, packets, case.references(
-                mj, model, runtime.integration_snapshot()), journal, "before")
+            case.advance(
+                runtime,
+                mj,
+                model,
+                packets,
+                case.references(mj, model, runtime.integration_snapshot()),
+                journal,
+                "before",
+            )
             before, raw = runtime.integration_snapshot(), runtime.checkpoint().to_bytes()
             revision = runtime.checkpoint_revision
             with pytest.raises(ValueError):
-                runtime.set_controls({
-                    case.KEYS[0]: case.control(model, 8, 0),
-                    case.KEYS[-1]: MuJoCoControl(np.zeros(model.nu + 1)),
-                })
+                runtime.set_controls(
+                    {
+                        case.KEYS[0]: case.control(model, 8, 0),
+                        case.KEYS[-1]: MuJoCoControl(np.zeros(model.nu + 1)),
+                    }
+                )
             with pytest.raises(ValueError):
                 runtime.restore(other.checkpoint(), expected_revision=revision)
             case.exact(runtime.integration_snapshot(), before, "bad binding/control retain all")
             assert runtime.checkpoint().to_bytes() == raw
             assert runtime.checkpoint_revision == revision
             journal.emit("rejected", before=before, raw=raw, foreign=other.checkpoint().to_bytes())
-            case.advance(runtime, mj, model, packets, case.references(mj, model, before), journal, "successor")
+            case.advance(
+                runtime,
+                mj,
+                model,
+                packets,
+                case.references(mj, model, before),
+                journal,
+                "successor",
+            )
     finally:
         journal.close()

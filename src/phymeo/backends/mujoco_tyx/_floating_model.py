@@ -173,9 +173,7 @@ def compile_floating_model(
                 slots += PAIR_SLOTS[shape]
             if _mix_contact(model, left, right, mj)[0] != 1:
                 issue("free-ball-contact", "FREE+BALL contacts require mixed condim=1")
-        if pairs and (
-            model.ngeom > MAX_GEOMS or len(pairs) > MAX_PAIRS or slots > MAX_SLOTS
-        ):
+        if pairs and (model.ngeom > MAX_GEOMS or len(pairs) > MAX_PAIRS or slots > MAX_SLOTS):
             issue(
                 "contact-layout-capacity",
                 "FREE+BALL normal domain permits 128 geoms/16 pairs/32 raw candidate slots",

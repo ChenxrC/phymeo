@@ -249,7 +249,9 @@ def dense_native_moment(model, data):
 
 def check_transmission(row, entry, native):
     tr, expected = row.transmission, native["analytic"]
-    require(tr.schema == "native-free-ball-joint-motor-transmission-v1", "complete transmission schema")
+    require(
+        tr.schema == "native-free-ball-joint-motor-transmission-v1", "complete transmission schema"
+    )
     for name in ("ids", "gear", "row_offsets", "dof_indices", "moment"):
         np.testing.assert_array_equal(getattr(tr, name), expected[name])
     for name in ("clamped_control", "raw_force", "scalar_force", "generalized_force"):
@@ -361,9 +363,7 @@ def source(name):
  <inertial mass=".5" pos="-.01 0 .01" diaginertia=".012 .014 .016"/>
  <geom name="toe1" type="sphere" size=".1"/>
 </body>"""
-        actors = motor("drive", "ball", "1 -2 .5", gain=".8") + motor(
-            "slide-drive", "slide", "-2"
-        )
+        actors = motor("drive", "ball", "1 -2 .5", gain=".8") + motor("slide-drive", "slide", "-2")
         header = HEADER
     elif name == "siblings":
         static, root_pos = "", ".2 -.1 .7"
@@ -385,12 +385,17 @@ def source(name):
     else:
         raise ValueError("only feet and siblings are declared")
     return (
-        header + "<worldbody>" + static
+        header
+        + "<worldbody>"
+        + static
         + '<body name="marker" pos="2 -1 .4"><geom size=".02" contype="0" conaffinity="0"/></body>'
         + f'<body name="root" pos="{root_pos}"><freejoint name="free"/>'
         + ROOT_INERTIA
         + '<geom size=".06" contype="0" conaffinity="0"/>'
-        + children + "</body></worldbody><actuator>" + actors + "</actuator></mujoco>"
+        + children
+        + "</body></worldbody><actuator>"
+        + actors
+        + "</actuator></mujoco>"
     )
 
 
@@ -398,16 +403,18 @@ def capacity_source(kind, overflow):
     """Exact normal pair and raw-slot boundaries; only static admission is tested."""
     count = (17 if overflow else 16) if kind == "pairs" else (5 if overflow else 4)
     geometry = 'type="sphere" size=".03"' if kind == "pairs" else 'type="box" size=".03 .04 .05"'
-    sites = "".join(
-        f'<geom name="site{i}" {geometry} pos="{i * .1} 0 0"/>' for i in range(count)
-    )
+    sites = "".join(f'<geom name="site{i}" {geometry} pos="{i * 0.1} 0 0"/>' for i in range(count))
     return (
-        HEADER + '<worldbody><geom name="ground" type="plane" size="1 1 .1"/>'
-        + '<body name="root" pos="0 0 .6"><freejoint name="free"/>' + ROOT_INERTIA
+        HEADER
+        + '<worldbody><geom name="ground" type="plane" size="1 1 .1"/>'
+        + '<body name="root" pos="0 0 .6"><freejoint name="free"/>'
+        + ROOT_INERTIA
         + '<body name="foot0" pos="0 0 -.3"><joint name="ball" type="ball"/>'
         + '<inertial mass=".4" pos=".02 0 .01" diaginertia=".01 .012 .014"/>'
-        + sites + "</body></body></worldbody><actuator>"
-        + motor("drive", "ball", "1 -2 .5") + "</actuator></mujoco>"
+        + sites
+        + "</body></body></worldbody><actuator>"
+        + motor("drive", "ball", "1 -2 .5")
+        + "</actuator></mujoco>"
     )
 
 
@@ -418,9 +425,13 @@ def negative_source(name):
     if name == "pyramid":
         return xml.replace('condim="1"', 'condim="3"')
     if name == "ball-limit":
-        return xml.replace('name="ball" type="ball"', 'name="ball" type="ball" limited="true" range="0 .8"')
+        return xml.replace(
+            'name="ball" type="ball"', 'name="ball" type="ball" limited="true" range="0 .8"'
+        )
     if name == "scalar-limit":
-        return xml.replace('name="slide" type="slide"', 'name="slide" type="slide" limited="true" range="-.5 .5"')
+        return xml.replace(
+            'name="slide" type="slide"', 'name="slide" type="slide" limited="true" range="-.5 .5"'
+        )
     if name == "dry":
         return xml.replace('name="ball" type="ball"', 'name="ball" type="ball" frictionloss=".1"')
     if name == "spring":
@@ -432,17 +443,22 @@ def negative_source(name):
     if name == "parent-transmission":
         return xml.replace('joint="ball"', 'jointinparent="ball"')
     if name == "explicit-pair":
-        return xml.replace("</mujoco>", '<contact><pair geom1="ground" geom2="toe0"/></contact></mujoco>')
+        return xml.replace(
+            "</mujoco>", '<contact><pair geom1="ground" geom2="toe0"/></contact></mujoco>'
+        )
     if name == "exclude":
-        return xml.replace("</mujoco>", '<contact><exclude body1="foot0" body2="foot1"/></contact></mujoco>')
+        return xml.replace(
+            "</mujoco>", '<contact><exclude body1="foot0" body2="foot1"/></contact></mujoco>'
+        )
     if name == "cylinder":
-        return xml.replace('name="toe0" type="sphere" size=".1"', 'name="toe0" type="cylinder" size=".1 .1"')
+        return xml.replace(
+            'name="toe0" type="sphere" size=".1"', 'name="toe0" type="cylinder" size=".1 .1"'
+        )
     if name in ("pair-overflow", "slot-overflow"):
         return capacity_source("pairs" if name == "pair-overflow" else "slots", True)
     if name == "geom-overflow":
         masked = "".join(
-            f'<geom name="masked{i}" size=".01" contype="0" conaffinity="0"/>'
-            for i in range(129)
+            f'<geom name="masked{i}" size=".01" contype="0" conaffinity="0"/>' for i in range(129)
         )
         return xml.replace("</worldbody>", masked + "</worldbody>")
     raise ValueError(name)
@@ -455,18 +471,18 @@ def initial(mj, model, name, slot):
     # Yaw changes no authored first-step foot heights or sibling separation.
     # Both sibling local rotations agree, so their equal anchor offset shifts
     # both centers equally; the 0.198 m center distance remains below 2r.
-    q[:2] += np.array([.02 * slot, -.01 * slot])
-    q[3:7] = (math.cos(.07), 0, 0, math.sin(.07))
-    v[:6] = np.array([.01, -.02, -.025, .01, -.015, .02]) * (1 + .1 * slot)
+    q[:2] += np.array([0.02 * slot, -0.01 * slot])
+    q[3:7] = (math.cos(0.07), 0, 0, math.sin(0.07))
+    v[:6] = np.array([0.01, -0.02, -0.025, 0.01, -0.015, 0.02]) * (1 + 0.1 * slot)
     for joint in range(1, model.njnt):
         qa, dof = int(model.jnt_qposadr[joint]), int(model.jnt_dofadr[joint])
         if int(model.jnt_type[joint]) == int(mj.mjtJoint.mjJNT_BALL):
-            q[qa:qa + 4] = (math.cos(.03), 0, 0, math.sin(.03))
+            q[qa : qa + 4] = (math.cos(0.03), 0, 0, math.sin(0.03))
             direction = -1 if name == "siblings" and joint == 2 else 1
-            v[dof:dof + 3] = direction * np.array([.02, -.03, .015]) * (1 + .1 * slot)
+            v[dof : dof + 3] = direction * np.array([0.02, -0.03, 0.015]) * (1 + 0.1 * slot)
         else:
-            v[dof] = -.02 * (1 + .1 * slot)
-    return MuJoCoInitialState(q, v.astype(np.float32), act=np.zeros(0), time=.125)
+            v[dof] = -0.02 * (1 + 0.1 * slot)
+    return MuJoCoInitialState(q, v.astype(np.float32), act=np.zeros(0), time=0.125)
 
 
 def fixture(name, mode, keys=KEYS):
@@ -709,7 +725,9 @@ def compare(row, before, after, packet, expected, model):
     require("device_rows" in raw, "complete normal raw payload")
     rows, jac, slots = (np.asarray(raw[k]) for k in ("device_rows", "normal_jacobian", "slot_ids"))
     require(rows.ndim == 2 and rows.shape[1] == 32, "raw normal width")
-    require(jac.shape == (len(rows), model.nv) and slots.shape == (len(rows), 4), "full normal J/slots")
+    require(
+        jac.shape == (len(rows), model.nv) and slots.shape == (len(rows), 4), "full normal J/slots"
+    )
     require(np.count_nonzero(rows[:, 0]) == len(row.contacts), "all normal rows")
     require(len(native_rows) == len(expected["efc_R"]), "complete native active normal rows")
     for c in row.contacts:
@@ -740,8 +758,11 @@ def compare(row, before, after, packet, expected, model):
     for joint, kind in enumerate(model.jnt_type):
         if int(kind) in (0, 1):
             qa = int(model.jnt_qposadr[joint]) + (3 if int(kind) == 0 else 0)
-            require(abs(float(after.q[qa:qa + 4] @ after.q[qa:qa + 4]) - 1) <= 8 * np.finfo(np.float32).eps,
-                    "root/child quaternion gate")
+            require(
+                abs(float(after.q[qa : qa + 4] @ after.q[qa : qa + 4]) - 1)
+                <= 8 * np.finfo(np.float32).eps,
+                "root/child quaternion gate",
+            )
     np.testing.assert_allclose(
         after.v, before.v + float(np.float32(H)) * row.integration_acceleration, rtol=0, atol=3e-6
     )
@@ -778,8 +799,14 @@ def advance(runtime, mj, model, packets, refs, journal, label):
     completed_before = runtime.counters["completed_steps"]
     accepted_before = runtime.counters["accepted_world_steps"]
     launches_before = runtime.counters["completed_kernels"]
-    journal.emit("input", label=label, entry=entry, full_entry=full_entry,
-                 requested=packets, counters=dict(runtime.counters))
+    journal.emit(
+        "input",
+        label=label,
+        entry=entry,
+        full_entry=full_entry,
+        requested=packets,
+        counters=dict(runtime.counters),
+    )
     expected = {k: native_fields(mj, model, s, packets[k]) for k, s in entry.items()}
     for key in runtime.world_keys:
         set_control(refs[key], packets[key])
@@ -805,8 +832,13 @@ def advance(runtime, mj, model, packets, refs, journal, label):
             for name in ("mj_step", "mj_step1", "mj_step2", "mj_forward"):
                 guard.enter_context(patch.object(mj, name, forbidden))
             accepted = runtime.step(H)
-        journal.emit("physics-return", label=label, accepted=accepted,
-                     revision=runtime.checkpoint_revision, counters=dict(runtime.counters))
+        journal.emit(
+            "physics-return",
+            label=label,
+            accepted=accepted,
+            revision=runtime.checkpoint_revision,
+            counters=dict(runtime.counters),
+        )
         full, output = observations(runtime)
         journal.emit(
             "step",
@@ -860,25 +892,41 @@ def continuous(name, mode, journal):
     try:
         require(runtime.capabilities["domain"] == domain(name), "precise composed domain")
         require(
-            model.na == 0 and tuple(runtime.capabilities["contact_dimensions"]) == (1,)
+            model.na == 0
+            and tuple(runtime.capabilities["contact_dimensions"]) == (1,)
             and not runtime.capabilities["joint_limits_supported"]
             and not runtime.capabilities["dry_friction_supported"],
             "bounded stateless normal domain",
         )
-        require((model.nq, model.nv) == ((12, 10) if name == "feet" else (15, 12)),
-                "complete native FREE/BALL/scalar addresses")
+        require(
+            (model.nq, model.nv) == ((12, 10) if name == "feet" else (15, 12)),
+            "complete native FREE/BALL/scalar addresses",
+        )
         state = runtime.integration_snapshot()
         start = state
         refs = references(mj, model, state)
         journal.emit(
-            "declaration", name=name, mode=mode, source_xml=source(name),
+            "declaration",
+            name=name,
+            mode=mode,
+            source_xml=source(name),
             source_sha256=hashlib.sha256(source(name).encode()).hexdigest(),
-            compilation=compiled.source, starts=starts, stored=state,
-            capabilities=runtime.capabilities, joint_types=model.jnt_type.copy(),
-            qa=model.jnt_qposadr.copy(), dof=model.jnt_dofadr.copy(),
-            tolerances=TOL, force_gate=FORCE, contact_force_gate=CONTACT_FORCE,
-            acceleration_gate=ACC, q_gate=Q_ATOL, v_gate=V_ATOL,
-            time_gate=TIME_ATOL, steps=24, h=H,
+            compilation=compiled.source,
+            starts=starts,
+            stored=state,
+            capabilities=runtime.capabilities,
+            joint_types=model.jnt_type.copy(),
+            qa=model.jnt_qposadr.copy(),
+            dof=model.jnt_dofadr.copy(),
+            tolerances=TOL,
+            force_gate=FORCE,
+            contact_force_gate=CONTACT_FORCE,
+            acceleration_gate=ACC,
+            q_gate=Q_ATOL,
+            v_gate=V_ATOL,
+            time_gate=TIME_ATOL,
+            steps=24,
+            h=H,
         )
         active = {key: [] for key in KEYS}
         both_moments = {key: False for key in KEYS}
@@ -892,40 +940,57 @@ def continuous(name, mode, journal):
                 if tick >= 16:
                     np.testing.assert_array_equal(row.control.ctrl, np.zeros(model.nu))
                     np.testing.assert_array_equal(row.control.qfrc_applied, np.zeros(model.nv))
-                    np.testing.assert_array_equal(row.control.xfrc_applied, np.zeros((model.nbody, 6)))
+                    np.testing.assert_array_equal(
+                        row.control.xfrc_applied, np.zeros((model.nbody, 6))
+                    )
                 if name == "siblings":
                     both_moments[key] = both_moments[key] or any(
                         np.linalg.norm(c.wrench_on_body1_world[3:]) > 0
                         and np.linalg.norm(c.wrench_on_body2_world[3:]) > 0
-                        for c in row.contacts if c.active and c.normal_force > 0
+                        for c in row.contacts
+                        if c.active and c.normal_force > 0
                     )
                     # Internal sibling contact has no resultant free-root force
                     # or torque, despite nonzero reaction in both child joints.
                     for c in row.contacts:
                         np.testing.assert_allclose(c.jacobian[:6], np.zeros(6), rtol=0, atol=5e-5)
-                    np.testing.assert_allclose(row.qfrc_constraint[:6], np.zeros(6), rtol=0, atol=5e-5)
+                    np.testing.assert_allclose(
+                        row.qfrc_constraint[:6], np.zeros(6), rtol=0, atol=5e-5
+                    )
                 if tick == 0:
                     live = [c for c in row.contacts if c.active and c.normal_force > 0]
-                    require(len(live) == (2 if name == "feet" else 1), "authored initial contact load")
+                    require(
+                        len(live) == (2 if name == "feet" else 1), "authored initial contact load"
+                    )
                     if name == "feet":
                         require(row.qfrc_constraint[2] > 0, "actual free-root upward support")
                     else:
-                        require(np.linalg.norm(row.qfrc_constraint[6:9]) > 0
-                                and np.linalg.norm(row.qfrc_constraint[9:12]) > 0,
-                                "both BALL branches have contact response")
+                        require(
+                            np.linalg.norm(row.qfrc_constraint[6:9]) > 0
+                            and np.linalg.norm(row.qfrc_constraint[9:12]) > 0,
+                            "both BALL branches have contact response",
+                        )
         require(all(any(values) for values in active.values()), "contact in both actual worlds")
         for key in KEYS:
             require(np.any(state[key].q[:7] != start[key].q[:7]), "free root actually moves")
         if name == "siblings":
             require(all(both_moments.values()), "both moving bodies receive COM moment")
             for qa in (7, 11):
-                require(np.any(state[KEYS[0]].q[qa:qa + 4] != start[KEYS[0]].q[qa:qa + 4]),
-                        "both BALL branches actually move")
+                require(
+                    np.any(state[KEYS[0]].q[qa : qa + 4] != start[KEYS[0]].q[qa : qa + 4]),
+                    "both BALL branches actually move",
+                )
         require(runtime.counters["completed_steps"] == 24, "24 actual uninterrupted batches")
         require(runtime.counters["accepted_world_steps"] == 48, "48 actual world steps")
         require(runtime.counters["failed_batches"] == 0, "no hidden rejected step")
-        journal.emit("continuous-complete", name=name, active=active, state=state,
-                     counters=dict(runtime.counters), both_moments=both_moments)
+        journal.emit(
+            "continuous-complete",
+            name=name,
+            active=active,
+            state=state,
+            counters=dict(runtime.counters),
+            both_moments=both_moments,
+        )
         return dict(name=name, accepted_world_steps=48, steps=24)
     finally:
         primary = sys.exc_info()[1]
@@ -1039,9 +1104,13 @@ def run(mode, output_path, journal, installed_root):
     ):
         require(module in paths["loaded"], "actual backend provenance " + module)
     return dict(
-        feet=feet, siblings=siblings, lifecycle=life,
-        accepted_world_steps=feet["accepted_world_steps"] + siblings["accepted_world_steps"]
-        + life["accepted_world_steps"], final_provenance=paths,
+        feet=feet,
+        siblings=siblings,
+        lifecycle=life,
+        accepted_world_steps=feet["accepted_world_steps"]
+        + siblings["accepted_world_steps"]
+        + life["accepted_world_steps"],
+        final_provenance=paths,
     )
 
 

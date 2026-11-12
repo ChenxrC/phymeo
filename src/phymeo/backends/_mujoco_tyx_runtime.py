@@ -407,8 +407,16 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                 if getattr(self._plan, "joint_transmission", None) is not None
                 else "scalar"
             )
+            if self._plan.kind == 3 and getattr(self._plan, "native_joint_layout", False):
+                domain = (
+                    "free-ball-joint-motor-normal-contact-v1"
+                    if getattr(self._plan, "joint_transmission", None) is not None
+                    else "free-ball-normal-contact-v1"
+                )
+            else:
+                domain = f"fixed-ball-{actuator_family}-{family}-contact{activation}-v1"
             info.update(
-                domain=f"fixed-ball-{actuator_family}-{family}-contact{activation}-v1",
+                domain=domain,
                 contact_dimensions=(1, 3) if pyramidal else (1,),
                 limits="unsupported",
                 joint_limits_supported=False,

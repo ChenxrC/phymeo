@@ -162,3 +162,17 @@ Original untracked mujoco-tyx-t1-review.md is untouched.
 This is normal-contact composition, not pyramidal friction, FILTEREXACT,
 limits/dry friction, multiple FREE roots, general robot completion or P6.5
 completion.
+
+## Parent source validation — 2026-11-13
+
+The parent connected the explicit FREE+BALL normal route and public capability
+label without changing numerical kernels. Run `22-r3-n-complete-first` completed
+both full new test files: **55 passed in 41.34 s**, RAW_EXIT 0. The matrix includes
+interpret and CUDA cases in the tests themselves; it was executed once, without
+skip or deselection. Runs 18/19 completed the exact new-file Ruff checks after
+formatting and the recorded import-order repair.
+
+Status: **SOURCE_VERIFIED_INSTALL_PENDING**. This is not yet the unified wheel
+acceptance. Original native reference, numerical gates, rejected combinations,
+capacity bounds and transaction requirements remain unchanged. Evidence is in
+`artifacts/p65-feature-until-0730-20261113-01`.

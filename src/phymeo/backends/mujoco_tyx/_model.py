@@ -95,9 +95,12 @@ def compile_model(mj, model):
         if np.any(model.jnt_type == mj.mjtJoint.mjJNT_FREE):
             from ._floating_model import compile_floating_model
 
-            # Structural dispatch only; the floating compiler independently
-            # rejects unported contact/activation/constraint combinations.
-            return compile_floating_model(mj, model)
+            # Admit the complete FREE+BALL structure before selecting its
+            # declared contact route. Unsupported combinations never fall
+            # back to a different solver after a failed lowering.
+            floating = compile_floating_model(mj, model, allow_normal_contacts=True)
+            pairs = possible_pairs(model)
+            return compile_normal_model(mj, model, pairs) if pairs else floating
         # Validate BALL structure before choosing its declared contact route.
         # Stateful JOINT motors use the activation compiler's explicit domain;
         # unsupported dynamics/bias are rejected before any device construction.

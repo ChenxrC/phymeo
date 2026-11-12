@@ -2,6 +2,7 @@
 
 Tests-first authoring; only the parent may execute this matrix.
 """
+
 import importlib.util
 from pathlib import Path
 
@@ -121,7 +122,7 @@ def test_free_ball_normal_invalid_quaternion_before_device(
     q = start.q.copy()
     joint = 0 if location == "root" else 1
     adr = int(model.jnt_qposadr[joint]) + (3 if location == "root" else 0)
-    q[adr:adr + 4] = np.zeros(4) if bad == "zero" else (1.1, 0, 0, 0)
+    q[adr : adr + 4] = np.zeros(4) if bad == "zero" else (1.1, 0, 0, 0)
     calls = []
 
     def forbidden(*args, **kwargs):
@@ -132,8 +133,12 @@ def test_free_ball_normal_invalid_quaternion_before_device(
     with pytest.raises(ValueError):
         MuJoCoRuntime(
             compile_mujoco_xml(xml, require_asset=False),
-            mode=mode, implementation="tyx", world_keys=case.KEYS,
-            initial_states={key: MuJoCoInitialState(q, start.v, time=start.time) for key in case.KEYS},
+            mode=mode,
+            implementation="tyx",
+            world_keys=case.KEYS,
+            initial_states={
+                key: MuJoCoInitialState(q, start.v, time=start.time) for key in case.KEYS
+            },
         )
     assert calls == []
     journal = case.Journal(tmp_path / "bad-quaternion.jsonl.gz")

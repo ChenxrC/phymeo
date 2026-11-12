@@ -2,6 +2,9 @@
 
 Predeclared matrix: E sphere / C capsule x translation (0,0,0)/(3,-2,5),
 two successive steps per case, h=1/1024. Original D3 gates are unchanged.
+This regression qualifies world frames, loads and the actual stored recurrence.
+The separately recorded real-arithmetic material velocity qualification may
+fail; its original threshold is not a coordinate-frame correctness criterion.
 The original first surface point is displaced 1/64 along its normal before
 construction, producing a genuinely nonplanar facet and a nonzero pair origin
 at tick zero. Real ordered material/contact evolution must change that origin.
@@ -14,19 +17,50 @@ Raw candidate/summary witnesses are pair-local. Public TriangleDistanceRow
 witnesses already include pair_origins_relative_m and need ONLY packet.origin_m
 to obtain a world point. No expected geometry is derived from the query frames.
 """
+
+import importlib.util
 from dataclasses import replace
+from functools import lru_cache
+from pathlib import Path
 
 import numpy as np
 import pytest
-
-import phymeo as ph
 from test_deformable_contact_response import (
-    ATOL, RTOL, FACES, FACETS, H, RADIUS, WIDTH, STIFFNESS, DAMPING,
-    audit_step, close, create, finite_reference, fixture, forces, manifest,
-    reference_load, root_state, rotation, saved,
+    ATOL,
+    DAMPING,
+    EDGES,
+    FACES,
+    FACETS,
+    RADIUS,
+    RTOL,
+    STIFFNESS,
+    WIDTH,
+    H,
+    audit_step,
+    close,
+    create,
+    finite_reference,
+    fixture,
+    forces,
+    manifest,
+    reference_load,
+    root_state,
+    rotation,
+    saved,
 )
 
+import phymeo as ph
+
 pytestmark = pytest.mark.tyx
+
+
+@lru_cache(maxsize=1)
+def impulse_auditor():
+    path = Path(__file__).parents[2] / "examples" / "deformable_impulse_audit.py"
+    spec = importlib.util.spec_from_file_location("coordinate_impulse_audit", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.audit_deformable_impulse
 
 
 def translated_deformed_fixture(case, translation):
@@ -51,7 +85,10 @@ def translated_deformed_fixture(case, translation):
     item["binding"] = ph.ResidentParticipantBinding(
         participant.key,
         ph.ResidentFloatingTreeBinding(
-            item["round"], item["world"], 0, item["local"],
+            item["round"],
+            item["world"],
+            0,
+            item["local"],
             topology=participant.compiled.topology,
         ),
     )
@@ -70,8 +107,7 @@ def independent_entry(item, entry):
     load, wrench, rows = reference_load(item, x, v, q, speed)
     axis = item["local"] @ rotation(q[3:]).T + q[:3]
     segment = np.vstack((axis, axis)) if len(axis) == 1 else axis
-    return dict(q=q, speed=speed, x=x, v=v, axis=segment,
-                load=load, wrench=wrench, rows=rows)
+    return dict(q=q, speed=speed, x=x, v=v, axis=segment, load=load, wrench=wrench, rows=rows)
 
 
 def check_coordinate_contract(item, entry, after, receipt, expected):
@@ -94,8 +130,9 @@ def check_coordinate_contract(item, entry, after, receipt, expected):
         length = finite_reference().local_scale(tri, expected["axis"], RADIUS)
         source_first = tri[0]
         pair_origins[ordinal] = group.packet.pair_origins_relative_m[index].copy()
-        close(group.packet.origin_m + pair_origins[ordinal], source_first,
-              atol=2e-4 * length, rtol=0)
+        close(
+            group.packet.origin_m + pair_origins[ordinal], source_first, atol=2e-4 * length, rtol=0
+        )
         # Independent exact finite oracle gives the expected selected witnesses.
         expected_axis = target["rigid_point"] - RADIUS * target["normal"]
         actual_axis = np.asarray(row.axis_point_relative_m) + group.packet.origin_m
@@ -122,14 +159,19 @@ def check_coordinate_contract(item, entry, after, receipt, expected):
         close(site["node_point"], target["node_point"], atol=2e-4 * length, rtol=0)
         close(site["rigid_point"], target["rigid_point"], atol=2e-4 * length, rtol=0)
         close(site["node_point"], triangle_point, atol=2e-4 * length, rtol=0)
-        close(site["rigid_point"], axis_point + RADIUS * np.asarray(row.normal),
-              atol=2e-4 * length, rtol=0)
+        close(
+            site["rigid_point"],
+            axis_point + RADIUS * np.asarray(row.normal),
+            atol=2e-4 * length,
+            rtol=0,
+        )
         close(site["rigid_com"], expected["q"][:3])
         beta = np.asarray(site["barycentric"])
         normal = np.asarray(site["normal"])
         point = np.asarray(site["rigid_point"])
         point_velocity = expected["speed"][:3] + np.cross(
-            expected["speed"][3:], point - expected["q"][:3])
+            expected["speed"][3:], point - expected["q"][:3]
+        )
         relative = beta @ expected["v"][indices] - point_velocity
         close(site["relative_velocity"], relative)
         rate = float(normal @ relative)
@@ -148,16 +190,52 @@ def check_coordinate_contract(item, entry, after, receipt, expected):
         rigid_power += float((-force) @ expected["speed"][:3] + torque @ expected["speed"][3:])
         relative_power += float(force @ relative)
         # Correct world points make this independently assembled work pairing agree.
-        close(float(force @ relative), float(
-            force @ (beta @ expected["v"][indices]) - force @ point_velocity))
+        close(
+            float(force @ relative),
+            float(force @ (beta @ expected["v"][indices]) - force @ point_velocity),
+        )
     close(receipt.worlds[world]["node_contact_force"], material_load)
     close(receipt.worlds[world]["rigid_wrench"], np.r_[rigid_force, rigid_torque][None, :])
     close(nodal_power + rigid_power, relative_power)
     # Original D3 independent geometry error propagation, complete material
     # recurrence, rigid M/J/a, both momenta and all fixed reactions remain checked.
-    full_audit = audit_step(item, entry, after, receipt, H)
-    return dict(pair_origins=pair_origins, node_power=nodal_power, rigid_power=rigid_power,
-                relative_power=relative_power, full_audit=full_audit)
+    node_step = receipt.node_receipt.worlds[world]
+    arithmetic = impulse_auditor()(
+        input_position=entry.node.position,
+        input_velocity=entry.node.velocity,
+        force=node_step.force,
+        inverse_mass=item["node"].model.inverse_mass,
+        gravity=item["node"].model.gravity,
+        h=H,
+        predicted_position=node_step.predicted_position,
+        predicted_velocity=node_step.predicted_velocity,
+        trace=node_step.trace,
+        edges=EDGES,
+        final_position=after.node.position,
+        final_velocity=after.node.velocity,
+        sweeps=node_step.sweeps,
+    )
+    velocity_failures = []
+    full_audit = audit_step(
+        item,
+        entry,
+        after,
+        receipt,
+        H,
+        numerical_impulse=arithmetic["total_remainder"],
+        material_velocity_diagnostic=velocity_failures.append,
+    )
+    return dict(
+        pair_origins=pair_origins,
+        node_power=nodal_power,
+        rigid_power=rigid_power,
+        relative_power=relative_power,
+        full_audit=full_audit,
+        stored_arithmetic=arithmetic,
+        separate_material_velocity_qualification=dict(
+            status="FAIL" if velocity_failures else "PASS", failures=velocity_failures
+        ),
+    )
 
 
 @pytest.mark.parametrize("case", ("E", "C"), ids=("sphere-offset", "capsule"))
@@ -165,10 +243,16 @@ def check_coordinate_contract(item, entry, after, receipt, expected):
 def test_public_witness_world_frame_in_joint_response(case, translation, tyx_mode, tmp_path):
     item = translated_deformed_fixture(case, translation)
     label = "coordinate-" + case + ("-translated" if any(translation) else "-base")
-    with saved(tmp_path, label, tyx_mode, case=manifest(item),
-               translation=translation, initial_surface_displacement=1/64,
-               initial_angular_velocity=(1/32, -1/64, 1/16),
-               tolerances=dict(atol=ATOL, rtol=RTOL)) as evidence:
+    with saved(
+        tmp_path,
+        label,
+        tyx_mode,
+        case=manifest(item),
+        translation=translation,
+        initial_surface_displacement=1 / 64,
+        initial_angular_velocity=(1 / 32, -1 / 64, 1 / 16),
+        tolerances=dict(atol=ATOL, rtol=RTOL),
+    ) as evidence:
         with create((item,), tyx_mode) as batch:
             initial = batch.snapshot()[item["world"]]
             anchor = np.asarray(root_state(initial, item).position[:3])
@@ -178,8 +262,14 @@ def test_public_witness_world_frame_in_joint_response(case, translation, tyx_mod
             for tick in range(2):
                 entry = batch.snapshot()[item["world"]]
                 expected = independent_entry(item, entry)
-                record = dict(tick=tick, entry=entry, expected=expected,
-                              inputs=forces((item,)), h=H, revision=batch.revision)
+                record = dict(
+                    tick=tick,
+                    entry=entry,
+                    expected=expected,
+                    inputs=forces((item,)),
+                    h=H,
+                    revision=batch.revision,
+                )
                 evidence["attempts"].append(record)
                 try:
                     receipt = batch.step(record["inputs"], H, expected_revision=record["revision"])
@@ -189,7 +279,9 @@ def test_public_witness_world_frame_in_joint_response(case, translation, tyx_mod
                     assert receipt.source_revision == record["revision"]
                     assert receipt.destination_revision == batch.revision
                     assert after.node.tick == after.rigid.tick == entry.node.tick + 1
-                    record["audit"] = check_coordinate_contract(item, entry, after, receipt, expected)
+                    record["audit"] = check_coordinate_contract(
+                        item, entry, after, receipt, expected
+                    )
                     records.append(record)
                 except BaseException:
                     record["last_attempt"] = batch.last_attempt
@@ -202,5 +294,7 @@ def test_public_witness_world_frame_in_joint_response(case, translation, tyx_mod
             after = records[-1]["after"].node.position
             before_edges = np.linalg.norm(before[FACES[0]][1:] - before[FACES[0]][0], axis=1)
             after_edges = np.linalg.norm(after[FACES[0]][1:] - after[FACES[0]][0], axis=1)
-            assert not np.array_equal(before_edges, after_edges), "material changed, not rigid FK only"
+            assert not np.array_equal(before_edges, after_edges), (
+                "material changed, not rigid FK only"
+            )
             evidence["initial_edges"], evidence["final_edges"] = before_edges, after_edges

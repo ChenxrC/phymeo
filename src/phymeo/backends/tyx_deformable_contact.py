@@ -506,7 +506,7 @@ class TyxDeformableContactBatch:
             model = self._nodes._models[world]
             source = query.source["surfaces"][surface]
             facet_ids = source["facet_ids"]
-            for ordinal, row in enumerate(group.packet.rows):
+            for row in group.packet.rows:
                 round_key = group.round_keys[row.segment_id]
                 law = self._laws[tuple(sorted((surface, round_key)))]
                 if law is None:
@@ -533,7 +533,9 @@ class TyxDeformableContactBatch:
                     raise ValueError(
                         "D3 facet ordinal does not bind its original oriented point IDs"
                     )
-                origin = group.packet.origin_m + group.packet.pair_origins_relative_m[ordinal]
+                # Public rows already include their pair frame; only raw kernel
+                # witnesses still need pair_origins_relative_m.
+                origin = group.packet.origin_m
                 axis_point = origin + np.asarray(row.axis_point_relative_m, np.float64)
                 node_point = origin + np.asarray(row.triangle_point_relative_m, np.float64)
                 rigid_point = axis_point + self._shapes[round_key].radius * normal

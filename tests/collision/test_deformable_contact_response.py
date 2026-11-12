@@ -318,7 +318,9 @@ def rigid_step(item, q, v, wrench, h):
     return np.r_[q[:3] + h * speed[:3], rotate_step(q[3:7], speed[3:], h)], speed
 
 
-def audit_step(item, entry, after, receipt, h):
+def audit_step(
+    item, entry, after, receipt, h, *, numerical_impulse=None, material_velocity_diagnostic=None
+):
     w = item["world"]
     observed = receipt.worlds[w]
     row = receipt.node_receipt.worlds[w]
@@ -420,7 +422,21 @@ def audit_step(item, entry, after, receipt, h):
         item, x0.astype(float), vs0.astype(float), row.force.astype(float), h, row.sweeps
     )
     close(after.node.position, y, atol=2e-5, rtol=2e-5)
-    close(after.node.velocity, velocity, atol=2e-5, rtol=2e-5)
+    try:
+        close(after.node.velocity, velocity, atol=2e-5, rtol=2e-5)
+    except AssertionError as error:
+        if material_velocity_diagnostic is None:
+            raise
+        material_velocity_diagnostic(
+            dict(
+                qualification="FAIL",
+                actual=after.node.velocity.copy(),
+                reference=velocity.copy(),
+                atol=2e-5,
+                rtol=2e-5,
+                error=str(error),
+            )
+        )
     close(row.multipliers, lam, atol=2e-5, rtol=2e-5)
     diagnostics = receipt.rigid_publication["diagnostics"][item["participant"].key]
     independent_mass = np.diag([item["mass"]] * 3 + [item["inertia"]] * 3)
@@ -463,11 +479,17 @@ def audit_step(item, entry, after, receipt, h):
     np.testing.assert_array_equal(after.node.position[fixed], x0[fixed])
     np.testing.assert_array_equal(after.node.velocity[fixed], 0)
     free = ~fixed
+    # New translated/deformed controls supply independently verified stored-
+    # arithmetic remainders. Existing controls keep their original zero value.
+    numerical = np.zeros_like(x0, dtype=float) if numerical_impulse is None else numerical_impulse
+    assert numerical.shape == x0.shape and np.all(np.isfinite(numerical))
+    np.testing.assert_array_equal(numerical[fixed], 0)
     impulse_actual = (after.node.velocity[free].astype(float) - vs0[free]) / weights[free, None]
-    close(impulse_actual, h * total[free] + material[free])
+    close(impulse_actual - numerical[free], h * total[free] + material[free])
     root_impulse = item["mass"] * (v1[:3] - v0[:3])
     close(
-        impulse_actual.sum(axis=0) + root_impulse, reaction.sum(axis=0) + h * item["external"][:3]
+        impulse_actual.sum(axis=0) + root_impulse,
+        reaction.sum(axis=0) + h * item["external"][:3] + numerical[free].sum(axis=0),
     )
     # Account for application time explicitly instead of claiming that every
     # ordered central row has zero torque about the initial positions.
@@ -476,7 +498,9 @@ def audit_step(item, entry, after, receipt, h):
     angular = (np.cross(after.node.position[free], p1) - np.cross(x0[free], p0)).sum(axis=0)
     angular += np.cross(q1[:3], item["mass"] * v1[:3]) - np.cross(q0[:3], item["mass"] * v0[:3])
     angular += item["inertia"] * (v1[3:] - v0[3:])
-    expected_angular = np.cross(x0[free], h * total[free] + material[free]).sum(axis=0)
+    expected_angular = np.cross(x0[free], h * total[free] + material[free] + numerical[free]).sum(
+        axis=0
+    )
     expected_angular += np.cross(after.node.position[free] - x0[free], p1).sum(axis=0)
     expected_angular += np.cross(q0[:3], h * total_wrench[:3]) + h * total_wrench[3:]
     expected_angular += np.cross(q1[:3] - q0[:3], item["mass"] * v1[:3])

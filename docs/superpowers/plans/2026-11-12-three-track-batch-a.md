@@ -1,6 +1,6 @@
 # 三主线 Batch A：设备来源、持久节点、球电机动态
 
-状态：AUTHORING / TESTS_PENDING。实施基线79e3e089，2026-11-12，用户已授权按计划继续；无新截止。上层范围见[三主线路线](2026-11-12-scene-deformable-scale-roadmap.md)。本批只关闭实际通过的子节点。
+状态：**SOURCE_AND_INSTALLED_QUALIFIED / SLOTS_RELEASED**。实施基线79e3e089，最终产品d2a18bee，2026-11-12。上层范围见[三主线路线](2026-11-12-scene-deformable-scale-roadmap.md)；[实际结果](../../development/p65-three-track-batch-a-20261112.md)记录测试、首失败与证据。本批只关闭S1/S2、D1及直接BALL FILTEREXACT这一R2格，没有关闭完整三条主线。
 
 ## 交付与所有权
 
@@ -11,7 +11,7 @@
 | R1/首R2 | mtyx_t2_audit / codex/p65-ball-activation-20261112 | direct BALL FILTEREXACT与原normal/pyramidal接触；必要tree/actuator有限扩展和新多案例。父独占model/runtime/shared contact ABI及导出，按S0确定最小变更 |
 | 集成 | root / codex/p65-parallel-modules | 共享协议、审阅、正常整合、小提交；全部环境/静态/测试/build/install与源码外验证串行 |
 
-三个作者先用现有研究核对实际源码，给出简短S0接口/资源/测试登记；父快速裁定后继续纯编码，不重新做泛调研。未分配路径先报父，避免双写。
+以上为本批实际分工，三个作者与父串行执行均已结束。S0接口/资源/测试登记、隔离编码、父共享接缝及最终验证已按下面顺序完成；历史步骤不构成新的重复任务。
 
 ## 开发与验证顺序
 
@@ -32,3 +32,12 @@
 ## 操作约束
 
 沿用三位原agent；无新助手。所有项目import/collection/数值/probe/lint/formatter/compile/build/install/profile由root唯一串行槽执行。没有owner时不得启动项目命令。只用现有环境/pins；旧K1三未跟踪文件、旧作者稿、全部证据/Junction保留。无CI、push/mainmerge、发包、清理环境、G1长窗或无假设训练。功能完成按feature-commit-checkpoint分小提交，不覆盖WIP。
+
+## 实际关闭记录
+
+- S1/S2：run014解释/HOST41、run015 CUDA39；受影响旧场景两后端共4。公共batch查询和一个混合多参与者安装场景完成，S3更高层编译声明接线与第二类独立安装场景仍待下一批。
+- D1：最终run036解释44、run033 CUDA33；真实形变、完整独立参考、资源与生命周期通过。未实施M2-Q或接触响应。
+- R1/首R2：run021解释/HOST41、run022 CUDA29；旧机器人两后端4兼容。只更新并关闭fixed direct BALL FILTEREXACT＋原normal/pyramidal这一组合，FREE+BALL等仍未实现。
+- 统一产品d2a18bee：520成员source/wheel/installed逐字节同；run043–048六消费者首次均PASS/RAW0。每后端BALL160worldsteps；scene6logical/12participantsteps、4queries/64rows/3stale；deform16batch/32worldsteps。
+- `artifacts/p65-three-track-a-20261112-01/installed-close.json`保存六消费者及143文件归档。原013 lowering、030测试末帧假设、032 CUDA helper首失败及style首失败全部保留，未改物理输入/阈值。
+- 下一批按路线Batch B：S3公共编译流程、D2真实变形查询、R2 FREE+BALL第一格；本批无新执行owner，不重新运行已绿范围。

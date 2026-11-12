@@ -128,3 +128,15 @@ collection, mathematical probe, test, native step, build or install was executed
 An initial file-write setup used an invalid .NET encoding overload before creating the
 consumer; subsequent explicit UTF8-no-BOM chunk writes succeeded. This was file I/O,
 not a product import/run; no result is claimed from it.
+
+## Parent source qualification — 2026-11-12
+
+The historical authoring labels above describe their original commits. The parent has now connected the public runtime route, typed joint-transmission receipt, checkpoint whitelist/binding, and fixed-tree mechanics call ABI. Product integration is cd895ead; transaction evidence encoding repair is 3541b1a7. No floating-kernel ABI or original physical tolerance changed.
+
+Actual serial results in `artifacts/p65-parity-m1-assembly-20261112-01`:
+- Run 010: 39 new main nodes passed before the first transaction failed during JSON saving of raw checkpoint bytes. The original failure and raw prefix remain. It was not a force, trajectory, checkpoint restore or native comparison failure.
+- The NEW transaction saver now records the same complete checkpoint bytes as hex and retains the original checkpoint.bin. Run 013: all eight transaction nodes passed (4.76 s); the 39 already-green main nodes were not rerun. Thus the two source files have 47 qualified new nodes across their declared backend/negative matrix.
+- Run 014: nine affected compatibility nodes passed (17.15 s), covering loaded/early BALL-C, fixed normal contact, condim1/minmu constraints and the still-unsupported BALL-contact-plus-direct-motor combination. This was a targeted compatibility selection, not a rerun of the old full suites.
+- Runs 004/005 retain the first style failures. Import-only fixing and formatting gave final 008/009 clean checks. The transaction encoding edit passed 011/012. The standalone consumer's formatting is included in 015–020; its actual installed execution is still pending the combined wheel.
+
+This accepts the finite source domain and preserves the original unsupported combinations. It does not claim FREE+BALL, BALL activation/contact motors, joint limits, full MuJoCo coverage, a performance advantage, G1 success or completion of P6.5. Final combined packaging and source-outside consumers remain required.

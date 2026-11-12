@@ -318,7 +318,7 @@ def verify(packet,states,initial,tick,bindings,source_asset):
         require(group.round_keys==(ph.CollisionKey(world,202,1),),"original sphere ownership")
         require(group.bvh_raw.shape==(1,4) and group.bvh_raw.dtype==np.int32,"complete K+3 BVH data")
         require(group.bvh_raw[0,0]==15 and np.all(group.bvh_raw[0,1:3]>=1),"all four selected bits and traversal")
-        require(group.bvh_raw[0,3]==1,"all selected source rows valid")
+        require(group.bvh_raw[0,3]==2*len(FACES)-1,"complete BVH root escape/stop node")
         narrow=group.packet
         require(narrow.schema=="phymeo-resident-triangle-distance-v1","resident packed packet")
         require(narrow.source_binding==packet.source_binding,"same accepted source for every facet")

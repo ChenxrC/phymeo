@@ -449,18 +449,45 @@ def run(mode, journal, installed_root, output):
                 )
             attempt = dict(tick=tick, before=states, before_stats=plan.stats(), margin=MARGIN)
             attempts.append(attempt)
+            query_error = None
             try:
                 result = plan.query(margin=MARGIN)
                 attempt["result"] = result
-            finally:
-                attempt.update(
-                    after=batch.snapshot(),
-                    last_attempt=plan.last_attempt,
-                    last_result=plan.last_result,
-                    after_stats=plan.stats(),
+            except BaseException as error:
+                query_error = error
+                attempt["query_error"] = dict(
+                    type=type(error).__name__, message=str(error), traceback=traceback.format_exc()
                 )
-                # Full returned result/raw/source and any failed prefix precede every assertion.
+            capture_errors = []
+            for name, reader in (
+                ("after", batch.snapshot),
+                ("last_attempt", lambda: plan.last_attempt),
+                ("last_result", lambda: plan.last_result),
+                ("after_stats", plan.stats),
+            ):
+                try:
+                    attempt[name] = reader()
+                except BaseException as error:
+                    capture_errors.append(error)
+                    attempt[name + "_error"] = dict(
+                        type=type(error).__name__,
+                        message=str(error),
+                        traceback=traceback.format_exc(),
+                    )
+            try:
+                # Snapshot may be forbidden after UNKNOWN; retain the query's original error
+                # and independently save every still-accessible raw/ownership diagnostic.
                 journal.emit("query-outcome", **attempt)
+            except BaseException as error:
+                capture_errors.append(error)
+            if query_error is not None:
+                if capture_errors:
+                    raise BaseExceptionGroup(
+                        "query and outcome capture failed", [query_error, *capture_errors]
+                    )
+                raise query_error
+            if capture_errors:
+                raise BaseExceptionGroup("query outcome capture failed", capture_errors)
             exact(states, attempt["after"], "query cannot mutate accepted physical bank")
             require(plan.require_current(result) is result, "new current source accepted")
             checks = verify(result, states, initial, tick)

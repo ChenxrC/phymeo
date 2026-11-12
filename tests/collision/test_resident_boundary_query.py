@@ -665,7 +665,11 @@ def test_no_host_current_geometry_or_closest_search(tyx_mode, tmp_path, monkeypa
                     value = query(batch, plan, record, 0.5)
                 assert_packet(batch, plan, value, model, expected)
                 assert plan.stats()["launches"] > 0
-                assert plan.stats()["downloads"] > 0 and plan.stats()["downloaded_bytes"] > 0
+                assert plan.stats()["host_downloaded_bytes"] > 0
+                if tyx_mode == "cuda":
+                    assert plan.stats()["downloads"] > 0 and plan.stats()["downloaded_bytes"] > 0
+                else:
+                    assert plan.stats()["downloads"] == plan.stats()["downloaded_bytes"] == 0
 
 
 @pytest.mark.tyx

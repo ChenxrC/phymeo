@@ -63,6 +63,10 @@ c=4096 N·s/m 轴向材料耗散应用，不改写原无耗散D4-N失败，也�
 重置速度或把所有差异都塞入数值误差账。当前转向独立的机器人组合功能，
 持续载荷保留为一个有完整反例的待办。
 
+保存数据对比：run148的`render/damping-comparison.png`和6144行CSV已生成并目视检查。
+原D4只复用run95已验CSV/receipt，新D6-B逐字读取run143完整压缩流；没有重算物理。
+两组曲线都明确标记FAIL / DIAGNOSTIC_ONLY，窗口RMS与瞬时速度分别解释。
+
 原证据：artifacts/p65-feature-until-0730-20261113-01/142与143命令目录；
 完整闭合安装结果：Temp/phymeo-feature-wheel-20261113-02/results/
 143-installed-d6b-n1-interpret。原D4两完整失败、D6-A strict失败与新应用结果分别保留。

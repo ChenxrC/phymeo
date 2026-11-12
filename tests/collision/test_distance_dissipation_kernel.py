@@ -147,7 +147,15 @@ def energy_rounding_bound(row):
             kinetic_error += float(np.sum((abs(ideal) * err + .5 * err * err) / weight))
     scalar_error = abs(impulse * (s - n @ (vi - vj)))
     scalar_error += .5 * (wi + wj) * impulse * impulse * abs(g2 - n @ n)
-    return kinetic_error + scalar_error
+    # FP64 audit arithmetic is itself rounded. Bound those sums/products by
+    # gamma_32 times their absolute operand scale; this is not an energy credit.
+    audit_scale = abs(impulse*s) + .5*(wi+wj)*abs(g2)*impulse*impulse
+    for before, after, weight in ((vi,row[12:15].astype(float),wi),
+                                  (vj,row[15:18].astype(float),wj)):
+        if weight:
+            audit_scale += float(np.sum(before*before + after*after)/(2*weight))
+    u = np.finfo(np.float64).eps/2
+    return kinetic_error + scalar_error + (32*u/(1-32*u))*audit_scale
 
 
 @MODES
@@ -167,13 +175,13 @@ def test_two_free_masses_once_per_h(run_kernel, h, sign):
     primitive_checks(trace[0])
     assert item.ideal_work[0] <= 0
     assert item.kinetic_change[0] <= energy_rounding_bound(trace[0])
-    assert abs(item.rounding_work[0]) <= energy_rounding_bound(trace[0]) + 1e-16
+    assert abs(item.rounding_work[0]) <= energy_rounding_bound(trace[0])
 
 
 @MODES
 @pytest.mark.parametrize("reverse", (False, True))
 def test_noncollinear_ordered_chain(run_kernel, reverse):
-    x = np.array([[0, 0, 0], [1, 2, .5], [-.5, 1, 1]], np.float32)
+    x = np.array([[0, 0, 0], [1, 1, 1], [-.5, 1, 1]], np.float32)
     v = np.array([[.25, -.125, .0625], [-.25, .5, -.125], [.125, .25, -.5]], np.float32)
     edges = np.array([[0, 1], [1, 2]], np.int32)[::(-1 if reverse else 1)]
     w, c, h = [1, .5, .25], [2, 2], 1/128
@@ -188,7 +196,7 @@ def test_noncollinear_ordered_chain(run_kernel, reverse):
     for k, row in enumerate(trace):
         primitive_checks(row)
         assert item.kinetic_change[k] <= energy_rounding_bound(row)
-        assert abs(item.rounding_work[k]) <= energy_rounding_bound(row) + 1e-15
+        assert abs(item.rounding_work[k]) <= energy_rounding_bound(row)
     assert np.any(trace[:, 27] != 1), "the frozen nonaxis geometry exercises actual stored g2"
     other, _, _ = oracle(x, v, edges[::-1], w, c, h)
     assert np.max(np.abs(expected - other)) > 1e-8, "ordered pass is not a simultaneous solve"
@@ -350,3 +358,17 @@ def test_observer_complete_chain_is_read_only_and_rejects_corruption(run_kernel)
     broken = after.copy()
     broken[2,0] += .125
     with pytest.raises(ValueError): phase(edges,w,c,v,broken,trace)
+
+
+@MODES
+def test_empty_edge_padding_is_not_an_extra_material_step(run_kernel):
+    x = np.array([[1,2,3]],np.float32)
+    v = np.array([[.25,-0.0,-.125]],np.float32)
+    edges = np.empty((0,2),np.int32)
+    after,trace,status = run_kernel(x,v,edges,[1],[],1/128)
+    assert status == 0 and trace.shape == (0,32)
+    np.testing.assert_array_equal(after.view(np.uint32),v.view(np.uint32))
+    item = phase(edges,[1],[],v,after,trace)
+    assert item.kinetic_change.shape == (0,)
+    np.testing.assert_array_equal(item.node_impulse,0)
+    np.testing.assert_array_equal(item.node_velocity_impulse,0)

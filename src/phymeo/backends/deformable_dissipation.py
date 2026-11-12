@@ -176,6 +176,18 @@ def make_dissipation_step(parameters, native_edges, weights, reconstructed_veloc
             requested = np.array([mul(impulse,d) for d in direction],np.float32)
             if not _same32(row[24:27],requested):
                 raise ValueError("trace requested device impulse is inconsistent")
+            # Scalar checks only: never return these computations as candidate
+            # state. The recorded chain below remains the sole source of v.
+            for old, new, weight, sign in (
+                (row[6:9],row[12:15],w[i],1), (row[9:12],row[15:18],w[j],-1)
+            ):
+                for a in range(3):
+                    expected_component = (
+                        add(old[a],sign*mul(mul(weight,impulse),direction[a]))
+                        if weight > 0 else old[a]
+                    )
+                    if not np.isfinite(expected_component) or not _same32(new[a],expected_component):
+                        raise ValueError("trace endpoint primitive update is inconsistent")
         # Follow the device evidence, not a HOST-generated update. Reject a
         # fixed endpoint change before placing recorded values into the chain.
         if (w[i] == 0 and not _same32(row[12:15],current[i])) or (w[j] == 0 and not _same32(row[15:18],current[j])):

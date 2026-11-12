@@ -2,7 +2,7 @@
 
 状态：SOURCE_AND_INSTALLED_QUALIFIED（父安装与容量更新见末节）。2026-11-13；父唯一串行执行，本报告仅读取已结束 stdout/final，不重跑或重审保存载荷。
 
-[实施合同](p65-multibody-deformable-implementation-20261113.md)限定的公共装配、逐体接触载荷与共同发布已通过两后端源码验证。安装消费者已交接，等待父 wheel04 的源码外验证；本报告不将源码运行当作安装通过。
+[实施合同](p65-multibody-deformable-implementation-20261113.md)限定的公共装配、逐体接触载荷与共同发布已通过两后端源码及 wheel04 源码外验证；末节另列第四包版本、容量案例和归档。源码结果与安装结果分别保留。
 
 ## 功能与边界
 

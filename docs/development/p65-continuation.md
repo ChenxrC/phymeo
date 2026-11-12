@@ -1,16 +1,16 @@
 # Phymeo 当前续作入口
 
-更新：2026-11-13 05:00；**R3-A完整源码117＋兼容6、第三包interpret/CUDA各352 worldsteps PASS；M-B1多独立刚体刚柔正在纯编码**。
+更新：2026-11-13；**M-B1多独立刚体刚柔、8参与者容量及mixed布局、G2-R0恢复清理已完成源码与第四包安装资格；R3-A原资格保留**。
 D5-A、R3-N/P、G2a、D6-A 已获各自有限源码/安装资格；D4 原稳态功能仍 FAIL。
 D6-A 的 FUNCTIONAL_PASS 与旧弹性 STRICT_FAIL_RECORDED 同时保留，不能合并成严格通过。
-整个 P6.5 / Newton 功能对齐未完成；本轮范围冻结06:15，07:30汇总，不自动顺延。
+整个 P6.5 / Newton 功能对齐未完成；到07:30计划内执行与安装已提前收口，见[本批交付概览](p65-feature-batch-summary-20261113.md)，不自动启动后继大域。
 
 ## 从这里继续
 
 1. [本轮功能计划与当前队列](../superpowers/plans/2026-11-13-feature-completion-until-0730.md)：冻结范围、唯一执行者、停止条件。
 2. [功能验收矩阵](p65-feature-acceptance-matrix-20261113.md)：源码、后端、安装、应用和性能分列；不估整体完成百分比。
 3. [当前连接架构](p65-feature-architecture-draft-20261113.md)、[统一编译架构](../architecture/unified-scene-compilation.md)：声明、设备来源、查询、载荷与共同发布。
-   [离线架构总览图](p65-functional-architecture-20261113.html)可直接打开；R3-A现已完成有限源码与安装资格，M-B1仍未执行。
+   [离线架构总览图](p65-functional-architecture-20261113.html)可直接打开；R3-A与M-B1现均完成有限源码/安装资格；图中未连接的域仍明确分开。
 4. [八方向差异全景](phymeo-newton-panorama-2026-11-12.md)：下一通用模块与未完成范围；本轮详细事实以验收矩阵及原收据为准。
 5. [D6用法](p65-distance-dissipation-usage.md)、[D6设计](../superpowers/specs/2026-11-13-distance-dissipation-design.md)、[D6-B应用协议](p65-damped-normal-load-application-20261113.md)。
 6. [Batch C](p65-three-track-batch-c-20261112.md)、[Batch B](p65-three-track-batch-b-20261112.md)、[旧历史入口](p65-continuation-history-through-20261112-0035.md)仅按需引用，不恢复旧周期任务或重做旧审计。
@@ -23,7 +23,7 @@ D6-A 的 FUNCTIONAL_PASS 与旧弹性 STRICT_FAIL_RECORDED 同时保留，不能
 
 | 功能 | 当前资格 | 仍然不能声称 |
 | --- | --- | --- |
-| D5-A 公共刚柔声明 | `ParticipantSceneDeclaration(contact_response="deformable_normal")`＋`ParticipantDeformable` 自动装配唯一 D3 owner，资产球/程序胶囊短窗及生命周期源码、安装通过 | 任意关节机器人或多刚体刚柔、持续稳态支撑 |
+| D5-A 公共刚柔声明 | `ParticipantSceneDeclaration(contact_response="deformable_normal")`＋`ParticipantDeformable` 自动装配唯一 D3 owner，资产球/程序胶囊短窗及生命周期源码、安装通过 | 任意关节机器人或持续稳态支撑；多独立单体见M-B1 |
 | R3-N 浮根球树法向接触 | FREE＋BALL/R/P、NONE JOINT motor、primitive condim1；完整同入步与连续参考及安装通过 | 人形长舞、limits/dry 等全部组合；activation见R3-A |
 | R3-P 浮根球树摩擦接触 | 同一约束/CSR路径的 primitive condim3 正控、安装通过；mixed1/3仅编译路由资格 | condim4/6、elliptic、FREE＋BALL limits/dry 已放行 |
 | R3-A 浮根球树有状态执行器 | FREE＋BALL/R/P的NONE/FILTEREXACT JOINT，no-contact/normal/pyramidal；源码117＋兼容6及安装两后端各352worldsteps通过 | limits/dry、多FREE根、任意机器人/刚柔组合 |
@@ -31,7 +31,7 @@ D6-A 的 FUNCTIONAL_PASS 与旧弹性 STRICT_FAIL_RECORDED 同时保留，不能
 | D6-A 可选轴向耗散 | 保存 elastic reconstructed velocity 后一次 ordered 速度pass；D1/D3/D5有限源码通过，D1/D3安装 FUNCTIONAL_PASS | 精确守恒、旧elastic短门通过、全网络BE、全局drag、所有膜振型衰减 |
 
 原 S1–S3 resident 多参与者查询、M1/M1-A 资产来源、D1设备节点、D2有限球/胶囊–triangle 与 D3共同发布资格继续复用。
-D3/D5当前每world是一个节点模型＋一个ordinary单body动态球/胶囊；入步采样、逐facet NormalLayer、零摩擦，存在HOST载荷/诊断往返。
+D3/D5经M-B1扩展为每world一个节点模型＋多个ordinary单body动态球/胶囊；总participants≤8、worlds≤8；入步采样、逐facet NormalLayer、零摩擦，存在HOST载荷/诊断往返。
 原几何 CONDITIONING 不得丢弃后继续施力；查询不自动授予响应、CCD、实体内外或面积压力。
 Resident 刚柔与 MuJoCo-TYX 机器人是分别准入的路径，不能把支持表相乘成任意联合求解。
 
@@ -62,7 +62,7 @@ run143仅补明确的源码外helper路径，已完成3072步/3秒，returned=ch
 1. 143入层/卸载/再接触、逐步phase/力/算术/连续长参考完成；peak约51.95 N、gap约−.03037 m、原侧约+.09463 m通过原门。7项旧elastic短精度失败仍记录。
 2. 按预登记停止这一系数的应用扩展：不启动该格CUDA或其余固定格，不扫描c，不修改质量/h/时间窗/验收门。
 3. 新D6-B失败与原D4失败分别保存；完整运行和可解释耗散不是稳态成功，不能把未运行格或新模型外推成已验。
-4. R3-A已完成117源码＋6兼容、第三包532成员parity和164/165两后端各352worldsteps；详[正式报告](p65-free-ball-activation-report.md)。下一M-B1仅多独立单body与同片的地址/反作用/共同发布，见[合同](p65-multibody-deformable-implementation-20261113.md)，父共享接缝＋三原作者分工，尚未运行。
+4. R3-A已完成117源码＋6兼容、第三包532成员parity和164/165两后端各352worldsteps；详[正式报告](p65-free-ball-activation-report.md)。M-B1已完成多独立单body与同片的地址/反作用/共同发布；新增28源码节点及S8/M3容量4节点通过，两后端安装各68worldsteps/132participantsteps，见[正式报告](p65-multibody-deformable-report-20261113.md)与[用法](p65-multibody-deformable-usage-20261113.md)。
 5. 异构扩容先补完整生命周期内存预算；live/peak无真实observer则UNKNOWN，Newton公平性能比较另立阶段。
 
 ## 执行与保护边界
@@ -79,4 +79,12 @@ run143仅补明确的源码外helper路径，已完成3072步/3秒，returned=ch
 旧G1长舞46.29s XY门/131.48s完整动作、J/R学习、R03两项净加速度、B-point touch-SE仍开放。
 通用摩擦/换面历史、CCD、更多刚柔机器人组合、传感、可微物理、密集布/体软体、杆缆与MPM/流体仍是后继；本轮不因安装绿而关闭。
 
-第三包R3-A产品08d7a1b6、全部164/165返回和压缩trace保留在源码外wheel-03目录；不重跑同源已绿矩阵。M-B2非根关节树与BALL limits/dry已有独立研究提案，未授实施。
+第三包R3-A产品08d7a1b6、全部164/165返回和压缩trace已保留canonical installed-closed-archive-01/wheel-03；不重跑同源已绿矩阵。M-B2非根关节树与BALL limits/dry已有独立研究提案，未授实施。
+
+## 本轮后段接受与下一交付
+
+- 第四包产品23757ae6：534成员同字节，191/192 M-B1各44worldsteps/88participantsteps；201/202 S8/M3各24/44。S8=4world/8participants，不外推8world满配。
+- G2-R0：178预期RED，185源码12GREEN、193包外12GREEN；实际恢复晚失败保原发布、原异常与cleanup，确切候选强owner及真实关闭。UNKNOWN未被重试，资源完整预算仍未实现。
+- 新canonical `artifacts/p65-feature-until-0730-20261113-01/installed-closed-archive-04/wheel-04`：33文件，原件保留，禁止重复归档/全解压。没有新项目执行owner；已绿同源不重跑。
+- 下一三条独立功能线：M-B2非根关节刚柔；BALL树标量limits/DOF dry与完整mixed checker；G2b真实allocation manifest/生命周期预算。先冻结每片多案例与接口，原作者隔离编码、父共享接缝及唯一串行验证。
+- D4/D6-B只按[可否证的短试样后继](p65-sustained-support-next-experiments-20261113.md)另冻实验；不选第二个c盲跑。本轮沒有新增该实验或BALL limits产品执行。

@@ -212,3 +212,11 @@ R3-A已完成完整117新源码节点＋6兼容节点、第三包532成员parity
 M-B1 新源码28唯一节点及旧兼容各8已通过；G2-R0真实恢复晚失败清理缺口经178 RED、185完整12 GREEN完成窄修。统一wheel04产品固定23757ae6，源码/包/安装534成员相同；安装消费者串行进行。
 
 最后新增的验证范围只有M-B1已实现容量，不增加产品能力：S8为四独立world(7,31,43,97)各原A两body，共8participants，4连续步；43/97仅重标原7/31的world和安装key，几何/anchor/质量/速度/外载/门保持。M3为world7原A首body、world31原A双body，验证混合单/多body布局，4步。完整原独立oracle/逐body来源/力矩/连续运动/一次发布；预期每后端24worldsteps/44participantsteps。不是性能、W32或稳态资格。两NEW tests/consumer由原测试作者纯编码，父唯一串行验证；执行后不调fixture或阈值追绿。06:15之后不增功能。
+
+## 实际收口：范围内执行、安装与文档提前完成
+
+M-B1、S8/M3与R0的源码和第四包验证均已结束，包外新增容量各后端24worldsteps/44participantsteps与预声明一致，R0安装12项通过。最新产品23757ae6、534成员parity及canonical归档已完成；不重跑已绿矩阵。原D4与D6-B稳态FAIL、D6严格精度失败分别保留，其他未执行应用格不填PASS。
+
+本计划的功能节点和其已登记增量已经收口，不为填满至07:30的剩余时间启动新的BALL约束大域。原作者完成了compiler与mixed-EFC checker的具体接缝调查，但该新域仍需单独冻结后执行。M-B2、G2b和持续支撑短试样同样作为后继，不混入本次已验产品。
+
+[本批交付概览](../../development/p65-feature-batch-summary-20261113.md)、[当前全景](../../development/phymeo-newton-panorama-2026-11-12.md)和[离线架构图](../../development/p65-functional-architecture-20261113.html)取代本文件中各时段的pending描述。源码、产品包与应用结果按实际版本分列；整个P6.5未完成。所有执行槽释放，无新周期任务、远程CI、push或环境改动。

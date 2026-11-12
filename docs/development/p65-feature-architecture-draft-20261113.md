@@ -1,6 +1,6 @@
-# 当前功能连接架构草稿：2026-11-13
+# 当前功能连接架构：2026-11-13
 
-状态：**当前连接架构草稿，供父任务收尾引用**。产品依据为父快照ec0e2997，
+状态：**当前连接架构，已加入M-B1/R3-A/G2-R0后继**。最新安装产品23757ae6，
 资格依据为父已报告的源码结果和同次安装summary顶层字段。此更新只读取文本、
 JSON与Git，没有执行项目、数值、保存审计或安装消费者。安装结果只授予对应
 有限范围；D4持续稳态支撑失败、D6原弹性严格精度失败与待执行项分别保留。
@@ -30,12 +30,12 @@ flowchart TD
   NodeDecl["ParticipantDeformable<br/>D1节点/距离材料/可选D6耗散/稳定point与facet IDs"]
   NodeDecl --> Factory
   Factory --> D5["deformable_normal<br/>静态lowering和原资产来源核验"]
-  D5 --> Joint["唯一 TyxDeformableContactBatch<br/>同runtime节点与单浮体owner"]
+  D5 --> Joint["唯一 TyxDeformableContactBatch<br/>同runtime节点与全部独立浮体owner"]
   Joint --> Dual["同入步accepted双来源<br/>节点bank + 刚体FK"]
   Dual --> D2["gather → bounds/BVH → sphere/capsule–triangle有限距离"]
   D2 --> Law["仅合法RESOLVED近接触<br/>原离散facet NormalLayer"]
   Law --> NodeCandidate["节点外力+接触力<br/>原integrate / ordered材料 / reconstruct候选"]
-  Law --> RigidCandidate["反向COM wrench<br/>原6DOF J/M与刚体候选"]
+  Law --> RigidCandidate["反向COM wrench<br/>各body原6DOF J/M与完整刚体候选"]
   NodeCandidate --> D6Choice{"显式非零 DistanceDissipation？"}
   D6Choice -->|是| D6["保存reconstructed v → 一次ordered轴向速度耗散<br/>设备status + 完整phase观察/验证"]
   D6Choice -->|None或全零，保持原路径| Commit["所有候选与完整receipt先验证<br/>一次共同发布两个accepted bank"]
@@ -46,7 +46,7 @@ flowchart TD
   Native["原MJCF/URDF及assets"]
   Native --> Compile["CPU MuJoCo 3.3.7编译<br/>原模型/MJB/来源与坐标记录"]
   Compile --> Admission["MuJoCo-TYX显式模型准入"]
-  Admission --> NativeTYX["原TYX动力学 / primitive接触 / 约束<br/>R3-N normal与R3-P condim3明确分域"]
+  Admission --> NativeTYX["原TYX动力学 / primitive接触 / 约束<br/>R3-N/P接触与R3-A FILTEREXACT明确分域"]
   NativeTYX --> NativeRuntime["MuJoCoRuntime<br/>controls / step / snapshot / checkpoint"]
   NativeRuntime --> Train["VecEnv / task-action设备接口<br/>随机reset / control windows / RSL PPO"]
   Compile --> Buckets["MuJoCoTyxHeterogeneousBatch<br/>完整来源分桶，同模型原runtime"]
@@ -252,12 +252,22 @@ D6-B现按闭合run143更新为功能FAIL；[独立结果](p65-damped-normal-loa
 
 ## 8. 后继连接仍应独立登记
 
-- D5-A之后：同world多刚体/关节资产与变形节点的共同载荷，不能只放开构造guard。
+- D5-A之后的M-B1多独立单体已接受；下一非根关节资产与变形节点的共同载荷，不能只放开构造guard。
 - D4/D6之后：先单独判断固定持续载荷应用，再扩切向摩擦、换面测度/历史和CCD；耗散phase通过不替代持续支撑。
 - 原节点模型之后：弯曲、密集布和体软体等材料/拓扑，不能用五条距离行代表全部软体。
-- R3-P之后：activation、limits/dry、condim4/6等具体组合，逐项登记真实原生参考；不重复已通过的NONE JOINT condim3域。
+- R3-P之后的R3-A activation已接受；下一limits/dry、condim4/6等具体组合，逐项登记真实原生参考；不重复已通过组合。
 - G2之后：完整生命周期资源/吞吐，再进行同模型同输出的Newton性能比较。
 - 训练/人形：现有真实CUDA PPO和N5/N6/N7连接保留；J/R学习门、G1完整动作、
   传感与可微物理等问题不会由场景装配或法向接触通过自动关闭。
 
-本次只更新这一架构草稿，记录已存在的有限结果；没有产品改动、其它共享文档覆盖、项目执行或自行授予的新资格。
+本页记录已存在的有限结果；文档更新不新增产品能力、项目执行或验收资格。
+
+## 9. M-B1 / R3-A / G2-R0当前后继覆盖
+
+前文D5-A/R3-N/P表格的限制属于各首片历史范围。当前M-B1提供同world多个独立单body与原节点模型的共同响应，总participants≤8/worlds≤8；新layout保存world body范围，每个site绑定真实participant/body槽，所有body包括零载荷者一次推进。新receipt明确逐participant wrench/delivery/外功，不再用含糊单world wrench。源及安装的S8实测4world/8participants，M3验证单/多body world混合；不授予任意关节树或新RR响应。
+
+R3-A在原FREE+BALL/R/P与direct JOINT组合中接入NONE/FILTEREXACT、no-contact/normal/pyramidal；完整117新源码节点和第三包各352worldsteps通过。它没有接入D1，也不使所有异构族自动合格。
+
+G2-R0修复restore提交前候选清理双失败的owner归属与异常聚合，保原accepted发布并真实恢复/释放；源码及第四包各12项通过，UNKNOWN原语义保留。完整资源manifest/生命周期预算仍是后继。
+
+最新图见[独立HTML](p65-functional-architecture-20261113.html)，实际细目见[功能矩阵](p65-feature-acceptance-matrix-20261113.md)及[M-B1用法](p65-multibody-deformable-usage-20261113.md)。第四包534成员同源；M-B1及容量各后端68worldsteps/132participantsteps，与原D4/D6-B稳态FAIL分别记录。

@@ -2,7 +2,7 @@
 
 本层将资产编译、场景装配和求解后端分开。MuJoCo编译是可选的CPU前端；已有URDF/MJCF加载器和TYX resident主线继续保留。原[实施计划](../superpowers/plans/2026-11-10-unified-scene-compilation.md)保留历史设计。
 
-**当前截点：2026-11-13，产品ec0e2997。** D5-A公共刚柔装配、R3-N/P原生接触组合、G2a原容量内异构规模和D6-A轴向材料耗散已有各自有限资格；D4无阻尼双后端3秒稳态失败仍保留，D6-B新c4096应用的run143已完成N1解释3秒，仍未过两稳态门；该系数的CUDA/其余案例停止扩跑。当前证据分层见[功能矩阵](../development/p65-feature-acceptance-matrix-20261113.md)，完整连接图见[架构草稿](../development/p65-feature-architecture-draft-20261113.md)。本页不将源码、指定安装消费者、完整应用或严格精度结果合并为一个PASS。
+**当前截点：2026-11-13，最新安装产品23757ae6。** D5-A/M-B1公共多独立刚体刚柔装配、R3-N/P/A原生接触与执行器组合、G2a原容量内异构规模、G2-R0恢复清理和D6-A轴向材料耗散已有各自有限资格；旧版本资格按原记录复用。D4无阻尼双后端3秒稳态失败仍保留，D6-B新c4096应用的run143已完成N1解释3秒，仍未过两稳态门；该系数的CUDA/其余案例停止扩跑。当前证据分层见[功能矩阵](../development/p65-feature-acceptance-matrix-20261113.md)，完整连接图见[当前架构](../development/p65-feature-architecture-draft-20261113.md)。本页不将源码、指定安装消费者、完整应用或严格精度结果合并为一个PASS。
 
 ~~~mermaid
 flowchart TD
@@ -44,7 +44,7 @@ resident刚柔、原生MuJoCo-TYX、异构原生world聚合是三条不同的运
 | 原生编译前端 | `phymeo.builders.mujoco_compiler.compile_mujoco` / `compile_mujoco_xml` | CPU解析、defaults/include展开、推导惯量；保留完整编译物与来源；显式转换到已有资产 |
 | 原场景声明 | `phymeo.builders.scene_compiler.SceneDeclaration` | 每world一个受支持资产及初态/控制/有限静态环境；原语义不变 |
 | 多参与者声明 | `ParticipantSceneDeclaration` / `compile_participant_scene` | 显式资产、participant/world、控制、collider和完整材料对表；host_patch/none复用resident共同事务 |
-| 刚柔声明 | `ParticipantDeformable` + `contact_response="deformable_normal"` | D5静态lowering到唯一D3 owner；每world一个节点模型和一个ordinary单body运动球/胶囊 |
+| 刚柔声明 | `ParticipantDeformable` + `contact_response="deformable_normal"` | D5/M-B1静态lowering到唯一D3 owner；每world一个节点模型和多个独立ordinary单body运动球/胶囊，总participants≤8/worlds≤8 |
 | 可选材料耗散 | `DeformableNodeWorld(dissipation=DistanceDissipation(...))` | D1直接使用或D5透传；原弹性重构后、候选发布前一次轴向速度pass |
 | Phymeo编译 | `scene_capabilities` / `compile_scene` | 在支持域内选择HOST或TYX；保留原物理程序、碰撞身份和控制语义 |
 | MuJoCo运行 | `phymeo.backends.mujoco_runtime.MuJoCoRuntime` | 选择原生CPU或独立CUDA路径；同一编译模型的多个独立world |
@@ -211,3 +211,13 @@ G2a完整来源分桶的W1/W8/W16源码矩阵已过，首包W16B3/W16B8双端安
 | N5/N6/N7与真实CUDA PPO | 原随机q/v、控制窗口、更新/恢复/规模连接资格保留 | J/R学习、G1完整131.48秒、R03原门仍独立开放；不是物理可微或全流水线零HOST |
 
 D6-B完整入层/释放/再接触事件与逐步phase通过不抵消稳态FAIL；另7项旧弹性短精度记录保留。该材料参数不被继续搜索，后继须由实际失败另立可检验合同；多body/关节刚柔、摩擦/换面/CCD、FREE+BALL更多执行器/约束及资源限定后的异构扩容/公平性能仍可独立推进。比较对象仍为既有固定Newton1.7.0；本页没有新调研、项目执行或性能实测。
+
+### 2026-11-13后段：多独立浮体、执行器组合与恢复资源
+
+当前D5入口已经通过M-B1扩展为同world多个ordinary floating单body＋原D1节点模型。总participants≤8/worlds≤8；world body-offset表和site participant/body-slot决定真实逐体COM wrench。所有body（包括零载荷body）、材料、节点和全部候选一次共同发布。多体receipt版本与原单体分开；8participants/4world与mixed单/多body布局均有interpret/CUDA源码和安装资格。仍无非根关节树刚柔、新RR响应、摩擦历史或CCD。
+
+R3-A已接通FREE+BALL/R/P的NONE/FILTEREXACT JOINT、no-contact/normal/pyramidal原域，原normal/constraint内核与ABI未改；117新源码节点及第三包各352worldsteps通过。前文“R3-P不扩activation”是该首片边界，不再代表当前整体缺失；scalar limits/dry、BALL angular limits等仍需另验。
+
+G2-R0提交前restore候选若验证和close同时失败，保留原错误及cleanup错误、强持有确切候选；原accepted状态/CAS不变，真正retry及关闭在源码和第四包各12项通过。此修复不把UNKNOWN释放变成可重试，也不提供完整显存峰值上界。
+
+[M-B1用法](../development/p65-multibody-deformable-usage-20261113.md)、[完整当前资格](../development/p65-feature-acceptance-matrix-20261113.md)分别记录接口与证据。最新第四包23757ae6、534产品成员同源；本段不声称全部历史功能重跑。

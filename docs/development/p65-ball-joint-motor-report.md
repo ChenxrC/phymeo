@@ -87,3 +87,44 @@ FP32 conversion is subnormal/zero. The helper now calls the same fp32 gate on ev
 complete native moment row before allocating final tables; the local import avoids a module
 initialization cycle. Fixed y/z tiny-gear negatives (1e-45 with x=1) exercise the previously
 uncovered columns before device allocation. No numerical gate changes. Authored count is now47.
+
+
+## Authoring handoff
+
+Current status: CODE_READY_TESTS_PENDING / AUTHORING_RELEASE. All product source and
+fixed tests are complete in the isolated branch; no project execution was performed.
+The initial S0 label above is retained as history, not the current implementation state.
+
+The self-contained installed consumer is tests/installed/check_ball_joint_motor.py.
+It uses the public compiler/runtime/control/observation/checkpoint API; no test helper
+or private state bank is imported. Its explicit mixed BALL/hinge/slide source has direct
+BALL gear(1,-2,.5), negative scalar gears and scalar affine bias; original nonzero q/v,
+source controls, physical/step-M gates and sparse worlds (3,29) are retained.
+The original 24-step drive/reversal/unload path is followed by checkpoint bytes,
+actual successor, clone successor, restore successor, partial original reset and successor.
+Counts are 27 actual main calls plus one clone call =56 accepted world steps per mode,
+not inferred from ticks after restore. A bad last-world control must preserve every state.
+Every step saves full/integration states, complete request/receipt/static map, same-entry
+native dynamics and native successor, independent continuous CPU state and counters.
+CPU step/forward is blocked only inside actual TYX step/integration observation;
+the independent native oracle and explicitly full CPU observation remain separate.
+Complete loaded phymeo module provenance must reside in --installed-root, with cwd,
+script and sys.path free of checkout source entries. Original exceptions and prefixes
+are saved; all runtime owners close. No performance claim or full MuJoCo coverage.
+
+Pending parent-only commands, with its fixed environment/guard/evidence wrapper:
+- pytest tests/test_mujoco_tyx_ball_joint_motor.py tests/test_mujoco_tyx_ball_joint_motor_transactions.py
+  -m "not cuda" -q -x --tb=short -p no:cacheprovider (30 authored nodes).
+- Same two files -m cuda (17 authored nodes).
+- Parent-selected affected old scalar/BALL-A/C/normal/constraint compatibility,
+  including precise retirement of the two obsolete negative parameters.
+- After one new wheel build/install, copy the installed consumer outside the checkout:
+  python check_ball_joint_motor.py --mode interpret --output ABSENT_ABSOLUTE_PATH
+  --installed-root ABSOLUTE_INSTALL_TARGET; repeat mode cuda with a different fresh output.
+
+Text-only checks performed: complete owned product diff/consumer read, exact interface
+comparison, git diff --check and controlled file readback. No import/AST/lint/formatter,
+collection, mathematical probe, test, native step, build or install was executed.
+An initial file-write setup used an invalid .NET encoding overload before creating the
+consumer; subsequent explicit UTF8-no-BOM chunk writes succeeded. This was file I/O,
+not a product import/run; no result is claimed from it.

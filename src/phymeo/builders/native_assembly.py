@@ -5,7 +5,6 @@ Newton compatibility model are introduced. All participants share one model.
 """
 
 from dataclasses import dataclass, field
-from hashlib import sha256
 from numbers import Integral
 from pathlib import Path
 
@@ -13,7 +12,7 @@ import numpy as np
 
 from ..backends.physolve_initial import NativeInitialState
 from .mujoco_compiler import compile_mujoco_spec
-from .native_resources import bind_attached_resources, own_spec_resources
+from .native_resources import bind_attached_resources, load_asset_source, own_spec_resources
 
 
 def _vector(value, size, name):
@@ -70,11 +69,23 @@ class NativeAssetInstance:
     self_collision: bool = True
     joint_defaults: tuple = ()
     floating: bool = False
+    urdf_xml: str | None = None
+    resource_roots: tuple[str, ...] = ()
 
     def __post_init__(self):
         if not isinstance(self.name, str) or not self.name or "::" in self.name:
             raise ValueError("instance requires a unique unscoped name")
         object.__setattr__(self, "path", str(Path(self.path).resolve()))
+        if self.urdf_xml is not None and (
+            not isinstance(self.urdf_xml, str) or not self.urdf_xml.strip()
+        ):
+            raise ValueError("urdf_xml requires nonempty XML text")
+        if isinstance(self.resource_roots, (str, bytes)):
+            raise TypeError("resource_roots requires a sequence of paths")
+        roots = tuple(self.resource_roots)
+        if any(not isinstance(p, (str, Path)) or not str(p).strip() for p in roots):
+            raise ValueError("resource_roots requires nonempty paths")
+        object.__setattr__(self, "resource_roots", tuple(str(Path(p).resolve()) for p in roots))
         object.__setattr__(self, "position", _vector(self.position, 3, "position"))
         q = _vector(self.orientation_xyzw, 4, "orientation")
         if abs(np.linalg.norm(q) - 1) > 1e-10:
@@ -335,16 +346,16 @@ def compile_native_template(
     captured_visuals = {}
     visual_diagnostics = []
     for asset in assets:
+        child, source_root, source_digest = load_asset_source(asset)
         if capture_visuals:
             from .native_visuals import capture_urdf_visuals
 
             try:
-                visual = capture_urdf_visuals(asset)
+                visual = capture_urdf_visuals(asset, source_root)
                 if visual is not None:
                     captured_visuals[asset.name] = visual
-            except (ValueError, NotImplementedError) as error:
+            except (ValueError, NotImplementedError, FileNotFoundError) as error:
                 visual_diagnostics.append(f"{asset.name}: visual export unavailable: {error}")
-        child = mj.MjSpec.from_file(asset.path)
         default = mj.MjSpec().option
         for name in dir(default):
             if name.startswith("_") or name in {"gravity", "timestep"}:
@@ -381,7 +392,9 @@ def compile_native_template(
         if asset.drive_mode == "scalar_pd":
             from ._native_drives import prepare_scalar_drives
 
-            rows, targets, notes = prepare_scalar_drives(mj, child, asset, NativeJointInput)
+            rows, targets, notes = prepare_scalar_drives(
+                mj, child, asset, NativeJointInput, source_root
+            )
             diagnostics.extend(notes)
         if asset.floating:
             roots = [
@@ -404,7 +417,7 @@ def compile_native_template(
                 for name, (leader, ratio, offset) in targets.items()
             }
         )
-        sources.append((asset.name, asset.path, sha256(Path(asset.path).read_bytes()).hexdigest()))
+        sources.append((asset.name, asset.path, source_digest))
     for shape in static_shapes:
         q = shape.orientation_xyzw
         spec.worldbody.add_geom(

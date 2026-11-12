@@ -7,6 +7,16 @@
 
 ## 资产及模板合同 1
 
+- B8d 增量输入 `NativeAssetInstance.urdf_xml` 接受非空 URDF 文本，优先于 path 文件；
+  path 只作来源标识和相对资源基准，可不存在。`resource_roots` 为有序文件系统根，
+  不替换模型文本；无这两项时沿原生文件/include 路径加载，不改变既有模型合同。
+  模型、标量 drive 和 display 使用同一来源文本，`asset_sources` 的主 SHA 为该文本
+  UTF-8 字节（文件路径则为原文件字节）；完整 MJB/archive 身份仍单独记录。
+  资源先按 strippath/meshdir 及来源目录、显式根解析，再冻结到模板资源；不写临时
+  URDF、不在 step/reset 重读源文件。当前 URI scheme 仍拒绝，不能猜 package 所在目录。
+  默认丢弃的 visual 资源失败只记录 visual_diagnostics，物理模型仍可用；视觉查询明确
+  拒绝，不伪造完整 visual。缺失碰撞资源始终失败；显式 discardvisual=false 仍要求
+  原生模型使用的所有资源有效。P2PE 负责将自身快照/根目录配置映射到这些公共参数。
 - `NativeAssetInstance` 以实例名区分同一资产的不同参与者；实例 pose 为 XYZ/XYZW。
   所有参与者 attach 到同一模型，保留跨参与者碰撞，不拆成独立仿真。
 - `drive_mode=preserve` 保留原生 actuator/equality/contact/resource 引用，不接受

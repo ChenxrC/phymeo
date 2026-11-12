@@ -1,7 +1,71 @@
 """Own disk resources before native attachment without filename aliasing."""
 
+from copy import deepcopy
 from hashlib import sha256
 from pathlib import Path
+from xml.etree import ElementTree as ET
+
+
+def load_asset_source(asset):
+    """Read one authoritative source; share its XML across physics and visuals.
+
+    An in-memory URDF overrides the locator file. Roots resolve resources only,
+    never replace its model text. Existing file-only MJCF/include loading stays
+    native. Resource bytes are owned by the compiled template before publication.
+    """
+    import mujoco as mj
+
+    path = Path(asset.path)
+    raw = asset.urdf_xml.encode("utf-8") if asset.urdf_xml is not None else path.read_bytes()
+    root = ET.fromstring(raw)
+    digest = sha256(raw).hexdigest()
+    if asset.urdf_xml is None and not asset.resource_roots:
+        return mj.MjSpec.from_file(str(path)), root, digest
+    if root.tag != "robot":
+        raise ValueError("in-memory XML and resource_roots require URDF")
+    physical = deepcopy(root)
+    compiler = physical.find("mujoco/compiler")
+    discard = "true" if compiler is None else compiler.get("discardvisual", "true")
+    if discard == "true":
+        for link in physical.findall("link"):
+            for visual in link.findall("visual"):
+                link.remove(visual)
+    resolve_urdf_resources(physical, asset)
+    spec = mj.MjSpec.from_string(ET.tostring(physical, encoding="unicode"))
+    spec.modelfiledir = str(path.parent) + "/"
+    return spec, root, digest
+
+
+def resolve_urdf_resources(root, asset):
+    """Resolve only the admitted geometry in this cold, caller-owned XML copy."""
+    path = Path(asset.path)
+    extension = root.find("mujoco")
+    if extension is None:
+        extension = ET.SubElement(root, "mujoco")
+    compiler = extension.find("compiler")
+    if compiler is None:
+        compiler = ET.SubElement(extension, "compiler")
+    strip = compiler.get("strippath", "false")
+    if strip not in {"true", "false"}:
+        raise ValueError("URDF strippath requires true/false")
+    directory = compiler.get("meshdir", compiler.get("assetdir", ""))
+    bases = (path.parent, *(Path(p) for p in asset.resource_roots))
+    for mesh in root.findall(".//mesh"):
+        filename = mesh.get("filename", "")
+        if not filename:
+            raise ValueError("URDF mesh requires filename")
+        if "://" in filename:
+            raise NotImplementedError("native URDF resource URI requires a filesystem path")
+        relative = Path(filename).name if strip == "true" else filename
+        candidates = [base / directory / relative for base in bases]
+        resolved = next((p for p in candidates if p.is_file()), None)
+        if resolved is None:
+            raise FileNotFoundError(f"URDF mesh not found in declared resource roots: {filename}")
+        mesh.set("filename", str(resolved.resolve()))
+    # Apply native strip/directory policy once, then pass explicit full paths to
+    # both compilers. This avoids a different root or basename being selected.
+    compiler.set("strippath", "false")
+    compiler.set("meshdir", "")
 
 
 def own_spec_resources(spec):

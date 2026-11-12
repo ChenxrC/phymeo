@@ -2,17 +2,15 @@
 
 from collections import deque
 from dataclasses import replace
-from xml.etree import ElementTree as ET
 
 import numpy as np
 
 from ._mimic_xml import extract_mimic_relations
 
 
-def prepare_scalar_drives(mj, spec, asset, input_type):
+def prepare_scalar_drives(mj, spec, asset, input_type, root):
     if spec.actuators:
         raise ValueError(f"{asset.name}: scalar_pd cannot replace or duplicate source actuators")
-    root = ET.parse(asset.path).getroot()
     if root.tag != "robot":
         raise ValueError("scalar_pd profile currently requires URDF; MJCF uses preserve")
     xml = {j.get("name"): j for j in root.findall("joint")}

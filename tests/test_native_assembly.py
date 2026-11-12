@@ -1,6 +1,7 @@
 """Solver-specific asset assembly, identity and once-only homogeneous binding."""
 
 from dataclasses import replace
+from hashlib import sha256
 from pathlib import Path
 
 import numpy as np
@@ -26,6 +27,116 @@ def urdf(tmp_path):
     path = tmp_path / "slider.urdf"
     path.write_text(URDF)
     return str(path)
+
+
+def test_snapshot_is_authoritative_for_model_drive_visual_and_identity(urdf):
+    snapshot = (
+        URDF.replace('mass value="2"', 'mass value="4"')
+        .replace('effort="3"', 'effort="7"')
+        .replace(
+            "<collision>", '<visual><geometry><sphere radius=".4"/></geometry></visual><collision>'
+        )
+    )
+    asset = NativeAssetInstance("arm", urdf, drive_mode="scalar_pd", urdf_xml=snapshot)
+    template = compile_native_template(
+        (asset,), timestep=0.002, gravity=(0, 0, 0), capture_visuals=True
+    )
+    model = template.compilation.fresh_native_model()
+    assert model.body("arm::link").mass == 4
+    np.testing.assert_array_equal(model.actuator_forcerange[0], [-7, 7])
+    assert template.compile_visual_scene().instances[0].size == (0.4,)
+    assert template.asset_sources == (("arm", asset.path, sha256(snapshot.encode()).hexdigest()),)
+    Path(urdf).unlink()
+    # The same authoritative snapshot also compiles when no locator file exists.
+    again = compile_native_template((asset,), timestep=0.002, gravity=(0, 0, 0))
+    assert again.compilation.fresh_native_model().body("arm::link").mass == 4
+
+
+@pytest.mark.parametrize(
+    "strip,filename", [(False, "meshes/shape.obj"), (True, "ignored/shape.obj")]
+)
+def test_snapshot_resource_roots_are_owned_for_collision_and_visual(tmp_path, strip, filename):
+    root = tmp_path / "assets"
+    meshdir = root if strip else root / "meshes"
+    meshdir.mkdir(parents=True)
+    mesh = meshdir / "shape.obj"
+    mesh.write_text("v 0 0 0\nv 1 0 0\nv 0 1 0\nv 0 0 1\nf 1 3 2\nf 1 2 4\nf 1 4 3\nf 2 3 4\n")
+    shape = f'<mesh filename="{filename}" scale=".2 .3 .4"/>'
+    snapshot = (
+        URDF.replace('<box size=".2 .2 .2"/>', shape)
+        .replace("<collision>", f"<visual><geometry>{shape}</geometry></visual><collision>")
+        .replace(
+            "</robot>", f'<mujoco><compiler strippath="{str(strip).lower()}"/></mujoco></robot>'
+        )
+    )
+    asset = NativeAssetInstance(
+        "arm", str(tmp_path / "missing/model.urdf"), urdf_xml=snapshot, resource_roots=(root,)
+    )
+    template = compile_native_template(
+        (asset,), timestep=0.002, gravity=(0, 0, 0), capture_visuals=True
+    )
+    mesh.unlink()
+    assert template.compilation.fresh_native_model().nmesh == 1
+    assert len(template.compile_visual_scene().meshes) == 1
+    assert template.compilation.fresh_native_model().ngeom == 1
+    with pytest.raises(FileNotFoundError, match="resource roots"):
+        compile_native_template((asset,), timestep=0.002, gravity=(0, 0, 0))
+
+
+@pytest.mark.parametrize("value", ["", " ", 1, b"<robot/>"])
+def test_snapshot_rejects_non_xml_text(urdf, value):
+    with pytest.raises(ValueError, match="urdf_xml"):
+        NativeAssetInstance("arm", urdf, urdf_xml=value)
+
+
+def test_snapshot_rejects_mjcf_and_malformed_xml(urdf):
+    from xml.etree import ElementTree as ET
+
+    for text, error in (("<mujoco/>", ValueError), ("<robot>", ET.ParseError)):
+        with pytest.raises(error):
+            compile_native_template(
+                (NativeAssetInstance("arm", urdf, urdf_xml=text),),
+                timestep=0.002,
+                gravity=(0, 0, 0),
+            )
+
+
+@pytest.mark.parametrize("capture", [False, True])
+@pytest.mark.parametrize("uri", ["missing.obj", "package://robot/missing.obj"])
+def test_snapshot_missing_visual_is_isolated_from_physics(urdf, capture, uri):
+    text = URDF.replace('<collision>',
+        f'<visual><geometry><mesh filename="{uri}"/></geometry></visual><collision>')
+    template = compile_native_template(
+        (NativeAssetInstance("arm", urdf, urdf_xml=text),),
+        timestep=.002, gravity=(0, 0, 0), capture_visuals=capture)
+    assert template.compilation.fresh_native_model().ngeom == 1
+    assert bool(template.visual_diagnostics) == capture
+    if capture:
+        with pytest.raises(NotImplementedError, match="visual export unavailable"):
+            template.compile_visual_scene()
+    physical = text.replace('<box size=".2 .2 .2"/>', f'<mesh filename="{uri}"/>')
+    with pytest.raises((FileNotFoundError, NotImplementedError)):
+        compile_native_template((NativeAssetInstance("arm", urdf, urdf_xml=physical),),
+                                timestep=.002, gravity=(0, 0, 0))
+
+
+def test_default_resource_policy_matches_file_snapshot_and_explicit_root(tmp_path):
+    mesh = tmp_path / "meshes/shape.obj"
+    mesh.parent.mkdir()
+    mesh.write_text("v 0 0 0\nv 1 0 0\nv 0 1 0\nv 0 0 1\nf 1 3 2\nf 1 2 4\nf 1 4 3\nf 2 3 4\n")
+    path = tmp_path / "model.urdf"
+    text = URDF.replace('<box size=".2 .2 .2"/>', '<mesh filename="meshes/shape.obj"/>')
+    path.write_text(text)
+    models = []
+    for options in ({}, {"urdf_xml": text}, {"resource_roots": (tmp_path,)}):
+        template = compile_native_template((NativeAssetInstance("arm", str(path), **options),),
+                                           timestep=.002, gravity=(0, 0, 0))
+        models.append(template.compilation.fresh_native_model())
+    for name in dir(models[0]):
+        if isinstance(getattr(models[0], name), np.ndarray):
+            for other in models[1:]:
+                np.testing.assert_array_equal(getattr(models[0], name), getattr(other, name),
+                                              err_msg=name)
 
 
 @pytest.mark.parametrize("size", [(0., 0., .1), (2., 3., .1)])

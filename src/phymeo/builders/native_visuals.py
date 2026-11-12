@@ -1,5 +1,6 @@
 """Native cold display export; URDF visuals never enter the physical model."""
 
+from copy import deepcopy
 from pathlib import Path
 from xml.etree import ElementTree as ET
 
@@ -8,12 +9,12 @@ import numpy as np
 from ..geometry.visual import VisualInstance, VisualMesh, VisualScene
 
 
-def capture_urdf_visuals(asset):
+def capture_urdf_visuals(asset, source_root):
     """Return a display-only snapshot, or None for native/collision fallback."""
     import mujoco as mj
 
     path = Path(asset.path)
-    root = ET.fromstring(path.read_bytes())
+    root = deepcopy(source_root)
     if root.tag != "robot" or not root.findall("link/visual"):
         return None
     if root.findall(".//material/texture"):
@@ -32,6 +33,10 @@ def capture_urdf_visuals(asset):
             link.remove(collision)
         for index, visual in enumerate(link.findall("visual")):
             visual.set("name", f"{link.attrib['name']}::visual_{index}")
+    if asset.urdf_xml is not None or asset.resource_roots:
+        from .native_resources import resolve_urdf_resources
+
+        resolve_urdf_resources(root, asset)
     spec = mj.MjSpec.from_string(ET.tostring(root, encoding="unicode"))
     spec.modelfiledir = str(path.parent) + "/"
     model = spec.compile()

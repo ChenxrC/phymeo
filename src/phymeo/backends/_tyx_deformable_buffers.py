@@ -18,7 +18,7 @@ def create_runtime(mode, cache_root):
 
 
 class DeformableBuffers:
-    def __init__(self, worlds, mode, trace, cache_root=None):
+    def __init__(self, worlds, mode, trace, cache_root=None, *, runtime_lease=None):
         self.mode = mode
         self.resources = DeviceResources()
         self.worlds = {}
@@ -30,8 +30,16 @@ class DeformableBuffers:
         self.syncs = 0
         self.runtime = None
         try:
-            self.runtime = create_runtime(mode, cache_root)
-            self.resources.set_runtime(self.runtime)
+            if runtime_lease is None:
+                self.runtime = create_runtime(mode, cache_root)
+                self.resources.set_runtime(self.runtime)
+            else:
+                from ._deformable_runtime_lease import ResidentDeformableRuntimeLease
+
+                if type(runtime_lease) is not ResidentDeformableRuntimeLease:
+                    raise TypeError("node shared runtime requires an owned resident lease")
+                self.runtime = runtime_lease.claim(mode)
+                self.resources.set_runtime(runtime_lease)
             import tyx as tx
 
             self.tx = tx

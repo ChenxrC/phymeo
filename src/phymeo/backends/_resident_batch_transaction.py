@@ -50,6 +50,7 @@ class ResidentBatchTransaction:
         )
         self._closed = False
         self._in_step = False
+        self._deformable = None
         self.last_publication = None
         self._logical_accepted_steps = 0
         self._logical_rejected_steps = 0
@@ -216,7 +217,7 @@ class ResidentBatchTransaction:
                 {self._mechanical[key]: value for key, value in controls.items()}
             )
 
-    def restore(self, checkpoints, *, expected_epoch=None):
+    def restore(self, checkpoints, *, expected_epoch=None, deformable=None):
         with self.locked():
             self._writer()
             if expected_epoch is not None and (
@@ -240,13 +241,35 @@ class ResidentBatchTransaction:
                     or len({value.tick for value in values}) != 1
                 ):
                     raise ValueError("restore logical world or common tick differs")
+            node_draft = None
+            if deformable is not None:
+                self._require_deformable(deformable)
+                node_draft = deformable._pending_stage
+                deformable._validate_staged_replace(node_draft)
+                if not checkpoints:
+                    raise ValueError("joint replacement requires selected rigid participants")
+
+            def before_commit():
+                self._before_restore_commit()
+                if deformable is not None:
+                    deformable._validate_staged_replace(node_draft)
+
             self._batch._restore(
                 {
                     self._mechanical[key]: replace(value, world=self._mechanical[key])
                     for key, value in checkpoints.items()
                 },
-                before_commit=self._before_restore_commit,
+                before_commit=before_commit,
             )
+            if node_draft is not None:
+                # Both owner locks are held. All node validation preceded the
+                # rigid bank swap; only direct fields are published here.
+                deformable._active = node_draft.active_bank
+                deformable._states = node_draft.states
+                deformable.last_step = node_draft.last_step
+                deformable._revision = node_draft.destination_revision
+                deformable._replacements = node_draft.replacements
+                deformable._pending_stage = None
             if checkpoints:
                 self.last_publication = None
 
@@ -290,9 +313,23 @@ class ResidentBatchTransaction:
                 self._batch.close()
                 self._closed = True
 
-    def step(self, h, adapter):
+    def _require_deformable(self, nodes):
+        from .tyx_deformable_batch import TyxDeformableBatch
+
+        if (
+            type(nodes) is not TyxDeformableBatch
+            or not nodes._busy
+            or nodes._runtime is not self._batch._runtime
+            or tuple(nodes.world_keys) != tuple(self.layout.world_keys)
+        ):
+            raise ValueError("joint nodes require the same runtime, worlds and active transaction")
+
+    def step(self, h, adapter, *, deformable=None):
         with self.locked():
             self._writer()
+            if deformable is not None:
+                self._require_deformable(deformable)
+            self._deformable = deformable
             self._in_step = True
             self._adapter = adapter
             try:
@@ -300,6 +337,7 @@ class ResidentBatchTransaction:
                 return self.last_publication
             finally:
                 self._adapter = None
+                self._deformable = None
                 self._in_step = False
 
     def _read_contact(self, buffer):
@@ -573,10 +611,26 @@ class ResidentBatchTransaction:
             MappingProxyType(names),
         )
         count = sum(accepted.values())
+        linked = None
+        if self._deformable is not None:
+            nodes = self._deformable
+            self._require_deformable(nodes)
+            draft = nodes._pending_stage
+            nodes._validate_staged_step(draft)
+            if not all(accepted.values()):
+                raise RuntimeError("joint deformable response rejected a rigid world")
+            for world in self.layout.worlds.values():
+                if any(
+                    candidate["packet"][key]["state"].tick != draft.states[world.world].tick
+                    for key in world.participant_keys
+                ):
+                    raise RuntimeError("joint node and rigid candidate ticks differ")
+            linked = (nodes, draft, nodes._successful_steps + 1)
         return (
             publication,
             self._logical_accepted_steps + count,
             self._logical_rejected_steps + len(accepted) - count,
+            linked,
         )
 
     def _prepare_publication(self, attempt, candidate, diagnostics, projected, accepted, status):
@@ -601,4 +655,11 @@ class ResidentBatchTransaction:
 
     def _publish(self, commit):
         # No allocation, validation or user callback after the accepted-bank swap.
-        self.last_publication, self._logical_accepted_steps, self._logical_rejected_steps = commit
+        publication, accepted, rejected, linked = commit
+        if linked is not None:
+            nodes, draft, completed = linked
+            nodes._active, nodes._states, nodes.last_step = draft.active_bank, draft.states, draft
+            nodes._revision, nodes._successful_steps = draft.destination_revision, completed
+            nodes._pending_stage = None
+        self.last_publication = publication
+        self._logical_accepted_steps, self._logical_rejected_steps = accepted, rejected

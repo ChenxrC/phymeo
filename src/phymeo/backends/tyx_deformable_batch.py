@@ -153,6 +153,16 @@ class DeformableCheckpoint:
 
 
 @dataclass(frozen=True, eq=False)
+class _DeformableReplacement:
+    source_revision: int
+    destination_revision: int
+    active_bank: int
+    states: Mapping
+    last_step: object
+    replacements: int
+
+
+@dataclass(frozen=True, eq=False)
 class _World:
     key: int
     n: int
@@ -464,9 +474,11 @@ class TyxDeformableBatch:
         trace=False,
         memory_limit_bytes=256 * 1024 * 1024,
         cache_root=None,
+        _runtime_lease=None,
     ):
         self._lock = RLock()
         self._busy = False
+        self._pending_stage = None
         self._loan = None
         self._close_pending = False
         self._poisoned = False
@@ -496,7 +508,9 @@ class TyxDeformableBatch:
             {key: self._initial_state(model) for key, model in self._models.items()}
         )
         self.last_step = None
-        self._buffers = DeformableBuffers(self._models, mode, trace, cache_root)
+        self._buffers = DeformableBuffers(
+            self._models, mode, trace, cache_root, runtime_lease=_runtime_lease
+        )
         self._mode = mode
         self._tx = self._buffers.tx
         self._runtime = self._buffers.runtime
@@ -663,6 +677,7 @@ class TyxDeformableBatch:
                     )
                 raise
             finally:
+                self._pending_stage = None
                 self._busy = False
 
     def snapshot(self):
@@ -727,12 +742,38 @@ class TyxDeformableBatch:
         )
 
     def step(self, inputs, h, *, expected_revision):
+        with self._transaction(expected_revision):
+            receipt = self._stage_step(inputs, h)
+            self._validate_staged_step(receipt)
+            self._publish_staged_step(receipt)
+            return receipt
+
+    def _validate_staged_step(self, receipt):
+        if (
+            not self._busy
+            or receipt is not self._pending_stage
+            or type(receipt) is not DeformableStepReceipt
+            or receipt.source_revision != self._revision
+            or receipt.active_bank != 1 - self._active
+        ):
+            raise ValueError("node step draft is stale or outside its owner transaction")
+
+    def _publish_staged_step(self, receipt):
+        self._active, self._states, self.last_step = (receipt.active_bank, receipt.states, receipt)
+        self._revision = receipt.destination_revision
+        self._successful_steps += 1
+        self._pending_stage = None
+
+    def _stage_step(self, inputs, h):
+        """Run the original integrator into standby inside an owned transaction."""
         from ._tyx_deformable_state import advance_clock, begin_candidate
         from ._tyx_kernels import integrate_particles
         from ._tyx_math_kernels import axpy_kernel
         from ._tyx_node_kernels import project_node_distances, reconstruct_nodes
 
-        with self._transaction(expected_revision):
+        if not self._busy or self._pending_stage is not None:
+            raise RuntimeError("node staging requires one active unpublished transaction")
+        with self._buffers.context():
             if not isinstance(inputs, Mapping) or set(inputs) != set(self.world_keys):
                 raise ValueError("one explicit StepInputs force packet is required for every world")
             if isinstance(h, (bool, np.bool_)) or not np.isscalar(h):
@@ -907,10 +948,9 @@ class TyxDeformableBatch:
                 rows[key] = row
                 states[key] = DeformableAcceptedState(key, x, v, clock, tick, float(clock[0]), row)
             receipt = self._make_receipt(rows, states, bank)
-            # All validation/readback/receipt work precedes this single all-world publication.
-            self._active, self._states, self.last_step = bank, receipt.states, receipt
-            self._revision += 1
-            self._successful_steps += 1
+            # The ordinary step or joint coordinator publishes only after all
+            # of its participants and aggregate records have been validated.
+            self._pending_stage = receipt
             return receipt
 
     def checkpoint(self):
@@ -1065,8 +1105,34 @@ class TyxDeformableBatch:
                     )
 
     def _replace(self, selected, expected, last_step=None):
+        draft = self._stage_replace(selected, expected, last_step)
+        self._validate_staged_replace(draft)
+        self._publish_staged_replace(draft)
+
+    def _validate_staged_replace(self, draft):
+        if (
+            not self._busy
+            or type(draft) is not _DeformableReplacement
+            or draft is not self._pending_stage
+            or draft.source_revision != self._revision
+            or draft.active_bank != 1 - self._active
+        ):
+            raise ValueError("node replacement is stale or outside its transaction")
+
+    def _publish_staged_replace(self, draft):
+        self._active, self._states, self.last_step = (
+            draft.active_bank,
+            draft.states,
+            draft.last_step,
+        )
+        self._revision, self._replacements = draft.destination_revision, draft.replacements
+        self._pending_stage = None
+
+    def _stage_replace(self, selected, expected, last_step=None):
         from ._tyx_deformable_state import copy_state
 
+        if not self._busy or self._pending_stage is not None:
+            raise RuntimeError("replacement requires one unpublished node transaction")
         bank = 1 - self._active
         for key, model in self._models.items():
             a = self._buffers.worlds[key]
@@ -1096,9 +1162,16 @@ class TyxDeformableBatch:
         self._buffers.sync()
         self._verify_replacement(expected, bank)
         publication = MappingProxyType(dict(expected))
-        self._active, self._states, self.last_step = bank, publication, last_step
-        self._revision += 1
-        self._replacements += 1
+        draft = _DeformableReplacement(
+            self._revision,
+            self._revision + 1,
+            bank,
+            publication,
+            last_step,
+            self._replacements + 1,
+        )
+        self._pending_stage = draft
+        return draft
 
     def reset(self, worlds, *, expected_revision):
         with self._transaction(expected_revision):

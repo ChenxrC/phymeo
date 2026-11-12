@@ -35,6 +35,34 @@ LAW = "mujoco-soft-normal-constraint-v1"
 MIXED_LAW = "mujoco-pyramidal-joint-constraint-v1"
 
 
+@dataclass(frozen=True, eq=False)
+class _PreparedStep:
+    owner: object
+    device: object
+    revision: int
+    active: int
+    entry_data: object
+    entry_controls: object
+    data: object
+    receipts: object
+    ticks: object
+    accepted: object
+    completed_steps: int
+    accepted_world_steps: int
+    destination_revision: int
+    destination_bank: int
+
+
+@dataclass(frozen=True, eq=False)
+class _PreparedControls:
+    owner: object
+    revision: int
+    entry_controls: object
+    controls: object
+    retired: object
+    destination_revision: int
+
+
 @dataclass(frozen=True)
 class MuJoCoTyxResetReceipt:
     """One committed reset boundary; requested and stored native states differ.
@@ -207,6 +235,8 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
         self._contact_capacity = _capacity(contact_capacity, "contact_capacity")
         self._constraint_capacity = _capacity(constraint_capacity, "constraint_capacity")
         self._mode, self._cache_root = mode, cache_root
+        self._preparing_batch = False
+        self._prepared_step = self._prepared_controls = None
         self._mirror_layout, self._observer_data = None, None
         super().__init__(
             compilation, world_keys=world_keys, initial_states=initial_states, mode="cpu"
@@ -501,21 +531,77 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
             prepared[key] = data[key].changed(**updates)
         return prepared
 
-    def set_controls(self, mapping):
+    def _check_open(self):
+        super()._check_open()
+        if (
+            getattr(self, "_preparing_batch", False)
+            or getattr(self, "_prepared_step", None) is not None
+            or getattr(self, "_prepared_controls", None) is not None
+        ):
+            raise RuntimeError("runtime is reserved by an unpublished batch transaction")
+
+    def _prepare_controls_locked(self, mapping):
         with self._lock:
             self._check_open()
-            self._exact_mapping(mapping, "controls")
-            prepared = {key: self._validated_control(mapping[key]) for key in self._world_keys}
-            for packet in prepared.values():
-                for value in (packet.ctrl, packet.qfrc_applied, packet.xfrc_applied):
-                    fp32(value, "held native control")
-            from .mujoco_device_controls import invalidate, retirement_list
+            self._preparing_batch = True
+            try:
+                self._exact_mapping(mapping, "controls")
+                prepared = {key: self._validated_control(mapping[key]) for key in self._world_keys}
+                for packet in prepared.values():
+                    for value in (packet.ctrl, packet.qfrc_applied, packet.xfrc_applied):
+                        fp32(value, "held native control")
+                from .mujoco_device_controls import retirement_list
 
-            retired = retirement_list(self)
-            revision = self._checkpoint_revision + 1
-            self._controls, self._control_retired = prepared, retired
-            self._checkpoint_revision = revision
-            invalidate(self)
+                retired = retirement_list(self)
+                draft = _PreparedControls(
+                    self,
+                    self._checkpoint_revision,
+                    self._controls,
+                    prepared,
+                    retired,
+                    self._checkpoint_revision + 1,
+                )
+            finally:
+                self._preparing_batch = False
+            self._prepared_controls = draft
+            return draft
+
+    def _validate_controls_draft_locked(self, draft):
+        MuJoCoRuntime._check_open(self)
+        if (
+            type(draft) is not _PreparedControls
+            or draft is not self._prepared_controls
+            or draft.owner is not self
+            or draft.revision != self._checkpoint_revision
+            or draft.entry_controls is not self._controls
+        ):
+            raise ValueError("stale or foreign controls draft")
+
+    def _commit_controls_draft_locked(self, draft):
+        # Internal coordinator validates every draft before entering this section.
+        self._controls, self._control_retired = draft.controls, draft.retired
+        self._checkpoint_revision = draft.destination_revision
+        self._control_packet = self._prepared_controls = None
+
+    def _discard_controls_draft_locked(self, draft=None):
+        if draft is None or draft is self._prepared_controls:
+            self._prepared_controls = None
+
+    def _finish_controls_cleanup_locked(self):
+        from .mujoco_device_controls import _cleanup_retired
+
+        _cleanup_retired(self)
+
+    def set_controls(self, mapping):
+        with self._lock:
+            draft = self._prepare_controls_locked(mapping)
+            try:
+                self._validate_controls_draft_locked(draft)
+            except BaseException:
+                self._discard_controls_draft_locked(draft)
+                raise
+            self._commit_controls_draft_locked(draft)
+            self._finish_controls_cleanup_locked()
 
     def set_controls_from_device(
         self, ctrl, *, qfrc_applied=None, xfrc_applied=None, expected_revision, producer_stream=None
@@ -695,10 +781,22 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
 
     def step(self, h):
         with self._lock:
+            draft = self._prepare_step_locked(h)
+            try:
+                self._validate_step_draft_locked(draft)
+            except BaseException:
+                self._discard_step_draft_locked(draft)
+                raise
+            self._commit_step_draft_locked(draft)
+            return draft.accepted
+
+    def _prepare_step_locked(self, h):
+        with self._lock:
             self._check_open()
             if not np.isfinite(h) or float(h) != self._timestep:
                 raise ValueError("step h must equal the original compiled MuJoCo timestep")
             accepted = dict.fromkeys(self._world_keys, False)
+            self._preparing_batch = True
             try:
                 ctrl, applied, body_force, stored = self._pack_controls()
                 self._device.advance(ctrl, applied, body_force)
@@ -858,12 +956,54 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                 raise PhysicsStepFailure(
                     "MuJoCo TYX candidate batch failed before publication", accepted_worlds=accepted
                 ) from error
-            self._device.publish()
-            self._data, self._receipts, self._ticks = data, receipts, ticks
-            self._checkpoint_revision += 1
-            self._extra_counts["completed_steps"] += 1
-            self._extra_counts["accepted_world_steps"] += len(self._world_keys)
-            return MappingProxyType(dict.fromkeys(self._world_keys, True))
+            finally:
+                self._preparing_batch = False
+            draft = _PreparedStep(
+                self,
+                self._device,
+                self._checkpoint_revision,
+                self._device.active,
+                self._data,
+                self._controls,
+                data,
+                receipts,
+                ticks,
+                MappingProxyType(dict.fromkeys(self._world_keys, True)),
+                self._extra_counts["completed_steps"] + 1,
+                self._extra_counts["accepted_world_steps"] + len(self._world_keys),
+                self._checkpoint_revision + 1,
+                1 - self._device.active,
+            )
+            self._prepared_step = draft
+            return draft
+
+    def _validate_step_draft_locked(self, draft):
+        MuJoCoRuntime._check_open(self)
+        if (
+            type(draft) is not _PreparedStep
+            or draft is not self._prepared_step
+            or draft.owner is not self
+            or draft.device is not self._device
+            or draft.revision != self._checkpoint_revision
+            or draft.active != self._device.active
+            or draft.entry_data is not self._data
+            or draft.entry_controls is not self._controls
+        ):
+            raise ValueError("stale or foreign step draft")
+
+    def _commit_step_draft_locked(self, draft):
+        # Device.publish() has exactly this bank assignment. Do not invoke a
+        # callback between swaps of an already validated heterogeneous batch.
+        self._device.active = draft.destination_bank
+        self._data, self._receipts, self._ticks = draft.data, draft.receipts, draft.ticks
+        self._checkpoint_revision = draft.destination_revision
+        self._extra_counts["completed_steps"] = draft.completed_steps
+        self._extra_counts["accepted_world_steps"] = draft.accepted_world_steps
+        self._prepared_step = None
+
+    def _discard_step_draft_locked(self, draft=None):
+        if draft is None or draft is self._prepared_step:
+            self._prepared_step = None
 
     def integration_snapshot(self, keys=None):
         """Copy accepted integration state without CPU endpoint reconstruction.
@@ -1210,6 +1350,12 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
 
     def close(self):
         with self._lock:
+            if (
+                getattr(self, "_preparing_batch", False)
+                or getattr(self, "_prepared_step", None) is not None
+                or getattr(self, "_prepared_controls", None) is not None
+            ):
+                raise RuntimeError("cannot close during an unpublished batch transaction")
             retired = list(getattr(self, "_checkpoint_retired", ()))
             controls = list(getattr(self, "_control_retired", ()))
             packet = getattr(self, "_control_packet", None)

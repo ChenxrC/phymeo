@@ -8,6 +8,51 @@ import tyx as tx
 from ._tyx_numeric import _add, _mul
 
 
+@tx.func
+def rotation_component(fk: tx.ndarray(tx.f32, 3), w: tx.i32, body: tx.i32, c: tx.i32) -> tx.f32:
+    """Largest-diagonal matrix-to-quaternion conversion of accepted FK only."""
+    r00 = fk[w, body, 3]
+    r11 = fk[w, body, 7]
+    r22 = fk[w, body, 11]
+    x = 0.0
+    y = 0.0
+    z = 0.0
+    scalar = 0.0
+    trace = r00 + r11 + r22
+    if trace > 0.0:
+        scale = 2.0 * tx.sqrt(1.0 + trace)
+        x = (fk[w, body, 10] - fk[w, body, 8]) / scale
+        y = (fk[w, body, 5] - fk[w, body, 9]) / scale
+        z = (fk[w, body, 6] - fk[w, body, 4]) / scale
+        scalar = scale * 0.25
+    elif r00 >= r11 and r00 >= r22:
+        scale = 2.0 * tx.sqrt(1.0 + r00 - r11 - r22)
+        x = scale * 0.25
+        y = (fk[w, body, 4] + fk[w, body, 6]) / scale
+        z = (fk[w, body, 5] + fk[w, body, 9]) / scale
+        scalar = (fk[w, body, 10] - fk[w, body, 8]) / scale
+    elif r11 >= r22:
+        scale = 2.0 * tx.sqrt(1.0 + r11 - r00 - r22)
+        x = (fk[w, body, 4] + fk[w, body, 6]) / scale
+        y = scale * 0.25
+        z = (fk[w, body, 8] + fk[w, body, 10]) / scale
+        scalar = (fk[w, body, 5] - fk[w, body, 9]) / scale
+    else:
+        scale = 2.0 * tx.sqrt(1.0 + r22 - r00 - r11)
+        x = (fk[w, body, 5] + fk[w, body, 9]) / scale
+        y = (fk[w, body, 8] + fk[w, body, 10]) / scale
+        z = scale * 0.25
+        scalar = (fk[w, body, 6] - fk[w, body, 4]) / scale
+    value = scalar
+    if c == 0:
+        value = x
+    elif c == 1:
+        value = y
+    elif c == 2:
+        value = z
+    return value / tx.sqrt(x * x + y * y + z * z + scalar * scalar)
+
+
 def read_sphere_bodies(
     count: tx.i32,
     width: tx.i32,
@@ -30,6 +75,8 @@ def read_sphere_bodies(
                     value = 1.0
             elif code < 21:
                 value = state[w, 3 + code % 3]
+            elif code == 27:
+                value = 1.0
             output[i, col] = value
         output_ticks[i] = ticks[rows[i, 1]]
 
@@ -64,6 +111,8 @@ def read_tree_bodies(
                 value = _add(value, fk[w, body, offset])
             elif code < 15:
                 value = fk[w, body, code - 3]
+            elif code >= 24:
+                value = rotation_component(fk, w, body, code - 24)
             else:
                 ancestor = body
                 for depth in range(meta[w, 1]):
@@ -123,6 +172,8 @@ def read_floating_bodies(
                 value = _add(anchor[w, axis], fk[w, body, offset])
             elif code < 15:
                 value = fk[w, body, code - 3]
+            elif code >= 24:
+                value = rotation_component(fk, w, body, code - 24)
             elif code >= 21:
                 value = twist[w, body, 3 + axis]
             else:

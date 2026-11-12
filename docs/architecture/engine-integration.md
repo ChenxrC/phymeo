@@ -822,3 +822,13 @@ N=1/8/64、interpret/真实 CUDA、乱序控制、masked/full reset、未选观�
 旧 owner 替换及失败恢复；公共 CompiledScene 验证 authored 初始力与局部恢复。
 配套共享 control/reset/scene 回归，证据保存在实验根 `evidence/b7l-*`。
 此依赖节点不自动开放 P2PE 浮根 Stage，也不授予 D2D、Graph、安装或 GUI 资格。
+
+## Resident quaternion read v1
+
+prepared body fields 新增 `rotation_xyzw`，每 body 四个 float32，无量纲、body-to-world
+旋转，采样时刻与已有 rotation 矩阵相同。translation sphere 返回身份旋转；固定/
+浮根树在原读取内核按最大对角分支从当前接受 FK 转换并单位化，无 host 矩阵中转、
+额外 FK 或物理推进。不保证四元数的符号跨步连续；q 与 -q 表示同一旋转。
+与原有字段一样遵守选择、布局、caller buffer、失败和清理合同，零新增长期状态。
+正式 `tests/scale/test_resident_orientation_read.py` 覆盖四个数值分支、纯球/固定/浮根、
+推进前后及矩阵等价，配套 body/floating read 回归。证据为实验根 `evidence/b7m-*`。

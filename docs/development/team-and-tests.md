@@ -136,3 +136,6 @@ B7l 的 `tests/scale/test_resident_floating_control_reset.py` 单独验收普通
 prepared control/reset，并回归 `tests/scale/test_resident_control_plan.py`、
 `tests/scale/test_resident_reset_plan.py` 与 `tests/test_scene_resident_io.py`。
 只验证实际接口、owner、失败恢复和未选世界保持，不重开跨 solver 微差研究。
+
+`tests/scale/test_resident_orientation_read.py` 验证 prepared xyzw 读取与接受 FK
+矩阵的等价关系，回归既有 body/floating read；不把表示转换当作物理算法更改。

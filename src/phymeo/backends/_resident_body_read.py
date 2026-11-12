@@ -15,6 +15,7 @@ FIELDS = {
     "linear_velocity": (15, 3, "m/s", "body_origin"),
     "com_velocity": (18, 3, "m/s", "body_com"),
     "angular_velocity": (21, 3, "rad/s", "body"),
+    "rotation_xyzw": (24, 4, "1", "body_to_world_xyzw"),
 }
 
 

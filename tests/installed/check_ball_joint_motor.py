@@ -225,7 +225,7 @@ def initial(mj, model, slot):
     v = np.array(
         [(-1 if i % 2 else 1) * (0.2 + 0.07 * i + 0.01 * slot) for i in range(model.nv)], np.float32
     )
-    return MuJoCoInitialState(q, v, time=.125)
+    return MuJoCoInitialState(q, v, time=0.125)
 
 
 def control(model, tick, slot=0):
@@ -242,7 +242,6 @@ def control(model, tick, slot=0):
         force.fill(0)
         wrench.fill(0)
     return MuJoCoControl(u, qfrc_applied=force, xfrc_applied=wrench)
-
 
 
 def native_state(data):
@@ -296,8 +295,8 @@ def native_fields(mj, model, entry, packet):
         qfrc_constraint=data.qfrc_constraint.copy(),
         scalar_force=data.actuator_force.copy(),
         actuator_velocity=data.actuator_velocity.copy(),
-        dense_moment=dense_native_moment(mj,model,data),
-        transmission=transmission_oracle(mj,model,entry,packet),
+        dense_moment=dense_native_moment(mj, model, data),
+        transmission=transmission_oracle(mj, model, entry, packet),
     )
     mj.mj_step(model, data)  # Independent same-input native successor, outside TYX guard.
     expected["native_successor"] = native_state(data)
@@ -321,32 +320,48 @@ def transmission_oracle(mj, model, state, packet):
             u = float(np.clip(u, *model.actuator_ctrlrange[a]))
         value = 0.0
         if not model.opt.disableactuator & (1 << int(model.actuator_group[a])):
-            value = float(model.actuator_gainprm[a, 0])*u
+            value = float(model.actuator_gainprm[a, 0]) * u
             if model.actuator_biastype[a] == mj.mjtBias.mjBIAS_AFFINE:
                 assert width == 1
                 b = model.actuator_biasprm[a]
                 gear = model.actuator_gear[a, 0]
-                value += b[0]+b[1]*gear*state.q[qa]+b[2]*gear*state.v[dof]
-        force = float(np.clip(value, *model.actuator_forcerange[a])) if model.actuator_forcelimited[a] else value
-        clamped.append(u); raw.append(value); scalar.append(force)
+                value += b[0] + b[1] * gear * state.q[qa] + b[2] * gear * state.v[dof]
+        force = (
+            float(np.clip(value, *model.actuator_forcerange[a]))
+            if model.actuator_forcelimited[a]
+            else value
+        )
+        clamped.append(u)
+        raw.append(value)
+        scalar.append(force)
         for axis in range(width):
-            col, coefficient = dof+axis, float(model.actuator_gear[a, axis])
-            columns.append(col); coefficients.append(coefficient)
+            col, coefficient = dof + axis, float(model.actuator_gear[a, axis])
+            columns.append(col)
+            coefficients.append(coefficient)
             moment[a, col] = coefficient
-            generalized[col] += coefficient*force
+            generalized[col] += coefficient * force
         offsets.append(len(columns))
-    return dict(ids=np.asarray(ids, np.int32), gear=model.actuator_gear.copy(),
-                row_offsets=np.asarray(offsets, np.int32), dof_indices=np.asarray(columns, np.int32),
-                moment=np.asarray(coefficients, np.float32), dense_moment=moment,
-                clamped_control=np.asarray(clamped), raw_force=np.asarray(raw),
-                scalar_force=np.asarray(scalar), generalized_force=generalized)
+    return dict(
+        ids=np.asarray(ids, np.int32),
+        gear=model.actuator_gear.copy(),
+        row_offsets=np.asarray(offsets, np.int32),
+        dof_indices=np.asarray(columns, np.int32),
+        moment=np.asarray(coefficients, np.float32),
+        dense_moment=moment,
+        clamped_control=np.asarray(clamped),
+        raw_force=np.asarray(raw),
+        scalar_force=np.asarray(scalar),
+        generalized_force=generalized,
+    )
 
 
 def dense_native_moment(mj, model, data):
     dense = np.zeros((model.nu, model.nv))
     for a in range(model.nu):
         start, count = int(data.moment_rowadr[a]), int(data.moment_rownnz[a])
-        dense[a, data.moment_colind[start:start+count]] = data.actuator_moment[start:start+count]
+        dense[a, data.moment_colind[start : start + count]] = data.actuator_moment[
+            start : start + count
+        ]
     return dense
 
 
@@ -354,26 +369,41 @@ def check_transmission(row, entry, native, analytic):
     tr = row.transmission
     require(tr.schema == "native-joint-motor-transmission-v1", "transmission schema")
     for name in ("ids", "gear", "row_offsets", "dof_indices", "moment"):
-        np.testing.assert_array_equal(getattr(tr,name), analytic[name])
+        np.testing.assert_array_equal(getattr(tr, name), analytic[name])
     for name in ("clamped_control", "raw_force", "scalar_force", "generalized_force"):
-        np.testing.assert_allclose(getattr(tr,name), analytic[name], **FORCE)
-    np.testing.assert_allclose(tr.scalar_force,native["scalar_force"],**FORCE)
-    exact(tr.generalized_force,row.qfrc_actuator,"same-stage generalized actuator force")
-    exact(tr.input_control,row.control.ctrl,"original control binding")
-    np.testing.assert_allclose(analytic["dense_moment"],native["dense_moment"],rtol=0,atol=2e-12)
-    np.testing.assert_allclose(analytic["dense_moment"]@entry.v,native["actuator_velocity"],**FORCE)
-    np.testing.assert_allclose(tr.generalized_force@entry.v,
-                              tr.scalar_force@(analytic["dense_moment"]@entry.v),**FORCE)
-    for name in ("ids","gear","row_offsets","dof_indices","moment","input_control",
-                 "clamped_control","raw_force","scalar_force","generalized_force"):
-        value=getattr(tr,name)
-        require(not value.flags.writeable,"immutable "+name)
-        rejected=False
+        np.testing.assert_allclose(getattr(tr, name), analytic[name], **FORCE)
+    np.testing.assert_allclose(tr.scalar_force, native["scalar_force"], **FORCE)
+    exact(tr.generalized_force, row.qfrc_actuator, "same-stage generalized actuator force")
+    exact(tr.input_control, row.control.ctrl, "original control binding")
+    np.testing.assert_allclose(analytic["dense_moment"], native["dense_moment"], rtol=0, atol=2e-12)
+    np.testing.assert_allclose(
+        analytic["dense_moment"] @ entry.v, native["actuator_velocity"], **FORCE
+    )
+    np.testing.assert_allclose(
+        tr.generalized_force @ entry.v,
+        tr.scalar_force @ (analytic["dense_moment"] @ entry.v),
+        **FORCE,
+    )
+    for name in (
+        "ids",
+        "gear",
+        "row_offsets",
+        "dof_indices",
+        "moment",
+        "input_control",
+        "clamped_control",
+        "raw_force",
+        "scalar_force",
+        "generalized_force",
+    ):
+        value = getattr(tr, name)
+        require(not value.flags.writeable, "immutable " + name)
+        rejected = False
         try:
             value.setflags(write=True)
         except ValueError:
-            rejected=True
-        require(rejected,"bytes-backed "+name)
+            rejected = True
+        require(rejected, "bytes-backed " + name)
 
 
 def observations(runtime):
@@ -430,7 +460,7 @@ def advance(runtime, mj, model, packets, references, journal, label):
         accepted = runtime.step(H)
         integration_only = runtime.integration_snapshot()
     full_output, output = observations(runtime)
-    exact(integration_only,output,"integration observation without CPU dynamics")
+    exact(integration_only, output, "integration observation without CPU dynamics")
     journal.emit(
         "step",
         label=label,
@@ -469,7 +499,7 @@ def advance(runtime, mj, model, packets, references, journal, label):
             require(not value.flags.writeable, "immutable dynamics " + name)
         np.testing.assert_allclose(row.qacc, oracle["smooth_acceleration"], rtol=5e-4, atol=8e-4)
         np.testing.assert_allclose(row.qfrc_actuator, oracle["qfrc_actuator"], **FORCE)
-        check_transmission(row,before,oracle,oracle["transmission"])
+        check_transmission(row, before, oracle, oracle["transmission"])
         np.testing.assert_array_equal(row.qfrc_constraint, oracle["qfrc_constraint"])
         for native in (oracle["native_successor"], oracle["continuous"]):
             np.testing.assert_allclose(after.q, native["q"], rtol=0, atol=Q_ATOL)
@@ -539,18 +569,25 @@ def run(mode, output_path, journal, installed_root):
             held = {key: control(model, tick, slot) for slot, key in enumerate(KEYS)}
             advance(runtime, mj, model, held, references, journal, f"continuous-{tick + 1}")
             main_calls += 1
-        before_invalid=runtime.integration_snapshot()
-        launches=runtime.counters["completed_kernels"]
-        rejected=False
+        before_invalid = runtime.integration_snapshot()
+        launches = runtime.counters["completed_kernels"]
+        rejected = False
         try:
-            runtime.set_controls({KEYS[0]:control(model,8,0),
-                                  KEYS[-1]:MuJoCoControl(np.zeros(model.nu+1))})
+            runtime.set_controls(
+                {KEYS[0]: control(model, 8, 0), KEYS[-1]: MuJoCoControl(np.zeros(model.nu + 1))}
+            )
         except ValueError:
-            rejected=True
-        require(rejected,"wrong control capacity rejected")
-        exact(before_invalid,runtime.integration_snapshot(),"invalid last-world control is atomic")
-        require(runtime.counters["completed_kernels"]==launches,"invalid control launched no kernel")
-        journal.emit("invalid-control",before=before_invalid,retained=runtime.integration_snapshot())
+            rejected = True
+        require(rejected, "wrong control capacity rejected")
+        exact(
+            before_invalid, runtime.integration_snapshot(), "invalid last-world control is atomic"
+        )
+        require(
+            runtime.counters["completed_kernels"] == launches, "invalid control launched no kernel"
+        )
+        journal.emit(
+            "invalid-control", before=before_invalid, retained=runtime.integration_snapshot()
+        )
         capsule = runtime.checkpoint()
         raw = capsule.to_bytes()
         (output_path / "accepted-checkpoint.bin").write_bytes(raw)
@@ -584,7 +621,9 @@ def run(mode, output_path, journal, installed_root):
         exact(after_reset[KEYS[0]], before_reset[KEYS[0]], "unselected complete state retained")
         selected = after_reset[KEYS[-1]]
         require(
-            selected.tick == 0 and selected.last_step is None and selected.time == initials[KEYS[-1]].time,
+            selected.tick == 0
+            and selected.last_step is None
+            and selected.time == initials[KEYS[-1]].time,
             "selected original reset",
         )
         np.testing.assert_array_equal(selected.q, np.asarray(initials[KEYS[-1]].q, np.float32))

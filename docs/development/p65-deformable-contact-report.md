@@ -215,3 +215,19 @@ parent's affected-seam plan; this author has not rerun them.
 D3 passing would cover this declared normal response slice only. D4 continuous
 support/friction/facet changes/unload and D5 broader scene/asset composition
 remain separate. There is no new Newton performance or learning-success claim.
+
+## Parent source and installed qualification — 2026-11-13
+
+The preceding authoring section remains historical. Parent product 3534f742
+passed the complete new D3 files: interpret 27 (one CUDA-only deselected),
+CUDA 28, plus the affected original staging seams. The installed consumer
+passed both backends with 8 common steps / 13 worldsteps / 8 queries each,
+including restore, partial reset and real successors. All 528 wheel products
+match source and installed bytes. See [actual parent results](p65-three-track-batch-c-20261112.md).
+
+The first sparse-world failure exposed a real construction ordering defect:
+both owners now canonicalize by stable world ID. A later cleanup-test message
+regex was corrected without changing retained-owner or release-count assertions.
+Original failures, law, cases, budgets and raw output remain preserved.
+D4 continuous support/friction/history and D5 broader scene composition are
+still separate work; short-window entry/exit is not their acceptance.

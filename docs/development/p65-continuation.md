@@ -1,43 +1,36 @@
 # Phymeo 当前续作入口
 
-更新：2026-11-12，**三主线 Batch B 已完成源码与安装资格**。S3 公共场景接线、D2/M2-Q 真实变形查询、R2 FREE＋BALL 基础组合已交付。统一产品快照 `0321c5a4`，522 成员同源，六个源码外解释/CUDA消费者通过。整个 P6.5 / Newton 功能对齐仍未完成，无新截止。
-
-当前已开始[Batch C](../superpowers/plans/2026-11-12-three-track-batch-c.md)：D3真实刚柔响应与G1异构分桶功能。原三位作者隔离编码，父独占共享接缝与串行执行；当前新批为IMPLEMENTING / TESTS_PENDING，不覆盖Batch B已验事实。
+更新：2026-11-13，**三主线 Batch C 已完成源码与安装资格**。D3真实设备节点/运动刚体双向法向响应、G1异构模型分桶已交付；产品 `3534f742` 的528成员同源，四个源码外解释/CUDA消费者通过。整个P6.5 / Newton功能对齐仍未完成，无新截止。
 
 ## 当前入口
 
-1. [Batch B 实际结果](p65-three-track-batch-b-20261112.md)：当前能力、全部实际执行、首失败与下一步。
-2. [八方向差异全景](phymeo-newton-panorama-2026-11-12.md)：已实现的范围、保留缺口和优先级。
-3. [三主线路线](../superpowers/plans/2026-11-12-scene-deformable-scale-roadmap.md)与[Batch B](../superpowers/plans/2026-11-12-three-track-batch-b.md)：D3/G1为下一批入口。
-4. [S3报告](p65-participant-scene-boundary-report.md)、[D2报告](p65-deformable-boundary-report.md)、[FREE＋BALL报告](p65-free-ball-composition-report.md)及[设计](p65-free-ball-composition-design.md)。
-5. [统一编译架构](../architecture/unified-scene-compilation.md)：CPU MuJoCo 编译、CPU/TYX/显式 Warp 与 resident 路径。
-6. [Batch A 已验基础](p65-three-track-batch-a-20261112.md)、[更早续作记录](p65-continuation-history-through-20261112-0035.md)。按需定位；不恢复旧 heartbeat 或重审旧证据。
+1. [Batch C实际结果](p65-three-track-batch-c-20261112.md)：公共能力、实际验证、首失败、资源与边界。
+2. [八方向差异全景](phymeo-newton-panorama-2026-11-12.md)：当前缺口及优先级。
+3. [三主线路线](../superpowers/plans/2026-11-12-scene-deformable-scale-roadmap.md)、[Batch C合同](../superpowers/plans/2026-11-12-three-track-batch-c.md)。
+4. [D3报告](p65-deformable-contact-report.md)、[异构报告](p65-heterogeneous-batch-report.md)、[统一编译架构](../architecture/unified-scene-compilation.md)。
+5. [Batch B](p65-three-track-batch-b-20261112.md)、[Batch A](p65-three-track-batch-a-20261112.md)、[更早记录](p65-continuation-history-through-20261112-0035.md)。按需定位，不恢复旧heartbeat或重审旧证据。
 
-## 最新能力与范围
+## 最新已验范围
 
-- **S3**：编译后的公共场景能准备设备边界查询，统一声明、真实步进、查询和生命周期。新增带固定网格工具的 mimic 结构＋自由物体安装场景，与 Batch A 场景不同。源码解释/HOST27、CUDA20；安装每后端8逻辑/16参与者步、5queries/60rows、3stale拒绝。查询不是新接触力、CCD或跨runtime组合。
-- **D2/M2-Q**：D1当次accepted顶点→gather→真实变化的bounds/BVH→原球/胶囊有限查询。解释31、CUDA31；安装每后端32worldsteps/19queries。102行RESOLVED、12行CONDITIONING；斜向平行未解析行无力法向。静态round与节点同runtime；双向响应和连续载荷仍待补。
-- **R2 FREE＋BALL**：单FREE根＋BALL/R/P后代、NONE JOINT电机、完整M/J/bias与地址/CSR、同次力与运动、checkpoint/真实后继。64新源码节点及16受影响兼容通过；安装每后端112worldsteps。nv35/nq45/nu32，不含该新组合的contact/activation/limits/dry；容量正控不等于规模或性能。
-- **统一包**：产品0321c5a4的522成员source/wheel/installed逐字节相同；六消费者完成，147安装证据文件已归档，首失败保留。后续修正只触及消费者/文档，不改变产品字节。
+- **S1–S3公共场景查询**：多参与者声明/编译、真实设备FK和统一身份已连接，两类不同源码外场景通过。仍是同runtime有限边界查询，不自动产生新载荷或CCD。
+- **D1/D2**：持久真实节点及其当次accepted顶点→bounds/BVH→有限球/胶囊查询已通过；CONDITIONING保持显式拒绝施力。
+- **D3首片**：公共TyxDeformableContactBatch连接双来源、原法向层、完整ordered材料反力与真实浮体动力学，共同候选/发布/reset/restore。解释27、CUDA28通过；安装每后端8共同steps/13worldsteps/8queries。限定W≤8、每world一个节点模型及一个ordinary单body运动球/胶囊、零摩擦、入步采样；有HOST载荷往返，非隐式耦合。短窗入层/离层未替代D4持续支撑。
+- **机器人组合**：fixed direct BALL FILTEREXACT＋原接触、单FREE＋BALL/NONE电机基础格已验；新浮根球树的contact/activation/limits/dry仍拒绝。
+- **G1异构首片**：MuJoCoTyxHeterogeneousBatch按完整模型/资产/cap分桶，全部world力与运动/边界事务共同接受。新源码42通过；安装每后端27calls/162worldsteps。原cap为8模型/16world，实际首片3模型6world；不是最大规模、单异构kernel、性能或G1人形舞蹈资格。
+- **统一包**：528产品source/wheel/installed逐字节相同。四消费者全部通过，18文件完整压缩归档，原失败保留；不称新包全量回归。
 
-## 下一批按此推进
+## 下一批
 
-1. **D3 接触力与共同发布**：先核既有材料点/接触层和事务接缝，再实现真实节点与运动刚体在同一候选中的双向响应。压片、偏心载荷、运动胶囊推动片为不同正控；核双方力/力矩、力与运动、固定点反力及晚失败。不可将accepted后的独立query冒充步内响应；CONDITIONING不得直接生成法向。
-2. **G1 异构机器人功能**：可与D3隔离编码，只组合已验关节/执行器/约束域。先小批、不同DOF与真实非零控制、分桶和世界身份、恢复后继/末world失败；再G2容量梯度。FREE＋BALL的接触与activation扩展另列，保持准入拒绝。
-3. **后继D4/D5与G2/G3**：持续支撑/摩擦/换面/卸载、统一场景安装；同模型/输出/质量的Newton性能比较后置。功能优先，性能超越非强制。
+1. **D4-N连续法向载荷**：先用真正有固定边界且有自由节点的弹性片检验持续支撑、卸载离层和再接触，同一真实轨迹保非零入步速度。当前D3已有无记忆normal law及事务，源码调研未发现必须先新建solver；先补通用连续指标/多案例与独立参考，产品缺陷按实证窄修。原全free压片不能拿来判定固定环境支撑。
+2. **G2a原容量内异构规模**：原三已验模型W1各一格、W8/W16及8桶16world，保原h、24步控制序列、每world完整参考及输出。先核功能/资源，live/peak设备内存未有完整observer则明确UNKNOWN；不以累计上传或旧同构S256代替。
+3. **后续**：D4摩擦/换面历史、D5统一场景组合；G2b须完整生命周期资源预算后再扩32/128/256，G3同模型/质量/输出Newton比较后置。
 
-S3当前公共查询目标已经闭环，后续维护和响应接线复用此入口，不另起私有bank/场景路径。允许预先声明的有限穿透、漂移和数值误差；不恢复精确相触或无限证明前置。两次同假设诊断不能缩小问题时保存最小反例并调整方向，不改fixture/预算追绿。
+下一批具体输入、门、文件owner需在首次执行前登记；不得从失败输出调fixture/质量/时间窗或放宽门。允许事先声明的有限穿入/漂移，不恢复精确相触和无限证明前置。同假设两次诊断不能缩小问题则保最小反例并调整方向。
 
-## 保留的失败与全景缺口
+## 保留失败与操作边界
 
-G1原46.29秒参考XY门及完整131.48秒动作、J/R原学习门、R03两项小净加速度门仍未通过。B-point touch-SE候选仍隔离；新查询能力不自动修复曲面接触表示。N8原768转移/0新Adam更新与297条审计保持，不自动追加训练或调clip/lr。
+原G1人形46.29s参考XY门/131.48s完整动作、J/R学习门、R03两项净加速度门、B-point touch-SE仍未通过。N8原768转移/0新更新及297条审计保持，不自动追加训练或调clip/lr。通用CCD、摩擦历史、实体内外、更多机器人组合、批量传感、可微物理/跨域、密集布与体软体、杆缆/MPM/流体仍待补。
 
-D3/D4/D5、通用CCD/摩擦历史/闭实体内外、更广机器人组合和异构规模、批量传感、可微物理/通用跨域、密集布/体软体、杆缆与MPM/流体均未因本批完成。旧局部结果按原版本复用，不当新包全量回归或总体完成百分比。
+父目录 C:/Users/38347/.codex/worktrees/p65-parallel-integration/phymeo；分支codex/p65-parallel-modules，本地未push。本批证据 `artifacts/p65-three-track-c-20261112-01`，installed-close.json绑定528产品、四消费者及18文件。原三作者沿用隔离worktree；父独占共享协议和集成、全部项目执行串行。下一批先查实时agents/Git/WIP，不重派已验工作。
 
-## 所有权与操作边界
-
-父目录 C:/Users/38347/.codex/worktrees/p65-parallel-integration/phymeo，分支 codex/p65-parallel-modules，本地未push。Batch B证据根 artifacts/p65-three-track-b-20261112-01；installed-close.json绑定522产品、六消费者及147归档文件。三个作者已释放，无子agent项目执行；父完成本批收尾后释放唯一串行槽。
-
-继续沿用原agent隔离编码；父独占共享协议和集成。所有项目import/collection/数值/pytest/离线probe/lint/formatter/build/install/profile必须fresh entrypoint-aware guard后串行。无自动周期任务、新截止、remote CI、push/mainmerge或发包。
-
-保留原K1三个未跟踪草稿、用户Torch、当前venv/pins、首失败、旧证据Junction；不跟随Junction清理，不全量解压补副本。下一批先查实时agents/Git/WIP，再按这里的当前依赖前进。
+所有import/collection/数值/pytest/离线probe/lint/formatter/build/install/profile必须单owner及fresh entrypoint-aware guard。无周期任务、新截止、remote CI、push/mainmerge/发包。保留三份未跟踪草稿、用户Torch、当前venv/pins、首失败及旧证据Junction；不跟随Junction清理或全解压补副本。

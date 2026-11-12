@@ -1,6 +1,6 @@
 # Batch C：真实刚柔响应与异构机器人功能
 
-状态：**IMPLEMENTING / TESTS_PENDING**。父基线 `5d3b4c50`，2026-11-12。
+状态：**SOURCE_AND_INSTALLED_QUALIFIED（限定D3/G1首片）**。父基线 `5d3b4c50`，2026-11-12；统一安装收尾2026-11-13，产品 `3534f742`。
 按[三主线路线](2026-11-12-scene-deformable-scale-roadmap.md)继续；Batch B已验范围保留，不重跑同源旧组。
 
 ## 本批交付和边界
@@ -51,3 +51,9 @@
 作者仅隔离编码/文本调研，禁止任何项目import/collection/数值/pytest/lint/formatter/build/install/profile。父合入后按变更范围串行：保首次static结果→修复→新文件完整interpret/CUDA→实际共享受影响兼容→统一wheel→两个独立源码外consumer两后端→收尾提交。每条执行前fresh entrypoint-aware guard；真实外来执行自然结束，不kill。所有首失败保留；同源完整绿组不重跑。
 
 本批关闭要求公共能力和多案例真实通过，而非文档或测试数量。若同一假设两轮不能缩小问题，保存最小反例并调整接口/分片；不通过调fixture/预算追绿。D4/D5、G2/G3及原G1舞蹈/JR学习等未过项仍独立保留。
+
+## 实际关闭
+
+[父执行结果](../../development/p65-three-track-batch-c-20261112.md)记录完整范围、首失败和修复。G1新双文件42项通过；D3解释27、CUDA28通过；受影响节点/runtime/resident共享接缝兼容通过。产品528成员source/wheel/installed逐字节相同，两个独立安装消费者各解释/CUDA均通过；G1每后端27calls/162worldsteps，D3每后端8共同步/13worldsteps/8queries。四份完整压缩轨迹及安装证据已核对归档，原始失败保留。
+
+本合同未放宽数值门、质量、容量或原求解法则。D3仍为入步采样法向层，G1仍为受限同模型桶编排；后继D4/D5、G2/G3照原路线推进。

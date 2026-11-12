@@ -166,3 +166,17 @@ There is no public child runtime, dynamic insertion, multirate stepping, shared
 contact graph across worlds, training tensor ABI or per-step boundary clone.
 Failures before common publication are atomic; retired-resource cleanup after
 a committed boundary is separately reported rather than undoing accepted physics.
+
+## Parent source and installed qualification — 2026-11-13
+
+The earlier pending section is the preserved author handoff. Parent tested
+a225cdc7 with 42 passes across both new complete test files and both backends.
+The product bytes remain unchanged in unified snapshot 3534f742. Each installed
+backend passed 27 actual calls / 162 worldsteps, with 115 complete saved events,
+strict installed imports and real restore/reset successors. All 528 product
+members match source, wheel and installation.
+
+See [actual parent results](p65-three-track-batch-c-20261112.md). This qualifies
+the original three-model/six-world functional matrix, not maximum capacity,
+GPU peak resources, throughput, or the G1 humanoid dance. Next scale work
+retains the existing 8-model/16-world cap before any separate extension.

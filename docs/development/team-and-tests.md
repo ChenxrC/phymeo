@@ -131,3 +131,8 @@ interpret/实际 CUDA 与 N=1/8/64，记录所选数据传输量、分配/同步
 `test_resident_field_read.py` 与 `test_resident_body_read.py`。覆盖解释器/真实 CUDA、
 N=1/8/64、根部/child 索引、自由落体/反冲与偏心 COM、乱序/零 DOF、清理/别名和
 既有 masked reset 保持；它不授予 prepared control/reset 或 P2PE 自由根资格。
+
+B7l 的 `tests/scale/test_resident_floating_control_reset.py` 单独验收普通浮根
+prepared control/reset，并回归 `tests/scale/test_resident_control_plan.py`、
+`tests/scale/test_resident_reset_plan.py` 与 `tests/test_scene_resident_io.py`。
+只验证实际接口、owner、失败恢复和未选世界保持，不重开跨 solver 微差研究。

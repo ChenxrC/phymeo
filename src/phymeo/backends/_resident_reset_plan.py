@@ -26,11 +26,12 @@ class ResidentResetPlan:
         self._resets = self._failures = self._uploads = self._uploaded_bytes = 0
         self._syncs = 0
         self._metadata_bank = 0
+        self._floating = None
         with batch._lock:
             batch._check_open()
-            if batch._affine_specs or batch._floating_specs or batch._floating_affine_specs:
+            if batch._affine_specs or batch._floating_affine_specs:
                 raise NotImplementedError(
-                    "prepared reset requires scalar worlds or ordinary fixed trees"
+                    "prepared reset requires scalar worlds or ordinary fixed/floating trees"
                 )
             self._tree = batch._trees
             n = batch._count
@@ -65,9 +66,9 @@ class ResidentResetPlan:
     def layout(self):
         return self._layout
 
-    def _control(self, owner, initial, mask):
+    def _control(self, owner, initial, mask, attribute="_held"):
         self._controls.append(
-            (owner, initial, np.empty_like(initial), np.empty(initial.shape, bool), mask)
+            (owner, attribute, initial, np.empty_like(initial), np.empty(initial.shape, bool), mask)
         )
 
     def _prepare(self):
@@ -77,7 +78,7 @@ class ResidentResetPlan:
         initial = np.zeros((batch._count, 12), np.float32)
         held = np.zeros_like(batch._held)
         for key, slot in batch._slots.items():
-            if key in batch._tree_specs:
+            if key in batch._tree_specs or key in batch._floating_specs:
                 self._initial_ticks[slot] = batch._initial[key].tick
             else:
                 initial[slot], self._initial_ticks[slot], command = batch._bindings[slot].unpack(
@@ -134,6 +135,12 @@ class ResidentResetPlan:
                 self._validity = [{w: False for w in tree.worlds} for _ in (0, 1)]
                 self._codes = [{w: "RESTORED" for w in tree.worlds} for _ in (0, 1)]
                 self._code_views = tuple(MappingProxyType(c) for c in self._codes)
+            if batch._floating_trees is not None:
+                from ._resident_floating_reset import FloatingResetBinding
+
+                self._floating = FloatingResetBinding(batch._floating_trees, self._allocate)
+                for attribute, initial_control, mask in self._floating.controls:
+                    self._control(batch._floating_trees, initial_control, mask, attribute)
             # Warm both argument directions into standby only; accepted banks stay
             # unchanged. A discarded standby bank is not an authoritative state.
             active, standby = batch._active, 1 - batch._active
@@ -142,6 +149,8 @@ class ResidentResetPlan:
             batch._sync()
             if tree:
                 tree.check_restore()
+            if self._floating is not None:
+                self._floating.storage.check_restore()
 
     def _allocate(self, initial):
         batch = self._batch
@@ -196,6 +205,8 @@ class ResidentResetPlan:
                 tree.fk[dst],
                 tree.energy[dst],
             )
+        if self._floating is not None:
+            self._floating.launch(kernel_bank, self._selected_ticks, src, dst)
 
     def _host_arrays(self):
         yield self._mask
@@ -203,7 +214,10 @@ class ResidentResetPlan:
         yield self._initial_ticks
         yield self._tree_rows
         yield self._tree_mask
-        for _, initial, previous, compare, _ in self._controls:
+        if self._floating is not None:
+            yield self._floating.rows
+            yield self._floating.mask
+        for _, _, initial, previous, compare, _ in self._controls:
             yield initial
             yield previous
             yield compare
@@ -227,6 +241,8 @@ class ResidentResetPlan:
         self._ticks_host.fill(-1)
         np.copyto(self._ticks_host, self._initial_ticks, where=self._mask)
         np.take(self._mask, self._tree_rows, out=self._tree_mask, mode="clip")
+        if self._floating is not None:
+            self._floating.select(self._mask)
 
     def reset(self, mask=None):
         """Reset all or selected initial worlds; empty selection does not publish."""
@@ -237,8 +253,8 @@ class ResidentResetPlan:
             if not self._mask.any():
                 return batch._state_epoch
             changed = []
-            for owner, initial, previous, compare, selected in self._controls:
-                current = owner._held
+            for owner, attribute, initial, previous, compare, selected in self._controls:
+                current = getattr(owner, attribute)
                 if (
                     current.shape != initial.shape
                     or current.dtype != np.float32
@@ -257,6 +273,8 @@ class ResidentResetPlan:
                     selected = self._tree_mask[row]
                     self._validity[metadata][key] = False if selected else tree._valid[key]
                     self._codes[metadata][key] = "RESTORED" if selected else tree.status_codes[key]
+            if self._floating is not None:
+                self._floating.prepare_metadata(metadata)
             src, dst = batch._active, 1 - batch._active
             try:
                 with batch._device():
@@ -268,29 +286,33 @@ class ResidentResetPlan:
                     batch._sync()
                     self._syncs += 1
                 try:
-                    for change, (owner, initial, _, _, selected) in zip(changed, self._controls):
+                    for change, (owner, attribute, initial, _, _, selected) in zip(
+                        changed, self._controls
+                    ):
                         if change:
-                            np.copyto(owner._held, initial, where=selected)
+                            np.copyto(getattr(owner, attribute), initial, where=selected)
                 except Exception:
                     try:
-                        for change, (owner, _, previous, _, selected) in zip(
+                        for change, (owner, attribute, _, previous, _, selected) in zip(
                             changed, self._controls
                         ):
                             if change:
-                                np.copyto(owner._held, previous, where=selected)
+                                np.copyto(getattr(owner, attribute), previous, where=selected)
                     except Exception as error:
                         batch._control_error = error
                     raise
             except Exception:
                 self._failures += 1
                 raise
-            for change, (owner, _, _, _, _) in zip(changed, self._controls):
+            for change, (owner, _, _, _, _, _) in zip(changed, self._controls):
                 owner._dirty = owner._dirty or change
             if tree:
                 tree._valid = self._validity[metadata]
                 tree.status_codes = self._code_views[metadata]
                 tree._pending_info = None
-                self._metadata_bank = metadata
+            if self._floating is not None:
+                self._floating.publish(metadata)
+            self._metadata_bank = metadata
             batch._active = dst
             batch._state_epoch += 1
             self._resets += 1
@@ -331,6 +353,7 @@ class ResidentResetPlan:
             self._tree_rows = self._tree_mask = None
             self._validity = self._codes = self._code_views = None
             self._tree = None
+            self._floating = None
             self._closed, self._closing = True, False
 
     def __enter__(self):

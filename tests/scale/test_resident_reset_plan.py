@@ -216,7 +216,7 @@ def test_reset_sources_cannot_be_overwritten_by_other_plans(mode, tmp_path):
             batch.prepare_control_write(fields=("com_force",)) as controls,
             batch.prepare_field_read(fields=("position",)) as fields,
         ):
-            target = reset._controls[0][1].reshape(-1)[:3].reshape(1, 3)
+            target = reset._controls[0][2].reshape(-1)[:3].reshape(1, 3)
             for reader in (controls, fields):
                 with pytest.raises(ValueError, match="alias"):
                     reader.read_into(target)

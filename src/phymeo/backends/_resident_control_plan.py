@@ -11,8 +11,13 @@ def _binding(batch, key):
     if key in batch._tree_specs:
         storage = batch._trees
         return storage, storage.rows[key], tuple(batch._tree_specs[key].joint_types), "tree"
+    if key in batch._floating_specs:
+        storage = batch._floating_trees
+        return storage, storage.rows[key], tuple(batch._floating_specs[key].joint_types), "floating"
     if binding.tree_spec is not None:
-        raise NotImplementedError("prepared controls require scalar worlds or ordinary fixed trees")
+        raise NotImplementedError(
+            "prepared controls require scalar worlds or ordinary fixed/floating trees"
+        )
     if not binding.kind:
         return batch, slot, (), "sphere"
     if binding.kind in (1, 2):
@@ -69,6 +74,33 @@ def _field_columns(fields, types, kind):
     return metadata, np.array(columns, np.intp)
 
 
+def _floating_columns(fields, types):
+    """Bind the three actual control owners; no packed authority or fake root motors."""
+    metadata, segments, start = {}, [], 0
+    for field in fields:
+        if field in ("target_position", "target_velocity", "feedforward"):
+            index = ("target_position", "target_velocity", "feedforward").index(field)
+            attribute, columns = "_held_drive", [3 * j + index for j in range(len(types))]
+        elif field == "external_effort":
+            attribute, columns = "_held_effort", list(range(len(types)))
+        elif field in ("com_force", "com_torque"):
+            offset = 0 if field == "com_force" else 3
+            attribute = "_held_loads"
+            columns = [6 * b + offset + c for b in range(len(types) + 1) for c in range(3)]
+        else:
+            raise ValueError(f"unsupported floating control field {field!r}")
+        # Shared metadata for scalar commands; body loads include the real root.
+        if field in ("com_force", "com_torque"):
+            meta, _ = _field_columns((field,), ("revolute",) * (len(types) + 1), "tree")
+            meta[field] = MappingProxyType({**meta[field], "body_order": "root_then_model_links"})
+        else:
+            meta, _ = _field_columns((field,), types, "tree")
+        metadata[field] = MappingProxyType({**meta[field], "offset": start})
+        segments.append((attribute, np.array(columns, np.intp), start, len(columns)))
+        start += len(columns)
+    return metadata, segments, start
+
+
 class ResidentControlPlan:
     """Validated partial control updates, with selected-only rollback scratch.
 
@@ -98,14 +130,26 @@ class ResidentControlPlan:
             owner, _, types, kind = bindings[0]
             if any(row[0] is not owner or row[2:] != bindings[0][2:] for row in bindings):
                 raise ValueError("selected controls require a homogeneous physical layout")
-            metadata, columns = _field_columns(fields, types, kind)
+            if kind == "floating":
+                metadata, definitions, width = _floating_columns(fields, types)
+            else:
+                metadata, columns = _field_columns(fields, types, kind)
+                width = len(columns)
+                definitions = [("_held", columns, 0, width)]
             self._owner = owner
-            self._owner_shape = owner._held.shape
-            stride = int(np.prod(self._owner_shape[1:]))
             rows = np.array([binding[1] for binding in bindings], np.intp)
-            self._indices = (rows[:, None] * stride + columns).reshape(-1)
-            self._shape = (len(selected), len(columns))
-            self._previous = np.empty(self._shape, np.float32)
+            self._shape = (len(selected), width)
+            self._segments = []
+            for attribute, columns, start, size in definitions:
+                shape = getattr(owner, attribute).shape
+                stride = int(np.prod(shape[1:]))
+                indices = (rows[:, None] * stride + columns).reshape(-1)
+                previous = np.empty((len(selected), size), np.float32)
+                # Full packed owner uses the caller directly, preserving the old path.
+                scratch = None if size == width else np.empty_like(previous)
+                self._segments.append(
+                    (attribute, shape, indices, slice(start, start + size), previous, scratch)
+                )
             self._magnitude = np.empty(self._shape, np.float32)
             self._valid = np.empty(self._shape, bool)
             self._zero = np.empty(self._shape, bool)
@@ -132,15 +176,26 @@ class ResidentControlPlan:
         if self._closed:
             raise RuntimeError("resident control plan is closed")
         self._batch._check_open()
-        current = self._owner._held
-        if (
-            current.shape != self._owner_shape
-            or current.dtype != np.float32
-            or not current.flags.c_contiguous
-            or not current.flags.writeable
-        ):
-            raise RuntimeError("resident control owner layout changed; rebuild plan")
-        return current.reshape(-1)
+        current = []
+        for attribute, shape, _, _, _, _ in self._segments:
+            array = getattr(self._owner, attribute)
+            if (
+                array.shape != shape
+                or array.dtype != np.float32
+                or not array.flags.c_contiguous
+                or not array.flags.writeable
+            ):
+                raise RuntimeError("resident control owner layout changed; rebuild plan")
+            current.append(array.reshape(-1))
+        return current
+
+    def _workspaces(self):
+        yield from (self._magnitude, self._valid, self._zero)
+        for _, _, indices, _, previous, scratch in self._segments:
+            yield indices
+            yield previous
+            if scratch is not None:
+                yield scratch
 
     def _validate_buffer(self, values, *, output=False):
         if not isinstance(values, np.ndarray) or values.dtype != np.float32:
@@ -155,10 +210,7 @@ class ResidentControlPlan:
             np.shares_memory(values, a)
             for a in (
                 *self._batch._host_alias_arrays(),
-                self._previous,
-                self._magnitude,
-                self._valid,
-                self._zero,
+                *self._workspaces(),
             )
         ):
             raise ValueError("caller controls must not alias resident-owned storage")
@@ -177,17 +229,25 @@ class ResidentControlPlan:
             np.logical_and(self._valid, self._zero, out=self._valid)
             if not self._valid.all():
                 raise ValueError("controls must be finite normal FP32 or zero")
-            np.take(current, self._indices, out=self._previous.reshape(-1), mode="clip")
-            np.equal(values, self._previous, out=self._valid)
+            for array, (_, _, indices, columns, previous, _) in zip(current, self._segments):
+                np.take(array, indices, out=previous.reshape(-1), mode="clip")
+                np.equal(values[:, columns], previous, out=self._valid[:, columns])
             if self._valid.all():
                 self._writes += 1
                 return
             try:
-                np.put(current, self._indices, values.reshape(-1), mode="clip")
+                for array, (_, _, indices, columns, _, scratch) in zip(current, self._segments):
+                    if scratch is None:
+                        source = values
+                    else:
+                        np.copyto(scratch, values[:, columns])
+                        source = scratch
+                    np.put(array, indices, source.reshape(-1), mode="clip")
             except Exception:
                 self._failed_writes += 1
                 try:
-                    np.put(current, self._indices, self._previous.reshape(-1), mode="clip")
+                    for array, (_, _, indices, _, previous, _) in zip(current, self._segments):
+                        np.put(array, indices, previous.reshape(-1), mode="clip")
                     self._rollbacks += 1
                 except Exception as error:
                     batch._control_error = error
@@ -200,7 +260,11 @@ class ResidentControlPlan:
         with self._batch._lock:
             current = self._current()
             self._validate_buffer(values, output=True)
-            np.take(current, self._indices, out=values.reshape(-1), mode="clip")
+            for array, (_, _, indices, columns, _, scratch) in zip(current, self._segments):
+                destination = values if scratch is None else scratch
+                np.take(array, indices, out=destination.reshape(-1), mode="clip")
+                if scratch is not None:
+                    np.copyto(values[:, columns], scratch)
             self._reads += 1
 
     def stats(self):
@@ -213,16 +277,7 @@ class ResidentControlPlan:
                 rollbacks=self._rollbacks,
                 host_workspace_bytes=0
                 if self._closed
-                else sum(
-                    a.nbytes
-                    for a in (
-                        self._indices,
-                        self._previous,
-                        self._magnitude,
-                        self._valid,
-                        self._zero,
-                    )
-                ),
+                else sum(a.nbytes for a in self._workspaces()),
                 rollback_bytes_per_write=int(np.prod(self._shape)) * 4,
                 device_allocations=0,
                 immediate_upload_bytes=0,
@@ -234,7 +289,8 @@ class ResidentControlPlan:
             if self._closed:
                 return
             self._batch._control_plans.discard(self)
-            self._indices = self._previous = self._magnitude = self._valid = self._zero = None
+            self._segments.clear()
+            self._magnitude = self._valid = self._zero = None
             self._owner = None
             self._closed = True
 

@@ -614,8 +614,8 @@ CUDA 持久空间为 `4*S*W + 12*S + 8*W` bytes，分别是 values、ticks、wor
 ## Resident prepared HOST controls v1
 
 `TyxWorldBatch.prepare_control_write(keys=None, fields=...)` 冷准备同构所选 world 的
-控制列及顺序；支持球、标量移动/转动关节、普通固定根树，空选择、重复/未知 key、
-混合布局、仿射/浮根树和未知字段明确拒绝。fields 必须非空且无重复。不可变 layout
+控制列及顺序；支持球、标量移动/转动关节、普通固定根/浮根树，空选择、重复/未知 key、
+混合布局、仿射树和未知字段明确拒绝。fields 必须非空且无重复。不可变 layout
 声明 shape、float32、offset/width、单位、frame、reference、source 和采样含义。
 
 球只开放 world COM `com_force`；关节开放 target_position、target_velocity、
@@ -653,7 +653,7 @@ prepared reset、完整物理字段及实际 P2PE C ABI/安装仍待完成；本
 B7e 的 `TyxWorldBatch.prepare_reset()` 冻结构造初态与控制，返回同步 HOST reset
 plan。`plan.reset(mask=None)` 的 bool 连续 NumPy mask 与不可变 layout.world_keys
 顺序一致；None 为全选，全 false/空 batch 无上传、kernel 或 epoch 发布。支持球、
-球/平面、标量移动/转动关节、普通固定根树；含仿射或浮根树的 batch 明确拒绝。
+球/平面、标量移动/转动关节、普通固定根/浮根树；含仿射树的 batch 明确拒绝。
 这不是通用状态写入、D2D、异步或 Graph 接口，原 reset/restore 保持可用。
 
 准备仅一次拆解原有初始 checkpoint，并保存 device 初态。固定树使用原几何/能量
@@ -673,7 +673,7 @@ plan 的 alias 检查覆盖 reset 初始值及 HOST scratch，不能覆盖后续
 两个 metadata bank 在每次执行前从当前树 owner 更新，所选 diagnostics 失效，未选
 validity/status 保留；支持多个 reset plan 与 legacy reset/step 交错。
 
-设备持久空间为 `4*(13*N + 25*T*J + T)` bytes：N 为 batch worlds，T/J 为固定树数
+不含浮根的设备持久空间为 `4*(13*N + 25*T*J + T)` bytes：N 为 batch worlds，T/J 为固定树数
 和 padded 最大关节数；无树时 T=0。每次非空 CUDA reset 上传 `4*N` bytes，一次
 显式完成；正常执行不分配 device buffer、不重新编译。共同 bank 发布仍需复制
 O(N + T*J) 状态/派生值；HOST 控制 mask 校验/回滚 O(控制列数)，metadata 更新 O(T)。
@@ -779,10 +779,46 @@ scratch 仍为 `12*S+8*W+4*S*W` 字节；这里不授予异步、D2D 或 Graph �
 N=1/8/64、纯 root 与带滑动关节、独立自由落体与内部驱动反冲、偏心旋转 COM、
 乱序选择、零 DOF、现有 public masked reset 的未选保持、CompiledScene 消费、
 失败输出与关闭重试。共享 fixed/scalar 读取测试继续执行，容差不变。
-当前浮根 prepared control/reset 仍未接通；此依赖节点不等于 P2PE 自由根 C ABI，
+本节点当时未接通浮根 prepared control/reset，后续 B7l 见下文；读取节点不等于 P2PE 自由根 C ABI，
 也不等于完整 B7、独立安装或 GUI。实验根证据入口 `evidence/b7k-*`。
 
 本批三个读取模块 96 个唯一 case 分段通过：首轮 94 通过、两项旧“浮根必须拒绝”
 断言失败；更新为新增读取/混族拒绝并保留 alias 门禁后，与旋转推进追加验证共
 四项复测通过。P2PE 既有 resident 实际 DLL 12 项回归通过。独立复审无阻断。
 原全仓文档门禁仍有 479 项历史链接错误，与 B7h 日志逐字相同，本批不声称该门禁通过。
+
+## Resident floating controls and reset v1
+
+B7l 将普通浮根接入同一 prepared control/reset 公共入口。child 目标、目标速度、
+feedforward 和 external_effort 仍按标量关节顺序；COM force/torque 使用
+`root_then_model_links`，包含真实根 body，不伪造六个根关节或根电机。
+上述单位、frame、全量预检、selected-only 回滚和关闭合同保持。
+
+控制 plan 借用 `_held_drive`、`_held_effort`、`_held_loads` 三个现有 owner；
+冷准备每字段的索引及 selected scratch，没有新增 packed 权威控制或物理状态。
+每次访问验证当前 owner 属性，legacy packet 更换等布局数组后不会绑定旧地址。
+旧 packet 在所有 family 发布前准备三块独占可写数组，提交只替换引用，避免发布
+期间的分配失败造成部分更新；caller packet 仍不可变，prepared 热写不走该路径。写入失败回滚全部所选字段，
+回滚失败仍锁定 batch。输入全等不制造 dirty；变化后的下一 step 仍上传三块 owner。
+
+普通浮根控制 workspace 为 `18*S*W + 4*S*Ws` bytes，Ws 为需要连续打包 scratch 的
+字段宽度总和；单字段覆盖完整输出时 Ws=0。正常访问 O(S*W)，没有即时 CUDA 上传、
+同步或设备分配。多个字段涉及的 HOST packing 是显式成本，不称为零复制。
+
+reset plan 冻结原有初态的根 pose/COM velocity/omega、child q/qd/drive/history、
+generalized applied load 以及 FK/twist/energy，三块初始控制同样保留。初始 FK/twist/
+energy 只在冷准备计算；运行时从初态或接受 bank 选择复制，保持未选世界的原值。
+全局 tick/mask 仍仅上传一次 `4*N` bytes、一次完成、一次共同 bank/epoch 发布；
+没有运行期 snapshot、packet、FK/energy 或整状态 H2D。diagnostics 仅所选失效。
+
+每个浮根族的额外 device 初态为
+`4*F*(13 + 7*Jp + D + 24*B + 1)` bytes，F 为该族 world 数，Jp 为 child padded
+宽度（至少 1），D=最大 child 数+6，B=最大 child 数+1。reset 复杂度包含整族
+candidate 复制 O(F*B)，不是仅与选择数量相关；控制恢复的 HOST scratch 由 stats
+单列。所有 native 资源仍归 reset plan，辅助绑定只借用；清理失败保留 owner。
+
+正式入口 `tests/scale/test_resident_floating_control_reset.py` 覆盖普通浮根的
+N=1/8/64、interpret/真实 CUDA、乱序控制、masked/full reset、未选观测/历史保持、
+旧 owner 替换及失败恢复；公共 CompiledScene 验证 authored 初始力与局部恢复。
+配套共享 control/reset/scene 回归，证据保存在实验根 `evidence/b7l-*`。
+此依赖节点不自动开放 P2PE 浮根 Stage，也不授予 D2D、Graph、安装或 GUI 资格。

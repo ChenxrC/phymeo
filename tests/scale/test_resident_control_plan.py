@@ -225,7 +225,7 @@ def test_equal_commands_keep_upload_clean_and_readonly_input_is_accepted(kind, m
                 plan.read_into(values)
 
 
-def test_floating_controls_and_foreign_owner_alias_are_rejected(tmp_path):
+def test_floating_controls_and_foreign_owner_alias(tmp_path):
     from test_resident_floating_step import _p03_host
 
     from phymeo.backends.tyx_world_batch import FloatingRobotTree
@@ -237,8 +237,14 @@ def test_floating_controls_and_foreign_owner_alias_are_rejected(tmp_path):
     with TyxWorldBatch(
         [(0, FreeSphere(1, 0.125)), (1, floating)], "interpret", cache_root=cache(tmp_path)
     ) as batch:
-        with pytest.raises(NotImplementedError, match="fixed trees"):
-            batch.prepare_control_write([1], fields=("feedforward",))
+        with batch.prepare_control_write([1], fields=("feedforward",)) as plan:
+            values = np.full(plan.layout["shape"], 0.25, np.float32)
+            plan.write(values)
+            result = np.empty_like(values)
+            plan.read_into(result)
+            np.testing.assert_array_equal(result, values)
+        with pytest.raises(ValueError, match="homogeneous"):
+            batch.prepare_control_write(fields=("com_force",))
         with batch.prepare_control_write([0], fields=("com_force",)) as plan:
             storage = batch._floating_trees
             storage._held_drive = storage._held_drive.copy()

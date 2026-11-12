@@ -3,7 +3,7 @@
 from ..core.runtime_storage import RuntimeField, RuntimeStorage
 
 
-def bind_storage(owner, banks, stream, device, generation, controls=None, bodies=None, contacts=None, validation=None, measurements=None):
+def bind_storage(owner, banks, stream, device, generation, controls=None, bodies=None, contacts=None, validation=None, measurements=None, parameters=None):
     import tyx as tx
 
     # q, DOF and body index spaces are deliberately distinct. The compiled
@@ -39,6 +39,16 @@ def bind_storage(owner, banks, stream, device, generation, controls=None, bodies
             array.update(bank)
     fields = tuple(RuntimeField(name, tuple(arrays[0][name].shape), "float32", *spec)
                    for name, spec in semantics.items())
+    if parameters is not None:
+        for array in arrays:
+            array.update(parameters.arrays)
+        for name, unit, frame in (
+            ('model_body_mass', 'kg', 'scalar'),
+            ('model_body_com', 'm', 'body-local COM position'),
+            ('model_body_inertia', 'kg*m^2', 'COM tensor in body axes; row-major mat3'),
+        ):
+            fields += (RuntimeField(name, tuple(parameters.arrays[name].shape), 'float32',
+                                    unit, frame, 'native_body', 'compiled model; shared across worlds'),)
     if contacts is not None:
         for array, bank in zip(arrays, contacts.banks):
             array.update(bank)

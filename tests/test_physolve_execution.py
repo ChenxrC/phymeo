@@ -13,6 +13,36 @@ payload = payload_fixture
 
 @pytest.mark.cuda
 @pytest.mark.parametrize('nworld', [1, 8, 64])
+def test_compiled_body_parameters_shared_readonly_and_body_axes(payload, nworld):
+    xml = '''<mujoco><option gravity="0 0 0"/><worldbody><body><freejoint/>
+    <inertial mass="2" pos=".03 -.02 .04" euler="0 0 45" diaginertia=".1 .2 .25"/>
+    <geom type="sphere" size=".1"/></body></worldbody></mujoco>'''
+    record = compile_mujoco_xml(xml, require_asset=False)
+    with PhySolveRuntime(record, payload=payload, nworld=nworld) as runtime:
+        storage = runtime.storage_binding()
+        expected = {
+            'model_body_mass': [2.], 'model_body_com': [.03, -.02, .04],
+            'model_body_inertia': [.15, -.05, 0., -.05, .15, 0., 0., 0., .25],
+        }
+        for name, values in expected.items():
+            a, b = (storage.borrow(name, bank) for bank in (0, 1))
+            assert a.ptr == b.ptr and a.shape[0] == 1
+            assert not storage.fields[name].writable
+            np.testing.assert_allclose(a.numpy(stream=storage.stream)[0, 1].reshape(-1),
+                                       values, atol=1e-7, rtol=0)
+            with pytest.raises(RuntimeError, match='writes require'):
+                storage.borrow(name, runtime.active_bank, write=True)
+        assert runtime.execution_costs()['body_parameter_derived_device_bytes'] == 2 * 9 * 4
+        runtime.step()
+        runtime.reset(np.arange(nworld) % 2 == 0)
+        np.testing.assert_allclose(storage.borrow('model_body_com', runtime.active_bank)
+            .numpy(stream=storage.stream)[0, 1], expected['model_body_com'], atol=1e-7, rtol=0)
+    with pytest.raises(RuntimeError, match='stale or closed'):
+        storage.borrow('model_body_mass', 0)
+
+
+@pytest.mark.cuda
+@pytest.mark.parametrize('nworld', [1, 8, 64])
 @pytest.mark.parametrize('lifetime', ['persistent', 'one_substep'])
 @pytest.mark.parametrize('mode', ['direct', 'cuda_graph'])
 def test_body_wrench_owner_lifetime_and_reset(payload, nworld, lifetime, mode):

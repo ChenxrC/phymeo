@@ -137,6 +137,7 @@ class PhySolveRuntime:
         self._body_observations = None
         self._contact_observations = None
         self._body_measurements = None
+        self._body_parameters = None
         self._site_measurements = []
         self._ray_queries = []
         self._free_body_updates = None
@@ -232,6 +233,9 @@ class PhySolveRuntime:
                         self._body_measurements.prepare(self._stream, self._reset.all_mask)
                         self._validation.read(self._stream)
                         self._validation.readbacks = 0
+                    from ._physolve_parameters import PreparedBodyParameters
+                    self._body_parameters = PreparedBodyParameters(self._model, cpu, selected)
+                    self._body_parameters.prepare(self._stream)
                     self._storage = bind_storage(
                         self, self._banks, self._stream, selected, self._storage_generation,
                         self._controls_binding,
@@ -239,6 +243,7 @@ class PhySolveRuntime:
                         self._contact_observations,
                         self._validation.flags,
                         self._body_measurements,
+                        self._body_parameters,
                     )
                     self._complete()
         except Exception as error:
@@ -519,7 +524,8 @@ class PhySolveRuntime:
         with self._scope():
             bodies = self._body_observations
             contacts = self._contact_observations
-            return {"validation_readbacks": self._validation.readbacks,
+            return {"body_parameter_derived_device_bytes": self._body_parameters.allocated_bytes,
+                    "validation_readbacks": self._validation.readbacks,
                     "validation_d2h_bytes": 4 * self._validation.readbacks,
                     "endpoint_kinematics_passes": 0 if bodies is None else bodies.kinematics_passes,
                     "body_observation_publications": 0 if bodies is None else bodies.publications,
@@ -898,6 +904,7 @@ class PhySolveRuntime:
             self._body_observations = None
             self._contact_observations = None
             self._body_measurements = None
+            self._body_parameters = None
             self._free_body_updates = None
             self._model = None
             self._closed = True

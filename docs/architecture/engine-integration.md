@@ -57,6 +57,16 @@ Graph 捕获资源完整保活，同一 stream 包装复用；捕获失败不 fa
 
 ### 字段借用与候选执行 v1
 
+编译模型新增只读 `model_body_mass`、`model_body_com`、`model_body_inertia`，
+分别为 float32 `[1,native_body]`、`[1,native_body,3]`、`[1,native_body,9]`。
+首维为共享模板，不能作为 world 数量；两个 bank 借用相同存储。单位依次 kg、m、
+kg*m²；COM 在 body-local，完整惯量为 COM 点、body 轴下 row-major 矩阵。
+质量/COM 借用原生 model；惯量在冷准备由主惯量与惯量轴转换，PHYMEO 持有
+36×native_body 字节的设备派生表及等量上传源，随 runtime 关闭释放。
+不逐 world 复制，不增加 step/forward/reset 工作；本轮参数只读，变化需重新编译。
+`execution_costs.body_parameter_derived_device_bytes` 单列设备表成本。
+公共存储借用的 generation、候选写权限及失败关闭保活规则照常适用。
+
 `storage_binding(contract_version=1)` 返回固定字段描述及两个 bank 的 TYX 标量视图，
 描述含 shape/dtype、单位、frame、native index space、采样时刻和写权限。
 字段含义以描述为事实来源；这不是 P2PE 的公共字段布局，消费适配仍须转换身份和坐标。

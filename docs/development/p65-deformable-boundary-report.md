@@ -289,3 +289,24 @@ run can qualify correct source and conservative-result propagation; it cannot
 claim that every square-patch capsule row is resolved or suitable for generating
 contact force. The parent owns the corresponding installed-consumer adjustment
 and all subsequent serial verification.
+
+## 8. Parent source validation (2026-11-12)
+
+The first raw run `20-d2-interpret` failed on the documented parallel-state
+expectation. Run `27-d2-interpret-final` then exposed an independent test error:
+the fixed-point square measured only its nearly stationary first edge. The
+deformation assertion now examines every original declared material edge at
+every step, with the unchanged `> 1e-6` gate. No initial state, motion, force,
+distance kernel or tolerance was changed; both failures remain in evidence.
+
+Final complete source runs: `29-d2-interpret-final` **31 passed / 7.56 s** and
+`30-d2-cuda` **31 passed / 8.10 s**, each RAW_EXIT0. They cover both new files,
+all original multi-frame fixtures, declared membership, conservative statuses,
+ownership/resource failures and restore/reset continuation. The installed
+consumer incorporates the same status and all-edge interpretation, plus the
+parent's pre-import provenance, complete group/round membership and selected
+reset-state checks. Its execution is still pending at this checkpoint.
+
+Evidence: `artifacts/p65-three-track-b-20261112-01`; source snapshots, inputs,
+actual returns and all first failures are retained. This qualifies the D2 source
+query connection only; unresolved capsule rows cannot be used for contact force.

@@ -492,7 +492,9 @@ class DeformableBoundaryAdapter:
             world: plan._download(loan.position(world), "source/actual_bank:" + str(world))
             for world in plan._source_base["dynamic_worlds"]
         }
-        plan._counts["actual_bank_host_readback_bytes"] = sum(bank.nbytes for bank in actual.values())
+        plan._counts["actual_bank_host_readback_bytes"] = sum(
+            bank.nbytes for bank in actual.values()
+        )
         deltas = np.empty((n, 3), np.float64)
         for i, shape in enumerate(plan._model.shapes):
             begin, end = map(int, plan._offsets[i : i + 2])
@@ -516,7 +518,10 @@ class DeformableBoundaryAdapter:
                 expected = plan._source_base["authored_constants"]["points"][i]
                 if points[begin:end].tobytes() != plan._constants["local"][begin:end].tobytes():
                     raise RuntimeError("D2 static source differs from its registered upload")
-                if bounds[begin:end].tobytes() != plan._constants["local_bounds"][begin:end].tobytes():
+                if (
+                    bounds[begin:end].tobytes()
+                    != plan._constants["local_bounds"][begin:end].tobytes()
+                ):
                     raise RuntimeError("D2 static interval differs from its registered upload")
             deltas[begin:end] = points[begin:end].astype(np.float64) - expected.astype(np.float64)
         raw.update(material_deltas=deltas, actual_bank_positions=actual)

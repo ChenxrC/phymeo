@@ -1,9 +1,9 @@
 """D2 admission, full owned-native budget and late-publication fault contracts."""
 
-from contextlib import closing
-from dataclasses import replace
 import gzip
 import json
+from contextlib import closing
+from dataclasses import replace
 
 import numpy as np
 import pytest
@@ -43,8 +43,16 @@ def test_complete_native_peak_cap_and_cap_minus_one(tyx_mode, tmp_path):
             batch.prepare_boundary_query(model, bindings, memory_limit_bytes=expected)
         ) as exact:
             actual = exact.query(margin=q.MARGIN)
-            record(tmp_path, "exact-memory", model=model, bindings=bindings, result=actual,
-                   attempt=exact.last_attempt, stats=exact.stats(), state=batch.snapshot())
+            record(
+                tmp_path,
+                "exact-memory",
+                model=model,
+                bindings=bindings,
+                result=actual,
+                attempt=exact.last_attempt,
+                stats=exact.stats(),
+                state=batch.snapshot(),
+            )
             assert actual.required_candidates == value.required_candidates
         with closing(
             batch.prepare_boundary_query(model, bindings, memory_limit_bytes=expected - 1)
@@ -54,8 +62,15 @@ def test_complete_native_peak_cap_and_cap_minus_one(tyx_mode, tmp_path):
             assert low.last_result is None
             assert low.last_attempt is not None
             assert low.stats()["peak_required_bytes"] == expected
-            record(tmp_path, "memory-minus-one", model=model, bindings=bindings,
-                   attempt=low.last_attempt, stats=low.stats(), state=batch.snapshot())
+            record(
+                tmp_path,
+                "memory-minus-one",
+                model=model,
+                bindings=bindings,
+                attempt=low.last_attempt,
+                stats=low.stats(),
+                state=batch.snapshot(),
+            )
 
 
 def test_candidate_cap_prepass_is_complete(tyx_mode, tmp_path):
@@ -64,8 +79,16 @@ def test_candidate_cap_prepass_is_complete(tyx_mode, tmp_path):
     with TyxDeformableBatch(specs, mode=tyx_mode, settings=q.SETTINGS) as batch:
         with closing(batch.prepare_boundary_query(model, bindings)) as full:
             value = full.query(margin=q.MARGIN)
-            record(tmp_path, "candidate-full", model=model, bindings=bindings, result=value,
-                   attempt=full.last_attempt, stats=full.stats(), state=batch.snapshot())
+            record(
+                tmp_path,
+                "candidate-full",
+                model=model,
+                bindings=bindings,
+                result=value,
+                attempt=full.last_attempt,
+                stats=full.stats(),
+                state=batch.snapshot(),
+            )
             count = value.required_candidates
         assert count > 1
         with closing(
@@ -74,8 +97,16 @@ def test_candidate_cap_prepass_is_complete(tyx_mode, tmp_path):
             )
         ) as exact:
             actual = exact.query(margin=q.MARGIN)
-            record(tmp_path, "candidate-exact", model=model, bindings=bindings, result=actual,
-                   attempt=exact.last_attempt, stats=exact.stats(), state=batch.snapshot())
+            record(
+                tmp_path,
+                "candidate-exact",
+                model=model,
+                bindings=bindings,
+                result=actual,
+                attempt=exact.last_attempt,
+                stats=exact.stats(),
+                state=batch.snapshot(),
+            )
             assert actual.required_candidates == count
         with closing(
             batch.prepare_boundary_query(
@@ -86,8 +117,15 @@ def test_candidate_cap_prepass_is_complete(tyx_mode, tmp_path):
                 low.query(margin=q.MARGIN)
             assert low.last_result is None
             assert low.last_attempt is not None
-            record(tmp_path, "candidate-minus-one", model=model, bindings=bindings,
-                   attempt=low.last_attempt, stats=low.stats(), state=batch.snapshot())
+            record(
+                tmp_path,
+                "candidate-minus-one",
+                model=model,
+                bindings=bindings,
+                attempt=low.last_attempt,
+                stats=low.stats(),
+                state=batch.snapshot(),
+            )
 
 
 @pytest.mark.parametrize("fault", ["first_launch", "last_launch", "last_download", "packet"])
@@ -328,9 +366,11 @@ def test_pending_cleanup_keeps_node_owner_close_only(entry, tyx_mode, tmp_path, 
         before = batch.snapshot()
         epoch, active = batch.revision, batch._active
         calls = []
+
         def pending():
             calls.append("before-ledger-close")
             raise OSError("authored pending cleanup")
+
         if entry == "query":
             monkeypatch.setattr(plan, "_close_query_resources", pending)
             with pytest.raises(OSError, match="pending cleanup"):
@@ -343,13 +383,25 @@ def test_pending_cleanup_keeps_node_owner_close_only(entry, tyx_mode, tmp_path, 
                 plan.close()
         assert retained.state == "OPEN" and retained.runtime_pending
         assert plan.last_result is old and (batch.revision, batch._active) == (epoch, active)
-        for operation in (lambda: plan.query(margin=q.MARGIN),
-                          lambda: batch.step(q.forces(specs), q.H, expected_revision=batch.revision)):
+        for operation in (
+            lambda: plan.query(margin=q.MARGIN),
+            lambda: batch.step(q.forces(specs), q.H, expected_revision=batch.revision),
+        ):
             with pytest.raises(RuntimeError):
                 operation()
-        record(tmp_path, "pending-" + entry, model=model, bindings=bindings, before=before,
-               old=old, attempt=plan.last_attempt, stats=plan.stats(), calls=calls,
-               retained_state=retained.state, runtime_pending=retained.runtime_pending)
+        record(
+            tmp_path,
+            "pending-" + entry,
+            model=model,
+            bindings=bindings,
+            before=before,
+            old=old,
+            attempt=plan.last_attempt,
+            stats=plan.stats(),
+            calls=calls,
+            retained_state=retained.state,
+            runtime_pending=retained.runtime_pending,
+        )
         assert calls == ["before-ledger-close"]
         monkeypatch.undo()
         plan.close()
@@ -373,7 +425,12 @@ def test_wrong_source_identity_is_not_accepted(field, tyx_mode):
                 if field in ("owner", "registration"):
                     wrong = replace(view, **{field: object()})
                 else:
-                    wrong = replace(view, accepted=replace(view.accepted, **{field: getattr(view.accepted, field) + 1}))
+                    wrong = replace(
+                        view,
+                        accepted=replace(
+                            view.accepted, **{field: getattr(view.accepted, field) + 1}
+                        ),
+                    )
                 with pytest.raises(ValueError):
                     plan._validate_source(wrong)
             assert plan.last_result is old

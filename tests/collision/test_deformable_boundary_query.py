@@ -170,13 +170,17 @@ def declared_membership(model):
     pairs = []
     excluded = set(model.excluded)
     for i, a in enumerate(model.shapes):
-        for b in model.shapes[i + 1:]:
+        for b in model.shapes[i + 1 :]:
             if a.key.world != b.key.world:
                 continue
             reason = (
-                "same_rigid_body" if a.key.body == b.key.body else
-                "mask" if not (a.group & b.mask and b.group & a.mask) else
-                "excluded" if (a.key, b.key) in excluded else None
+                "same_rigid_body"
+                if a.key.body == b.key.body
+                else "mask"
+                if not (a.group & b.mask and b.group & a.mask)
+                else "excluded"
+                if (a.key, b.key) in excluded
+                else None
             )
             if reason is not None:
                 pairs.append((a.key, b.key, "filtered", reason, None, None))
@@ -192,20 +196,29 @@ def declared_membership(model):
     return {key: tuple(sorted(groups[key])) for key in sorted(groups)}, tuple(pairs)
 
 
-def assert_d2_row(row, triangle, segment, radius, packet, index, *, allow_conditioning,
-                  initial, evidence):
+def assert_d2_row(
+    row, triangle, segment, radius, packet, index, *, allow_conditioning, initial, evidence
+):
     """Unresolved is not promoted; every retained witness still gets an oracle check."""
     ref = reference().distance_reference()
     tri, axis = np.asarray(triangle, np.float64), reference().axis(segment)
     length = ref.local_scale(tri, axis, radius)
     ideal = ref.oracle(tri, axis)
-    distance = float(ideal["distance2"]) ** .5
-    evidence.append(dict(
-        triangle=tri, axis=axis, radius=radius, length=length, status=row.status,
-        distance_squared_exact=str(ideal["distance2"]),
-        independent_witnesses_exact=repr(ideal["witnesses"]),
-        distance=distance, allow_conditioning=allow_conditioning, initial=initial,
-    ))
+    distance = float(ideal["distance2"]) ** 0.5
+    evidence.append(
+        dict(
+            triangle=tri,
+            axis=axis,
+            radius=radius,
+            length=length,
+            status=row.status,
+            distance_squared_exact=str(ideal["distance2"]),
+            independent_witnesses_exact=repr(ideal["witnesses"]),
+            distance=distance,
+            allow_conditioning=allow_conditioning,
+            initial=initial,
+        )
+    )
     if allow_conditioning:
         assert row.status in ("RESOLVED", "CONDITIONING")
         if initial:
@@ -245,18 +258,22 @@ def assert_d2_row(row, triangle, segment, radius, packet, index, *, allow_condit
     assert 0 <= row.axis_parameter <= 1
     ap = axis[0] + row.axis_parameter * (axis[1] - axis[0])
     tp = tri[0] + bary @ (tri - tri[0])
-    np.testing.assert_allclose(np.asarray(row.axis_point_relative_m) + packet.origin_m, ap,
-                               rtol=0, atol=2e-4 * length)
-    np.testing.assert_allclose(np.asarray(row.triangle_point_relative_m) + packet.origin_m, tp,
-                               rtol=0, atol=2e-4 * length)
+    np.testing.assert_allclose(
+        np.asarray(row.axis_point_relative_m) + packet.origin_m, ap, rtol=0, atol=2e-4 * length
+    )
+    np.testing.assert_allclose(
+        np.asarray(row.triangle_point_relative_m) + packet.origin_m, tp, rtol=0, atol=2e-4 * length
+    )
     assert abs(float(np.linalg.norm(tp - ap)) - distance) <= 2e-4 * length
     if row.status == "CONDITIONING" or distance <= 32 * reference().U * length:
         assert row.normal is None and int(meta[3]) == 0
         np.testing.assert_array_equal(summary[12:15], np.zeros(3, np.float32))
     else:
         assert int(meta[3]) == 1 and row.normal is not None
-        direction = (np.asarray(ideal["witnesses"][0][4], float)
-                     - np.asarray(ideal["witnesses"][0][3], float)) / distance
+        direction = (
+            np.asarray(ideal["witnesses"][0][4], float)
+            - np.asarray(ideal["witnesses"][0][3], float)
+        ) / distance
         assert np.linalg.norm(np.asarray(row.normal) - direction) <= 2e-3
 
 
@@ -285,8 +302,9 @@ def check(batch, plan, specs, model, rounds, events):
         total = 0
         for group in result.groups:
             spec = by_world[group.surface.world]
-            surface = next(s for s in spec.surfaces
-                           if s.key == shape_map[group.surface].surface_key)
+            surface = next(
+                s for s in spec.surfaces if s.key == shape_map[group.surface].surface_key
+            )
             ids = tuple(map(int, spec.point_ids))
             current = before[spec.key].position.astype(np.float64)
             faces = tuple(
@@ -294,7 +312,9 @@ def check(batch, plan, specs, model, rounds, events):
             )
             expected_rounds = expected_groups[group.surface]
             assert group.round_keys == expected_rounds
-            assert group.round_vertex_ids == tuple(shape_map[key].vertex_ids for key in expected_rounds)
+            assert group.round_vertex_ids == tuple(
+                shape_map[key].vertex_ids for key in expected_rounds
+            )
             axes = [reference().axis(rounds[key]) for key in expected_rounds]
             radii = [shape_map[key].radius for key in expected_rounds]
             wanted = reference().aabb_candidates(current, faces, axes, radii, MARGIN)
@@ -319,15 +339,27 @@ def check(batch, plan, specs, model, rounds, events):
                 assert tuple(row.vertex_ids) == tuple(surface.oriented_point_ids[facet])
                 # Packet facet IDs are local ordinals; the source maps them to actual IDs.
                 assert int(declaration["facet_ids"][row.facet_id]) == int(surface.facet_ids[facet])
-                allow_conditioning = (len(surface.facet_ids) == 2
-                                      and shape_map[expected_rounds[segment]].kind == "capsule")
-                assert_d2_row(row, current[list(faces[facet])], axes[segment], radii[segment],
-                              group.packet, i, allow_conditioning=allow_conditioning,
-                              initial=before[spec.key].tick == 0, evidence=event["independent_rows"])
+                allow_conditioning = (
+                    len(surface.facet_ids) == 2
+                    and shape_map[expected_rounds[segment]].kind == "capsule"
+                )
+                assert_d2_row(
+                    row,
+                    current[list(faces[facet])],
+                    axes[segment],
+                    radii[segment],
+                    group.packet,
+                    i,
+                    allow_conditioning=allow_conditioning,
+                    initial=before[spec.key].tick == 0,
+                    evidence=event["independent_rows"],
+                )
                 assert group.packet.raw["candidates"].shape[1:] == (18, 11)
                 assert group.packet.packed["owners"][i].tolist() == [segment, facet]
             total += len(wanted)
-        for pair, (a, b, status, reason, surface_key, round_key) in zip(result.pairs, expected_pairs, strict=True):
+        for pair, (a, b, status, reason, surface_key, round_key) in zip(
+            result.pairs, expected_pairs, strict=True
+        ):
             assert (pair.first, pair.second, pair.reason) == (a, b, reason)
             if status is not None:
                 assert pair.status == status and pair.group is None and pair.segment_id is None
@@ -335,11 +367,15 @@ def check(batch, plan, specs, model, rounds, events):
             else:
                 group_index = tuple(expected_groups).index(surface_key)
                 segment = expected_groups[surface_key].index(round_key)
-                indices = tuple(i for i, (s, _) in enumerate(wanted_groups[surface_key]) if s == segment)
+                indices = tuple(
+                    i for i, (s, _) in enumerate(wanted_groups[surface_key]) if s == segment
+                )
                 facets = tuple(wanted_groups[surface_key][i][1] for i in indices)
                 assert pair.group == group_index and pair.segment_id == segment
                 assert pair.row_indices == indices and pair.facet_ids == facets
-                assert pair.status == ("boundary_candidates" if indices else "no_boundary_candidate")
+                assert pair.status == (
+                    "boundary_candidates" if indices else "no_boundary_candidate"
+                )
         assert result.required_candidates == total
         plan.require_current(result)
         assert plan.stats()["live_bytes"] == plan.stats()["persistent_bytes"]
@@ -373,11 +409,19 @@ def test_twelve_real_deformations(square, fixed, tyx_mode, tmp_path):
                     assert receipt.accepted
                     result = check(batch, plan, specs, model, rounds, events)
                     current = batch.snapshot()[7].position
-                    edge = specs[0].constraints.indices[0]
+                    edges = specs[0].constraints.indices
                     deformation.append(
-                        abs(
-                            np.linalg.norm(current[edge[1]] - current[edge[0]])
-                            - np.linalg.norm(initial[edge[1]] - initial[edge[0]])
+                        float(
+                            np.max(
+                                np.abs(
+                                    np.linalg.norm(
+                                        current[edges[:, 1]] - current[edges[:, 0]], axis=1
+                                    )
+                                    - np.linalg.norm(
+                                        initial[edges[:, 1]] - initial[edges[:, 0]], axis=1
+                                    )
+                                )
+                            )
                         )
                     )
                     bounds_change.append(

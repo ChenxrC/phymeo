@@ -54,6 +54,7 @@ class PhySolveRuntime:
     contact_observation_contract_version = 1
     contact_reference_contract_version = 1
     body_measurement_contract_version = 1
+    site_measurement_contract_version = 1
     selected_update_contract_version = 1
     device_reset_contract_version = 1
     free_body_update_contract_version = 1
@@ -128,6 +129,7 @@ class PhySolveRuntime:
         self._body_observations = None
         self._contact_observations = None
         self._body_measurements = None
+        self._site_measurements = []
         self._free_body_updates = None
         self._validation = self._storage = None
         self._storage_generation = 1
@@ -245,6 +247,26 @@ class PhySolveRuntime:
                 raise RuntimeError("PhySolve runtime is closing or closed")
             with self._tx.use_device(self._device), self._tx.use_stream(self._stream):
                 yield
+
+    def prepare_site_measurements(self, binding):
+        """Cold-create an owned site projection plan; callers only borrow it."""
+        from ._physolve_sites import PreparedSiteMeasurements
+
+        with self._scope():
+            if self._pending is not None:
+                raise RuntimeError('site preparation requires idle execution')
+            plan = PreparedSiteMeasurements.__new__(PreparedSiteMeasurements)
+            plan.resources = []
+            plan.storage = self.storage_binding()
+            self._site_measurements.append(plan)
+            try:
+                plan.__init__(self, binding)
+            except Exception:
+                # Retain even partial uploads until normal runtime cleanup completes.
+                if not plan.resources:
+                    self._site_measurements.pop()
+                raise
+            return plan
 
     def _complete(self):
         self._synchronize_stream(self._stream)
@@ -448,6 +470,7 @@ class PhySolveRuntime:
                     "body_measurement_evaluations": 0 if self._body_measurements is None else self._body_measurements.evaluations,
                     "body_measurement_copies": 0 if self._body_measurements is None else self._body_measurements.copies,
                     "body_measurement_device_bytes": 0 if self._body_measurements is None else self._body_measurements.allocated_bytes,
+                    "site_measurement_device_bytes": sum(plan.allocated_bytes for plan in self._site_measurements),
                     "free_body_update_device_bytes": 0 if self._free_body_updates is None else self._free_body_updates.allocated_bytes,
                     "stream_rebindings": self._stream_rebindings,
                     "step_graph_captures": self._graph_captures,
@@ -765,6 +788,9 @@ class PhySolveRuntime:
             for stream in self._stream_retained:
                 self._synchronize_stream(stream)
             self._release_step_graphs()
+            while self._site_measurements:
+                self._site_measurements[-1].close()
+                self._site_measurements.pop()
             for index, handle in enumerate(self._handles):
                 if handle is not None:
                     self._native._close_runtime(handle, True)

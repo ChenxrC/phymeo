@@ -718,3 +718,23 @@ command 保持、非有限观测拒绝和恢复、外部 stream/GC/换流、准�
 独立复审关闭 current-device/冻结布局门禁发现；未运行新 GUI、完整 release 或性能。
 接触支撑/非零外力矩、site frame 和 P2PE IMU/F-T SensorView 属于后续接入验收，
 不能据本批 body 测量测试宣称完整 F/T 能力。证据见配套根 `evidence/b6c-*`。
+
+## B6d：公开 site 投影与消费方 IMU/F-T
+
+本批补充 [Selected body-site projection v1](../architecture/engine-integration.md#selected-body-site-projection-v1)，
+通过公开 BodySite、编译绑定和预分配投影让消费者借用求解时刻测量。
+不重建 Newton 模型，不插入 native sensor，不增加物理推进、forward 或 RNE。
+codedev/TYX、六 CUBIN 与 Host 均不修改。
+
+正式 `tests/test_physolve_sites.py` 最终 6 项通过（39.01 s）：N=1/8/64 的偏心
+旋转 site、非零外加力矩、Graph 四子步、局部 reset、command-only 保持、
+接触支撑比力和自由根 reaction、来源失配、准备/清理失败保活。
+热投影禁止 tx.empty/Array.numpy 的检查通过。接触参照是同次物理测量的受力平衡，
+未追加官方 MuJoCo-Warp 对照或轨迹排序调查。
+
+新增测试首轮遗漏 site 参考点变换中的动态力矩项、误把 contact_world 的
+`[capacity,1]` 当作一维；修正解析公式和索引后通过，无生产算法或容差修改。
+更早的投影 device 字符串检查已修复，原始失败日志全部保留。
+既有 TYX AST 弃用警告保留。消费者 P2PE 的实际 DLL/host/D2D、错误与生命周期
+验证在其 `docs/phymeo-sensors.md` 记录，不能替代独立安装、GUI 或完整传感器资格。
+来源、载荷、最终提交及审查见配套实验根 `evidence/b6d-summary.json`。

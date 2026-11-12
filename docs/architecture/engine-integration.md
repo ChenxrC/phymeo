@@ -342,6 +342,55 @@ and one publication kernel; no additional CPU physics or host snapshot.
 The native direct conditional readbacks remain visible. Throughput and peak
 memory are not qualified here. Source tests do not qualify an installed wheel.
 
+## Selected body-site projection v1
+
+`BodySite(name, body, position, rotation_xyzw)` declares a named body-local
+measurement site independently of native indices. `NativeTemplate.bind_body_sites`
+resolves public body names into an immutable compilation-bound `NativeBodySites`.
+Unknown bodies, duplicate names, nonfinite poses and non-unit rotations fail.
+This does not insert native sensors or recompile the physical model.
+
+`PhySolveRuntime.prepare_site_measurements(binding)` requires body measurements
+and the identical compilation object. It returns a runtime-owned prepared plan
+with `contract_version=1`; the consumer borrows it. Preparation registers the
+owner before uploads. Partial preparation and failed close retain resources for
+retry. Close completes stream work before releasing projection buffers and then
+native resources. A successful runtime stream rebind is reflected by the shared
+storage binding; no second stream wrapper is created.
+
+`sample(selected, count, gate, rows)` enqueues on the canonical stream and returns
+without waiting or producing a host snapshot. The caller must prevalidate unique
+world IDs and `count[0] == rows` in stream order, exclude alias with the plan's
+outputs/errors, retain inputs, and exclude concurrent mutation/close. The method
+checks capacity, dtype, shape, stride and device. It guards world indexing and
+reports nonfinite output through `errors`; publication requires completed error
+validation. This prepared API is not a replacement for a consumer selector gate.
+
+Output is float32 `[selected_row * site_count + site, 12]`, ordered as specific
+acceleration (m/s²), angular velocity (rad/s), force (N), torque (N·m). All vectors
+use site axes; wrench is parent-on-child at site origin. Let `R` map site axes to
+world and `r` point from COM to site in world coordinates:
+
+- acceleration: `R.T * (f_com + alpha × r + omega × (omega × r))`;
+- angular velocity: `R.T * omega`;
+- force: `R.T * F`;
+- torque: `R.T * (tau_com - r × F)`.
+
+Input pose borrows existing retained solve-time `xpos/xquat`; measurements borrow
+the matching body measurement bank. There is no new pose mirror, FK, forward,
+solver advance, or RNE evaluation. Sample time is `measurement_sample_time`, not
+the integrated endpoint clock. Masked reset and command-only updates preserve
+the established bank/time semantics. Consumers may explicitly convert wrench
+direction to their public schema; PHYMEO does not silently change it.
+
+Projection is O(selected worlds × sites). Each plan owns `48*N*S + 32*S + 4`
+device bytes: output, body indices, local poses and an error flag. These bytes
+are reported by `site_measurement_device_bytes`; consumer borrowed-byte reports
+must not be added again. Body measurement storage remains separately reported.
+Plans are prepared cold and reused, with no host snapshot or per-world dispatch.
+This contract qualifies the PhySolve path only; resident, ray sensors and mounted
+sensor runtime mutation require separate capabilities and tests.
+
 ## Contact reference v1
 
 `contact_reference_contract_version=1` adds readonly borrowed storage

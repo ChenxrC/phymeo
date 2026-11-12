@@ -218,6 +218,12 @@ class NativeTemplate:
             raise ValueError("homogeneous binding requires positive integer nworld")
         return HomogeneousNativeBinding(self, int(nworld))
 
+    def bind_body_sites(self, sites):
+        """Resolve named BodySite values against this compilation only."""
+        from .native_sites import bind_body_sites
+
+        return bind_body_sites(self, sites)
+
 
 @dataclass(frozen=True)
 class HomogeneousNativeBinding:

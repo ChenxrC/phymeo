@@ -769,6 +769,7 @@ def run_window(name, mode, output, *, expected_install_root=None, diagnose_short
         runner_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         qualification="DIAGNOSTIC_ONLY" if diagnose_short_state else "STRICT",
         short_state_violations={},
+        continuous_max_errors={},
     )
     progress = dict(
         steps_attempted=0,
@@ -949,6 +950,8 @@ def run_window(name, mode, output, *, expected_install_root=None, diagnose_short
                 rigid_velocity=float(np.max(abs(np.asarray(actual_root.velocity) - velocity))),
                 orientation=angle_error(actual_root.position[3:], q[3:]),
             )
+            for field, value in errors_now.items():
+                summary["continuous_max_errors"][field] = max(summary["continuous_max_errors"].get(field, 0.0), value)
             emit("continuous-errors", step=step, errors=errors_now)
             require(
                 max(errors_now["node_position"], errors_now["rigid_position"]) <= ref.LONG_POSITION,

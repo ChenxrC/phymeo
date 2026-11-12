@@ -40,8 +40,7 @@ def mirror_record(mirror):
         "time": float(mirror.time),
         "cpu_state": mirror.cpu_state.copy(),
         "fields": {
-            name: getattr(mirror, name).copy()
-            for name in checkpoint_implementation.MIRROR_FIELDS
+            name: getattr(mirror, name).copy() for name in checkpoint_implementation.MIRROR_FIELDS
         },
     }
 
@@ -290,7 +289,9 @@ def test_failed_restore_retains_candidate_cleanup_owner(
             actual = accepted_step(runtime, "retry-successor-" + str(index))
             expected = accepted_step(reference, "reference-successor-" + str(index))
             assert encode(actual) == encode(expected)
-            assert encode(runtime.integration_snapshot()) == encode(reference.integration_snapshot())
+            assert encode(runtime.integration_snapshot()) == encode(
+                reference.integration_snapshot()
+            )
         # GREEN proves the production runtime itself releases the retained owner.
         # Test fallback is solely for safe teardown of the expected old-source RED.
         runtime.close()

@@ -85,7 +85,7 @@
 | B：运动球＋斜胶囊，分时入层/卸载/再接触 | 一方离层时另一方仍载荷，另一稀疏 world 不同步事件 | 清掉旧 site/旧 body force，无跨 body/world 残留；合法零接触 participant 仍推进 |
 | C：一个浮根 R–P 链，末端 capsule 接触片 | contact body_group 非0，原非零关节速度/驱动 | 真实 child FK、点速、完整 root–joint M 耦合与 Jᵀw；既有 HOST/native-independent力学参考，不调用产品 helper 自证 |
 | D：一个分支 R/P 树，两不同 links 同时接触 | 多 site 分到两 body，另一个 body 无接触 | 两 body 的不同 COM 矩/功率、全部 generalized components；没有重算为“根合力” |
-| E：身份/生命周期与故障交叉矩阵 | 非零且不同 anchors、participant/shape输入反序、source变更、同world最后participant失败 | keyed 等价；cap/cap−1；query control-only失效；restore/clone或同源新owner继续、partial reset保未选raw/history；失败后无半发布 |
+| E：身份/生命周期与故障交叉矩阵 | 非零且不同 anchors、participant/shape输入反序、source变更、同world最后participant失败 | keyed 等价；cap/cap−1；query control-only失效；原owner restore后继、独立同声明owner同步参考（不冒跨owner restore）、partial reset保未选raw/history；失败后无半发布 |
 
 A/B 是 M-B1；C/D 是 M-B2；E 分别覆盖两项。至少两个源码外消费者分别从高层资产声明走 A 和 C，不能只重复低级 owner。每后端独立报告实际步数、完整失败记录和模块 provenance。动态解析状态不能由出现过一次 RESOLVED 外推：任一必须受力的 CONDITIONING 行仍拒绝整个 step，不给它补法向。
 

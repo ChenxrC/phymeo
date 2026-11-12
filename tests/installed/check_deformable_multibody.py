@@ -456,6 +456,49 @@ def compile_scene(items, mode, **options):
     return ph.compile_participant_scene(declaration(items, **options), mode=mode)
 
 
+_OWNER_CLOSE_RECORDS = []
+_RETAINED_CLOSE_FAILURES = []
+
+
+@contextmanager
+def owned_scene(items, mode, journal, label):
+    """Close each constructed owner once; retain uncertain owners, not fake cleanup."""
+    scene = compile_scene(items, mode)
+    record = dict(label=label, owner_identity=id(scene), close_attempts=0,
+                  close_succeeded=False, state="OPEN")
+    _OWNER_CLOSE_RECORDS.append(record)
+    primary, errors = None, []
+    try:
+        journal.emit("owner-constructed", owner=record)
+        yield scene
+    except BaseException as error:
+        primary = error
+    try:
+        journal.emit("owner-close-attempt", owner=record, primary=primary)
+    except BaseException as error:
+        errors.append(error)
+    record["close_attempts"] = 1
+    try:
+        scene.close()
+    except BaseException as error:
+        record.update(state="UNKNOWN", close_error=repr(error))
+        # Do not retry an opaque release or let its owner/runtime disappear.
+        # This process-lifetime root deliberately outlives the context manager.
+        _RETAINED_CLOSE_FAILURES.append(scene)
+        errors.append(error)
+    else:
+        record.update(state="CLOSED", close_succeeded=True)
+    try:
+        journal.emit("owner-close-result", owner=record)
+    except BaseException as error:
+        errors.append(error)
+    failures = ([primary] if primary is not None else []) + errors
+    if len(failures) == 1:
+        raise failures[0]
+    if failures:
+        raise BaseExceptionGroup("M-B1 primary and owner cleanup failures", failures)
+
+
 def participants(items):
     return tuple(ph.ResidentParticipant(
         body["key"], ph.FloatingRobotTree(body["model"], body["initial"],
@@ -785,7 +828,7 @@ def run_window(items, mode, journal, *, steps):
     journal.emit("declaration", items=items, declaration=declaration(items), steps=steps, h=H,
                  gates=dict(force_atol=ATOL, force_rtol=RTOL, geometry=1e-4, witness=2e-4,
                             normal=2e-3, short_state=2e-5, continuous=2e-4))
-    with compile_scene(items, mode) as scene:
+    with owned_scene(items, mode, journal, "window") as scene:
         check_sources(scene, items)
         initial = scene.snapshot()
         journal.emit("constructed", state=initial, source_map=scene.source_map, stats=scene.stats())
@@ -834,7 +877,7 @@ def query(scene, journal):
 
 def lifecycle(items, mode, journal):
     journal.emit("lifecycle-construct-attempt", declaration=declaration(items), items=items)
-    with compile_scene(items, mode) as scene:
+    with owned_scene(items, mode, journal, "lifecycle") as scene:
         check_sources(scene, items)
         initial, references = scene.snapshot(), reference_initial(items)
         _, references, _ = advance(scene, items, references, journal, "warm")
@@ -913,7 +956,9 @@ def main():
                 errors.append(error)
                 summary.update(status="FAIL")
                 summary[label + "_failure"] = repr(error)
-        summary["closed"] = True
+        summary["owner_cleanup"] = [dict(row) for row in _OWNER_CLOSE_RECORDS]
+        summary["retained_close_failures"] = len(_RETAINED_CLOSE_FAILURES)
+        summary["closed"] = all(row["close_succeeded"] for row in _OWNER_CLOSE_RECORDS) and "trace" in summary
         try:
             (args.output / "summary.json").write_text(json.dumps(summary, indent=2, allow_nan=False), encoding="utf-8")
         except BaseException as error:

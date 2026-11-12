@@ -571,8 +571,8 @@ TYX 原有 runtime/module 关闭内部同步保持不变。无新物理 bank、�
 ## Resident caller-buffer fields v1
 
 `TyxWorldBatch.prepare_field_read(keys=None, fields=("position", "velocity"))` 冷准备
-`ResidentFieldReadPlan`。只支持球体、标量移动/转动关节和普通固定根树的同构选择。
-不同坐标布局混选、仿射/浮根树字段明确拒绝；原有 snapshot、kinematics 不改变。
+`ResidentFieldReadPlan`。支持球体、标量移动/转动关节和普通固定/浮根树的同构选择。
+不同坐标布局混选及仿射树字段明确拒绝；原有 snapshot、kinematics 不改变。
 keys 默认注册顺序，显式 keys 固定选择及顺序，重复/未知 world 拒绝。空选择布局
 为 `(0, 0)`，不启动计算；非空布局由同构坐标数和 fields 顺序确定。
 
@@ -691,8 +691,9 @@ plan alias、分配/清理重试。证据见实验根 evidence/b7e-summary.json�
 caller-buffer 观测。普通固定根树按 RobotModel moving link 顺序输出，不把 anchor
 参考 frame 当成有质量/COM 的 body；静态 root/资产 frame 须由编译绑定另行表达。
 FreeSphere/SpherePlaneWorld 是平移模型，单 body 的原点就是 COM，姿态恒 identity、
-角速度恒零，这是该模型的物理定义，不代表完整自由刚体旋转能力。标量专用模型、
-仿射/浮根树与不同 family/body_count 的混选明确拒绝；空选择不启动 kernel。
+角速度恒零，这是该模型的物理定义，不代表完整自由刚体旋转能力。标量专用模型的
+body 读取仍拒绝。普通浮根树的 root/child 读取见下文；仿射树与不同 family/body_count 的混选明确
+拒绝，空选择不启动 kernel。
 
 可选字段为 position、com_position、rotation、linear_velocity、com_velocity 和
 angular_velocity。位置单位 m；原点/COM 线速度 m/s；世界角速度 rad/s；rotation
@@ -711,7 +712,7 @@ HOST caller buffer 在传输失败后可能部分写入，物理状态不变；�
 每次 CUDA read 一次显式完成、一次 values D2H，可选 ticks 再增加一次 D2H；没有
 热 device 分配、全模型复制或逐 world HOST 读回。S 为所选世界、W 为 packed width，
 device scratch 为 `12*S + 8*W + 4*S*W` bytes（indices/columns/ticks/output）。
-普通树速度当前固定循环 J 次，全部 body 读取上界 O(S×B×J)，即链状树 O(S×J²)；
+普通固定树速度当前固定循环 J 次，全部 body 读取上界 O(S×B×J)，即链状树 O(S×J²)；
 只读 pose 为 O(S×W)。不把没有额外 FK 宣称为线性速度读取或性能已验收。
 
 正式 `tests/scale/test_resident_body_read.py` 用独立 FP64 homogeneous transform 与
@@ -727,7 +728,7 @@ device scratch 为 `12*S + 8*W + 4*S*W` bytes（indices/columns/ticks/output）�
 返回 plan 的 layout/read_into/write/reset/close 沿用上面的原生合同，同时检查
 scene 生命周期、partial-publication 状态与资产 target position/velocity 限额。
 HOST backend 明确拒绝这些 prepared 接口，原有 snapshot/set_controls/reset 保留。
-各 physical family 的限制仍由原生 plan 判断，不能从方法存在推断浮根/仿射已支持。
+各 physical family 的限制仍由原生 plan 判断，不能从方法存在推断该族读写/reset 均支持。
 控制选择仍须非空；字段读取可为空。不同 scene 独立锁，同 scene 串行调用。
 
 TYX 场景不再保存第二份当前 held control。`TyxWorldBatch(initial_controls=...)`
@@ -752,3 +753,36 @@ receipt 组织，这些现有工作没有被 prepared IO 隐藏或删除，不�
 `tests/test_scene_resident_io.py` 与原 scene compiler 测试覆盖 N=1/8/64、实际 CUDA、
 初态/控制、有限环境接触、未选 reset、限额、共同/部分发布及清理。实验记录为
 `evidence/b7h-summary.json`；P2PE 的 actual DLL resident 路由仍须后续单独验收。
+
+## Resident floating reads v1
+
+B7k 为普通 `FloatingRobotTree` 接通上述 prepared field/body 读取，同样可由
+`CompiledScene.prepare_field_read/prepare_body_read` 使用。自由根不表示六个标量
+关节：field position/velocity/applied_effort 仅包含 child scalar coordinates 与
+实际 motor 输出，顺序与 asset.joint_names 一致；纯 root 模型合法返回 `(S,0)`。
+它不等于原 snapshot 的完整 q/v，也不包含 root 广义载荷或外加 effort。
+
+body layout 为 `family:floating_tree`、`body_order:root_then_model_links`，第一项
+是真实有质量的根部，后续按原生 moving-link 顺序。position/com_position/rotation
+直接借用 active bank 的 accepted FK，COM/world angular velocity 借用同 bank 的
+accepted twist。原点速度按 `v_origin=v_COM-omega×(COM-origin)` 在设备 gather；
+不使用上一步入口 Jacobian，不再次 FK、forward 或产生 HOST 物理 snapshot。
+静态 anchor 加回位置，旋转为 body-to-world row-major 3×3；单位沿原 body 合同。
+
+原有冷 prepared 索引、caller dtype/shape/stride/alias、bank lifetime、单 batch
+锁、失败传播和可重试释放保持。浮根新增借用的 FK/twist/anchor 纳入 alias 检查；
+不同物理族即使 body_count 相同也不能混选。设备读取 O(S×W)，每次一份 values D2H，
+仅请求 ticks 时增加一次 D2H；没有热设备分配、逐 world 读回或新的权威状态。
+scratch 仍为 `12*S+8*W+4*S*W` 字节；这里不授予异步、D2D 或 Graph 资格。
+
+正式测试 `tests/scale/test_resident_floating_read.py` 覆盖 interpret/实际 CUDA、
+N=1/8/64、纯 root 与带滑动关节、独立自由落体与内部驱动反冲、偏心旋转 COM、
+乱序选择、零 DOF、现有 public masked reset 的未选保持、CompiledScene 消费、
+失败输出与关闭重试。共享 fixed/scalar 读取测试继续执行，容差不变。
+当前浮根 prepared control/reset 仍未接通；此依赖节点不等于 P2PE 自由根 C ABI，
+也不等于完整 B7、独立安装或 GUI。实验根证据入口 `evidence/b7k-*`。
+
+本批三个读取模块 96 个唯一 case 分段通过：首轮 94 通过、两项旧“浮根必须拒绝”
+断言失败；更新为新增读取/混族拒绝并保留 alias 门禁后，与旋转推进追加验证共
+四项复测通过。P2PE 既有 resident 实际 DLL 12 项回归通过。独立复审无阻断。
+原全仓文档门禁仍有 479 项历史链接错误，与 B7h 日志逐字相同，本批不声称该门禁通过。

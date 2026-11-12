@@ -126,3 +126,8 @@ resident caller-buffer 读取使用 `tests/scale/test_resident_field_read.py`，
 interpret/实际 CUDA 与 N=1/8/64，记录所选数据传输量、分配/同步及接受状态。
 拒绝推进的 world 必须读回既有值/tick；不能为数据接口测试放宽物理容差。
 字段与成本合同见[caller buffer](../architecture/engine-integration.md#resident-caller-buffer-fields-v1)。
+
+普通浮根 prepared 读取使用 `tests/scale/test_resident_floating_read.py`，同时回归
+`test_resident_field_read.py` 与 `test_resident_body_read.py`。覆盖解释器/真实 CUDA、
+N=1/8/64、根部/child 索引、自由落体/反冲与偏心 COM、乱序/零 DOF、清理/别名和
+既有 masked reset 保持；它不授予 prepared control/reset 或 P2PE 自由根资格。

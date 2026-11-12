@@ -352,5 +352,11 @@ def test_body_read_cannot_alias_accepted_geometry_or_unselected_control(tmp_path
                 with pytest.raises(ValueError, match="alias"):
                     plan.read_into(array)
                 np.testing.assert_array_equal(array, previous)
-        with pytest.raises(NotImplementedError):
-            batch.prepare_body_read([1])
+        with batch.prepare_body_read([1], fields=("position",)) as plan:
+            geometry = foreign.fk[batch._active].reshape(1, -1)[:, :6]
+            previous = geometry.copy()
+            with pytest.raises(ValueError, match="alias"):
+                plan.read_into(geometry)
+            np.testing.assert_array_equal(geometry, previous)
+        with pytest.raises(ValueError, match="homogeneous"):
+            batch.prepare_body_read([0, 1])

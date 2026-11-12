@@ -274,8 +274,12 @@ def test_unselected_floating_control_owner_is_protected(mode, tmp_path):
     with TyxWorldBatch(
         [(0, FreeSphere(1, 0.125)), (1, floating)], mode, cache_root=cache(tmp_path)
     ) as batch:
-        with pytest.raises(NotImplementedError, match="fixed trees"):
-            batch.prepare_field_read([1])
+        with batch.prepare_field_read([1]) as floating_plan:
+            values = np.empty(floating_plan.layout["shape"], np.float32)
+            floating_plan.read_into(values)
+            np.testing.assert_array_equal(values, 0)
+        with pytest.raises(ValueError, match="homogeneous"):
+            batch.prepare_field_read([0, 1])
         with batch.prepare_field_read([0], fields=("position",)) as plan:
             # Fault injection: an owner replaces its immutable HOST control with
             # equivalent writable storage. The accepted read still cannot alias it.

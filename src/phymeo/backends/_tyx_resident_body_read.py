@@ -95,3 +95,49 @@ def read_tree_bodies(
 def make_body_read_kernels(tree):
     function = read_tree_bodies if tree else read_sphere_bodies
     return tx.kernel(function), tx.kernel(function)
+
+
+def read_floating_bodies(
+    count: tx.i32,
+    width: tx.i32,
+    rows: tx.ndarray(tx.i32, 2),
+    columns: tx.ndarray(tx.i32, 2),
+    ticks: tx.ndarray(tx.i32, 1),
+    anchor: tx.ndarray(tx.f32, 2),
+    fk: tx.ndarray(tx.f32, 3),
+    twist: tx.ndarray(tx.f32, 3),
+    output: tx.ndarray(tx.f32, 2),
+    output_ticks: tx.ndarray(tx.i32, 1),
+):
+    for i in tx.range(count):
+        w = rows[i, 0]
+        for col in range(width):
+            body = columns[col, 0]
+            code = columns[col, 1]
+            axis = code % 3
+            value = 0.0
+            if code < 6:
+                offset = axis
+                if code >= 3:
+                    offset += 15
+                value = _add(anchor[w, axis], fk[w, body, offset])
+            elif code < 15:
+                value = fk[w, body, code - 3]
+            elif code >= 21:
+                value = twist[w, body, 3 + axis]
+            else:
+                value = twist[w, body, axis]
+                if code < 18:
+                    # v_origin = v_COM - omega x (COM-origin), all world frame.
+                    a = (axis + 1) % 3
+                    b = (axis + 2) % 3
+                    ra = _add(fk[w, body, 15 + a], -fk[w, body, a])
+                    rb = _add(fk[w, body, 15 + b], -fk[w, body, b])
+                    value = _add(value, -_mul(twist[w, body, 3 + a], rb))
+                    value = _add(value, _mul(twist[w, body, 3 + b], ra))
+            output[i, col] = value
+        output_ticks[i] = ticks[rows[i, 1]]
+
+
+def make_floating_body_read_kernels():
+    return tx.kernel(read_floating_bodies), tx.kernel(read_floating_bodies)

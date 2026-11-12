@@ -23,12 +23,15 @@ class ResidentBodyReadPlan(ResidentFieldReadPlan):
 
     Fixed ordinary trees expose moving links in model order, not a synthetic
     anchor body with fabricated COM. Translation-only spheres expose one COM body
-    with identity rotation. Other physical families are explicitly unqualified.
+    with identity rotation. Ordinary floating trees expose the massive root then
+    moving child links; accepted COM twists supply velocities without another FK.
     """
 
     def __init__(self, batch, keys, fields):
         self._initialize_owner(batch)
         self._tree = None
+        self._floating = None
+        self._twists = ()
         self._geometry = ()
         self._topology = ()
         with batch._lock:
@@ -43,10 +46,14 @@ class ResidentBodyReadPlan(ResidentFieldReadPlan):
             for key in selected:
                 if key in batch._tree_specs:
                     descriptions.append(("fixed_tree", batch._tree_specs[key].n))
+                elif key in batch._floating_specs:
+                    descriptions.append(("floating_tree", batch._floating_specs[key].b))
                 elif batch._bindings[batch._slots[key]].kind == 0:
                     descriptions.append(("translation_sphere", 1))
                 else:
-                    raise NotImplementedError("body read requires spheres or ordinary fixed trees")
+                    raise NotImplementedError(
+                        "body read requires spheres or ordinary fixed/floating trees"
+                    )
             if descriptions and any(d != descriptions[0] for d in descriptions):
                 raise ValueError("selected worlds require one homogeneous body layout")
             family, count = descriptions[0] if descriptions else ("empty", 0)
@@ -76,7 +83,13 @@ class ResidentBodyReadPlan(ResidentFieldReadPlan):
                     fields=MappingProxyType(metadata),
                     body_count=count,
                     family=family,
-                    body_order="model_links" if family == "fixed_tree" else "single_com_body",
+                    body_order=(
+                        "root_then_model_links"
+                        if family == "floating_tree"
+                        else "model_links"
+                        if family == "fixed_tree"
+                        else "single_com_body"
+                    ),
                     ticks_shape=(len(selected),),
                     ticks_dtype="int32",
                     ticks_unit="accepted_substeps",
@@ -95,15 +108,29 @@ class ResidentBodyReadPlan(ResidentFieldReadPlan):
                     self._tree.anchor,
                 )
                 rows = [(self._tree.rows[k], batch._slots[k]) for k in selected]
+            elif family == "floating_tree":
+                self._floating = batch._floating_trees
+                self._sources = self._floating.states
+                self._geometry = self._floating.fk
+                self._twists = self._floating.twist
+                self._topology = (self._floating.anchor,)
+                rows = [(self._floating.rows[k], batch._slots[k]) for k in selected]
             else:
                 self._sources = batch._states
                 rows = [(batch._slots[k], batch._slots[k]) for k in selected]
             batch._readback_plans.add(self)
             try:
                 if selected:
-                    from ._tyx_resident_body_read import make_body_read_kernels
+                    from ._tyx_resident_body_read import (
+                        make_body_read_kernels,
+                        make_floating_body_read_kernels,
+                    )
 
-                    self._kernels = make_body_read_kernels(family == "fixed_tree")
+                    self._kernels = (
+                        make_floating_body_read_kernels()
+                        if self._floating is not None
+                        else make_body_read_kernels(family == "fixed_tree")
+                    )
                     with batch._device():
                         ids = np.asarray(rows, np.int32)
                         cols = np.asarray(columns, np.int32)
@@ -126,6 +153,20 @@ class ResidentBodyReadPlan(ResidentFieldReadPlan):
                 raise
 
     def _launch_read(self, bank, output, ticks):
+        if self._floating is not None:
+            self._batch._launch(
+                self._kernels[bank],
+                *self._shape,
+                self._indices,
+                self._columns,
+                self._batch._ticks[bank],
+                *self._topology,
+                self._geometry[bank],
+                self._twists[bank],
+                output,
+                ticks,
+            )
+            return
         extra = (*self._topology, self._geometry[bank]) if self._tree is not None else ()
         self._batch._launch(
             self._kernels[bank],
@@ -140,9 +181,11 @@ class ResidentBodyReadPlan(ResidentFieldReadPlan):
         )
 
     def _borrowed_arrays(self):
-        return (*super()._borrowed_arrays(), *self._geometry, *self._topology)
+        return (*super()._borrowed_arrays(), *self._geometry, *self._topology, *self._twists)
 
     def _clear_bindings(self):
         super()._clear_bindings()
         self._tree = None
+        self._floating = None
+        self._twists = ()
         self._geometry = self._topology = ()

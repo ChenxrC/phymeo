@@ -14,8 +14,16 @@ def _description(batch, key):
         storage = batch._trees
         types = tuple(batch._tree_specs[key].joint_types)
         return storage.states, storage.rows[key], types, "joint", "actuator_drive", True
+    if key in batch._floating_specs:
+        storage = batch._floating_trees
+        types = tuple(batch._floating_specs[key].joint_types)
+        # Child coordinates/actual motor output only; the physical free root is
+        # exposed by body observations, never invented as six scalar motors.
+        return storage.states, storage.rows[key], types, "joint", "actuator_drive", True
     if binding.tree_spec is not None:
-        raise NotImplementedError("field read requires scalar worlds or ordinary fixed trees")
+        raise NotImplementedError(
+            "field read requires scalar worlds or ordinary fixed/floating trees"
+        )
     if binding.kind == 0:
         types, frame, effort = ("translation",) * 3, "world_com", "external_com_force"
     else:
@@ -134,7 +142,7 @@ class ResidentFieldReadPlan:
                         ],
                         np.int32,
                     )
-                    cols = np.array(columns, np.int32)
+                    cols = np.array(columns, np.int32).reshape(-1, 2)
                     with batch._device():
                         self._indices = self._allocate(indices.shape, np.int32, indices)
                         self._columns = self._allocate(cols.shape, np.int32, cols)

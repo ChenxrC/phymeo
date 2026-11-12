@@ -1,6 +1,7 @@
 """D6-A real D3 candidate/transaction qualification; authored, not executed here."""
 
 import importlib.util
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -10,6 +11,18 @@ import phymeo as ph
 
 pytestmark = pytest.mark.tyx
 
+
+
+def cleanup(*callbacks):
+    primary = sys.exception()
+    errors = []
+    for callback in callbacks:
+        try:
+            callback()
+        except BaseException as error:
+            errors.append(error)
+    if errors:
+        raise BaseExceptionGroup("D6 test cleanup preserves primary", ([primary] if primary is not None else []) + errors)
 
 def consumer():
     path = Path(__file__).parents[1] / "installed" / "check_deformable_dissipation.py"
@@ -32,7 +45,7 @@ def test_dissipation_contact_real_ordered_phase_and_lifecycle(case, tyx_mode, tm
         assert progress["worldsteps"] == 10
         assert progress["restores"] == progress["resets"] == progress["stale_rejections"] == 1
     finally:
-        journal.close()
+        cleanup(journal.close)
 
 
 @pytest.mark.parametrize("case", ("E", "C"))
@@ -76,8 +89,4 @@ def test_dissipation_contact_actual_late_candidate_failure_and_retry(case, tyx_m
         c.state_equal(retried, replay, items)
         journal.emit("retained-and-replayed", before=before, checkpoint=checkpoint, retry=retried, replay=replay, stats=owner.stats())
     finally:
-        try:
-            if owner is not None:
-                owner.close()
-        finally:
-            journal.close()
+        cleanup(lambda: owner.close() if owner is not None else None, journal.close)

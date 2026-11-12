@@ -154,7 +154,7 @@ def fixture(case="P", *, world=7, factor=1, variant=None, reverse=False):
                 materials={(sk,rk):ph.NormalLayer(WIDTH,STIFFNESS,DAMPING)},
                 surface=sk, round=rk, local=local, mass=2*factor, inertia=factor/4,
                 external=external, command=tree.inputs(np.zeros((0,3)),
-                    ph.FloatingRobotInputs(np.zeros(0),external[None,:3],external[None,3:]))))
+                    ph.FloatingRobotInputs(np.zeros(0),external[None,:3],external[None,3:])))
 
 
 def create(items, mode, **options):

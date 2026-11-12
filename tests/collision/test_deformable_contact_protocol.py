@@ -32,7 +32,7 @@ def rejected_step(batch, items, evidence, *, match):
     row = dict(entry=before,revision=revision,h=H,inputs=forces(items),expected_rejection=match,
                checkpoint_before=checkpoint_before)
     evidence["attempts"].append(row)
-    with pytest.raises((ValueError,RuntimeError,ph.SolverFailure),match=match) as failure:
+    with pytest.raises((ValueError,RuntimeError,MemoryError,ph.SolverFailure),match=match) as failure:
         batch.step(row["inputs"],H,expected_revision=revision)
     row.update(error=str(failure.value),last_attempt=batch.last_attempt,state=batch.snapshot(),stats=batch.stats())
     retained(before,batch.snapshot(),items)
@@ -118,6 +118,41 @@ def test_active_capacity_exact_and_one_less_are_atomic(tyx_mode,tmp_path):
             assert row["last_attempt"]["node_receipt"] is None
             assert row["last_attempt"]["rigid_publication"] is None
 
+
+def test_query_and_response_memory_exact_and_one_less(tyx_mode,tmp_path):
+    items = (fixture("P",world=7),fixture("E",world=31))
+    capacity = 2
+    # Count the original force arrays independently; query peak comes from the
+    # same successful physical attempt, not a search over budgets or fixtures.
+    response_bytes = 116*capacity + 12*8 + 28*2 + 4*3
+    with saved(tmp_path,"native-memory",tyx_mode,cases=[manifest(i) for i in items]) as evidence:
+        with create(items,tyx_mode,contact_capacity=capacity) as first:
+            _,reference = attempt(first,items,H,evidence)
+            stats = first.stats()
+            evidence["measured_same_attempt"] = stats
+            assert stats["response_native_bytes"] == response_bytes
+            query_bytes = stats["query"]["peak_required_bytes"]
+            assert type(query_bytes) is int and query_bytes > 0
+            exact_bytes = response_bytes+query_bytes
+            evidence["exact_bytes"] = exact_bytes
+        with create(items,tyx_mode,contact_capacity=capacity,memory_limit_bytes=exact_bytes) as exact:
+            _,accepted = attempt(exact,items,H,evidence)
+            stats = exact.stats()
+            assert stats["response_native_bytes"]+stats["query"]["peak_required_bytes"] == exact_bytes
+            assert stats["native_query_response_limit"] == exact_bytes
+            for item in items:
+                world = item["world"]
+                close(accepted["state"][world].node.position,reference["state"][world].node.position,atol=0,rtol=0)
+                close(accepted["state"][world].node.velocity,reference["state"][world].node.velocity,atol=0,rtol=0)
+                close(root_state(accepted["state"][world],item).position,
+                      root_state(reference["state"][world],item).position,atol=0,rtol=0)
+                close(root_state(accepted["state"][world],item).velocity,
+                      root_state(reference["state"][world],item).velocity,atol=0,rtol=0)
+        with create(items,tyx_mode,contact_capacity=capacity,memory_limit_bytes=exact_bytes-1) as short:
+            row = rejected_step(short,items,evidence,match="owned bytes.*limit")
+            assert row["last_attempt"]["node_receipt"] is None
+            assert row["last_attempt"]["rigid_publication"] is None
+            assert row["stats"]["response"]["launches"] == 0
 
 def test_checkpoint_restore_partial_reset_then_real_successors(tyx_mode,tmp_path):
     items = (fixture("P",world=7),fixture("E",world=31))

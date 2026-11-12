@@ -216,7 +216,7 @@ def test_old_modes_refuse_deformable_without_changing_defaults(mode):
 
 @pytest.mark.parametrize("fault", (
     "missing_layer", "extra_layer", "friction", "wrong_world", "unknown_surface",
-    "duplicate_world", "static_shape", "site_mapping", "capacity", "node_memory",
+    "duplicate_world", "static_shape", "site_mapping", "capacity", "node_memory", "pair_capacity",
 ))
 def test_full_static_admission_before_owner(fault, monkeypatch):
     from phymeo.builders import deformable_scene_lowering as lowering
@@ -251,6 +251,8 @@ def test_full_static_admission_before_owner(fault, monkeypatch):
                            static_body_ids=((7, 999),))
         elif fault == "site_mapping":
             decl = replace(decl, site_capacity={7: 2})
+        elif fault == "pair_capacity":
+            decl = replace(decl, candidate_capacity=0)
         elif fault == "capacity":
             decl = replace(decl, site_capacity=129)
         elif fault == "node_memory":
@@ -327,3 +329,13 @@ def test_constructor_control_failure_retains_cleanup_owner(monkeypatch, cleanup_
         assert failure.value.cleanup_state == "unresolved"
     else:
         assert failure.value is primary
+
+
+@pytest.mark.parametrize("value", ("object", "none", "host_patch"))
+def test_direct_compiled_constructor_refuses_wrong_declaration(value):
+    if value == "object":
+        decl = object()
+    else:
+        decl = ParticipantSceneDeclaration((fixture()["row"],), contact_response=value)
+    with pytest.raises((TypeError, ValueError), match="ParticipantSceneDeclaration|deformable_normal"):
+        CompiledDeformableParticipantScene(decl, mode="interpret")

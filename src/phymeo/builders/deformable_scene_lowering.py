@@ -9,8 +9,6 @@ from dataclasses import dataclass, field
 from threading import RLock
 from types import MappingProxyType
 
-import numpy as np
-
 from ..backends._deformable_boundary_source import DeformableBoundaryModel, DeformableBoundarySurface
 from ..backends._resident_floating_binding import compile_floating_tree_binding
 from ..backends.tyx_deformable_batch import DeformableNodeWorld, TyxDeformableBatch
@@ -145,6 +143,8 @@ def prepare_deformable_scene(declaration, rigid_prepared):
         and surface.group & shape.mask and shape.group & surface.mask
         and tuple(sorted((surface.key, shape.key))) not in model.excluded
     }
+    if len(expected) > declaration.candidate_capacity:
+        raise ValueError("complete deformable candidate domain exceeds candidate_capacity")
     if set(declaration.materials_by_pair) != expected:
         raise ValueError("deformable materials must completely cover eligible original pairs")
     if any(law is not None and (type(law) is not NormalLayer or law.friction != 0)
@@ -186,8 +186,12 @@ class CompiledDeformableParticipantScene:
     reset restores declared initial controls as well as both physical states.
     """
     def __init__(self, declaration, *, mode="cuda", cache_root=None):
-        from .participant_scene_compiler import _input, _prepare
+        from .participant_scene_compiler import ParticipantSceneDeclaration, _input, _prepare
 
+        if type(declaration) is not ParticipantSceneDeclaration:
+            raise TypeError("compile requires ParticipantSceneDeclaration")
+        if declaration.contact_response != "deformable_normal":
+            raise ValueError("compiled deformable scene requires deformable_normal mode")
         if mode not in ("interpret", "cuda"):
             raise ValueError("deformable scene mode must be interpret or cuda")
         prepared = _prepare(declaration)

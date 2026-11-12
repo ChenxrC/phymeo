@@ -114,6 +114,7 @@ def fixture(case="P", *, world=7, factor=1, variant=None, reverse=False):
     center = np.array((3/4,1/8,5/32), float)
     local = np.zeros((1,3))
     velocity = np.array((0,0,-1/16,0,0,0), float)
+    external = np.zeros(6)
     kind = "sphere"
     if case == "E":
         center[0] = 1/2
@@ -131,6 +132,10 @@ def fixture(case="P", *, world=7, factor=1, variant=None, reverse=False):
         center[2] = RADIUS + 3/32
     elif variant == "opening":
         velocity[2] = 4
+    elif variant == "entry-exit":
+        center[2] = RADIUS+WIDTH+1/16384
+        velocity[2] = -1/8
+        external[2] = 64
     root = ph.RigidBodyModel(np.array((1/(2*factor),)), np.full((1,3), factor/4), np.zeros(3))
     model = ph.FloatingRobotModel(root, np.zeros(3), None)
     initial = ph.FloatingRobotState(np.r_[center,(0,0,0,1)], velocity)
@@ -148,7 +153,8 @@ def fixture(case="P", *, world=7, factor=1, variant=None, reverse=False):
                 model=ph.DeformableBoundaryModel(shapes), binding=binding,
                 materials={(sk,rk):ph.NormalLayer(WIDTH,STIFFNESS,DAMPING)},
                 surface=sk, round=rk, local=local, mass=2*factor, inertia=factor/4,
-                command=tree.inputs(np.zeros((0,3))))
+                external=external, command=tree.inputs(np.zeros((0,3)),
+                    ph.FloatingRobotInputs(np.zeros(0),external[None,:3],external[None,3:]))))
 
 
 def create(items, mode, **options):
@@ -161,7 +167,7 @@ def create(items, mode, **options):
 
 def manifest(item):
     return {name:item[name] for name in ("case","world","factor","node","surface","round",
-        "local","mass","inertia","materials")}
+        "local","mass","inertia","materials","external")}
 
 def forces(items):
     return {i["world"]:ph.StepInputs(np.zeros((4,3),np.float32)) for i in items}
@@ -234,6 +240,7 @@ def material_step(item, x, v, force, h, sweeps=None):
 
 
 def rigid_step(item,q,v,wrench,h):
+    wrench = wrench + item["external"]
     speed = v + h*np.r_[wrench[:3]/item["mass"],wrench[3:]/item["inertia"]]
     return np.r_[q[:3]+h*speed[:3],rotate_step(q[3:7],speed[3:],h)],speed
 
@@ -325,7 +332,8 @@ def audit_step(item, entry, after, receipt, h):
     close(diagnostics.bias,0)
     close(diagnostics.linear_jacobian,np.eye(3,6)[None,:,:])
     close(diagnostics.angular_jacobian,np.eye(3,6,k=3)[None,:,:])
-    close(diagnostics.acceleration,np.r_[device_wrench[:3]/item["mass"],device_wrench[3:]/item["inertia"]])
+    total_wrench = device_wrench+item["external"]
+    close(diagnostics.acceleration,np.r_[total_wrench[:3]/item["mass"],total_wrench[3:]/item["inertia"]])
     assert diagnostics.equation_residual <= 2e-5
     expected_q,expected_v = rigid_step(item,q0,v0,device_wrench,h)
     close(q1[:3],expected_q[:3])
@@ -356,7 +364,7 @@ def audit_step(item, entry, after, receipt, h):
     impulse_actual = (after.node.velocity[free].astype(float)-vs0[free])/weights[free,None]
     close(impulse_actual,h*total[free]+material[free])
     root_impulse = item["mass"]*(v1[:3]-v0[:3])
-    close(impulse_actual.sum(axis=0)+root_impulse,reaction.sum(axis=0))
+    close(impulse_actual.sum(axis=0)+root_impulse,reaction.sum(axis=0)+h*item["external"][:3])
     # Account for application time explicitly instead of claiming that every
     # ordered central row has zero torque about the initial positions.
     p0 = vs0[free]/weights[free,None]
@@ -366,9 +374,10 @@ def audit_step(item, entry, after, receipt, h):
     angular += item["inertia"]*(v1[3:]-v0[3:])
     expected_angular = np.cross(x0[free],h*total[free]+material[free]).sum(axis=0)
     expected_angular += np.cross(after.node.position[free]-x0[free],p1).sum(axis=0)
-    expected_angular += np.cross(q0[:3],h*device_wrench[:3])+h*device_wrench[3:]
+    expected_angular += np.cross(q0[:3],h*total_wrench[:3])+h*total_wrench[3:]
     expected_angular += np.cross(q1[:3]-q0[:3],item["mass"]*v1[:3])
     close(angular,expected_angular)
+    close(observed["rigid_external_entry_power"],np.dot(item["external"],v0))
     power = sum(np.dot(r["force"],r["relative"]) for r in reference)
     storage_rate = sum(-STIFFNESS*r["compression"]*r["rate"] for r in reference)
     assert power+storage_rate <= 1e-10
@@ -461,3 +470,20 @@ def test_zero_layer_load_is_real_motion_not_a_frozen_state(variant,tyx_mode,tmp_
             close(result.worlds[7]["node_contact_force"],0,atol=0,rtol=0)
             close(result.worlds[7]["rigid_wrench"],0,atol=0,rtol=0)
         assert root_state(batch.snapshot()[7],item).position != root_state(initial,item).position
+
+
+@pytest.mark.tyx
+def test_same_trajectory_enters_and_leaves_layer_under_declared_external_load(tyx_mode,tmp_path):
+    item = fixture("P",variant="entry-exit")
+    with saved(tmp_path,"entry-exit",tyx_mode,case=manifest(item),h=H,steps=16) as evidence, create((item,),tyx_mode) as batch:
+        batch.set_controls({item["participant"].key:item["command"]})
+        magnitudes,gaps = [],[]
+        for _ in range(16):
+            result,record = attempt(batch,(item,),H,evidence)
+            magnitudes.append(float(np.linalg.norm(result.worlds[7]["node_contact_force"].sum(axis=0))))
+            gaps.append(min(r["gap"] for r in record["audit"][7]["reference"]))
+        evidence["layer_events"] = dict(entry_gaps=gaps,force_magnitudes=magnitudes)
+        assert gaps[0] > WIDTH and magnitudes[0] == 0
+        assert any(f > 1e-5 for f in magnitudes[1:-1])
+        assert gaps[-1] > WIDTH and magnitudes[-1] == 0
+        assert batch.snapshot()[7].node.tick == 16

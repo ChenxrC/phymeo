@@ -172,12 +172,13 @@ class _BVHEngine:
 
 
 class ResidentBoundaryQueryPlan:
-    def __init__(self, batch, model, bindings, *, limits, memory_limit_bytes):
+    def __init__(self, batch, model, bindings, *, limits, memory_limit_bytes, source_adapter=None):
         if type(limits) is not BoundaryDistanceLimits:
             raise TypeError("boundary limits require BoundaryDistanceLimits")
         if type(memory_limit_bytes) is not int or memory_limit_bytes <= 0:
             raise ValueError("boundary memory_limit_bytes requires a positive builtin int")
         self._batch = batch
+        self._source_adapter = source_adapter
         self._mode = batch._mode
         self._tx = batch._tx if hasattr(batch, "_tx") else None
         self._runtime = getattr(batch, "_runtime", None)
@@ -224,7 +225,10 @@ class ResidentBoundaryQueryPlan:
         )
         with batch._lock:
             batch._check_open()
-            compile_registration(self, model, bindings)
+            if source_adapter is None:
+                compile_registration(self, model, bindings)
+            else:
+                source_adapter.compile_registration(self, model, bindings)
             self._templates, self._pair_template = self._groups()
             self._counts["persistent_bytes"] = sum(x.nbytes for x in self._constants.values())
             self._counts["host_constant_bytes"] = self._constant_bytes(self._layouts)
@@ -396,10 +400,19 @@ class ResidentBoundaryQueryPlan:
         return value
 
     def _borrow_source(self):
+        if self._source_adapter is not None:
+            return self._source_adapter.borrow_source(self)
         return borrow_boundary_source(self)
 
     def _validate_source(self, view):
+        if self._source_adapter is not None:
+            return self._source_adapter.validate_source(self, view)
         return validate_source(self, view)
+
+    def _logical_ticks(self, view, ticks):
+        if self._source_adapter is not None:
+            return self._source_adapter.logical_ticks(self, view, ticks)
+        return [int(ticks[view.accepted.slots[w]]) for w in self._world_keys]
 
     def _groups(self):
         shapes = self._model.shapes
@@ -465,6 +478,8 @@ class ResidentBoundaryQueryPlan:
     def _prepass_bytes(self):
         s, n = len(self._shape_keys), int(self._offsets[-1])
         result = self._counts["persistent_bytes"] + 64 * s + 36 * n
+        if self._source_adapter is not None:
+            result += 48 * s  # retain actual native poses before common-frame translation
         for group in self._templates:
             f, r = len(group["facets"]), len(group["items"])
             result += 40 * f + 48 * (2 * f - 1) + (52 + 4 * ((f + 29) // 30)) * r
@@ -502,6 +517,22 @@ class ResidentBoundaryQueryPlan:
                 outputs["points"],
                 outputs["point_bounds"],
             )
+        if self._source_adapter is not None:
+            from ._tyx_boundary_source import translate_boundary_frame
+
+            outputs["native_poses"] = self._allocate(ledger, shape=(s, 12), dtype=np.float32)
+            self._launch(
+                "source/common_frame",
+                translate_boundary_frame,
+                s,
+                self._buffers["shape_meta"],
+                self._buffers["anchor_shifts"],
+                outputs["poses"],
+                outputs["native_poses"],
+                outputs["stamps"],
+                outputs["points"],
+                outputs["point_bounds"],
+            )
         raw = {name: self._download(array, "source/" + name) for name, array in outputs.items()}
         ticks = self._download(view.accepted.ticks, "source/accepted_ticks")
         self._validate_gather(view, raw, ticks)
@@ -520,6 +551,15 @@ class ResidentBoundaryQueryPlan:
                 raise RuntimeError("invalid boundary gathered " + name)
         if ticks.shape != (len(view.accepted.bindings),) or ticks.dtype != np.int32:
             raise RuntimeError("invalid accepted source ticks")
+        if self._source_adapter is not None:
+            native = raw["native_poses"]
+            if (
+                native.shape != (s, 12)
+                or native.dtype != np.float32
+                or not np.isfinite(native).all()
+            ):
+                raise RuntimeError("invalid native boundary poses")
+            self._logical_ticks(view, ticks)
         meta = self._constants["shape_meta"]
         if (
             np.any(raw["stamps"][:, 0] != 1)
@@ -538,8 +578,10 @@ class ResidentBoundaryQueryPlan:
             if self._shape_rows[index] < 0:
                 expected = original - self._anchors[binding.key.world]
             else:
-                pose = raw["poses"][index].astype(np.float64)
+                pose = raw.get("native_poses", raw["poses"])[index].astype(np.float64)
                 expected = pose[:3] + original @ pose[3:].reshape(3, 3).T
+                if self._source_adapter is not None:
+                    expected += self._source_base["anchor_shifts_exact"][index]
             material_deltas[begin:end] = points[begin:end].astype(np.float64) - expected
         # Validation from actual stored pose + authored constants, never input to
         # a device kernel and never called an ideal-FP64 FK oracle.
@@ -651,6 +693,7 @@ class ResidentBoundaryQueryPlan:
                     point_bounds=raw["point_bounds"],
                     accepted_ticks=ticks,
                     material_reconstruction_delta=raw["material_deltas"],
+                    **({"native_poses": raw["native_poses"]} if "native_poses" in raw else {}),
                 ),
             )
         )
@@ -827,7 +870,9 @@ class ResidentBoundaryQueryPlan:
         return ResidentBoundaryDistances(
             "phymeo-resident-boundary-distances-v1",
             "threshold-limited-boundary-distance",
-            "resident-rigid-device-v1",
+            "resident-rigid-device-v1"
+            if self._source_adapter is None
+            else self._source_adapter.source_kind,
             self._owner,
             self._registration,
             self._sequence + 1,
@@ -900,7 +945,11 @@ class ResidentBoundaryQueryPlan:
                         active=view.accepted.active,
                     )
                     pending = self._layouts.copy()
-                    active = self._batch._device() if self._shape_keys else nullcontext()
+                    active = (
+                        self._batch._device()
+                        if self._shape_keys or self._source_adapter is not None
+                        else nullcontext()
+                    )
                     original_error = None
                     try:
                         with active:
@@ -919,7 +968,13 @@ class ResidentBoundaryQueryPlan:
                                     stamps=np.empty((0, 4), np.int32),
                                     material_deltas=np.empty((0, 3), np.float64),
                                 )
-                                accepted_ticks = np.empty(0, np.int32)
+                                if self._source_adapter is not None:
+                                    source_raw["native_poses"] = np.empty((0, 12), np.float32)
+                                accepted_ticks = (
+                                    self._download(view.accepted.ticks, "source/accepted_ticks")
+                                    if self._source_adapter is not None
+                                    else np.empty(0, np.int32)
+                                )
                             source = self._source_record(source_raw, accepted_ticks, view)
                             self._binding = _digest((source_stamp, margin, self._limits, source))
                             broad = []
@@ -1000,10 +1055,7 @@ class ResidentBoundaryQueryPlan:
                                     )
                                 self._completed_groups.append(index)
                             self._validate_source(view)
-                            ticks = [
-                                int(accepted_ticks[view.accepted.slots[w]])
-                                for w in self._world_keys
-                            ]
+                            ticks = self._logical_ticks(view, accepted_ticks)
                             packet = self._build_packet(
                                 view, source, groups, pairs, ticks, margin, total
                             )
@@ -1078,4 +1130,6 @@ class ResidentBoundaryQueryPlan:
                 (stamp, result.margin, result.limits, result.source)
             ):
                 raise ValueError("boundary source binding differs")
+            if self._source_adapter is not None:
+                self._source_adapter.require_current(self, result)
             return result

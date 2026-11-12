@@ -87,3 +87,9 @@ Bpeak = Bpersistent + Bglobal + sum(Bgroup) + 1060 sum(P)
 `check_resident_scene_boundary.py --mode interpret|cuda --installed-root ABS --output freshABS`。自包含原 URDF/OBJ、两个 sparse worlds(17,83)，每 world ordinary + floating-affine 两个真实 arms。ordinary 原 asset mesh 对另一个 participant 的原 asset sphere 与 direct finite capsule；实际不同 anchors，全部原 facet/local IDs 保留。三连续物理步预计 6 logical worldsteps / 12 participantsteps，然后 selected reset/restore 和一次新 query；共 4 queries / 64 rows / 3 stale 拒绝。
 
 公共数据和原资产原文构造 oracle，不读取 binding 私有来源作期望。有限距离 oracle 独立比较端点→三角、段→三条有限边、穿面候选；保原距离/witness/normal门。每次物理调用前、实际返回后、snapshot 后分别持久写 journal，query outcome 在断言前保存，失败/close 同样保前缀；一个失败查询不声称 physics rollback。所有 loaded Phymeo module origins 必须来自指定安装目录，禁止源码 tests/examples imports。完整 JSONL.gz 与 summary 保存，源码外执行仍待父。
+
+## Parent source qualification — 2026-11-12
+
+Root serial qualification completed on the integrated source: run 014 has 41 passed (39 TYX interpret cases and 2 HOST release cases), and run 015 has 39 passed / 2 HOST-only deselected on CUDA. Both RAW_EXIT values are 0. The first run 013 stopped at a TYX lowering error because the newly added frame-translation kernel contained a Python docstring; changing that statement into a comment preserved the arithmetic and allowed both full backend selections to complete. Initial style findings and their raw sources are retained.
+
+The tested scope is logical participant ownership, real accepted device FK, common-frame finite boundary queries, and their transaction/resource behavior. This is query support, not new contact-force response or continuous collision detection. Source-external wheel qualification is still pending for Batch A. Evidence: `artifacts/p65-three-track-a-20261112-01/{013-scene-interpret-first,014-scene-interpret-repair,015-scene-cuda}`.

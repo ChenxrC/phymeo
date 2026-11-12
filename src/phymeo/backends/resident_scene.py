@@ -43,7 +43,9 @@ class ResidentSceneBatch:
         self._last_publication = None
         from ._resident_batch_transaction import ResidentBatchTransaction
 
-        self._service = ResidentBatchTransaction(self.layout, mode, cache_root=cache_root)
+        self._service = ResidentBatchTransaction(
+            self.layout, mode, cache_root=cache_root, scene_owner=self._owner
+        )
         try:
             self._free_plan = ResidentParticipantContactPlan(self)
         except BaseException:
@@ -161,6 +163,22 @@ class ResidentSceneBatch:
             plan._publish(publication)
             self._last_publication = publication
             return publication.accepted
+
+    def prepare_boundary_query(self, model, bindings, *, limits, memory_limit_bytes):
+        """Read accepted participant geometry without adding a contact-force law."""
+        from ._resident_boundary_query import ResidentBoundaryQueryPlan
+        from ._resident_scene_boundary import ResidentSceneBoundaryAdapter
+
+        with self._service.locked():
+            self._check_open()
+            return ResidentBoundaryQueryPlan(
+                self._service._batch,
+                model,
+                bindings,
+                limits=limits,
+                memory_limit_bytes=memory_limit_bytes,
+                source_adapter=ResidentSceneBoundaryAdapter(self),
+            )
 
     def step(self, h):
         return self._step(h, self._free_plan)

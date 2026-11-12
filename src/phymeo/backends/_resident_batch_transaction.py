@@ -33,13 +33,14 @@ class ResidentBatchTransaction:
     Publication is fully constructed before the original batch swaps its bank.
     """
 
-    def __init__(self, layout, mode="cuda", *, cache_root=None):
+    def __init__(self, layout, mode="cuda", *, cache_root=None, scene_owner=None):
         if type(layout) is not ResidentParticipantLayout:
             raise TypeError("transaction requires a ResidentParticipantLayout")
         layout.require_current()
         if any(world.body_count > 33 for world in layout.worlds.values()):
             raise ValueError("resident scene supports at most 33 physical bodies per logical world")
         self.layout = layout
+        self._scene_owner = scene_owner
         self._mechanical = {key: index for index, key in enumerate(layout.participant_keys)}
         self._keys = {index: key for key, index in self._mechanical.items()}
         self._batch = TyxWorldBatch(
@@ -141,6 +142,8 @@ class ResidentBatchTransaction:
         with self._batch._lock:
             if self._in_step:
                 raise RuntimeError("cannot close during scene publication")
+            if self._batch._boundary_reading:
+                raise RuntimeError("cannot close during scene boundary source loan")
             yield self
 
     def _check_open(self):
@@ -153,6 +156,25 @@ class ResidentBatchTransaction:
         self._check_open()
         if self._in_step:
             raise RuntimeError("cannot mutate a resident scene during its transaction")
+
+    @contextmanager
+    def borrow_boundary_source(self, scene_owner, registry_fingerprint):
+        """Loan the real common bank; logical identities never become storage IDs."""
+        with self.locked():
+            if (
+                scene_owner is None
+                or scene_owner is not self._scene_owner
+                or registry_fingerprint != self.layout.fingerprint
+            ):
+                raise ValueError("boundary scene owner or registry differs")
+            if self._in_step:
+                raise RuntimeError("boundary query during scene publication")
+            mapping = MappingProxyType(dict(self._mechanical))
+            with self._batch._borrow_boundary_collision_state(
+                owner=self._batch._collision_owner,
+                topology_generation=self._batch._topology_generation,
+            ) as accepted:
+                yield accepted, mapping
 
     @property
     def state_epoch(self):

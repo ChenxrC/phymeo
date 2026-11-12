@@ -82,6 +82,44 @@ def gather_boundary_points(
 
 
 @tx.kernel
+def translate_boundary_frame(
+    count: tx.i32,
+    shape_meta: tx.ndarray(tx.i32, 2),
+    shifts: tx.ndarray(tx.f32, 2),
+    poses: tx.ndarray(tx.f32, 2),
+    native_poses: tx.ndarray(tx.f32, 2),
+    stamps: tx.ndarray(tx.i32, 2),
+    points: tx.ndarray(tx.f32, 2),
+    point_bounds: tx.ndarray(tx.f32, 2),
+):
+    # Bring distinct native anchors into one logical-world frame on device.
+    for shape in tx.range(count):
+        for component in tx.static_range(12):
+            native_poses[shape, component] = poses[shape, component]
+        if shape_meta[shape, 1] >= 0:
+            begin = shape_meta[shape, 4]
+            end = shape_meta[shape, 5]
+            for axis in tx.static_range(3):
+                pose = tx.add_rn(poses[shape, axis], shifts[shape, axis])
+                poses[shape, axis] = pose
+                if not tx.isfinite(pose):
+                    stamps[shape, 0] = 0
+                for vertex in range(begin, end):
+                    center = tx.add_rn(points[vertex, axis], shifts[shape, axis])
+                    low = _lower(tx.add_rn(point_bounds[vertex, axis], shifts[shape, 3 + axis]))
+                    high = _upper(
+                        tx.add_rn(point_bounds[vertex, 3 + axis], shifts[shape, 6 + axis])
+                    )
+                    points[vertex, axis] = center
+                    point_bounds[vertex, axis] = low
+                    point_bounds[vertex, 3 + axis] = high
+                    if not tx.isfinite(center) or not tx.isfinite(low) or not tx.isfinite(high):
+                        stamps[shape, 0] = 0
+                    if low > center or center > high:
+                        stamps[shape, 0] = 0
+
+
+@tx.kernel
 def boundary_leaf_bounds(
     count: tx.i32,
     faces: tx.ndarray(tx.i32, 2),

@@ -1,5 +1,15 @@
 # 原生资产装配与完整初态
 
+## B8o：按来源 body 设置滑动摩擦
+
+`NativeAssetInstance.body_friction` 接收不可变的 `(source_body_name, sliding_mu)`
+序列；值须为非负有限 FP32 可表示标量，名称唯一且为资产局部名称。装配前绑定
+来源 body，对其直接形状修改 `friction[0]`，保留其它摩擦分量、condim、solref 等
+接触参数；不传播到子 body 或其他实例。未知 body 或没有形状的目标拒绝。
+未传入时没有新增模型修改。该输入是编译合同，不是运行期参数写入或另一套状态。
+输入被冻结，后续修改 caller 列表不影响实例；资源及原生运行时 owner 不变。
+成本是冷编译的来源 body 查找及指定形状遍历，没有按 world 重复解析或热路径成本。
+
 `builders.native_assembly` 是 **native-only/physolve** 专属适配入口，不是 resident
 模型，也不替代 `ArticulationWorld`。P2PE 只提供资产、placement、已解析的标量关节
 输入及有限静态环境；MjSpec、资源引用和原生下标转换均留在 PHYMEO。

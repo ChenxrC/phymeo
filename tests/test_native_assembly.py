@@ -29,6 +29,46 @@ def urdf(tmp_path):
     return str(path)
 
 
+def test_body_friction_targets_direct_source_shapes_without_changing_other_parameters(tmp_path):
+    source = tmp_path / "material.xml"
+    source.write_text('''<mujoco><worldbody><body name="base">
+      <geom name="a" size=".1" friction=".4 .02 .003"/>
+      <geom name="b" size=".1" pos=".3 0 0" friction=".6 .03 .004"/>
+      <body name="child" pos="0 0 .5"><geom name="c" size=".1"/></body>
+      </body><body name="empty"/></worldbody></mujoco>''')
+    plain = NativeAssetInstance("arm", str(source))
+    original = compile_native_template((plain,), timestep=.002, gravity=(0, 0, 0))
+    rows = [["base", 1.5]]
+    changed = replace(plain, body_friction=rows)
+    rows[0][1] = .1
+    template = compile_native_template((changed, replace(plain, name="neighbor")),
+                                       timestep=.002, gravity=(0, 0, 0))
+    before = original.compilation.fresh_native_model()
+    after = template.compilation.fresh_native_model()
+    for name in ("a", "b", "c"):
+        expected = before.geom("arm::" + name).friction.copy()
+        if name != "c":
+            expected[0] = 1.5
+        np.testing.assert_array_equal(after.geom("arm::" + name).friction, expected)
+        np.testing.assert_array_equal(after.geom("neighbor::" + name).friction,
+                                      before.geom("arm::" + name).friction)
+        np.testing.assert_array_equal(after.geom("arm::" + name).solref,
+                                      before.geom("arm::" + name).solref)
+        assert after.geom("arm::" + name).condim == before.geom("arm::" + name).condim
+    for name, message in (("missing", "unknown source body"), ("empty", "no shapes")):
+        with pytest.raises(ValueError, match=message):
+            compile_native_template((replace(plain, body_friction=((name, 1.),)),),
+                                    timestep=.002, gravity=(0, 0, 0))
+
+
+@pytest.mark.parametrize("rows", [(("base", -1.),), (("base", np.nan),),
+    (("base", np.inf),), (("base", 1e40),), (("base", True),), (("base", "1"),),
+    (("base", .4), ("base", .5)), (("arm::base", .4),), (("", .4),)])
+def test_body_friction_rejects_invalid_declarations(urdf, rows):
+    with pytest.raises(ValueError, match="friction"):
+        NativeAssetInstance("arm", urdf, body_friction=rows)
+
+
 def test_snapshot_is_authoritative_for_model_drive_visual_and_identity(urdf):
     snapshot = (
         URDF.replace('mass value="2"', 'mass value="4"')

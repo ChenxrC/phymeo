@@ -5,7 +5,7 @@ Newton compatibility model are introduced. All participants share one model.
 """
 
 from dataclasses import dataclass, field
-from numbers import Integral
+from numbers import Integral, Real
 from pathlib import Path
 
 import numpy as np
@@ -86,6 +86,8 @@ class NativeAssetInstance:
     floating: bool = False
     urdf_xml: str | None = None
     resource_roots: tuple[str, ...] = ()
+    # Asset-local body name and sliding friction; other contact parameters stay native.
+    body_friction: tuple[tuple[str, float], ...] = ()
 
     def __post_init__(self):
         if not isinstance(self.name, str) or not self.name or "::" in self.name:
@@ -101,6 +103,19 @@ class NativeAssetInstance:
         if any(not isinstance(p, (str, Path)) or not str(p).strip() for p in roots):
             raise ValueError("resource_roots requires nonempty paths")
         object.__setattr__(self, "resource_roots", tuple(str(Path(p).resolve()) for p in roots))
+        friction = tuple(tuple(row) for row in self.body_friction)
+        names = set()
+        for row in friction:
+            if len(row) != 2:
+                raise ValueError("body_friction requires (source body name, sliding friction)")
+            name, value = row
+            if not isinstance(name, str) or not name or "::" in name or name in names:
+                raise ValueError("body_friction requires unique asset-local body names")
+            if (isinstance(value, (bool, np.bool_)) or not isinstance(value, Real)
+                    or not np.isfinite(value) or not 0 <= value <= float(np.finfo(np.float32).max)):
+                raise ValueError("body friction requires a nonnegative finite FP32 scalar")
+            names.add(name)
+        object.__setattr__(self, "body_friction", tuple((name, float(v)) for name, v in friction))
         object.__setattr__(self, "position", _vector(self.position, 3, "position"))
         q = _vector(self.orientation_xyzw, 4, "orientation")
         if abs(np.linalg.norm(q) - 1) > 1e-10:
@@ -413,6 +428,17 @@ def compile_native_template(
                     f"{asset.name}: source option {name} needs an assembly profile"
                 )
         child.compiler.fusestatic = False
+        # Apply while source body ownership still exists, before namespaces and
+        # attachment. Do not broadcast to descendants or another asset instance.
+        for name, sliding in asset.body_friction:
+            body = child.body(name)
+            if body is None or name == "world":
+                raise ValueError(f"{asset.name}: unknown source body for friction: {name}")
+            geoms = tuple(body.geoms)
+            if not geoms:
+                raise ValueError(f"{asset.name}: body friction has no shapes: {name}")
+            for geom in geoms:
+                geom.friction[0] = sliding
         # MjSpec.to_zip only stores VFS assets, not files loaded implicitly from
         # disk. Own them before attachment (which namespaces their paths too),
         # so a later explicit rule compile never rereads the source directory.

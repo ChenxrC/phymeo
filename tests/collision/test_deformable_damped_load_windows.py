@@ -190,3 +190,41 @@ def test_new_runner_verifies_unchanged_original_dependency_bytes():
             module.reference_provenance()
     finally:
         module.EXPECTED_DEPENDENCIES["deformable_normal_load_cases"] = original
+
+@pytest.mark.tyx
+def test_late_observer_failure_keeps_one_real_damped_return(tyx_mode, tmp_path, monkeypatch):
+    import gzip
+    import json
+
+    module = runner()
+    original = module.audit_step
+    visits = []
+
+    def after_real_audit(*args, **kwargs):
+        original(*args, **kwargs)
+        visits.append(args[3])
+        raise RuntimeError("D6-B observer failed after first actual return")
+
+    output = tmp_path / "one-return-prefix"
+    with monkeypatch.context() as patch:
+        patch.setattr(module, "audit_step", after_real_audit)
+        with pytest.raises(RuntimeError, match="observer failed after first"):
+            module.run_window(module.ref.NAMES[0], tyx_mode, output)
+    assert len(visits) == 1
+    summary = json.loads((output / "summary.json").read_text(encoding="utf-8"))
+    assert summary["status"] == "FAIL"
+    assert summary["progress"]["steps_returned"] == summary["progress"]["worldsteps"] == 1
+    assert summary["progress"]["steps_checked"] == 0
+    assert summary["progress"]["close_returned"] == 1
+    with gzip.open(output / "damped-normal-load.jsonl.gz", "rt", encoding="utf-8") as stream:
+        records = [json.loads(line) for line in stream]
+    assert [r["ordinal"] for r in records] == list(range(len(records)))
+    events = [r["event"] for r in records]
+    assert events.index("step-attempt") < events.index("step-return") < events.index("damping-phase-audit") < events.index("failure")
+    returned = next(r for r in records if r["event"] == "step-return")
+    receipt = dict(returned["payload"]["mapping_entries"])["receipt"]
+    node = dict(receipt["node_receipt"]["worlds"]["mapping_entries"])[7]
+    assert node["dissipation"]["trace"]["shape"] == [4, 32]
+    state = dict(receipt["states"]["mapping_entries"])[7]
+    assert state["node"]["tick"] == state["rigid"]["tick"] == 1
+    # The observer fails after common physical publication; no rollback claim.

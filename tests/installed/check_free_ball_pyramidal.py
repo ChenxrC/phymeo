@@ -731,91 +731,146 @@ def compare(row, before, after, packet, expected, model):
     raw = row.raw_contact_fields
     # Native geometry-only bijection defines the EFC permutation. Never compare
     # a normal-only proxy or sort by force to obtain agreement.
-    require(len(row.constraints) == len(native_rows) == len(expected["efc_R"]),
-            "complete native pyramidal EFC count")
+    require(
+        len(row.constraints) == len(native_rows) == len(expected["efc_R"]),
+        "complete native pyramidal EFC count",
+    )
     ids, values, jac = (np.asarray(raw[k]) for k in ("efc_ids", "efc_data", "efc_J"))
     cmap = np.asarray(raw["contact_map"])
     n, nc = len(row.constraints), len(row.contacts)
-    require(ids.shape[1] == 5 and values.shape[1] == 14 and jac.shape[1] >= model.nv,
-            "complete EFC buffer layout")
+    require(
+        ids.shape[1] == 5 and values.shape[1] == 14 and jac.shape[1] >= model.nv,
+        "complete EFC buffer layout",
+    )
     np.testing.assert_array_equal(raw["counts"], [nc, sum(c.active for c in row.contacts), n])
     scalar_fields = (
-        ("position", "efc_pos"), ("margin", "efc_margin"), ("velocity", "efc_vel"),
-        ("reference_acceleration", "efc_aref"), ("regularization", "efc_R"),
-        ("inverse_regularization", "efc_D"), ("impedance", "efc_impedance"),
+        ("position", "efc_pos"),
+        ("margin", "efc_margin"),
+        ("velocity", "efc_vel"),
+        ("reference_acceleration", "efc_aref"),
+        ("regularization", "efc_R"),
+        ("inverse_regularization", "efc_D"),
+        ("impedance", "efc_impedance"),
         ("diag_approx", "efc_diagApprox"),
     )
     reconstructed = np.zeros(model.nv)
     for i, (constraint, ni) in enumerate(zip(row.constraints, native_rows, strict=True)):
         require(constraint.schema == "mujoco-tyx-constraint-row-v1", "EFC schema")
-        require(constraint.constraint_type == int(expected["efc_type"][ni]) == 6,
-                "native pyramidal row type")
-        require(native[constraint.source_id]["native_index"] == int(expected["efc_id"][ni]),
-                "native contact owner")
+        require(
+            constraint.constraint_type == int(expected["efc_type"][ni]) == 6,
+            "native pyramidal row type",
+        )
+        require(
+            native[constraint.source_id]["native_index"] == int(expected["efc_id"][ni]),
+            "native contact owner",
+        )
         contact = row.contacts[constraint.source_id]
         edge = ni - native[constraint.source_id]["address"]
-        require(constraint.side_or_edge == edge and edge in range(4) and constraint.dof == -1,
-                "all four native edge identities")
+        require(
+            constraint.side_or_edge == edge and edge in range(4) and constraint.dof == -1,
+            "all four native edge identities",
+        )
         require(constraint.geometry_slot == cmap[constraint.source_id, 0], "geometry slot")
         np.testing.assert_array_equal(
-            ids[i], [constraint.constraint_type, constraint.source_id, edge,
-                     constraint.geometry_slot, constraint.dof])
-        np.testing.assert_array_equal(jac[i, :model.nv], constraint.jacobian)
-        np.testing.assert_allclose(constraint.jacobian, expected["efc_J"][ni],
-                                   rtol=2e-4, atol=5e-5)
+            ids[i],
+            [
+                constraint.constraint_type,
+                constraint.source_id,
+                edge,
+                constraint.geometry_slot,
+                constraint.dof,
+            ],
+        )
+        np.testing.assert_array_equal(jac[i, : model.nv], constraint.jacobian)
+        np.testing.assert_allclose(constraint.jacobian, expected["efc_J"][ni], rtol=2e-4, atol=5e-5)
         axis, sign = edge // 2, (1 if edge % 2 == 0 else -1)
-        independent_edge = contact.jacobian[0] + sign * contact.friction[axis] * contact.jacobian[1 + axis]
+        independent_edge = (
+            contact.jacobian[0] + sign * contact.friction[axis] * contact.jacobian[1 + axis]
+        )
         np.testing.assert_allclose(constraint.jacobian, independent_edge, rtol=2e-4, atol=5e-5)
         for field, target in scalar_fields:
-            np.testing.assert_allclose(getattr(constraint, field), expected[target][ni],
-                                       rtol=5e-4, atol=4e-4, err_msg=field)
+            np.testing.assert_allclose(
+                getattr(constraint, field),
+                expected[target][ni],
+                rtol=5e-4,
+                atol=4e-4,
+                err_msg=field,
+            )
         np.testing.assert_allclose(constraint.force, expected["efc_force"][ni], **CONTACT_FORCE)
-        require(constraint.lower == 0 and constraint.upper is None and constraint.force >= 0,
-                "unchanged nonnegative pyramid edge force")
+        require(
+            constraint.lower == 0 and constraint.upper is None and constraint.force >= 0,
+            "unchanged nonnegative pyramid edge force",
+        )
         np.testing.assert_array_equal(
-            values[i, [0,1,2,3,4,5,6,7,8,9,10,12,13]],
-            [constraint.position, constraint.margin, constraint.velocity,
-             constraint.reference_acceleration, constraint.regularization,
-             constraint.inverse_regularization, constraint.impedance, 0, 0,
-             constraint.force, constraint.gradient, 0, constraint.diag_approx])
+            values[i, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 13]],
+            [
+                constraint.position,
+                constraint.margin,
+                constraint.velocity,
+                constraint.reference_acceleration,
+                constraint.regularization,
+                constraint.inverse_regularization,
+                constraint.impedance,
+                0,
+                0,
+                constraint.force,
+                constraint.gradient,
+                0,
+                constraint.diag_approx,
+            ],
+        )
         require(values[i, 11] == 1, "active EFC raw flag")
         reconstructed += constraint.jacobian * constraint.force
     np.testing.assert_allclose(reconstructed, row.qfrc_constraint, rtol=5e-5, atol=5e-5)
     first = 0
     for ci, contact in enumerate(row.contacts):
-        require(contact.dimension == 3 and contact.jacobian.shape == (6, model.nv),
-                "full contact dimension and Jacobian")
+        require(
+            contact.dimension == 3 and contact.jacobian.shape == (6, model.nv),
+            "full contact dimension and Jacobian",
+        )
         count = 4 if contact.active else 0
         np.testing.assert_array_equal(cmap[ci, 1:], [first if count else -1, count])
-        np.testing.assert_array_equal(np.asarray(raw["contact_J"])[ci, :, :model.nv], contact.jacobian)
-        np.testing.assert_array_equal(np.asarray(raw["contact_wrench"])[ci], contact.wrench_contact_frame)
+        np.testing.assert_array_equal(
+            np.asarray(raw["contact_J"])[ci, :, : model.nv], contact.jacobian
+        )
+        np.testing.assert_array_equal(
+            np.asarray(raw["contact_wrench"])[ci], contact.wrench_contact_frame
+        )
         decoded = np.zeros(6)
         if count:
-            forces = np.array([r.force for r in row.constraints[first:first + 4]])
+            forces = np.array([r.force for r in row.constraints[first : first + 4]])
             decoded[0] = np.sum(forces)
             decoded[1] = contact.friction[0] * (forces[0] - forces[1])
             decoded[2] = contact.friction[1] * (forces[2] - forces[3])
-            require(all(r.source_id == ci for r in row.constraints[first:first + 4]),
-                    "exact compact contact-to-edge ownership")
+            require(
+                all(r.source_id == ci for r in row.constraints[first : first + 4]),
+                "exact compact contact-to-edge ownership",
+            )
         np.testing.assert_allclose(decoded, contact.wrench_contact_frame, rtol=4e-5, atol=4e-5)
         # Contact velocity and both COM wrench powers use the actual input v.
         power = float(contact.wrench_contact_frame @ (contact.jacobian @ row.input_v))
-        dual_power = sum(float(getattr(contact, f"wrench_on_body{side}_world") @
-                               (dyn.jacobian_com[body] @ row.input_v))
-                         for side, body in enumerate(contact.body_ids, 1))
+        dual_power = sum(
+            float(
+                getattr(contact, f"wrench_on_body{side}_world")
+                @ (dyn.jacobian_com[body] @ row.input_v)
+            )
+            for side, body in enumerate(contact.body_ids, 1)
+        )
         np.testing.assert_allclose(dual_power, power, rtol=5e-5, atol=5e-5)
         first += count
     require(first == n, "no omitted or extra EFC edge")
     # Independent physical-M QP residual, retaining the original mixed-solver
     # engineering audit gate. Euler M+hD is checked separately above.
-    j = jac[:n, :model.nv].astype(float)
+    j = jac[:n, : model.nv].astype(float)
     force = np.array([r.force for r in row.constraints])
     reg = np.array([r.regularization for r in row.constraints])
     aref = np.array([r.reference_acceleration for r in row.constraints])
     hessian = j @ np.linalg.solve(dyn.mass_matrix.astype(float), j.T) + np.diag(reg)
     linear = j @ dyn.smooth_acceleration - aref
     native_j = expected["efc_J"][native_rows]
-    native_h = native_j @ np.linalg.solve(expected["mass_matrix"], native_j.T) + np.diag(expected["efc_R"][native_rows])
+    native_h = native_j @ np.linalg.solve(expected["mass_matrix"], native_j.T) + np.diag(
+        expected["efc_R"][native_rows]
+    )
     np.testing.assert_allclose(hessian, native_h, rtol=7e-4, atol=5e-4)
     gradient = hessian @ force + linear
     working = np.asarray(raw["working_set"])[:n]
@@ -828,14 +883,21 @@ def compare(row, before, after, packet, expected, model):
         np.testing.assert_allclose(constraint.gradient, gradient[i], rtol=3e-3, atol=5e-5 * scale)
     physical_rhs = dyn.applied + dyn.passive - dyn.bias + row.qfrc_constraint
     mass_error = dyn.mass_matrix.astype(float) @ row.qacc - physical_rhs
-    mass_scale = max(1.0, np.max(np.abs(physical_rhs) + np.abs(dyn.mass_matrix) @ np.abs(row.qacc), initial=0))
+    mass_scale = max(
+        1.0, np.max(np.abs(physical_rhs) + np.abs(dyn.mass_matrix) @ np.abs(row.qacc), initial=0)
+    )
     require(np.max(np.abs(mass_error), initial=0) / mass_scale <= 5e-5, "independent mass residual")
     diag = raw["solver_diagnostics"]
-    require(diag["converged"] and diag["actual_efc"] == n and
-            diag["normalized_kkt"] <= float(np.float32(max(model.opt.tolerance, 2e-5))),
-            "original KKT gate")
-    require(diag["normalized_mass_residual"] <= 5e-5 and diag["bound_violation"] <= 2e-7,
-            "original mass/bound gates")
+    require(
+        diag["converged"]
+        and diag["actual_efc"] == n
+        and diag["normalized_kkt"] <= float(np.float32(max(model.opt.tolerance, 2e-5))),
+        "original KKT gate",
+    )
+    require(
+        diag["normalized_mass_residual"] <= 5e-5 and diag["bound_violation"] <= 2e-7,
+        "original mass/bound gates",
+    )
     require(diag["face_solves"] <= diag["budget"] == model.opt.iterations, "original source budget")
     np.testing.assert_array_equal(values[n:], 0)
     np.testing.assert_array_equal(jac[n:], 0)
@@ -950,7 +1012,9 @@ def advance(runtime, mj, model, packets, refs, journal, label):
             runtime.counters["accepted_world_steps"] == accepted_before + len(runtime.world_keys),
             "one accepted step per world",
         )
-        stages = 6 + runtime.capabilities["normal_geometry_launches"]
+        # These declared plane/sphere and sphere/sphere sources use one geometry stage.
+        # Pyramidal has geometry, mechanics, contacts, EFC assembly/solve/decode, integration.
+        stages = 7
         require(
             runtime.counters["completed_kernels"] == launches_before + stages,
             "unchanged contact pipeline launch count",
@@ -1031,7 +1095,8 @@ def continuous(name, mode, journal):
                 row = state[key].last_step
                 active[key].append(any(c.active and c.normal_force > 0 for c in row.contacts))
                 tangent_response[key] = tangent_response[key] or any(
-                    c.active and np.any(c.wrench_contact_frame[1:3] != 0) for c in row.contacts)
+                    c.active and np.any(c.wrench_contact_frame[1:3] != 0) for c in row.contacts
+                )
                 require(np.any(row.qfrc_actuator != 0) or tick >= 16, "real JOINT drive retained")
                 if tick >= 16:
                     np.testing.assert_array_equal(row.control.ctrl, np.zeros(model.nu))
@@ -1049,7 +1114,9 @@ def continuous(name, mode, journal):
                     # Internal sibling contact has no resultant free-root force
                     # or torque, despite nonzero reaction in both child joints.
                     for c in row.contacts:
-                        np.testing.assert_allclose(c.jacobian[:, :6], np.zeros((6, 6)), rtol=0, atol=5e-5)
+                        np.testing.assert_allclose(
+                            c.jacobian[:, :6], np.zeros((6, 6)), rtol=0, atol=5e-5
+                        )
                     np.testing.assert_allclose(
                         row.qfrc_constraint[:6], np.zeros(6), rtol=0, atol=5e-5
                     )

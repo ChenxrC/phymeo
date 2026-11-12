@@ -409,9 +409,9 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
             )
             if self._plan.kind == 3 and getattr(self._plan, "native_joint_layout", False):
                 domain = (
-                    "free-ball-joint-motor-normal-contact-v1"
+                    f"free-ball-joint-motor-{family}-contact-v1"
                     if getattr(self._plan, "joint_transmission", None) is not None
-                    else "free-ball-normal-contact-v1"
+                    else f"free-ball-{family}-contact-v1"
                 )
             else:
                 domain = f"fixed-ball-{actuator_family}-{family}-contact{activation}-v1"

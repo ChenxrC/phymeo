@@ -100,6 +100,8 @@ def compile_model(mj, model):
             # back to a different solver after a failed lowering.
             floating = compile_floating_model(mj, model, allow_normal_contacts=True)
             pairs = possible_pairs(model)
+            if any(_mix_contact(model, left, right, mj)[0] == 3 for left, right in pairs):
+                return compile_constraint_model(mj, model, pairs)
             return compile_normal_model(mj, model, pairs) if pairs else floating
         # Validate BALL structure before choosing its declared contact route.
         # Stateful JOINT motors use the activation compiler's explicit domain;

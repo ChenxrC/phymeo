@@ -32,7 +32,6 @@ def test_free_ball_normal_complete_native_24_steps(name, mode, tmp_path):
 
 NEGATIVES = {
     "activation": "free-ball-activation",
-    "pyramid": "free-ball-contact",
     "ball-limit": "free-ball-constraint",
     "scalar-limit": "free-ball-constraint",
     "dry": "free-ball-constraint",
@@ -76,7 +75,7 @@ def test_free_ball_normal_unsupported_precedes_device(negative, monkeypatch, tmp
     (tmp_path / "rejection.txt").write_text(repr(caught.value), encoding="utf-8")
 
 
-@pytest.mark.parametrize("negative", ("pyramid", "activation", "ball-limit", "dry"))
+@pytest.mark.parametrize("negative", ("activation", "ball-limit", "dry"))
 def test_free_ball_normal_direct_compiler_flags_cannot_bypass_domain(negative):
     mj = pytest.importorskip("mujoco")
     from phymeo.backends.mujoco_tyx import MuJoCoTyxUnsupported

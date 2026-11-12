@@ -79,7 +79,9 @@ def test_free_ball_pyramidal_unsupported_precedes_device(negative, monkeypatch, 
     (tmp_path / "rejection.txt").write_text(repr(caught.value), encoding="utf-8")
 
 
-@pytest.mark.parametrize("negative", ("condim4", "condim6", "elliptic", "activation", "ball-limit", "dry"))
+@pytest.mark.parametrize(
+    "negative", ("condim4", "condim6", "elliptic", "activation", "ball-limit", "dry")
+)
 def test_free_ball_pyramidal_direct_compiler_flags_cannot_bypass_domain(negative):
     mj = pytest.importorskip("mujoco")
     from phymeo.backends.mujoco_tyx import MuJoCoTyxUnsupported
@@ -161,8 +163,13 @@ def test_free_ball_pyramidal_priority_mixing_controls_route(cone, mixed_three):
 
     xml = case.source("feet").replace('cone="pyramidal"', f'cone="{cone}"')
     xml = xml.replace('name="ground"', 'name="ground" condim="1" priority="1"')
-    if mixed_three:
-        xml = xml.replace('name="toe0"', 'name="toe0" condim="3" priority="2"')
+    # The toe-to-toe potential pair is part of the complete route too.  A
+    # normal ground alone does not override that pair's inherited condim3.
+    xml = xml.replace('name="toe1"', 'name="toe1" condim="1"')
+    xml = xml.replace(
+        'name="toe0"',
+        'name="toe0" condim="3" priority="2"' if mixed_three else 'name="toe0" condim="1"',
+    )
     model = mj.MjModel.from_xml_string(xml)
     if mixed_three and cone == "elliptic":
         with pytest.raises(MuJoCoTyxUnsupported) as caught:
@@ -206,11 +213,19 @@ def test_free_ball_pyramidal_exact_static_capacity_real_step(capacity, mode, tmp
                 for k in case.KEYS
             }
             journal.emit("capacity-input", source=xml, state=states, capacity=capacity)
-            case.advance(runtime, mj, model, packets, case.references(mj, model, states),
-                         journal, "exact-static-capacity")
+            case.advance(
+                runtime,
+                mj,
+                model,
+                packets,
+                case.references(mj, model, states),
+                journal,
+                "exact-static-capacity",
+            )
             assert runtime.counters["accepted_world_steps"] == len(case.KEYS)
     finally:
         journal.close()
+
 
 @pytest.mark.parametrize("name", CASES)
 def test_free_ball_pyramidal_inputs_only_change_condim(name):
@@ -240,10 +255,13 @@ def test_free_ball_pyramidal_inputs_only_change_condim(name):
     # Resolve only these authored pure XML functions; no project/native execution.
     names = {"HEADER", "ROOT_INERTIA"}
     nodes = [
-        n for n in original.body
+        n
+        for n in original.body
         if (isinstance(n, ast.FunctionDef) and n.name in ("motor", "source"))
-        or (isinstance(n, ast.Assign)
-            and any(isinstance(t, ast.Name) and t.id in names for t in n.targets))
+        or (
+            isinstance(n, ast.Assign)
+            and any(isinstance(t, ast.Name) and t.id in names for t in n.targets)
+        )
     ]
     namespace = {}
     exec(compile(ast.Module(body=nodes, type_ignores=[]), str(original_path), "exec"), namespace)

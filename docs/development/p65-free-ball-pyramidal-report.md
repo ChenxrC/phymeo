@@ -152,3 +152,16 @@ tests-first 62004f0a；有限准入82b7b83e；输入绑定45ee0bb5；
 一NEW安装消费者。未改模型/参数/求解器/pin，也未产生性能或Newton比较结论。
 仍不支持FREE+BALL activation、关节限位/干摩擦、condim4/6/elliptic、mesh或跨体系耦合；
 本次脚接触24ms不构成人形长期足地支撑、训练或舞蹈资格。
+
+## Parent source qualification (2026-11-13)
+
+SOURCE_VERIFIED_LIMITED; installed qualification for this pyramidal increment is still pending.
+Parent route performs the complete FREE+BALL structural validation first, then sends any actual mixed condim3 pair to the existing constraint compiler; otherwise the original normal/no-contact path remains. Capability family is explicit.
+
+The first run86 returned a real step but the new consumer read normal_geometry_launches, a capability absent from the constraint route. The consumer now checks the source-confirmed seven launches for these plane/sphere and sphere/sphere declarations. Run87 then passed37 and exposed a HOST test premise: changing only the ground priority left the toe-to-toe potential pair at inherited condim3. That route correctly remained pyramidal. The new priority-only fixture now declares both toes' intended dimensions, with the higher-priority toe3 branch unchanged. Original continuous source/physical parameters and numerical gates were not altered.
+
+Run88: both complete new test files, **69 passed in74.43s**, RAW_EXIT0; no skips/deselections. All31 HOST and19 per actual backend were exercised.
+Run89: four affected original routing controls (normal feet and no-contact mixed, each interpret/CUDA), **4 passed in16.53s**, RAW_EXIT0. No whole old suite rerun.
+Ruff82/90 passed; first format83/91 failed, formatting84/92 and final85/93 passed. Run94 independently confirms the post-test formatted test AST equals its tested run88 snapshot. Product source was not changed after run88.
+
+Evidence: artifacts/p65-feature-until-0730-20261113-01, exact command/environment/before-after source snapshots and first failure logs. This is bounded FREE+BALL stateless joint-motor primitive condim1/3 support. The continuous positives use condim3; mixed1/3 is currently compile-route qualification only. No claim of activation, joint limits/dry, long human support/dance, G1 closure or performance.

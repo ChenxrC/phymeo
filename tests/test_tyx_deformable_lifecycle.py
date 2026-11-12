@@ -5,26 +5,29 @@ import numpy as np
 import pytest
 
 from phymeo.backends.tyx_deformable_batch import TyxDeformableBatch
-from test_tyx_deformable_batch import H, SETTINGS, arrays_equal, forces, world
+from test_tyx_deformable_batch import H, SETTINGS, arrays_equal, forces, record, world
 
 pytestmark = pytest.mark.tyx
 
 
-def test_checkpoint_partial_reset_and_real_successor(tyx_mode):
+def test_checkpoint_partial_reset_and_real_successor(tyx_mode, tmp_path):
     specs = (world(), world(31, square=True, fixed=True))
     with TyxDeformableBatch(specs, mode=tyx_mode, settings=SETTINGS) as batch:
         for t in range(3):
             batch.step(forces(specs,t), H, expected_revision=batch.revision)
+            record(tmp_path,"warm",input=forces(specs,t),receipt=batch.last_step,state=batch.snapshot())
         saved = batch.snapshot()
         capsule = batch.checkpoint()
         batch.step(forces(specs,4), H, expected_revision=batch.revision)
         successor = batch.snapshot()
+        record(tmp_path,"branch-a",checkpoint=capsule,receipt=batch.last_step,state=successor)
         old_revision = batch.revision
         batch.restore(capsule, expected_revision=old_revision)
         arrays_equal(batch.snapshot(), saved)
         with pytest.raises(ValueError):
             batch.restore(capsule, expected_revision=old_revision)
         batch.step(forces(specs,4), H, expected_revision=batch.revision)
+        record(tmp_path,"branch-b",receipt=batch.last_step,state=batch.snapshot())
         for key in batch.world_keys:
             np.testing.assert_array_equal(batch.snapshot()[key].position, successor[key].position)
             np.testing.assert_array_equal(batch.snapshot()[key].velocity, successor[key].velocity)
@@ -36,8 +39,10 @@ def test_checkpoint_partial_reset_and_real_successor(tyx_mode):
         arrays_equal({7:batch.snapshot()[7]}, {7:untouched})
         assert batch.snapshot()[31].tick == 0 and batch.snapshot()[31].last_step is None
         np.testing.assert_array_equal(batch.snapshot()[31].position, specs[1].initial_state.position)
+        record(tmp_path,"partial-reset",state=batch.snapshot(),checkpoint=batch.checkpoint())
         for _ in range(2):
             assert batch.step(forces(specs), H, expected_revision=batch.revision).accepted
+            record(tmp_path,"post-reset",receipt=batch.last_step,state=batch.snapshot())
         with pytest.raises(ValueError):
             batch.restore(replace(capsule,binding_sha256="0"*64), expected_revision=batch.revision)
 
@@ -71,16 +76,18 @@ def test_loan_prevents_reentry_and_expires(operation, tyx_mode):
 
 
 @pytest.mark.parametrize("fault", ["readback", "last-world", "receipt", "restore", "reset"])
-def test_late_failure_keeps_whole_accepted_bank(fault, tyx_mode, monkeypatch):
+def test_late_failure_keeps_whole_accepted_bank(fault, tyx_mode, monkeypatch, tmp_path):
     specs = (world(), world(31, square=True, fixed=True))
     with TyxDeformableBatch(specs, mode=tyx_mode, settings=SETTINGS) as batch:
         batch.step(forces(specs), H, expected_revision=0)
         saved, checkpoint, revision = batch.snapshot(), batch.checkpoint(), batch.revision
+        record(tmp_path,"before-fault",fault=fault,input=forces(specs),checkpoint=checkpoint,state=saved)
         with monkeypatch.context() as patch:
             if fault in ("restore", "reset"):
                 original = batch._verify_replacement
                 def refuse(*args, **kwargs):
                     original(*args, **kwargs)
+                    record(tmp_path,"verified-replacement",expected=args[0],candidate_bank=args[1])
                     raise RuntimeError("real prepared state refused")
                 patch.setattr(batch, "_verify_replacement", refuse)
                 with pytest.raises(RuntimeError, match="real prepared"):
@@ -91,7 +98,8 @@ def test_late_failure_keeps_whole_accepted_bank(fault, tyx_mode, monkeypatch):
             elif fault == "receipt":
                 original = batch._make_receipt
                 def refuse(*args, **kwargs):
-                    original(*args, **kwargs)
+                    candidate = original(*args, **kwargs)
+                    record(tmp_path,"complete-candidate-receipt",receipt=candidate)
                     raise RuntimeError("receipt after actual data refused")
                 patch.setattr(batch, "_make_receipt", refuse)
                 with pytest.raises(RuntimeError, match="receipt after"):
@@ -100,18 +108,21 @@ def test_late_failure_keeps_whole_accepted_bank(fault, tyx_mode, monkeypatch):
                 original = batch._read_candidate
                 def refuse(key, *args, **kwargs):
                     result = original(key, *args, **kwargs)
+                    record(tmp_path,"actual-candidate-read",world=key,arrays=result)
                     if fault == "readback" or key == 31:
                         raise RuntimeError("complete actual candidate read refused")
                     return result
                 patch.setattr(batch, "_read_candidate", refuse)
                 with pytest.raises(RuntimeError, match="complete actual"):
                     batch.step(forces(specs), H, expected_revision=revision)
+        record(tmp_path,"after-fault",state=batch.snapshot(),checkpoint=batch.checkpoint())
         arrays_equal(batch.snapshot(), saved)
         assert batch.revision == revision
         with batch.borrow_vertices(expected_revision=revision) as loan:
             assert loan.active_bank == checkpoint.active_bank
         assert batch.step(forces(specs), H, expected_revision=revision).accepted
         after = batch.snapshot()
+        record(tmp_path,"successful-retry",receipt=batch.last_step,state=after)
         batch.restore(checkpoint, expected_revision=batch.revision)
         assert batch.step(forces(specs), H, expected_revision=batch.revision).accepted
         for key in batch.world_keys:
@@ -183,13 +194,14 @@ def test_unknown_release_never_retries_opaque_callback(tyx_mode):
 
 
 @pytest.mark.parametrize("where", ["first-before", "last-after"])
-def test_real_kernel_failure_keeps_bank_and_allows_known_python_retry(where, tyx_mode, monkeypatch):
+def test_real_kernel_failure_keeps_bank_and_allows_known_python_retry(where, tyx_mode, monkeypatch, tmp_path):
     specs = (world(), world(31, square=True, fixed=True))
     with TyxDeformableBatch(specs, mode=tyx_mode, settings=SETTINGS) as batch, \
          TyxDeformableBatch(specs, mode=tyx_mode, settings=SETTINGS) as twin:
         for owner in (batch, twin):
             owner.step(forces(specs), H, expected_revision=0)
         saved = batch.snapshot()
+        record(tmp_path,"before-launch-fault",where=where,state=saved,input=forces(specs,1))
         revision = batch.revision
         bank = batch.checkpoint().active_bank
         original = batch._buffers.call
@@ -217,9 +229,12 @@ def test_real_kernel_failure_keeps_bank_and_allows_known_python_retry(where, tyx
                 batch.step(forces(specs, 1), H, expected_revision=revision)
         arrays_equal(batch.snapshot(), saved)
         assert batch.revision == revision and batch.checkpoint().active_bank == bank
+        record(tmp_path,"after-launch-fault",state=batch.snapshot(),checkpoint=batch.checkpoint(),calls=calls)
         assert calls and (where != "last-after" or len(clocks) == 2)
         assert batch.step(forces(specs, 1), H, expected_revision=revision).accepted
         assert twin.step(forces(specs, 1), H, expected_revision=twin.revision).accepted
+        record(tmp_path,"kernel-fault-retry",actual=batch.last_step,independent=twin.last_step,
+               actual_state=batch.snapshot(),independent_state=twin.snapshot())
         for key in batch.world_keys:
             for field in ("position", "velocity", "clock"):
                 assert getattr(batch.snapshot()[key], field).tobytes() == getattr(twin.snapshot()[key], field).tobytes()

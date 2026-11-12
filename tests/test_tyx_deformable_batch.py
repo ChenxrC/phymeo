@@ -1,5 +1,8 @@
 """D1 persistent native node states: fixed, independently authored cases."""
-from dataclasses import replace
+import base64
+from collections.abc import Mapping
+from dataclasses import fields, is_dataclass, replace
+import json
 
 import numpy as np
 import pytest
@@ -72,12 +75,34 @@ def arrays_equal(left, right):
         assert a.last_step is b.last_step
 
 
+def record(path, event, **payload):
+    def encode(value):
+        if isinstance(value, np.ndarray):
+            return dict(dtype=value.dtype.str, shape=value.shape,
+                        bytes_b64=base64.b64encode(value.tobytes()).decode())
+        if isinstance(value, np.generic):
+            return value.item()
+        if is_dataclass(value):
+            return dict(type=type(value).__name__,
+                        fields={field.name:encode(getattr(value,field.name)) for field in fields(value)})
+        if isinstance(value, Mapping):
+            return dict(mapping_entries=[[encode(k),encode(v)] for k,v in value.items()])
+        if isinstance(value,(tuple,list)):
+            return [encode(v) for v in value]
+        if type(value) is object:
+            return dict(opaque_owner_identity=True)
+        return value
+    with (path/"deformable-evidence.jsonl").open("a",encoding="utf-8") as stream:
+        stream.write(json.dumps(dict(event=event,payload=encode(payload)),allow_nan=False)+"\n")
+
+
 @pytest.mark.parametrize("square,fixed", [(False, False), (True, False), (True, True)])
 def test_real_ordered_deformation(square, fixed, tyx_mode, tmp_path):
     from phymeo.backends.tyx_node_math import TyxNodeMath
     spec = world(square=square, fixed=fixed)
     evidence = []
     with TyxDeformableBatch((spec,), mode=tyx_mode, settings=SETTINGS) as batch:
+        record(tmp_path,"initial",declaration=spec,state=batch.snapshot(),checkpoint=batch.checkpoint())
         original = batch.snapshot()[7].position.copy()
         with TyxNodeMath(tyx_mode, cache_root=tmp_path) as old_math:
             for tick in range(12):
@@ -87,6 +112,7 @@ def test_real_ordered_deformation(square, fixed, tyx_mode, tmp_path):
                 receipt = batch.step(packet, H, expected_revision=batch.revision)
                 state = batch.snapshot()[7]
                 row = receipt.worlds[7]
+                record(tmp_path,"step",input=packet,h=H,receipt=receipt,state=batch.snapshot(),stats=batch.stats())
                 # Exact old device arithmetic, separately invoked, never fed back.
                 px, pv = old_math.predict(entry.position, entry.velocity, packet[7].force,
                                          spec.model.inverse_mass, spec.model.gravity, H)
@@ -152,6 +178,8 @@ def test_sparse_world_permutation_and_force_isolation(tyx_mode, tmp_path):
             for owner, declarations in ((a, specs), (b, permuted)):
                 assert owner.step(forces(declarations, tick), H,
                                   expected_revision=owner.revision).accepted
+                record(tmp_path,"permutation-step",input=forces(declarations,tick),receipt=owner.last_step,
+                       state=owner.snapshot(),point_ids={s.key:s.point_ids for s in declarations})
             for sa, sb in zip(specs, reversed(permuted), strict=True):
                 aa, bb = a.snapshot()[sa.key], b.snapshot()[sb.key]
                 np.testing.assert_allclose(aa.position[np.argsort(sa.point_ids)],
@@ -234,13 +262,14 @@ def test_registration_rejects_before_runtime(bad, monkeypatch):
     assert not calls
 
 
-def test_trace_is_original_complete_projection(tyx_mode):
+def test_trace_is_original_complete_projection(tyx_mode, tmp_path):
     spec = world(square=True)
     with TyxDeformableBatch((spec,), mode=tyx_mode, settings=SETTINGS, trace=True) as traced, \
          TyxDeformableBatch((spec,), mode=tyx_mode, settings=SETTINGS) as plain:
         for _ in range(3):
             a = traced.step(forces((spec,)), H, expected_revision=traced.revision)
             b = plain.step(forces((spec,)), H, expected_revision=plain.revision)
+            record(tmp_path,"trace-parity",traced=a,plain=b,traced_state=traced.snapshot(),plain_state=plain.snapshot())
             np.testing.assert_array_equal(traced.snapshot()[7].position, plain.snapshot()[7].position)
             np.testing.assert_array_equal(traced.snapshot()[7].velocity, plain.snapshot()[7].velocity)
             assert len(a.worlds[7].trace) == a.worlds[7].sweeps

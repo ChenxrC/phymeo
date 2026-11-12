@@ -3,7 +3,7 @@
 from ..core.runtime_storage import RuntimeField, RuntimeStorage
 
 
-def bind_storage(owner, banks, stream, device, generation, controls=None, bodies=None, contacts=None, validation=None):
+def bind_storage(owner, banks, stream, device, generation, controls=None, bodies=None, contacts=None, validation=None, measurements=None):
     import tyx as tx
 
     # q, DOF and body index spaces are deliberately distinct. The compiled
@@ -57,6 +57,14 @@ def bind_storage(owner, banks, stream, device, generation, controls=None, bodies
             fields += (RuntimeField(name, tuple(arrays[0][name].shape),
                                     "float32" if floating else "int32", unit, frame,
                                     space, "solver evaluation; unselected reset worlds retain last sample"),)
+    if measurements is not None:
+        for array, bank in zip(arrays, measurements.banks):
+            array.update(bank)
+        for name, (_, _, unit, frame) in measurements.fields.items():
+            fields += (RuntimeField(name, tuple(arrays[0][name].shape), 'float32', unit,
+                                    frame, 'native_body', 'retained solver evaluation; see measurement_sample_time'),)
+        fields += (RuntimeField('measurement_sample_time', (banks[0].nworld,), 'float32', 's',
+                                'simulation clock', 'world', 'retained solver evaluation; unselected reset worlds retain last sample'),)
     if validation is not None:
         for array in arrays:
             array['execution_error'] = validation

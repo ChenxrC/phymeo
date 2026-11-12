@@ -29,6 +29,8 @@ class PreparedStepGraphs:
         contacts = self.runtime._contact_observations
         if contacts is not None:
             contacts.extractions += 1
+        if self.runtime._body_measurements is not None:
+            self.runtime._body_measurements.evaluations += 1
 
     def close(self):
         self.ready = False

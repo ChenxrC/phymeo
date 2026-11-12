@@ -700,3 +700,21 @@ P2PE 正式输入测试验证 NaN 拒绝。两项后续均通过，见 b5a-nativ
 新几何比较容差固定 1e-6 m，时间 1e-7 s，不改变已有测试容差。
 最终执行结果与审查统一保存配套实验根 evidence/b6a-summary.json；SensorView
 筛选、聚合、采样和安装 GUI 并未因本合同而完成。
+
+## B6c：求解时刻 body 测量前置接口
+
+公共字段、所有权、成本和可用范围集中于
+[Solve-time body measurements v1](../architecture/engine-integration.md#solve-time-body-measurements-v1)。
+配套 codedev a7 源码提供预分配 RNE 调用层，复用锁定算子；六 CUBIN 与 Host 不变。
+不新增求解算法、不做跨求解器排序/微小数值差异调查。默认不开启测量时成本不变。
+
+正式 pytest 入口 `tests/test_physolve_measurements.py` 最终 10 项通过（70.96 s），
+覆盖 N=1/8/64 解析铰链与自由落体、direct/固定四步 Graph、求解时间、局部 reset、
+command 保持、非有限观测拒绝和恢复、外部 stream/GC/换流、准备与清理失败保活。
+保持现有容差；独立解析参照使用既定 1e-6，时刻 1e-7 s。保留 TYX AST 弃用告警。
+初次最终入口遗漏 `phymeo/` 路径而未收集用例，修正入口后上述全套通过，原日志保留。
+
+本批是配套源码验证，未覆盖旧环境中的已安装 a6；不在原环境安装替换。
+独立复审关闭 current-device/冻结布局门禁发现；未运行新 GUI、完整 release 或性能。
+接触支撑/非零外力矩、site frame 和 P2PE IMU/F-T SensorView 属于后续接入验收，
+不能据本批 body 测量测试宣称完整 F/T 能力。证据见配套根 `evidence/b6c-*`。

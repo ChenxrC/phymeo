@@ -93,6 +93,8 @@ class PreparedValidation:
             raise RuntimeError(
                 "PhySolve mixed contact observation capacity exceeded; not published"
             )
+        if bits & 1048576:
+            raise RuntimeError('non-finite PhySolve body measurement; not published')
         if bits & 524288:
             if bits == 524288:
                 from .physolve_runtime import PhySolveInputError

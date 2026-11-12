@@ -298,6 +298,50 @@ Compact execution errors prevent publication, but arbitrary invalid raw input
 or a fatal CUDA context error does not promise in-process recovery. Consumers
 must prevalidate input; P2PE tests its finite-value rejection separately.
 
+## Solve-time body measurements v1
+
+`PhySolveRuntime(body_measurements=True)` opts into
+`body_measurement_contract_version=1`. The default is disabled with zero
+additional measurement storage or evaluations. It requires the paired
+`physolve-tyx-frontend` a7 source with `PostConstraintWorkspace.contract_version=1`;
+older frontends fail explicitly when this capability is requested.
+
+Readonly storage fields are defined once in `PreparedMeasurements.fields` and
+exposed through `RuntimeStorage.fields`: COM position, COM linear specific
+acceleration, angular acceleration, COM linear/angular twist, and internal
+force/torque at COM. All use float32, world coordinates, SI units and native
+body indices. Specific acceleration is physical acceleration minus gravity.
+Internal wrench is the parent-on-child resultant, not commanded joint effort
+or a scalar constraint force. Native body 0 is the world aggregate and must not
+be exposed as a valid joint F/T measurement. Compilation mappings resolve
+public bodies; no consumer may assume public IDs are native offsets.
+
+`measurement_sample_time: float32[nworld]` is the retained solver clock. A
+multi-substep advance measures its final solver evaluation, before the final
+integration, not the endpoint pose. The prepared RNE composition retains that
+evaluation's qvel and consumes matching native cvel/qacc/geometry. It evaluates
+once per logical advance without another forward, solve, or contact response.
+Forward/reset evaluate at their new solver time. Selected refresh/reset retain
+every unselected measurement and timestamp; command-only updates copy prior
+measurements without RNE. Mounted site transforms and actual SensorView
+IMU/F-T projection are not implemented by this body-level contract.
+
+The runtime owns two published measurement banks and one shared RNE workspace;
+all operations use its canonical stream. Completion merges non-finite
+measurement error bit 1048576 into the existing compact validation readback;
+failed execution cannot publish and can be discarded. Graphs retain this
+workspace; close completes work, retires Graph/Host resources, then releases it.
+Preparation followed by cleanup failure retains the runtime for explicit retry.
+Native arrays may not be replaced while borrowed descriptors are live.
+
+Additional device storage is `240*N*B + 4*N*nv + 8*N` bytes, plus `8*N` for
+equality counters when present (`B` includes the native world body). The
+N=1/8/64 two-body hinge reports 492/3936/31488 bytes. Each logical advance adds
+one device velocity snapshot, one time snapshot, one existing RNE composition
+and one publication kernel; no additional CPU physics or host snapshot.
+The native direct conditional readbacks remain visible. Throughput and peak
+memory are not qualified here. Source tests do not qualify an installed wheel.
+
 ## Contact reference v1
 
 `contact_reference_contract_version=1` adds readonly borrowed storage

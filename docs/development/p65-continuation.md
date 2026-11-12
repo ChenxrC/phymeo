@@ -1,38 +1,78 @@
 # Phymeo 当前续作入口
 
-更新：2026-11-13，**三主线 Batch C 已完成源码与安装资格**。D3真实设备节点/运动刚体双向法向响应、G1异构模型分桶已交付；产品 `3534f742` 的528成员同源，四个源码外解释/CUDA消费者通过。整个P6.5 / Newton功能对齐仍未完成；用户新指定本轮计划窗口至北京时间11月13日07:30。
+更新：2026-11-13；本页截点为 **D6-B run143 完整粗 N1 interpret 正在运行**。
+D5-A、R3-N/P、G2a、D6-A 已获各自有限源码/安装资格；D4 原稳态功能仍 FAIL。
+D6-A 的 FUNCTIONAL_PASS 与旧弹性 STRICT_FAIL_RECORDED 同时保留，不能合并成严格通过。
+整个 P6.5 / Newton 功能对齐未完成；本轮范围冻结06:15，07:30汇总，不自动顺延。
 
-## 当前入口
+## 从这里继续
 
-1. [Batch C实际结果](p65-three-track-batch-c-20261112.md)：公共能力、实际验证、首失败、资源与边界。
-2. [八方向差异全景](phymeo-newton-panorama-2026-11-12.md)：当前缺口及优先级。
-3. [三主线路线](../superpowers/plans/2026-11-12-scene-deformable-scale-roadmap.md)、[Batch C合同](../superpowers/plans/2026-11-12-three-track-batch-c.md)。
-4. [D3报告](p65-deformable-contact-report.md)、[异构报告](p65-heterogeneous-batch-report.md)、[统一编译架构](../architecture/unified-scene-compilation.md)。
-5. [Batch B](p65-three-track-batch-b-20261112.md)、[Batch A](p65-three-track-batch-a-20261112.md)、[更早记录](p65-continuation-history-through-20261112-0035.md)。按需定位，不恢复旧heartbeat或重审旧证据。
+1. [本轮功能计划与当前队列](../superpowers/plans/2026-11-13-feature-completion-until-0730.md)：冻结范围、唯一执行者、停止条件。
+2. [功能验收矩阵](p65-feature-acceptance-matrix-20261113.md)：源码、后端、安装、应用和性能分列；不估整体完成百分比。
+3. [当前连接架构](p65-feature-architecture-draft-20261113.md)、[统一编译架构](../architecture/unified-scene-compilation.md)：声明、设备来源、查询、载荷与共同发布。
+4. [八方向差异全景](phymeo-newton-panorama-2026-11-12.md)：下一通用模块与未完成范围；本轮详细事实以验收矩阵及原收据为准。
+5. [D6用法](p65-distance-dissipation-usage.md)、[D6设计](../superpowers/specs/2026-11-13-distance-dissipation-design.md)、[D6-B应用协议](p65-damped-normal-load-application-20261113.md)。
+6. [Batch C](p65-three-track-batch-c-20261112.md)、[Batch B](p65-three-track-batch-b-20261112.md)、[旧历史入口](p65-continuation-history-through-20261112-0035.md)仅按需引用，不恢复旧周期任务或重做旧审计。
 
-## 最新已验范围
+本轮证据总入口：`artifacts/p65-feature-until-0730-20261113-01`。
+当前事实依据包含父文档提交 `e25df478`、矩阵 `b1e95c70`、架构 `3e8d0df7`。
+本页是续作导航，不替代原完整输入、输出、原始失败、source snapshots 与保存收据。
 
-- **S1–S3公共场景查询**：多参与者声明/编译、真实设备FK和统一身份已连接，两类不同源码外场景通过。仍是同runtime有限边界查询，不自动产生新载荷或CCD。
-- **D1/D2**：持久真实节点及其当次accepted顶点→bounds/BVH→有限球/胶囊查询已通过；CONDITIONING保持显式拒绝施力。
-- **D3首片**：公共TyxDeformableContactBatch连接双来源、原法向层、完整ordered材料反力与真实浮体动力学，共同候选/发布/reset/restore。解释27、CUDA28通过；安装每后端8共同steps/13worldsteps/8queries。限定W≤8、每world一个节点模型及一个ordinary单body运动球/胶囊、零摩擦、入步采样；有HOST载荷往返，非隐式耦合。短窗入层/离层未替代D4持续支撑。
-- **机器人组合**：fixed direct BALL FILTEREXACT＋原接触、单FREE＋BALL/NONE电机基础格已验；新浮根球树的contact/activation/limits/dry仍拒绝。
-- **G1异构首片**：MuJoCoTyxHeterogeneousBatch按完整模型/资产/cap分桶，全部world力与运动/边界事务共同接受。新源码42通过；安装每后端27calls/162worldsteps。原cap为8模型/16world，实际首片3模型6world；不是最大规模、单异构kernel、性能或G1人形舞蹈资格。
-- **统一包**：528产品source/wheel/installed逐字节相同。四消费者全部通过，18文件完整压缩归档，原失败保留；不称新包全量回归。
+## 已验公共功能与边界
 
-## 下一批
+| 功能 | 当前资格 | 仍然不能声称 |
+| --- | --- | --- |
+| D5-A 公共刚柔声明 | `ParticipantSceneDeclaration(contact_response="deformable_normal")`＋`ParticipantDeformable` 自动装配唯一 D3 owner，资产球/程序胶囊短窗及生命周期源码、安装通过 | 任意关节机器人或多刚体刚柔、持续稳态支撑 |
+| R3-N 浮根球树法向接触 | FREE＋BALL/R/P、NONE JOINT motor、primitive condim1；完整同入步与连续参考及安装通过 | 人形长舞、activation、limits/dry 等全部组合 |
+| R3-P 浮根球树摩擦接触 | 同一约束/CSR路径的 primitive condim3 正控、安装通过；mixed1/3仅编译路由资格 | condim4/6、elliptic、FREE＋BALL activation/limits/dry 已放行 |
+| G2a 原容量内异构规模 | W1、W8/B3、W16/B3、W16/B8 源码格及晚失败/retry通过；W16两个格各有两后端安装资格 | W1/W8额外包外资格、单异构kernel、跨桶碰撞或W32以上 |
+| D6-A 可选轴向耗散 | 保存 elastic reconstructed velocity 后一次 ordered 速度pass；D1/D3/D5有限源码通过，D1/D3安装 FUNCTIONAL_PASS | 精确守恒、旧elastic短门通过、全网络BE、全局drag、所有膜振型衰减 |
 
-当前按[至07:30功能补齐计划](../superpowers/plans/2026-11-13-feature-completion-until-0730.md)执行：P0公共场景D5-A接线＋D4-N持续法向资格，P1 FREE＋BALL/condim1接触，P2原容量内G2a。用户已授权，11月13日约01:01从计划基线`6dcf99c2`启动；原三作者在隔离分支并行纯编码，父/root独占共享接缝与全部串行项目执行。新证据入口`artifacts/p65-feature-until-0730-20261113-01`。以下原路线保留依赖，执行顺序以新计划为准；07:30不顺延，也不是整个阶段完成承诺。
+原 S1–S3 resident 多参与者查询、M1/M1-A 资产来源、D1设备节点、D2有限球/胶囊–triangle 与 D3共同发布资格继续复用。
+D3/D5当前每world是一个节点模型＋一个ordinary单body动态球/胶囊；入步采样、逐facet NormalLayer、零摩擦，存在HOST载荷/诊断往返。
+原几何 CONDITIONING 不得丢弃后继续施力；查询不自动授予响应、CCD、实体内外或面积压力。
+Resident 刚柔与 MuJoCo-TYX 机器人是分别准入的路径，不能把支持表相乘成任意联合求解。
 
-1. **D4-N连续法向载荷**：先用真正有固定边界且有自由节点的弹性片检验持续支撑、卸载离层和再接触，同一真实轨迹保非零入步速度。当前D3已有无记忆normal law及事务，源码调研未发现必须先新建solver；先补通用连续指标/多案例与独立参考，产品缺陷按实证窄修。原全free压片不能拿来判定固定环境支撑。
-2. **G2a原容量内异构规模**：原三已验模型W1各一格、W8/W16及8桶16world，保原h、24步控制序列、每world完整参考及输出。先核功能/资源，live/peak设备内存未有完整observer则明确UNKNOWN；不以累计上传或旧同构S256代替。
-3. **后续**：D4摩擦/换面历史、D5统一场景组合；G2b须完整生命周期资源预算后再扩32/128/256，G3同模型/质量/输出Newton比较后置。
+详细范围：[D5](p65-deformable-scene-report.md)、[R3-N](p65-free-ball-normal-report.md)、[R3-P](p65-free-ball-pyramidal-report.md)、[G2a](p65-heterogeneous-scale-protocol.md)、[D6-A](p65-distance-dissipation-report.md)。
 
-下一批具体输入、门、文件owner需在首次执行前登记；不得从失败输出调fixture/质量/时间窗或放宽门。允许事先声明的有限穿入/漂移，不恢复精确相触和无限证明前置。同假设两次诊断不能缩小问题则保最小反例并调整方向。
+## 安装产品与保留失败
 
-## 保留失败与操作边界
+- 首包 `113629b3`：530成员同源；R3-N 75/76、G2a W16/B3 77/78 与 W16/B8 79/80已验，按原证据复用。
+- 第二包产品 `ec0e2997`：run127核532成员 source/wheel/installed 同字节；不是全部历史套件重跑。
+- 第二包 D6 128/129各44 worldsteps，均 FUNCTIONAL_PASS，同时每后端20项旧弹性精度记录、`strict_elastic_precision=FAIL_RECORDED`。
+- 第二包 R3-P 130/131各112 worldsteps，D5 132/133各57 worldsteps，均有限安装通过。
+- D6专用安装消费D1/D3；带耗散D5声明有源码资格，不能借普通D5安装消费者声称另一个带耗散D5包外矩阵。
 
-原G1人形46.29s参考XY门/131.48s完整动作、J/R学习门、R03两项净加速度门、B-point touch-SE仍未通过。N8原768转移/0新更新及297条审计保持，不自动追加训练或调clip/lr。通用CCD、摩擦历史、实体内外、更多机器人组合、批量传感、可微物理/跨域、密集布与体软体、杆缆/MPM/流体仍待补。
+**原D4无阻尼N1：** run50 interpret、run69 CUDA各完整3072步/3秒，入层、释放、重入等事件发生，但两预定稳态窗支撑力均值与速度RMS不合格，均保留 FAIL / DIAGNOSTIC_ONLY。
+这不是仅精度问题；另有run46第301步旧短速度门失败，原其余三格未执行。生成载荷subnormal窄修前后的两轨迹不冒称同一产品快照。
+**D6-A：** run104原总动量严格失败、run112旧elastic重构速度严格失败及安装strict记录保留；完整算术余项解释不修改状态、请求冲量或原阈值。
+固定反力包含外/接触、elastic及damping冲量；requested与实际速度冲量、理想功与有符号舍入差均分别保存，不使用能量补贴。
 
-父目录 C:/Users/38347/.codex/worktrees/p65-parallel-integration/phymeo；分支codex/p65-parallel-modules，本地未push。本批证据 `artifacts/p65-three-track-c-20261112-01`，installed-close.json绑定528产品、四消费者及18文件。原三作者沿用隔离worktree；父独占共享协议和集成、全部项目执行串行。下一批先查实时agents/Git/WIP，不重派已验工作。
+## D6-B 当前应用队列
 
-所有import/collection/数值/pytest/离线probe/lint/formatter/build/install/profile必须单owner及fresh entrypoint-aware guard。本轮仅采用用户明确的07:30窗口；不建周期任务，不做remote CI、push/mainmerge/发包。保留三份未跟踪草稿、用户Torch、当前venv/pins、首失败及旧证据Junction；不跟随Junction清理或全解压补副本。
+新案例统一四径向边 `c=4096 N·s/m`，来自事先静力/线性化量纲选择；原四格几何、质量、初态、3秒时序、h、物理门全部保持。
+这是独立的新材料应用，不覆盖原D4 FAIL；接触阻尼单位仍s/m，不能与材料系数混淆。
+新短合同 run140 interpret14通过，run141 CUDA单返回故障1通过；**这些不是长窗资格**。
+包外首launch142因辅助目录不在search path而0step失败；原记录保留，未发生物理推进。
+run143仅补明确的源码外helper路径，正在运行完整粗N1 interpret，使用预登记 `--diagnose-short-state`。
+截至本页没有该长窗物理结论；原短门失败逐项记录，诊断完成也不能标 STRICT PASS。
+
+1. 父先读取143实际完成结果，核完整3072步、共同力/运动、两phase与固定反力、独立带阻尼连续参考、原所有功能门。
+2. 仅首格功能成功且时间允许，才进入其余原固定格/后端；不将未运行格写成已验，不以短窗替换完整3秒。
+3. 若功能失败，保原结果并做一次有边界的模型/观察器诊断；不扫c，不调质量/h/时间窗/门追绿，不自动重跑原D4。
+4. FREE＋BALL FILTEREXACT后继仅由原audit作者做文档调查，尚无新实现授权；架构/全景由原source作者更新。
+5. 异构扩容先补完整生命周期内存预算；live/peak无真实observer则UNKNOWN，Newton公平性能比较另立阶段。
+
+## 执行与保护边界
+
+父集成：`C:/Users/38347/.codex/worktrees/p65-parallel-integration/phymeo`，分支 `codex/p65-parallel-modules`。
+父/root独占旧共享接缝、合入及唯一串行项目执行；原三作者仅在既有隔离worktree按allowlist并行作者工作。
+继续前先核实时agents/Git/WIP和当前grant；已释放任务不重派，同源已绿不重跑，同hash证据不重审。
+所有import/collection/数值/probe/pytest/lint/formatter/compile/build/install/profile必须由父fresh entrypoint-aware guard后串行执行。
+06:15冻结新增范围，07:30按真实已验/失败/未执行汇总；时间边界不授权伪造通过或自动扩展任务。
+不建周期任务，不poll/rerun/dispatch远程CI，不push/mainmerge/发包，不改pin或盲跑寿命stress。
+三份无关未跟踪稿、证据Junction及其canonical归档、用户Torch和当前venv/pins全部保留，不跟随Junction删除或全解压补副本。
+观察器在物理返回后失败不能称物理回滚；UNKNOWN_RELEASE保owner/lease，不能重复free或伪报零live。
+
+旧G1长舞46.29s XY门/131.48s完整动作、J/R学习、R03两项净加速度、B-point touch-SE仍开放。
+通用摩擦/换面历史、CCD、更多刚柔机器人组合、传感、可微物理、密集布/体软体、杆缆与MPM/流体仍是后继；本轮不因安装绿而关闭。

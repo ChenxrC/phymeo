@@ -1,6 +1,6 @@
 # 功能补齐执行计划：2026-11-13 至 07:30
 
-状态：**PLANNED，尚未启动本计划的项目执行**。时间均为北京时间；规划核对时为00:22，窗口约7小时。截止是本轮工作窗口，不是整个P6.5完成承诺。执行开始较晚时压缩可选项，07:30不顺延。起点 `be091c29`，已验产品 `3534f742`；三位原作者已完成本轮只读源码核对。
+状态：**IMPLEMENTING，用户已授权按计划执行**。北京时间2026-11-13约01:01开始，07:30截止不顺延；06:15冻结新功能。计划基线 `6dcf99c2`，上一批已验产品 `3534f742`。原三位作者已从该基线在各自原worktree切换新隔离分支，父/root是全部项目执行的唯一串行owner；当前实现不等于验证通过。执行收据入口为 `artifacts/p65-feature-until-0730-20261113-01`。
 
 ## 1. 本轮原则与交付优先级
 
@@ -97,7 +97,7 @@
 
 ## 4. 并行作者与共享文件
 
-仅沿用原三位agent、现有隔离worktree；父唯一项目执行者。以下是执行时分工，本轮规划阶段未派发实现grant。
+仅沿用原三位agent、现有隔离worktree；父唯一项目执行者。下列纯作者grant已派发；作者不运行任何项目命令。
 
 | owner | 独占工作 | 关键文件边界 |
 | --- | --- | --- |
@@ -106,7 +106,7 @@
 | mtyx_t2_audit | R3-N组合准入与独立机器人矩阵 | 隔离树内_floating_model.py的限定准入、新专用测试/安装consumer；不改父runtime或公共分流 |
 | 父/root | 共享声明/分流/来源校验/导出、G2a工具、合入和全部执行 | participant_scene_compiler.py、_deformable_response_source.py、必要D3公共query、_model.py、_mujoco_tyx_runtime.py；精确allowlist在代码前登记 |
 
-D5初始control与subset reset接口如需D3新公共方法，由父统一补，禁止作者私改checkpoint或访问私有bank绕过。执行时子agent只做编码/文本，所有import、collection、数值、pytest、lint/format、build/install/profile均父串行且每条fresh guard；当前规划阶段的三位作者均已完成只读工作并释放。
+D5初始control与subset reset使用原公开checkpoint/restore共同事务；D3新增公开query/currentness由父统一补，禁止作者私改checkpoint或访问私有bank绕过。子agent只做编码/文本，所有import、collection、数值、pytest、lint/format、build/install/profile均父串行且每条fresh guard。父共享allowlist为 `participant_scene_compiler.py`、`_deformable_response_source.py`、`tyx_deformable_contact.py`、`phymeo/__init__.py`、MuJoCo-TYX `_model.py`及`_mujoco_tyx_runtime.py`；后续实际缺陷需先窄定位再记录增量。
 
 ## 5. 到07:30的时间安排
 
@@ -141,4 +141,4 @@ D5初始control与subset reset接口如需D3新公共方法，由父统一补，
 3. 每片commits、代表案例、工程限制、真实首失败和安装产品版本。
 4. 下一步按剩余依赖排：摩擦/换面→更广D5；pyramid→activation；完整内存预算→扩容→公平性能。
 
-沿用[续作入口](../../development/p65-continuation.md)和[差异全景](../../development/phymeo-newton-panorama-2026-11-12.md)。禁止周期任务、remote CI、push/mainmerge或发包；不改用户环境，不清理旧证据Junction或三份无关草稿。本轮仅计划与源码文本调研，执行结果另记，不能用本文件的安排宣称已开始或通过。
+沿用[续作入口](../../development/p65-continuation.md)和[差异全景](../../development/phymeo-newton-panorama-2026-11-12.md)。禁止周期任务、remote CI、push/mainmerge或发包；不改用户环境，不清理旧证据Junction或三份无关草稿。实际结果另记，不能用本文件的安排宣称验证通过。

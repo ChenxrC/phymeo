@@ -92,8 +92,11 @@ class MuJoCoTyxJointActivationStepReceipt(MuJoCoTyxActivationStepReceipt):
         if (
             type(self.actuation) is not MuJoCoTyxActuation
             or type(self.transmission) is not MuJoCoTyxJointTransmission
-            or self.transmission.schema != "native-joint-motor-transmission-v1"
-            or self.actuation.schema != "native-joint-filterexact-actuation-v1"
+            or self.transmission.schema
+            != {
+                "native-joint-filterexact-actuation-v1": "native-joint-motor-transmission-v1",
+                "native-free-ball-joint-filterexact-actuation-v1": "native-free-ball-joint-motor-transmission-v1",
+            }.get(self.actuation.schema)
         ):
             raise ValueError("joint activation receipt requires both typed device records")
         for name in ("clamped_control", "raw_force", "scalar_force", "generalized_force"):

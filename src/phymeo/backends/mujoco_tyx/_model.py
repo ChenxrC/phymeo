@@ -93,6 +93,10 @@ def compile_model(mj, model):
 
     if np.any(model.jnt_type == mj.mjtJoint.mjJNT_BALL):
         if np.any(model.jnt_type == mj.mjtJoint.mjJNT_FREE):
+            if model.na:
+                from ._actuator_model import compile_activation_model
+
+                return compile_activation_model(mj, model)
             from ._floating_model import compile_floating_model
 
             # Admit the complete FREE+BALL structure before selecting its

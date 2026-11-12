@@ -139,9 +139,7 @@ def compile_activation_model(mj, model):
         # Validate the complete narrow FREE+BALL domain first. The generic
         # constraint predicate must not admit limits, dry friction, excludes,
         # larger contact capacities or higher contact dimensions through it.
-        base = compile_floating_model(
-            mj, model, allow_normal_contacts=True, allow_activation=True
-        )
+        base = compile_floating_model(mj, model, allow_normal_contacts=True, allow_activation=True)
         pairs = possible_pairs(model)
         if any(_mix_contact(model, left, right, mj)[0] == 3 for left, right in pairs):
             base = compile_constraint_model(mj, model, pairs, allow_activation=True)

@@ -453,6 +453,8 @@ def restore(runtime, checkpoint, expected_revision):
             "last receipt binding",
         )
         if stateful and receipt is not None:
+            from .mujoco_actuation import _actuation_schema
+
             actuation = receipt.actuation
             _require(
                 actuation.output_act.astype(np.float64).tobytes() == candidate.act.tobytes()
@@ -461,12 +463,7 @@ def restore(runtime, checkpoint, expected_revision):
                 and actuation.input_act.shape == (runtime._plan.activation.na,)
                 and actuation.ids.tobytes() == runtime._plan.activation.ids.tobytes()
                 and actuation.parameters.tobytes() == runtime._plan.activation.values.tobytes()
-                and actuation.schema
-                == (
-                    "native-joint-filterexact-actuation-v1"
-                    if getattr(runtime._plan, "joint_transmission", None) is not None
-                    else "native-scalar-filterexact-actuation-v1"
-                ),
+                and actuation.schema == _actuation_schema(runtime._plan),
                 "stateful receipt/source/accepted activation binding",
             )
         if getattr(runtime._plan, "joint_transmission", None) is not None and receipt is not None:

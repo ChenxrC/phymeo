@@ -1,4 +1,4 @@
-"""Public immutable device actuation evidence for the ROB2a native T1 domain."""
+"""Public immutable device actuation evidence for admitted native domains."""
 
 from dataclasses import dataclass
 
@@ -62,15 +62,29 @@ class MuJoCoTyxActuation:
             not in (
                 "native-scalar-filterexact-actuation-v1",
                 "native-joint-filterexact-actuation-v1",
+                "native-free-ball-joint-filterexact-actuation-v1",
             )
             or self.phase != "tyx-euler-entry-actuation-and-next-activation"
         ):
             raise ValueError("actuation publication schema")
+        if self.schema == "native-free-ball-joint-filterexact-actuation-v1" and not (
+            1 <= nu <= 32 and 1 <= na <= 32 and 1 <= self.generalized_force.size <= 35
+        ):
+            raise ValueError("free joint actuation publication capacity")
 
 
 @dataclass(frozen=True, kw_only=True)
 class MuJoCoTyxActivationStepReceipt(MuJoCoTyxStepReceipt):
     actuation: MuJoCoTyxActuation
+
+
+def _actuation_schema(plan):
+    """Derive the publication domain from the admitted plan, never the payload."""
+    if getattr(plan, "joint_transmission", None) is not None:
+        if plan.kind == 3 and getattr(plan, "native_joint_layout", False):
+            return "native-free-ball-joint-filterexact-actuation-v1"
+        return "native-joint-filterexact-actuation-v1"
+    return "native-scalar-filterexact-actuation-v1"
 
 
 def publish_actuation(plan, result, index):
@@ -89,9 +103,5 @@ def publish_actuation(plan, result, index):
         raw_force=actor[:, 2],
         scalar_force=actor[:, 3],
         generalized_force=result["actuator"][index, : plan.nv],
-        schema=(
-            "native-joint-filterexact-actuation-v1"
-            if getattr(plan, "joint_transmission", None) is not None
-            else "native-scalar-filterexact-actuation-v1"
-        ),
+        schema=_actuation_schema(plan),
     )

@@ -380,9 +380,10 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
             self._capabilities = MappingProxyType(info)
 
         if self._plan.kind == 3 and getattr(self._plan, "native_joint_layout", False):
+            activation = "-filterexact" if hasattr(self._plan, "activation") else ""
             info.update(
                 domain=(
-                    "free-ball-joint-motor-no-contact-v1"
+                    f"free-ball-joint-motor{activation}-no-contact-v1"
                     if getattr(self._plan, "joint_transmission", None) is not None
                     else "free-ball-no-contact-v1"
                 ),
@@ -409,7 +410,7 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
             )
             if self._plan.kind == 3 and getattr(self._plan, "native_joint_layout", False):
                 domain = (
-                    f"free-ball-joint-motor-{family}-contact-v1"
+                    f"free-ball-joint-motor-{family}-contact{activation}-v1"
                     if getattr(self._plan, "joint_transmission", None) is not None
                     else f"free-ball-{family}-contact-v1"
                 )

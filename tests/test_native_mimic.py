@@ -74,7 +74,6 @@ def test_native_affine_constraint_and_independent_commands(tmp_path):
     [
         NativeJointInput("follower", position=0.5),
         NativeJointInput("follower", velocity=0.5),
-        NativeJointInput("follower", kp=2),
         NativeJointInput("follower", target_position=0.1),
     ],
 )
@@ -103,6 +102,34 @@ def test_passive_follower_accepts_external_force_without_a_motor(tmp_path):
     compiled.initial_state.apply(compiled.compilation, data)
     assert data.ctrl.size == 1
     np.testing.assert_array_equal(data.qfrc_applied, [0, 3])
+
+
+def test_explicit_follower_servo_preserves_independent_command_contract(tmp_path):
+    value = asset(tmp_path)
+    compiled = compile_asset(replace(value, joints=(*value.joints,
+        NativeJointInput('follower', kp=7, kd=2, effort_limit=3))))
+    assert len(compiled.scalar_controls) == 1
+    assert compiled.target_bindings == (('arm::driver',0,1.,0.),('arm::follower',0,-2.,.1))
+    assert compiled.follower_drives == (('arm::follower',1,0,-2.,.1,7,2),)
+    model = compiled.compilation.fresh_native_model()
+    assert model.nu == 2 and model.neq == 1
+    np.testing.assert_array_equal(model.actuator_biasprm[1,:3],[0,-7,-2])
+    np.testing.assert_array_equal(model.actuator_forcerange[1],[-3,3])
+    data = mj.MjData(model)
+    compiled.initial_state.apply(compiled.compilation,data)
+    np.testing.assert_allclose(data.ctrl,[.8,-2.1],rtol=0,atol=1e-12)
+
+
+def test_prepared_follower_is_zero_gain_without_inheriting_defaults(tmp_path):
+    value = asset(tmp_path)
+    baseline = compile_asset(value)
+    prepared = compile_asset(replace(value,prepare_follower_drives=True))
+    assert baseline.follower_drives == () and baseline.compilation.mj_model.nu == 1
+    assert prepared.follower_drives[0][-2:] == (0.,0.)
+    assert prepared.scalar_controls == baseline.scalar_controls
+    assert prepared.target_bindings == baseline.target_bindings
+    for field in ('body_mass','body_inertia','jnt_range','dof_damping','eq_data'):
+        np.testing.assert_array_equal(getattr(prepared.compilation.mj_model,field),getattr(baseline.compilation.mj_model,field))
 
 
 def test_explicit_limits_and_mimic_rating_do_not_create_another_actuator(tmp_path):
@@ -205,6 +232,14 @@ def test_chain_and_rejection_boundaries(tmp_path):
     data = mj.MjData(compiled.compilation.mj_model)
     compiled.initial_state.apply(compiled.compilation, data)
     np.testing.assert_allclose(data.qpos, [0.2, -0.3, 0.35], atol=1e-12, rtol=0)
+    driven = compile_asset(replace(original, prepare_follower_drives=True,
+        joints=(*original.joints, NativeJointInput("second", kp=6, kd=2))))
+    assert len(driven.scalar_controls) == 1
+    assert driven.follower_drives[-1][:3] == ("arm::second", 2, 0)
+    np.testing.assert_allclose(driven.follower_drives[-1][3:], [1, .15, 6, 2], atol=1e-12, rtol=0)
+    driven_data = mj.MjData(driven.compilation.mj_model)
+    driven.initial_state.apply(driven.compilation, driven_data)
+    np.testing.assert_allclose(driven_data.ctrl, [.8, 0, 2.1], atol=1e-12, rtol=0)
     for driver in ("missing", "second"):
         damaged = deepcopy(root)
         if driver == "second":

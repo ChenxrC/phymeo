@@ -3,17 +3,6 @@
 from numbers import Real
 
 import numpy as np
-import tyx as tx
-
-
-@tx.kernel(gradient="unsupported")
-def _validate_commands(position: tx.Array[tx.f32], velocity: tx.Array[tx.f32],
-                       gains: tx.Array[tx.f32], flags: tx.Array[tx.i32]):
-    for i in tx.range(position.shape[0]):
-        joint = i % (gains.shape[0] // 2)
-        value = gains[2 * joint] * position[i] + gains[2 * joint + 1] * velocity[i]
-        if not tx.isfinite(value):
-            tx.atomic_or(flags[0], 32)  # Existing validation bit for native ctrl.
 
 
 def parameters(runtime):
@@ -22,7 +11,7 @@ def parameters(runtime):
         return {}
     cpu = runtime._cpu_model
     result = {}
-    for name, actuator in zip(control.names, control.native_actuators):
+    for name, actuator in zip(control.drive_names, control.native_actuators):
         if cpu.actuator_forcelimited[actuator] and (
                 cpu.actuator_forcerange[actuator, 0] != -cpu.actuator_forcerange[actuator, 1]
                 or cpu.actuator_forcerange[actuator, 1] <= 0):
@@ -44,7 +33,7 @@ def update(runtime, updates):
         raise ValueError('drive updates require a nonempty mapping')
     for name, values in updates.items():
         if name not in current:
-            raise ValueError(f'unknown independent scalar drive: {name}')
+            raise ValueError(f'unknown prepared scalar drive: {name}')
         if not isinstance(values, dict) or not values or set(values) - {'kp', 'kd', 'effort_limit'}:
             raise ValueError('drive parameter fields require kp, kd or effort_limit')
         for field, value in values.items():
@@ -60,7 +49,7 @@ def update(runtime, updates):
     proposed = {name: array.copy() for name, array in originals.items()}
     coefficients = []
     old_coefficients = []
-    for name, actuator in zip(control.names, control.native_actuators):
+    for name, actuator in zip(control.drive_names, control.native_actuators):
         row = effective[name]
         proposed['actuator_biasprm'][actuator, 1:3] = [-row['kp'], -row['kd']]
         if 'effort_limit' in updates.get(name, {}):
@@ -88,9 +77,7 @@ def update(runtime, updates):
         # compact flag crosses the explicit cold completion boundary.
         runtime._validation.clear(runtime._stream)
         for commands in (control.flat[runtime._active], control.initial_flat):
-            _validate_commands(commands['target_position'], commands['target_velocity'],
-                               control.coefficients, runtime._validation.flags,
-                               mode='cuda', stream=runtime._stream)
+            control.validate_commands(commands, runtime._stream)
         runtime._validation.read(runtime._stream)
         # Publish refreshed observations only after successful completion. The
         # fixed Graph retains the same model/coefficient pointers throughout.

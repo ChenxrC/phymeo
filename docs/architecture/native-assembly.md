@@ -91,8 +91,8 @@ B8e 的 `NativeJointInput.lower_limit/upper_limit` 是原生位置约束的有�
 需提供完整有限区间，lower 必须小于 upper。`joint_limits` 以 public name 保存
 编译后的界限和声明速度；没有第二套可写 solver 状态。velocity_limit 是非负声明，
 不增加速度裁剪，未强制执行的信息进入 import_diagnostics。mimic follower 可重申
-与 URDF 相同的 effort rating，明确没有独立 actuator；改变 follower cap、独立目标
-或增益仍拒绝。P2PE 的 null 解除限位不能映射成这里的 None/保留，须另行资格化。
+与 URDF 相同的 effort rating，默认不创建 actuator；显式 follower servo 合同见下。
+独立目标仍拒绝。P2PE 的 null 解除限位不能映射成这里的 None/保留，须另行资格化。
 
 NativeJointInput 的可选增益、被动参数和速度以 None 表示未提供；解析优先级为
 逐关节显式值 → asset.joint_defaults → 源 URDF 标准 damping/friction → profile
@@ -103,9 +103,9 @@ friction=0 保留零；没有 dynamics 的旧模型缺省不变。D、K、mu_cou
 mimic 采用 PHYMEO 已有严格 XML 提取，再在专用适配中生成 native joint equality。
 关系为 `q_follower = multiplier*q_driver + offset`；转换系数包含原生 ref 修正，
 支持同类型标量关节、非零有限比例、非零偏移及无环链。循环、未知引用、类型冲突
-与 FP32 无法表示的系数拒绝。所有关节保留 q/DOF；只有独立根关节生成 actuator。
+与 FP32 无法表示的系数拒绝。所有关节保留 q/DOF；默认只有独立根关节生成 actuator。
 约束是求解器的软 equality，不做逐步强制坐标投影，不承诺每步物理 q/qvel 严格相等。
-直接外加力仍可作用在任意物理 DOF，follower 不拥有独立 drive/target/effort_limit。
+直接外加力仍可作用在任意物理 DOF，follower 不拥有独立 target。
 初态从 driver 传播到未提供的 follower；显式冲突 q/v 拒绝，不通过 stepping 修正。
 标量初始 q 超出原生限位时记录 initial_position_outside_limit diagnostic，保持原值，
 不 clamp 或自动选择另一姿态；消费者需要明确提供任务初态。
@@ -119,6 +119,22 @@ bank 只存独立命令，不重复维护 follower 目标。消费方可批量�
 本机 3.8 URDF 导入的 mimic 补齐由本适配负责；不继承未来版本导入器的行为。
 
 ## 初态、reset 和 owner
+
+### 显式 follower servo 合同 1
+
+标量 URDF 关节可显式声明 follower kp/kd，生成附着该物理 DOF 的 servo；
+目标来自 mimic 根：`q_target_f=a*q_target_root+b`、`v_target_f=a*v_target_root`。
+原生 bias 使用 follower 实际 q/v，equality 不变，不做状态投影。
+`prepare_follower_drives=True` 允许冷编译预建零增益 servo，供运行期参数启用；
+默认 False 保持无声明模型，follower 不继承 asset 的默认 kp/kd。
+限力遵循原额定值/显式 0 不限力合同，仅 restate effort 不自动启用驱动。
+
+`NativeTemplate.follower_drive_contract_version=1` 的 `follower_drives` 保存
+名字、原生 actuator、独立命令索引、比例、偏移和初始增益。运行时命令 bank
+仍只有独立列；持久 servo 映射和系数驱动一次 world×servo kernel，未增加
+目标镜像、逐世界 Python 调用或额外同步。当前与 reset 目标都做派生溢出预检。
+参数原位更新保持 Graph 资源地址；失败回滚系数/原生模型，reset 用当前增益
+重组初始命令。独立 follower 目标写入仍拒绝。P2PE 主动预备 URDF follower 槽。
 
 `backends.physolve_initial.NativeInitialState` 与 MJB 散列绑定，拥有只读积分输入：
 time、qpos/qvel、act、qacc_warmstart、ctrl、qfrc_applied、xfrc_applied、eq_active、
@@ -483,3 +499,5 @@ q 为绝对坐标，slide anchor 减 R axis ref，hinge parent rotation 乘 Rot(
 N=1/8/64 direct/Graph 字段与状态/action/reset 验收。完整证据在实验根
 `evidence/model-summary.json`。不声称完整 MJCF、resident、安装或 GUI 资格；
 原生 Host、六 CUBIN 和已有数值门槛保持。本批改动均在编译/绑定阶段。
+
+Follower 控制准备新增持久映射 sources（每 servo 4 字节）、affine（每 servo 8 字节），以及校验 scratch（N × native nu × 4 字节）。系数与 actuator 索引随实际 servo 数量增长；独立目标 bank 宽度不变。所有数组由 runtime 持有，准备失败且关闭失败时保留到显式重试成功。

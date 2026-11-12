@@ -88,8 +88,14 @@ class NativeAssetInstance:
     resource_roots: tuple[str, ...] = ()
     # Asset-local body name and sliding friction; other contact parameters stay native.
     body_friction: tuple[tuple[str, float], ...] = ()
+    # Opt-in zero-gain servo slots for cold runtime follower gain edits.
+    prepare_follower_drives: bool = False
 
     def __post_init__(self):
+        if type(self.prepare_follower_drives) is not bool:
+            raise TypeError("prepare_follower_drives requires bool")
+        if self.prepare_follower_drives and self.drive_mode != "scalar_pd":
+            raise ValueError("prepare_follower_drives requires scalar_pd")
         if not isinstance(self.name, str) or not self.name or "::" in self.name:
             raise ValueError("instance requires a unique unscoped name")
         object.__setattr__(self, "path", str(Path(self.path).resolve()))
@@ -242,6 +248,9 @@ class NativeTemplate:
     collision_plans: tuple = ()
     # (public joint, native actuator, kp, kd, initial target q, initial target qd).
     scalar_controls: tuple = ()
+    # name, native actuator, independent command index, ratio, offset, kp, kd
+    follower_drives: tuple = ()
+    follower_drive_contract_version: int = 1
     # (public joint, independent command index, multiplier, position offset).
     target_bindings: tuple = ()
     target_contract_version: int = 1
@@ -333,11 +342,14 @@ class HomogeneousNativeBinding:
 
         if self.template.contract_version != 1:
             raise ValueError("unsupported native integration contract")
+        if self.template.follower_drive_contract_version != 1:
+            raise ValueError("unsupported follower drive contract")
         return PhySolveRuntime(
             self.template.compilation,
             payload=payload,
             initial_state=self.template.initial_state,
             scalar_controls=self.template.scalar_controls,
+            follower_drives=self.template.follower_drives,
             nworld=self.nworld,
             **options,
         )
@@ -564,6 +576,20 @@ def compile_native_template(
         scalar_controls.append(
             (prefix + row.name, actuator.id, row.kp, row.kd, float(target), target_velocity)
         )
+    control_ids = {row[0]: i for i, row in enumerate(scalar_controls)}
+    follower_drives = []
+    actuator_names = {model.actuator(i).name: i for i in range(model.nu)}
+    for prefix, row in pending:
+        name = prefix + row.name
+        leader, ratio, offset = target_maps[name]
+        actuator = actuator_names.get(prefix + "__drive_" + row.name)
+        if name == leader or actuator is None:
+            continue
+        index = control_ids[leader]
+        q, v = scalar_controls[index][4:6]
+        data.ctrl[actuator] = row.kp * (ratio * q + offset) + row.kd * ratio * v
+        follower_drives.append((name, actuator, index, ratio, offset, row.kp, row.kd))
+        actuator_ids[model.joint(name).id] = actuator
     joints = tuple(
         (
             model.joint(i).name,
@@ -574,7 +600,6 @@ def compile_native_template(
         )
         for i in range(model.njnt)
     )
-    control_ids = {row[0]: i for i, row in enumerate(scalar_controls)}
     for i in range(model.njnt):
         if model.jnt_limited[i] and model.jnt_type[i] in (
             mj.mjtJoint.mjJNT_HINGE,
@@ -614,6 +639,7 @@ def compile_native_template(
         asset_identities=tuple(identities),
         frame_metadata=frame_metadata,
         scalar_controls=tuple(scalar_controls),
+        follower_drives=tuple(follower_drives),
         target_bindings=target_bindings,
         import_diagnostics=tuple(diagnostics),
         joint_limits=tuple(joint_limits),

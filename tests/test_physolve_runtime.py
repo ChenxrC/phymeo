@@ -42,6 +42,62 @@ def test_runtime_requires_compilation_and_explicit_payload():
         PhySolveRuntime(None, payload=None)
 
 
+@pytest.mark.parametrize('nworld', [1, 8, 64])
+@pytest.mark.parametrize('graph', [False, True])
+def test_follower_servo_affine_commands_parameters_reset_graph(payload, tmp_path, nworld, graph, monkeypatch):
+    from dataclasses import replace
+    from test_native_mimic import asset, compile_asset
+    template = compile_asset(replace(asset(tmp_path), prepare_follower_drives=True))
+    with template.bind(nworld).create_runtime(payload=payload) as runtime:
+        if graph:
+            runtime.prepare_step_graph(steps=4)
+        storage = runtime.storage_binding()
+        assert storage.borrow('target_position', runtime.active_bank).shape == (nworld, 1)
+        captures = runtime.execution_costs()['step_graph_captures']
+        runtime.update_scalar_drive_parameters({'arm::follower': {'kp':7., 'kd':2., 'effort_limit':0.}})
+        ticket = runtime.begin_execution()
+        storage.borrow('target_position', runtime.writable_bank, write=True).assign(
+            np.full((nworld,1),.4,np.float32),stream=storage.stream)
+        storage.borrow('target_velocity', runtime.writable_bank, write=True).assign(
+            np.full((nworld,1),.5,np.float32),stream=storage.stream)
+        runtime.enqueue_update(ticket,compose_controls=True)
+        runtime.complete_execution(ticket)
+        runtime.accept_execution(ticket)
+        # follower qtarget=-2*.4+.1, vtarget=-2*.5; no independent command slot.
+        np.testing.assert_allclose(runtime.snapshot()['ctrl'][:,1],-6.9,rtol=0,atol=1e-6)
+        before=runtime.snapshot()
+        parameters=runtime.scalar_drive_parameters()
+        with pytest.raises(RuntimeError, match='non-finite PhySolve ctrl'):
+            runtime.update_scalar_drive_parameters({'arm::follower': {'kp':3e38, 'kd':3e38}})
+        assert runtime.scalar_drive_parameters() == parameters
+        for name, values in before.items():
+            np.testing.assert_array_equal(runtime.snapshot()[name], values)
+        with monkeypatch.context() as patch:
+            def fail(*args,**kwargs):
+                raise RuntimeError('injected follower publication failure')
+            patch.setattr(runtime,'enqueue_update',fail)
+            with pytest.raises(RuntimeError,match='injected'):
+                runtime.update_scalar_drive_parameters({'arm::follower':{'kp':9.}})
+        assert runtime.scalar_drive_parameters()==parameters
+        np.testing.assert_array_equal(runtime.snapshot()['ctrl'],before['ctrl'])
+        ticket=runtime.begin_execution()
+        runtime.enqueue_step(ticket,steps=4,execution_mode='cuda_graph' if graph else 'direct')
+        runtime.complete_execution(ticket)
+        runtime.accept_execution(ticket)
+        before=runtime.snapshot()
+        mask=np.arange(nworld)%2==0
+        runtime.reset(mask)
+        after=runtime.snapshot()
+        np.testing.assert_allclose(after['ctrl'][mask,1],-2.1,rtol=0,atol=1e-6)
+        for field in ('qpos','qvel','ctrl','qfrc_actuator'):
+            np.testing.assert_array_equal(after[field][~mask],before[field][~mask])
+        runtime.update_scalar_drive_parameters({'arm::follower':{'kp':0.,'kd':0.}})
+        np.testing.assert_array_equal(runtime.snapshot()['ctrl'][:,1],0.)
+        runtime.reset()
+        np.testing.assert_array_equal(runtime.snapshot()['ctrl'][:,1],0.)
+        assert runtime.execution_costs()['step_graph_captures']==captures
+
+
 def _drive_binding(tmp_path, nworld, target=.1):
     from phymeo.builders.native_assembly import NativeAssetInstance, NativeJointInput, compile_native_template
     source = tmp_path / 'drive.urdf'
@@ -631,3 +687,34 @@ def test_robot_forward_and_masked_reset_native_state(payload, name, nworld):
         runtime.reset()
         for field in ("qpos", "qvel", "time", "qfrc_applied"):
             np.testing.assert_array_equal(runtime.snapshot()[field], initial[field])
+
+
+def test_follower_without_independent_control_rejected_before_native_work():
+    with pytest.raises(ValueError, match="require independent scalar controls"):
+        PhySolveRuntime(None, payload=None, follower_drives=(("follower",),))
+
+
+def test_control_upload_failure_retains_owner_until_close_retry(payload, monkeypatch, tmp_path):
+    from phymeo.backends._physolve_controls import PreparedControls
+    from test_native_mimic import asset, compile_asset
+    from dataclasses import replace
+    template = compile_asset(replace(asset(tmp_path), prepare_follower_drives=True))
+    initialize = PreparedControls.initialize
+    native = payload.load()
+    with monkeypatch.context() as patch:
+        def fail(plan, *args, **kwargs):
+            initialize(plan, *args, **kwargs)
+            plan.sources.zero_()
+            raise RuntimeError("injected control upload failure")
+        def close(*args):
+            raise RuntimeError("injected native close")
+        patch.setattr(PreparedControls, "initialize", fail)
+        patch.setattr(native, "_close_runtime", close)
+        with pytest.raises(RuntimeError, match="control upload failure") as caught:
+            template.bind(1).create_runtime(payload=payload)
+        retained = caught.value.runtime
+        assert retained._controls_binding.sources.ptr
+        assert retained._controls_binding.affine.ptr
+        assert retained._stream is not None
+    retained.close()
+    assert retained._closed and retained._controls_binding is None

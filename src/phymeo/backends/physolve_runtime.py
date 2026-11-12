@@ -82,11 +82,14 @@ class PhySolveRuntime:
         device="cuda:0",
         initial_state=None,
         scalar_controls=(),
+        follower_drives=(),
         body_observations=False,
         contact_observations=False,
         body_measurements=False,
         body_wrench_lifetime="persistent",
     ):
+        if follower_drives and not scalar_controls:
+            raise ValueError("follower drives require independent scalar controls")
         if body_wrench_lifetime not in ("persistent", "one_substep"):
             raise ValueError("body_wrench_lifetime requires persistent or one_substep")
         self._body_wrench_lifetime = body_wrench_lifetime
@@ -233,9 +236,10 @@ class PhySolveRuntime:
                         self._validation.readbacks = 0
                     if scalar_controls:
                         from ._physolve_controls import PreparedControls
-                        self._controls_binding = PreparedControls(
+                        self._controls_binding = PreparedControls()
+                        self._controls_binding.initialize(
                             scalar_controls, self._banks, cpu, self.nworld, device,
-                            self._validation.flags,
+                            self._validation.flags, followers=follower_drives,
                         )
                         self._controls_binding.prepare(self._stream)
                     if body_measurements:
@@ -507,7 +511,7 @@ class PhySolveRuntime:
     def update_scalar_drive_parameters(self, updates):
         """Synchronous all-world parameter transaction, with one native forward.
 
-        Independent scalar actuators only; zero effort limit means unlimited.
+        Prepared independent and affine follower scalar actuators; zero effort limit means unlimited.
         Changes survive reset, whose target/force initial commands are unchanged.
         No topology, target, armature or per-world parameter edits are implied.
         """

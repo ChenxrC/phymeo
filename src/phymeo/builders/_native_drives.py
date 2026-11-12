@@ -64,12 +64,12 @@ def prepare_scalar_drives(mj, spec, asset, input_type, root):
         rating = 0.0 if limit is None else float(limit.get("effort", "0"))
         if not np.isfinite(rating) or rating < 0:
             raise ValueError("invalid asset motor rating")
-        if name in followers and (
-            any(value not in (None, 0) for value in (row.kp, row.kd))
-            or any(value is not None for value in (row.target_position, row.target_velocity))
-        ):
-            raise ValueError("mimic follower cannot own a drive or target command")
-        if name in followers and row.effort_limit is not None:
+        if name in followers and any(value is not None for value in (row.target_position, row.target_velocity)):
+            raise ValueError("mimic follower cannot own an independent target command")
+        servo = name not in followers or asset.prepare_follower_drives or any(
+            value not in (None, 0) for value in (row.kp, row.kd)
+        )
+        if name in followers and not servo and row.effort_limit is not None:
             if row.effort_limit != rating:
                 raise ValueError(
                     "mimic follower has no actuator; effort limit override unsupported"
@@ -122,12 +122,8 @@ def prepare_scalar_drives(mj, spec, asset, input_type, root):
         damping = float(joint.damping[0])
         row = replace(
             row,
-            kp=0.0
-            if name in followers
-            else (row.kp if row.kp is not None else defaults.get("kp", 500.0)),
-            kd=0.0
-            if name in followers
-            else (row.kd if row.kd is not None else defaults.get("kd", 50.0)),
+            kp=row.kp if row.kp is not None else (0.0 if name in followers else defaults.get("kp", 500.0)),
+            kd=row.kd if row.kd is not None else (0.0 if name in followers else defaults.get("kd", 50.0)),
             armature=row.armature if row.armature is not None else defaults.get("armature", float(joint.armature) if native else 0.01),
             damping=row.damping if row.damping is not None else defaults.get("damping", damping),
             frictionloss=row.frictionloss
@@ -136,7 +132,7 @@ def prepare_scalar_drives(mj, spec, asset, input_type, root):
         )
         joint.armature, joint.frictionloss = row.armature, row.frictionloss
         joint.damping[:] = [row.damping, 0.0, 0.0]
-        if name not in followers:
+        if servo:
             cap = rating if row.effort_limit is None else row.effort_limit
             if not np.isfinite(cap) or cap < 0:
                 raise ValueError("invalid asset motor rating")

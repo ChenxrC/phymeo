@@ -262,7 +262,7 @@ class TreeDeviceStorage:
         if held.shape != self._held.shape:
             raise ValueError("tree held-control shape changed")
         if not np.array_equal(held, self._held):
-            self._held = held
+            np.copyto(self._held, held)
             self._dirty = True
 
     def upload_controls(self):

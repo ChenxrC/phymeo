@@ -73,10 +73,12 @@ class TyxWorldBatch:
         self._closed = False
         self._closing = False
         self._unavailable = False
+        self._control_error = None
         self._cleanup_drained = False
         self._resources = ReleaseStack()
         self._host_buffers = []
         self._readback_plans = set()
+        self._control_plans = set()
         self._collision_plans = set()
         self._contact_bundles = set()
         self._collision_owner = object()
@@ -386,6 +388,10 @@ class TyxWorldBatch:
     def _check_open(self):
         if self._closed or self._closing:
             raise RuntimeError("resident world batch is closed or closing")
+        if self._control_error is not None:
+            raise RuntimeError(
+                "resident control rollback failed; close and rebuild"
+            ) from self._control_error
         if self._unavailable:
             raise RuntimeError("device cannot synchronize; rebuild from a saved checkpoint")
 
@@ -529,6 +535,12 @@ class TyxWorldBatch:
                 self._held, self._dirty = held, True
             for storage, stage in tree_stages:
                 storage.commit_controls(stage)
+
+    def prepare_control_write(self, keys=None, *, fields):
+        """Prepare selected HOST command fields; execution uploads on the next step."""
+        from ._resident_control_plan import ResidentControlPlan
+
+        return ResidentControlPlan(self, keys, fields)
 
     def prepare_contacts(
         self,
@@ -924,6 +936,7 @@ class TyxWorldBatch:
                 "state_buffer_count": 2 if self._count else 0,
                 "current_buffer": self._active,
                 "readback_plan_live_count": len(self._readback_plans),
+                "control_plan_live_count": len(self._control_plans),
                 "collision_plan_live_count": len(self._collision_plans),
                 "contact_bundle_live_count": len(self._contact_bundles),
                 "convex_query_plan_live_count": len(convex_queries),
@@ -964,7 +977,12 @@ class TyxWorldBatch:
             self._ensure_cleanup_ready()
             close_dependencies(self)
             # Bundles depend on pages; pages depend on queries and batch storage.
-            for owners in (self._contact_bundles, self._collision_plans, self._readback_plans):
+            for owners in (
+                self._contact_bundles,
+                self._collision_plans,
+                self._readback_plans,
+                self._control_plans,
+            ):
                 for plan in tuple(owners):
                     plan.close()
             self._resources.close()

@@ -610,3 +610,40 @@ CUDA 持久空间为 `4*S*W + 12*S + 8*W` bytes，分别是 values、ticks、wor
 固定树控制组合存在原路径部分拒绝，单列记录而非修改容差或追加 solver 调查。
 这只是公共数据前置；P2PE resident 编译/控制/reset、完整 body/contact 字段、
 实际 C ABI 和独立安装资格仍待完成。证据见配套实验根 evidence/b7c-summary.json。
+
+## Resident prepared HOST controls v1
+
+`TyxWorldBatch.prepare_control_write(keys=None, fields=...)` 冷准备同构所选 world 的
+控制列及顺序；支持球、标量移动/转动关节、普通固定根树，空选择、重复/未知 key、
+混合布局、仿射/浮根树和未知字段明确拒绝。fields 必须非空且无重复。不可变 layout
+声明 shape、float32、offset/width、单位、frame、reference、source 和采样含义。
+
+球只开放 world COM `com_force`；关节开放 target_position、target_velocity、
+feedforward、external_effort，转动关节/固定树还开放 COM force/torque。字段先按
+fields 顺序、各字段再按模型关节顺序打包。标量 slider 的 external_effort 是原控制
+包已经合并广义负载与轴向外力后的 total_axial_load，不能直接当作 P2PE joint_force。
+target/rate/feedforward 服从原模型延迟；外部负载即时生效，未改驱动或物理算法。
+
+`plan.write(values)` 接收精确 shape 的连续 float32 HOST NumPy buffer，只读输入
+允许，非有限/非零 subnormal 拒绝。一次全量预检后只替换所选控制列；未选世界与
+字段保持不变。`read_into(values)` 直接填 writable caller buffer，读取 held command，
+不读取执行器实际输出。输入/输出均不得与物理或控制 owner、plan scratch 别名。
+原接口/reset 更换 held buffer 后使用当前 owner；布局变化或关闭后拒绝继续。
+
+没有逐 world 包装、snapshot 或全批 held 副本；预备索引/校验/回滚缓冲为
+`(sizeof(intp)+10)*S*W` bytes，Windows x64 为 `18*S*W`。正常读写 O(S*W)，
+另有 O(owned HOST buffer 数) 的别名检查；无新 device 分配或即时上传/同步。
+等值输入保留已有 dirty 状态，不制造新上传。变值仍沿原逻辑在下一 step 一次上传
+整个所属控制 bank，成本随完整 owner 增长，尚未实现 selected-only H2D 或 D2D。
+这些 HOST 控制缓冲本来存在，不增加第二份权威物理状态。
+
+执行 scatter 异常恢复所选旧值；回滚也失败则关闭该 batch 的后续操作准入，仅允许
+close/rebuild，owner 保留到清理完成。控制写入不更改接受状态 epoch、延迟历史或
+已发布观测。锁仍为每 batch 原有 RLock，没有新增跨实例锁。固定树既有控制提交
+改为填充自身可写 held owner，保持原先全量验证和外部 packet 不可变语义。
+
+选测正式 test_resident_control_plan 覆盖 interpret/实际 CUDA、N=1/8/64、乱序选择、
+新旧控制入口一致、局部 reset 未选世界保持、延迟历史、字段语义、错误回滚和关闭；
+同时复用原固定树 delay/restore CUDA 回归。仅验证受影响集合，不重复跨 solver
+微差调查。配套实验根 evidence/b7d-summary.json 保存命令、身份、计数与审查。
+prepared reset、完整物理字段及实际 P2PE C ABI/安装仍待完成；本批不授予 B7 资格。

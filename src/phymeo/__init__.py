@@ -38,6 +38,15 @@ from .backends._resident_floating_tree import (
 from .backends._resident_revolute_binding import ResidentRevoluteBinding
 from .backends._resident_slider_binding import ResidentSliderBinding
 from .backends._resident_tree_binding import ResidentTreeBinding
+from .backends.mujoco_heterogeneous import (
+    MuJoCoTyxHeterogeneousBatch,
+    MuJoCoTyxHeterogeneousBoundaryReceipt,
+    MuJoCoTyxHeterogeneousStepReceipt,
+    MuJoCoTyxModelSpec,
+    MuJoCoTyxWorldLayout,
+    MuJoCoTyxWorldSpec,
+)
+from .backends.mujoco_heterogeneous_checkpoint import MuJoCoTyxHeterogeneousCheckpoint
 from .backends.resident_scene import (
     MAX_PARTICIPANTS_PER_WORLD,
     ResidentParticipant,
@@ -67,6 +76,12 @@ from .backends.tyx_deformable_batch import (
     DeformableStepReceipt,
     DeformableSurface,
     TyxDeformableBatch,
+)
+from .backends.tyx_deformable_contact import (
+    DeformableContactCheckpoint,
+    DeformableContactReceipt,
+    DeformableContactState,
+    TyxDeformableContactBatch,
 )
 from .backends.tyx_multiface_contact import TyxMultifaceContactBatch
 from .backends.tyx_normal_layer import TyxNormalLayer
@@ -433,6 +448,17 @@ __all__ = [
     "DeformableStepReceipt",
     "DeformableSurface",
     "TyxDeformableBatch",
+    "DeformableContactCheckpoint",
+    "DeformableContactReceipt",
+    "DeformableContactState",
+    "TyxDeformableContactBatch",
+    "MuJoCoTyxModelSpec",
+    "MuJoCoTyxWorldSpec",
+    "MuJoCoTyxWorldLayout",
+    "MuJoCoTyxHeterogeneousBatch",
+    "MuJoCoTyxHeterogeneousCheckpoint",
+    "MuJoCoTyxHeterogeneousStepReceipt",
+    "MuJoCoTyxHeterogeneousBoundaryReceipt",
     "ResidentBoundaryDistances",
     "ResidentBoundaryNarrowPacket",
     "ResidentBoundaryQueryAttempt",

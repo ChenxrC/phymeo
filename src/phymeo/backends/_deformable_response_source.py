@@ -11,9 +11,17 @@ import numpy as np
 
 from ..constraints.collision_shapes import CollisionMotion, CollisionShape
 from ._deformable_boundary_source import (
-    DeformableBoundaryAdapter, DeformableBoundaryModel, _Accepted,
+    DeformableBoundaryAdapter,
+    DeformableBoundaryModel,
+    _Accepted,
 )
-from ._resident_boundary_source import ResidentBoundarySourceView, freeze, owned, physical_sources, stored_interval
+from ._resident_boundary_source import (
+    ResidentBoundarySourceView,
+    freeze,
+    owned,
+    physical_sources,
+    stored_interval,
+)
 from ._resident_collision_plan import ResidentStaticBinding
 from ._resident_floating_binding import ResidentFloatingTreeBinding
 from ._resident_participant_layout import ResidentParticipantBinding
@@ -106,9 +114,14 @@ class DeformableResponseBoundaryAdapter(DeformableBoundaryAdapter):
                 slot = accepted.slots[native]
                 by_key[key] = wrapper
                 self._moving[key] = dict(
-                    participant=participant, native=native, slot=slot,
-                    row=int(source.rows[native]), group=0, topology=spec.topology,
-                    model_token=spec.model_token, anchor=owned(spec.anchor, np.float64),
+                    participant=participant,
+                    native=native,
+                    slot=slot,
+                    row=int(source.rows[native]),
+                    group=0,
+                    topology=spec.topology,
+                    model_token=spec.model_token,
+                    anchor=owned(spec.anchor, np.float64),
                     local=owned(points, np.float64),
                 )
                 # Reuse only D2's bounded material/topology registration. These
@@ -132,22 +145,29 @@ class DeformableResponseBoundaryAdapter(DeformableBoundaryAdapter):
                 shifts[i] = np.r_[value, lower, upper]
                 exact[i] = item["anchor"]
                 row.update(
-                    frame="floating_body_local", participant=item["participant"],
-                    mechanical_world=item["native"], native_slot=item["slot"],
-                    native_row=item["row"], native_group=0, topology=item["topology"],
+                    frame="floating_body_local",
+                    participant=item["participant"],
+                    mechanical_world=item["native"],
+                    native_slot=item["slot"],
+                    native_row=item["row"],
+                    native_group=0,
+                    topology=item["topology"],
                     model_token=item["model_token"],
                 )
             definitions.append(row)
         plan._constants = dict(
-            plan._constants, shape_meta=owned(meta, np.int32),
-            rigid_meta=owned(rigid_meta, np.int32), anchor_shifts=owned(shifts),
+            plan._constants,
+            shape_meta=owned(meta, np.int32),
+            rigid_meta=owned(rigid_meta, np.int32),
+            anchor_shifts=owned(shifts),
         )
         plan._bindings = tuple(
             by_key[s.key] if s.key in by_key else plan._bindings[i]
             for i, s in enumerate(plan._model.shapes)
         )
         plan._source_base.update(
-            bindings=tuple(definitions), moving=freeze(self._moving),
+            bindings=tuple(definitions),
+            moving=freeze(self._moving),
             rigid_owner=self.scene._owner,
             rigid_world_layouts=("floating",) * len(plan._world_keys),
             rigid_registry_fingerprint=self.scene.layout.fingerprint,
@@ -157,7 +177,8 @@ class DeformableResponseBoundaryAdapter(DeformableBoundaryAdapter):
         )
         plan._counts["borrowed_device_bytes"] = (
             12 * sum(self.batch._models[w].n for w in plan._world_keys)
-            + 4 * len(plan._world_keys) + self._borrowed_rigid_bytes()
+            + 4 * len(plan._world_keys)
+            + self._borrowed_rigid_bytes()
         )
         self._signature = (model, wrappers)
 
@@ -177,17 +198,31 @@ class DeformableResponseBoundaryAdapter(DeformableBoundaryAdapter):
             ) as (rigid, mechanical):
                 lease = _DualLease(loan, self.scene, rigid, mechanical)
                 accepted = _Accepted(
-                    plan._owner, plan._topology_generation, loan.revision,
-                    loan.active_bank, loan.world_keys, loan.runtime, loan.mode,
+                    plan._owner,
+                    plan._topology_generation,
+                    loan.revision,
+                    loan.active_bank,
+                    loan.world_keys,
+                    loan.runtime,
+                    loan.mode,
                 )
                 try:
                     lease.require()
                     yield ResidentBoundarySourceView(
-                        accepted, plan._model, plan._bindings, plan._owner,
-                        plan._registration, plan._world_keys, plan._shape_keys,
-                        plan._shape_revisions, plan._world_layouts, plan._shape_rows,
-                        plan._shape_groups, plan._shape_layouts,
-                        tuple(loan.position(w) for w in plan._world_keys), lease,
+                        accepted,
+                        plan._model,
+                        plan._bindings,
+                        plan._owner,
+                        plan._registration,
+                        plan._world_keys,
+                        plan._shape_keys,
+                        plan._shape_revisions,
+                        plan._world_layouts,
+                        plan._shape_rows,
+                        plan._shape_groups,
+                        plan._shape_layouts,
+                        tuple(loan.position(w) for w in plan._world_keys),
+                        lease,
                     )
                 finally:
                     lease.active = False
@@ -227,8 +262,12 @@ class DeformableResponseBoundaryAdapter(DeformableBoundaryAdapter):
             if rigid_ticks[self._world_rigid[world][1]] != ticks[i]:
                 raise RuntimeError("D3 empty source node/rigid tick mismatch")
         fk = plan._download(physical_sources(rigid)[2].fk, "source/actual_rigid_fk")
-        raw.update(rigid_ticks=rigid_ticks, actual_rigid_fk=fk,
-                   poses=np.empty((0, 12), np.float32), native_poses=np.empty((0, 12), np.float32))
+        raw.update(
+            rigid_ticks=rigid_ticks,
+            actual_rigid_fk=fk,
+            poses=np.empty((0, 12), np.float32),
+            native_poses=np.empty((0, 12), np.float32),
+        )
         plan._counts["actual_bank_host_readback_bytes"] = fk.nbytes
         return outputs, raw, ticks
 
@@ -242,9 +281,12 @@ class DeformableResponseBoundaryAdapter(DeformableBoundaryAdapter):
         outputs = {
             name: plan._allocate(ledger, shape=shape, dtype=dtype)
             for name, shape, dtype in (
-                ("points", (n, 3), np.float32), ("point_bounds", (n, 6), np.float32),
-                ("stamps", (s, 4), np.int32), ("ticks", (w,), np.int32),
-                ("poses", (s, 12), np.float32), ("native_poses", (s, 12), np.float32),
+                ("points", (n, 3), np.float32),
+                ("point_bounds", (n, 6), np.float32),
+                ("stamps", (s, 4), np.int32),
+                ("ticks", (w,), np.int32),
+                ("poses", (s, 12), np.float32),
+                ("native_poses", (s, 12), np.float32),
             )
         }
         plan._launch("source/clear_poses", clear_response_poses, s, outputs["poses"])
@@ -252,24 +294,52 @@ class DeformableResponseBoundaryAdapter(DeformableBoundaryAdapter):
         for slot, world in enumerate(plan._world_keys):
             source = loan.position(world)
             plan._launch(
-                "source/node:" + str(world), gather_deformable_points, s, slot,
-                int(source.shape[0]), plan._buffers["shape_meta"],
-                plan._buffers["node_indices"], plan._buffers["local"],
-                plan._buffers["local_bounds"], source, loan.tick(world),
-                outputs["points"], outputs["point_bounds"], outputs["stamps"], outputs["ticks"],
+                "source/node:" + str(world),
+                gather_deformable_points,
+                s,
+                slot,
+                int(source.shape[0]),
+                plan._buffers["shape_meta"],
+                plan._buffers["node_indices"],
+                plan._buffers["local"],
+                plan._buffers["local_bounds"],
+                source,
+                loan.tick(world),
+                outputs["points"],
+                outputs["point_bounds"],
+                outputs["stamps"],
+                outputs["ticks"],
             )
         rigid = view._lease.rigid
         source = physical_sources(rigid)[2]
         plan._launch(
-            "source/floating", gather_boundary_points, s, 2, 1,
-            plan._buffers["rigid_meta"], plan._buffers["local"],
-            plan._buffers["local_bounds"], source.meta, source.fk, rigid.ticks,
-            outputs["poses"], outputs["stamps"], outputs["points"], outputs["point_bounds"],
+            "source/floating",
+            gather_boundary_points,
+            s,
+            2,
+            1,
+            plan._buffers["rigid_meta"],
+            plan._buffers["local"],
+            plan._buffers["local_bounds"],
+            source.meta,
+            source.fk,
+            rigid.ticks,
+            outputs["poses"],
+            outputs["stamps"],
+            outputs["points"],
+            outputs["point_bounds"],
         )
         plan._launch(
-            "source/floating_world", translate_boundary_frame, s,
-            plan._buffers["rigid_meta"], plan._buffers["anchor_shifts"], outputs["poses"],
-            outputs["native_poses"], outputs["stamps"], outputs["points"], outputs["point_bounds"],
+            "source/floating_world",
+            translate_boundary_frame,
+            s,
+            plan._buffers["rigid_meta"],
+            plan._buffers["anchor_shifts"],
+            outputs["poses"],
+            outputs["native_poses"],
+            outputs["stamps"],
+            outputs["points"],
+            outputs["point_bounds"],
         )
         raw = {name: plan._download(a, "source/" + name) for name, a in outputs.items()}
         ticks = raw.pop("ticks")
@@ -279,11 +349,15 @@ class DeformableResponseBoundaryAdapter(DeformableBoundaryAdapter):
         for i, world in enumerate(plan._world_keys):
             if rigid_ticks[self._world_rigid[world][1]] != ticks[i]:
                 raise RuntimeError("D3 node and rigid world ticks differ")
-        actual = {world: plan._download(loan.position(world), "source/actual_node:" + str(world))
-                  for world in plan._world_keys}
+        actual = {
+            world: plan._download(loan.position(world), "source/actual_node:" + str(world))
+            for world in plan._world_keys
+        }
         for name, shape, dtype in (
-            ("points", (n, 3), np.float32), ("point_bounds", (n, 6), np.float32),
-            ("stamps", (s, 4), np.int32), ("poses", (s, 12), np.float32),
+            ("points", (n, 3), np.float32),
+            ("point_bounds", (n, 6), np.float32),
+            ("stamps", (s, 4), np.int32),
+            ("poses", (s, 12), np.float32),
             ("native_poses", (s, 12), np.float32),
         ):
             a = raw[name]
@@ -298,7 +372,7 @@ class DeformableResponseBoundaryAdapter(DeformableBoundaryAdapter):
         deltas = np.empty((n, 3), np.float64)
         slots = {world: i for i, world in enumerate(plan._world_keys)}
         for i, shape in enumerate(plan._model.shapes):
-            begin, end = map(int, plan._offsets[i:i + 2])
+            begin, end = map(int, plan._offsets[i : i + 2])
             world = shape.key.world
             stamp = raw["stamps"][i]
             if shape.key in self._moving:
@@ -309,9 +383,11 @@ class DeformableResponseBoundaryAdapter(DeformableBoundaryAdapter):
                 native = fk[item["row"], 0, :12]
                 if raw["native_poses"][i].tobytes() != native.tobytes():
                     raise RuntimeError("D3 gathered rigid pose is not its actual FK bank")
-                expected = native[:3].astype(np.float64) + item["local"] @ native[3:].astype(
-                    np.float64
-                ).reshape(3, 3).T + item["anchor"]
+                expected = (
+                    native[:3].astype(np.float64)
+                    + item["local"] @ native[3:].astype(np.float64).reshape(3, 3).T
+                    + item["anchor"]
+                )
             else:
                 slot = slots[world]
                 expected_stamp = (1, ticks[slot], slot, slot)
@@ -329,10 +405,14 @@ class DeformableResponseBoundaryAdapter(DeformableBoundaryAdapter):
                 raise RuntimeError("D3 source stamp mismatch")
             deltas[begin:end] = raw["points"][begin:end].astype(np.float64) - expected
         raw.update(
-            material_deltas=deltas, actual_bank_positions=actual,
-            actual_rigid_fk=fk, rigid_ticks=rigid_ticks,
+            material_deltas=deltas,
+            actual_bank_positions=actual,
+            actual_rigid_fk=fk,
+            rigid_ticks=rigid_ticks,
         )
-        plan._counts["actual_bank_host_readback_bytes"] = sum(a.nbytes for a in actual.values()) + fk.nbytes
+        plan._counts["actual_bank_host_readback_bytes"] = (
+            sum(a.nbytes for a in actual.values()) + fk.nbytes
+        )
         plan._raw_prefix["source/material_reconstruction_delta"] = owned(deltas)
         self.validate_source(plan, view)
         return outputs, raw, ticks
@@ -342,8 +422,10 @@ class DeformableResponseBoundaryAdapter(DeformableBoundaryAdapter):
         base.update(
             rigid_epoch=view._lease.rigid.state_epoch,
             rigid_active_bank=view._lease.rigid.active,
-            rigid_ticks=raw["rigid_ticks"], actual_rigid_fk=raw["actual_rigid_fk"],
-            current_rigid_poses=raw["poses"], native_rigid_poses=raw["native_poses"],
+            rigid_ticks=raw["rigid_ticks"],
+            actual_rigid_fk=raw["actual_rigid_fk"],
+            current_rigid_poses=raw["poses"],
+            native_rigid_poses=raw["native_poses"],
             semantics="dual-accepted-entry; no response has yet committed",
         )
         return freeze(base)

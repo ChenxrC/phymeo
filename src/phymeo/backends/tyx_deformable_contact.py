@@ -71,12 +71,16 @@ class _ResponseEngine:
             try:
                 self.lease.close()
             except BaseException as cleanup:
-                raise BaseExceptionGroup("D3 lease claim and cleanup failed", [primary, cleanup]) from primary
+                raise BaseExceptionGroup(
+                    "D3 lease claim and cleanup failed", [primary, cleanup]
+                ) from primary
             raise
         self.tx = scene._service._batch._tx
         self.resources = DeviceResources()
         self.resources.set_runtime(self.lease)
-        self.counts = dict(launches=0, uploads=0, uploaded_bytes=0, downloads=0, downloaded_bytes=0, syncs=0)
+        self.counts = dict(
+            launches=0, uploads=0, uploaded_bytes=0, downloads=0, downloaded_bytes=0, syncs=0
+        )
         self.worlds = len(node_counts)
         self.offsets = np.asarray([0, *np.cumsum(node_counts)], np.int32)
         p, n, w = max(1, capacity), int(self.offsets[-1]), self.worlds
@@ -85,13 +89,21 @@ class _ResponseEngine:
         try:
             with self.tx.use_runtime(self.runtime):
                 for name, shape, dtype in (
-                    ("rows", (p, 13), np.float32), ("law", (p, 5), np.float32),
-                    ("ids", (p, 5), np.int32), ("bary", (p, 3), np.float32),
-                    ("lever", (p, 3), np.float32), ("nodes", (n, 3), np.float32),
-                    ("wrench", (w, 6), np.float32), ("status", (w,), np.int32),
+                    ("rows", (p, 13), np.float32),
+                    ("law", (p, 5), np.float32),
+                    ("ids", (p, 5), np.int32),
+                    ("bary", (p, 3), np.float32),
+                    ("lever", (p, 3), np.float32),
+                    ("nodes", (n, 3), np.float32),
+                    ("wrench", (w, 6), np.float32),
+                    ("status", (w,), np.int32),
                     ("offsets", (w + 1,), np.int32),
                 ):
-                    array = np.empty(shape, dtype) if self.mode == "interpret" else self.tx.cuda_empty(shape, dtype)
+                    array = (
+                        np.empty(shape, dtype)
+                        if self.mode == "interpret"
+                        else self.tx.cuda_empty(shape, dtype)
+                    )
                     if self.mode == "cuda":
                         self.resources.add_buffer(array)
                     self.arrays[name] = array
@@ -100,7 +112,9 @@ class _ResponseEngine:
             try:
                 self.close()
             except BaseException as cleanup:
-                raise BaseExceptionGroup("D3 force construction and cleanup failed", [primary, cleanup]) from primary
+                raise BaseExceptionGroup(
+                    "D3 force construction and cleanup failed", [primary, cleanup]
+                ) from primary
             raise
 
     @property
@@ -140,14 +154,27 @@ class _ResponseEngine:
             a = self.arrays
             normal_layer_rows(count, a["rows"], a["law"], mode=self.mode)
             transpose_response(
-                self.worlds, count, a["offsets"], a["ids"], a["bary"], a["lever"],
-                a["law"], a["nodes"], a["wrench"], a["status"], mode=self.mode,
+                self.worlds,
+                count,
+                a["offsets"],
+                a["ids"],
+                a["bary"],
+                a["lever"],
+                a["law"],
+                a["nodes"],
+                a["wrench"],
+                a["status"],
+                mode=self.mode,
             )
             self.counts["launches"] += 2
             self.runtime.sync()
             self.counts["syncs"] += 1
-            law, nodes, wrench, status = (self.read(n) for n in ("law", "nodes", "wrench", "status"))
-        if np.any(status != 1) or not all(np.isfinite(a).all() for a in (law[:count], nodes, wrench)):
+            law, nodes, wrench, status = (
+                self.read(n) for n in ("law", "nodes", "wrench", "status")
+            )
+        if np.any(status != 1) or not all(
+            np.isfinite(a).all() for a in (law[:count], nodes, wrench)
+        ):
             raise FloatingPointError("D3 nonfinite contact transpose")
         return law[:count], nodes, wrench
 
@@ -164,10 +191,20 @@ class TyxDeformableContactBatch:
     """
 
     def __init__(
-        self, node_worlds, participants, model, bindings, materials_by_pair, *,
-        mode="cuda", settings=None, limits=None, contact_capacity=128,
+        self,
+        node_worlds,
+        participants,
+        model,
+        bindings,
+        materials_by_pair,
+        *,
+        mode="cuda",
+        settings=None,
+        limits=None,
+        contact_capacity=128,
         memory_limit_bytes=256 * 1024 * 1024,
-        node_memory_limit_bytes=256 * 1024 * 1024, cache_root=None,
+        node_memory_limit_bytes=256 * 1024 * 1024,
+        cache_root=None,
     ):
         from ._deformable_runtime_lease import ResidentDeformableRuntimeLease
 
@@ -182,17 +219,27 @@ class TyxDeformableContactBatch:
         self._context = None
         self._prepared_attempt = self._prepared_expected = None
         self._scene = self._nodes = self._query = self._engine = None
-        node_worlds, participants, bindings = tuple(node_worlds), tuple(participants), tuple(bindings)
+        node_worlds, participants, bindings = (
+            tuple(node_worlds),
+            tuple(participants),
+            tuple(bindings),
+        )
         if type(model) is not DeformableBoundaryModel:
             raise TypeError("D3 needs DeformableBoundaryModel")
         if type(contact_capacity) is not int or not 0 <= contact_capacity <= 128:
             raise ValueError("D3 contact capacity must be in [0,128]")
         if type(memory_limit_bytes) is not int or memory_limit_bytes <= 0:
             raise ValueError("D3 native memory limit must be positive")
-        if not participants or len(participants) > 8 or any(type(p) is not ResidentParticipant for p in participants):
+        if (
+            not participants
+            or len(participants) > 8
+            or any(type(p) is not ResidentParticipant for p in participants)
+        ):
             raise ValueError("D3 requires 1..8 registered ordinary floating participants")
         worlds = tuple(sorted(p.key.world for p in participants))
-        if len(set(worlds)) != len(worlds) or any(p.family != "floating" or p.body_count != 1 for p in participants):
+        if len(set(worlds)) != len(worlds) or any(
+            p.family != "floating" or p.body_count != 1 for p in participants
+        ):
             raise ValueError("D3 requires exactly one ordinary free body in every world")
         if tuple(sorted(w.key for w in node_worlds)) != worlds:
             raise ValueError("D3 node and rigid worlds differ")
@@ -200,8 +247,10 @@ class TyxDeformableContactBatch:
             raise ValueError("D3 needs complete physical topology")
         preflight_counts = [len(w.initial_state.position) for w in node_worlds]
         preflight_bytes = (
-            116 * max(1, contact_capacity) + 12 * sum(preflight_counts)
-            + 28 * len(worlds) + 4 * (len(worlds) + 1)
+            116 * max(1, contact_capacity)
+            + 12 * sum(preflight_counts)
+            + 28 * len(worlds)
+            + 4 * (len(worlds) + 1)
         )
         if preflight_bytes >= memory_limit_bytes:
             raise MemoryError("D3 response buffers leave no boundary query budget")
@@ -209,15 +258,21 @@ class TyxDeformableContactBatch:
         surfaces = [s for s in model.shapes if type(s) is DeformableBoundarySurface]
         expected = {
             tuple(sorted((s.key, r.key)))
-            for s in surfaces for r in model.shapes
+            for s in surfaces
+            for r in model.shapes
             if type(r) is not DeformableBoundarySurface
-            and s.key.world == r.key.world and s.key.body != r.key.body
-            and s.group & r.mask and r.group & s.mask
+            and s.key.world == r.key.world
+            and s.key.body != r.key.body
+            and s.group & r.mask
+            and r.group & s.mask
             and tuple(sorted((s.key, r.key))) not in model.excluded
         }
         if not isinstance(materials_by_pair, Mapping) or set(materials_by_pair) != expected:
             raise ValueError("D3 requires the complete eligible pair material table")
-        if any(law is not None and (type(law) is not NormalLayer or law.friction != 0) for law in materials_by_pair.values()):
+        if any(
+            law is not None and (type(law) is not NormalLayer or law.friction != 0)
+            for law in materials_by_pair.values()
+        ):
             raise ValueError("D3 supports calibrated normal layers with mu=0")
         self._laws = MappingProxyType(dict(materials_by_pair))
         self._shapes = shapes
@@ -231,8 +286,12 @@ class TyxDeformableContactBatch:
             lease = ResidentDeformableRuntimeLease(self._scene)
             try:
                 self._nodes = TyxDeformableBatch(
-                    node_worlds, mode=mode, settings=settings, trace=True,
-                    memory_limit_bytes=node_memory_limit_bytes, cache_root=cache_root,
+                    node_worlds,
+                    mode=mode,
+                    settings=settings,
+                    trace=True,
+                    memory_limit_bytes=node_memory_limit_bytes,
+                    cache_root=cache_root,
                     _runtime_lease=lease,
                 )
             except BaseException as primary:
@@ -242,27 +301,46 @@ class TyxDeformableContactBatch:
                     try:
                         lease.close()
                     except BaseException as cleanup:
-                        raise BaseExceptionGroup("D3 node construction and lease cleanup failed", [primary, cleanup]) from primary
+                        raise BaseExceptionGroup(
+                            "D3 node construction and lease cleanup failed", [primary, cleanup]
+                        ) from primary
                 raise
             if self._nodes.world_keys != self._scene.world_keys:
                 raise ValueError("D3 sources have different stable world order")
             node_counts = [self._nodes._models[w].n for w in worlds]
-            required = 116 * max(1, contact_capacity) + 12 * sum(node_counts) + 28 * len(worlds) + 4 * (len(worlds) + 1)
+            required = (
+                116 * max(1, contact_capacity)
+                + 12 * sum(node_counts)
+                + 28 * len(worlds)
+                + 4 * (len(worlds) + 1)
+            )
             if required >= memory_limit_bytes:
                 raise MemoryError("D3 response buffers leave no boundary query budget")
             self._adapter = DeformableResponseBoundaryAdapter(self._nodes, self._scene)
             self._query = ResidentBoundaryQueryPlan(
-                self._nodes, model, bindings, limits=BoundaryDistanceLimits() if limits is None else limits,
-                memory_limit_bytes=memory_limit_bytes - required, source_adapter=self._adapter,
+                self._nodes,
+                model,
+                bindings,
+                limits=BoundaryDistanceLimits() if limits is None else limits,
+                memory_limit_bytes=memory_limit_bytes - required,
+                source_adapter=self._adapter,
             )
             self._engine = _ResponseEngine(self._scene, node_counts, contact_capacity)
             if self._engine.native_bytes != required:
                 raise RuntimeError("D3 native buffer inventory differs")
-            self.binding_sha256 = _digest((
-                "tyx-deformable-contact-v1", self._nodes.binding_sha256,
-                self._scene.layout.fingerprint, model, bindings, self._laws,
-                contact_capacity, mode, self._query._limits,
-            ))
+            self.binding_sha256 = _digest(
+                (
+                    "tyx-deformable-contact-v1",
+                    self._nodes.binding_sha256,
+                    self._scene.layout.fingerprint,
+                    model,
+                    bindings,
+                    self._laws,
+                    contact_capacity,
+                    mode,
+                    self._query._limits,
+                )
+            )
             self._expected = (self._nodes.revision, self._scene.state_epoch)
             self._initial_nodes = self._nodes.checkpoint()
             self._initial_rigid = self._scene.snapshot()
@@ -293,7 +371,9 @@ class TyxDeformableContactBatch:
         self._check_open()
         if self._busy:
             raise RuntimeError("D3 owner cannot be reentered")
-        if expected_revision is not None and (type(expected_revision) is not int or expected_revision != self._revision):
+        if expected_revision is not None and (
+            type(expected_revision) is not int or expected_revision != self._revision
+        ):
             raise ValueError("stale D3 revision")
 
     @contextmanager
@@ -308,7 +388,9 @@ class TyxDeformableContactBatch:
         nodes, rigid = self._nodes.snapshot(), self._scene.snapshot()
         if any(nodes[w].tick != rigid[w].tick for w in self.world_keys):
             raise RuntimeError("D3 accepted node and rigid ticks differ")
-        return MappingProxyType({w: DeformableContactState(w, nodes[w], rigid[w]) for w in self.world_keys})
+        return MappingProxyType(
+            {w: DeformableContactState(w, nodes[w], rigid[w]) for w in self.world_keys}
+        )
 
     def snapshot(self):
         with self._locked():
@@ -331,7 +413,11 @@ class TyxDeformableContactBatch:
             if not isinstance(inputs, Mapping) or set(inputs) != set(self.world_keys):
                 raise ValueError("D3 needs complete nodal external-force inputs")
             inputs = {
-                w: StepInputs(as_fp32(inputs[w].force, "D3 external nodal force", (self._nodes._models[w].n, 3)))
+                w: StepInputs(
+                    as_fp32(
+                        inputs[w].force, "D3 external nodal force", (self._nodes._models[w].n, 3)
+                    )
+                )
                 for w in self.world_keys
             }
             dt = float(as_fp32(h, "D3 timestep", ()))
@@ -339,8 +425,14 @@ class TyxDeformableContactBatch:
                 raise ValueError("D3 timestep must be positive")
             entry = self._snapshot()
             self._context = dict(
-                phase="entry-query", error=None, entry=entry, query=None,
-                node_receipt=None, rigid_publication=None, inputs=inputs, h=dt,
+                phase="entry-query",
+                error=None,
+                entry=entry,
+                query=None,
+                node_receipt=None,
+                rigid_publication=None,
+                inputs=inputs,
+                h=dt,
             )
             self._busy = True
             try:
@@ -365,7 +457,10 @@ class TyxDeformableContactBatch:
     def _law_rows(self, entry):
         context = self._context
         query = context["query"]
-        if query.state_epoch != self._nodes.revision or query.source["rigid_epoch"] != self._scene.state_epoch:
+        if (
+            query.state_epoch != self._nodes.revision
+            or query.source["rigid_epoch"] != self._scene.state_epoch
+        ):
             raise ValueError("D3 entry query no longer binds both owners")
         sites = []
         indices, bary, levers, rows = [], [], [], []
@@ -397,9 +492,13 @@ class TyxDeformableContactBatch:
                 beta = np.asarray(row.barycentric, np.float64)
                 if abs(np.linalg.norm(normal) - 1.0) > 2e-6:
                     raise ValueError("D3 normal violates the original calibrated-layer unit gate")
-                node_indices = tuple(int(np.flatnonzero(model.point_ids == point)[0]) for point in row.vertex_ids)
+                node_indices = tuple(
+                    int(np.flatnonzero(model.point_ids == point)[0]) for point in row.vertex_ids
+                )
                 if tuple(source["oriented_point_ids"][row.facet_id]) != row.vertex_ids:
-                    raise ValueError("D3 facet ordinal does not bind its original oriented point IDs")
+                    raise ValueError(
+                        "D3 facet ordinal does not bind its original oriented point IDs"
+                    )
                 origin = group.packet.origin_m + group.packet.pair_origins_relative_m[ordinal]
                 axis_point = origin + np.asarray(row.axis_point_relative_m, np.float64)
                 node_point = origin + np.asarray(row.triangle_point_relative_m, np.float64)
@@ -407,22 +506,47 @@ class TyxDeformableContactBatch:
                 com = geometry.com_position_m[0]
                 lever = rigid_point - com
                 vn = beta @ context["entry"][world].node.velocity[np.asarray(node_indices)]
-                vr = geometry.linear_velocity_m_s[0] + np.cross(geometry.angular_velocity_rad_s[0], lever)
+                vr = geometry.linear_velocity_m_s[0] + np.cross(
+                    geometry.angular_velocity_rad_s[0], lever
+                )
                 relative = vn - vr
-                law_row = np.r_[normal, relative, law.width_m, row.gap, law.stiffness_n_per_m,
-                                1.0, law.damping_s_per_m, 0.0, law.slip_speed_m_s]
+                law_row = np.r_[
+                    normal,
+                    relative,
+                    law.width_m,
+                    row.gap,
+                    law.stiffness_n_per_m,
+                    1.0,
+                    law.damping_s_per_m,
+                    0.0,
+                    law.slip_speed_m_s,
+                ]
                 law_row = as_fp32(law_row, "D3 calibrated layer row", (13,))
-                local_point = geometry.link_rotation[0].T @ (rigid_point - geometry.link_position_m[0])
-                local_axis = geometry.link_rotation[0].T @ (axis_point - geometry.link_position_m[0])
+                local_point = geometry.link_rotation[0].T @ (
+                    rigid_point - geometry.link_position_m[0]
+                )
+                local_axis = geometry.link_rotation[0].T @ (
+                    axis_point - geometry.link_position_m[0]
+                )
                 site = dict(
-                    world=world, surface=surface, round=round_key,
-                    facet_id=int(facet_ids[row.facet_id]), facet_ordinal=int(row.facet_id),
-                    point_ids=tuple(row.vertex_ids), node_indices=node_indices,
-                    barycentric=owned(beta), axis_parameter=row.axis_parameter,
-                    normal=owned(normal), gap=row.gap, node_point=owned(node_point),
-                    rigid_point=owned(rigid_point), rigid_com=owned(com),
-                    relative_velocity=owned(relative), law_input=owned(law_row),
-                    rigid_point_local=owned(local_point), rigid_axis_local=owned(local_axis),
+                    world=world,
+                    surface=surface,
+                    round=round_key,
+                    facet_id=int(facet_ids[row.facet_id]),
+                    facet_ordinal=int(row.facet_id),
+                    point_ids=tuple(row.vertex_ids),
+                    node_indices=node_indices,
+                    barycentric=owned(beta),
+                    axis_parameter=row.axis_parameter,
+                    normal=owned(normal),
+                    gap=row.gap,
+                    node_point=owned(node_point),
+                    rigid_point=owned(rigid_point),
+                    rigid_com=owned(com),
+                    relative_velocity=owned(relative),
+                    law_input=owned(law_row),
+                    rigid_point_local=owned(local_point),
+                    rigid_axis_local=owned(local_axis),
                     radius=self._shapes[round_key].radius,
                 )
                 sites.append(site)
@@ -432,7 +556,8 @@ class TyxDeformableContactBatch:
                 levers.append(lever)
                 rows.append(law_row)
         return (
-            sites, np.asarray(rows, np.float32).reshape(-1, 13),
+            sites,
+            np.asarray(rows, np.float32).reshape(-1, 13),
             np.asarray(indices, np.int32).reshape(-1, 5),
             np.asarray(bary, np.float32).reshape(-1, 3),
             np.asarray(levers, np.float32).reshape(-1, 3),
@@ -448,24 +573,30 @@ class TyxDeformableContactBatch:
         for i, site in enumerate(sites):
             f = law[i, 2:5].astype(np.float64)
             site.update(
-                law_output=owned(law[i]), node_forces=owned(bary[i].astype(np.float64)[:, None] * f),
-                rigid_force=owned(-f), rigid_torque=owned(np.cross(levers[i].astype(np.float64), -f)),
+                law_output=owned(law[i]),
+                node_forces=owned(bary[i].astype(np.float64)[:, None] * f),
+                rigid_force=owned(-f),
+                rigid_torque=owned(np.cross(levers[i].astype(np.float64), -f)),
             )
         inputs, world_contact, wrenches = {}, {}, {}
         for i, world in enumerate(self.world_keys):
-            start, end = map(int, self._engine.offsets[i:i + 2])
+            start, end = map(int, self._engine.offsets[i : i + 2])
             contact = node_force[start:end]
             total = as_fp32(
                 self._context["inputs"][world].force + contact.astype(np.float64),
-                "D3 complete uploaded node force", contact.shape,
+                "D3 complete uploaded node force",
+                contact.shape,
             )
             inputs[world] = StepInputs(total)
             world_contact[world] = owned(contact)
-            wrenches[self._participants[world]] = owned(wrench[i:i + 1])
+            wrenches[self._participants[world]] = owned(wrench[i : i + 1])
         self._context.update(
-            sites=freeze(sites), node_contact_force=freeze(world_contact),
-            wrenches=freeze(wrenches), complete_node_inputs=freeze(inputs),
-            mechanical_entry=entry, phase="node-candidate",
+            sites=freeze(sites),
+            node_contact_force=freeze(world_contact),
+            wrenches=freeze(wrenches),
+            complete_node_inputs=freeze(inputs),
+            mechanical_entry=entry,
+            phase="node-candidate",
         )
         receipt = self._nodes._stage_step(inputs, h)
         self._context["node_receipt"] = receipt
@@ -476,14 +607,22 @@ class TyxDeformableContactBatch:
             payload=self._context,
         )
 
-    def prepare_publication(self, entry, candidate, diagnostics, projected, accepted, status, payload, h):
+    def prepare_publication(
+        self, entry, candidate, diagnostics, projected, accepted, status, payload, h
+    ):
         return self._prepare_response_publication(
             entry, candidate, diagnostics, projected, accepted, status, payload, h
         )
 
-    def _prepare_response_publication(self, entry, candidate, diagnostics, projected, accepted, status, payload, h):
+    def _prepare_response_publication(
+        self, entry, candidate, diagnostics, projected, accepted, status, payload, h
+    ):
         self._context["phase"] = "candidate-audit"
-        if payload is not self._context or set(accepted) != set(self.world_keys) or not all(accepted.values()):
+        if (
+            payload is not self._context
+            or set(accepted) != set(self.world_keys)
+            or not all(accepted.values())
+        ):
             raise RuntimeError("D3 all worlds must accept both physical domains")
         node_receipt = payload["node_receipt"]
         if node_receipt is None or node_receipt.source_revision != self._nodes.revision:
@@ -494,7 +633,10 @@ class TyxDeformableContactBatch:
             participant = self._participants[world]
             before, after = entry[participant], candidate[participant]
             state = node_receipt.states[world]
-            if after["state"].tick != state.tick or state.tick != payload["entry"][world].node.tick + 1:
+            if (
+                after["state"].tick != state.tick
+                or state.tick != payload["entry"][world].node.tick + 1
+            ):
                 raise RuntimeError("D3 candidates do not share one actual successor tick")
             if participant not in diagnostics or participant not in projected:
                 raise RuntimeError("D3 rigid candidate lacks complete mechanics diagnostics")
@@ -518,16 +660,25 @@ class TyxDeformableContactBatch:
                 nodes = np.asarray(site["node_indices"], np.int32)
                 node_after = beta @ state.position[nodes].astype(np.float64)
                 geometry = after["geometry"]
-                rigid_after = geometry.link_position_m[0] + geometry.link_rotation[0] @ site["rigid_point_local"]
-                axis_after = geometry.link_position_m[0] + geometry.link_rotation[0] @ site["rigid_axis_local"]
+                rigid_after = (
+                    geometry.link_position_m[0]
+                    + geometry.link_rotation[0] @ site["rigid_point_local"]
+                )
+                axis_after = (
+                    geometry.link_position_m[0]
+                    + geometry.link_rotation[0] @ site["rigid_axis_local"]
+                )
                 force = site["law_output"][2:5].astype(np.float64)
-                work += float(force @ (node_after - site["node_point"]) - force @ (rigid_after - site["rigid_point"]))
+                work += float(
+                    force @ (node_after - site["node_point"])
+                    - force @ (rigid_after - site["rigid_point"])
+                )
                 law = site["law_input"]
                 stiffness, width = float(law[8]), float(law[6])
                 compression = max(0.0, width - float(law[7]))
                 before_potential += 0.5 * stiffness * compression**2
                 gap_after = float(np.linalg.norm(axis_after - node_after)) - site["radius"]
-                after_potential += 0.5 * stiffness * max(0.0, width - gap_after)**2
+                after_potential += 0.5 * stiffness * max(0.0, width - gap_after) ** 2
                 rate, magnitude = map(float, site["law_output"][:2])
                 dissipation += (stiffness * compression - magnitude) * rate
             if not np.isfinite([work, before_potential, after_potential, dissipation]).all():
@@ -535,32 +686,55 @@ class TyxDeformableContactBatch:
             # This is the true sampled damping power, not an energy credit used
             # by either physical solver. Finite-step work balance is reported.
             world_record = dict(
-                entry=payload["entry"][world], sites=selected,
+                entry=payload["entry"][world],
+                sites=selected,
                 node_contact_force=payload["node_contact_force"][world],
                 node_total_force=row.force,
                 rigid_wrench=payload["wrenches"][participant],
-                uploaded_rigid_wrench=owned(np.asarray(payload["wrenches"][participant], np.float32)),
-                material_impulse=owned(material), fixed_reaction_impulse=owned(fixed),
-                contact_work=work, entry_dissipation_rate=dissipation,
-                layer_potential_before=before_potential, layer_potential_after=after_potential,
+                uploaded_rigid_wrench=owned(
+                    np.asarray(payload["wrenches"][participant], np.float32)
+                ),
+                material_impulse=owned(material),
+                fixed_reaction_impulse=owned(fixed),
+                contact_work=work,
+                entry_dissipation_rate=dissipation,
+                layer_potential_before=before_potential,
+                layer_potential_after=after_potential,
                 work_balance=work + after_potential - before_potential + h * dissipation,
                 potential_semantics="advected entry material sites; not endpoint closest feature",
-                node_external_work=float(np.sum(
-                    payload["inputs"][world].force * (state.position - payload["entry"][world].node.position)
-                )),
-                rigid_external_entry_power=float(before["external"] @ np.asarray(before["state"].velocity)),
+                node_external_work=float(
+                    np.sum(
+                        payload["inputs"][world].force
+                        * (state.position - payload["entry"][world].node.position)
+                    )
+                ),
+                rigid_external_entry_power=float(
+                    before["external"] @ np.asarray(before["state"].velocity)
+                ),
             )
             worlds[world] = freeze(world_record)
             states[world] = DeformableContactState(world, state, rigid_states[world])
-        rigid_publication = freeze(dict(
-            entry=entry, candidate=candidate, diagnostics=diagnostics,
-            projected=projected, accepted=accepted, status=status,
-        ))
+        rigid_publication = freeze(
+            dict(
+                entry=entry,
+                candidate=candidate,
+                diagnostics=diagnostics,
+                projected=projected,
+                accepted=accepted,
+                status=status,
+            )
+        )
         self._context["rigid_publication"] = rigid_publication
         receipt = DeformableContactReceipt(
-            "tyx-deformable-contact-step-v1", self.binding_sha256,
-            self._revision, self._revision + 1, payload["query"], node_receipt,
-            rigid_publication, MappingProxyType(worlds), MappingProxyType(states),
+            "tyx-deformable-contact-step-v1",
+            self.binding_sha256,
+            self._revision,
+            self._revision + 1,
+            payload["query"],
+            node_receipt,
+            rigid_publication,
+            MappingProxyType(worlds),
+            MappingProxyType(states),
         )
         self._prepared_attempt = freeze(dict(self._context, phase="accepted"))
         self._prepared_expected = (node_receipt.destination_revision, self._scene.state_epoch + 1)
@@ -572,13 +746,21 @@ class TyxDeformableContactBatch:
             nodes, rigid = self._nodes.checkpoint(), self._scene.snapshot()
             digest = _digest((self.binding_sha256, nodes, rigid, self.last_step))
             return DeformableContactCheckpoint(
-                "tyx-deformable-contact-checkpoint-v1", self._owner, self.binding_sha256,
-                self._revision, nodes, rigid, self.last_step, digest,
+                "tyx-deformable-contact-checkpoint-v1",
+                self._owner,
+                self.binding_sha256,
+                self._revision,
+                nodes,
+                rigid,
+                self.last_step,
+                digest,
             )
 
     def _selected(self, worlds):
         values = self.world_keys if worlds is None else tuple(worlds)
-        if len(set(values)) != len(values) or any(type(w) is not int or w not in self.world_keys for w in values):
+        if len(set(values)) != len(values) or any(
+            type(w) is not int or w not in self.world_keys for w in values
+        ):
             raise ValueError("D3 unknown or duplicate selected world")
         return tuple(w for w in self.world_keys if w in values)
 
@@ -592,11 +774,14 @@ class TyxDeformableContactBatch:
             packet = rigid_states[world]
             keys = self._scene.layout.worlds[world].participant_keys
             if (
-                packet.world != world or packet.owner is not self._scene._owner
+                packet.world != world
+                or packet.owner is not self._scene._owner
                 or packet.registry_fingerprint != self._scene.layout.fingerprint
                 or set(packet.participants) != set(keys)
                 or packet.tick != expected[world].tick
-                or any(p.world != world or p.tick != packet.tick for p in packet.participants.values())
+                or any(
+                    p.world != world or p.tick != packet.tick for p in packet.participants.values()
+                )
             ):
                 raise ValueError("D3 replacement rigid world/owner/tick binding differs")
             flat.update(packet.participants)
@@ -609,7 +794,9 @@ class TyxDeformableContactBatch:
             with self._nodes._transaction(self._nodes.revision):
                 self._nodes._stage_replace(selected, expected, last_step=node_last_step)
                 self._scene._service.restore(
-                    flat, expected_epoch=self._scene.state_epoch, deformable=self._nodes,
+                    flat,
+                    expected_epoch=self._scene.state_epoch,
+                    deformable=self._nodes,
                 )
             self._expected = prepared_expected
             self._revision = prepared_revision
@@ -625,15 +812,18 @@ class TyxDeformableContactBatch:
                 or checkpoint.owner is not self._owner
                 or checkpoint.binding_sha256 != self.binding_sha256
                 or tuple(checkpoint.rigid) != self.world_keys
-                or checkpoint.content_sha256 != _digest((
-                    self.binding_sha256, checkpoint.nodes, checkpoint.rigid, checkpoint.last_step
-                ))
+                or checkpoint.content_sha256
+                != _digest(
+                    (self.binding_sha256, checkpoint.nodes, checkpoint.rigid, checkpoint.last_step)
+                )
             ):
                 raise ValueError("D3 checkpoint owner/model/layout/content differs")
             states = self._nodes._validate_checkpoint(checkpoint.nodes)
             selected = self._selected(worlds)
             self._replace(
-                states, checkpoint.rigid, selected,
+                states,
+                checkpoint.rigid,
+                selected,
                 last_step=checkpoint.last_step if selected == self.world_keys else None,
                 node_last_step=checkpoint.nodes.last_step if selected == self.world_keys else None,
             )
@@ -647,15 +837,22 @@ class TyxDeformableContactBatch:
 
     def stats(self):
         with self._locked():
-            return freeze(dict(
-                revision=self._revision, world_count=len(self.world_keys),
-                nodes=self._nodes.stats(), scene=self._scene.stats(),
-                query=self._query.stats(), response=self._engine.counts,
-                response_native_bytes=self._engine.native_bytes,
-                native_query_response_limit=self._native_limit,
-                node_memory_limit_scope="D1 device plus reserved HOST arrays, separate",
-                contact_sampling="discrete_entry", friction=False, ccd=False,
-            ))
+            return freeze(
+                dict(
+                    revision=self._revision,
+                    world_count=len(self.world_keys),
+                    nodes=self._nodes.stats(),
+                    scene=self._scene.stats(),
+                    query=self._query.stats(),
+                    response=self._engine.counts,
+                    response_native_bytes=self._engine.native_bytes,
+                    native_query_response_limit=self._native_limit,
+                    node_memory_limit_scope="D1 device plus reserved HOST arrays, separate",
+                    contact_sampling="discrete_entry",
+                    friction=False,
+                    ccd=False,
+                )
+            )
 
     def close(self):
         with self._lock:

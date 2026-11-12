@@ -504,12 +504,15 @@ def restore(runtime, checkpoint, expected_revision):
         # mj_forward cannot supply q/v or physics to the restored device.
         for candidate in data.values():
             runtime._observe_native(candidate)
-    except BaseException:
+    except BaseException as error:
         if replacement is not None:
             try:
                 replacement.close()
-            except Exception:
-                pass
+            except BaseException as cleanup:
+                runtime._checkpoint_retired.append(replacement)
+                raise BaseExceptionGroup(
+                    "restore candidate verification and cleanup failed", [error, cleanup]
+                )
         raise
     old = runtime._device
     # Operational resource/launch counters are monotonic, not simulated state.

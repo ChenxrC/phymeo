@@ -2,7 +2,9 @@
 
 The existing one-articulation SceneDeclaration is unaffected. This opt-in v1
 lowers original assets, controllers and material installations to the public
-ResidentSceneBatch boundary. Contact sampling remains HOST/discrete-entry.
+ResidentSceneBatch boundary. Default contact sampling remains HOST/discrete-entry.
+Explicit contact_response="none" retains geometry for accepted device queries
+and advances the same scene through its existing no-contact physical plan.
 """
 
 import hashlib
@@ -193,12 +195,18 @@ def _scene_source(scene):
         scene.candidate_capacity,
         scene.site_capacity,
         scene.intra_participant_pairs,
+        scene.contact_response,
     )
 
 
 @dataclass(frozen=True, eq=False)
 class ParticipantSceneDeclaration:
-    """Explicit multi-articulation world assembly; pair None means exclusion."""
+    """Explicit multi-articulation assembly with an explicit response policy.
+
+    Default host_patch retains the complete material table and None exclusions.
+    none requires an empty material table, keeps original geometry filters, and
+    creates no contact forces. Boundary queries never imply a response law.
+    """
 
     articulations: tuple[ParticipantArticulation, ...]
     static_shapes: tuple[FiniteStaticShape, ...] = field(default=(), kw_only=True)
@@ -207,12 +215,15 @@ class ParticipantSceneDeclaration:
     candidate_capacity: int = field(default=4096, kw_only=True)
     site_capacity: object = field(default=128, kw_only=True)
     intra_participant_pairs: bool = field(default=False, kw_only=True)
+    contact_response: str = field(default="host_patch", kw_only=True)
     schema: str = field(default=_SCHEMA, kw_only=True)
     identity: str = field(init=False)
 
     def __post_init__(self):
         if self.schema != _SCHEMA:
             raise ValueError("unsupported participant scene schema")
+        if type(self.contact_response) is not str or self.contact_response not in ("host_patch", "none"):
+            raise ValueError("contact_response must be host_patch or none")
         rows = tuple(self.articulations)
         if not rows or any(type(row) is not ParticipantArticulation for row in rows):
             raise TypeError("scene requires nonempty ParticipantArticulation declarations")
@@ -244,6 +255,8 @@ class ParticipantSceneDeclaration:
         materials = {} if self.materials_by_pair is None else self.materials_by_pair
         if not isinstance(materials, Mapping):
             raise TypeError("materials_by_pair must be an explicit mapping")
+        if self.contact_response == "none" and materials:
+            raise ValueError("contact_response none requires empty materials_by_pair")
         owned_laws = {}
         for pair, law in materials.items():
             if (
@@ -376,6 +389,16 @@ def _prepare(declaration):
             source_map=MappingProxyType(source_map),
         )
     model = CollisionModel(tuple(shapes), tuple(sorted(excluded)))
+    if declaration.contact_response == "none":
+        # The accepted boundary adapter validates the original full asset source
+        # when explicitly prepared. Do not run the finite HOST patch compiler on
+        # triangle/mesh assets or reinterpret a material default as a filter.
+        declaration.assert_unchanged()
+        return dict(
+            participants=tuple(participants), specs=MappingProxyType(specs),
+            model=model, bindings=tuple(bindings), laws=MappingProxyType({}),
+            source_map=MappingProxyType(source_map),
+        )
     potential = []
     adjacent = set()
     for first, second in combinations(model.shapes, 2):
@@ -463,6 +486,9 @@ class CompiledParticipantScene:
         self._rows = MappingProxyType({row.key: row for row in declaration.articulations})
         self._specs = prepared["specs"]
         self._source_map = prepared["source_map"]
+        self._boundary_model = prepared["model"] if prepared["model"] is not None else CollisionModel(())
+        self._boundary_bindings = prepared["bindings"]
+        self._boundary_plan = None
         # Initial command conversion also completes before allocating an owner.
         initial = {
             key: _input(row, self._specs[key], row.initial_control)
@@ -475,16 +501,21 @@ class CompiledParticipantScene:
             static_body_ids=declaration.static_body_ids,
         )
         try:
-            self._plan = self._batch.prepare_contacts(
-                prepared["model"],
-                prepared["bindings"],
-                prepared["laws"],
-                candidate_capacity=declaration.candidate_capacity,
-                site_capacity=declaration.site_capacity,
-                intra_participant_pairs=declaration.intra_participant_pairs,
-                sampling="discrete_entry",
-                narrow_phase="host_patch",
-            )
+            if declaration.contact_response == "none":
+                # The scene owns this original plan, its receipts and its close.
+                # No alternate state, controller or physical integrator is made.
+                self._plan = self._batch._free_plan
+            else:
+                self._plan = self._batch.prepare_contacts(
+                    prepared["model"],
+                    prepared["bindings"],
+                    prepared["laws"],
+                    candidate_capacity=declaration.candidate_capacity,
+                    site_capacity=declaration.site_capacity,
+                    intra_participant_pairs=declaration.intra_participant_pairs,
+                    sampling="discrete_entry",
+                    narrow_phase="host_patch",
+                )
             self._batch.set_controls(initial)
         except BaseException as primary:
             try:
@@ -548,6 +579,42 @@ class CompiledParticipantScene:
             self._check()
             return self._plan.last_status
 
+    def prepare_boundary_query(self, *, limits=None, memory_limit_bytes):
+        """Register original declared geometry with the accepted device source.
+
+        Each successful call returns an independent plan owned by this scene.
+        The last/current convenience accessors refer only to the latest
+        successfully prepared plan. Earlier plans remain usable through their
+        own APIs and all plans are closed by this scene's existing owner.
+        """
+        from ..geometry._triangle_distance_dispatch import BoundaryDistanceLimits
+
+        with self._lock:
+            self._check()
+            if limits is None:
+                limits = BoundaryDistanceLimits()
+            plan = self._batch.prepare_boundary_query(
+                self._boundary_model, self._boundary_bindings,
+                limits=limits, memory_limit_bytes=memory_limit_bytes,
+            )
+            self._boundary_plan = plan
+            return plan
+
+    @property
+    def last_boundary_result(self):
+        """Last published query of the current plan; it may predate a step."""
+        with self._lock:
+            self._check()
+            return None if self._boundary_plan is None else self._boundary_plan.last_result
+
+    def require_boundary_result(self, result):
+        """Require the current plan's evidence for the current accepted state."""
+        with self._lock:
+            self._check()
+            if self._boundary_plan is None:
+                raise RuntimeError("compiled participant scene has no boundary query plan")
+            return self._boundary_plan.require_current(result)
+
     def snapshot(self, worlds=None):
         with self._lock:
             self._check()
@@ -573,6 +640,8 @@ class CompiledParticipantScene:
     def step(self, h):
         with self._lock:
             self._check()
+            if self._declaration.contact_response == "none":
+                return self._batch.step(h)
             return self._batch.step_contacts(h, self._plan)
 
     def restore(self, checkpoints, *, expected_epoch):
@@ -591,7 +660,8 @@ class CompiledParticipantScene:
                 self._batch.stats(),
                 assembly_schema=_SCHEMA,
                 assembly_identity=self.identity,
-                narrow_phase="host_patch",
+                contact_response=self._declaration.contact_response,
+                narrow_phase="host_patch" if self._declaration.contact_response == "host_patch" else "none",
                 sampling="discrete_entry",
                 assembly_closed=self._closed,
             )

@@ -42,6 +42,38 @@ def test_runtime_requires_compilation_and_explicit_payload():
         PhySolveRuntime(None, payload=None)
 
 
+def test_configuration_readback_is_owned_idle_only_and_capture_safe(payload):
+    import tyx as tx
+
+    record = compile_mujoco_xml(SLIDER, require_asset=False)
+    runtime = PhySolveRuntime(record, payload=payload, nworld=8, nconmax=32, njmax=96)
+    try:
+        expected = runtime.configuration_info()
+        assert expected['bank_capacities'] == [(8, 256, 96)] * 2
+        assert expected['nworld'] == 8 and expected['device'] == 'cuda:0'
+        changed = runtime.configuration_info()
+        changed['device_gravity'][0][0] = 123
+        changed['gravity'][0] = 123
+        assert runtime.configuration_info() == expected
+        ticket = runtime.begin_execution()
+        with pytest.raises(RuntimeError, match='pending'):
+            runtime.configuration_info()
+        runtime.discard_execution(ticket)
+        stream = runtime.storage_binding().stream
+        graph = tx.Graph(stream=stream, mode='cuda_stream')
+        try:
+            with graph:
+                with pytest.raises(RuntimeError, match='capture'):
+                    runtime.configuration_info()
+        finally:
+            graph.destroy()
+        assert runtime.configuration_info() == expected
+    finally:
+        runtime.close()
+    with pytest.raises(RuntimeError, match='closed|closing'):
+        runtime.configuration_info()
+
+
 def test_payload_installed_dependency_contract(tmp_path, monkeypatch):
     import hashlib
     from phymeo.backends import physolve_payload as module

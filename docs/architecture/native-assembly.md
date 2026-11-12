@@ -63,6 +63,17 @@ visual 与物理资源共用此冷入口，各自保持独立几何角色；成�
 资源/视觉/装配/mimic 合同78项通过；真实消费者Stage的物理模型与视觉13实例/
 11mesh编译通过。源码冷准备证据见实验根 evidence/b8f-*，不代替安装或GUI资格。
 
+### 原生配置读回（B8g）
+
+PhySolveRuntime.configuration_info() 提供 configuration_readback_contract_version=1：
+实际CPU模板与设备option中的timestep/gravity、原生integrator、world/设备身份和
+两bank容量。返回值独立，不借出可写model；pending、capture和closed时拒绝。
+这是冷同步API：一次显式完成加两块option数组D2H，不能用于高频观测或宣称零同步。
+不调用CPU step/forward，也不读取整批状态。execution_costs新增step_graph_substeps，
+来自实际准备图的steps，未准备时为0；不改变捕获、推进或资源生命周期。
+实际原生测试覆盖返回值独立、pending/capture/closed门禁；消费者配置比较和
+candidate发布仍由消费方负责，导入默认policy与逐关节override不得混为同一实际值。
+
 ### 标准 dynamics 与 mimic（B3e）
 
 B8e 的 `NativeJointInput.lower_limit/upper_limit` 是原生位置约束的有限覆盖值，

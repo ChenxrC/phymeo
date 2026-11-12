@@ -63,6 +63,7 @@ class PhySolveRuntime:
     free_body_component_contract_version = 1
     stream_binding_contract_version = 1
     step_graph_contract_version = 1
+    configuration_readback_contract_version = 1
 
     def __init__(
         self,
@@ -320,6 +321,34 @@ class PhySolveRuntime:
         from ._physolve_stream import bind_stream
         return bind_stream(self, handle, owner)
 
+    def configuration_info(self):
+        """Cold, synchronous readback of the native execution configuration.
+
+        No state snapshot or model copy: only timestep/gravity option arrays
+        are read on the canonical stream. Pending execution/capture is rejected.
+        Returned lists own their values and expose no writable native storage.
+        """
+        with self._scope():
+            self._require_idle()
+            if self._stream.is_capturing:
+                raise RuntimeError('configuration readback is unavailable during capture')
+            self._complete()
+            option = self._model.opt
+            return {
+                'contract_version': 1,
+                'device': str(self._device),
+                'nworld': self.nworld,
+                'timestep': float(self._cpu_model.opt.timestep),
+                'gravity': self._cpu_model.opt.gravity.tolist(),
+                'device_timestep': option.timestep.numpy(stream=self._stream).reshape(-1).tolist(),
+                'device_gravity': option.gravity.numpy(stream=self._stream).reshape(-1, 3).tolist(),
+                'integrator': int(option.integrator),
+                'nconmax': self.nconmax,
+                'njmax': self.njmax,
+                'bank_capacities': [(int(b.nworld), int(b.naconmax), int(b.njmax))
+                                    for b in self._banks],
+            }
+
     @property
     def step_graph_ready(self):
         return self._step_graphs is not None and self._step_graphs.ready
@@ -503,6 +532,7 @@ class PhySolveRuntime:
                     "stream_rebindings": self._stream_rebindings,
                     "step_graph_captures": self._graph_captures,
                     "step_graph_ready": self.step_graph_ready,
+                    "step_graph_substeps": self._step_graphs.steps if self.step_graph_ready else 0,
                     "step_graph_replays": self._graph_replays,
                     "native_direct_conditional_sync": True}
 

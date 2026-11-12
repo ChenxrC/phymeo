@@ -553,6 +553,18 @@ class TyxWorldBatch:
 
         return convex_query_for(self, plan)
 
+    def prepare_boundary_query(self, model, bindings, *, limits, memory_limit_bytes):
+        """Prepare finite boundary distances from this batch's accepted device state.
+
+        Limits and memory capacity are explicit. The plan borrows this runtime;
+        query does not advance physics, resolve contact forces, or certify CCD.
+        """
+        from ._resident_boundary_query import ResidentBoundaryQueryPlan
+
+        return ResidentBoundaryQueryPlan(
+            self, model, bindings, limits=limits, memory_limit_bytes=memory_limit_bytes
+        )
+
     def _keys(self, keys):
         result = list(self._slots) if keys is None else [world_key(k) for k in keys]
         if len(set(result)) != len(result):

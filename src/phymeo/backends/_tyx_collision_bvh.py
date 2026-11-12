@@ -4,7 +4,7 @@ import numpy as np
 
 
 class TreeBuffers:
-    def __init__(self, engine, tree, max_queries, shape):
+    def __init__(self, engine, tree, max_queries, shape, *, device_inputs=False):
         self.engine = engine
         self.words = (len(tree.ordered) + 29) // 30
         self.nodes = engine._scratch(tree.nodes.shape, np.int32)
@@ -13,7 +13,7 @@ class TreeBuffers:
         self.params = engine._scratch((max_queries, 3), np.int32)
         self.output = engine._scratch((max_queries, self.words + 3), np.int32)
         self.host_params = np.zeros((max_queries, 3), np.int32)
-        if not shape:
+        if not shape and not device_inputs:
             self.leaves = engine._scratch((len(tree.ordered), 6), np.float32)
             self.queries = engine._scratch((max_queries, 6), np.float32)
             self.host_queries = np.zeros((max_queries, 6), np.float32)
@@ -62,3 +62,30 @@ class TreeBuffers:
         if not np.array_equal(raw[:, -1], stop):
             raise RuntimeError("incomplete device BVH traversal")
         return raw[:, :-1]
+
+
+    def hits_device(self, tree, *, leaf_bounds, query_bounds, query_count, params, source_lease):
+        """Refit/traverse already registered device boxes; no HOST geometry upload."""
+        from ._tyx_spatial_kernels import bvh_candidates, refit_boxes
+
+        engine = self.engine
+        engine._require_device_inputs(source_lease, leaf_bounds, query_bounds)
+        if query_count != len(params) or params.shape != self.host_params.shape:
+            raise ValueError("device BVH query count/params differ from registered capacity")
+        if self.layout is not tree:
+            engine._spatial_upload(self.nodes, tree.nodes)
+            engine._spatial_upload(self.order, tree.ordered)
+            self.layout = tree
+        self.host_params[:] = params
+        engine._spatial_upload(self.params, self.host_params)
+        engine._launch_device("refit", refit_boxes,
+            len(tree.nodes), self.nodes, self.order, leaf_bounds, self.node_boxes)
+        engine._launch_device("traverse", bvh_candidates,
+            query_count, self.words, 0, self.nodes, self.node_boxes, query_bounds,
+            self.params, self.params, self.output)
+        raw = engine._spatial_output(self.output)
+        if raw.shape != (query_count, self.words + 3) or raw.dtype != np.int32:
+            raise RuntimeError("device BVH output shape/type differs")
+        if not np.array_equal(raw[:, -1], tree.nodes[params[:, 0], 2]):
+            raise RuntimeError("incomplete device BVH traversal")
+        return raw

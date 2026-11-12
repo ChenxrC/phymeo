@@ -402,161 +402,9 @@ class DeviceTriangleDistanceBatch:
 
     def _build(self, prepared, raw, generation):
         metadata, inputs, binding, uploaded, deltas, frames, scales = prepared
-        count = len(inputs["candidates"])
-        expected = {
-            "candidates": ((count, 18, 11), np.dtype(np.float32)),
-            "valid": ((count, 18), np.dtype(np.int32)),
-            "summary": ((count, 16), np.dtype(np.float32)),
-            "meta": ((count, 7), np.dtype(np.int32)),
-        }
-        for key, (shape, dtype) in expected.items():
-            value = raw[key]
-            if (
-                not isinstance(value, np.ndarray)
-                or value.shape != shape
-                or value.dtype != dtype
-                or not np.all(np.isfinite(value))
-            ):
-                raise RuntimeError(f"invalid device {key} readback")
-        rows = []
-        deltas = dict(deltas)
-        deltas["published_axis"] = np.zeros((count, 3), np.float64)
-        deltas["published_triangle"] = np.zeros((count, 3), np.float64)
-        for i, (sid, fid) in enumerate(inputs["candidates"]):
-            state, selected, mask, normal_defined, tag, si, fi = map(int, raw["meta"][i])
-            if tag != generation or (si, fi) != tuple(map(int, uploaded["owners"][i])):
-                raise RuntimeError("device row ownership or generation mismatch")
-            if (
-                state not in (1, 2, 3)
-                or normal_defined not in (0, 1)
-                or mask < 0
-                or mask >= 1 << 18
-            ):
-                raise RuntimeError("invalid device row status")
-            valid = raw["valid"][i]
-            if np.any((valid != 0) & (valid != 1)):
-                raise RuntimeError("invalid candidate validity")
-            values = raw["candidates"][i]
-            summary = raw["summary"][i]
-            length = float(scales[i])
-            g = uploaded["geometry"][i].astype(np.float64)
-            for c in range(18):
-                if not valid[c]:
-                    if np.any(values[c] != 0):
-                        raise RuntimeError("invalid slot has nonzero candidate data")
-                    continue
-                s, b0, b1, b2, d2 = map(float, values[c, :5])
-                if (
-                    not 0 <= s <= 1
-                    or min(b0, b1, b2) < 0
-                    or abs(b0 + b1 + b2 - 1) > 8 * _U
-                    or d2 < 0
-                ):
-                    raise RuntimeError("invalid finite candidate address")
-                ap = g[3] + s * (g[4] - g[3])
-                tp = np.array((b0, b1, b2)) @ g[:3]
-                if (
-                    np.linalg.norm(ap - values[c, 5:8]) > 2e-4 * length
-                    or np.linalg.norm(tp - values[c, 8:11]) > 2e-4 * length
-                ):
-                    raise RuntimeError("candidate material reconstruction mismatch")
-                difference = values[c, 8:11].astype(np.float64) - values[c, 5:8]
-                if abs(d2 - float(difference @ difference)) > 32 * _U * max(length * length, d2):
-                    raise RuntimeError("candidate distance reconstruction mismatch")
-            if selected == -1:
-                if (
-                    np.any(valid)
-                    or state == 1
-                    or mask
-                    or normal_defined
-                    or np.any(summary[:15] != 0)
-                ):
-                    raise RuntimeError("missing selected candidate")
-                ties = ()
-                span = None
-            else:
-                if not 0 <= selected < 18 or not valid[selected] or not (mask & (1 << selected)):
-                    raise RuntimeError("invalid selected candidate")
-                if not np.array_equal(summary[2:6], values[selected, :4]) or not np.array_equal(
-                    summary[6:12], values[selected, 5:11]
-                ):
-                    raise RuntimeError("selected witness publication mismatch")
-                best = float(values[selected, 4])
-                # Check the emitted finite list; do not calculate new candidates.
-                if any(float(values[c, 4]) < best for c in range(18) if valid[c]):
-                    raise RuntimeError("selected candidate is not the emitted minimum")
-                ties = tuple(c for c in range(18) if mask & (1 << c))
-                tie_limit = float(
-                    np.float32(
-                        np.float32(16 * _U)
-                        * np.float32(uploaded["scales"][i] * uploaded["scales"][i])
-                    )
-                )
-                for c in range(18):
-                    claimed = c in ties
-                    expected_tie = bool(
-                        valid[c]
-                        and abs(float(np.float32(values[c, 4] - values[selected, 4]))) <= tie_limit
-                    )
-                    if claimed != expected_tie:
-                        raise RuntimeError("incomplete candidate tie mask")
-                span = (
-                    min(float(values[c, 0]) for c in ties),
-                    max(float(values[c, 0]) for c in ties),
-                )
-                distance = float(summary[0])
-                if distance < 0 or abs(distance * distance - best) > 32 * _U * max(
-                    length * length, best
-                ):
-                    raise RuntimeError("selected distance mismatch")
-                if abs(float(summary[1]) - (distance - float(uploaded["radii"][i]))) > 8 * _U * max(
-                    length, distance
-                ):
-                    raise RuntimeError("radius gap mismatch")
-            if float(summary[15]) != float(uploaded["scales"][i]):
-                raise RuntimeError("device local scale mismatch")
-            normal_floor = float(np.float32(np.float32(32 * _U) * uploaded["scales"][i]))
-            expected_normal = bool(state == 1 and selected >= 0 and summary[0] > normal_floor)
-            if bool(normal_defined) != expected_normal:
-                raise RuntimeError("undefined normal mismatch")
-            normal = None
-            if expected_normal:
-                direction = (summary[9:12].astype(np.float64) - summary[6:9]) / float(summary[0])
-                if (
-                    np.linalg.norm(direction - summary[12:15]) > 2e-3
-                    or abs(np.linalg.norm(summary[12:15]) - 1) > 2e-3
-                ):
-                    raise RuntimeError("device direction mismatch")
-                normal = tuple(map(float, summary[12:15]))
-            elif np.any(summary[12:15] != 0):
-                raise RuntimeError("unexpected normal for unresolved row")
-            axis_point = frames[i] + summary[6:9].astype(np.float64)
-            triangle_point = frames[i] + summary[9:12].astype(np.float64)
-            deltas["published_axis"][i] = (axis_point - frames[i]) - summary[6:9]
-            deltas["published_triangle"][i] = (triangle_point - frames[i]) - summary[9:12]
-            if (
-                np.linalg.norm(deltas["published_axis"][i]) > 2e-4 * length
-                or np.linalg.norm(deltas["published_triangle"][i]) > 2e-4 * length
-            ):
-                raise RuntimeError("pair frame publication loses local witness")
-            rows.append(
-                TriangleDistanceRow(
-                    int(sid),
-                    int(fid),
-                    tuple(map(int, inputs["vertex_ids"][inputs["faces"][fi]])),
-                    {1: "RESOLVED", 2: "CONDITIONING", 3: "DEGENERATE"}[state],
-                    float(summary[0]),
-                    float(summary[1]),
-                    float(summary[2]),
-                    tuple(map(float, summary[3:6])),
-                    tuple(map(float, axis_point)),
-                    tuple(map(float, triangle_point)),
-                    normal,
-                    selected,
-                    ties,
-                    span,
-                )
-            )
+        rows, deltas = validate_triangle_distance_rows(
+            inputs, uploaded, raw, frames, scales, generation, deltas
+        )
         return TriangleDistancePacket(
             "phymeo-device-triangle-distance-v1",
             self._owner,
@@ -661,3 +509,167 @@ class DeviceTriangleDistanceBatch:
                 raise ValueError("packet is not current")
             if self._prepare(**inputs)[2] != packet.input_binding:
                 raise ValueError("packet input binding mismatch")
+
+
+def validate_triangle_distance_rows(inputs, uploaded, raw, frames, scales, generation, deltas):
+    """Validate emitted candidate/witness records without generating geometry.
+
+    Shared by explicit HOST-packed COL2 and resident device-packed M1.
+    This routine only checks the complete already emitted finite list.
+    """
+    count = len(inputs["candidates"])
+    expected = {
+        "candidates": ((count, 18, 11), np.dtype(np.float32)),
+        "valid": ((count, 18), np.dtype(np.int32)),
+        "summary": ((count, 16), np.dtype(np.float32)),
+        "meta": ((count, 7), np.dtype(np.int32)),
+    }
+    for key, (shape, dtype) in expected.items():
+        value = raw[key]
+        if (
+            not isinstance(value, np.ndarray)
+            or value.shape != shape
+            or value.dtype != dtype
+            or not np.all(np.isfinite(value))
+        ):
+            raise RuntimeError(f"invalid device {key} readback")
+    rows = []
+    deltas = dict(deltas)
+    deltas["published_axis"] = np.zeros((count, 3), np.float64)
+    deltas["published_triangle"] = np.zeros((count, 3), np.float64)
+    for i, (sid, fid) in enumerate(inputs["candidates"]):
+        state, selected, mask, normal_defined, tag, si, fi = map(int, raw["meta"][i])
+        if tag != generation or (si, fi) != tuple(map(int, uploaded["owners"][i])):
+            raise RuntimeError("device row ownership or generation mismatch")
+        if (
+            state not in (1, 2, 3)
+            or normal_defined not in (0, 1)
+            or mask < 0
+            or mask >= 1 << 18
+        ):
+            raise RuntimeError("invalid device row status")
+        valid = raw["valid"][i]
+        if np.any((valid != 0) & (valid != 1)):
+            raise RuntimeError("invalid candidate validity")
+        values = raw["candidates"][i]
+        summary = raw["summary"][i]
+        length = float(scales[i])
+        g = uploaded["geometry"][i].astype(np.float64)
+        for c in range(18):
+            if not valid[c]:
+                if np.any(values[c] != 0):
+                    raise RuntimeError("invalid slot has nonzero candidate data")
+                continue
+            s, b0, b1, b2, d2 = map(float, values[c, :5])
+            if (
+                not 0 <= s <= 1
+                or min(b0, b1, b2) < 0
+                or abs(b0 + b1 + b2 - 1) > 8 * _U
+                or d2 < 0
+            ):
+                raise RuntimeError("invalid finite candidate address")
+            ap = g[3] + s * (g[4] - g[3])
+            tp = np.array((b0, b1, b2)) @ g[:3]
+            if (
+                np.linalg.norm(ap - values[c, 5:8]) > 2e-4 * length
+                or np.linalg.norm(tp - values[c, 8:11]) > 2e-4 * length
+            ):
+                raise RuntimeError("candidate material reconstruction mismatch")
+            difference = values[c, 8:11].astype(np.float64) - values[c, 5:8]
+            if abs(d2 - float(difference @ difference)) > 32 * _U * max(length * length, d2):
+                raise RuntimeError("candidate distance reconstruction mismatch")
+        if selected == -1:
+            if (
+                np.any(valid)
+                or state == 1
+                or mask
+                or normal_defined
+                or np.any(summary[:15] != 0)
+            ):
+                raise RuntimeError("missing selected candidate")
+            ties = ()
+            span = None
+        else:
+            if not 0 <= selected < 18 or not valid[selected] or not (mask & (1 << selected)):
+                raise RuntimeError("invalid selected candidate")
+            if not np.array_equal(summary[2:6], values[selected, :4]) or not np.array_equal(
+                summary[6:12], values[selected, 5:11]
+            ):
+                raise RuntimeError("selected witness publication mismatch")
+            best = float(values[selected, 4])
+            # Check the emitted finite list; do not calculate new candidates.
+            if any(float(values[c, 4]) < best for c in range(18) if valid[c]):
+                raise RuntimeError("selected candidate is not the emitted minimum")
+            ties = tuple(c for c in range(18) if mask & (1 << c))
+            tie_limit = float(
+                np.float32(
+                    np.float32(16 * _U)
+                    * np.float32(uploaded["scales"][i] * uploaded["scales"][i])
+                )
+            )
+            for c in range(18):
+                claimed = c in ties
+                expected_tie = bool(
+                    valid[c]
+                    and abs(float(np.float32(values[c, 4] - values[selected, 4]))) <= tie_limit
+                )
+                if claimed != expected_tie:
+                    raise RuntimeError("incomplete candidate tie mask")
+            span = (
+                min(float(values[c, 0]) for c in ties),
+                max(float(values[c, 0]) for c in ties),
+            )
+            distance = float(summary[0])
+            if distance < 0 or abs(distance * distance - best) > 32 * _U * max(
+                length * length, best
+            ):
+                raise RuntimeError("selected distance mismatch")
+            if abs(float(summary[1]) - (distance - float(uploaded["radii"][i]))) > 8 * _U * max(
+                length, distance
+            ):
+                raise RuntimeError("radius gap mismatch")
+        if float(summary[15]) != float(uploaded["scales"][i]):
+            raise RuntimeError("device local scale mismatch")
+        normal_floor = float(np.float32(np.float32(32 * _U) * uploaded["scales"][i]))
+        expected_normal = bool(state == 1 and selected >= 0 and summary[0] > normal_floor)
+        if bool(normal_defined) != expected_normal:
+            raise RuntimeError("undefined normal mismatch")
+        normal = None
+        if expected_normal:
+            direction = (summary[9:12].astype(np.float64) - summary[6:9]) / float(summary[0])
+            if (
+                np.linalg.norm(direction - summary[12:15]) > 2e-3
+                or abs(np.linalg.norm(summary[12:15]) - 1) > 2e-3
+            ):
+                raise RuntimeError("device direction mismatch")
+            normal = tuple(map(float, summary[12:15]))
+        elif np.any(summary[12:15] != 0):
+            raise RuntimeError("unexpected normal for unresolved row")
+        axis_point = frames[i] + summary[6:9].astype(np.float64)
+        triangle_point = frames[i] + summary[9:12].astype(np.float64)
+        deltas["published_axis"][i] = (axis_point - frames[i]) - summary[6:9]
+        deltas["published_triangle"][i] = (triangle_point - frames[i]) - summary[9:12]
+        if (
+            np.linalg.norm(deltas["published_axis"][i]) > 2e-4 * length
+            or np.linalg.norm(deltas["published_triangle"][i]) > 2e-4 * length
+        ):
+            raise RuntimeError("pair frame publication loses local witness")
+        rows.append(
+            TriangleDistanceRow(
+                int(sid),
+                int(fid),
+                tuple(map(int, inputs["vertex_ids"][inputs["faces"][fi]])),
+                {1: "RESOLVED", 2: "CONDITIONING", 3: "DEGENERATE"}[state],
+                float(summary[0]),
+                float(summary[1]),
+                float(summary[2]),
+                tuple(map(float, summary[3:6])),
+                tuple(map(float, axis_point)),
+                tuple(map(float, triangle_point)),
+                normal,
+                selected,
+                ties,
+                span,
+            )
+        )
+    return tuple(rows), deltas

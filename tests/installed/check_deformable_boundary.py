@@ -563,7 +563,7 @@ def run(mode, journal, progress):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--mode", choices=("interpret", "cuda"), required=True)
-    parser.add_argument("--expected-install-root", type=Path, required=True)
+    parser.add_argument("--expected-install-root", "--installed-root", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     require(args.output.is_absolute(), "absolute fresh output required")

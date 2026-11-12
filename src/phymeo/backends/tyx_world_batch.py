@@ -65,7 +65,7 @@ class TyxWorldBatch:
 
     publication_contract_version = 1
 
-    def __init__(self, worlds, mode="cuda", *, cache_root=None):
+    def __init__(self, worlds, mode="cuda", *, cache_root=None, initial_controls=None):
         if mode not in ("cuda", "interpret"):
             raise ValueError("resident mode must be cuda or interpret")
         self._mode = mode
@@ -293,6 +293,11 @@ class TyxWorldBatch:
                     self._floating_affine_trees = FloatingAffineTreeDeviceStorage(
                         self, self._floating_affine_specs
                     )
+            if initial_controls is not None:
+                self.set_controls(initial_controls)
+                # Construction only: freeze the complete authored reset baseline,
+                # including held commands. Never recapture it in a hot reset.
+                self._initial = self.snapshot()
         except BaseException as error:
             cleanup_failed_init(self, error)
             raise

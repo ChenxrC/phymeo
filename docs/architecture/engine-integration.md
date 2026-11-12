@@ -719,3 +719,36 @@ device scratch 为 `12*S + 8*W + 4*S*W` bytes（indices/columns/ticks/output）�
 覆盖 interpret/实际 CUDA、N=1/8/64、乱序选择、局部 reset、未选保持及执行/清理
 失败。证据见实验根 `evidence/b7g-summary.json`；这仍不是 resident 实际 C ABI、
 独立安装或 GUI 资格，P2PE 模型/控制/字段映射继续推进。
+
+## Compiled resident scene IO v1
+
+`CompiledScene.resident_io_contract_version=1` 在既有编译结果上提供
+`prepare_field_read`、`prepare_body_read`、`prepare_control_write`、`prepare_reset`。
+返回 plan 的 layout/read_into/write/reset/close 沿用上面的原生合同，同时检查
+scene 生命周期、partial-publication 状态与资产 target position/velocity 限额。
+HOST backend 明确拒绝这些 prepared 接口，原有 snapshot/set_controls/reset 保留。
+各 physical family 的限制仍由原生 plan 判断，不能从方法存在推断浮根/仿射已支持。
+控制选择仍须非空；字段读取可为空。不同 scene 独立锁，同 scene 串行调用。
+
+TYX 场景不再保存第二份当前 held control。`TyxWorldBatch(initial_controls=...)`
+在构造时安装初始命令并捕获一次完整 reset baseline；因此首次输入、legacy reset
+与 prepared reset 都恢复 authored 控制，局部 reset 不以过期 scene 副本覆盖未选
+控制。该 snapshot 是冷构造成本，含既有按状态族的完成/D2H 和 HOST checkpoint；
+热 prepared 路径不调用 snapshot、不逐 world 构造输入 packet、不重建计划。
+目标限额属于不可变编译参数，预检复用 bool scratch，额外 HOST 空间由
+scene_limit_workspace_bytes 报告；它不是运行期控制副本。
+
+`scene.step(h, require_all=True)` 在 resident 单子步完成后共同接受或拒绝，拒绝
+转成 known-all-false PhysicsStepFailure，保留既有时间/观测并允许修正输入重试。
+默认 require_all=False 的部分发布行为不变：若部分世界推进，prepared read/write
+与继续 step 被拒绝，局部 reset 不能解除 poison；成功全量 reset 后恢复准入。
+这不是多子步事务，也不承诺执行器/设备故障可直接恢复。HOST 不提供该共同发布选项。
+reset 成功后仅清除所选时钟与公开 contact receipt；未选世界保留。
+
+构造采用既有 cleanup_owner 合同，close 按 LIFO 成功才移除 owner；子资源释放失败
+不继续释放父 batch，完整依赖链可重试。prepared plan 借用 scene/batch，不增加
+权威物理 state 或 solver。原生接触仍包含 HOST narrow phase、候选诊断读回及
+receipt 组织，这些现有工作没有被 prepared IO 隐藏或删除，不声称完整设备常驻。
+`tests/test_scene_resident_io.py` 与原 scene compiler 测试覆盖 N=1/8/64、实际 CUDA、
+初态/控制、有限环境接触、未选 reset、限额、共同/部分发布及清理。实验记录为
+`evidence/b7h-summary.json`；P2PE 的 actual DLL resident 路由仍须后续单独验收。

@@ -163,8 +163,13 @@ def test_query_revision_control_restore_and_initial_held_reset(tyx_mode, tmp_pat
             state_b = checked_step(scene, items, evidence)[1]["state"]
             assert_physical_equal(state_a, state_b, items)
             current = scene.snapshot()
+            with pytest.raises(ValueError, match="stale|current|revision|query"):
+                scene.require_query_current(scene.last_step.query, expected_revision=scene.revision)
+            control_query = scene.query(expected_revision=scene.revision)
             scene.set_controls({items[0]["row"].key: ph.FloatingRobotCommand(
                 None, ph.FloatingRobotInputs(np.zeros(0), np.ones((1, 3)), np.zeros((1, 3))))})
+            with pytest.raises(ValueError, match="stale|current|revision"):
+                scene.require_query_current(control_query, expected_revision=scene.revision)
             query = scene.query(expected_revision=scene.revision)
             scene.reset((31,), expected_revision=scene.revision)
             with pytest.raises(ValueError, match="stale|current|revision"):

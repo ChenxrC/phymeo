@@ -1,0 +1,89 @@
+# D3 entry-sampled deformable / rigid response cases
+
+Status: **PREDECLARED_CASES_API_PENDING / UNEXECUTED**, 2026-11-12. This document fixes a small independent case library for Batch C. No query, numerical probe, collection, test or build was run to choose these data. Product/API authoring and all project execution remain with the parent/source owners. [Current roadmap](../superpowers/plans/2026-11-12-scene-deformable-scale-roadmap.md) and [Batch B acceptance](p65-three-track-batch-b-20261112.md) remain authoritative.
+
+## 1. Reused mechanics and scope
+
+The first D3 slice is **entry-sampled compliant force**: one accepted entry from both real banks supplies geometry, material velocities and rigid COM velocities; the original layer law supplies one force packet; D1 ordered material projection and the existing rigid solver produce candidates; both candidates and the receipt publish together only after all checks succeed. It is not an implicit contact solve. A post-step D2 query is not evidence that this sequence happened.
+
+Reuse `NormalLayer` in `src/phymeo/solvers/collision_loads.py`: effective stiffness is N/m per declared pair, not Pa/m or an invented contact area. The existing `normal_layer_rows` implements
+
+`x = max(width-gap,0); rate = n dot (v_second-v_first); F = k*x*fraction*max(1-d*rate,0)`.
+
+Each side uses its own actual material point and equal/opposite normal force. For this slice friction is zero. The application points may differ by the normal gap; this introduces no force couple because their separation is parallel to the force. Neither a full curved patch nor a unique global MTD is required by these triangle/round finite-distance cases. CONDITIONING, undefined normals and incomplete candidate sets cannot produce a response.
+
+Local pinned Newton 1.7.0 source confirms the architectural comparison, not an identical law: `newton/_src/solvers/xpbd/kernels.py::solve_particle_shape_contacts` (lines 121-258) computes rigid point velocity with the COM arm, includes translational and angular inverse mass, and accumulates the opposite rigid correction. `solver_xpbd.py` (lines 610-648) passes current particle/body arrays into that common solve. Its positional XPBD law differs from this calibrated force law, so Newton trajectories are not a same-law numerical oracle. The fixed source is under the parent's `.venv-newton-1.7.0/Lib/site-packages/`; no unverified latest-version claim is made.
+
+Useful existing independent gates and constructors:
+
+- `tests/test_tyx_deformable_batch.py::world/test_real_ordered_deformation`: real fixed-topology nodes, five ordered edges, fixed-node variant, saved per-sweep trace and continuous successor states.
+- `tests/scale/test_resident_floating_contacts.py::test_f01_public_root_contact_keeps_full_six_coordinate_response`: `RigidBodyModel`, `FloatingRobotModel(root, root_com, None)`, `FloatingRobotState`, `FloatingRobotTree`, a true massive six-coordinate root and independent M / force / moment checks.
+- `tests/scale/test_resident_device_contacts.py`: physical gates 5e-6 absolute / 5e-5 relative, mass gate 2e-5, and a 2e-4 continuous-window position/velocity engineering comparison in the floating suite.
+- `tests/collision/test_deformable_boundary_query.py`: complete finite segment/triangle reference, stable source addresses, and the original distance/witness/normal gates. Its genuine oblique-parallel CONDITIONING case is retained below.
+
+## 2. Fixed positive inputs
+
+All coordinates are metres, masses kg, inertia kg m2, velocities m/s, angular velocities rad/s and forces N. No prescribed trajectory or kinematic object replaces the dynamic root.
+
+Shared sheet: four points A,B,C,D with IDs `(101,113,127,139)`, two oriented facets `(503: A,B,C)` and `(509: A,C,D)`, surface ID 23. XY sheet positions are `((0,0,0),(1,0,0),(1,1,0),(0,1,0))`; YZ variant is `((0,0,0),(0,1,0),(0,1,1),(0,0,1))`. Edge order is `(AB,BC,CD,DA,AC)` with independent rest lengths `(1,1,1,1,sqrt(2))`. Every edge has compliance **1/16384**, held fixed under h refinement. Initial sheet velocities and all gravity vectors are zero. Base node mass is 1/2 for every free node (inverse mass 2); the named fixed node has inverse mass zero, exact fixed position and zero velocity. It has a support reaction, not a fictitious finite inertial mass.
+
+Base rigid root: mass 2, principal inertia `(1/4,1/4,1/4)`, root COM at body origin, identity XYZW orientation, no scalar children, no actuator input, zero initial angular velocity. Collision geometry is body-local. Layer is `NormalLayer(width_m=1/16, stiffness_n_per_m=128, damping_s_per_m=1/2, friction=0)`; one row per declared facet/round pair, weight/fraction one for a single closest point. This is a point-discrete engineering law, not area pressure. The second facet remains in the query/identity set even when outside the active layer; it must not silently disappear from coverage or acquire a duplicate load.
+
+| Identity | Sheet / fixed nodes | Dynamic round geometry and COM at entry | True root linear velocity | Independent entry anchors |
+| --- | --- | --- | --- | --- |
+| P: local pressing | XY, all four free | Sphere radius 1/8, local centre `(0,0,0)`, COM `(3/4,1/8,5/32)` | `(0,0,-1/16)` | Facet 503 closest point `(3/4,1/8,0)`, bary `(1/4,5/8,1/8)`, gap 1/32, force on sheet `-(33/8) ez`; rigid COM torque zero |
+| E: eccentric pressing | XY, **B fixed** | Same world sphere, local centre `(1/4,0,0)`, COM `(1/2,1/8,5/32)` | `(0,0,-1/16)` | Same gap/bary/normal force; force on rigid `+(33/8) ez`, COM torque `-(33/32) ey`; initial direct contact part of fixed support reaction `+(165/64) ez` |
+| C: moving capsule pushes sheet | YZ, all four free | Radius 1/8; COM `(5/32,7/8,1/8)`; local axis endpoints `(0,-1/8,0)` and `(1/8,1/8,0)` | `(-1/16,1/8,0)` | World axis endpoints `(5/32,3/4,1/8)` and `(9/32,1,1/8)`; unique closest first endpoint, axis parameter 0; triangle point `(0,3/4,1/8)`, bary `(1/4,5/8,1/8)`, gap 1/32; sheet force `-(33/8) ex`, rigid COM torque `+(33/64) ez` |
+
+Before the first registration commit, the initially proposed projection `(3/4,1/4)` was corrected by hand to `(3/4,1/8)` (YZ coordinates for C): the former barycentric load `(1/4,1/2,1/4,0)` obeys `F_A+F_C=F_B+F_D` and can produce a merely planar first-order tilt. The registered `(1/4,5/8,1/8,0)` has a nonzero alternating sum `-1/4`, so the free sheet has an independently visible first-order nonplanarity. This was a design clarification before execution, not a failed physical run or adjustment to output.
+
+Initial normal closing rate is -1/16 in all three, so the scalar force is `128*(1/32)*(1+1/32)=33/8`. The other facet's nearest point is farther than the layer width plus radius; independently enumerate it, record its finite result and zero load. The capsule is short and has a nonzero plane-normal axis component; its first endpoint has the unique minimum at entry. Later closest features must be determined from the actual state, never held to these entry literals.
+
+Each of P/E/C has three fixed variants, **nine positive trajectories per backend**:
+
+1. base: h=1/1024, 16 steps, T=1/64;
+2. time refinement: h=1/2048, 32 steps, same physical T and unchanged material;
+3. mass: h=1/1024, 16 steps, all free node and rigid masses and rigid principal inertias multiplied by four (nodes 2, root 8, inertia 1); geometry, compliance, layer and velocities unchanged.
+
+D1 settings retain substeps=1, position_iterations=200, tolerance=2e-6; enable its existing full ordered trace for the reaction audit. No trajectory resets occur inside these windows. These are short response controls, not D4 sustained equilibrium, full support or a learning task.
+
+The step was selected before execution from the existing floating-contact h=1/1024, not a probe. At entry, the barycentric nodal inverse mass is at most 2; the root translation/rotation contribution in these declared frames is below 2, so a conservative contact inverse-mass sum is 4. Thus the elastic contact scale satisfies `h*sqrt(128*4)<23/1024`; the damping slope at compression no greater than width is at most `128*(1/16)*(1/2)=4 N s/m`, giving `h*4*4=1/64`. This is an initial explicit-contact step-size rationale, not a proof of arbitrary nonlinear stability. D1 material still uses its original implicit-compliance ordered projection. If a later candidate leaves its stated domain or budget, retain the failure; do not tune h, mass or stiffness from its output.
+
+## 3. Independent reference and gates
+
+Every attempted step saves the complete original entry, external/control input, h, geometry candidates, selected material barycentric/axis addresses, actual FP32 layer input/output, scatter, fixed reactions, rigid wrenches, material ordered trace, both raw candidates and final commit/reject decision **before assertions**. A thrown call retains a request/attempt prefix and all available raw output. Outcomes are not selected after observing them.
+
+- Geometry oracle: independently enumerate endpoint-to-triangle, segment-to-edge and valid face crossings in FP64 (or exact rational literals for initial anchors). Preserve all minimal-feature ties and complete facet membership. Do not call the product detector/helper as the reference. Use original `distance <= 1e-4 L`, witness `<=2e-4 L`, normal `<=2e-3`; L uses only the local triangle edges, axis and radius, never scene translation or world spacing.
+- Law oracle: independently evaluate the scalar equation above on the saved actual entry material points and velocities, plus the exact first-step literals. Arithmetic against the actual device law inputs uses `atol=5e-6, rtol=5e-5`. Geometry-to-force comparison also explicitly propagates the independent gap/rate/normal errors through this unchanged law; do not disguise the geometric allowance as a looser force-arithmetic gate. For `A=max(1-d*rate,0)`, a useful scalar bound is `k*(A*|delta_gap| + x*d*|delta_rate| + d*|delta_gap*delta_rate|)` plus the normal-vector force term and original arithmetic gate.
+- Map oracle: scatter `beta_i*F_sheet` at the actual triangle material point; round velocity is `v_COM + omega cross (round_point-COM)`. Compare nodal force, opposite total force and `cross(round_point-COM,F_round)` separately. Full sum of world moments uses the two actual points. No lever moment may be omitted or counted twice.
+- Motion oracle: independently reproduce the declared entry-force predictor, original ordered scalar XPBD equations and original rigid integration convention from source; no product physics helper is an expected-value oracle. D1 same-input positions/velocities/multipliers keep `2e-5` absolute/relative gates. Rigid same-input M uses 2e-5 and original force/acceleration/state gates 5e-6 / 5e-5. Preserve actual entry velocity; no replay may start again from zero velocity. A separately continued FP64 reference, never fed back to the device, uses the prior floating window gate 2e-4 for position/velocity. The reference integration formula must be frozen with the parent's final API, not inferred from later output.
+- Physical response: initial literal nonzero force is mandatory. Over the short window, maximum sheet deviation from its best rigid-plane description and maximum change of an original edge must each be recorded; require contact-induced nonplanarity >1e-6 m at some accepted step (the fourth node has no direct contact) and actual root response. Compare against an independently continued zero-contact version only as a diagnostic/control, not as a source of expected loaded state. E must show the correct sign of initial angular acceleration; C must move through its real y velocity while receiving x reaction.
+- Energy: save material `sum((length-rest)^2/(2*compliance))`, kinetic energy, layer potential, external work and entry dissipative power. At a differentiable entry feature, `F*rate - k*x*rate <= 0` for the normal pair after adding the layer energy derivative. A finite explicit step is not claimed to conserve continuous energy exactly; report discretization defect and refinement. Do not reuse the obsolete 1e-8 exact-touch/global-energy proof as a new prerequisite or credit internal contact work as external work.
+
+### Complete fixed-node and angular bookkeeping
+
+For each ordered material correction, retain the actual pre-row direction g and multiplier increment `delta_lambda`. Its equivalent nodal impulse is `g*delta_lambda/h`, including fixed endpoints even though they do not move. The fixed support impulse is
+
+`I_fixed = -h*(F_external_fixed + F_contact_fixed) - sum_rows(g_fixed*delta_lambda/h)`.
+
+Do not use final-gradient times final-lambda, drop early sweeps, or report the contact contribution alone. Original trace columns 14:17 and 17 in `_tyx_distance_trace.py` supply the direction and increment, with pre/post positions and lambdas in the same row. Check both per-node reconstruction and the system momentum balance including this support impulse. Zero gravity avoids assigning an inertial mass to a fixed node.
+
+For angular momentum, retain the force application state/time and the ordered material application positions. `g_i + g_j=0` and central row forces give zero pair torque at that row's own positions; they do not imply zero torque about the original entry positions after other corrections. Audit the observed momentum change against these ordered impulses plus the explicit position-update moment terms and native rounding residual. Do not erase this discrete defect under an ideal central-force claim. Use 5e-6 absolute / 5e-5 relative for each independently reconstructed impulse/moment term, with accumulation bounds stated from the actual number and units of terms; do not assert exact long-window angular conservation.
+
+## 4. Negative/protocol cases and honest conditioning
+
+Keep the following bounded cases in addition to the nine positives; their parameterization/node count will be frozen with the API before collection.
+
+1. Genuine oblique parallel capsule: original XY square, axis endpoints `(3/8,3/8,5/32)` and `(5/8,5/8,5/32)`, r=1/8, same layer. The axis is parallel to shared diagonal AC with nonzero x and y components. The original segment-edge denominator is zero while the kernel's structural-parallel predicate is false, so this is a real CONDITIONING result (not a fake malformed shape). Its initial gap lies inside the layer. Save the raw distance evidence/no normal, reject the **whole response**, preserve both accepted banks and old receipt. The original D2 query remains permitted to expose such a diagnostic row. A positive-sloped capsule is not substituted after seeing this failure.
+2. Layer-outside and opening cutoff: independent legal initial-state cases, respectively sphere gap 3/32 (>width) and sphere at the base gap with outward root speed 4 (rate +4, so damping factor clamps to zero). Require no force or residual attraction and actual free/material motion. These are separate predeclared controls, not modifications of positive windows.
+3. Sparse worlds `(7,31)`, repeated local point/facet/body IDs, and reversed registration/storage order: compare complete same-identity physics, no cross-world scatter. Include one fixed-node world and one all-free world. Pair masks/exclusions retain explicit provenance and do not hide a valid contact merely because a material table entry is absent.
+4. Exact capacity and one-less tests for candidate/site/scratch limits; reject before partial publication. Include wrong source/epoch, a missing facet, foreign participant/root and a changed input token. No helper may silently gather current geometry on the HOST and upload it as an accepted device source.
+5. A genuine later-world/late-readback/finish failure after both candidates exist: both old states, revisions, queries and response receipt remain unchanged; restore the failing seam and retry the same accepted inputs, matching a fresh independently constructed run. Save actual failed scratch when safely available.
+6. Checkpoint/advance/restore/replay and selected reset followed by a real step: stable IDs/topology and fresh source binding remain enforced; old query/response evidence must be stale. Reset is an explicit transaction, not part of a positive trajectory.
+7. Allocation and release failure: reuse existing PENDING versus UNKNOWN_RELEASE semantics; unknown actual free retains owners/leases and blocks reuse without double-free. Independent siblings still clean up. This is a bounded affected regression, not a rerun of old resource suites.
+
+## 5. Remaining API needs and stop rule
+
+Tests need public access to the common entry/candidate/commit receipt, the two bank revisions/ticks, actual layer rows and scatter, rigid COM wrenches, the full material trace (or an equivalent independently auditable fixed-reaction accumulator), and explicit success/rejection. Source ownership stays with the parent/shared owners. This document does not authorize a new solver or a cross-runtime HOST coordinate bridge.
+
+Freeze the API and exact test node table first; then tests-first authoring and parent-only serial execution. A failure of a declared positive is reported with its first actual candidate/force/trace; no fixture, law, budget, h or threshold is changed to make it pass. CONDITIONING remains a response-domain rejection. One concrete implementation bug may receive a narrow repair; repeated failure with no reduced counterexample stops that hypothesis and leaves a documented missing capability. D4 sustained support, friction/history, CCD, solid containment, general cloth bending and unified deformable scene assembly remain separate nodes.

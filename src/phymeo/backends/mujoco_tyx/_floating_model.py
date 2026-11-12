@@ -46,7 +46,10 @@ def compile_floating_model(
         or model.njnt != model.nv - 5 - 2 * ball_count
         or model.nq > 45
     ):
-        issue("joint-domain", "floating trees require one leading FREE, native BALL/R/P descendants, nv<=35/nq<=45")
+        issue(
+            "joint-domain",
+            "floating trees require one leading FREE, native BALL/R/P descendants, nv<=35/nq<=45",
+        )
         raise MuJoCoTyxUnsupported(issues)
     if has_ball:
         if model.na or np.any(model.actuator_dyntype != mj.mjtDyn.mjDYN_NONE):
@@ -80,7 +83,7 @@ def compile_floating_model(
         issue("free-spring", "native quaternion free-joint springs are not migrated")
     if model.nbody > MAX_BODIES:
         issue("body-capacity", "T2 preserves every body and supports at most 128 native bodies")
-    for field, code in (
+    for native_field, code in (
         ("neq", "equality"),
         ("ntendon", "tendon"),
         ("nflex", "flex"),
@@ -90,8 +93,10 @@ def compile_floating_model(
         ("npair", "explicit-pairs"),
         ("nexclude", "explicit-excludes"),
     ):
-        if int(getattr(model, field, 0)) and not (allow_constraints and field == "nexclude"):
-            issue(code, f"native {field} is not migrated in T2")
+        if int(getattr(model, native_field, 0)) and not (
+            allow_constraints and native_field == "nexclude"
+        ):
+            issue(code, f"native {native_field} is not migrated in T2")
     if model.na and not allow_activation:
         issue("actuator-state", "activation dynamics are not migrated")
     if int(model.opt.integrator) != int(mj.mjtIntegrator.mjINT_EULER):
@@ -133,7 +138,7 @@ def compile_floating_model(
             or np.any(
                 model.actuator_gear[
                     actuator,
-                    (3 if has_ball and model.jnt_type[joint] == mj.mjtJoint.mjJNT_BALL else 1) :
+                    (3 if has_ball and model.jnt_type[joint] == mj.mjtJoint.mjJNT_BALL else 1) :,
                 ]
             )
             or (
@@ -144,7 +149,9 @@ def compile_floating_model(
             or np.any(model.actuator_gainprm[actuator, 1:])
             or np.any(model.actuator_biasprm[actuator, 3:])
         ):
-            issue("actuator-domain", f"actuator {actuator} is not an admitted JOINT fixed-gain motor")
+            issue(
+                "actuator-domain", f"actuator {actuator} is not an admitted JOINT fixed-gain motor"
+            )
     if np.any(model.jnt_actfrclimited):
         issue("joint-actuator-limits", "joint-wide summed force clamps are not migrated")
     # Test potential pairs, not just collisions at the source initial pose.
@@ -160,16 +167,16 @@ def compile_floating_model(
                 int(model.geom_contype[right]) & int(model.geom_conaffinity[left])
             ):
                 if has_ball:
-                    issue("free-ball-contact", f"FREE+BALL has a possible contact pair {left}/{right}")
+                    issue(
+                        "free-ball-contact", f"FREE+BALL has a possible contact pair {left}/{right}"
+                    )
                 elif not allow_normal_contacts:
                     issue("contact-domain", f"T2 has a possible native contact pair {left}/{right}")
                 break
     if issues:
         raise MuJoCoTyxUnsupported(issues)
     transmission = (
-        compile_joint_transmission(mj, model, capacity=(35, 45))
-        if has_ball and model.nu
-        else None
+        compile_joint_transmission(mj, model, capacity=(35, 45)) if has_ball and model.nu else None
     )
     body_data = np.zeros((model.nbody, 25))
     for body in range(model.nbody):
@@ -265,7 +272,8 @@ def compile_floating_model(
         if body != root and model.body_jntnum[body]:
             start = int(model.body_jntadr[body])
             ranges[body] = (
-                start if has_ball else int(model.jnt_dofadr[start]), int(model.body_jntnum[body])
+                start if has_ball else int(model.jnt_dofadr[start]),
+                int(model.body_jntnum[body]),
             )
     return TyxFloatingModel(
         kind=3,

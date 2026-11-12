@@ -9,12 +9,12 @@ import pytest
 from test_mujoco_tyx_activation import save
 from test_mujoco_tyx_ball_joint_motor import dense_native_moment, transmission_oracle
 from test_mujoco_tyx_floating import (
-    H,
     MODES,
     Q_ATOL,
     TIME_ATOL,
     TOL,
     V_ATOL,
+    H,
     _assert_dynamics,
     _deps,
     _native,
@@ -33,10 +33,7 @@ SCHEMA = "native-free-ball-joint-motor-transmission-v1"
 
 
 def body(name, kind="ball", child="", pos=".12 -.04 .23"):
-    joint = (
-        f'<joint name="{name}" type="{kind}" pos=".02 -.01 .03" '
-        'damping=".04" armature=".003"/>'
-    )
+    joint = f'<joint name="{name}" type="{kind}" pos=".02 -.01 .03" damping=".04" armature=".003"/>'
     if kind == "slide":
         joint = joint.replace('type="slide"', 'type="slide" axis=".3 -.4 .5"')
     elif kind == "hinge":
@@ -73,12 +70,16 @@ def source(case):
         child = body("ball") + body("other", pos="-.18 .07 .16")
         actors += motor("other-drive", "other", "-.3 .4 .2")
     elif case == "nested":
-        child = body("ball", child=body("hinge", "hinge", body("other", child=body("slide", "slide"))))
+        child = body(
+            "ball", child=body("hinge", "hinge", body("other", child=body("slide", "slide")))
+        )
         actors += motor("other-drive", "other", "-.3 .4 .2")
         actors += motor("hinge-drive", "hinge", "-.5") + motor("slide-drive", "slide", ".8")
     elif case == "clamps-disabled":
         actors = motor(
-            "drive", "ball", "1 -2 .5",
+            "drive",
+            "ball",
+            "1 -2 .5",
             'ctrllimited="true" ctrlrange="-.08 .08" forcelimited="true" forcerange="-.09 .09"',
             gain="2",
         )
@@ -89,7 +90,9 @@ def source(case):
     elif case == "capacity":
         child = "".join(body(f"b{i}", pos=f".{i + 1} .04 .2") for i in range(9))
         child += body("hinge", "hinge") + body("slide", "slide")
-        actors = "".join(motor(f"a{i}", f"b{i % 9}", ".125 -.0625 .03125", gain=".02") for i in range(32))
+        actors = "".join(
+            motor(f"a{i}", f"b{i % 9}", ".125 -.0625 .03125", gain=".02") for i in range(32)
+        )
     option = 'actuatorgroupdisable="1"' if case == "clamps-disabled" else ""
     return f"""<mujoco model="free-ball-{case}">
 <compiler angle="radian"/>
@@ -110,26 +113,26 @@ def initial(mj, model, slot=0, sign=False):
         qa = int(model.jnt_qposadr[joint])
         if kind in (mj.mjtJoint.mjJNT_FREE, mj.mjtJoint.mjJNT_BALL):
             adr = qa + (3 if kind == mj.mjtJoint.mjJNT_FREE else 0)
-            quat = np.array([1.0, .13 + .02 * joint, -.09, .07])
-            q[adr:adr + 4] = quat / np.linalg.norm(quat)
+            quat = np.array([1.0, 0.13 + 0.02 * joint, -0.09, 0.07])
+            q[adr : adr + 4] = quat / np.linalg.norm(quat)
             if sign and slot:
-                q[adr:adr + 4] *= -1
+                q[adr : adr + 4] *= -1
         else:
-            q[qa] = .03 * (joint + 1)
+            q[qa] = 0.03 * (joint + 1)
     if not sign:
-        q[:3] += slot * np.array([.04, -.02, .03])
-    velocity = np.linspace(-.13, .17, model.nv) * (1 if sign else 1 + .1 * slot)
-    return MuJoCoInitialState(q, velocity, time=.125)
+        q[:3] += slot * np.array([0.04, -0.02, 0.03])
+    velocity = np.linspace(-0.13, 0.17, model.nv) * (1 if sign else 1 + 0.1 * slot)
+    return MuJoCoInitialState(q, velocity, time=0.125)
 
 
 def control(model, tick, slot=0):
     phase = 1 if tick < 8 else (-1 if tick < 16 else 0)
-    ctrl = phase * np.array([(.18 + .01 * a) * (-1 if a % 2 else 1) for a in range(model.nu)])
+    ctrl = phase * np.array([(0.18 + 0.01 * a) * (-1 if a % 2 else 1) for a in range(model.nu)])
     qforce = np.zeros(model.nv)
-    qforce[:6] = phase * np.array([.3, -.2, .15, .08, -.06, .04])
-    qforce[6:] = phase * np.linspace(.025, .085, model.nv - 6)
+    qforce[:6] = phase * np.array([0.3, -0.2, 0.15, 0.08, -0.06, 0.04])
+    qforce[6:] = phase * np.linspace(0.025, 0.085, model.nv - 6)
     wrench = np.zeros((model.nbody, 6))
-    wrench[-1] = phase * (1 + .1 * slot) * np.array([.35, -.25, .4, .025, -.035, .015])
+    wrench[-1] = phase * (1 + 0.1 * slot) * np.array([0.35, -0.25, 0.4, 0.025, -0.035, 0.015])
     return MuJoCoControl(ctrl, qfrc_applied=qforce, xfrc_applied=wrench)
 
 
@@ -139,7 +142,9 @@ def fixture(case, mode):
     model = mj.MjModel.from_xml_string(text)
     starts = {key: initial(mj, model, slot, case == "sign") for slot, key in enumerate(KEYS)}
     compiled = compile_mujoco_xml(text, require_asset=False)
-    runtime = MuJoCoRuntime(compiled, mode=mode, implementation="tyx", world_keys=KEYS, initial_states=starts)
+    runtime = MuJoCoRuntime(
+        compiled, mode=mode, implementation="tyx", world_keys=KEYS, initial_states=starts
+    )
     return mj, model, compiled, starts, runtime
 
 
@@ -174,8 +179,12 @@ def compare(model, entry, state, expected, analytic):
         np.testing.assert_allclose(tr.scalar_force, expected["scalar_force"], **FORCE)
         np.testing.assert_array_equal(tr.generalized_force, row.qfrc_actuator)
         np.testing.assert_array_equal(tr.input_control, row.control.ctrl)
-        np.testing.assert_allclose(analytic["dense_moment"], expected["dense_moment"], atol=2e-12, rtol=0)
-        np.testing.assert_allclose(analytic["dense_moment"] @ entry.v, expected["actuator_velocity"], **FORCE)
+        np.testing.assert_allclose(
+            analytic["dense_moment"], expected["dense_moment"], atol=2e-12, rtol=0
+        )
+        np.testing.assert_allclose(
+            analytic["dense_moment"] @ entry.v, expected["actuator_velocity"], **FORCE
+        )
         np.testing.assert_allclose(
             tr.generalized_force @ entry.v,
             tr.scalar_force @ (analytic["dense_moment"] @ entry.v),
@@ -185,24 +194,41 @@ def compare(model, entry, state, expected, analytic):
 
 def continuous(case, mode, steps, monkeypatch, tmp_path):
     mj, model, _, starts, runtime = fixture(case, mode)
-    payload = dict(source=source(case), starts=starts, tolerance=TOL, steps=[], requested_steps=steps)
+    payload = dict(
+        source=source(case), starts=starts, tolerance=TOL, steps=[], requested_steps=steps
+    )
     references = {key: mj.MjData(model) for key in KEYS}
     for key in KEYS:
         state = runtime.integration_snapshot()[key]
-        references[key].qpos[:], references[key].qvel[:], references[key].time = state.q, state.v, state.time
+        references[key].qpos[:], references[key].qvel[:], references[key].time = (
+            state.q,
+            state.v,
+            state.time,
+        )
     try:
         for tick in range(steps):
             entry = runtime.integration_snapshot()
             packets = {key: control(model, tick, slot) for slot, key in enumerate(KEYS)}
             stored = {key: _stored(packet) for key, packet in packets.items()}
             expected = {key: native(mj, model, entry[key], stored[key]) for key in KEYS}
-            analytic = {key: transmission_oracle(mj, model, entry[key], stored[key]) for key in KEYS}
-            record = dict(tick=tick, entry=entry, controls=packets, stored=stored, native=expected, analytic=analytic)
+            analytic = {
+                key: transmission_oracle(mj, model, entry[key], stored[key]) for key in KEYS
+            }
+            record = dict(
+                tick=tick,
+                entry=entry,
+                controls=packets,
+                stored=stored,
+                native=expected,
+                analytic=analytic,
+            )
             payload["steps"].append(record)
             runtime.set_controls(packets)
             with monkeypatch.context() as patch:
+
                 def forbidden(*args, **kwargs):
                     raise AssertionError("CPU mj_step called by actual TYX step")
+
                 patch.setattr(mj, "mj_step", forbidden)
                 runtime.step(H)
             result = runtime.integration_snapshot()
@@ -211,7 +237,11 @@ def continuous(case, mode, steps, monkeypatch, tmp_path):
                 compare(model, entry[key], result[key], expected[key], analytic[key])
                 _set_control(references[key], stored[key])
                 mj.mj_step(model, references[key])
-                record.setdefault("continuous_native", {})[key] = dict(q=references[key].qpos.copy(), v=references[key].qvel.copy(), time=references[key].time)
+                record.setdefault("continuous_native", {})[key] = dict(
+                    q=references[key].qpos.copy(),
+                    v=references[key].qvel.copy(),
+                    time=references[key].time,
+                )
                 np.testing.assert_allclose(result[key].q, references[key].qpos, atol=Q_ATOL, rtol=0)
                 np.testing.assert_allclose(result[key].v, references[key].qvel, atol=V_ATOL, rtol=0)
                 assert abs(result[key].time - references[key].time) <= TIME_ATOL
@@ -263,7 +293,9 @@ def negative_source(case):
     if case == "activation":
         return text.replace('dyntype="none"', 'dyntype="filterexact" dynprm=".02"')
     if case == "contact":
-        return text.replace("<worldbody>", '<worldbody><geom type="plane" size="2 2 .1"/>').replace('contype="0" conaffinity="0"', 'contype="1" conaffinity="1"')
+        return text.replace("<worldbody>", '<worldbody><geom type="plane" size="2 2 .1"/>').replace(
+            'contype="0" conaffinity="0"', 'contype="1" conaffinity="1"'
+        )
     if case == "limit":
         return text.replace('type="ball"', 'type="ball" limited="true" range="0 .8"')
     if case == "dry":
@@ -277,13 +309,21 @@ def negative_source(case):
     if case == "joint-in-parent":
         return text.replace('joint="ball"', 'jointinparent="ball"')
     if case == "actors33":
-        return text.replace("</actuator>", "".join(motor(f"extra{i}", "ball", "1 0 0") for i in range(32)) + "</actuator>")
+        return text.replace(
+            "</actuator>",
+            "".join(motor(f"extra{i}", "ball", "1 0 0") for i in range(32)) + "</actuator>",
+        )
     if case == "nv36":
         return source("capacity").replace("</worldbody>", body("extra", "hinge") + "</worldbody>")
     if case == "multiple-free":
-        return text.replace("</worldbody>", '<body name="second-free"><freejoint/><geom size=".03" contype="0" conaffinity="0"/></body></worldbody>')
+        return text.replace(
+            "</worldbody>",
+            '<body name="second-free"><freejoint/><geom size=".03" contype="0" conaffinity="0"/></body></worldbody>',
+        )
     if case == "ball-same-body":
-        return text.replace('<joint name="ball"', '<joint name="pre-ball" type="slide"/><joint name="ball"')
+        return text.replace(
+            '<joint name="ball"', '<joint name="pre-ball" type="slide"/><joint name="ball"'
+        )
     if case == "tiny-y":
         return text.replace('gear="1 -2 .5"', 'gear="1 1e-45 .5"')
     if case == "tiny-z":
@@ -298,11 +338,14 @@ def test_free_ball_outside_domain_precedes_device(case, monkeypatch):
     mj.MjModel.from_xml_string(text)
     compiled = compile_mujoco_xml(text, require_asset=False)
     import phymeo.backends._mujoco_tyx_runtime as implementation
+
     calls = []
     original = implementation.MuJoCoTyxRuntime._build_device
+
     def forbidden(*args, **kwargs):
         calls.append(True)
         raise AssertionError("unsupported input allocated a device")
+
     monkeypatch.setattr(implementation.MuJoCoTyxRuntime, "_build_device", forbidden)
     with pytest.raises((MuJoCoTyxUnsupported, ValueError)) as caught:
         MuJoCoRuntime(compiled, implementation="tyx", mode="interpret")
@@ -315,6 +358,7 @@ def test_free_ball_outside_domain_precedes_device(case, monkeypatch):
 def test_joint_csr_rejects_unregistered_capacity(capacity):
     mj = _deps()
     from phymeo.backends.mujoco_tyx._joint_transmission import compile_joint_transmission
+
     model = mj.MjModel.from_xml_string(source("oblique"))
     with pytest.raises((MuJoCoTyxUnsupported, ValueError, TypeError), match="capacity"):
         compile_joint_transmission(mj, model, capacity=capacity)
@@ -322,14 +366,21 @@ def test_joint_csr_rejects_unregistered_capacity(capacity):
 
 @pytest.mark.parametrize("mode", MODES)
 @pytest.mark.parametrize("legacy", ("floating-ball", "fixed-free-ball", "motor-free"))
-def test_exact_previous_free_ball_negative_now_has_native_successor(mode, legacy, monkeypatch, tmp_path):
-    from test_mujoco_tyx_ball import body as old_body, joint as old_joint, xml as old_xml
+def test_exact_previous_free_ball_negative_now_has_native_successor(
+    mode, legacy, monkeypatch, tmp_path
+):
+    from test_mujoco_tyx_ball import body as old_body
+    from test_mujoco_tyx_ball import joint as old_joint
+    from test_mujoco_tyx_ball import xml as old_xml
     from test_mujoco_tyx_ball_joint_motor import negative_source as old_motor
     from test_mujoco_tyx_floating import BALL_XML
 
     text = {
         "floating-ball": BALL_XML,
-        "fixed-free-ball": old_xml("free-and-ball", old_body("free", "<freejoint/>", old_body("ball-child", old_joint("ball")))),
+        "fixed-free-ball": old_xml(
+            "free-and-ball",
+            old_body("free", "<freejoint/>", old_body("ball-child", old_joint("ball"))),
+        ),
         "motor-free": old_motor("free"),
     }[legacy]
     mj = _deps()
@@ -341,18 +392,26 @@ def test_exact_previous_free_ball_negative_now_has_native_successor(mode, legacy
         reference = mj.MjData(model)
         entry = runtime.integration_snapshot()[key]
         reference.qpos[:], reference.qvel[:], reference.time = entry.q, entry.v, entry.time
-        packet = MuJoCoControl(np.zeros(model.nu), qfrc_applied=np.zeros(model.nv), xfrc_applied=np.zeros((model.nbody, 6)))
+        packet = MuJoCoControl(
+            np.zeros(model.nu),
+            qfrc_applied=np.zeros(model.nv),
+            xfrc_applied=np.zeros((model.nbody, 6)),
+        )
         try:
             for tick in range(2):
                 entry = runtime.integration_snapshot()[key]
                 expected = native(mj, model, entry, packet)
                 analytic = transmission_oracle(mj, model, entry, packet)
-                record = dict(tick=tick, entry=entry, native=expected, analytic=analytic, control=packet)
+                record = dict(
+                    tick=tick, entry=entry, native=expected, analytic=analytic, control=packet
+                )
                 payload["steps"].append(record)
                 runtime.set_controls({key: packet})
                 with monkeypatch.context() as patch:
+
                     def forbidden(*args, **kwargs):
                         raise AssertionError("native step in TYX")
+
                     patch.setattr(mj, "mj_step", forbidden)
                     runtime.step(H)
                 state = runtime.integration_snapshot()[key]
@@ -360,7 +419,9 @@ def test_exact_previous_free_ball_negative_now_has_native_successor(mode, legacy
                 compare(model, entry, state, expected, analytic)
                 _set_control(reference, packet)
                 mj.mj_step(model, reference)
-                record["continuous_native"] = dict(q=reference.qpos.copy(), v=reference.qvel.copy(), time=reference.time)
+                record["continuous_native"] = dict(
+                    q=reference.qpos.copy(), v=reference.qvel.copy(), time=reference.time
+                )
                 np.testing.assert_allclose(state.q, reference.qpos, atol=Q_ATOL, rtol=0)
                 np.testing.assert_allclose(state.v, reference.qvel, atol=V_ATOL, rtol=0)
                 assert abs(state.time - reference.time) <= TIME_ATOL
@@ -381,14 +442,22 @@ def test_free_ball_invalid_quaternion_rejected_before_device(mode, location, bad
     start = initial(mj, model)
     q = start.q.copy()
     qa = 3 if location == "root" else int(model.jnt_qposadr[1])
-    q[qa:qa + 4] = (0, 0, 0, 0) if bad == "zero" else (2, 0, 0, 0)
+    q[qa : qa + 4] = (0, 0, 0, 0) if bad == "zero" else (2, 0, 0, 0)
     compiled = compile_mujoco_xml(text, require_asset=False)
     import phymeo.backends._mujoco_tyx_runtime as implementation
+
     calls = []
+
     def forbidden(*args, **kwargs):
         calls.append(True)
         raise AssertionError("invalid quaternion allocated a device")
+
     monkeypatch.setattr(implementation.MuJoCoTyxRuntime, "_build_device", forbidden)
     with pytest.raises(ValueError, match="quaternion"):
-        MuJoCoRuntime(compiled, implementation="tyx", mode=mode, initial_states={0: MuJoCoInitialState(q, start.v)})
+        MuJoCoRuntime(
+            compiled,
+            implementation="tyx",
+            mode=mode,
+            initial_states={0: MuJoCoInitialState(q, start.v)},
+        )
     assert not calls

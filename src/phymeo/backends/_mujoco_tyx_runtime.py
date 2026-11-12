@@ -349,6 +349,22 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
             )
             self._capabilities = MappingProxyType(info)
 
+        if self._plan.kind == 3 and getattr(self._plan, "native_joint_layout", False):
+            info.update(
+                domain=(
+                    "free-ball-joint-motor-no-contact-v1"
+                    if getattr(self._plan, "joint_transmission", None) is not None
+                    else "free-ball-no-contact-v1"
+                ),
+                limits="unsupported",
+                joint_limits_supported=False,
+                dry_friction_supported=False,
+                mixed_articulated_constraints_supported=False,
+                floating_mixed_constraints_supported=False,
+                g1_supported=False,
+            )
+            self._capabilities = MappingProxyType(info)
+
         if np.any(self._model.jnt_type == self._mj.mjtJoint.mjJNT_BALL) and (
             getattr(self._plan, "normal_contact", False)
             or getattr(self._plan, "constraint_contact", False)

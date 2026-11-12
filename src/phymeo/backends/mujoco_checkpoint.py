@@ -479,6 +479,13 @@ def restore(runtime, checkpoint, expected_revision):
                     and getattr(transmission, name).dtype == getattr(layout, name).dtype
                     for name in ("ids", "gear", "row_offsets", "dof_indices", "moment")
                 )
+                and transmission.schema
+                == (
+                    "native-free-ball-joint-motor-transmission-v1"
+                    if runtime._plan.kind == 3
+                    and getattr(runtime._plan, "native_joint_layout", False)
+                    else "native-joint-motor-transmission-v1"
+                )
                 and transmission.input_control.tobytes() == receipt.control.ctrl.tobytes()
                 and transmission.generalized_force.astype(np.float64).tobytes()
                 == candidate.qfrc_actuator.tobytes()

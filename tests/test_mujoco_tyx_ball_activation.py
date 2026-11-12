@@ -37,7 +37,7 @@ def test_ball_activation_continuous(name, mode, tmp_path):
 
 
 NEGATIVES = {
-    "free": "joint-domain",
+    "free": "free-ball-activation",
     "ball-limit": "ball-constraint-domain",
     "scalar-limit": "ball-constraint-domain",
     "dry": "ball-constraint-domain",

@@ -76,7 +76,7 @@ def test_ball_motor_contact_rejected_before_device(negative, monkeypatch, tmp_pa
         MuJoCoRuntime(compiled, mode="interpret", implementation="tyx")
     assert not calls
     expected_codes = {
-        "free": "joint-domain",
+        "free": "free-ball-contact",
         "ball-limit": "ball-constraint-domain",
         "scalar-limit": "ball-constraint-domain",
         "dry": "ball-constraint-domain",

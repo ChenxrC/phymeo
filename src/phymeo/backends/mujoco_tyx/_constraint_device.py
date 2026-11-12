@@ -125,23 +125,17 @@ class TyxConstraintDevice(TyxDevice):
                 self.plan.nv,
                 0 if self.activation_enabled else self.plan.nu,
                 self.body_data,
-                self.joints if self.plan.base.kind == 3 else self.dofs,
+                self.dofs,
                 self.ancestors,
                 self.vectors,
                 self.gravity,
                 self.act_ids,
                 self.act_values,
-                *(
-                    (
-                        int(self.transmission_enabled),
-                        self.transmission_offsets,
-                        self.transmission_dofs,
-                        self.transmission_moment,
-                        self.transmission_fields,
-                    )
-                    if self.plan.base.kind != 3
-                    else ()
-                ),
+                int(self.transmission_enabled),
+                self.transmission_offsets,
+                self.transmission_dofs,
+                self.transmission_moment,
+                self.transmission_fields,
                 self.controls,
                 self.applied_input,
                 self.body_force,
@@ -321,6 +315,16 @@ class TyxConstraintDevice(TyxDevice):
                 self.constraint,
                 self.rows,
                 self.status,
+                *(
+                    (
+                        int(getattr(self.plan, "native_joint_layout", False)),
+                        self.plan.nq,
+                        len(self.plan.joint_ids),
+                        self.joints,
+                    )
+                    if self.plan.base.kind == 3
+                    else ()
+                ),
                 mode=self.mode,
             )
             self.counts["completed_kernels"] += 1

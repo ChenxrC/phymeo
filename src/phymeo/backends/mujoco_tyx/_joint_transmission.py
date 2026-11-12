@@ -57,7 +57,9 @@ def compile_joint_transmission(mj, model, *, capacity=(8, 10)):
     max_nv, max_nq = capacity
     nu, nv, nq = int(model.nu), int(model.nv), int(model.nq)
     if not 1 <= nu <= MAX_ACTUATORS or not 1 <= nv <= max_nv or not 1 <= nq <= max_nq:
-        reject("joint-transmission-capacity", f"joint CSR requires nu<=32/nv<={max_nv}/nq<={max_nq}")
+        reject(
+            "joint-transmission-capacity", f"joint CSR requires nu<=32/nv<={max_nv}/nq<={max_nq}"
+        )
     rows = []
     nnz = 0
     for actor in range(nu):

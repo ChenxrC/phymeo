@@ -711,7 +711,6 @@ BALL_XML = _model(0).replace(
     "xml,code",
     [
         (_model(30, marker=True), "joint-domain"),
-        (BALL_XML, "joint-domain"),
         (
             _model(0).replace('name="free" type="free"', 'name="free" type="free" stiffness="1"'),
             "free-spring",

@@ -357,7 +357,6 @@ NEGATIVES = {
     "dry": "ball-constraint-domain",
     "spring": "ball-spring",
     "capacity": "ball-actuator-capacity",
-    "free": "joint-domain",
     "tiny-y": "fp32-range",
     "tiny-z": "fp32-range",
 }

@@ -60,17 +60,20 @@ class MuJoCoTyxJointTransmission:
             raise ValueError("joint transmission CSR row widths")
         if not np.isin(self.ids[:, 5], (1, 3)).all():
             raise ValueError("joint transmission native width")
-        if self.generalized_force.ndim != 1 or not 1 <= self.generalized_force.size <= 8:
+        capacity = {
+            "native-joint-motor-transmission-v1": 8,
+            "native-free-ball-joint-motor-transmission-v1": 35,
+        }.get(self.schema)
+        if capacity is None:
+            raise ValueError("joint transmission publication schema")
+        if self.generalized_force.ndim != 1 or not 1 <= self.generalized_force.size <= capacity:
             raise ValueError("joint transmission generalized force shape")
         if np.any(self.dof_indices < 0) or np.any(self.dof_indices >= self.generalized_force.size):
             raise ValueError("joint transmission DOF address")
         for name in ("input_control", "clamped_control", "raw_force", "scalar_force"):
             if getattr(self, name).shape != (nu,):
                 raise ValueError("joint transmission actor field shape")
-        if (
-            self.schema != "native-joint-motor-transmission-v1"
-            or self.phase != "tyx-euler-entry-joint-transmission"
-        ):
+        if self.phase != "tyx-euler-entry-joint-transmission":
             raise ValueError("joint transmission publication schema")
 
 
@@ -89,6 +92,7 @@ class MuJoCoTyxJointActivationStepReceipt(MuJoCoTyxActivationStepReceipt):
         if (
             type(self.actuation) is not MuJoCoTyxActuation
             or type(self.transmission) is not MuJoCoTyxJointTransmission
+            or self.transmission.schema != "native-joint-motor-transmission-v1"
             or self.actuation.schema != "native-joint-filterexact-actuation-v1"
         ):
             raise ValueError("joint activation receipt requires both typed device records")
@@ -123,4 +127,9 @@ def publish_joint_transmission(plan, result, index, input_control):
         raw_force=fields[:, 1],
         scalar_force=fields[:, 2],
         generalized_force=result["actuator"][index, : plan.nv],
+        schema=(
+            "native-free-ball-joint-motor-transmission-v1"
+            if plan.kind == 3 and getattr(plan, "native_joint_layout", False)
+            else "native-joint-motor-transmission-v1"
+        ),
     )

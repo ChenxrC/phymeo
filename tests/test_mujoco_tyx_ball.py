@@ -347,6 +347,10 @@ def test_ball_anisotropic_rotor_analytic_three_axis_torque(mode, tmp_path):
         assert np.max(np.abs(bias)) > 1e-4
 
 
+FREE_BALL_XML = xml(
+    "free-and-ball", body("free", "<freejoint/>", body("ball-child", joint("ball")))
+)
+
 NEGATIVE_XML = (
     ("ball-spring", ROTOR.replace('type="ball"', 'type="ball" stiffness="1"')),
     ("ball-limit", ROTOR.replace('type="ball"', 'type="ball" limited="true" range="0 .5"')),
@@ -364,10 +368,6 @@ NEGATIVE_XML = (
     (
         "same-body-slide-ball",
         xml("same-body-slide-ball", body("mixed", joint("slide", "slide") + joint("ball"))),
-    ),
-    (
-        "free-and-ball",
-        xml("free-and-ball", body("free", "<freejoint/>", body("ball-child", joint("ball")))),
     ),
     (
         "scalar-limit",

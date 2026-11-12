@@ -7,8 +7,8 @@ import numpy as np
 import pytest
 from test_mujoco_tyx_activation import save
 from test_mujoco_tyx_ball import MODES, H
-from test_mujoco_tyx_free_ball import KEYS, control, fixture
 from test_mujoco_tyx_ball_transactions import same
+from test_mujoco_tyx_free_ball import KEYS, control, fixture
 
 from phymeo.backends.mujoco_checkpoint import MuJoCoTyxCheckpoint
 from phymeo.backends.mujoco_runtime import MuJoCoControl, MuJoCoRuntime
@@ -183,7 +183,6 @@ def test_free_ball_bad_last_control_changes_no_world(mode, tmp_path):
         runtime.close()
 
 
-
 @pytest.mark.parametrize("mode", MODES)
 @pytest.mark.parametrize("field", ("schema", "generalized-width"))
 def test_free_ball_wrong_saved_transmission_is_atomic(mode, field, tmp_path):
@@ -217,7 +216,13 @@ def test_free_ball_wrong_saved_transmission_is_atomic(mode, field, tmp_path):
             edit(decoded)
             assert changed == len(KEYS)
             damaged_body = json.dumps(decoded, sort_keys=True, separators=(",", ":")).encode()
-            damaged = header + b"\n" + hashlib.sha256(damaged_body).hexdigest().encode() + b"\n" + damaged_body
+            damaged = (
+                header
+                + b"\n"
+                + hashlib.sha256(damaged_body).hexdigest().encode()
+                + b"\n"
+                + damaged_body
+            )
             checkpoint = MuJoCoTyxCheckpoint.from_bytes(damaged)
             with pytest.raises(ValueError):
                 runtime.restore(checkpoint, expected_revision=runtime.checkpoint_revision)
@@ -225,6 +230,16 @@ def test_free_ball_wrong_saved_transmission_is_atomic(mode, field, tmp_path):
             runtime.step(H)
             clone.step(H)
             assert_complete_equal(runtime.integration_snapshot(), clone.integration_snapshot())
-            save(tmp_path / "wrong-transmission.json.gz", dict(field=field, original=original.hex(), damaged=damaged.hex(), before=before, successor=runtime.integration_snapshot(), clone=clone.integration_snapshot()))
+            save(
+                tmp_path / "wrong-transmission.json.gz",
+                dict(
+                    field=field,
+                    original=original.hex(),
+                    damaged=damaged.hex(),
+                    before=before,
+                    successor=runtime.integration_snapshot(),
+                    clone=clone.integration_snapshot(),
+                ),
+            )
     finally:
         runtime.close()

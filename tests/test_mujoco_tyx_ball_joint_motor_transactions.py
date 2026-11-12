@@ -88,7 +88,7 @@ def test_joint_motor_checkpoint_clone_partial_reset_successor(mode, tmp_path):
                 assert_complete_equal({KEYS[-1]: result[KEYS[-1]]}, fresh.integration_snapshot())
                 payload.update(
                     before=before,
-                    checkpoint=checkpoint,
+                    checkpoint_bytes_hex=raw.hex(),
                     successor=successor,
                     reset=reset,
                     result=result,

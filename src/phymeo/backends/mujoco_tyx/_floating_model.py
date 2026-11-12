@@ -154,6 +154,32 @@ def compile_floating_model(
             )
     if np.any(model.jnt_actfrclimited):
         issue("joint-actuator-limits", "joint-wide summed force clamps are not migrated")
+    if has_ball and allow_normal_contacts is True:
+        # A caller cannot use the wrapper's structural permission to admit
+        # pyramidal contacts or enlarge the existing normal geometry domain.
+        # Reuse the native pair predicate and the established raw slot table;
+        # this pass creates no contact solver or configuration-dependent data.
+        from ._constraint_model import PAIR_SLOTS
+        from ._model import _mix_contact
+        from ._normal_model import MAX_GEOMS, MAX_PAIRS, MAX_SLOTS, possible_pairs
+
+        pairs = possible_pairs(model)
+        slots = 0
+        for left, right in pairs:
+            shape = tuple(map(int, model.geom_type[[left, right]]))
+            if shape not in PAIR_SLOTS:
+                issue("contact-domain", f"FREE+BALL normal geometry pair {shape} is not migrated")
+            else:
+                slots += PAIR_SLOTS[shape]
+            if _mix_contact(model, left, right, mj)[0] != 1:
+                issue("free-ball-contact", "FREE+BALL contacts require mixed condim=1")
+        if pairs and (
+            model.ngeom > MAX_GEOMS or len(pairs) > MAX_PAIRS or slots > MAX_SLOTS
+        ):
+            issue(
+                "contact-layout-capacity",
+                "FREE+BALL normal domain permits 128 geoms/16 pairs/32 raw candidate slots",
+            )
     # Test potential pairs, not just collisions at the source initial pose.
     for left in range(model.ngeom):
         for right in range(left + 1, model.ngeom):
@@ -166,7 +192,7 @@ def compile_floating_model(
             if (int(model.geom_contype[left]) & int(model.geom_conaffinity[right])) or (
                 int(model.geom_contype[right]) & int(model.geom_conaffinity[left])
             ):
-                if has_ball:
+                if has_ball and allow_normal_contacts is not True:
                     issue(
                         "free-ball-contact", f"FREE+BALL has a possible contact pair {left}/{right}"
                     )

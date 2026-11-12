@@ -163,7 +163,7 @@ def compile_registration(plan, model, bindings):
         sources, world_layouts = check_accepted(plan, accepted)
         world_layout = dict(zip(plan._world_keys, world_layouts, strict=True))
         anchors = {
-            w: np.asarray(sources[world_layout[w]].specs[w].anchor, np.float32).astype(np.float64)
+            w: np.asarray(sources[world_layout[w]].specs[w].anchor, np.float64)
             for w in plan._world_keys
         }
         meta = []

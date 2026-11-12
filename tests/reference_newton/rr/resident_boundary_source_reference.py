@@ -169,7 +169,7 @@ def aabb_candidates(vertices, faces, axes, radii, margin):
         lo = np.min(segment, axis=0) - radii[si] - margin
         hi = np.max(segment, axis=0) + radii[si] + margin
         for fi, ids in enumerate(faces):
-            tri = vertices[ids]
+            tri = vertices[list(ids)]
             if np.all(np.min(tri, axis=0) <= hi) and np.all(lo <= np.max(tri, axis=0)):
                 result.append((si, fi))
     return tuple(result)

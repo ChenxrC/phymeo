@@ -84,6 +84,15 @@ def query(batch, plan, record, margin):
         value = plan.query(margin=margin)
         row["result"] = value
         assert isinstance(value, ph.ResidentBoundaryDistances)
+        topology_bytes = sum(
+            24 * (2 * len(group.facet_vertices) - 1) + 8 * len(group.facet_vertices)
+            for group in value.groups
+        )
+        added = topology_bytes if row["before_stats"]["queries"] == 0 else 0
+        assert (
+            value.counters["host_constant_bytes"]
+            == row["before_stats"]["host_constant_bytes"] + added
+        )
         return value
     finally:
         row.update(after=batch.snapshot(), last_attempt=plan.last_attempt, stats=plan.stats())
@@ -689,3 +698,50 @@ def test_original_conditioning_and_zero_direction_status(case, tyx_mode, tmp_pat
                 assert_packet(batch, plan, value, model, expected, statuses=status)
                 assert value.required_candidates == 1
                 assert value.groups[0].packet.rows[0].normal is None
+
+
+@pytest.mark.tyx
+@pytest.mark.parametrize("layout", ("floating", "floating_affine"))
+def test_non_fp32_world_anchor_keeps_static_dynamic_touch(layout, tyx_mode, tmp_path):
+    """Original FP64 root anchor must be common to static and device FK frames."""
+    from phymeo.dynamics.floating_robot import FloatingRobotState
+
+    tree = fsrc.declaration(layout, 0)
+    q = np.asarray(tree.state.q, dtype=np.float64).copy()
+    anchor = np.array((2**20 + 1 / 16, -(2**20) + 1 / 32, 1 / 64), dtype=np.float64)
+    q[:3] = anchor
+    tree = replace(tree, state=FloatingRobotState(q, tree.state.v))
+    with ph.TyxWorldBatch([(17, tree)], tyx_mode, cache_root=tmp_path) as batch:
+        state = batch.snapshot()[17]
+        surface_key, round_key = ph.CollisionKey(17, 901, 0), ph.CollisionKey(17, 101, 0)
+        local_triangle = np.array(((1 / 8, -1, -1), (1 / 8, 1, -1), (1 / 8, 0, 1)))
+        triangle = local_triangle + anchor
+        model = ph.CollisionModel(
+            (
+                ph.CollisionShape(surface_key, "triangle", (11, 37, 91)),
+                ph.CollisionShape(round_key, "sphere", (101,), radius=1 / 8),
+            )
+        )
+        bindings = (
+            ph.ResidentStaticBinding(surface_key, ph.CollisionMotion(triangle)),
+            binding(tree, state, layout, round_key, 0, np.zeros((1, 3))),
+        )
+        with closing(
+            batch.prepare_boundary_query(
+                model, bindings, limits=ph.BoundaryDistanceLimits(), memory_limit_bytes=BUDGET
+            )
+        ) as plan:
+            with saved(
+                tmp_path,
+                "non-fp32-anchor-" + layout,
+                tyx_mode,
+                inputs=dict(model=model, bindings=bindings, anchor=anchor),
+                plan=plan,
+            ) as record:
+                result = query(batch, plan, record, 0.0)
+                np.testing.assert_array_equal(result.source["world_anchors"][17], anchor)
+                assert_packet(
+                    batch, plan, result, model, {surface_key: triangle, round_key: anchor[None]}
+                )
+                assert result.required_candidates == 1
+                assert abs(result.groups[0].packet.rows[0].distance - 1 / 8) < 1e-6

@@ -227,7 +227,7 @@ class ResidentBoundaryQueryPlan:
             compile_registration(self, model, bindings)
             self._templates, self._pair_template = self._groups()
             self._counts["persistent_bytes"] = sum(x.nbytes for x in self._constants.values())
-            self._counts["host_constant_bytes"] = _nbytes((self._source_base, self._templates))
+            self._counts["host_constant_bytes"] = self._constant_bytes(self._layouts)
             self._check_memory(self._counts["persistent_bytes"])
             batch._boundary_plans.add(self)
             if self._shape_keys:
@@ -269,6 +269,28 @@ class ResidentBoundaryQueryPlan:
             raise MemoryError(
                 f"boundary query requires {size} owned bytes, limit {self._memory_limit}"
             )
+
+    def _constant_bytes(self, layouts):
+        """Resident registration/topology arrays, with shared ndarray identities counted once.
+
+        Does not claim Python-object overhead, temporary HOST scratch or process RSS.
+        """
+        topology = tuple((tree.nodes, tree.ordered, tree.roots) for tree in layouts.values())
+        return _nbytes(
+            (
+                self._model,
+                self._bindings,
+                self._constants,
+                self._source_base,
+                self._templates,
+                self._shape_rows,
+                self._shape_groups,
+                self._shape_layouts,
+                self._offsets,
+                self._anchors,
+                topology,
+            )
+        )
 
     def _check_open(self):
         self._batch._check_open()
@@ -1002,6 +1024,7 @@ class ResidentBoundaryQueryPlan:
                     # completed. These assignments perform no device IO.
                     final_counts = dict(
                         self._counts,
+                        host_constant_bytes=self._constant_bytes(pending),
                         queries=self._counts["queries"] + 1,
                         packet_array_bytes=_nbytes(packet),
                     )

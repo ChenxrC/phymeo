@@ -32,6 +32,7 @@ def require(condition, message):
 
 _TOKENS = {}
 
+
 def encode(value):
     if isinstance(value, np.ndarray):
         require(not value.dtype.hasobject, "object array in evidence")
@@ -210,11 +211,20 @@ def make_scene(output):
     for i, world in enumerate(WORLDS):
         q = np.array(((i + 1) / 512, 0.004 - (i + 1) / 512), np.float64)
         v = np.array(((i + 1) / 1024, -(i + 1) / 1024), np.float64)
-        program = ph.DrivenRobotProgram(asset.tree.model, kp=np.zeros(2), kd=np.zeros(2),
-                                       effort_limit=np.ones(2), delay_steps=0)
+        program = ph.DrivenRobotProgram(
+            asset.tree.model, kp=np.zeros(2), kd=np.zeros(2), effort_limit=np.ones(2), delay_steps=0
+        )
         trees[world] = ph.FixedRobotTree(program, program.initial_state(ph.RobotState(q, v)))
         initial[world] = dict(q=q, v=v)
-    return trees, initial, dict(path=str(asset_path), sha256=hashlib.sha256(asset_path.read_bytes()).hexdigest(), xml=xml)
+    return (
+        trees,
+        initial,
+        dict(
+            path=str(asset_path),
+            sha256=hashlib.sha256(asset_path.read_bytes()).hexdigest(),
+            xml=xml,
+        ),
+    )
 
 
 def register(batch):
@@ -225,16 +235,20 @@ def register(batch):
     for world in WORLDS:
         surface = ph.CollisionShape(ph.CollisionKey(world, 101, 0), "triangle", IDS, revision=3)
         shapes.append(surface)
-        bindings.append(ph.ResidentTreeBinding(surface.key, world, 0, TRIANGLE,
-                                               topology=states[world].topology))
+        bindings.append(
+            ph.ResidentTreeBinding(surface.key, world, 0, TRIANGLE, topology=states[world].topology)
+        )
         for ordinal, kind, points, ids in (
-            (0, "sphere", SPHERE, (11,)), (1, "capsule", CAPSULE, (11, 37))
+            (0, "sphere", SPHERE, (11,)),
+            (1, "capsule", CAPSULE, (11, 37)),
         ):
-            shape = ph.CollisionShape(ph.CollisionKey(world, 202, ordinal), kind, ids,
-                                      radius=RADIUS, revision=5)
+            shape = ph.CollisionShape(
+                ph.CollisionKey(world, 202, ordinal), kind, ids, radius=RADIUS, revision=5
+            )
             shapes.append(shape)
-            bindings.append(ph.ResidentTreeBinding(shape.key, world, 1, points,
-                                                   topology=states[world].topology))
+            bindings.append(
+                ph.ResidentTreeBinding(shape.key, world, 1, points, topology=states[world].topology)
+            )
     return ph.CollisionModel(tuple(shapes)), tuple(bindings)
 
 
@@ -246,12 +260,18 @@ def verify(packet, states, initial, tick):
     require(packet.semantics == "threshold-limited-boundary-distance", "finite boundary semantics")
     require(packet.world_keys == WORLDS and packet.margin == MARGIN, "world/margin binding")
     np.testing.assert_array_equal(packet.ticks, (tick, tick))
-    require(len(packet.groups) == 2 and packet.required_candidates == 4, "complete two-world membership")
+    require(
+        len(packet.groups) == 2 and packet.required_candidates == 4, "complete two-world membership"
+    )
     require(len(packet.pairs) == 6, "all within-world original pairs retained")
-    require(sum(row.reason == "same_rigid_body" for row in packet.pairs) == 2,
-            "sphere/capsule same follower filtered")
-    require(sum(row.status == "boundary_candidates" for row in packet.pairs) == 4,
-            "four eligible finite pairs")
+    require(
+        sum(row.reason == "same_rigid_body" for row in packet.pairs) == 2,
+        "sphere/capsule same follower filtered",
+    )
+    require(
+        sum(row.status == "boundary_candidates" for row in packet.pairs) == 4,
+        "four eligible finite pairs",
+    )
     require(len(packet.source_binding) == 64, "complete source binding")
     immutable(packet)
     checks = {}
@@ -260,8 +280,9 @@ def verify(packet, states, initial, tick):
         world = group.surface.world
         state = states[world]
         q, v = np.asarray(state.position), np.asarray(state.velocity)
-        np.testing.assert_allclose(q, initial[world]["q"] + tick * H * initial[world]["v"],
-                                   atol=3e-6, rtol=0)
+        np.testing.assert_allclose(
+            q, initial[world]["q"] + tick * H * initial[world]["v"], atol=3e-6, rtol=0
+        )
         np.testing.assert_allclose(v, initial[world]["v"], atol=3e-6, rtol=0)
         require(state.tick == tick, "physical accepted tick")
         require(np.any(v != 0), "real nonzero motion retained")
@@ -271,10 +292,14 @@ def verify(packet, states, initial, tick):
         anchor = np.asarray(packet.source["world_anchors"][world])
         np.testing.assert_array_equal(group.candidates, np.array(((0, 0), (1, 0)), np.int64))
         require(group.facet_vertices == (IDS,), "original facet IDs")
-        require(group.round_keys == (ph.CollisionKey(world, 202, 0), ph.CollisionKey(world, 202, 1)),
-                "round original owners")
-        require(group.bvh_raw.shape == (2, 4) and group.bvh_raw.dtype == np.int32,
-                "full K+3 raw traversal")
+        require(
+            group.round_keys == (ph.CollisionKey(world, 202, 0), ph.CollisionKey(world, 202, 1)),
+            "round original owners",
+        )
+        require(
+            group.bvh_raw.shape == (2, 4) and group.bvh_raw.dtype == np.int32,
+            "full K+3 raw traversal",
+        )
         np.testing.assert_array_equal(group.bvh_raw[:, 0], (1, 1))
         require(np.all(group.bvh_raw[:, 1:3] >= 1), "node/leaf visits retained")
         np.testing.assert_array_equal(group.bvh_raw[:, 3], (1, 1))
@@ -283,42 +308,80 @@ def verify(packet, states, initial, tick):
         require(narrow.source_binding == packet.source_binding, "shared same-query source binding")
         np.testing.assert_array_equal(narrow.origin_m, anchor)
         require(len(narrow.rows) == 2, "no candidate loss")
-        for name, shape, dtype in (("candidates", (2, 18, 11), np.float32),
-                ("valid", (2, 18), np.int32), ("summary", (2, 16), np.float32),
-                ("meta", (2, 7), np.int32)):
-            require(narrow.raw[name].shape == shape and narrow.raw[name].dtype == dtype,
-                    "full original narrow raw " + name)
+        for name, shape, dtype in (
+            ("candidates", (2, 18, 11), np.float32),
+            ("valid", (2, 18), np.int32),
+            ("summary", (2, 16), np.float32),
+            ("meta", (2, 7), np.int32),
+        ):
+            require(
+                narrow.raw[name].shape == shape and narrow.raw[name].dtype == dtype,
+                "full original narrow raw " + name,
+            )
         np.testing.assert_array_equal(narrow.packed["owners"], group.candidates)
         for row in narrow.rows:
-            require(row.status == "RESOLVED" and row.facet_id == 0 and row.vertex_ids == IDS,
-                    "complete finite resolved ownership")
-            require(abs(row.distance - expected_distance) <= DISTANCE_GATE * length, "distance oracle")
-            require(abs(row.gap - (expected_distance-RADIUS)) <= DISTANCE_GATE * length, "radius gap")
+            require(
+                row.status == "RESOLVED" and row.facet_id == 0 and row.vertex_ids == IDS,
+                "complete finite resolved ownership",
+            )
+            require(
+                abs(row.distance - expected_distance) <= DISTANCE_GATE * length, "distance oracle"
+            )
+            require(
+                abs(row.gap - (expected_distance - RADIUS)) <= DISTANCE_GATE * length, "radius gap"
+            )
             require(0 <= row.axis_parameter <= 1, "finite axis address")
             if row.segment_id == 1:
                 require(abs(row.axis_parameter) <= WITNESS_GATE, "nearest capsule endpoint")
-            np.testing.assert_allclose(row.barycentric, (0.5, 0.25, 0.25), atol=WITNESS_GATE, rtol=0)
-            np.testing.assert_allclose(np.asarray(row.axis_point_relative_m) + anchor, expected_axis,
-                                       atol=WITNESS_GATE * length, rtol=0)
-            np.testing.assert_allclose(np.asarray(row.triangle_point_relative_m) + anchor, expected_triangle,
-                                       atol=WITNESS_GATE * length, rtol=0)
+            np.testing.assert_allclose(
+                row.barycentric, (0.5, 0.25, 0.25), atol=WITNESS_GATE, rtol=0
+            )
+            np.testing.assert_allclose(
+                np.asarray(row.axis_point_relative_m) + anchor,
+                expected_axis,
+                atol=WITNESS_GATE * length,
+                rtol=0,
+            )
+            np.testing.assert_allclose(
+                np.asarray(row.triangle_point_relative_m) + anchor,
+                expected_triangle,
+                atol=WITNESS_GATE * length,
+                rtol=0,
+            )
             np.testing.assert_allclose(row.normal, (-1, 0, 0), atol=NORMAL_GATE, rtol=0)
         for ordinal, local in ((0, SPHERE), (1, CAPSULE)):
             key = ph.CollisionKey(world, 202, ordinal)
             expected = local + np.array((0.25 + q[1], 0, 0)) - anchor
-            np.testing.assert_allclose(packet.source["gathered_points"][key], expected,
-                                       atol=WITNESS_GATE * length, rtol=0)
+            np.testing.assert_allclose(
+                packet.source["gathered_points"][key], expected, atol=WITNESS_GATE * length, rtol=0
+            )
         expected = TRIANGLE + np.array((-0.25 + q[0], 0, 0)) - anchor
-        np.testing.assert_allclose(packet.source["gathered_points"][group.surface], expected,
-                                   atol=WITNESS_GATE * length, rtol=0)
-        checks[world] = dict(distance=expected_distance, axis=expected_axis,
-                             triangle=expected_triangle, length=length)
-    require(packet.counters["live_bytes"] == packet.counters["persistent_bytes"], "temporary cleanup")
-    require(packet.counters["launches"] == packet.counters["completed_launches"], "completed submissions")
+        np.testing.assert_allclose(
+            packet.source["gathered_points"][group.surface],
+            expected,
+            atol=WITNESS_GATE * length,
+            rtol=0,
+        )
+        checks[world] = dict(
+            distance=expected_distance,
+            axis=expected_axis,
+            triangle=expected_triangle,
+            length=length,
+        )
+    require(
+        packet.counters["live_bytes"] == packet.counters["persistent_bytes"], "temporary cleanup"
+    )
+    require(
+        packet.counters["launches"] == packet.counters["completed_launches"],
+        "completed submissions",
+    )
     if packet.backend == "cuda":
-        require(packet.counters["downloads"] > 0 and packet.counters["downloaded_bytes"] > 0,
-                "real transfers counted")
+        require(
+            packet.counters["downloads"] > 0 and packet.counters["downloaded_bytes"] > 0,
+            "real transfers counted",
+        )
     return checks
+
 
 def run(mode, journal, installed_root, output):
     import phymeo as ph
@@ -328,43 +391,74 @@ def run(mode, journal, installed_root, output):
     primary = None
     try:
         trees, initial, asset = make_scene(output)
-        journal.emit("fixture", asset=asset, initial=initial, worlds=WORLDS,
-                     triangle=TRIANGLE, sphere=SPHERE, capsule=CAPSULE,
-                     radius=RADIUS, margin=MARGIN, h=H)
+        journal.emit(
+            "fixture",
+            asset=asset,
+            initial=initial,
+            worlds=WORLDS,
+            triangle=TRIANGLE,
+            sphere=SPHERE,
+            capsule=CAPSULE,
+            radius=RADIUS,
+            margin=MARGIN,
+            h=H,
+        )
         batch = ph.TyxWorldBatch(list(trees.items())[::-1], mode, cache_root=output / "cache")
         owners.append(("batch", batch))
         model, bindings = register(batch)
-        journal.emit("registration", model=model, bindings=bindings, initial=batch.snapshot(),
-                     batch_stats=batch.stats())
-        plan = batch.prepare_boundary_query(model, bindings,
-            limits=ph.BoundaryDistanceLimits(), memory_limit_bytes=32 * 1024 * 1024)
+        journal.emit(
+            "registration",
+            model=model,
+            bindings=bindings,
+            initial=batch.snapshot(),
+            batch_stats=batch.stats(),
+        )
+        plan = batch.prepare_boundary_query(
+            model, bindings, limits=ph.BoundaryDistanceLimits(), memory_limit_bytes=32 * 1024 * 1024
+        )
         owners.append(("plan", plan))
         last = None
         for tick in (1, 2, 3):
             before = batch.snapshot()
             step_result = batch.step(H)
             states = batch.snapshot()
-            journal.emit("physical-step", tick=tick, h=H, before=before,
-                         result=step_result, after=states, batch_stats=batch.stats())
+            journal.emit(
+                "physical-step",
+                tick=tick,
+                h=H,
+                before=before,
+                result=step_result,
+                after=states,
+                batch_stats=batch.stats(),
+            )
             require(all(step_result.values()), "real accepted physical step")
             if last is not None:
                 rejection = dict(tick=tick, previous_sequence=last.sequence)
                 try:
                     plan.require_current(last)
                 except ValueError as error:
-                    rejection.update(status="rejected", error_type=type(error).__name__, message=str(error))
+                    rejection.update(
+                        status="rejected", error_type=type(error).__name__, message=str(error)
+                    )
                 else:
                     rejection.update(status="unexpected-success")
                 journal.emit("stale-query-binding", **rejection)
-                require(rejection["status"] == "rejected", "physical source change invalidates old packet")
+                require(
+                    rejection["status"] == "rejected",
+                    "physical source change invalidates old packet",
+                )
             attempt = dict(tick=tick, before=states, before_stats=plan.stats(), margin=MARGIN)
             attempts.append(attempt)
             try:
                 result = plan.query(margin=MARGIN)
                 attempt["result"] = result
             finally:
-                attempt.update(after=batch.snapshot(), last_attempt=plan.last_attempt,
-                               last_result=plan.last_result, after_stats=plan.stats())
+                attempt.update(
+                    after=batch.snapshot(),
+                    last_attempt=plan.last_attempt,
+                    last_result=plan.last_result,
+                    after_stats=plan.stats(),
+                )
                 # Full returned result/raw/source and any failed prefix precede every assertion.
                 journal.emit("query-outcome", **attempt)
             exact(states, attempt["after"], "query cannot mutate accepted physical bank")
@@ -373,20 +467,45 @@ def run(mode, journal, installed_root, output):
             journal.emit("query-checks", tick=tick, checks=checks)
             last = result
         modules = provenance(installed_root)
-        journal.emit("completed", accepted_world_steps=6, complete_queries=3,
-                     full_rows=12, modules=modules, plan_stats=plan.stats(), batch_stats=batch.stats())
-        return dict(accepted_world_steps=6, complete_queries=3, rows=12,
-                    stale_rejections=2, final_ticks=last.ticks, modules=modules)
+        journal.emit(
+            "completed",
+            accepted_world_steps=6,
+            complete_queries=3,
+            full_rows=12,
+            modules=modules,
+            plan_stats=plan.stats(),
+            batch_stats=batch.stats(),
+        )
+        return dict(
+            accepted_world_steps=6,
+            complete_queries=3,
+            rows=12,
+            stale_rejections=2,
+            final_ticks=last.ticks,
+            modules=modules,
+        )
     except BaseException as error:
         primary = error
         try:
-            journal.emit("attempt-failure", error_type=type(error).__name__, message=str(error),
-                         complete_attempt_prefix=attempts,
-                         owners=tuple(dict(label=label, stats=owner.stats(),
-                            last=getattr(owner, "last_result", None),
-                            attempt=getattr(owner, "last_attempt", None)) for label, owner in owners))
+            journal.emit(
+                "attempt-failure",
+                error_type=type(error).__name__,
+                message=str(error),
+                complete_attempt_prefix=attempts,
+                owners=tuple(
+                    dict(
+                        label=label,
+                        stats=owner.stats(),
+                        last=getattr(owner, "last_result", None),
+                        attempt=getattr(owner, "last_attempt", None),
+                    )
+                    for label, owner in owners
+                ),
+            )
         except BaseException as log_error:
-            primary = BaseExceptionGroup("original attempt and evidence-write errors", [error, log_error])
+            primary = BaseExceptionGroup(
+                "original attempt and evidence-write errors", [error, log_error]
+            )
         raise primary
     finally:
         failures = []
@@ -396,14 +515,20 @@ def run(mode, journal, installed_root, output):
                 owner.close()
             except BaseException as error:
                 failures.append(error)
-                outcome.update(status="close-failed", error_type=type(error).__name__, message=str(error))
+                outcome.update(
+                    status="close-failed", error_type=type(error).__name__, message=str(error)
+                )
             try:
                 journal.emit("owner-close", **outcome)
             except BaseException as error:
                 failures.append(error)
         if failures:
-            raise BaseExceptionGroup("M1 consumer/cleanup errors (original retained)",
-                                     ([primary] if primary is not None else []) + failures)
+            raise BaseExceptionGroup(
+                "M1 consumer/cleanup errors (original retained)",
+                ([primary] if primary is not None else []) + failures,
+            )
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--mode", choices=("interpret", "cuda"), required=True)
@@ -415,9 +540,13 @@ def main():
     )
     root = args.installed_root.resolve(strict=True)
     output = args.output.resolve()
-    require(not any((parent / "pyproject.toml").is_file() and
-                    (parent / "src" / "phymeo").is_dir()
-                    for parent in (output, *output.parents)), "output must be outside checkouts")
+    require(
+        not any(
+            (parent / "pyproject.toml").is_file() and (parent / "src" / "phymeo").is_dir()
+            for parent in (output, *output.parents)
+        ),
+        "output must be outside checkouts",
+    )
     output.mkdir(parents=True, exist_ok=False)
     journal = Journal(output / "resident-boundary.jsonl.gz")
     summary = dict(

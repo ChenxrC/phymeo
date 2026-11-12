@@ -15,6 +15,7 @@ def bind_storage(owner, banks, stream, device, generation, controls=None, bodies
         "time": ("s", "simulation", "world", "integration endpoint", False),
         "ctrl": ("compiled actuator input", "compiled actuator", "native_actuator", "persistent command", True),
         "qfrc_applied": ("N or N*m by DOF", "generalized qvel dual", "native_dof", "persistent external command", True),
+        "xfrc_applied": ("N,N*m", "world; force then torque at body COM", "native_body", "external command; see body_wrench_lifetime", True),
         "qfrc_actuator": ("N or N*m by DOF", "generalized qvel dual", "native_dof", "solver evaluation", False),
         "qfrc_constraint": ("N or N*m by DOF", "generalized qvel dual", "native_dof", "solver evaluation", False),
         "xpos": ("m", "world; body frame origin, not COM", "native_body", "solver evaluation", False),

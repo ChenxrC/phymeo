@@ -785,3 +785,21 @@ Panda 本夹具无 visual，明确发布 collision_geometry fallback；FANUC 保
 未变更求解器、六 CUBIN、Host、容差或生产排序。初轮测试路径及断言错误保留。
 消费方实际 DLL 结果及各仓提交统一见配套实验根 `evidence/b6h-summary.json`；
 这些源码验证不代表完整纹理、resident、安装或真实 GUI 资格。
+
+## Body external wrench v1
+
+PhySolveRuntime.body_wrench_contract_version=1。RuntimeStorage 的 xfrc_applied 是已有
+双 bank 原生命令 owner 的可借用 float32[N,native_body,6]，世界坐标、body COM 参考点，
+前三项 force(N)、后三项 torque(N·m)。仅 prepared candidate 可写；输入须有限且
+满足公共字段前置条件。begin/candidate、discard、masked reset 沿用原 INTEGRATION_FIELDS，
+不建立另一套物理命令镜像。它不是接触或关节反力测量。
+
+构造参数 body_wrench_lifetime 冻结为 persistent（默认，保持既有行为）或 one_substep。
+forward 不消费；one_substep 只用于下一次物理推进的第一个子步，RNE/IMU 消费对应
+求解时刻输入后清零，后续子步使用零外力；一次推进只额外清零一次，无额外同步。
+固定 Graph 捕获同一行为，无 direct fallback。清零只影响未发布候选，失败仍可丢弃。
+跨框架命令寿命的名称转换由消费者负责，PHYMEO 不依赖 P2PE schema。
+
+正式 tests/test_physolve_execution.py 登记 N=1/8/64 direct/Graph、独立球体 F/m 与
+T/I 参照、forward/局部 reset/discard 和测量时刻用例。六 CUBIN、Host、原容差和排序
+保持；没有开展 GPU 微差对照，实验记录见配套根 evidence/b8j-*。

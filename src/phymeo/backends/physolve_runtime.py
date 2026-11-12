@@ -64,6 +64,7 @@ class PhySolveRuntime:
     stream_binding_contract_version = 1
     step_graph_contract_version = 1
     configuration_readback_contract_version = 1
+    body_wrench_contract_version = 1
 
     def __init__(
         self,
@@ -79,7 +80,11 @@ class PhySolveRuntime:
         body_observations=False,
         contact_observations=False,
         body_measurements=False,
+        body_wrench_lifetime="persistent",
     ):
+        if body_wrench_lifetime not in ("persistent", "one_substep"):
+            raise ValueError("body_wrench_lifetime requires persistent or one_substep")
+        self._body_wrench_lifetime = body_wrench_lifetime
         if type(body_observations) is not bool:
             raise TypeError("body_observations must be bool")
         if type(contact_observations) is not bool:
@@ -597,8 +602,15 @@ class PhySolveRuntime:
                 self._pending["phase"] = "failed"
                 raise
 
+    @property
+    def body_wrench_lifetime(self):
+        """Frozen command policy; forward does not consume an external wrench."""
+        return self._body_wrench_lifetime
+
     def _enqueue_step_work(self, index, steps, *, record=True):
         for substep in range(steps):
+            if substep == 1 and self._body_wrench_lifetime == "one_substep":
+                self._banks[index].xfrc_applied.zero_(stream=self._stream)
             if self._body_measurements is not None and substep == steps - 1:
                 self._body_measurements.capture(index, self._stream)
             if self._contact_observations is not None and substep == steps - 1:
@@ -612,6 +624,10 @@ class PhySolveRuntime:
             self._contact_observations.update(index, self._stream, integrated=True, record=record)
         if self._body_measurements is not None:
             self._body_measurements.update(index, self._stream, integrated=True, record=record)
+        # Preserve the solve-time input until RNE measurements have consumed it.
+        # For multiple substeps it was already consumed before the second solve.
+        if steps == 1 and self._body_wrench_lifetime == "one_substep":
+            self._banks[index].xfrc_applied.zero_(stream=self._stream)
 
     def enqueue_forward(self, ticket):
         with self._scope():

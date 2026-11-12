@@ -12,6 +12,97 @@ payload = payload_fixture
 
 
 @pytest.mark.cuda
+@pytest.mark.parametrize('nworld', [1, 8, 64])
+@pytest.mark.parametrize('lifetime', ['persistent', 'one_substep'])
+@pytest.mark.parametrize('mode', ['direct', 'cuda_graph'])
+def test_body_wrench_owner_lifetime_and_reset(payload, nworld, lifetime, mode):
+    # Independent SI reference: 2 kg sphere, zero gravity, F=2 N in x.
+    # Spherical inertia .008 kg m², T=.008 N m in z -> alpha=1 rad/s².
+    record = compile_mujoco_xml(FREE.replace('integrator="Euler"',
+        'integrator="Euler" gravity="0 0 0"'), require_asset=False)
+    with PhySolveRuntime(record, payload=payload, nworld=nworld,
+                        body_wrench_lifetime=lifetime) as runtime:
+        storage = runtime.storage_binding()
+        meta = storage.fields['xfrc_applied']
+        assert meta.shape == (nworld, 2, 6) and meta.writable
+        assert meta.index_space == 'native_body' and 'COM' in meta.frame
+        force = np.zeros(meta.shape, np.float32)
+        force[:, 1, 0], force[:, 1, 5] = 2., .008
+        def read(field):
+            return storage.borrow(field, runtime.active_bank).numpy(stream=storage.stream).copy()
+        def write():
+            ticket = runtime.begin_execution()
+            storage.borrow('xfrc_applied', runtime.writable_bank, write=True).assign(
+                force, stream=storage.stream)
+            runtime.enqueue_update(ticket)
+            runtime.complete_execution(ticket)
+            runtime.accept_execution(ticket)
+        write()
+        runtime.forward()
+        np.testing.assert_array_equal(read('xfrc_applied'), force)
+        if mode == 'cuda_graph':
+            runtime.prepare_step_graph()
+            np.testing.assert_array_equal(read('xfrc_applied'), force)
+        def advance():
+            ticket = runtime.begin_execution()
+            runtime.enqueue_step(ticket, steps=4, execution_mode=mode)
+            runtime.complete_execution(ticket)
+            runtime.accept_execution(ticket)
+        advance()
+        duration = .008 if lifetime == 'persistent' else .002
+        velocity = read('qvel')
+        np.testing.assert_allclose(velocity[:, 0], duration, atol=1e-6, rtol=0)
+        np.testing.assert_allclose(velocity[:, 5], duration, atol=1e-6, rtol=0)
+        np.testing.assert_array_equal(read('xfrc_applied'), force if lifetime == 'persistent' else 0.)
+        write()
+        mask = np.arange(nworld) % 2 == 0
+        runtime.reset(mask)
+        reset_force = read('xfrc_applied')
+        np.testing.assert_array_equal(reset_force[mask], 0.)
+        np.testing.assert_array_equal(reset_force[~mask], force[~mask])
+        # A discarded command mutation cannot replace the accepted bank.
+        ticket = runtime.begin_execution()
+        storage.borrow('xfrc_applied', runtime.writable_bank, write=True).zero_(stream=storage.stream)
+        runtime.enqueue_update(ticket)
+        runtime.complete_execution(ticket)
+        runtime.discard_execution(ticket)
+        np.testing.assert_array_equal(read('xfrc_applied'), reset_force)
+        if mode == 'cuda_graph':
+            assert runtime.execution_costs()['step_graph_replays'] == 1
+
+
+def test_body_wrench_policy_rejected_before_dependency_loading():
+    with pytest.raises(ValueError, match='body_wrench_lifetime'):
+        PhySolveRuntime(None, payload=None, body_wrench_lifetime='unknown')
+
+
+@pytest.mark.cuda
+@pytest.mark.parametrize('mode,steps', [('direct', 1), ('cuda_graph', 4)])
+def test_one_substep_wrench_kept_until_solve_time_measurement(payload, mode, steps):
+    record = compile_mujoco_xml(FREE.replace('integrator="Euler"',
+        'integrator="Euler" gravity="0 0 0"'), require_asset=False)
+    with PhySolveRuntime(record, payload=payload, body_measurements=True,
+                        body_wrench_lifetime='one_substep') as runtime:
+        storage = runtime.storage_binding()
+        force = np.zeros((1, 2, 6), np.float32)
+        force[0, 1, 0] = 2.
+        if mode == 'cuda_graph':
+            runtime.prepare_step_graph()
+        ticket = runtime.begin_execution()
+        storage.borrow('xfrc_applied', runtime.writable_bank, write=True).assign(force, stream=storage.stream)
+        runtime.enqueue_step(ticket, steps=steps, execution_mode=mode)
+        runtime.complete_execution(ticket)
+        runtime.accept_execution(ticket)
+        def read(field):
+            return storage.borrow(field, runtime.active_bank).numpy(stream=storage.stream)
+        np.testing.assert_array_equal(read('xfrc_applied'), 0.)
+        np.testing.assert_allclose(read('measured_body_specific_acceleration')[0, 1],
+                                   [1 if steps == 1 else 0, 0, 0], atol=1e-6, rtol=0)
+        # Free body has no parent reaction. Clearing xfrc before RNE would report F as reaction.
+        np.testing.assert_allclose(read('measured_body_internal_wrench')[0, 1], 0., atol=1e-6, rtol=0)
+
+
+@pytest.mark.cuda
 def test_contact_reference_nonfinite_rejects_and_discards(payload, monkeypatch):
     import tyx as tx
 

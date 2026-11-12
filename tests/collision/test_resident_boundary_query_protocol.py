@@ -710,7 +710,13 @@ def test_allocation_failure_peak_is_actual_prefix_and_retry(stage, tyx_mode, tmp
                 m1.query(batch, plan, record, 0.5)
             assert failed and len(failed) == 1
             assert_rejected(plan, batch, old, before)
-            assert max(live_prefix) <= plan.stats()["prepass_required_bytes"]
+            if stage == "prepass":
+                assert max(live_prefix) == plan.stats()["persistent_bytes"] + 48 * len(model.shapes)
+            else:
+                # The selected int32[P,2] owner map precedes the geometry allocation
+                # where this fault fires. Count that real prefix, not just prepass.
+                selected_bytes = failed[0][0][0] * 2 * np.dtype(np.int32).itemsize
+                assert max(live_prefix) == plan.stats()["prepass_required_bytes"] + selected_bytes
             assert all(
                 not x.endswith("/narrow") for x in plan.last_attempt.counters["launch_labels"]
             )

@@ -242,3 +242,50 @@ actual backends, complete saved-evidence review and the new installed package ar
 pending. No learning, performance, Newton speed comparison, physical contact
 response, deformable–deformable collision, bending or CCD acceptance follows
 from this author handoff.
+
+## 7. Pre-validation interpretation correction: conservative capsule status
+
+The parent's first interpretation run reached the original square-patch capsule
+rows and returned `CONDITIONING`, with the two initial sphere rows resolved.
+The declared capsule axis `(.375,.375,.25) → (.625,.625,.25)` is parallel to the
+square's shared diagonal. The unchanged finite-distance kernel only recognizes
+the small edge-axis cross branch as structurally parallel when its products are
+individually zero. This diagonal has nonzero products which cancel, so the
+existing conservative status is intentional. The selected candidate can still
+have the correct distance; that does not turn the row into a resolved certificate.
+The original failed run remains evidence and is not rewritten as a pass.
+
+The parent authorized a narrow change to this report and the new D2 query test
+only. No fixture, coordinate, trajectory, threshold, original reference helper,
+producer or collision kernel changes. The local D2 assertion now requires:
+
+- all original three-point-patch sphere/capsule rows remain `RESOLVED`;
+- square-patch sphere rows remain `RESOLVED`;
+- only the fixed square-patch capsule family may return `CONDITIONING` or
+  `RESOLVED`; at initial tick zero its two shared-diagonal rows must explicitly
+  be `CONDITIONING`;
+- `DEGENERATE`, absent selected candidates and missing candidate groups remain
+  failures for these fixed nondegenerate cases.
+
+Every row, including `CONDITIONING`, still evaluates the independent low-level
+reference oracle from accepted source geometry. Its original `1e-4 L` distance
+and gap gates, `2e-4 L` witness gates, `8u` barycentric gate and complete finite
+candidate ledger are retained. Each emitted candidate is independently checked
+against its actual triangle/axis material address; the selected witness must be
+finite and selected from the complete emitted minimum. Unresolved rows must
+publish no normal, a zero raw normal vector and `normal_defined=0`. The prior
+reference helper's unresolved early return is not used. Oracle inputs and exact
+reference distance/witness records are saved before assertions.
+
+Expected surface/round group membership and the entire same-world pair list are
+now independently constructed from the model declarations, ownership, masks and
+explicit exclusions. Output groups cannot define the oracle's case set. Filtered
+empty groups, same-family exclusions, finite far pairs and all candidate row
+indices are checked against that declared coverage.
+
+This is an author-only test correction, not an execution result. The 12-step,
+permutation, restoration and filtering cases remain intact. A successful future
+run can qualify correct source and conservative-result propagation; it cannot
+claim that every square-patch capsule row is resolved or suitable for generating
+contact force. The parent owns the corresponding installed-consumer adjustment
+and all subsequent serial verification.

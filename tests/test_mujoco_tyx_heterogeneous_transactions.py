@@ -1,12 +1,10 @@
 """Whole heterogeneous publication, boundary restore and late-failure tests."""
 
-from dataclasses import replace
-
 import numpy as np
 import pytest
 from test_mujoco_tyx_heterogeneous import (
     H, MODES, ORDER, MuJoCoControl, MuJoCoTyxHeterogeneousBatch,
-    MuJoCoTyxModelSpec, MuJoCoTyxWorldSpec, ball, declarations, packets, scalar,
+    ball, declarations, packets, scalar,
 )
 
 from phymeo.backends.mujoco_heterogeneous_checkpoint import MuJoCoTyxHeterogeneousCheckpoint
@@ -16,6 +14,20 @@ from phymeo.training.resident_stepper import PhysicsStepFailure
 def make(mode):
     mj, xml, models, specs, worlds = declarations()
     return models, MuJoCoTyxHeterogeneousBatch(specs, worlds, mode=mode)
+
+
+def checkpoint_rows(batch):
+    capsule = batch.checkpoint()
+    leaves, _ = capsule._read(batch._binding)
+    result = {}
+    for leaf in leaves:
+        raw = leaf._read(leaf.binding)
+        for index, world in enumerate(raw["worlds"]):
+            result[world["key"]] = dict(
+                world=world,
+                banks={name: raw[name][index] for name in ("q", "v", "clock", "act") if name in raw},
+            )
+    return result
 
 
 def step(batch, models, tick=0):
@@ -44,10 +56,12 @@ def test_checkpoint_bytes_restore_and_partial_original_reset(mode, tmp_path):
         history["repeated"] = repeated
         ball.exact(successor, repeated, "checkpoint exact actual successor")
         before = batch.integration_snapshot()
+        before_raw = checkpoint_rows(batch)
         old_owners = tuple(batch._buckets)
         result = batch.reset((41, 7))
         after = batch.integration_snapshot()
-        history.update(before_reset=before, after_reset=after, reset=result)
+        after_raw = checkpoint_rows(batch)
+        history.update(before_reset=before, after_reset=after, before_raw=before_raw, after_raw=after_raw, reset=result)
         assert batch._buckets[2] is old_owners[2]
         for key in ORDER:
             if key in (41, 7):
@@ -56,6 +70,7 @@ def test_checkpoint_bytes_restore_and_partial_original_reset(mode, tmp_path):
                     ball.exact(getattr(after[key], name), getattr(start[key], name), name)
             else:
                 ball.exact(after[key], before[key], "unselected full accepted record")
+                ball.exact(after_raw[key], before_raw[key], "unselected exact raw clock/CPU mirror/receipt/initial")
         history["after_reset_successor"] = step(batch, models, 2)
         assert history["after_reset_successor"][41].tick == 1
         assert history["after_reset_successor"][11].tick == before[11].tick + 1
@@ -232,4 +247,59 @@ def test_postpublication_cleanup_failure_keeps_owner_and_accepted_reset(mode, mo
         batch.close()
         assert len(calls) == 2
     finally:
+        batch.close()
+
+
+@pytest.mark.parametrize("close_fails", (False, True))
+def test_counter_observation_failure_never_skips_owner_close(close_fails, monkeypatch):
+    batch = object.__new__(MuJoCoTyxHeterogeneousBatch)
+    batch._retired, batch._cleanup_errors, batch._counter_errors = [], (), ()
+    calls = []
+
+    class Owner:
+        def close(self):
+            calls.append("close")
+            if close_fails:
+                raise RuntimeError("original close fault")
+
+    owner = Owner()
+
+    def bad_counter(value):
+        assert value is owner
+        raise RuntimeError("counter fault")
+
+    monkeypatch.setattr(batch, "_observe_owner", bad_counter)
+    failures = batch._close_owners((owner,))
+    assert calls == ["close"]
+    assert len(failures) == (2 if close_fails else 1)
+    assert str(failures[0]) == "counter fault"
+    assert (owner in batch._retired) == close_fails
+    if close_fails:
+        assert str(failures[1]) == "original close fault"
+
+
+@pytest.mark.parametrize("mode", MODES)
+def test_postcommit_counter_failure_does_not_refuse_accepted_control(mode, monkeypatch):
+    models, batch = make(mode)
+    try:
+        original = batch._observe_owner
+        revision = batch.checkpoint_revision
+        commands = packets(models, 1)
+
+        def bad_counter(owner):
+            raise RuntimeError("postcommit counter fault")
+
+        monkeypatch.setattr(batch, "_observe_owner", bad_counter)
+        batch.set_controls(commands)
+        assert batch.checkpoint_revision == revision + 1
+        assert len(batch._counter_errors) == len(batch._buckets)
+        monkeypatch.setattr(batch, "_observe_owner", original)
+        current = batch.integration_snapshot()
+        for key in ORDER:
+            ball.exact(current[key].held_control, commands[key], "accepted held control")
+        batch.step(H)
+        assert batch.counters["control_submissions"] == 1
+        assert batch.counters["completed_steps"] == 1
+    finally:
+        monkeypatch.undo()
         batch.close()

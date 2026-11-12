@@ -15,15 +15,15 @@ import numpy as np
 import pytest
 
 import phymeo as ph
-from phymeo.backends import _resident_batch_transaction as transaction
-from phymeo.backends import resident_scene
-from phymeo.builders._robot_asset import LinkCollision, RobotAsset
-from phymeo.builders.floating_urdf import FloatingRobotAsset
-from phymeo.builders.participant_scene_compiler import (
+from phymeo import (
     ParticipantArticulation,
     ParticipantSceneDeclaration,
     compile_participant_scene,
 )
+from phymeo.backends import _resident_batch_transaction as transaction
+from phymeo.backends import resident_scene
+from phymeo.builders._robot_asset import LinkCollision, RobotAsset
+from phymeo.builders.floating_urdf import FloatingRobotAsset
 from phymeo.builders.scene_compiler import ArticulationWorld, FiniteStaticShape, SceneDeclaration
 from phymeo.dynamics.floating_mimic import FloatingMimicRobotAsset
 from phymeo.dynamics.joint_mimic import MimicRobotAsset
@@ -61,15 +61,29 @@ def scenario(case):
         specs = {}
         for pid, side, mass in ((7, -1, 2), (29, 1, 1)):
             s = ref.spec(
-                "floating", ref.model([], [], [], [], [], []),
+                "floating",
+                ref.model([], [], [], [], [], []),
                 [side * 7 / 64, 0, 0, 0, 0, 0, 1],
-                [-side / 64, 0, 0, 0, 0, 0], root_mass=mass,
+                [-side / 64, 0, 0, 0, 0, 0],
+                root_mass=mass,
             )
             s["shapes"] = [dict(body=0, kind="sphere", center=np.zeros(3), radius=1 / 8)]
             specs[pid] = s
-        return dict(name=case, specs=specs, pairs=((7, 0, 29, 0),), stiffness=64.,
-                    friction=0., slip_speed=1 / 16, steps=40, switch=None)
-    return ref.r02(1 / 4 if case.endswith("friction") else 0) if case.startswith("R02") else ref.r04(case)
+        return dict(
+            name=case,
+            specs=specs,
+            pairs=((7, 0, 29, 0),),
+            stiffness=64.0,
+            friction=0.0,
+            slip_speed=1 / 16,
+            steps=40,
+            switch=None,
+        )
+    return (
+        ref.r02(1 / 4 if case.endswith("friction") else 0)
+        if case.startswith("R02")
+        else ref.r04(case)
+    )
 
 
 def asset_from_spec(s):
@@ -80,38 +94,67 @@ def asset_from_spec(s):
     if floating:
         model = ph.FloatingRobotModel(
             ph.RigidBodyModel(np.array([1 / s["root_mass"]]), s["root_inertia"][None], np.zeros(3)),
-            s["root_com"], model,
+            s["root_com"],
+            model,
         )
     colliders = []
     for si, row in enumerate(s["shapes"]):
         group = row["body"]
         link = group - int(floating)
-        local = (row["center"][None] if row["kind"] == "sphere" else
-                 np.array(list(product((-1, 1), repeat=3))) * row["half"] + row["center"])
-        shape = ph.CollisionShape(ph.CollisionKey(0, 42 + si, 71 + si), row["kind"],
-                                  tuple(range(31, 31 + len(local))), row.get("radius", 0.), revision=1)
-        colliders.append(LinkCollision(
-            f"original-{si}", "base" if link < 0 else f"link{link}", link,
-            (0., 0., 0.), (0., 0., 0., 1.), shape,
-            tuple(tuple(float(x) for x in p) for p in local), True,
-        ))
+        local = (
+            row["center"][None]
+            if row["kind"] == "sphere"
+            else np.array(list(product((-1, 1), repeat=3))) * row["half"] + row["center"]
+        )
+        shape = ph.CollisionShape(
+            ph.CollisionKey(0, 42 + si, 71 + si),
+            row["kind"],
+            tuple(range(31, 31 + len(local))),
+            row.get("radius", 0.0),
+            revision=1,
+        )
+        colliders.append(
+            LinkCollision(
+                f"original-{si}",
+                "base" if link < 0 else f"link{link}",
+                link,
+                (0.0, 0.0, 0.0),
+                (0.0, 0.0, 0.0, 1.0),
+                shape,
+                tuple(tuple(float(x) for x in p) for p in local),
+                True,
+            )
+        )
     cls = FloatingRobotAsset if floating else RobotAsset
-    asset = cls("assembly-" + s["family"], "base", model,
-                tuple(f"link{i}" for i in range(n)), tuple(f"joint{i}" for i in range(n)),
-                (-2.,) * n, (2.,) * n, (64.,) * n, (10.,) * n,
-                tuple(colliders), ph.CollisionModel(tuple(c.shape for c in colliders)))
+    asset = cls(
+        "assembly-" + s["family"],
+        "base",
+        model,
+        tuple(f"link{i}" for i in range(n)),
+        tuple(f"joint{i}" for i in range(n)),
+        (-2.0,) * n,
+        (2.0,) * n,
+        (64.0,) * n,
+        (10.0,) * n,
+        tuple(colliders),
+        ph.CollisionModel(tuple(c.shape for c in colliders)),
+    )
     if s["family"] == "affine":
-        asset = MimicRobotAsset(asset, "joint0", "joint1", -1., 0.)
+        asset = MimicRobotAsset(asset, "joint0", "joint1", -1.0, 0.0)
     elif s["family"] == "floating_affine":
-        asset = FloatingMimicRobotAsset(asset, (("joint0", "joint1", -1., 0.),))
+        asset = FloatingMimicRobotAsset(asset, (("joint0", "joint1", -1.0, 0.0),))
     return asset
 
 
 def high_control(s, drive=None):
     drive = s["drive"] if drive is None else drive
-    joint = ph.RobotCommand(drive[:, 0], drive[:, 1], feedforward=drive[:, 2]) if len(drive) else None
+    joint = (
+        ph.RobotCommand(drive[:, 0], drive[:, 1], feedforward=drive[:, 2]) if len(drive) else None
+    )
     if s["family"].startswith("floating"):
-        return ph.FloatingRobotCommand(joint, ph.FloatingRobotInputs(s["effort"], s["force"], s["torque"]))
+        return ph.FloatingRobotCommand(
+            joint, ph.FloatingRobotInputs(s["effort"], s["force"], s["torque"])
+        )
     assert not np.any(s["force"]) and not np.any(s["torque"]) and not np.any(s["effort"])
     return joint
 
@@ -130,15 +173,28 @@ def assembly(case="R02", *, worlds=WORLDS, reverse=False):
                 mapping[collider.shape.key] = target
                 keys[world, pid, si] = target
             key = ph.ResidentParticipantKey(world, pid)
-            state_cls = ph.FloatingRobotState if s["family"].startswith("floating") else ph.RobotState
+            state_cls = (
+                ph.FloatingRobotState if s["family"].startswith("floating") else ph.RobotState
+            )
             controls[key] = high_control(s)
-            rows.append(ParticipantArticulation(
-                key, asset, state_cls(s["q"], s["v"]), kp=s["kp"], kd=s["kd"],
-                effort_limit=s["caps"], body_ids=body_ids, collider_keys=mapping,
-                initial_control=controls[key],
-            ))
-    wanted = {tuple(sorted((keys[w, a, ai], keys[w, b, bi]))) for w in worlds
-              for a, ai, b, bi in data["pairs"]}
+            rows.append(
+                ParticipantArticulation(
+                    key,
+                    asset,
+                    state_cls(s["q"], s["v"]),
+                    kp=s["kp"],
+                    kd=s["kd"],
+                    effort_limit=s["caps"],
+                    body_ids=body_ids,
+                    collider_keys=mapping,
+                    initial_control=controls[key],
+                )
+            )
+    wanted = {
+        tuple(sorted((keys[w, a, ai], keys[w, b, bi])))
+        for w in worlds
+        for a, ai, b, bi in data["pairs"]
+    }
     materials = {}
     for left, right in combinations(rows, 2):
         if left.key.world != right.key.world:
@@ -146,19 +202,31 @@ def assembly(case="R02", *, worlds=WORLDS, reverse=False):
         for a in left.collider_keys.values():
             for b in right.collider_keys.values():
                 pair = tuple(sorted((a, b)))
-                materials[pair] = (ph.RobotContactMaterial(data["stiffness"], 0, data["friction"], data["slip_speed"])
-                                   if pair in wanted else None)
+                materials[pair] = (
+                    ph.RobotContactMaterial(
+                        data["stiffness"], 0, data["friction"], data["slip_speed"]
+                    )
+                    if pair in wanted
+                    else None
+                )
     if reverse:
         rows.reverse()
         materials = dict(reversed(tuple(materials.items())))
-    declaration = ParticipantSceneDeclaration(tuple(rows), materials_by_pair=materials,
-                                             candidate_capacity=len(wanted), site_capacity=128)
+    declaration = ParticipantSceneDeclaration(
+        tuple(rows), materials_by_pair=materials, candidate_capacity=len(wanted), site_capacity=128
+    )
     return declaration, data, dict(keys=keys, worlds=tuple(sorted(worlds))), controls
 
 
 def capture(scene):
-    return dict(states=scene.snapshot(), receipts=scene.last_accepted, status=scene.last_status,
-                epoch=scene.state_epoch, bank=scene.stats()["current_buffer"], stats=scene.stats())
+    return dict(
+        states=scene.snapshot(),
+        receipts=scene.last_accepted,
+        status=scene.last_status,
+        epoch=scene.state_epoch,
+        bank=scene.stats()["current_buffer"],
+        stats=scene.stats(),
+    )
 
 
 def retained(scene, previous):
@@ -174,18 +242,48 @@ def audited_step(scene, data, built, history):
     before = scene.snapshot()
     assert scene.step(H) == dict.fromkeys(built["worlds"], True)
     after = scene.snapshot()
-    checks = {w: ref.audit_receipt(data, built, w, before[w], after[w], scene.last_accepted[w],
-                                   ref.drives(data, before[w].tick)) for w in built["worlds"]}
-    history.append(dict(entry=before, accepted=after, receipts=scene.last_accepted,
-                        status=scene.last_status, independent=checks, epoch=scene.state_epoch,
-                        controls={k: p.control for w in after.values() for k, p in w.participants.items()}))
+    checks = {
+        w: ref.audit_receipt(
+            data,
+            built,
+            w,
+            before[w],
+            after[w],
+            scene.last_accepted[w],
+            ref.drives(data, before[w].tick),
+        )
+        for w in built["worlds"]
+    }
+    history.append(
+        dict(
+            entry=before,
+            accepted=after,
+            receipts=scene.last_accepted,
+            status=scene.last_status,
+            independent=checks,
+            epoch=scene.state_epoch,
+            controls={k: p.control for w in after.values() for k, p in w.participants.items()},
+        )
+    )
 
 
 def save_case(path, declaration, data, built, history, scene, failure):
     base, _ = references()
-    base.save(path, "participant-assembly", dict(declaration=declaration, inputs=data, identities=built,
-                                               source_map=scene.source_map, identity=scene.identity,
-                                               history=history, final=capture(scene), failure=failure))
+    base.save(
+        path,
+        "participant-assembly",
+        dict(
+            declaration=declaration,
+            inputs=data,
+            identities=built,
+            source_map=scene.source_map,
+            identity=scene.identity,
+            history=history,
+            final=capture(scene),
+            failure=failure,
+        ),
+    )
+
 
 @pytest.mark.tyx
 @pytest.mark.parametrize("case", CASES)
@@ -197,19 +295,28 @@ def test_original_multicase_asset_lowering_complete_windows(case, tyx_mode, tmp_
     with compile_participant_scene(declaration, mode=tyx_mode, cache_root=tmp_path) as scene:
         try:
             assert scene.world_keys == built["worlds"]
-            assert scene.participant_keys == tuple(row.key for row in sorted(declaration.articulations, key=lambda r: r.key))
+            assert scene.participant_keys == tuple(
+                row.key for row in sorted(declaration.articulations, key=lambda r: r.key)
+            )
             for row in declaration.articulations:
                 assert scene.source_map[row.key] == row.collider_keys
-                assert scene.layout.entries[row.key].family == data["specs"][row.key.participant]["family"]
+                assert (
+                    scene.layout.entries[row.key].family
+                    == data["specs"][row.key.participant]["family"]
+                )
             for tick in range(data["steps"]):
                 terms, wrench, sites = ref.independent_contacts(data, oracle)
                 selected = ref.drives(data, tick)
-                expected = {pid: ref.advance_one(s, *oracle[pid], terms[pid], wrench[pid], selected[pid])[0]
-                            for pid, s in data["specs"].items()}
+                expected = {
+                    pid: ref.advance_one(s, *oracle[pid], terms[pid], wrench[pid], selected[pid])[0]
+                    for pid, s in data["specs"].items()
+                }
                 audited_step(scene, data, built, history)
                 for world in scene.world_keys:
                     for pid, (q, v) in expected.items():
-                        actual = scene.snapshot()[world].participants[ph.ResidentParticipantKey(world, pid)]
+                        actual = scene.snapshot()[world].participants[
+                            ph.ResidentParticipantKey(world, pid)
+                        ]
                         ref.close(actual.position, q, atol=2e-4)
                         ref.close(actual.velocity, v, atol=2e-4)
                 history[-1]["continuous_oracle"] = dict(states=expected, sites=sites)
@@ -226,8 +333,12 @@ def test_world_and_registration_permutation_keeps_sources_and_motion(tyx_mode, t
     first, data, built, _ = assembly("floating_affine")
     second, _, _, _ = assembly("floating_affine", worlds=WORLDS[::-1], reverse=True)
     with ExitStack() as stack:
-        a = stack.enter_context(compile_participant_scene(first, mode=tyx_mode, cache_root=tmp_path / "a"))
-        b = stack.enter_context(compile_participant_scene(second, mode=tyx_mode, cache_root=tmp_path / "b"))
+        a = stack.enter_context(
+            compile_participant_scene(first, mode=tyx_mode, cache_root=tmp_path / "a")
+        )
+        b = stack.enter_context(
+            compile_participant_scene(second, mode=tyx_mode, cache_root=tmp_path / "b")
+        )
         assert a.identity == b.identity
         assert a.source_map == b.source_map
         history = []
@@ -237,9 +348,20 @@ def test_world_and_registration_permutation_keeps_sources_and_motion(tyx_mode, t
             for w in a.world_keys:
                 assert a.snapshot()[w].participants == b.snapshot()[w].participants
                 for key in a.last_accepted[w].participants:
-                    left, right = a.last_accepted[w].participants[key], b.last_accepted[w].participants[key]
-                    for field in ("entry_mass", "entry_bias", "entry_linear", "entry_angular", "input_external",
-                                  "law_wrench_fp64", "uploaded_wrench_fp32", "contact_generalized"):
+                    left, right = (
+                        a.last_accepted[w].participants[key],
+                        b.last_accepted[w].participants[key],
+                    )
+                    for field in (
+                        "entry_mass",
+                        "entry_bias",
+                        "entry_linear",
+                        "entry_angular",
+                        "input_external",
+                        "law_wrench_fp64",
+                        "uploaded_wrench_fp32",
+                        "contact_generalized",
+                    ):
                         np.testing.assert_array_equal(getattr(left, field), getattr(right, field))
             history[-1]["permuted"] = capture(b)
         save_case(tmp_path, first, data, built, history, a, None)
@@ -275,12 +397,16 @@ def test_checkpoint_replay_selected_reset_and_real_successor(tyx_mode, tmp_path)
 
 
 @pytest.mark.tyx
-@pytest.mark.parametrize("fault", ("missing_participant", "wrong_world", "stale_epoch", "foreign_owner"))
+@pytest.mark.parametrize(
+    "fault", ("missing_participant", "wrong_world", "stale_epoch", "foreign_owner")
+)
 def test_restore_identity_rejects_before_publication(fault, tyx_mode, tmp_path):
     declaration, data, built, _ = assembly("floating_affine")
     history = []
     with ExitStack() as stack:
-        scene = stack.enter_context(compile_participant_scene(declaration, mode=tyx_mode, cache_root=tmp_path / "a"))
+        scene = stack.enter_context(
+            compile_participant_scene(declaration, mode=tyx_mode, cache_root=tmp_path / "a")
+        )
         audited_step(scene, data, built, history)
         previous = capture(scene)
         world = scene.world_keys[-1]
@@ -294,7 +420,9 @@ def test_restore_identity_rejects_before_publication(fault, tyx_mode, tmp_path):
         elif fault == "stale_epoch":
             epoch -= 1
         else:
-            other = stack.enter_context(compile_participant_scene(declaration, mode=tyx_mode, cache_root=tmp_path / "b"))
+            other = stack.enter_context(
+                compile_participant_scene(declaration, mode=tyx_mode, cache_root=tmp_path / "b")
+            )
             point = other.snapshot()[world]
         with pytest.raises((ValueError, RuntimeError)):
             scene.restore({world: point}, expected_epoch=epoch)
@@ -306,7 +434,9 @@ def test_restore_identity_rejects_before_publication(fault, tyx_mode, tmp_path):
 
 @pytest.mark.tyx
 @pytest.mark.parametrize("fault", ("publication", "restore", "participant"))
-def test_actual_late_failure_preserves_complete_world_and_retries(fault, tyx_mode, tmp_path, monkeypatch):
+def test_actual_late_failure_preserves_complete_world_and_retries(
+    fault, tyx_mode, tmp_path, monkeypatch
+):
     declaration, data, built, _ = assembly("floating_affine")
     history, reached = [], []
     with compile_participant_scene(declaration, mode=tyx_mode, cache_root=tmp_path) as scene:
@@ -319,26 +449,32 @@ def test_actual_late_failure_preserves_complete_world_and_retries(fault, tyx_mod
         with monkeypatch.context() as patch:
             if fault == "publication":
                 original = transaction.ResidentBatchTransaction._prepare_publication
+
                 def fail(service, *args):
                     candidate = original(service, *args)
                     assert set(candidate.receipts) == set(scene.world_keys)
                     reached.append(candidate)
                     raise RuntimeError("after complete assembly receipt")
+
                 patch.setattr(transaction.ResidentBatchTransaction, "_prepare_publication", fail)
                 with pytest.raises(RuntimeError, match="complete assembly"):
                     scene.step(H)
             elif fault == "restore":
+
                 def fail(service):
                     reached.append(service.state_epoch)
                     raise RuntimeError("after actual restore preparation")
+
                 patch.setattr(transaction.ResidentBatchTransaction, "_before_restore_commit", fail)
                 with pytest.raises(RuntimeError, match="restore preparation"):
                     scene.restore(checkpoint, expected_epoch=scene.state_epoch)
             else:
+
                 def fail(service, attempt):
                     assert set(attempt["rows"]) == set(scene.participant_keys)
                     reached.append(tuple(attempt["rows"]))
                     return {target: 6}
+
                 patch.setattr(transaction.ResidentBatchTransaction, "_before_finalize", fail)
                 assert scene.step(H) == {w: w != target_world for w in scene.world_keys}
         assert len(reached) == 1
@@ -346,10 +482,14 @@ def test_actual_late_failure_preserves_complete_world_and_retries(fault, tyx_mod
             assert scene.snapshot()[target_world] == previous["states"][target_world]
             assert scene.last_accepted[target_world] is previous["receipts"][target_world]
             for w in scene.world_keys:
-                assert scene.snapshot()[w].tick == previous["states"][w].tick + int(w != target_world)
+                assert scene.snapshot()[w].tick == previous["states"][w].tick + int(
+                    w != target_world
+                )
         else:
             retained(scene, previous)
-        history.append(dict(fault=fault, reached=reached, previous=previous, observed=capture(scene)))
+        history.append(
+            dict(fault=fault, reached=reached, previous=previous, observed=capture(scene))
+        )
         audited_step(scene, data, built, history)
         save_case(tmp_path, declaration, data, built, history, scene, None)
 
@@ -365,7 +505,7 @@ def test_late_invalid_control_cannot_partly_commit(tyx_mode, tmp_path):
         invalid = ph.ResidentParticipantKey(scene.world_keys[-1], 7)
         changed = dict(controls)
         changed[valid] = ph.RobotCommand(np.array([1 / 8, 1 / 16]))
-        changed[invalid] = ph.RobotCommand(np.array([3., 0.]))
+        changed[invalid] = ph.RobotCommand(np.array([3.0, 0.0]))
         with pytest.raises(ValueError, match="limit"):
             scene.set_controls(changed)
         retained(scene, previous)
@@ -398,6 +538,7 @@ def test_bad_asset_installation_rejected_before_runtime(fault, monkeypatch):
     row = declaration.articulations[0]
     called = []
     monkeypatch.setattr(resident_scene, "ResidentSceneBatch", lambda *a, **kw: called.append(True))
+
     def attempt():
         mapping = dict(row.collider_keys)
         source = next(iter(mapping))
@@ -416,19 +557,37 @@ def test_bad_asset_installation_rejected_before_runtime(fault, monkeypatch):
         else:
             asset = replace(row.asset, collision_model=ph.CollisionModel(()))
             row2 = replace(row, asset=asset)
-            return compile_participant_scene(replace(declaration, articulations=(row2, *declaration.articulations[1:])))
+            return compile_participant_scene(
+                replace(declaration, articulations=(row2, *declaration.articulations[1:]))
+            )
         row2 = replace(row, collider_keys=mapping)
-        return compile_participant_scene(replace(declaration, articulations=(row2, *declaration.articulations[1:])))
+        return compile_participant_scene(
+            replace(declaration, articulations=(row2, *declaration.articulations[1:]))
+        )
+
     with pytest.raises((ValueError, TypeError)):
         attempt()
     assert not called
 
 
-@pytest.mark.parametrize("fault", ("missing", "foreign", "reverse", "static_default", "static_alias", "schema", "body_alias", "capacity"))
+@pytest.mark.parametrize(
+    "fault",
+    (
+        "missing",
+        "foreign",
+        "reverse",
+        "static_default",
+        "static_alias",
+        "schema",
+        "body_alias",
+        "capacity",
+    ),
+)
 def test_incomplete_scene_is_not_silently_repaired(fault, monkeypatch):
     declaration, _, _, _ = assembly("R02", worlds=(91,))
     called = []
     monkeypatch.setattr(resident_scene, "ResidentSceneBatch", lambda *a, **kw: called.append(True))
+
     def attempt():
         if fault in ("missing", "foreign", "reverse"):
             materials = dict(declaration.materials_by_pair)
@@ -441,10 +600,14 @@ def test_incomplete_scene_is_not_silently_repaired(fault, monkeypatch):
                 materials = {pair[::-1]: law}
             bad = replace(declaration, materials_by_pair=materials)
         elif fault == "static_default":
-            static = FiniteStaticShape.sphere(91, 990, (10, 0, 0), 1 / 8, material=ph.RobotContactMaterial(64, 0, 0))
+            static = FiniteStaticShape.sphere(
+                91, 990, (10, 0, 0), 1 / 8, material=ph.RobotContactMaterial(64, 0, 0)
+            )
             bad = replace(declaration, static_shapes=(static,), static_body_ids=((91, 990),))
         elif fault == "static_alias":
-            bad = replace(declaration, static_body_ids=((91, declaration.articulations[0].body_ids[0]),))
+            bad = replace(
+                declaration, static_body_ids=((91, declaration.articulations[0].body_ids[0]),)
+            )
         elif fault == "schema":
             bad = replace(declaration, schema="old-default")
         elif fault == "body_alias":
@@ -453,6 +616,7 @@ def test_incomplete_scene_is_not_silently_repaired(fault, monkeypatch):
         else:
             bad = replace(declaration, candidate_capacity=0)
         return compile_participant_scene(bad)
+
     with pytest.raises((ValueError, TypeError)):
         attempt()
     assert not called
@@ -469,32 +633,65 @@ def test_explicit_none_pair_and_empty_geometry_are_real_no_contact(tyx_mode, tmp
         rows.append(replace(row, asset=source, collider_keys={}))
     empty = ParticipantSceneDeclaration(tuple(rows), candidate_capacity=0)
     with ExitStack() as stack:
-        a = stack.enter_context(compile_participant_scene(excluded, mode=tyx_mode, cache_root=tmp_path / "excluded"))
-        b = stack.enter_context(compile_participant_scene(empty, mode=tyx_mode, cache_root=tmp_path / "empty"))
+        a = stack.enter_context(
+            compile_participant_scene(excluded, mode=tyx_mode, cache_root=tmp_path / "excluded")
+        )
+        b = stack.enter_context(
+            compile_participant_scene(empty, mode=tyx_mode, cache_root=tmp_path / "empty")
+        )
         before = a.snapshot()
         assert a.step(H) == b.step(H) == {91: True}
         assert a.snapshot()[91].participants == b.snapshot()[91].participants
         assert not a.last_accepted[91].sites and not b.last_accepted[91].sites
         for key, point in before[91].participants.items():
             after = a.snapshot()[91].participants[key]
-            np.testing.assert_allclose(after.position[:3], np.asarray(point.position[:3]) + H * np.asarray(point.velocity[:3]), atol=2e-7)
+            np.testing.assert_allclose(
+                after.position[:3],
+                np.asarray(point.position[:3]) + H * np.asarray(point.velocity[:3]),
+                atol=2e-7,
+            )
             np.testing.assert_array_equal(after.velocity, point.velocity)
-        references()[0].save(tmp_path, "explicit-no-contact", dict(excluded=excluded, empty=empty,
-                                  before=before, a=capture(a), b=capture(b), inputs=data, identities=built))
+        references()[0].save(
+            tmp_path,
+            "explicit-no-contact",
+            dict(
+                excluded=excluded,
+                empty=empty,
+                before=before,
+                a=capture(a),
+                b=capture(b),
+                inputs=data,
+                identities=built,
+            ),
+        )
 
 
 @pytest.mark.tyx
 def test_local_urdf_root_static_installation_and_old_declaration_unchanged(tyx_mode, tmp_path):
     path = tmp_path / "asset.urdf"
-    path.write_text('''<robot name="assembly_source"><link name="base"><collision name="root_marker"><origin xyz="10 0 0"/><geometry><sphere radius=".125"/></geometry></collision></link><link name="slider"><inertial><mass value="2"/><inertia ixx=".125" iyy=".125" izz=".125" ixy="0" ixz="0" iyz="0"/></inertial><collision name="moving_tip"><geometry><sphere radius=".125"/></geometry></collision></link><joint name="slide" type="prismatic"><parent link="base"/><child link="slider"/><axis xyz="1 0 0"/><limit lower="-2" upper="2" effort="64" velocity="10"/></joint></robot>''', encoding="utf-8")
+    path.write_text(
+        """<robot name="assembly_source"><link name="base"><collision name="root_marker"><origin xyz="10 0 0"/><geometry><sphere radius=".125"/></geometry></collision></link><link name="slider"><inertial><mass value="2"/><inertia ixx=".125" iyy=".125" izz=".125" ixy="0" ixz="0" iyz="0"/></inertial><collision name="moving_tip"><geometry><sphere radius=".125"/></geometry></collision></link><joint name="slide" type="prismatic"><parent link="base"/><child link="slider"/><axis xyz="1 0 0"/><limit lower="-2" upper="2" effort="64" velocity="10"/></joint></robot>""",
+        encoding="utf-8",
+    )
     asset = ph.load_urdf(path, gravity=(0, 0, 0))
-    mapping = {c.shape.key: ph.CollisionKey(91, 990 if c.link_index < 0 else 700, 20 + i)
-               for i, c in enumerate(asset.collisions)}
-    row = ParticipantArticulation(ph.ResidentParticipantKey(91, 7), asset,
-            ph.RobotState(np.array([1 / 16]), np.array([1 / 64])), kp=np.zeros(1), kd=np.zeros(1),
-            effort_limit=np.array([64.]), body_ids=(700,), collider_keys=mapping)
+    mapping = {
+        c.shape.key: ph.CollisionKey(91, 990 if c.link_index < 0 else 700, 20 + i)
+        for i, c in enumerate(asset.collisions)
+    }
+    row = ParticipantArticulation(
+        ph.ResidentParticipantKey(91, 7),
+        asset,
+        ph.RobotState(np.array([1 / 16]), np.array([1 / 64])),
+        kp=np.zeros(1),
+        kd=np.zeros(1),
+        effort_limit=np.array([64.0]),
+        body_ids=(700,),
+        collider_keys=mapping,
+    )
     pair = tuple(sorted(mapping.values()))
-    declaration = ParticipantSceneDeclaration((row,), static_body_ids=((91, 990),), materials_by_pair={pair: None})
+    declaration = ParticipantSceneDeclaration(
+        (row,), static_body_ids=((91, 990),), materials_by_pair={pair: None}
+    )
     with compile_participant_scene(declaration, mode=tyx_mode, cache_root=tmp_path) as scene:
         assert scene.source_map[row.key] == mapping
         assert scene.layout.static_body_ids == ((91, 990),)
@@ -502,8 +699,14 @@ def test_local_urdf_root_static_installation_and_old_declaration_unchanged(tyx_m
             assert scene.step(H) == {91: True}
             point = scene.snapshot()[91].participants[row.key]
             np.testing.assert_allclose(point.position, [1 / 16 + (tick + 1) * H / 64], atol=2e-7)
-        references()[0].save(tmp_path, "urdf-source", dict(xml=path.read_text(), declaration=declaration, final=capture(scene)))
-    old = ArticulationWorld(91, asset, row.initial_state, kp=row.kp, kd=row.kd, effort_limit=row.effort_limit)
+        references()[0].save(
+            tmp_path,
+            "urdf-source",
+            dict(xml=path.read_text(), declaration=declaration, final=capture(scene)),
+        )
+    old = ArticulationWorld(
+        91, asset, row.initial_state, kp=row.kp, kd=row.kd, effort_limit=row.effort_limit
+    )
     assert SceneDeclaration((old,)).worlds[0].world == 91
     with pytest.raises(ValueError, match="duplicate"):
         SceneDeclaration((old, old))
@@ -512,14 +715,18 @@ def test_local_urdf_root_static_installation_and_old_declaration_unchanged(tyx_m
 def test_plan_construction_failure_closes_allocated_public_owner(monkeypatch):
     declaration, _, _, _ = assembly("R02", worlds=(91,))
     calls = []
+
     class Owner:
         def __init__(self, *args, **kwargs):
             calls.append("construct")
+
         def prepare_contacts(self, *args, **kwargs):
             calls.append("prepare")
             raise RuntimeError("deliberate late prepare")
+
         def close(self):
             calls.append("close")
+
     monkeypatch.setattr(resident_scene, "ResidentSceneBatch", Owner)
     with pytest.raises(RuntimeError, match="late prepare"):
         compile_participant_scene(declaration)
@@ -536,18 +743,27 @@ def test_material_cannot_override_original_source_restrictions(restriction, monk
         original = asset.collisions[0]
         altered = replace(original, shape=replace(original.shape, mask=0))
         colliders = (altered, *asset.collisions[1:])
-        asset = replace(asset, collisions=colliders,
-                        collision_model=ph.CollisionModel(tuple(c.shape for c in colliders)))
+        asset = replace(
+            asset,
+            collisions=colliders,
+            collision_model=ph.CollisionModel(tuple(c.shape for c in colliders)),
+        )
         intra = False
     else:
         pair = tuple(sorted(c.shape.key for c in asset.collisions))
-        asset = replace(asset, collision_model=ph.CollisionModel(asset.collision_model.shapes, (pair,)))
+        asset = replace(
+            asset, collision_model=ph.CollisionModel(asset.collision_model.shapes, (pair,))
+        )
         installed = tuple(sorted(row.collider_keys[k] for k in pair))
         materials[installed] = ph.RobotContactMaterial(64, 0, 0)
         intra = True
     changed = replace(row, asset=asset)
-    bad = replace(declaration, articulations=(changed, *declaration.articulations[1:]),
-                  materials_by_pair=materials, intra_participant_pairs=intra)
+    bad = replace(
+        declaration,
+        articulations=(changed, *declaration.articulations[1:]),
+        materials_by_pair=materials,
+        intra_participant_pairs=intra,
+    )
     called = []
     monkeypatch.setattr(resident_scene, "ResidentSceneBatch", lambda *a, **kw: called.append(True))
     with pytest.raises(ValueError, match="pairs"):
@@ -559,16 +775,20 @@ def test_constructor_preserves_primary_and_cleanup_failure(monkeypatch):
     declaration, _, _, _ = assembly("R01", worlds=(91,))
     calls, owners = [], []
     primary, cleanup = RuntimeError("primary assembly failure"), OSError("real cleanup failure")
+
     class Owner:
         def __init__(self, *args, **kwargs):
             calls.append("construct")
             owners.append(self)
             self.released = False
+
         def prepare_contacts(self, *args, **kwargs):
             raise primary
+
         def close(self):
             calls.append("close")
             raise cleanup  # fails before any actual release
+
     monkeypatch.setattr(resident_scene, "ResidentSceneBatch", Owner)
     with pytest.raises(BaseExceptionGroup) as captured:
         compile_participant_scene(declaration)

@@ -82,6 +82,12 @@ from .builders.floating_mimic_urdf import load_floating_mimic_urdf
 from .builders.floating_urdf import FloatingRobotAsset, load_floating_urdf
 from .builders.mimic_urdf import load_mimic_urdf
 from .builders.mjcf import load_mjcf
+from .builders.participant_scene_compiler import (
+    CompiledParticipantScene,
+    ParticipantArticulation,
+    ParticipantSceneDeclaration,
+    compile_participant_scene,
+)
 from .builders.robot import pendulum_chain
 from .builders.tetrahedral import tetrahedral_block
 from .builders.urdf import load_urdf
@@ -399,6 +405,10 @@ from .validation.terminal_impulse import TerminalImpulseLedger
 from .validation.thick_contact_mapping import ThickContactMappingLedger
 
 __all__ = [
+    "CompiledParticipantScene",
+    "ParticipantArticulation",
+    "ParticipantSceneDeclaration",
+    "compile_participant_scene",
     "MAX_PARTICIPANTS_PER_WORLD",
     "ResidentParticipant",
     "ResidentParticipantBinding",

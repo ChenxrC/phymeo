@@ -16,28 +16,39 @@ from types import MappingProxyType
 import numpy as np
 
 from ..backends import resident_scene
+from ..backends._resident_affine_binding import ResidentAffineTreeBinding
+from ..backends._resident_collision_plan import ResidentStaticBinding
+from ..backends._resident_floating_affine_binding import ResidentFloatingAffineTreeBinding
+from ..backends._resident_floating_binding import ResidentFloatingTreeBinding
+from ..backends._resident_tree_binding import ResidentTreeBinding
 from ..backends.resident_scene import (
-    ResidentParticipant, ResidentParticipantBinding, ResidentParticipantKey,
+    ResidentParticipant,
+    ResidentParticipantBinding,
+    ResidentParticipantKey,
     ResidentParticipantLayout,
 )
-from ..backends._resident_collision_plan import ResidentStaticBinding
-from ..backends._resident_tree_binding import ResidentTreeBinding
-from ..backends._resident_affine_binding import ResidentAffineTreeBinding
-from ..backends._resident_floating_binding import ResidentFloatingTreeBinding
-from ..backends._resident_floating_affine_binding import ResidentFloatingAffineTreeBinding
 from ..constraints.collision_shapes import CollisionKey, CollisionModel
 from ..constraints.robot_contact import RobotContactMaterial
 from ..dynamics.joint_mimic import MimicRobotAsset
 from ..runtime.robot_scene import _asset_snapshot
 from ._urdf_frames import FoldedURDFAsset
 from .scene_compiler import (
-    ArticulationWorld, FiniteStaticShape, _floating, _integer, _physical,
-    _validated_control, _world_spec,
+    ArticulationWorld,
+    FiniteStaticShape,
+    _floating,
+    _integer,
+    _physical,
+    _validated_control,
+    _world_spec,
 )
 
 _SCHEMA = "phymeo-participant-scene-v1"
-_BINDINGS = dict(fixed=ResidentTreeBinding, affine=ResidentAffineTreeBinding,
-                 floating=ResidentFloatingTreeBinding, floating_affine=ResidentFloatingAffineTreeBinding)
+_BINDINGS = dict(
+    fixed=ResidentTreeBinding,
+    affine=ResidentAffineTreeBinding,
+    floating=ResidentFloatingTreeBinding,
+    floating_affine=ResidentFloatingAffineTreeBinding,
+)
 
 
 def _encoded(value):
@@ -63,8 +74,12 @@ def _encoded(value):
     if is_dataclass(value) and not isinstance(value, type):
         entries = {f.name: getattr(value, f.name) for f in fields(value)}
         entries.update(getattr(value, "__dict__", {}))
-        return ["dataclass", type(value).__module__, type(value).__qualname__,
-                [(key, _encoded(entries[key])) for key in sorted(entries)]]
+        return [
+            "dataclass",
+            type(value).__module__,
+            type(value).__qualname__,
+            [(key, _encoded(entries[key])) for key in sorted(entries)],
+        ]
     if isinstance(value, Mapping):
         rows = [(_encoded(key), _encoded(item)) for key, item in value.items()]
         rows.sort(key=lambda row: json.dumps(row[0], separators=(",", ":")))
@@ -79,12 +94,24 @@ def _encoded(value):
 
 
 def _digest(value):
-    return hashlib.sha256(json.dumps(_encoded(value), separators=(",", ":"), allow_nan=False).encode()).hexdigest()
+    return hashlib.sha256(
+        json.dumps(_encoded(value), separators=(",", ":"), allow_nan=False).encode()
+    ).hexdigest()
 
 
 def _row_source(row):
-    return (row.key, row.asset, row.initial_state, row.kp, row.kd, row.effort_limit,
-            row.body_ids, row.collider_keys, row.initial_control, row._world)
+    return (
+        row.key,
+        row.asset,
+        row.initial_state,
+        row.kp,
+        row.kd,
+        row.effort_limit,
+        row.body_ids,
+        row.collider_keys,
+        row.initial_control,
+        row._world,
+    )
 
 
 @dataclass(frozen=True, eq=False)
@@ -106,9 +133,15 @@ class ParticipantArticulation:
     def __post_init__(self):
         if type(self.key) is not ResidentParticipantKey:
             raise TypeError("key must be a ResidentParticipantKey")
-        world = ArticulationWorld(self.key.world, self.asset, self.initial_state,
-                                  kp=self.kp, kd=self.kd, effort_limit=self.effort_limit,
-                                  initial_control=self.initial_control)
+        world = ArticulationWorld(
+            self.key.world,
+            self.asset,
+            self.initial_state,
+            kp=self.kp,
+            kd=self.kd,
+            effort_limit=self.effort_limit,
+            initial_control=self.initial_control,
+        )
         physical = _physical(world.asset)
         body_ids = tuple(_integer(value, "physical body ID") for value in self.body_ids)
         count = len(physical.joint_names) + int(_floating(world.asset))
@@ -120,13 +153,21 @@ class ParticipantArticulation:
         if len(set(sources)) != len(sources) or set(self.collider_keys) != set(sources):
             raise ValueError("collider installation must exactly cover unique original source keys")
         shapes = {shape.key: shape for shape in physical.collision_model.shapes}
-        if set(shapes) != set(sources) or any(shapes[c.shape.key] != c.shape for c in physical.collisions):
+        if set(shapes) != set(sources) or any(
+            shapes[c.shape.key] != c.shape for c in physical.collisions
+        ):
             raise ValueError("asset collider source and collision model disagree")
         installed = {}
         for source in sorted(sources):
             target = self.collider_keys[source]
-            if type(source) is not CollisionKey or type(target) is not CollisionKey or target.world != self.key.world:
-                raise ValueError("source/installed collider must be CollisionKey in the participant world")
+            if (
+                type(source) is not CollisionKey
+                or type(target) is not CollisionKey
+                or target.world != self.key.world
+            ):
+                raise ValueError(
+                    "source/installed collider must be CollisionKey in the participant world"
+                )
             installed[source] = target
         if len(set(installed.values())) != len(installed):
             raise ValueError("installed collider keys must be unique")
@@ -143,9 +184,16 @@ class ParticipantArticulation:
 
 
 def _scene_source(scene):
-    return (scene.schema, tuple(_row_source(row) for row in scene.articulations),
-            scene.static_shapes, scene.static_body_ids, scene.materials_by_pair,
-            scene.candidate_capacity, scene.site_capacity, scene.intra_participant_pairs)
+    return (
+        scene.schema,
+        tuple(_row_source(row) for row in scene.articulations),
+        scene.static_shapes,
+        scene.static_body_ids,
+        scene.materials_by_pair,
+        scene.candidate_capacity,
+        scene.site_capacity,
+        scene.intra_participant_pairs,
+    )
 
 
 @dataclass(frozen=True, eq=False)
@@ -180,7 +228,9 @@ class ParticipantSceneDeclaration:
             raise TypeError("static_shapes requires FiniteStaticShape")
         if any(item.material is not None for item in static):
             raise ValueError("move static default material into explicit materials_by_pair")
-        static = tuple(sorted((_asset_snapshot(item) for item in static), key=lambda item: item.shape.key))
+        static = tuple(
+            sorted((_asset_snapshot(item) for item in static), key=lambda item: item.shape.key)
+        )
         if len({item.shape.key for item in static}) != len(static):
             raise ValueError("duplicate static collider identity")
         body_ids = []
@@ -196,8 +246,12 @@ class ParticipantSceneDeclaration:
             raise TypeError("materials_by_pair must be an explicit mapping")
         owned_laws = {}
         for pair, law in materials.items():
-            if (not isinstance(pair, tuple) or len(pair) != 2 or
-                    any(type(key) is not CollisionKey for key in pair) or not pair[0] < pair[1]):
+            if (
+                not isinstance(pair, tuple)
+                or len(pair) != 2
+                or any(type(key) is not CollisionKey for key in pair)
+                or not pair[0] < pair[1]
+            ):
                 raise ValueError("materials require canonical ordered collision pairs")
             if law is not None and not isinstance(law, RobotContactMaterial):
                 raise TypeError("pair material must be RobotContactMaterial or explicit None")
@@ -207,19 +261,27 @@ class ParticipantSceneDeclaration:
             raise ValueError("candidate capacity exceeds the original resident bound")
         worlds = tuple(sorted({row.key.world for row in rows}))
         if isinstance(self.site_capacity, Mapping):
-            if any(_integer(key, "site capacity world") != key for key in self.site_capacity) or set(self.site_capacity) != set(worlds):
+            if any(
+                _integer(key, "site capacity world") != key for key in self.site_capacity
+            ) or set(self.site_capacity) != set(worlds):
                 raise ValueError("site capacities must cover all logical worlds")
-            site_capacity = MappingProxyType({w: _integer(self.site_capacity[w], "site capacity") for w in worlds})
+            site_capacity = MappingProxyType(
+                {w: _integer(self.site_capacity[w], "site capacity") for w in worlds}
+            )
             caps = tuple(site_capacity.values())
         else:
             site_capacity = _integer(self.site_capacity, "site capacity")
             caps = (site_capacity,)
         if any(cap > 4096 for cap in caps):
             raise ValueError("site capacity exceeds the original resident bound")
-        for name, value in (("articulations", rows), ("static_shapes", static),
-                            ("static_body_ids", tuple(sorted(body_ids))),
-                            ("materials_by_pair", MappingProxyType(dict(sorted(owned_laws.items())))),
-                            ("candidate_capacity", capacity), ("site_capacity", site_capacity)):
+        for name, value in (
+            ("articulations", rows),
+            ("static_shapes", static),
+            ("static_body_ids", tuple(sorted(body_ids))),
+            ("materials_by_pair", MappingProxyType(dict(sorted(owned_laws.items())))),
+            ("candidate_capacity", capacity),
+            ("site_capacity", site_capacity),
+        ):
             object.__setattr__(self, name, value)
         object.__setattr__(self, "identity", _digest(_scene_source(self)))
 
@@ -249,7 +311,9 @@ def _prepare(declaration):
         specs[row.key] = system
         participants.append(participant)
         source_map[row.key] = row.collider_keys
-    layout = ResidentParticipantLayout(tuple(participants), static_body_ids=declaration.static_body_ids)
+    layout = ResidentParticipantLayout(
+        tuple(participants), static_body_ids=declaration.static_body_ids
+    )
     by_key = {participant.key: participant for participant in participants}
     shapes, bindings, owners, excluded = [], [], {}, set()
     for row in declaration.articulations:
@@ -259,16 +323,24 @@ def _prepare(declaration):
         for collider in physical.collisions:
             source, target = collider.shape.key, row.collider_keys[collider.shape.key]
             shape = replace(collider.shape, key=target)
-            if not _floating(asset) and (_fixed_group(physical, collider) is None or _fixed_group(physical, collider) < 0):
+            if not _floating(asset) and (
+                _fixed_group(physical, collider) is None or _fixed_group(physical, collider) < 0
+            ):
                 if (target.world, target.body) not in declaration.static_body_ids:
                     raise ValueError("fixed-root collider needs explicit static_body_ids ownership")
                 if static_paths is None:
-                    q = asset.full_state(row.initial_state).q if isinstance(asset, MimicRobotAsset) else row.initial_state.q
+                    q = (
+                        asset.full_state(row.initial_state).q
+                        if isinstance(asset, MimicRobotAsset)
+                        else row.initial_state.q
+                    )
                     static_paths = physical.collision_motion(q)
                 binding = ResidentStaticBinding(target, static_paths[source])
                 owner = None
             else:
-                binding = _BINDINGS[participant.family].from_asset(asset, source, key=target, world=row.key.world)
+                binding = _BINDINGS[participant.family].from_asset(
+                    asset, source, key=target, world=row.key.world
+                )
                 group = binding.group_index
                 if group >= len(row.body_ids) or row.body_ids[group] != target.body:
                     raise ValueError("installed collider body differs from actual physical group")
@@ -288,22 +360,34 @@ def _prepare(declaration):
         if (key.world, key.body) not in declaration.static_body_ids:
             raise ValueError("static collider requires explicit static_body_ids ownership")
         from ..constraints.collision_shapes import CollisionMotion
+
         shapes.append(item.shape)
         bindings.append(ResidentStaticBinding(key, CollisionMotion(item.points_m)))
         owners[key] = None
     if not shapes:
         if declaration.materials_by_pair:
             raise ValueError("empty geometry requires an empty pair material table")
-        return dict(participants=tuple(participants), specs=MappingProxyType(specs), model=None,
-                    bindings=(), laws=MappingProxyType({}), source_map=MappingProxyType(source_map))
+        return dict(
+            participants=tuple(participants),
+            specs=MappingProxyType(specs),
+            model=None,
+            bindings=(),
+            laws=MappingProxyType({}),
+            source_map=MappingProxyType(source_map),
+        )
     model = CollisionModel(tuple(shapes), tuple(sorted(excluded)))
     potential = []
     adjacent = set()
     for first, second in combinations(model.shapes, 2):
         a, b = first.key, second.key
         pair = a, b
-        if (a.world != b.world or a.body == b.body or pair in excluded or
-                not (first.group & second.mask) or not (second.group & first.mask)):
+        if (
+            a.world != b.world
+            or a.body == b.body
+            or pair in excluded
+            or not (first.group & second.mask)
+            or not (second.group & first.mask)
+        ):
             continue
         left, right = owners[a], owners[b]
         if left is None and right is None:
@@ -317,7 +401,9 @@ def _prepare(declaration):
                 adjacent.add(pair)
         potential.append(pair)
     if set(declaration.materials_by_pair) != set(potential):
-        raise ValueError("materials_by_pair must exactly cover allowed source pairs; None is explicit exclusion")
+        raise ValueError(
+            "materials_by_pair must exactly cover allowed source pairs; None is explicit exclusion"
+        )
     laws = {}
     for pair in potential:
         law = declaration.materials_by_pair[pair]
@@ -334,8 +420,14 @@ def _prepare(declaration):
     # binding. The real batch repeats its normal admission without a new solver.
     layout.bind_geometry(model, tuple(bindings))
     declaration.assert_unchanged()
-    return dict(participants=tuple(participants), specs=MappingProxyType(specs), model=model,
-                bindings=tuple(bindings), laws=MappingProxyType(laws), source_map=MappingProxyType(source_map))
+    return dict(
+        participants=tuple(participants),
+        specs=MappingProxyType(specs),
+        model=model,
+        bindings=tuple(bindings),
+        laws=MappingProxyType(laws),
+        source_map=MappingProxyType(source_map),
+    )
 
 
 def _input(row, spec, command):
@@ -372,22 +464,35 @@ class CompiledParticipantScene:
         self._specs = prepared["specs"]
         self._source_map = prepared["source_map"]
         # Initial command conversion also completes before allocating an owner.
-        initial = {key: _input(row, self._specs[key], row.initial_control) for key, row in self._rows.items()}
-        self._batch = resident_scene.ResidentSceneBatch(prepared["participants"], mode=mode,
-                            cache_root=cache_root, static_body_ids=declaration.static_body_ids)
+        initial = {
+            key: _input(row, self._specs[key], row.initial_control)
+            for key, row in self._rows.items()
+        }
+        self._batch = resident_scene.ResidentSceneBatch(
+            prepared["participants"],
+            mode=mode,
+            cache_root=cache_root,
+            static_body_ids=declaration.static_body_ids,
+        )
         try:
             self._plan = self._batch.prepare_contacts(
-                prepared["model"], prepared["bindings"], prepared["laws"],
-                candidate_capacity=declaration.candidate_capacity, site_capacity=declaration.site_capacity,
+                prepared["model"],
+                prepared["bindings"],
+                prepared["laws"],
+                candidate_capacity=declaration.candidate_capacity,
+                site_capacity=declaration.site_capacity,
                 intra_participant_pairs=declaration.intra_participant_pairs,
-                sampling="discrete_entry", narrow_phase="host_patch",
+                sampling="discrete_entry",
+                narrow_phase="host_patch",
             )
             self._batch.set_controls(initial)
         except BaseException as primary:
             try:
                 self._batch.close()
             except BaseException as cleanup:
-                failure = BaseExceptionGroup("participant assembly and owner cleanup failed", [primary, cleanup])
+                failure = BaseExceptionGroup(
+                    "participant assembly and owner cleanup failed", [primary, cleanup]
+                )
                 # Keep explicit ownership reachable without relying on traceback or GC.
                 # Unresolved does not authorize an automatic retry of an unknown cleanup.
                 failure.resident_owner = self._batch
@@ -451,10 +556,18 @@ class CompiledParticipantScene:
     def set_controls(self, controls):
         with self._lock:
             self._check()
-            if not isinstance(controls, Mapping) or any(type(key) is not ResidentParticipantKey or key not in self._rows for key in controls):
+            if not isinstance(controls, Mapping) or any(
+                type(key) is not ResidentParticipantKey or key not in self._rows for key in controls
+            ):
                 raise ValueError("controls must map registered participant identities")
-            owned = {key: _validated_control(self._rows[key]._world, value) for key, value in controls.items()}
-            native = {key: _input(self._rows[key], self._specs[key], value) for key, value in owned.items()}
+            owned = {
+                key: _validated_control(self._rows[key]._world, value)
+                for key, value in controls.items()
+            }
+            native = {
+                key: _input(self._rows[key], self._specs[key], value)
+                for key, value in owned.items()
+            }
             self._batch.set_controls(native)
 
     def step(self, h):
@@ -474,8 +587,14 @@ class CompiledParticipantScene:
 
     def stats(self):
         with self._lock:
-            return dict(self._batch.stats(), assembly_schema=_SCHEMA, assembly_identity=self.identity,
-                        narrow_phase="host_patch", sampling="discrete_entry", assembly_closed=self._closed)
+            return dict(
+                self._batch.stats(),
+                assembly_schema=_SCHEMA,
+                assembly_identity=self.identity,
+                narrow_phase="host_patch",
+                sampling="discrete_entry",
+                assembly_closed=self._closed,
+            )
 
     def close(self):
         with self._lock:
@@ -497,4 +616,9 @@ def compile_participant_scene(declaration, *, mode="cuda", cache_root=None):
     return CompiledParticipantScene(declaration, mode=mode, cache_root=cache_root)
 
 
-__all__ = ["ParticipantArticulation", "ParticipantSceneDeclaration", "CompiledParticipantScene", "compile_participant_scene"]
+__all__ = [
+    "ParticipantArticulation",
+    "ParticipantSceneDeclaration",
+    "CompiledParticipantScene",
+    "compile_participant_scene",
+]

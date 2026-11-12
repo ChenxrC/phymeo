@@ -30,7 +30,7 @@
 - `NativeAssetInstance` 以实例名区分同一资产的不同参与者；实例 pose 为 XYZ/XYZW。
   所有参与者 attach 到同一模型，保留跨参与者碰撞，不拆成独立仿真。
 - `drive_mode=preserve` 保留原生 actuator/equality/contact/resource 引用，不接受
-  joints 或 joint_defaults。`scalar_pd` 只接 URDF 标量关节，已有 actuator 拒绝，
+  joints 或 joint_defaults。`scalar_pd` 接 URDF 及下述限定 MJCF 标量关节，已有 actuator 拒绝，
   不重复增加驱动。B3e 补齐标准 dynamics 和仿射 mimic，合同见下节。
 - gravity/timestep 来自 assembly；`integrator` 显式接受 `euler` / `implicitfast`，
   缺省保持 Euler。源默认 Euler 可采用 assembly 选择，非默认源积分器必须与选择
@@ -461,3 +461,25 @@ None，不扩大已有非URDF路径的要求。已请求且为空的模型返回
 非 URDF、空名或重复名拒绝。用于消费者冷 authoring 预检，不能代替编译绑定
 或依据来源顺序猜原生关节下标。正式 native assembly 测试覆盖删除来源文件后
 使用 snapshot、缺失 mesh 时仍可读取目录。
+
+
+## RC7 后 MJCF 标量承接
+
+`NativeTemplate.mjcf_scalar_contract_version=1` 声明本增量；未知版本由消费方拒绝。
+`scalar_pd` 增量接受 compiler angle=radian 的 MJCF hinge/slide；源 actuator、
+keyframe、非标量关节、高阶 damping、springdamper 自动推导及 floating 增量根
+明确拒绝。未覆盖的 assembly 全局 option 仍拒绝。缺省 armature/damping/frictionloss
+保留来源值；显式覆盖遵循公共 NativeJointInput，target 与 q、命令力与 actuator
+输出继续分开。URDF 原默认与 mimic 不变，resident 不消费 MjModel。
+
+NativeAssetIdentity.format 真实标记 mjcf；同一 body 的多个 shape 各有来源名称。
+read_native_joint_catalog 在冷阶段从原生编译结果读取标量 SI 限位（URDF 仍沿
+无 mesh 的源码目录）。frame 导出允许 world parent、单 moving body 一个标量关节；
+q 为绝对坐标，slide anchor 减 R axis ref，hinge parent rotation 乘 Rot(-ref)。
+编译期补偿不改初态或求解模型，不增加热循环 FK。固定 body 不生成虚构 joint。
+
+正式 test_native_assembly 覆盖完整初态/控制、被动参数保留、多 shape、来源身份、
+非零 ref/anchor/旋转 placement 的独立 FK 和拒绝边界；P2PE 配套实际 DLL 负责
+N=1/8/64 direct/Graph 字段与状态/action/reset 验收。完整证据在实验根
+`evidence/model-summary.json`。不声称完整 MJCF、resident、安装或 GUI 资格；
+原生 Host、六 CUBIN 和已有数值门槛保持。本批改动均在编译/绑定阶段。

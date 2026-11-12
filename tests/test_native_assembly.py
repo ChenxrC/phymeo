@@ -573,3 +573,99 @@ def test_two_floating_assets_and_rigid_keep_rotated_identity(urdf):
             _ = candidate.scalar_joint_bindings
     with pytest.raises(NotImplementedError, match='ball or multi-DOF'):
         _ = replace(result, joint_dimensions=((4, 3),) + result.joint_dimensions[1:]).scalar_joint_bindings
+
+
+MJCF_SCALAR = """<mujoco model="native_slider"><compiler angle="radian"/>
+<worldbody><body name="link" pos=".2 .1 .3">
+<joint name="slide" type="slide" axis="1 0 0" range="-1 1" damping=".4" armature=".02" frictionloss=".03"/>
+<inertial pos=".03 -.02 .04" mass="2" diaginertia=".1 .2 .25"/>
+<geom name="a" type="sphere" size=".1"/><geom name="b" type="box" size=".1 .2 .1" pos="0 .3 0"/>
+</body></worldbody></mujoco>"""
+
+
+def test_mjcf_scalar_initial_control_frames_and_source_parameters(tmp_path):
+    import mujoco as mj
+
+    from phymeo.builders.native_resources import read_native_joint_catalog
+    source = tmp_path / "slider.xml"
+    source.write_text(MJCF_SCALAR)
+    asset = NativeAssetInstance("arm", str(source), drive_mode="scalar_pd",
+        joints=(NativeJointInput("slide", position=.125, velocity=.2,
+                                target_position=.3, target_velocity=.4, applied_force=4., kp=10., kd=2.),))
+    assert read_native_joint_catalog(asset) == (("slide", "prismatic", -1., 1.),)
+    result = compile_native_template((asset,), timestep=.002, gravity=(0, 0, 0),
+                                     capture_frames=True, capture_visuals=True)
+    model = result.compilation.fresh_native_model()
+    data = mj.MjData(model)
+    result.initial_state.apply(result.compilation, data)
+    np.testing.assert_array_equal(data.qpos, [.125])
+    np.testing.assert_array_equal(data.qvel, [.2])
+    np.testing.assert_array_equal(data.qfrc_applied, [4.])
+    np.testing.assert_allclose(data.ctrl, [3.8], atol=1e-12, rtol=0)
+    np.testing.assert_array_equal(model.dof_armature, [.02])
+    np.testing.assert_array_equal(model.dof_damping, [.4])
+    np.testing.assert_array_equal(model.dof_frictionloss, [.03])
+    assert result.asset_identities[0].format == "mjcf"
+    assert result.asset_identities[0].bodies == (("link", "arm::link", 1),)
+    assert tuple(n for n, _ in result.shape_bindings) == ("arm::a", "arm::b")
+    frame = result.frame_metadata.joints[0]
+    assert (frame.parent_body, frame.child_body, frame.kind) == ("world", "arm::link", "prismatic")
+    np.testing.assert_array_equal(frame.parent_anchor[:3], [.2, .1, .3])
+    np.testing.assert_array_equal(result.frame_metadata.bodies[0][1], [.03, -.02, .04])
+    for count in (1, 8, 64):
+        assert result.bind(count).nworld == count
+    assert result.compile_visual_scene().instances
+
+
+@pytest.mark.parametrize("extra", ["degree", "actuator", "keyframe", "ball", "nonlinear_damping", "springdamper"])
+def test_mjcf_scalar_rejects_unqualified_source_semantics(tmp_path, extra):
+    text = MJCF_SCALAR
+    if extra == "degree":
+        text = text.replace('angle="radian"', 'angle="degree"')
+    elif extra == "actuator":
+        text = text.replace("</mujoco>", '<actuator><motor joint="slide"/></actuator></mujoco>')
+    elif extra == "keyframe":
+        text = text.replace("</mujoco>", '<keyframe><key qpos=".2"/></keyframe></mujoco>')
+    elif extra == "nonlinear_damping":
+        text = text.replace('damping=".4"', 'damping=".4 .2 .1"')
+    elif extra == "springdamper":
+        text = text.replace('damping=".4"', 'damping=".4" springdamper=".02 .8"')
+    else:
+        text = text.replace('type="slide"', 'type="ball"')
+    source = tmp_path / "unsupported.xml"
+    source.write_text(text)
+    reasons = {"degree": "angle=radian", "actuator": "source actuators", "keyframe": "keyframes",
+               "ball": "scalar hinge/slide", "nonlinear_damping": "nonlinear damping", "springdamper": "springdamper"}
+    with pytest.raises((ValueError, NotImplementedError), match=reasons[extra]):
+        compile_native_template((NativeAssetInstance("arm", str(source), drive_mode="scalar_pd"),),
+                                timestep=.002, gravity=(0, 0, 0), capture_frames=True)
+
+
+@pytest.mark.parametrize("kind", ["hinge", "slide"])
+def test_mjcf_nonzero_reference_anchor_reconstructs_native_pose(tmp_path, kind):
+    import mujoco as mj
+
+    from phymeo.dynamics.rotation import quaternion_matrix
+    text = MJCF_SCALAR.replace('type="slide"', 'type="' + kind + '" ref=".3"').replace('axis="1 0 0"', 'axis="1 0 0" pos=".02 .04 -.01"')
+    source = tmp_path / "reference.xml"
+    source.write_text(text)
+    result = compile_native_template((NativeAssetInstance("arm", str(source),
+        orientation_xyzw=(0., 0., .6, .8), position=(1., 2., 3.), drive_mode="scalar_pd",
+        joints=(NativeJointInput("slide", position=.6),)),), timestep=.002, gravity=(0, 0, 0), capture_frames=True)
+    model = result.compilation.fresh_native_model()
+    data = mj.MjData(model)
+    result.initial_state.apply(result.compilation, data)
+    mj.mj_kinematics(model, data)
+    frame = result.frame_metadata.joints[0]
+    parent = quaternion_matrix(np.array(frame.parent_anchor[3:])[None])[0]
+    offset = np.array(frame.parent_anchor[:3])
+    if kind == "hinge":
+        q = np.empty(4)
+        mj.mju_axisAngle2Quat(q, np.array(frame.axis_joint_local), .6)
+        rotation = parent @ quaternion_matrix(q[[1, 2, 3, 0]][None])[0]
+    else:
+        offset += parent @ (np.array(frame.axis_joint_local) * .6)
+        rotation = parent
+    position = offset - rotation @ np.array(frame.child_anchor[:3])
+    np.testing.assert_allclose(position, data.xpos[1], atol=1e-12, rtol=0)
+    np.testing.assert_allclose(rotation, data.xmat[1].reshape(3, 3), atol=1e-12, rtol=0)

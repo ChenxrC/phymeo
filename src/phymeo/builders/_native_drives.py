@@ -11,8 +11,13 @@ from ._mimic_xml import extract_mimic_relations
 def prepare_scalar_drives(mj, spec, asset, input_type, root):
     if spec.actuators:
         raise ValueError(f"{asset.name}: scalar_pd cannot replace or duplicate source actuators")
-    if root.tag != "robot":
-        raise ValueError("scalar_pd profile currently requires URDF; MJCF uses preserve")
+    if root.tag not in {"robot", "mujoco"}:
+        raise ValueError("scalar_pd requires URDF or MJCF")
+    native = root.tag == "mujoco"
+    if native and spec.compiler.degree:
+        raise NotImplementedError("MJCF scalar_pd requires compiler angle=radian")
+    if native and spec.keys:
+        raise NotImplementedError("MJCF scalar_pd keyframes need an explicit initial-state policy")
     xml = {j.get("name"): j for j in root.findall("joint")}
     actual = {j.name: j for j in spec.joints}
     supplied = {j.name: j for j in asset.joints}
@@ -55,7 +60,7 @@ def prepare_scalar_drives(mj, spec, asset, input_type, root):
         if joint.type not in (mj.mjtJoint.mjJNT_HINGE, mj.mjtJoint.mjJNT_SLIDE):
             raise NotImplementedError("scalar_pd admits scalar hinge/slide joints only")
         row = supplied.get(name, input_type(name))
-        limit = xml[name].find("limit")
+        limit = None if native else xml[name].find("limit")
         rating = 0.0 if limit is None else float(limit.get("effort", "0"))
         if not np.isfinite(rating) or rating < 0:
             raise ValueError("invalid asset motor rating")
@@ -100,7 +105,7 @@ def prepare_scalar_drives(mj, spec, asset, input_type, root):
             diagnostics.append(
                 f"{asset.name}::{name}: velocity_limit={row.velocity_limit} is declared metadata; native solver does not clamp velocity"
             )
-        dynamics = xml[name].find("dynamics")
+        dynamics = None if native else xml[name].find("dynamics")
         if dynamics is not None:
             extra = sorted(set(dynamics.attrib) - {"damping", "friction"})
             if extra:
@@ -108,8 +113,12 @@ def prepare_scalar_drives(mj, spec, asset, input_type, root):
                     f"{asset.name}::{name}: native MuJoCo 3.8 ignores nonstandard URDF dynamics attributes {','.join(extra)}"
                 )
         friction = (
-            joint.frictionloss if dynamics is not None and "friction" in dynamics.attrib else 1e-5
+            joint.frictionloss if native or (dynamics is not None and "friction" in dynamics.attrib) else 1e-5
         )
+        if native and np.any(np.asarray(joint.springdamper) != 0):
+            raise NotImplementedError("MJCF springdamper requires an explicit parameter contract")
+        if native and np.any(np.asarray(joint.damping)[1:] != 0):
+            raise NotImplementedError("MJCF nonlinear damping requires an explicit parameter contract")
         damping = float(joint.damping[0])
         row = replace(
             row,
@@ -119,7 +128,7 @@ def prepare_scalar_drives(mj, spec, asset, input_type, root):
             kd=0.0
             if name in followers
             else (row.kd if row.kd is not None else defaults.get("kd", 50.0)),
-            armature=row.armature if row.armature is not None else defaults.get("armature", 0.01),
+            armature=row.armature if row.armature is not None else defaults.get("armature", float(joint.armature) if native else 0.01),
             damping=row.damping if row.damping is not None else defaults.get("damping", damping),
             frictionloss=row.frictionloss
             if row.frictionloss is not None

@@ -228,6 +228,8 @@ class NativeAssetIdentity:
 
 @dataclass(frozen=True)
 class NativeTemplate:
+    mjcf_scalar_contract_version = 1
+
     compilation: object
     initial_state: NativeInitialState
     # Names are public scope; native indices are this compilation only.
@@ -403,7 +405,7 @@ def compile_native_template(
         if capture_frames:
             frame_sources.append((asset.name, source_root))
         if source_root.tag == "robot":
-            source_bodies.append((asset.name, source_root.get("name", ""),
+            source_bodies.append((asset.name, "urdf", source_root.get("name", ""),
                                   tuple(link.attrib["name"] for link in source_root.findall("link"))))
         if capture_visuals:
             from .native_visuals import capture_urdf_visuals
@@ -448,6 +450,9 @@ def compile_native_template(
             for i, element in enumerate(getattr(child, kind)):
                 if not element.name:
                     element.name = f"__{kind}_{i}"
+        if source_root.tag == "mujoco":
+            source_bodies.append((asset.name, "mjcf", source_root.get("model", asset.name),
+                                  tuple(body.name for body in child.bodies if body.name != "world")))
         if not asset.self_collision:
             if child.pairs:
                 raise NotImplementedError(
@@ -466,6 +471,8 @@ def compile_native_template(
             )
             diagnostics.extend(notes)
         if asset.floating:
+            if source_root.tag != "robot":
+                raise NotImplementedError("floating assembly requires URDF")
             roots = [
                 body
                 for body in child.bodies
@@ -519,13 +526,13 @@ def compile_native_template(
 
         frame_metadata = compile_urdf_frames(model, frame_sources)
     identities = []
-    for instance, model_name, links in source_bodies:
+    for instance, source_format, model_name, links in source_bodies:
         rows = []
         for source_name in links:
             compiled_name = instance + "::" + source_name
             body = model.body(compiled_name)
             rows.append((source_name, compiled_name, int(body.id)))
-        identities.append(NativeAssetIdentity(instance, "urdf", model_name, tuple(rows)))
+        identities.append(NativeAssetIdentity(instance, source_format, model_name, tuple(rows)))
     if model.nsensor or model.nplugin or model.nflex or model.nuserdata:
         raise NotImplementedError("PhySolve template excludes native sensors/plugins/flex/userdata")
     data = mj.MjData(model)

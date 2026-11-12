@@ -34,8 +34,11 @@ def compile_urdf_frames(model, sources):
 
     joints = []
     for instance, root in sources:
+        if root.tag == "mujoco":
+            joints.extend(_mjcf_frames(model, instance))
+            continue
         if root.tag != "robot":
-            raise NotImplementedError("native source frame export currently requires URDF")
+            raise NotImplementedError("native source frame export requires URDF or MJCF")
         prefix = instance + "::"
         for source in root.findall("joint"):
             name = source.attrib["name"]
@@ -89,3 +92,38 @@ def compile_urdf_frames(model, sources):
         for i in range(1, model.nbody)
     )
     return NativeFrameMetadata(bodies, tuple(joints))
+
+
+def _mjcf_frames(model, instance):
+    """Native scalar anchors in compiled SI units, including a world parent."""
+    import mujoco as mj
+
+    prefix = instance + "::"
+    for index in range(model.njnt):
+        joint = model.joint(index)
+        if not joint.name.startswith(prefix):
+            continue
+        kind = {int(mj.mjtJoint.mjJNT_HINGE): "revolute",
+                int(mj.mjtJoint.mjJNT_SLIDE): "prismatic"}.get(int(model.jnt_type[index]))
+        child = int(model.jnt_bodyid[index])
+        if kind is None or int(model.body_jntnum[child]) != 1:
+            raise NotImplementedError("MJCF frames require one scalar joint per moving body")
+        parent = int(model.body_parentid[child])
+        position = np.asarray(model.jnt_pos[index], dtype=float)
+        rotation = np.asarray(model.body_quat[child], dtype=float)[[1, 2, 3, 0]]
+        matrix = quaternion_matrix(rotation[None])[0]
+        anchor = model.body_pos[child] + matrix @ position
+        axis = np.asarray(model.jnt_axis[index], dtype=float)
+        reference = float(model.qpos0[model.jnt_qposadr[index]])
+        if kind == "prismatic":
+            anchor = anchor - matrix @ (axis * reference)
+        else:
+            correction, composed = np.empty(4), np.empty(4)
+            mj.mju_axisAngle2Quat(correction, axis, -reference)
+            mj.mju_mulQuat(composed, model.body_quat[child], correction)
+            rotation = composed[[1, 2, 3, 0]]
+        yield NativeJointFrame(instance, joint.name[len(prefix):], kind,
+                               model.body(parent).name if parent else "world", model.body(child).name,
+                               tuple(float(x) for x in (*anchor, *rotation)),
+                               tuple(float(x) for x in (*position, 0, 0, 0, 1)),
+                               tuple(float(x) for x in axis / np.linalg.norm(axis)))

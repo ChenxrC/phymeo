@@ -9,7 +9,10 @@ from xml.etree import ElementTree as ET
 def read_urdf_joint_catalog(asset):
     """Source-only joint identity/limits; no mesh loading, solver or device work."""
     raw = asset.urdf_xml if asset.urdf_xml is not None else Path(asset.path).read_bytes()
-    root = ET.fromstring(raw)
+    return _urdf_joint_rows(ET.fromstring(raw))
+
+
+def _urdf_joint_rows(root):
     if root.tag != 'robot':
         raise NotImplementedError('native source joint catalog currently requires URDF')
     rows = []
@@ -24,6 +27,26 @@ def read_urdf_joint_catalog(asset):
         if kind in ('revolute', 'prismatic') and limit is not None:
             lower, upper = float(limit.get('lower', '0')), float(limit.get('upper', '0'))
         rows.append((name, 'revolute' if kind == 'continuous' else kind, lower, upper))
+    return tuple(rows)
+
+
+def read_native_joint_catalog(asset):
+    """Cold source catalog: URDF logical joints or compiled MJCF scalar joints."""
+    raw = asset.urdf_xml if asset.urdf_xml is not None else Path(asset.path).read_bytes()
+    root = ET.fromstring(raw)
+    if root.tag == "robot":
+        return _urdf_joint_rows(root)
+    import mujoco as mj
+    spec, _, _ = load_asset_source(asset)
+    model = spec.compile()
+    rows = []
+    for i in range(model.njnt):
+        kind = {int(mj.mjtJoint.mjJNT_HINGE): "revolute",
+                int(mj.mjtJoint.mjJNT_SLIDE): "prismatic"}.get(int(model.jnt_type[i]))
+        if kind is None or not model.joint(i).name:
+            raise NotImplementedError("MJCF joint catalog requires named scalar joints")
+        lower, upper = model.jnt_range[i] if model.jnt_limited[i] else (-float("inf"), float("inf"))
+        rows.append((model.joint(i).name, kind, float(lower), float(upper)))
     return tuple(rows)
 
 

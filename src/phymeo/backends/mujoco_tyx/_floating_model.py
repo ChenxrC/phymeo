@@ -52,8 +52,20 @@ def compile_floating_model(
         )
         raise MuJoCoTyxUnsupported(issues)
     if has_ball:
-        if model.na or np.any(model.actuator_dyntype != mj.mjtDyn.mjDYN_NONE):
-            issue("free-ball-activation", "FREE+BALL currently requires stateless NONE actors")
+        allowed_dynamics = (
+            (mj.mjtDyn.mjDYN_NONE, mj.mjtDyn.mjDYN_FILTEREXACT)
+            if allow_activation is True
+            else (mj.mjtDyn.mjDYN_NONE,)
+        )
+        if (model.na and allow_activation is not True) or np.any(
+            ~np.isin(model.actuator_dyntype, allowed_dynamics)
+        ):
+            issue(
+                "free-ball-activation",
+                "FREE+BALL activation requires explicit NONE/FILTEREXACT permission",
+            )
+        if model.na > 32:
+            issue("activation-capacity", "FREE+BALL admits at most 32 activation coordinates")
         if model.nu > 32:
             issue("free-ball-actuator-capacity", "FREE+BALL admits at most 32 complete actors")
         if np.any(model.jnt_limited) or np.any(model.dof_frictionloss):

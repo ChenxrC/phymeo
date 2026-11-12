@@ -130,10 +130,24 @@ def compile_activation_model(mj, model):
     # a failed compilation. Each base keeps all its geometry/solver/option gates.
     from ._constraint_model import compile_constraint_model, constraint_pairs, needs_constraints
     from ._floating_model import compile_floating_model
+    from ._model import _mix_contact
     from ._normal_model import compile_normal_model, possible_pairs
 
     candidate_pairs = constraint_pairs(model)
-    if np.any(model.jnt_type == mj.mjtJoint.mjJNT_BALL):
+    has_ball = bool(np.any(model.jnt_type == mj.mjtJoint.mjJNT_BALL))
+    if has_ball and np.any(model.jnt_type == mj.mjtJoint.mjJNT_FREE):
+        # Validate the complete narrow FREE+BALL domain first. The generic
+        # constraint predicate must not admit limits, dry friction, excludes,
+        # larger contact capacities or higher contact dimensions through it.
+        base = compile_floating_model(
+            mj, model, allow_normal_contacts=True, allow_activation=True
+        )
+        pairs = possible_pairs(model)
+        if any(_mix_contact(model, left, right, mj)[0] == 3 for left, right in pairs):
+            base = compile_constraint_model(mj, model, pairs, allow_activation=True)
+        elif pairs:
+            base = compile_normal_model(mj, model, pairs, allow_activation=True)
+    elif has_ball:
         # Preserve fixed BALL structural gates before contact composition.
         base = compile_ball_model(mj, model, allow_activation=True)
     elif needs_constraints(mj, model, candidate_pairs):

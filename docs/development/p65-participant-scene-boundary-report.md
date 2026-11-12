@@ -158,3 +158,32 @@ Passing this slice must not be presented as full Newton collision parity.
 
 Handoff: `AUTHORING_SLOT_RELEASED`. Product/tests/consumer are ready for the
 parent's actual serial checks; there is no child execution session to resume.
+
+## Installed first-attempt consumer coordinate correction
+
+Parent run `37-installed-scene-interpret` stopped in consumer declaration,
+before any physical step, at the assertion comparing the original collider's
+`local_vertices` directly with `TOOL_VERTICES`. The original stderr is retained
+under `artifacts/p65-three-track-b-20261112-01/37-installed-scene-interpret`.
+
+This was an oracle coordinate-domain error. `LinkCollision.local_vertices`
+and `FoldedURDFAsset` preserve the authored named-link coordinates. For the tool
+these are the untouched OBJ `VERTICES`. The material factory applies the public
+fixed site transform only later to obtain moving-group coordinates:
+`R = Rx(pi/2)`, `p = (0, 1.75, 0)`. The existing consumer world oracle and
+`provenance.local_points_m` comparison require these group-local coordinates.
+
+The narrow consumer correction independently checks the original OBJ vertices,
+authored link, collision origin, fixed site position/rotation and physical group.
+It then constructs `VERTICES @ R.T + p` from the original literal transform and
+checks the existing literal `TOOL_VERTICES`. The follower similarly retains its
+original `ROUND` material and identity fixed site. Both coordinate descriptions
+and the independent fixed transform are saved in the consumer's original inputs.
+No product transformation/FK function is used to define the expected points.
+
+The URDF/OBJ, fixed placement, initial state, drives, external force, physical
+steps, query count, original geometry gates and all product source are unchanged.
+The already accepted source positive used the correct group-local independent
+reference and had no equivalent raw-vertex assertion. This commit changes only
+this consumer and this report. Correction is `UNEXECUTED` by the author; parent
+owns the fresh installation retry.

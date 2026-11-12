@@ -196,6 +196,8 @@ def asset_files(output, anchor):
 
 
 TOOL_VERTICES = np.array(((0, 1.75, 0), (0, 1.75, 2), (0, -0.25, 0), (-1, 1.75, 0)))
+TOOL_POSITION = np.array((0., 1.75, 0.))
+TOOL_ROTATION = np.array(((1., 0., 0.), (0., 0., -1.), (0., 1., 0.)))
 EFFORT = 1 / 64
 FORCE = np.array((1 / 64, 0.0, 0.0))
 
@@ -216,11 +218,32 @@ def declaration(output):
             which = "driver" if collider.name == "surface" else "follower"
             target = ph.CollisionKey(world, 700 + int(which == "follower"), 0)
             mapping[collider.shape.key] = target
-            local = TOOL_VERTICES if which == "driver" else ROUND
-            np.testing.assert_allclose(collider.local_vertices, local, atol=1e-14, rtol=0)
-            originals[target] = dict(
-                owner=tool_key, which=which, local=local, source_shape=collider.shape
-            )
+            # FoldedURDFAsset retains authored-link vertices. The device binding
+            # separately applies the fixed site's pose to obtain group-local material.
+            authored_local = VERTICES if which == "driver" else ROUND
+            fixed_position = TOOL_POSITION if which == "driver" else np.zeros(3)
+            fixed_rotation = TOOL_ROTATION if which == "driver" else np.eye(3)
+            require(collider.link_name == ("tool" if which == "driver" else "right_jaw"),
+                    "original authored link")
+            np.testing.assert_allclose(collider.local_vertices, authored_local, atol=1e-14, rtol=0)
+            np.testing.assert_allclose(collider.origin_xyz,
+                                       np.zeros(3) if which == "driver" else ROUND[0],
+                                       atol=1e-14, rtol=0)
+            np.testing.assert_allclose(rotation(collider.origin_xyzw), np.eye(3),
+                                       atol=1e-14, rtol=0)
+            site = tool.tree.sites[collider.link_name]
+            require(site.link_index == int(which == "follower"), "original moving-group owner")
+            np.testing.assert_allclose(site.local_position_m, fixed_position, atol=1e-14, rtol=0)
+            np.testing.assert_allclose(rotation(site.local_orientation_xyzw), fixed_rotation,
+                                       atol=1e-14, rtol=0)
+            # Oracle uses authored literals, never the product's transformed points.
+            local = authored_local @ fixed_rotation.T + fixed_position
+            np.testing.assert_allclose(local, TOOL_VERTICES if which == "driver" else ROUND,
+                                       atol=1e-14, rtol=0)
+            originals[target] = dict(owner=tool_key, which=which, local=local,
+                                     authored_local=authored_local,
+                                     fixed_position=fixed_position, fixed_rotation=fixed_rotation,
+                                     source_shape=collider.shape)
         q, v = np.array((1 / 512,)), np.array((1 / 1024,))
         command = ph.RobotCommand(q, np.zeros(1), feedforward=np.array((EFFORT,)))
         rows.append(

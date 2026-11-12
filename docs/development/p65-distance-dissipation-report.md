@@ -163,3 +163,39 @@ memory/latefault/reset/restore；原audit作者负责D3耦合与包外消费者�
 不保证平膜中心normal零模衰减、不支持运动规定支座、
 不声称原D4两稳态窗因此合格。新的3s应用窗必须等本模块及短耦合实际验收，
 且另行预登记；本报告不启动该执行。
+
+## Parent source qualification, 2026-11-13
+
+The imported author snapshot was UNEXECUTED. Root has now connected D1 standby
+velocity, resource accounting, subtype/checkpoint validation, public exports,
+and D3 separate damping impulse/fixed reaction in the four shared files.
+
+- 102 kernel interpret:33pass (11 HOST+22 TYX);103 CUDA:22pass/11 HOST deselected.
+- D1:104 original strict pair momentum FAIL, 105 other26pass,106 two 1s
+  oscillators pass,110 four pair cases pass complete saved arithmetic acceptance.
+  Interpret unique current matrix34 includes6 HOST declarations;111 CUDA29pass,
+  excluding those6 and including the actual UNKNOWN_RELEASE failure boundary.
+- D3 direct:112 original strict elastic-velocity FAIL;116/117 functional4pass
+  per backend including late actual candidate failure/retry and restore/reset.
+- Run107 audits only the failed saved pair prefix: its raw momentum defect is
+  original elastic rounding, damping contribution0 there; no exact physical
+  conservation claim. The original strict failures stay FAIL, with thresholds
+  unchanged. New same-candidate damping and all original continuous engineering,
+  force, arithmetic, energy and transaction checks remain hard gates.
+- First static96/97 failures are retained; seven local assigned lambdas became
+  equivalent defs, imports/format fixed, two unused test imports removed.
+  100/101 final12file checks pass; later narrow consumer/test static receipts
+  accompany the explicitly documented functional qualification.
+
+D6 is optional ordered axial dissipation, not global drag or full network BE.
+The old None/zero numerical path remains tested bitwise. Current scope is
+SOURCE_FUNCTIONALLY_VERIFIED with a retained old elastic precision limitation;
+installed qualification and public D5 damped assembly follow separately.
+No sustained-support, full cloth, Newton performance or whole-stage claim.
+
+Public D5 integration now has two additional asset sphere/capsule successors
+per backend:121 interpret2pass,122 CUDA2pass. They bind c changes into scene
+identity and carry complete damping phases through common step/query staleness/
+checkpoint/restore. Run120 was a test reference metadata omission before the
+first step (root_initial), repaired by binding the original asset root state.
+Source and installed qualification remain distinct; no full old suite rerun.

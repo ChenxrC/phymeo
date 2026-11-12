@@ -87,3 +87,31 @@ All use original isolated worktrees, based on current parent; preserve prior bra
 - Observer masses are the registered stored FP32 inverse masses actually used by D1, not unrounded FP64 declarations.
 - An additional pure device copy_dissipation_velocity(n, velocity, saved_velocity) kernel preserves the reconstructed velocity before the single damping pass. Both launches and their buffers are counted; no HOST-generated velocity is uploaded.
 - The 2e-6 / 2e-5 gate applies to each same-candidate damping phase. For the independent continuous FP64 split oscillator trajectory, use absolute position2e-3m and velocity1e-2m/s, the already-declared D4 long-window engineering scale. Preserve every step/max error. The continuous analytic oscillator error is diagnostic, since the declared integrator is a first-order split. This clarification precedes every D6 execution; no case result has selected a threshold.
+
+### D6-A first source results and the retained conservation limit
+
+Runs102/103 pass the fixed-candidate kernel (33 interpret including 11 HOST,
+22 CUDA); run105 passes 26 other public D1 cases, run106 both full-second
+oscillators. Run104 retains the original strict free-pair momentum failure:
+3.0517578125e-5 N s exceeds the authored 2e-5 gate. Run107 reads only that
+closed saved prefix and verifies the entire old elastic FP32 primitive chain:
+the raw imbalance closes as elastic predictor/position/reconstruction rounding
+plus new damping rounding. It does not establish exact physical conservation.
+The pair's replacement acceptance requires this independently bounded complete
+arithmetic decomposition and retains the original strict pass/fail as a saved
+diagnostic. Same-candidate D6 velocity/impulse gates and independent continuous
+position/velocity gates stay unchanged. No mass, h, force, coefficient or
+numeric threshold was tuned to this result. Original run104 remains FAIL.
+This accepts the optional dissipative operator with documented finite precision,
+consistent with the user's functional-first scope, not a repair of D1 conservation.
+
+Run112 exposes the same existing elastic reconstruction precision limit in
+D3: 4.31084045e-5 m/s at one component against the original2e-5 short gate.
+That strict failure is retained. Before any subsequent run, D6-A's installed
+consumer now reports FUNCTIONAL_PASS separately from strict_elastic_precision;
+the latter records every original same-entry velocity violation. Exact saved
+elastic primitives, all new D6 phase checks, original geometry/force/reaction/
+transaction gates and the already-authored independent continuous2e-4 state
+gates remain hard checks. This bounded functional qualification follows the
+user's explicit finite-precision acceptance and does not claim the strict old
+elastic gate passed. No parameter, mass, h or numeric threshold is changed.

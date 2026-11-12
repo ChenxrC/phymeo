@@ -4,6 +4,22 @@ import tyx as tx
 
 
 @tx.kernel(gradient="unsupported")
+def _next_sample(serial: tx.Array[tx.i64]):
+    for i in tx.range(1):
+        serial[i] += 1
+
+
+@tx.kernel(gradient="unsupported")
+def _sample_identity(serial: tx.Array[tx.i64], previous: tx.Array[tx.i64],
+                     output: tx.Array[tx.i64], mask: tx.Array[tx.bool1]):
+    for i in tx.range(output.shape[0]):
+        if mask[i]:
+            output[i] = serial[0]
+        else:
+            output[i] = previous[i]
+
+
+@tx.kernel(gradient="unsupported")
 def _ids(count: tx.Array[tx.i32], world: tx.Array[tx.i32], geom: tx.Array[tx.i32],
          dim: tx.Array[tx.i32], address: tx.Array[tx.i32], nefc: tx.Array[tx.i32], flags: tx.Array[tx.i32],
          ids: tx.Array[tx.i32], nworld: tx.i32, ngeom: tx.i32, njmax: tx.i32,
@@ -131,6 +147,10 @@ class PreparedContacts:
         self.model, self.native, self.flags = model, banks, flags
         self.force_operation = frontend.contact_force
         self.capacity, self.nworld = banks[0].naconmax, banks[0].nworld
+        # Never roll this counter back: discarded candidates must not reuse IDs.
+        # Device increments also run on every Graph replay, not just capture.
+        self.serial = tx.empty(1, tx.i64, device=device)
+        self.sample_ids = tuple(tx.empty(self.nworld, tx.i64, device=device) for _ in banks)
         self.sample_times = tuple(tx.empty(self.nworld, tx.f32, device=device) for _ in banks)
         self.body_com = tuple(tx.empty((self.nworld, model.nbody, 3), tx.f32, device=device)
                               for _ in banks)
@@ -150,6 +170,7 @@ class PreparedContacts:
             fields.update({name: identity[:, start:end] for name, (start, end) in self.int_fields.items()})
             fields.update(contact_count=count, contact_count_by_world=by_world)
             fields['contact_sample_time'] = self.sample_times[bank_index]
+            fields['contact_sample_id'] = self.sample_ids[bank_index]
             fields['contact_body_com_position'] = self.body_com[bank_index]
             self.banks.append(fields)
         self.inputs = tuple(tuple(getattr(bank.contact, name).view(dtype).flatten()
@@ -161,6 +182,9 @@ class PreparedContacts:
 
     def prepare(self, stream, all_mask):
         self.all_mask = all_mask
+        self.serial.zero_(stream=stream)
+        for ids in self.sample_ids:
+            ids.zero_(stream=stream)
         for index in range(2):
             self.update(index, stream)
         # Warm merge without changing either published bank's records.
@@ -169,6 +193,9 @@ class PreparedContacts:
 
     def update(self, index, stream, *, mask=None, integrated=False, record=True):
         native = self.native[index]
+        _next_sample(self.serial, mode="cuda", stream=stream)
+        _sample_identity(self.serial, self.sample_ids[1-index], self.sample_ids[index],
+                         self.all_mask if mask is None else mask, mode="cuda", stream=stream)
         target = index if mask is None else 2
         inputs = self.inputs[index]
         _ids(native.nacon, *inputs[:3], self.addresses[index], native.nefc, self.flags, self.ids,
@@ -201,13 +228,14 @@ class PreparedContacts:
         for out, old in zip(self.raw[target], self.raw[source]):
             out.assign(old, stream=stream)
         self.sample_times[target].assign(self.sample_times[source], stream=stream)
+        self.sample_ids[target].assign(self.sample_ids[source], stream=stream)
         self.body_com[target].assign(self.body_com[source], stream=stream)
         self.copies += 1
 
     @property
     def allocated_bytes(self):
         return (sum(a.size*4 for bank in self.raw for a in bank) + self.capacity*28
-                + self.nworld*8 + sum(a.size*4 for a in self.body_com))
+                + self.nworld*24 + 8 + sum(a.size*4 for a in self.body_com))
 
 
 @tx.kernel(gradient="unsupported")

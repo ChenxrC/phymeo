@@ -53,6 +53,7 @@ class PhySolveRuntime:
     body_observation_contract_version = 1
     contact_observation_contract_version = 1
     contact_reference_contract_version = 1
+    contact_sample_identity_contract_version = 1
     body_measurement_contract_version = 1
     site_measurement_contract_version = 1
     prepared_ray_contract_version = 1

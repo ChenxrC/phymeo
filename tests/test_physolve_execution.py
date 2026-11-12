@@ -13,6 +13,52 @@ payload = payload_fixture
 
 @pytest.mark.cuda
 @pytest.mark.parametrize('nworld', [1, 8, 64])
+@pytest.mark.parametrize('mode', ['direct', 'cuda_graph'])
+def test_retained_contact_sample_identity_reset_copy_and_discard(payload, nworld, mode):
+    record = compile_mujoco_xml(CONTACT, require_asset=False)
+    with PhySolveRuntime(record, payload=payload, nworld=nworld, contact_observations=True) as runtime:
+        storage = runtime.storage_binding()
+        assert runtime.contact_sample_identity_contract_version == 1
+        field = storage.fields['contact_sample_id']
+        assert field.dtype == 'int64' and field.shape == (nworld,) and not field.writable
+        def ids(bank=None):
+            return storage.borrow('contact_sample_id', runtime.active_bank if bank is None else bank
+                                  ).numpy(stream=storage.stream).copy()
+        initial = ids()
+        runtime.forward()
+        assert np.all(ids() > initial)  # forward at identical physical time is a new sample
+        if mode == 'cuda_graph':
+            runtime.prepare_step_graph(steps=4)
+        for _ in range(2):
+            before = ids()
+            ticket = runtime.begin_execution()
+            runtime.enqueue_step(ticket, steps=4, execution_mode=mode)
+            runtime.complete_execution(ticket)
+            runtime.accept_execution(ticket)
+            assert np.all(ids() > before)
+        before = ids()
+        mask = np.arange(nworld) % 2 == 0
+        runtime.reset(mask)
+        after = ids()
+        np.testing.assert_array_equal(after[~mask], before[~mask])
+        assert np.all(after[mask] > before[mask])
+        ticket = runtime.begin_execution()
+        runtime.enqueue_update(ticket)  # command-only copy keeps sample identity
+        runtime.complete_execution(ticket)
+        runtime.accept_execution(ticket)
+        np.testing.assert_array_equal(ids(), after)
+        ticket = runtime.begin_execution()
+        runtime.enqueue_update(ticket, refresh_state=True)
+        runtime.complete_execution(ticket)
+        discarded = ids(runtime.observation_bank)
+        runtime.discard_execution(ticket)
+        np.testing.assert_array_equal(ids(), after)
+        runtime.forward()
+        assert np.all(ids() > discarded)  # discarded candidates cannot cause an ABA cache hit
+
+
+@pytest.mark.cuda
+@pytest.mark.parametrize('nworld', [1, 8, 64])
 def test_compiled_body_parameters_shared_readonly_and_body_axes(payload, nworld):
     xml = '''<mujoco><option gravity="0 0 0"/><worldbody><body><freejoint/>
     <inertial mass="2" pos=".03 -.02 .04" euler="0 0 45" diaginertia=".1 .2 .25"/>

@@ -842,3 +842,27 @@ prepared body fields 新增 `rotation_xyzw`，每 body 四个 float32，无量�
 与原有字段一样遵守选择、布局、caller buffer、失败和清理合同，零新增长期状态。
 正式 `tests/scale/test_resident_orientation_read.py` 覆盖四个数值分支、纯球/固定/浮根、
 推进前后及矩阵等价，配套 body/floating read 回归。证据为实验根 `evidence/b7m-*`。
+
+## Retained contact sample identity v1
+
+`contact_sample_identity_contract_version=1` adds read-only device field
+`contact_sample_id: int64[nworld]`. This is an opaque runtime-local sample identity,
+not a simulation clock, native row index, or public shape identity. Consumers must
+scope their caches to the storage generation and world. The two physical banks
+have separate ID arrays. A new solve/forward changes IDs only for refreshed worlds;
+masked refresh retains unselected IDs and measurements; command-only copy retains
+all IDs. New forward evaluations at the same time still receive a new identity.
+
+A device serial is incremented on the canonical stream for every extraction,
+including Graph replay. Discard never rewinds it, preventing candidate ID reuse.
+IDs of failed candidates are not published; consumers still apply execution/error
+gates and keep accepted and candidate derived caches separate. A storage replacement
+invalidates all bindings and caches. Raw arrays remain read-only to consumers.
+No contact sorting, physical response, CUBIN or tolerance changes are involved.
+
+This adds `16*N+8` persistent device bytes, two constant-count kernel dispatches
+per extraction, and one `8*N` D2D ID copy on the existing command-copy boundary.
+There is no new synchronization or host transfer. IDs are valid for the lifetime
+of a runtime with fewer than 2^63-1 extractions; they are not serialized checkpoints.
+Native tests in `tests/test_physolve_execution.py` cover direct/Graph N=1/8/64,
+same-time forward, masked retention, command copy and discard without ID reuse.

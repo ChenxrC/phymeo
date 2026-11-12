@@ -200,3 +200,15 @@ internal allocation cleanup remains the existing runtime/device responsibility,
 not a new consumer recovery promise. The standalone main already preserves
 independent final provenance, journal and summary failures. This is a source-review
 correction, not an executed failure or pass.
+
+## 父串行源码资格（2026-11-12）
+
+状态更新：**SOURCE_QUALIFIED / INSTALLED_PENDING**。父已共同接入两 contact wrapper 的原五个 transmission 参数与准确 capability，保 kind3 空参数分支和旧 scalar aliases。原 exact contact XML 从 M1 negative 参数移除，source helper 保留并在新矩阵以原默认入口两步验证。
+
+本批证据根 `artifacts/p65-parity-motor-asset-20261112-01`：
+- 015-ball-full：两份完整新测试文件首次执行 **51 passed / 54.46s / RAW_EXIT0**，无跳过；包含 interpret 与 CUDA、完整六案例及事务。
+- 016-ball-compat：旧 c1-loaded、c3-early、oblique 各两后端 **6 passed / 12.94s / RAW_EXIT0**，只检查实际受影响入口。
+- 009/010 首静态失败分别为两个 import 排序和两文件排版；011/012 只修上述格式，013/014 全通过，原失败与前后快照保留。没有数值或物理修复，没有改变模型、门、预算或原核。
+- [独立文本审阅](p65-ball-mc-independent-review-20261112.md)唯一消费者双错保全 finding 已在首执行前关闭；审阅本身不计执行资格。
+
+本次新源码资格覆盖该有限组合。统一新 wheel 和源码外两个消费者尚未执行；FREE+BALL、direct BALL activation、limits/dry 与完整 G1 等边界保持。

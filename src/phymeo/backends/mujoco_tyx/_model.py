@@ -93,7 +93,7 @@ def compile_model(mj, model):
 
     if np.any(model.jnt_type == mj.mjtJoint.mjJNT_BALL):
         # Validate BALL structure before choosing its declared contact route.
-        # Direct stateless JOINT motors have a separate, no-contact domain.
+        # Direct stateless JOINT motors compose with admitted primitive contacts.
         from ._joint_transmission import has_ball_transmission
 
         if model.na and has_ball_transmission(mj, model):

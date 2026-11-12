@@ -43,8 +43,13 @@ def test_ball_motor_contact_late_failure_retains_whole_batch(
         raw = capsule.to_bytes()
         revision = runtime.checkpoint_revision
         journal.emit(
-            "pre-fault", name=name, fault=fault, state=before, checkpoint=raw,
-            revision=revision, counters=dict(runtime.counters),
+            "pre-fault",
+            name=name,
+            fault=fault,
+            state=before,
+            checkpoint=raw,
+            revision=revision,
+            counters=dict(runtime.counters),
         )
         with runtime.clone() as clone:
             with monkeypatch.context() as patch:
@@ -64,7 +69,9 @@ def test_ball_motor_contact_late_failure_retains_whole_batch(
 
                         def refuse(plan, result, index, input_control):
                             value = original(plan, result, index, input_control)
-                            journal.emit("actual-publication-prefix", index=index, transmission=value)
+                            journal.emit(
+                                "actual-publication-prefix", index=index, transmission=value
+                            )
                             if index == len(runtime.world_keys) - 1:
                                 raise RuntimeError("BALL-MC final-world publication refused")
                             return value
@@ -90,9 +97,11 @@ def test_ball_motor_contact_late_failure_retains_whole_batch(
                 assert runtime.checkpoint().to_bytes() == raw
                 assert runtime.checkpoint_revision == revision
                 journal.emit(
-                    "rejected-retained", state=runtime.integration_snapshot(),
+                    "rejected-retained",
+                    state=runtime.integration_snapshot(),
                     checkpoint=runtime.checkpoint().to_bytes(),
-                    revision=runtime.checkpoint_revision, counters=dict(runtime.counters),
+                    revision=runtime.checkpoint_revision,
+                    counters=dict(runtime.counters),
                 )
             held = {k: state.held_control for k, state in before.items()}
             left = case.advance(
@@ -124,7 +133,11 @@ def test_ball_motor_contact_foreign_checkpoint_retains_source(mode, tmp_path):
                 runtime.restore(foreign, expected_revision=revision)
             assert runtime.checkpoint().to_bytes() == before
             assert runtime.checkpoint_revision == revision
-            journal.emit("rejected", before=before, foreign=foreign.to_bytes(),
-                         retained=runtime.integration_snapshot())
+            journal.emit(
+                "rejected",
+                before=before,
+                foreign=foreign.to_bytes(),
+                retained=runtime.integration_snapshot(),
+            )
     finally:
         journal.close()

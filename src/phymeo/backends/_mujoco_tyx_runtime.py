@@ -175,8 +175,9 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
     bounded primitive condim=1 manifold with coupled normal forces.
     Ball extension: fixed-root ball/hinge/slide with at most 8 velocity and 10
     position coordinates, complete SO(3) integration and full M/J/bias. This
-    extension permits scalar JOINT actors and excludes ball-target actors,
-    contact, joint limits and dry friction.
+    extension permits scalar JOINT actors and stateless direct BALL motors,
+    with primitive normal/pyramidal3 contact. Direct BALL activation, free-root
+    composition, joint limits and dry friction remain separate capabilities.
     Original domain: 1..8 all-prismatic native DOFs with full coupled static
     mass, stateless direct/affine motors, scalar stiffness/armature/damping; or
     one centered isotropic free body, with native local angular coordinates and
@@ -353,8 +354,13 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
             pyramidal = bool(getattr(self._plan, "constraint_contact", False))
             family = "pyramidal" if pyramidal else "normal"
             activation = "-filterexact" if hasattr(self._plan, "activation") else ""
+            actuator_family = (
+                "joint-motor"
+                if getattr(self._plan, "joint_transmission", None) is not None
+                else "scalar"
+            )
             info.update(
-                domain=f"fixed-ball-scalar-{family}-contact{activation}-v1",
+                domain=f"fixed-ball-{actuator_family}-{family}-contact{activation}-v1",
                 contact_dimensions=(1, 3) if pyramidal else (1,),
                 limits="unsupported",
                 joint_limits_supported=False,

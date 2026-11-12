@@ -58,8 +58,8 @@ def test_ball_motor_contact_rejected_before_device(negative, monkeypatch, tmp_pa
     mj = pytest.importorskip("mujoco")
     import phymeo.backends._mujoco_tyx_runtime as runtime_module
     from phymeo.backends.mujoco_runtime import MuJoCoRuntime
-    from phymeo.builders.mujoco_compiler import compile_mujoco_xml
     from phymeo.backends.mujoco_tyx import MuJoCoTyxUnsupported
+    from phymeo.builders.mujoco_compiler import compile_mujoco_xml
 
     xml = case.negative_source(negative)
     model = mj.MjModel.from_xml_string(xml)

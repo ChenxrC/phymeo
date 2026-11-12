@@ -132,7 +132,13 @@ class TyxConstraintDevice(TyxDevice):
                 self.act_ids,
                 self.act_values,
                 *(
-                    (0, self.parents, self.parents, self.gravity, self.body_force)
+                    (
+                        int(self.transmission_enabled),
+                        self.transmission_offsets,
+                        self.transmission_dofs,
+                        self.transmission_moment,
+                        self.transmission_fields,
+                    )
                     if self.plan.base.kind != 3
                     else ()
                 ),

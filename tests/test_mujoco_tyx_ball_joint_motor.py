@@ -353,7 +353,6 @@ NEGATIVES = {
     "affine-ball": "ball-actuator-domain",
     "parent": "ball-actuator-domain",
     "tail-gear": "actuator-domain",
-    "contact": "joint-motor-contact",
     "limit": "ball-constraint-domain",
     "dry": "ball-constraint-domain",
     "spring": "ball-spring",

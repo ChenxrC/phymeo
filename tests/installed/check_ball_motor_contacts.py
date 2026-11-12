@@ -208,7 +208,11 @@ def analytic(model, entry, packet):
                 bias = model.actuator_biasprm[actor]
                 gear = model.actuator_gear[actor, 0]
                 value += bias[0] + bias[1] * gear * entry.q[qa] + bias[2] * gear * entry.v[dof]
-        force = float(np.clip(value, *model.actuator_forcerange[actor])) if model.actuator_forcelimited[actor] else value
+        force = (
+            float(np.clip(value, *model.actuator_forcerange[actor]))
+            if model.actuator_forcelimited[actor]
+            else value
+        )
         clamped.append(u)
         raw.append(value)
         scalar.append(force)
@@ -220,11 +224,16 @@ def analytic(model, entry, packet):
             generalized[col] += coefficient * force
         offsets.append(len(columns))
     return dict(
-        ids=np.asarray(ids, np.int32), gear=model.actuator_gear.copy(),
-        row_offsets=np.asarray(offsets, np.int32), dof_indices=np.asarray(columns, np.int32),
-        moment=np.asarray(coefficients, np.float32), dense_moment=dense,
-        clamped_control=np.asarray(clamped), raw_force=np.asarray(raw),
-        scalar_force=np.asarray(scalar), generalized_force=generalized,
+        ids=np.asarray(ids, np.int32),
+        gear=model.actuator_gear.copy(),
+        row_offsets=np.asarray(offsets, np.int32),
+        dof_indices=np.asarray(columns, np.int32),
+        moment=np.asarray(coefficients, np.float32),
+        dense_moment=dense,
+        clamped_control=np.asarray(clamped),
+        raw_force=np.asarray(raw),
+        scalar_force=np.asarray(scalar),
+        generalized_force=generalized,
     )
 
 
@@ -232,7 +241,9 @@ def dense_native_moment(model, data):
     dense = np.zeros((model.nu, model.nv))
     for actor in range(model.nu):
         start, count = int(data.moment_rowadr[actor]), int(data.moment_rownnz[actor])
-        dense[actor, data.moment_colind[start:start + count]] = data.actuator_moment[start:start + count]
+        dense[actor, data.moment_colind[start : start + count]] = data.actuator_moment[
+            start : start + count
+        ]
     return dense
 
 
@@ -254,10 +265,21 @@ def check_transmission(row, entry, native):
     )
     np.testing.assert_allclose(
         tr.generalized_force @ entry.v,
-        tr.scalar_force @ (expected["dense_moment"] @ entry.v), **FORCE,
+        tr.scalar_force @ (expected["dense_moment"] @ entry.v),
+        **FORCE,
     )
-    for name in ("ids", "gear", "row_offsets", "dof_indices", "moment", "input_control",
-                 "clamped_control", "raw_force", "scalar_force", "generalized_force"):
+    for name in (
+        "ids",
+        "gear",
+        "row_offsets",
+        "dof_indices",
+        "moment",
+        "input_control",
+        "clamped_control",
+        "raw_force",
+        "scalar_force",
+        "generalized_force",
+    ):
         value = getattr(tr, name)
         require(not value.flags.writeable, "immutable transmission " + name)
         try:
@@ -266,6 +288,7 @@ def check_transmission(row, entry, native):
             pass
         else:
             raise AssertionError("transmission permits mutable reenable " + name)
+
 
 def native_state(data):
     return dict(
@@ -314,14 +337,26 @@ HEADER = """<mujoco><compiler angle="radian" fusestatic="false"/>
 
 
 def motor(name, target, gear, extra="", gain="1"):
-    return (f'<general name="{name}" joint="{target}" gear="{gear}" '
-            f'dyntype="none" gaintype="fixed" gainprm="{gain}" {extra}/>')
+    return (
+        f'<general name="{name}" joint="{target}" gear="{gear}" '
+        f'dyntype="none" gaintype="fixed" gainprm="{gain}" {extra}/>'
+    )
 
 
 def source(name):
     """Predeclared original BALL-C geometry plus stateless direct JOINT motors."""
-    require(name in ("mc1-normal", "mc2-friction", "mc3-mixed", "mc4-shared",
-                     "mc5-two-ball", "mc6-disabled"), "declared case")
+    require(
+        name
+        in (
+            "mc1-normal",
+            "mc2-friction",
+            "mc3-mixed",
+            "mc4-shared",
+            "mc5-two-ball",
+            "mc6-disabled",
+        ),
+        "declared case",
+    )
     dim = 1 if name == "mc1-normal" else 3
     if name in ("mc1-normal", "mc2-friction", "mc4-shared"):
         world = f'''<geom name="ground" type="plane" size="1 1 .1" condim="{dim}"/>
@@ -349,22 +384,32 @@ def source(name):
         actors += motor("slide-a-drive", "slide-a", "-.5")
         actors += motor("slide-b-drive", "slide-b", ".5")
     else:
-        world = f'''<geom name="ground" type="box" pos="0 0 -.05" size=".8 .8 .05" condim="3"/>
+        world = f"""<geom name="ground" type="box" pos="0 0 -.05" size=".8 .8 .05" condim="3"/>
         <body name="base" pos="0 0 .4"><joint name="hinge" type="hinge" axis="0 0 1" {JOINT} {SCALAR}/>
         {INERTIA}<body name="middle" pos="0 0 -.2"><joint name="ball" type="ball" {JOINT}/>
         {INERTIA}<body name="tip" pos="0 0 -.1"><joint name="slide" type="slide" axis="0 0 1" {JOINT} {SCALAR}/>
         {INERTIA}<geom name="tip-sphere" type="sphere" pos=".06 0 0" size=".1" condim="3"/>
-        </body></body></body>'''
-        extra = 'group="1" forcelimited="true" forcerange=".1 .25"' if name == "mc6-disabled" else ""
+        </body></body></body>"""
+        extra = (
+            'group="1" forcelimited="true" forcerange=".1 .25"' if name == "mc6-disabled" else ""
+        )
         actors = motor("ball-drive", "ball", "1 -2 .5", extra)
         actors += motor("hinge-drive", "hinge", "-.5")
-        actors += motor("slide-drive", "slide", "-2",
-                        'biastype="affine" biasprm=".01 -.3 -.04" ctrllimited="true" '
-                        'ctrlrange="-.4 .4" forcelimited="true" forcerange="-.7 .7"', gain="1.2")
-    xml = HEADER + "<worldbody>" + world + "</worldbody><actuator>" + actors + "</actuator></mujoco>"
+        actors += motor(
+            "slide-drive",
+            "slide",
+            "-2",
+            'biastype="affine" biasprm=".01 -.3 -.04" ctrllimited="true" '
+            'ctrlrange="-.4 .4" forcelimited="true" forcerange="-.7 .7"',
+            gain="1.2",
+        )
+    xml = (
+        HEADER + "<worldbody>" + world + "</worldbody><actuator>" + actors + "</actuator></mujoco>"
+    )
     if name == "mc6-disabled":
         xml = xml.replace('integrator="Euler"', 'integrator="Euler" actuatorgroupdisable="1"')
     return xml
+
 
 def capacity_source(family, overflow):
     count = (17 if overflow else 16) if family == "pairs" else (5 if overflow else 4)
@@ -386,16 +431,24 @@ def negative_source(name):
     if name == "activation":
         return xml.replace('dyntype="none"', 'dyntype="filterexact" dynprm=".004"', 1)
     if name == "scalar-activation":
-        return xml.replace('name="slide-drive" joint="slide" gear="-2" dyntype="none"',
-                           'name="slide-drive" joint="slide" gear="-2" dyntype="filterexact" dynprm=".004"')
+        return xml.replace(
+            'name="slide-drive" joint="slide" gear="-2" dyntype="none"',
+            'name="slide-drive" joint="slide" gear="-2" dyntype="filterexact" dynprm=".004"',
+        )
     if name == "free":
-        return xml.replace("<worldbody>", '<worldbody><body name="free-root"><freejoint/>'
-                           '<inertial mass="1" pos="0 0 0" diaginertia=".1 .1 .1"/>').replace(
-                           "</worldbody>", "</body></worldbody>")
+        return xml.replace(
+            "<worldbody>",
+            '<worldbody><body name="free-root"><freejoint/>'
+            '<inertial mass="1" pos="0 0 0" diaginertia=".1 .1 .1"/>',
+        ).replace("</worldbody>", "</body></worldbody>")
     if name == "ball-limit":
-        return xml.replace('name="ball" type="ball"', 'name="ball" type="ball" limited="true" range="0 .5"')
+        return xml.replace(
+            'name="ball" type="ball"', 'name="ball" type="ball" limited="true" range="0 .5"'
+        )
     if name == "scalar-limit":
-        return xml.replace('name="hinge" type="hinge"', 'name="hinge" type="hinge" limited="true" range="-1 1"')
+        return xml.replace(
+            'name="hinge" type="hinge"', 'name="hinge" type="hinge" limited="true" range="-1 1"'
+        )
     if name == "dry":
         return xml.replace('name="ball" type="ball"', 'name="ball" type="ball" frictionloss=".1"')
     if name == "ball-spring":
@@ -405,17 +458,25 @@ def negative_source(name):
     if name in ("condim4", "condim6"):
         return xml.replace('condim="3"', 'condim="' + name[-1] + '"')
     if name == "affine-ball":
-        return xml.replace('name="ball-drive"', 'biastype="affine" biasprm="0 -.2 -.1" name="ball-drive"')
+        return xml.replace(
+            'name="ball-drive"', 'biastype="affine" biasprm="0 -.2 -.1" name="ball-drive"'
+        )
     if name == "parent-transmission":
         return xml.replace('joint="ball"', 'jointinparent="ball"')
     if name == "actor-overflow":
-        return xml.replace("</actuator>", "".join(
-            motor("extra-" + str(i), "ball", ".125 0 0") for i in range(30)) + "</actuator>")
+        return xml.replace(
+            "</actuator>",
+            "".join(motor("extra-" + str(i), "ball", ".125 0 0") for i in range(30))
+            + "</actuator>",
+        )
     if name in ("pair-overflow", "slot-overflow"):
         text = capacity_source("pairs" if name == "pair-overflow" else "slots", True)
-        return text.replace("</mujoco>", "<actuator>" + motor("ball-drive", "ball", "1 -2 .5")
-                            + "</actuator></mujoco>")
+        return text.replace(
+            "</mujoco>",
+            "<actuator>" + motor("ball-drive", "ball", "1 -2 .5") + "</actuator></mujoco>",
+        )
     raise ValueError(name)
+
 
 def initial(mj, model, name, slot):
     from phymeo.backends.mujoco_runtime import MuJoCoInitialState
@@ -425,22 +486,26 @@ def initial(mj, model, name, slot):
         qa, dof = int(model.jnt_qposadr[joint]), int(model.jnt_dofadr[joint])
         if int(model.jnt_type[joint]) == 1:
             if name in ("mc1-normal", "mc2-friction", "mc4-shared"):
-                q[qa:qa + 4] = (2 / 3, 1 / 3, 2 / 3, 0)
-                v[dof:dof + 3] = np.array([0.02, -0.03, 0.01]) * (1 + .1 * slot)
+                q[qa : qa + 4] = (2 / 3, 1 / 3, 2 / 3, 0)
+                v[dof : dof + 3] = np.array([0.02, -0.03, 0.01]) * (1 + 0.1 * slot)
             else:
-                q[qa:qa + 4] = (math.cos(.125),
-                    math.sin(.125) if name == "mc5-two-ball" else 0, 0,
-                    0 if name == "mc5-two-ball" else math.sin(.125))
-                v[dof:dof + 3] = np.array([.02, -.03, .04]) * (-1 if slot % 2 else 1)
+                q[qa : qa + 4] = (
+                    math.cos(0.125),
+                    math.sin(0.125) if name == "mc5-two-ball" else 0,
+                    0,
+                    0 if name == "mc5-two-ball" else math.sin(0.125),
+                )
+                v[dof : dof + 3] = np.array([0.02, -0.03, 0.04]) * (-1 if slot % 2 else 1)
         elif int(model.jnt_type[joint]) == 3:
-            q[qa] += .11
-            v[dof] = .1 if slot % 2 else -.1
+            q[qa] += 0.11
+            v[dof] = 0.1 if slot % 2 else -0.1
         elif name == "mc5-two-ball":
-            v[dof] = .02 if joint == 1 else -.02
+            v[dof] = 0.02 if joint == 1 else -0.02
         else:
-            q[qa] -= .001
-            v[dof] = -.02
-    return MuJoCoInitialState(q, v.astype(np.float32), act=np.zeros(model.na), time=.125)
+            q[qa] -= 0.001
+            v[dof] = -0.02
+    return MuJoCoInitialState(q, v.astype(np.float32), act=np.zeros(model.na), time=0.125)
+
 
 def fixture(name, mode, keys=KEYS):
     import mujoco as mj
@@ -834,10 +899,18 @@ def advance(runtime, mj, model, packets, refs, journal, label):
             counters=dict(runtime.counters),
         )
         require(accepted == dict.fromkeys(runtime.world_keys, True), "all real worlds accepted")
-        require(runtime.counters["completed_steps"] == completed_before + 1, "one actual batch step")
-        require(runtime.counters["accepted_world_steps"] == accepted_before + len(runtime.world_keys), "one accepted step per world")
+        require(
+            runtime.counters["completed_steps"] == completed_before + 1, "one actual batch step"
+        )
+        require(
+            runtime.counters["accepted_world_steps"] == accepted_before + len(runtime.world_keys),
+            "one accepted step per world",
+        )
         stages = 5 if runtime.capabilities["numerical_solver"] == "normal-dual-active-set-v1" else 7
-        require(runtime.counters["completed_kernels"] == launches_before + stages, "unchanged contact pipeline launch count")
+        require(
+            runtime.counters["completed_kernels"] == launches_before + stages,
+            "unchanged contact pipeline launch count",
+        )
         for key in runtime.world_keys:
             compare(
                 output[key].last_step, entry[key], output[key], packets[key], expected[key], model
@@ -859,16 +932,28 @@ def advance(runtime, mj, model, packets, refs, journal, label):
 
 
 def domain(name):
-    return "fixed-ball-joint-motor-" + ("normal" if name == "mc1-normal" else "pyramidal") + "-contact-v1"
+    return (
+        "fixed-ball-joint-motor-"
+        + ("normal" if name == "mc1-normal" else "pyramidal")
+        + "-contact-v1"
+    )
 
 
 def continuous(name, mode, journal):
     mj, model, compiled, starts, runtime = fixture(name, mode)
     try:
         require(runtime.capabilities["domain"] == domain(name), "precise composed domain")
-        require(model.na == 0 and not runtime.capabilities["joint_limits_supported"]
-                and not runtime.capabilities["dry_friction_supported"], "bounded stateless domain")
-        require(tuple(runtime.capabilities["contact_dimensions"]) == ((1,) if name == "mc1-normal" else (1, 3)), "contact dimensions")
+        require(
+            model.na == 0
+            and not runtime.capabilities["joint_limits_supported"]
+            and not runtime.capabilities["dry_friction_supported"],
+            "bounded stateless domain",
+        )
+        require(
+            tuple(runtime.capabilities["contact_dimensions"])
+            == ((1,) if name == "mc1-normal" else (1, 3)),
+            "contact dimensions",
+        )
         if name == "mc5-two-ball":
             require((model.nq, model.nv) == (10, 8), "native nq/nv boundary")
         if name in ("mc3-mixed", "mc6-disabled"):
@@ -877,13 +962,29 @@ def continuous(name, mode, journal):
         state = runtime.integration_snapshot()
         start = state
         refs = references(mj, model, state)
-        journal.emit("declaration", name=name, mode=mode, source_xml=source(name),
+        journal.emit(
+            "declaration",
+            name=name,
+            mode=mode,
+            source_xml=source(name),
             source_sha256=hashlib.sha256(source(name).encode()).hexdigest(),
-            compilation=compiled.source, starts=starts, stored=state,
-            capabilities=runtime.capabilities, joint_types=model.jnt_type.copy(),
-            qa=model.jnt_qposadr.copy(), dof=model.jnt_dofadr.copy(), tolerances=TOL,
-            force_gate=FORCE, contact_force_gate=CONTACT_FORCE, acceleration_gate=ACC,
-            q_gate=Q_ATOL, v_gate=V_ATOL, time_gate=TIME_ATOL, steps=24, h=H)
+            compilation=compiled.source,
+            starts=starts,
+            stored=state,
+            capabilities=runtime.capabilities,
+            joint_types=model.jnt_type.copy(),
+            qa=model.jnt_qposadr.copy(),
+            dof=model.jnt_dofadr.copy(),
+            tolerances=TOL,
+            force_gate=FORCE,
+            contact_force_gate=CONTACT_FORCE,
+            acceleration_gate=ACC,
+            q_gate=Q_ATOL,
+            v_gate=V_ATOL,
+            time_gate=TIME_ATOL,
+            steps=24,
+            h=H,
+        )
         active = {key: [] for key in KEYS}
         both_moments = False
         for tick in range(24):
@@ -896,32 +997,58 @@ def continuous(name, mode, journal):
                 if tick >= 16:
                     np.testing.assert_array_equal(row.control.ctrl, np.zeros(model.nu))
                     np.testing.assert_array_equal(row.control.qfrc_applied, np.zeros(model.nv))
-                    np.testing.assert_array_equal(row.control.xfrc_applied, np.zeros((model.nbody, 6)))
+                    np.testing.assert_array_equal(
+                        row.control.xfrc_applied, np.zeros((model.nbody, 6))
+                    )
                 if name == "mc4-shared":
                     np.testing.assert_array_equal(row.transmission.moment[-3:], np.zeros(3))
-                    require(row.transmission.ids[-1, 5] == 3, "zero gear keeps three native columns")
+                    require(
+                        row.transmission.ids[-1, 5] == 3, "zero gear keeps three native columns"
+                    )
                 if name == "mc6-disabled":
                     require(row.transmission.raw_force[0] == 0, "disabled raw motor force")
-                    require(row.transmission.scalar_force[0] == np.float32(.1), "positive clamp after disabled zero")
+                    require(
+                        row.transmission.scalar_force[0] == np.float32(0.1),
+                        "positive clamp after disabled zero",
+                    )
                 if name == "mc5-two-ball":
                     both_moments = both_moments or any(
                         np.linalg.norm(c.wrench_on_body1_world[3:]) > 0
-                        and np.linalg.norm(c.wrench_on_body2_world[3:]) > 0 for c in row.contacts)
+                        and np.linalg.norm(c.wrench_on_body2_world[3:]) > 0
+                        for c in row.contacts
+                    )
             if tick == 0 and name == "mc1-normal":
                 contacts = state[KEYS[0]].last_step.contacts
-                require(any(c.active and c.normal_force > 0 for c in contacts), "initial normal load")
-                require(all(abs(x) > 1e-4 for x in contacts[0].jacobian), "all ball normal J columns")
-                require(np.linalg.norm(contacts[0].wrench_on_body2_world[3:]) > 0, "offset load moment")
-        require(all(any(values) for values in active.values()), "actual contact in both independent worlds")
+                require(
+                    any(c.active and c.normal_force > 0 for c in contacts), "initial normal load"
+                )
+                require(
+                    all(abs(x) > 1e-4 for x in contacts[0].jacobian), "all ball normal J columns"
+                )
+                require(
+                    np.linalg.norm(contacts[0].wrench_on_body2_world[3:]) > 0, "offset load moment"
+                )
+        require(
+            all(any(values) for values in active.values()),
+            "actual contact in both independent worlds",
+        )
         if name == "mc5-two-ball":
             for qa in (0, 5):
-                require(np.any(state[KEYS[0]].q[qa:qa + 5] != start[KEYS[0]].q[qa:qa + 5]),
-                        "each dynamic branch actually moved")
+                require(
+                    np.any(state[KEYS[0]].q[qa : qa + 5] != start[KEYS[0]].q[qa : qa + 5]),
+                    "each dynamic branch actually moved",
+                )
             require(both_moments, "both moving bodies received contact moment")
         require(runtime.counters["completed_steps"] == 24, "24 actual uninterrupted batches")
         require(runtime.counters["accepted_world_steps"] == 48, "48 actual world steps")
-        journal.emit("continuous-complete", name=name, active=active, state=state,
-                     counters=dict(runtime.counters), both_moments=both_moments)
+        journal.emit(
+            "continuous-complete",
+            name=name,
+            active=active,
+            state=state,
+            counters=dict(runtime.counters),
+            both_moments=both_moments,
+        )
         return dict(name=name, accepted_world_steps=48, steps=24)
     finally:
         primary = sys.exc_info()[1]
@@ -937,6 +1064,7 @@ def continuous(name, mode, journal):
 def legacy_default(xml, mode, journal):
     """Exact prior M1 negative XML, its default q/v and original two-step controls."""
     import mujoco as mj
+
     from phymeo.backends.mujoco_runtime import MuJoCoRuntime
     from phymeo.builders.mujoco_compiler import compile_mujoco_xml
 
@@ -946,8 +1074,13 @@ def legacy_default(xml, mode, journal):
     with MuJoCoRuntime(compiled, mode=mode, implementation="tyx", world_keys=KEYS) as runtime:
         entry = runtime.integration_snapshot()
         refs = references(mj, model, entry)
-        journal.emit("legacy-declaration", xml=xml, source_sha256=hashlib.sha256(xml.encode()).hexdigest(),
-                     stored=entry, capabilities=runtime.capabilities)
+        journal.emit(
+            "legacy-declaration",
+            xml=xml,
+            source_sha256=hashlib.sha256(xml.encode()).hexdigest(),
+            stored=entry,
+            capabilities=runtime.capabilities,
+        )
         for tick in range(2):
             packets = {key: control(model, tick, i) for i, key in enumerate(KEYS)}
             state = advance(runtime, mj, model, packets, refs, journal, f"legacy-{tick + 1}")
@@ -955,6 +1088,7 @@ def legacy_default(xml, mode, journal):
                 require(not row.last_step.contacts, "original default geometry remains separated")
                 np.testing.assert_array_equal(row.last_step.qfrc_constraint, np.zeros(model.nv))
         journal.emit("legacy-complete", state=state, counters=dict(runtime.counters))
+
 
 def lifecycle(name, mode, journal, keys=(7, 41, 103, 509), output_path=None):
     from phymeo.backends.mujoco_checkpoint import MuJoCoTyxCheckpoint
@@ -1053,7 +1187,9 @@ def run(mode, output_path, journal, installed_root):
         normal=normal,
         continuous=result,
         lifecycle=life,
-        accepted_world_steps=normal["accepted_world_steps"] + result["accepted_world_steps"] + life["accepted_world_steps"],
+        accepted_world_steps=normal["accepted_world_steps"]
+        + result["accepted_world_steps"]
+        + life["accepted_world_steps"],
         final_provenance=paths,
     )
 

@@ -1,0 +1,91 @@
+"""Cold logical URDF frames bound to retained bodies in a native compilation."""
+
+from dataclasses import dataclass
+
+import numpy as np
+
+from ..dynamics.rotation import quaternion_matrix
+
+
+@dataclass(frozen=True)
+class NativeJointFrame:
+    instance: str
+    source_name: str
+    kind: str
+    parent_body: str
+    child_body: str
+    # SI body-local joint anchors: xyz followed by xyzw, never COM-local.
+    parent_anchor: tuple[float, ...]
+    child_anchor: tuple[float, ...]
+    axis_joint_local: tuple[float, ...] | None
+
+
+@dataclass(frozen=True)
+class NativeFrameMetadata:
+    # (compiled body name, commit-reference COM in that body's local frame).
+    bodies: tuple
+    joints: tuple[NativeJointFrame, ...]
+    contract_version: int = 1
+
+
+def compile_urdf_frames(model, sources):
+    """Opt-in URDF fixed/scalar frame export; no extra FK or simulation state."""
+    import mujoco as mj
+
+    joints = []
+    for instance, root in sources:
+        if root.tag != "robot":
+            raise NotImplementedError("native source frame export currently requires URDF")
+        prefix = instance + "::"
+        for source in root.findall("joint"):
+            name = source.attrib["name"]
+            kind = source.attrib["type"]
+            kind = "revolute" if kind == "continuous" else kind
+            if kind not in {"fixed", "revolute", "prismatic"}:
+                raise NotImplementedError(f"native source frame type {kind!r} is not qualified")
+            parent_name = prefix + source.find("parent").attrib["link"]
+            child_name = prefix + source.find("child").attrib["link"]
+            parent, child = model.body(parent_name), model.body(child_name)
+            if int(model.body_parentid[child.id]) != parent.id:
+                raise ValueError("native source frame requires retained parent/child bodies")
+            position = np.zeros(3)
+            axis = None
+            count = int(model.body_jntnum[child.id])
+            if kind == "fixed":
+                if count:
+                    raise ValueError("fixed source frame has native moving joints")
+            else:
+                native = model.joint(prefix + name)
+                expected = (
+                    mj.mjtJoint.mjJNT_SLIDE if kind == "prismatic" else mj.mjtJoint.mjJNT_HINGE
+                )
+                if (
+                    count != 1
+                    or int(model.jnt_bodyid[native.id]) != child.id
+                    or int(model.jnt_type[native.id]) != int(expected)
+                ):
+                    raise ValueError("source scalar frame does not match the native joint")
+                position = np.asarray(model.jnt_pos[native.id], dtype=float)
+                vector = np.asarray(model.jnt_axis[native.id], dtype=float)
+                norm = np.linalg.norm(vector)
+                if not np.isfinite(norm) or norm <= 0:
+                    raise ValueError("native joint axis must be finite and nonzero")
+                axis = tuple(vector / norm)
+            rotation = np.asarray(model.body_quat[child.id], dtype=float)[[1, 2, 3, 0]]
+            parent_position = (
+                model.body_pos[child.id] + quaternion_matrix(rotation[None])[0] @ position
+            )
+            parent_anchor = tuple(float(x) for x in (*parent_position, *rotation))
+            child_anchor = tuple(float(x) for x in (*position, 0, 0, 0, 1))
+            if not np.isfinite((*parent_anchor, *child_anchor)).all():
+                raise ValueError("native joint anchors must be finite")
+            joints.append(
+                NativeJointFrame(
+                    instance, name, kind, parent_name, child_name, parent_anchor, child_anchor, axis
+                )
+            )
+    bodies = tuple(
+        (model.body(i).name, tuple(float(x) for x in model.body_ipos[i]))
+        for i in range(1, model.nbody)
+    )
+    return NativeFrameMetadata(bodies, tuple(joints))

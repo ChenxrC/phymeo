@@ -425,3 +425,22 @@ host/设备访问及空场景。独立只读复审无阻断。全文档检查仍
 同步。无 URDF 的程序化模板保持空身份集；非 URDF 资产不伪造 URDF 身份。
 装配、visual、显式排除和 mimic 共74项通过；新增覆盖两个重命名实例、前导/内部
 斜杠、固定根、删除源文件后绑定64 world。安装及消费者结论由 P2PE 单独记录。
+
+## B8i：原生来源 frame 合同
+
+`compile_native_template(capture_frames=True)` 显式导出 `frame_metadata`；缺省为
+None，不扩大已有非URDF路径的要求。已请求且为空的模型返回版本1的空合同。
+首版覆盖保留body的URDF fixed/revolute/continuous/prismatic逻辑关节；continuous
+按原生revolute描述。每行保留instance/source_name，与原生控制列数量独立。
+端点引用scoped body名称；anchor为body原点局部的米与xyzw旋转，axis为关节局部
+单位向量。body COM是本次编译参考值，不能冒充后续参数修改或逐帧状态。
+
+固定关节从实际编译的父子body关系导出；标量关节同时验证原生类型和唯一child
+绑定。parent anchor由body相对姿态与joint局部位置组合，child anchor为joint局部
+位置及单位旋转。不执行额外forward/FK，不复制设备state，不引入P2PE字段定义。
+此合同不单独资格化reaction wrench、MJCF来源frame或resident折叠frame。
+冷成本O(B+J)，结果为不可变tuple/dataclass，随template生命周期和重编译失效。
+
+装配、visual、排除与mimic共78项通过（2.00s），覆盖旋转轴、非零COM、固定关节、
+多个实例和文件删除后的绑定。首轮未设置资产来源有5项skip，补齐显式来源后全过。
+真实消费者Stage冷编译得到14个body frame和13个逻辑关节；不将冷编译当作GUI通过。

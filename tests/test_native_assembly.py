@@ -76,6 +76,45 @@ def test_source_identity_preserves_renaming_slashes_and_multiple_instances(urdf)
     assert template.compilation.fresh_native_model().nbody == 5
 
 
+@pytest.mark.parametrize("kind", ["prismatic", "revolute", "continuous"])
+def test_compiled_source_frames_include_fixed_joints_and_com(urdf, kind):
+    text = URDF.replace('type="prismatic"', f'type="{kind}"')
+    text = text.replace('<inertial>', '<inertial><origin xyz=".03 .04 .05"/>')
+    text = text.replace('<axis xyz=', '<origin xyz=".1 .2 .3" rpy="0 0 1.5707963267948966"/><axis xyz=')
+    text = text.replace('</robot>', '<link name="tip"/><joint name="weld" type="fixed">'
+                        '<parent link="link"/><child link="tip"/>'
+                        '<origin xyz=".4 .5 .6"/></joint></robot>')
+    assets = tuple(NativeAssetInstance(name, urdf, urdf_xml=text)
+                   for name in ("first", "second"))
+    template = compile_native_template(assets, timestep=.002, gravity=(0, 0, 0),
+                                       capture_frames=True)
+    frames = template.frame_metadata
+    assert frames.contract_version == 1
+    assert len(frames.joints) == 4
+    for index, name in enumerate(("first", "second")):
+        moving, fixed = frames.joints[index * 2:index * 2 + 2]
+        assert moving.instance == name and moving.source_name == "slide"
+        assert moving.kind == ("revolute" if kind == "continuous" else kind)
+        assert moving.parent_body == name + "::base"
+        assert moving.child_body == name + "::link"
+        np.testing.assert_allclose(moving.parent_anchor, [.1, .2, .3, 0, 0, 2**-.5, 2**-.5],
+                                   atol=1e-12, rtol=0)
+        assert moving.child_anchor == (0, 0, 0, 0, 0, 0, 1)
+        assert moving.axis_joint_local == (1, 0, 0)
+        assert fixed.kind == "fixed" and fixed.axis_joint_local is None
+        np.testing.assert_allclose(fixed.parent_anchor, [.4, .5, .6, 0, 0, 0, 1], atol=1e-12)
+        np.testing.assert_allclose(dict(frames.bodies)[name + "::link"], [.03, .04, .05], atol=1e-12)
+    Path(urdf).unlink()
+    assert template.bind(64).template.frame_metadata is frames
+
+
+def test_source_frames_are_explicit_and_empty_template_is_not_missing():
+    template = compile_native_template((), timestep=.002, gravity=(0, 0, 0))
+    assert template.frame_metadata is None
+    template = compile_native_template((), timestep=.002, gravity=(0, 0, 0), capture_frames=True)
+    assert template.frame_metadata.bodies == template.frame_metadata.joints == ()
+
+
 @pytest.mark.parametrize(
     "strip,filename", [(False, "meshes/shape.obj"), (True, "ignored/shape.obj")]
 )

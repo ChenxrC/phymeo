@@ -243,6 +243,8 @@ class NativeTemplate:
     # values; the public compilation.mj_spec is caller-mutable. Never expose or
     # edit this snapshot, only copy it for a newly requested rule compilation.
     _source_spec: object = field(default=None, repr=False, compare=False)
+    # None means not requested; an empty contract means no logical URDF joints.
+    frame_metadata: object = None
 
     @property
     def scalar_joint_bindings(self):
@@ -333,6 +335,7 @@ def compile_native_template(
     rigid_shapes=(),
     integrator="euler",
     capture_visuals=False,
+    capture_frames=False,
 ):
     """Compile a same-world assembly once; retain admitted asset-local semantics.
 
@@ -347,6 +350,8 @@ def compile_native_template(
 
     if type(capture_visuals) is not bool:
         raise TypeError("capture_visuals must be bool")
+    if type(capture_frames) is not bool:
+        raise TypeError("capture_frames must be bool")
 
     assets, static_shapes, rigid_shapes = tuple(assets), tuple(static_shapes), tuple(rigid_shapes)
     if any(not isinstance(a, NativeAssetInstance) for a in assets):
@@ -375,10 +380,13 @@ def compile_native_template(
     spec.option.jacobian = mj.mjtJacobian.mjJAC_DENSE
     pending, sources, target_maps, diagnostics = [], [], {}, []
     source_bodies = []
+    frame_sources = []
     captured_visuals = {}
     visual_diagnostics = []
     for asset in assets:
         child, source_root, source_digest = load_asset_source(asset)
+        if capture_frames:
+            frame_sources.append((asset.name, source_root))
         if source_root.tag == "robot":
             source_bodies.append((asset.name, source_root.get("name", ""),
                                   tuple(link.attrib["name"] for link in source_root.findall("link"))))
@@ -479,6 +487,11 @@ def compile_native_template(
         )
     compilation = compile_mujoco_spec(spec, instance="assembly")
     model = compilation.fresh_native_model()
+    frame_metadata = None
+    if capture_frames:
+        from .native_frames import compile_urdf_frames
+
+        frame_metadata = compile_urdf_frames(model, frame_sources)
     identities = []
     for instance, model_name, links in source_bodies:
         rows = []
@@ -566,6 +579,7 @@ def compile_native_template(
         tuple((model.geom(i).name, i) for i in range(model.ngeom)),
         tuple(sources),
         asset_identities=tuple(identities),
+        frame_metadata=frame_metadata,
         scalar_controls=tuple(scalar_controls),
         target_bindings=target_bindings,
         import_diagnostics=tuple(diagnostics),

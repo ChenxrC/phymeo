@@ -4,23 +4,32 @@ Reuse the unchanged D4 declarations and independent geometry/elastic/rigid
 references. Only the optional node dissipation and case identity change. The
 continued FP64 reference always advances its own damped state.
 """
+
 from dataclasses import replace
 from types import MappingProxyType
 
+import deformable_normal_load_cases as base
 import numpy as np
 
-import deformable_normal_load_cases as base
 from phymeo.backends.deformable_dissipation import DistanceDissipation
 
 COEFFICIENT = 4096.0
 NAMES = (
-    "d6b_n1_sphere_c4096", "d6b_n2_capsule_c4096",
-    "d6b_n3_soft_c4096", "d6b_n1_fine_c4096",
+    "d6b_n1_sphere_c4096",
+    "d6b_n2_capsule_c4096",
+    "d6b_n3_soft_c4096",
+    "d6b_n1_fine_c4096",
 )
 BASE_NAMES = MappingProxyType(dict(zip(NAMES, base.NAMES, strict=True)))
 ph = base.ph
 T, BASE_H = base.T, base.BASE_H
-RADIUS, WIDTH, STIFFNESS, DAMPING, LOAD = base.RADIUS, base.WIDTH, base.STIFFNESS, base.DAMPING, base.LOAD
+RADIUS, WIDTH, STIFFNESS, DAMPING, LOAD = (
+    base.RADIUS,
+    base.WIDTH,
+    base.STIFFNESS,
+    base.DAMPING,
+    base.LOAD,
+)
 SHORT_ATOL, SHORT_RTOL = base.SHORT_ATOL, base.SHORT_RTOL
 LONG_POSITION, LONG_VELOCITY, LONG_ANGLE = base.LONG_POSITION, base.LONG_VELOCITY, base.LONG_ANGLE
 SUPPORT_WINDOWS, EVENT_DURATION = base.SUPPORT_WINDOWS, base.EVENT_DURATION
@@ -45,7 +54,8 @@ def make_case(name, *, world=7):
 
 def manifest(case):
     return dict(
-        base.manifest(case), base_name=case["base_name"],
+        base.manifest(case),
+        base_name=case["base_name"],
         dissipation=case["node"].dissipation,
         application="one ordered axial velocity pass after unchanged elastic reconstruction",
         coefficient_selection="predeclared 4096 N s/m; no trajectory fit or sweep",
@@ -65,7 +75,9 @@ def ordered_velocity(spec, x, velocity, h):
         normal = separation / np.linalg.norm(separation)
         rate = float(normal @ (result[i] - result[j]))
         impulse = (
-            -h * coefficient * rate
+            -h
+            * coefficient
+            * rate
             / (1 + h * coefficient * (weights[i] + weights[j]) * (normal @ normal))
         )
         result[i] += weights[i] * impulse * normal
@@ -80,6 +92,10 @@ def continue_reference(case, state, external):
     velocity = ordered_velocity(case["node"], y, reconstructed, case["h"])
     next_q, next_speed = rigid_step(case, q, speed, wrench, case["h"], external)
     return (y, velocity, next_q, next_speed), dict(
-        force=force, wrench=wrench, rows=rows, multipliers=lam,
-        reconstructed_velocity=reconstructed, dissipated_velocity=velocity,
+        force=force,
+        wrench=wrench,
+        rows=rows,
+        multipliers=lam,
+        reconstructed_velocity=reconstructed,
+        dissipated_velocity=velocity,
     )

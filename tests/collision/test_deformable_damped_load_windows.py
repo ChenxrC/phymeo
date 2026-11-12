@@ -3,6 +3,7 @@
 Fabricated phase/statistics records exercise validators only, never establish
 physical qualification. Full windows require the explicit public runner CLI.
 """
+
 import importlib.util
 import sys
 from functools import lru_cache
@@ -44,8 +45,10 @@ def test_only_explicit_radial_dissipation_changes_the_four_declarations():
     module = runner()
     reference = module.ref
     assert reference.NAMES == (
-        "d6b_n1_sphere_c4096", "d6b_n2_capsule_c4096",
-        "d6b_n3_soft_c4096", "d6b_n1_fine_c4096",
+        "d6b_n1_sphere_c4096",
+        "d6b_n2_capsule_c4096",
+        "d6b_n3_soft_c4096",
+        "d6b_n1_fine_c4096",
     )
     assert reference.COEFFICIENT == 4096
     steps = 0
@@ -60,14 +63,24 @@ def test_only_explicit_radial_dissipation_changes_the_four_declarations():
         left = dict(left, name=original_name, node=old["node"])
         assert module.encode(left) == module.encode(right)
         for field in ("model", "initial_state", "constraints", "point_ids", "surfaces"):
-            assert module.encode(getattr(new["node"], field)) == module.encode(getattr(old["node"], field))
+            assert module.encode(getattr(new["node"], field)) == module.encode(
+                getattr(old["node"], field)
+            )
         phase = new["node"].dissipation
         np.testing.assert_array_equal(phase.ordered_point_ids, old["ids"][old["edges"]])
         np.testing.assert_array_equal(phase.coefficients_ns_per_m, (4096,) * 4)
         assert not phase.ordered_point_ids.flags.writeable
         assert not phase.coefficients_ns_per_m.flags.writeable
-        for step in (0, int(1 / new["h"]) - 1, int(1 / new["h"]), int(9 / 8 / new["h"]), new["steps"] - 1):
-            np.testing.assert_array_equal(reference.load_at_step(new, step), reference.base.load_at_step(old, step))
+        for step in (
+            0,
+            int(1 / new["h"]) - 1,
+            int(1 / new["h"]),
+            int(9 / 8 / new["h"]),
+            new["steps"] - 1,
+        ):
+            np.testing.assert_array_equal(
+                reference.load_at_step(new, step), reference.base.load_at_step(old, step)
+            )
     assert steps == 15360
     with pytest.raises(ValueError, match="fixed damped"):
         reference.make_case("n1_sphere")
@@ -79,7 +92,9 @@ def test_independent_damped_reference_keeps_flat_null_mode_and_uses_its_own_stat
     initial = reference.initial_reference(case)
     velocity = np.zeros((5, 3))
     velocity[0, 2] = -1 / 16
-    np.testing.assert_array_equal(reference.ordered_velocity(case["node"], initial[0], velocity, case["h"]), velocity)
+    np.testing.assert_array_equal(
+        reference.ordered_velocity(case["node"], initial[0], velocity, case["h"]), velocity
+    )
     bent = initial[0].copy()
     bent[0, 2] = -1 / 8
     damped = reference.ordered_velocity(case["node"], bent, velocity, case["h"])
@@ -96,15 +111,21 @@ def test_independent_damped_reference_keeps_flat_null_mode_and_uses_its_own_stat
     np.testing.assert_array_equal(next_state[1], expected_velocity)
     np.testing.assert_array_equal(audit["reconstructed_velocity"], reconstructed)
     np.testing.assert_array_equal(audit["multipliers"], lam)
-    expected_q, expected_v = reference.rigid_step(case, state[2], state[3], wrench, case["h"], external)
+    expected_q, expected_v = reference.rigid_step(
+        case, state[2], state[3], wrench, case["h"], external
+    )
     np.testing.assert_array_equal(next_state[2], expected_q)
     np.testing.assert_array_equal(next_state[3], expected_v)
 
 
 def phase_record():
     """Exact one-edge validator fixture, not a physical run or copied output."""
+
     def own(value, dtype=float):
-        return np.frombuffer(np.asarray(value, dtype).tobytes(), dtype=dtype).reshape(np.shape(value))
+        return np.frombuffer(np.asarray(value, dtype).tobytes(), dtype=dtype).reshape(
+            np.shape(value)
+        )
+
     spec = SimpleNamespace(
         point_ids=own((11, 23), np.int64),
         constraints=SimpleNamespace(indices=own(((0, 1),), np.int64)),
@@ -118,12 +139,16 @@ def phase_record():
     trace[0, 18:28] = (1, 1, 1, 0, 1, 2, -0.5, 0, 0, 1)
     phase = SimpleNamespace(
         schema="distance-dissipation-step-v1",
-        ordered_point_ids=own(((11, 23),), np.int64), coefficients_ns_per_m=own((1,)),
+        ordered_point_ids=own(((11, 23),), np.int64),
+        coefficients_ns_per_m=own((1,)),
         reconstructed_velocity=own(((1, 0, 0), (0, 0, 0)), np.float32),
         dissipated_velocity=own(((0.5, 0, 0), (0, 0, 0)), np.float32),
-        trace=own(trace, np.float32), node_impulse=own(((-0.5, 0, 0), (0.5, 0, 0))),
+        trace=own(trace, np.float32),
+        node_impulse=own(((-0.5, 0, 0), (0.5, 0, 0))),
         node_velocity_impulse=own(((-0.5, 0, 0), (0, 0, 0))),
-        kinetic_change=own((-0.375,)), ideal_work=own((-0.375,)), rounding_work=own((0,)),
+        kinetic_change=own((-0.375,)),
+        ideal_work=own((-0.375,)),
+        rounding_work=own((0,)),
     )
     return spec, np.array(((1, 0, 0), (0, 0, 0)), np.float32), phase
 
@@ -134,7 +159,12 @@ def test_damping_observer_rejects_broken_phase_evidence(bad):
     spec, position, phase = phase_record()
     actual = module.audit_dissipation(spec, position, phase, 1)
     np.testing.assert_array_equal(actual["fixed_reaction_impulse"], ((-0.5, 0, 0),))
-    field = {"chain": "trace", "coefficient": "coefficients_ns_per_m", "fixed-impulse": "node_impulse", "energy": "kinetic_change"}[bad]
+    field = {
+        "chain": "trace",
+        "coefficient": "coefficients_ns_per_m",
+        "fixed-impulse": "node_impulse",
+        "energy": "kinetic_change",
+    }[bad]
     changed = getattr(phase, field).copy()
     if bad == "chain":
         changed[0, 6] = 2
@@ -154,14 +184,18 @@ def gate_record(module):
     observed.steps = observed.case["steps"]
     observed.minimum_gap, observed.minimum_side, observed.peak = 1 / 32, 5 / 32, 16
     for name, start in (("initial_outside", 0), ("entry", 0.25), ("release", 1), ("recontact", 2)):
-        observed.events[name].update(maximum=observed.minimum, qualified_start=start, qualified_end=start + 1 / 128)
+        observed.events[name].update(
+            maximum=observed.minimum, qualified_start=start, qualified_end=start + 1 / 128
+        )
     for row in observed.windows:
         n = int((row["end"] - row["begin"]) / observed.case["h"])
         row.update(count=n, force_sum=16 * n, rigid_speed2=0.0, node_speed2=0.0)
     return observed
 
 
-@pytest.mark.parametrize("bad", ("recontact", "rigid-rms", "center-rms", "force", "truncated", "window-count"))
+@pytest.mark.parametrize(
+    "bad", ("recontact", "rigid-rms", "center-rms", "force", "truncated", "window-count")
+)
 def test_damped_window_retains_every_original_functional_gate(bad):
     observed = gate_record(runner())
     observed.finish()
@@ -172,7 +206,11 @@ def test_damped_window_retains_every_original_functional_gate(bad):
     elif bad == "window-count":
         observed.windows[1]["count"] -= 1
     else:
-        field, value = {"rigid-rms": ("rigid_speed2", 0.2**2), "center-rms": ("node_speed2", 0.2**2), "force": ("force_sum", 32)}[bad]
+        field, value = {
+            "rigid-rms": ("rigid_speed2", 0.2**2),
+            "center-rms": ("node_speed2", 0.2**2),
+            "force": ("force_sum", 32),
+        }[bad]
         observed.windows[1][field] = value * observed.windows[1]["count"]
     with pytest.raises(AssertionError):
         observed.finish()
@@ -181,7 +219,11 @@ def test_damped_window_retains_every_original_functional_gate(bad):
 def test_new_runner_verifies_unchanged_original_dependency_bytes():
     module = runner()
     result = module.reference_provenance()
-    assert set(result) == {"deformable_damped_load_cases", "deformable_normal_load_cases", "deformable_impulse_audit"}
+    assert set(result) == {
+        "deformable_damped_load_cases",
+        "deformable_normal_load_cases",
+        "deformable_impulse_audit",
+    }
     for value in result.values():
         assert len(value["sha256"]) == 64 and value["bytes"] > 0
     original = module.EXPECTED_DEPENDENCIES["deformable_normal_load_cases"]
@@ -191,6 +233,7 @@ def test_new_runner_verifies_unchanged_original_dependency_bytes():
             module.reference_provenance()
     finally:
         module.EXPECTED_DEPENDENCIES["deformable_normal_load_cases"] = original
+
 
 @pytest.mark.tyx
 def test_late_observer_failure_keeps_one_real_damped_return(tyx_mode, tmp_path, monkeypatch):
@@ -221,7 +264,12 @@ def test_late_observer_failure_keeps_one_real_damped_return(tyx_mode, tmp_path, 
         records = [json.loads(line) for line in stream]
     assert [r["ordinal"] for r in records] == list(range(len(records)))
     events = [r["event"] for r in records]
-    assert events.index("step-attempt") < events.index("step-return") < events.index("damping-phase-audit") < events.index("failure")
+    assert (
+        events.index("step-attempt")
+        < events.index("step-return")
+        < events.index("damping-phase-audit")
+        < events.index("failure")
+    )
     returned = next(r for r in records if r["event"] == "step-return")
     receipt = dict(returned["payload"]["mapping_entries"])["receipt"]
     node = dict(receipt["node_receipt"]["worlds"]["mapping_entries"])[7]

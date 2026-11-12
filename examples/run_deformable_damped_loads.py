@@ -488,11 +488,16 @@ def audit_step(case, entry, after, receipt, h, external, emit, *, short_state_di
     emit("stored-arithmetic-audit", tick=entry.node.tick, audit=arithmetic)
     numerical = arithmetic["total_remainder"][free]
     impulse_actual = (after.node.velocity[free].astype(float) - vs0[free]) / weights[free, None]
-    close(impulse_actual - numerical, h * total[free] + material[free] + phase.node_velocity_impulse[free])
+    close(
+        impulse_actual - numerical,
+        h * total[free] + material[free] + phase.node_velocity_impulse[free],
+    )
     root_impulse = case["mass"] * (v1[:3] - v0[:3])
     close(
         impulse_actual.sum(axis=0) + root_impulse,
-        reaction.sum(axis=0) + h * external[:3] + numerical.sum(axis=0)
+        reaction.sum(axis=0)
+        + h * external[:3]
+        + numerical.sum(axis=0)
         + damping["velocity_rounding_impulse"].sum(axis=0),
     )
     # Account for application time explicitly instead of claiming that every
@@ -506,8 +511,12 @@ def audit_step(case, entry, after, receipt, h, external, emit, *, short_state_di
     # afterwards at that fixed candidate, not at entry x or at a moved position.
     reconstructed_momentum = phase.reconstructed_velocity[free].astype(float) / weights[free, None]
     expected_angular = np.cross(x0[free], h * total[free] + material[free] + numerical).sum(axis=0)
-    expected_angular += np.cross(after.node.position[free] - x0[free], reconstructed_momentum).sum(axis=0)
-    damping_angular = np.cross(after.node.position.astype(float), phase.node_velocity_impulse).sum(axis=0)
+    expected_angular += np.cross(after.node.position[free] - x0[free], reconstructed_momentum).sum(
+        axis=0
+    )
+    damping_angular = np.cross(after.node.position.astype(float), phase.node_velocity_impulse).sum(
+        axis=0
+    )
     expected_angular += damping_angular
     expected_angular += np.cross(q0[:3], h * total_wrench[:3]) + h * total_wrench[3:]
     expected_angular += np.cross(q1[:3] - q0[:3], case["mass"] * v1[:3])
@@ -951,7 +960,9 @@ def run_window(name, mode, output, *, expected_install_root=None, diagnose_short
                 orientation=angle_error(actual_root.position[3:], q[3:]),
             )
             for field, value in errors_now.items():
-                summary["continuous_max_errors"][field] = max(summary["continuous_max_errors"].get(field, 0.0), value)
+                summary["continuous_max_errors"][field] = max(
+                    summary["continuous_max_errors"].get(field, 0.0), value
+                )
             emit("continuous-errors", step=step, errors=errors_now)
             require(
                 max(errors_now["node_position"], errors_now["rigid_position"]) <= ref.LONG_POSITION,
@@ -973,9 +984,15 @@ def run_window(name, mode, output, *, expected_install_root=None, diagnose_short
                 sample=observation,
                 energy_before=mechanical_energy(case, entry),
                 energy_after=mechanical_energy(case, after),
-                material_damping_kinetic_change=float(np.sum(receipt.node_receipt.worlds[case["world"]].dissipation.kinetic_change)),
-                material_damping_ideal_work=float(np.sum(receipt.node_receipt.worlds[case["world"]].dissipation.ideal_work)),
-                material_damping_rounding_work=float(np.sum(receipt.node_receipt.worlds[case["world"]].dissipation.rounding_work)),
+                material_damping_kinetic_change=float(
+                    np.sum(receipt.node_receipt.worlds[case["world"]].dissipation.kinetic_change)
+                ),
+                material_damping_ideal_work=float(
+                    np.sum(receipt.node_receipt.worlds[case["world"]].dissipation.ideal_work)
+                ),
+                material_damping_rounding_work=float(
+                    np.sum(receipt.node_receipt.worlds[case["world"]].dissipation.rounding_work)
+                ),
                 external_translation_work=float(
                     external[:3] @ (np.asarray(root1.position[:3]) - np.asarray(root0.position[:3]))
                 ),
@@ -1072,11 +1089,18 @@ def run_window(name, mode, output, *, expected_install_root=None, diagnose_short
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "--case", choices=("d6b_n1_sphere_c4096", "d6b_n2_capsule_c4096", "d6b_n3_soft_c4096", "d6b_n1_fine_c4096"), required=True
+        "--case",
+        choices=(
+            "d6b_n1_sphere_c4096",
+            "d6b_n2_capsule_c4096",
+            "d6b_n3_soft_c4096",
+            "d6b_n1_fine_c4096",
+        ),
+        required=True,
     )
     parser.add_argument("--mode", choices=("interpret", "cuda"), required=True)
     parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--expected-install-root", type=Path)
+    parser.add_argument("--expected-install-root", "--installed-root", type=Path)
     parser.add_argument(
         "--diagnose-short-state",
         action="store_true",

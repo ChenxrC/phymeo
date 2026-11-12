@@ -40,6 +40,10 @@ __all__ = [
 ]
 
 
+_BOUNDARY_RUNTIME_QUARANTINE = {}
+_BOUNDARY_RUNTIME_QUARANTINE_LOCK = RLock()
+
+
 class TyxWorldBatch:
     """Device passes advance independent worlds using a pair of persistent state buffers.
 
@@ -60,6 +64,12 @@ class TyxWorldBatch:
         self._readback_plans = set()
         self._collision_plans = set()
         self._contact_bundles = set()
+        self._boundary_plans = set()
+        self._boundary_runtime_leases = {}
+        self._boundary_unknown = {}
+        self._boundary_reading = False
+        self._boundary_closing = False
+        self._boundary_close_pending = False
         self._collision_owner = object()
         self._topology_generation = 0
         self._state_epoch = 0
@@ -343,11 +353,100 @@ class TyxWorldBatch:
                 self._unavailable = True
             raise
 
-    def _check_open(self):
+    def _check_open(self, *, allow_boundary_loan=False):
         if self._closed:
             raise RuntimeError("resident world batch is closed")
+        if self._boundary_unknown:
+            raise RuntimeError("boundary resource UNKNOWN_RELEASE; batch cannot be reused")
+        if self._boundary_close_pending:
+            raise RuntimeError("boundary cleanup pending; only close may be retried")
+        if self._boundary_reading and not allow_boundary_loan:
+            raise RuntimeError("resident mutation/reentry during a boundary source loan")
         if self._unavailable:
             raise RuntimeError("device cannot synchronize; rebuild from a saved checkpoint")
+
+    def _register_boundary_runtime_lease(self, lease):
+        """Retain a query buffer's runtime dependency before its first allocation."""
+        with self._lock:
+            self._check_open(allow_boundary_loan=True)
+            runtime = getattr(self, "_runtime", None)
+            if runtime is None or getattr(lease, "runtime", None) is not runtime:
+                raise ValueError("boundary lease must borrow this exact batch runtime")
+            if any(value is lease for value in self._boundary_runtime_leases.values()):
+                raise ValueError("boundary runtime lease is already registered")
+            token = object()
+            self._boundary_runtime_leases[token] = lease
+            return token
+
+    def _release_boundary_runtime_lease(self, token):
+        """Called only by a normally completed ledger's no-op runtime close."""
+        with self._lock:
+            if token in self._boundary_unknown:
+                raise RuntimeError("boundary UNKNOWN_RELEASE token cannot be unregistered")
+            if token not in self._boundary_runtime_leases:
+                raise ValueError("unknown boundary runtime lease token")
+            del self._boundary_runtime_leases[token]
+
+    def _quarantine_boundary_runtime_lease(self, token, ledger):
+        with self._lock:
+            if token not in self._boundary_runtime_leases:
+                raise ValueError("unknown boundary runtime lease token")
+            if ledger.state != "UNKNOWN_RELEASE":
+                raise ValueError("only UNKNOWN_RELEASE ledgers may quarantine the runtime")
+            previous = self._boundary_unknown.get(token)
+            if previous is not None and previous is not ledger:
+                raise ValueError("boundary token already belongs to another unknown ledger")
+            self._boundary_unknown[token] = ledger
+            self._unavailable = True
+            with _BOUNDARY_RUNTIME_QUARANTINE_LOCK:
+                _BOUNDARY_RUNTIME_QUARANTINE[id(self)] = self
+
+    @contextmanager
+    def _borrow_boundary_collision_state(self, *, owner=None, topology_generation=None):
+        """A read-only accepted loan also rejects same-thread producer reentry."""
+        with self._lock:
+            self._check_open()
+            with self._borrow_collision_state(
+                owner=owner, topology_generation=topology_generation
+            ) as accepted:
+                self._boundary_reading = True
+                try:
+                    yield accepted
+                finally:
+                    self._boundary_reading = False
+
+    def _close_boundary_resources(self):
+        """Keep the complete parent stack until every dependent lease is closed.
+
+        A failure before ledger entry may be retried. An opaque free failure is
+        sticky and its DeviceResources ledger never invokes that callback again.
+        Independent plans are still visited; the parent runtime is not a sibling.
+        """
+        if self._boundary_closing:
+            raise RuntimeError("recursive boundary cleanup")
+        self._boundary_closing = True
+        self._boundary_close_pending = True
+        errors = []
+        try:
+            for plan in tuple(self._boundary_plans):
+                try:
+                    plan.close()
+                except BaseException as error:
+                    errors.append(error)
+            if errors:
+                raise BaseExceptionGroup("boundary cleanup incomplete; parent retained", errors)
+            if self._boundary_unknown:
+                errors = [
+                    failure.error
+                    for ledger in self._boundary_unknown.values()
+                    for failure in ledger.failures
+                ]
+                raise BaseExceptionGroup("boundary UNKNOWN_RELEASE; parent retained", errors)
+            if self._boundary_runtime_leases:
+                raise RuntimeError("boundary runtime leases pending; parent retained")
+            self._boundary_plans.clear()
+        finally:
+            self._boundary_closing = False
 
     @contextmanager
     def _borrow_collision_state(self, *, owner=None, topology_generation=None):
@@ -903,7 +1002,10 @@ class TyxWorldBatch:
 
     def close(self):
         with self._lock:
+            if self._boundary_reading:
+                raise RuntimeError("cannot close during a boundary source loan")
             if not self._closed:
+                self._close_boundary_resources()
                 self._closed = True
                 try:
                     with ExitStack() as closing_plans:

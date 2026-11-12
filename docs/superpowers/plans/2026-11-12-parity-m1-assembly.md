@@ -36,3 +36,13 @@ M1的S0必须给可计算的注册/持久/query/暂存buffer字节式和失败�
 不新增训练/虚拟Adam分析或G1长窗，不清理环境/证据Junction，不remote CI/push/mainmerge/发包，不改pin/物理门/质量/预算。连续两次针对性尝试未缩小同一问题，则保最小反例并暂停该片，继续独立lane；不让反复精度证明阻塞通用模块。
 
 成功以公共API、多模型/来源/world/连续步、两后端、故障恢复和源码外消费者为准；研究/代码完成/测试通过分别标记。本批三个模块完成也不代表整个P6.5或Newton全功能完成。
+
+## 父共享实现首片：M1 runtime 所有权
+
+父新增 tests/scale/test_boundary_runtime_ownership.py（tests-first 1964a392）并修改 tyx_world_batch.py。范围为三种runtime lease hook、专用accepted只读借用scope及batch关闭前保护；同线程producer重入明确拒绝。旧convex/math/数值核不改。首组为11个HOST生命周期节点：正常关闭、三类BaseException的UNKNOWN、PENDING重试、遗留lease、错runtime/token、强owner存活、scope正常/异常退出与递归close。全部使用明确synthetic owner，不称真实CUDA释放资格；实际M16和物理连续来源仍由完整M1覆盖。
+
+首执行仅这两个精确Python文件Ruff/format检查、必要纯style修复、完整新HOST文件及受影响旧empty/close目标；父单一串行队列在新 artifacts/p65-parity-m1-assembly-20261112-01，执行前fresh guard，禁止并行。此片不是M1查询已实现。
+
+### 父所有权首片资格
+
+2026-11-12 首次精确两文件 Ruff 与 format-check 均 0；新生命周期文件 11 节点和两个受影响旧 empty/close 节点同次 13 passed / 1.34s / RAW_EXIT 0。证据为本批 001–003，源前后 SHA 未变。测试使用 synthetic owner 验证 UNKNOWN 强保留、独立 sibling 清理、PENDING 重试、借用期拒绝重入；真实设备 M1 仍未完成。没有项目物理或 CUDA 通过声明，也未重跑旧全组。

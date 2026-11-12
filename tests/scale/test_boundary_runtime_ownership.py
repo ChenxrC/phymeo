@@ -79,7 +79,7 @@ def owned(monkeypatch):
     batch._resources.callback(batch._runtime.close)
     batch._resources.callback(events.append, "parent-buffer")
     batch._counts["device_owned_bytes"] = 123
-    return batch, events
+    return [batch, events]
 
 
 def test_normal_close_releases_queries_before_parent_runtime_once(owned):
@@ -165,8 +165,8 @@ def test_unknown_query_keeps_batch_runtime_alive_after_caller_drops_them(owned):
         plan.close()
     refs = [weakref.ref(x) for x in (batch, batch._runtime, plan.ledger, plan.buffer)]
     del batch, plan
-    # Drop the fixture tuple as well; the global quarantine must retain the owner.
-    owned = None
+    # Drop the fixture's own reference too; global quarantine must retain it.
+    owned.clear()
     gc.collect()
     assert all(ref() is not None for ref in refs)
     assert refs[0]() in batch_module._BOUNDARY_RUNTIME_QUARANTINE.values()

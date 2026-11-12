@@ -73,7 +73,7 @@ def own_spec_resources(spec):
     # filenames in meshdir/texturedir must not resolve to the first added file.
     existing = dict(spec.assets)
 
-    def freeze(filename, directory):
+    def freeze(filename, directory, kind):
         if not filename:
             return filename
         if spec.strippath:
@@ -82,6 +82,10 @@ def own_spec_resources(spec):
             content = bytes(existing[filename])
         else:
             content = (Path(spec.modelfiledir) / directory / filename).read_bytes()
+        if kind == "meshes" and Path(filename).suffix.lower() == ".stl":
+            from ._native_stl import binary_stl
+
+            content = binary_stl(content)
         key = "__phymeo_resource_" + sha256(content).hexdigest() + Path(filename).suffix
         spec.assets[key] = content
         return key
@@ -96,7 +100,7 @@ def own_spec_resources(spec):
                 raise NotImplementedError(
                     "cube-face texture attachment is not qualified; use a single-file texture"
                 )
-            resource.file = freeze(resource.file, directory)
+            resource.file = freeze(resource.file, directory, kind)
     # Every admitted file now has a flat owned VFS key. Disk search directories
     # must not be prepended again during attachment/recompilation.
     spec.compiler.meshdir = ""

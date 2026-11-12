@@ -39,6 +39,9 @@ def capture_urdf_visuals(asset, source_root):
         resolve_urdf_resources(root, asset)
     spec = mj.MjSpec.from_string(ET.tostring(root, encoding="unicode"))
     spec.modelfiledir = str(path.parent) + "/"
+    from .native_resources import own_spec_resources
+
+    own_spec_resources(spec)
     model = spec.compile()
     return export_model(model, prefix=asset.name + "::", role="visual")
 

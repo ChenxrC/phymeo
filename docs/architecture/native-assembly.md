@@ -52,6 +52,17 @@ URDF 的 scalar_pd 使用 `kp*(target-q)+kd*(target_velocity-v)`；初始 target
 不改变 resident/ArticulationWorld 中 0 表示零驱动的含义。applied_force 独立写
 qfrc_applied，不受 actuator cap 限制。被动 damping、armature、frictionloss 分开。
 
+### ASCII STL 原生资源编码（B8f）
+
+原生资源冻结支持单 solid ASCII STL，在 template 自有 VFS 内编码为 binary STL，
+供 MuJoCo 原生解码器消费；不改磁盘原件、不重建网格或改变面序。binary 输入按
+长度/面数优先识别，包含 solid 开头的 binary header 仍逐字节保留。ASCII 顶点和
+法向必须可表示为有限 float32，语法/溢出拒绝；不做补面或非法数值修复。
+visual 与物理资源共用此冷入口，各自保持独立几何角色；成本 O(文件字节数)，
+不增加运行期复制、设备同步或 Python 依赖。源移除后 template 仍拥有资源。
+资源/视觉/装配/mimic 合同78项通过；真实消费者Stage的物理模型与视觉13实例/
+11mesh编译通过。源码冷准备证据见实验根 evidence/b8f-*，不代替安装或GUI资格。
+
 ### 标准 dynamics 与 mimic（B3e）
 
 B8e 的 `NativeJointInput.lower_limit/upper_limit` 是原生位置约束的有限覆盖值，

@@ -647,3 +647,40 @@ close/rebuild，owner 保留到清理完成。控制写入不更改接受状态 
 同时复用原固定树 delay/restore CUDA 回归。仅验证受影响集合，不重复跨 solver
 微差调查。配套实验根 evidence/b7d-summary.json 保存命令、身份、计数与审查。
 prepared reset、完整物理字段及实际 P2PE C ABI/安装仍待完成；本批不授予 B7 资格。
+
+## Resident prepared reset v1
+
+B7e 的 `TyxWorldBatch.prepare_reset()` 冻结构造初态与控制，返回同步 HOST reset
+plan。`plan.reset(mask=None)` 的 bool 连续 NumPy mask 与不可变 layout.world_keys
+顺序一致；None 为全选，全 false/空 batch 无上传、kernel 或 epoch 发布。支持球、
+球/平面、标量移动/转动关节、普通固定根树；含仿射或浮根树的 batch 明确拒绝。
+这不是通用状态写入、D2D、异步或 Graph 接口，原 reset/restore 保持可用。
+
+准备仅一次拆解原有初始 checkpoint，并保存 device 初态。固定树使用原几何/能量
+kernel 冷计算初始 FK/energy；只借 frame/flags/spatial 工作区，不覆盖接受状态、
+当前 FK/energy 或有效 diagnostics。预热两方向 reset 仅写 standby，不发布。
+初态缓存与既有 checkpoint 都是恢复来源，不成为第二套当前物理权威状态。
+
+每次执行一次全量 mask/owner 预检，上传一个 int32 初始 tick/选择向量，选择初态或
+当前值复制到现有 candidate banks；一次显式完成后恢复所选 held control，再统一
+发布 bank/epoch。q/qd、实际 drive 输出、延迟历史、tick、支撑冲量与固定树 FK/energy
+一同恢复，未选值逐值保持。无热 snapshot、逐 world packet、完整状态 H2D、额外
+FK/energy 或 D2H；控制仍沿既有 dirty 规则在下一步上传，不能据此声称零传输。
+
+kernel/完成失败不发布；控制恢复失败回滚所选旧值，回滚也失败则锁定 batch、保留
+owner 供 close/rebuild。构造与 close 失败沿既有可重试清理合同。跨 read/control
+plan 的 alias 检查覆盖 reset 初始值及 HOST scratch，不能覆盖后续恢复来源。
+两个 metadata bank 在每次执行前从当前树 owner 更新，所选 diagnostics 失效，未选
+validity/status 保留；支持多个 reset plan 与 legacy reset/step 交错。
+
+设备持久空间为 `4*(13*N + 25*T*J + T)` bytes：N 为 batch worlds，T/J 为固定树数
+和 padded 最大关节数；无树时 T=0。每次非空 CUDA reset 上传 `4*N` bytes，一次
+显式完成；正常执行不分配 device buffer、不重新编译。共同 bank 发布仍需复制
+O(N + T*J) 状态/派生值；HOST 控制 mask 校验/回滚 O(控制列数)，metadata 更新 O(T)。
+HOST NumPy 缓冲单列统计，另有 O(T) 的预备 metadata dict，不把它们算作峰值内存
+实测。复制是现有双 bank 发布所需，尚未授予更高效的设备 selector 或局部 bank 资格。
+
+正式 test_resident_reset_plan 覆盖 N=1/8/64 的 interpret/实际 CUDA、非零初态与
+控制历史、局部未选观测、双 plan、预检、kernel/完成/控制恢复/二次回滚失败、跨
+plan alias、分配/清理重试。证据见实验根 evidence/b7e-summary.json，历史跨 solver
+微差不重开调查。P2PE resident 模型/完整字段映射及实际 C ABI 仍待接，B7 未完成。

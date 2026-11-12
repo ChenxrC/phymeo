@@ -79,6 +79,7 @@ class TyxWorldBatch:
         self._host_buffers = []
         self._readback_plans = set()
         self._control_plans = set()
+        self._reset_plans = set()
         self._collision_plans = set()
         self._contact_bundles = set()
         self._collision_owner = object()
@@ -94,6 +95,8 @@ class TyxWorldBatch:
                 "initial_uploaded_bytes",
                 "control_uploaded_bytes",
                 "restore_uploaded_bytes",
+                "reset_plan_uploaded_bytes",
+                "reset_plan_initial_uploaded_bytes",
                 "status_downloaded_bytes",
                 "summary_downloaded_bytes",
                 "snapshot_downloaded_bytes",
@@ -333,6 +336,8 @@ class TyxWorldBatch:
         yield self._held
         for _, storage in self._tree_storages():
             yield from storage._host_controls()
+        for plan in self._reset_plans:
+            yield from plan._host_arrays()
 
     def _ensure_cleanup_ready(self):
         # Only a failed recovery sync needs another completion attempt. Normal
@@ -921,6 +926,12 @@ class TyxWorldBatch:
             self._check_open()
             self.restore({key: self._initial[key] for key in self._keys(keys)})
 
+    def prepare_reset(self):
+        """Freeze initial states for repeated HOST-mask reset without snapshots."""
+        from ._resident_reset_plan import ResidentResetPlan
+
+        return ResidentResetPlan(self)
+
     def stats(self):
         with self._lock:
             convex_queries = tuple(
@@ -937,6 +948,7 @@ class TyxWorldBatch:
                 "current_buffer": self._active,
                 "readback_plan_live_count": len(self._readback_plans),
                 "control_plan_live_count": len(self._control_plans),
+                "reset_plan_live_count": len(self._reset_plans),
                 "collision_plan_live_count": len(self._collision_plans),
                 "contact_bundle_live_count": len(self._contact_bundles),
                 "convex_query_plan_live_count": len(convex_queries),
@@ -982,6 +994,7 @@ class TyxWorldBatch:
                 self._collision_plans,
                 self._readback_plans,
                 self._control_plans,
+                self._reset_plans,
             ):
                 for plan in tuple(owners):
                     plan.close()

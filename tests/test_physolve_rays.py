@@ -417,3 +417,36 @@ def test_robot_mesh_source_and_selected_geometry(payload, robot):
             values[:, hit, 0], np.tile(expected[hit], (2, 1)), atol=2e-6, rtol=2e-6
         )
         assert np.isposinf(values[:, ~hit, 0]).all()
+
+
+@pytest.mark.cuda
+def test_panda_original_ray_distances_independent_of_label(payload):
+    """Keep the original rays/tolerance; a label failure must not hide depth failures."""
+    import mujoco as mj
+    import tyx as tx
+    from test_physolve_models import robot_path
+
+    from phymeo.builders.native_assembly import NativeAssetInstance, compile_native_template
+
+    source = compile_native_template(
+        (NativeAssetInstance("panda", str(robot_path("panda")), drive_mode="scalar_pd"),),
+        timestep=.01, gravity=(0, 0, -9.81))
+    model = source.compilation.fresh_native_model()
+    data = mj.MjData(model)
+    source.initial_state.apply(source.compilation, data)
+    mj.mj_kinematics(model, data)
+    origins = data.geom_xpos + np.asarray([0, 0, 3.0])
+    directions = np.tile([0.0, 0.0, -1.0], (model.ngeom, 1))
+    expected = np.asarray([mj.mj_ray(model, data, o, v, None, True, -1, np.full(1, -1, np.int32))
+                           for o, v in zip(origins, directions)])
+    with PhySolveRuntime(source.compilation, payload=payload, nworld=8,
+                        initial_state=source.initial_state, body_observations=True) as runtime:
+        plan = runtime.prepare_ray_query(source.compile_ray_scene(), max_rays=model.ngeom)
+        plan.sample(*inputs(tx, [7, 0], origins, directions), rows=2, far=10.)
+        plan.storage.stream.synchronize()
+        assert plan.errors.numpy()[0] == 0
+        values = plan.hits.numpy().reshape(8, model.ngeom, 4)[:2]
+        hit = expected >= 0
+        np.testing.assert_allclose(values[:, hit, 0], np.tile(expected[hit], (2, 1)),
+                                   atol=2e-6, rtol=2e-6)
+        assert np.isposinf(values[:, ~hit, 0]).all()

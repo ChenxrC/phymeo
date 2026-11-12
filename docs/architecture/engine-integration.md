@@ -866,3 +866,19 @@ There is no new synchronization or host transfer. IDs are valid for the lifetime
 of a runtime with fewer than 2^63-1 extractions; they are not serialized checkpoints.
 Native tests in `tests/test_physolve_execution.py` cover direct/Graph N=1/8/64,
 same-time forward, masked retention, command copy and discard without ID reuse.
+
+
+### Panda seam and tangent qualification
+
+The original native Panda reference test remains unchanged and failed: its rays
+hit barrel/cap seams, where FP32 transforms and double-precision native geometry
+can disagree on boundary inclusion or the nearest label. Two additional rays
+are exactly tangent to spheres in the CPU model; their depth errors exceed the
+original 2e-6 absolute/relative tolerance. A separate formal depth test retains
+these original inputs and thresholds so the earlier identity assertion cannot
+hide the second failure. This is not proof of a public-name mapping defect or
+a PhySolve integration-step defect. No epsilon tie merge, clamp, changed initial
+state or relaxed tolerance was introduced. P2PE additionally qualifies explicit
+non-seam public IDs after a permutation of surfaces; that test does not close
+the seam/tangent failures. Source evidence: `evidence/model-summary.json` in the
+paired experiment workspace. No new installed artifact qualification is implied.

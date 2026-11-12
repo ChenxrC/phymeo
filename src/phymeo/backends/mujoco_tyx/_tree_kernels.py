@@ -312,6 +312,11 @@ def mechanics(
     gravity: tx.ndarray(tx.f32, 1),
     act_ids: tx.ndarray(tx.i32, 2),
     act_values: tx.ndarray(tx.f32, 2),
+    transmission_enabled: tx.i32,
+    transmission_offsets: tx.ndarray(tx.i32, 1),
+    transmission_dofs: tx.ndarray(tx.i32, 1),
+    transmission_moment: tx.ndarray(tx.f32, 1),
+    transmission_fields: tx.ndarray(tx.f32, 3),
     controls: tx.ndarray(tx.f32, 2),
     applied_input: tx.ndarray(tx.f32, 2),
     body_force: tx.ndarray(tx.f32, 3),
@@ -346,22 +351,60 @@ def mechanics(
             if qa >= 0:
                 passive[w, i] = passive[w, i] - vectors[2, i] * (q[w, qa] - vectors[3, i])
             applied[w, i] = applied_input[w, i]
-        for a in range(nu):
-            value = 0.0
-            qa = act_ids[a, 0]
-            dof = act_ids[a, 1]
-            gear = act_values[a, 0]
-            if act_ids[a, 2] == 0:
-                ctrl = tx.min(act_values[a, 6], tx.max(act_values[a, 5], controls[w, a]))
-                value = (
-                    act_values[a, 1] * ctrl
-                    + act_values[a, 2]
-                    + act_values[a, 3] * gear * q[w, qa]
-                    + act_values[a, 4] * gear * v[w, dof]
+        if transmission_enabled == 0:
+            for a in range(nu):
+                value = 0.0
+                qa = act_ids[a, 0]
+                dof = act_ids[a, 1]
+                gear = act_values[a, 0]
+                if act_ids[a, 2] == 0:
+                    ctrl = tx.min(act_values[a, 6], tx.max(act_values[a, 5], controls[w, a]))
+                    value = (
+                        act_values[a, 1] * ctrl
+                        + act_values[a, 2]
+                        + act_values[a, 3] * gear * q[w, qa]
+                        + act_values[a, 4] * gear * v[w, dof]
+                    )
+                # CPU 3.3.7 clamps all actuator forces, including disabled-group zero.
+                value = tx.min(act_values[a, 8], tx.max(act_values[a, 7], value))
+                actuator[w, dof] = actuator[w, dof] + gear * value
+        else:
+            for actor in range(nu):
+                begin = transmission_offsets[actor]
+                end = transmission_offsets[actor + 1]
+                motor_control = tx.min(
+                    act_values[actor, 6], tx.max(act_values[actor, 5], controls[w, actor])
                 )
-            # CPU 3.3.7 clamps all actuator forces, including disabled-group zero.
-            value = tx.min(act_values[a, 8], tx.max(act_values[a, 7], value))
-            actuator[w, dof] = actuator[w, dof] + gear * value
+                raw_force = 0.0
+                if act_ids[actor, 2] == 0:
+                    if end - begin == 1:
+                        scalar_qa = act_ids[actor, 0]
+                        scalar_dof = act_ids[actor, 1]
+                        scalar_gear = act_values[actor, 0]
+                        raw_force = (
+                            act_values[actor, 1] * motor_control
+                            + act_values[actor, 2]
+                            + act_values[actor, 3] * scalar_gear * q[w, scalar_qa]
+                            + act_values[actor, 4] * scalar_gear * v[w, scalar_dof]
+                        )
+                    else:
+                        # BALL BIAS_NONE never reads quaternion qpos as length.
+                        raw_force = act_values[actor, 1] * motor_control
+                motor_force = tx.min(
+                    act_values[actor, 8], tx.max(act_values[actor, 7], raw_force)
+                )
+                transmission_fields[w, actor, 0] = motor_control
+                transmission_fields[w, actor, 1] = raw_force
+                transmission_fields[w, actor, 2] = motor_force
+                if not tx.isfinite(motor_control) or not tx.isfinite(raw_force) or not tx.isfinite(motor_force):
+                    status[w] = 2
+                for moment_index in range(begin, end):
+                    column = transmission_dofs[moment_index]
+                    actuator[w, column] = (
+                        actuator[w, column] + transmission_moment[moment_index] * motor_force
+                    )
+                    if not tx.isfinite(actuator[w, column]):
+                        status[w] = 2
         for b in range(nbody):
             for i in range(3):
                 for j in range(3):

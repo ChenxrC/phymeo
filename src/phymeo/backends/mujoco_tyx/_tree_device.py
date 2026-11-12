@@ -18,6 +18,9 @@ class TyxTreeDevice(TyxDevice):
         if plan.dof_ids is None:
             raise ValueError("fixed-tree native DOF mapping is required")
         self.activation_enabled = _actuator_device.validate(plan, activation, len(q))
+        self.transmission_enabled = plan.joint_transmission is not None
+        if self.transmission_enabled and self.activation_enabled:
+            raise ValueError("direct BALL transmission does not admit activation")
         self.tx, self.mode, self.plan = tx, mode, plan
         self.nbody, self.nworld, self.h = nbody, len(q), float(h)
         self.active = 0
@@ -57,6 +60,19 @@ class TyxTreeDevice(TyxDevice):
                 self.controls = self._buffer(np.zeros((self.nworld, max(plan.nu, 1)), np.float32))
                 self.applied_input = self._buffer(np.zeros((self.nworld, 8), np.float32))
                 self.body_force = self._buffer(np.zeros((self.nworld, nbody, 6), np.float32))
+                # Disabled callers alias existing buffers without allocating or accessing them.
+                self.transmission_offsets = self.parents
+                self.transmission_dofs = self.parents
+                self.transmission_moment = self.gravity
+                self.transmission_fields = self.body_force
+                if self.transmission_enabled:
+                    layout = plan.joint_transmission
+                    self.transmission_offsets = self._buffer(layout.row_offsets)
+                    self.transmission_dofs = self._buffer(layout.dof_indices)
+                    self.transmission_moment = self._buffer(layout.moment)
+                    self.transmission_fields = self._buffer(
+                        np.zeros((self.nworld, plan.nu, 3), np.float32)
+                    )
                 self.motion = self._buffer(np.zeros((self.nworld, nbody, 7, 3), np.float32))
                 self.rotation = self._buffer(np.zeros((self.nworld, nbody, 3, 3), np.float32))
                 self.axes = self._buffer(np.zeros((self.nworld, 8, 3), np.float32))
@@ -122,6 +138,11 @@ class TyxTreeDevice(TyxDevice):
                 self.gravity,
                 self.act_ids,
                 self.act_values,
+                int(self.transmission_enabled),
+                self.transmission_offsets,
+                self.transmission_dofs,
+                self.transmission_moment,
+                self.transmission_fields,
                 self.controls,
                 self.applied_input,
                 self.body_force,
@@ -204,6 +225,8 @@ class TyxTreeDevice(TyxDevice):
                 )
             }
             _actuator_device.download(self, result, old, target)
+            if self.transmission_enabled:
+                result["joint_transmission_fields"] = self._get(self.transmission_fields)
             result["body_position"] = motion[:, :, 0, :]
             result["body_com"] = motion[:, :, 5, :]
             result["smooth_acceleration"] = result["qacc"]

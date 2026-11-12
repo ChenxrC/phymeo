@@ -14,6 +14,7 @@ from ...dynamics.rotation import quaternion_matrix
 from . import MuJoCoTyxIssue as Issue
 from . import MuJoCoTyxUnsupported
 from ._model import WIDTH, TyxModel, fp32
+from ._joint_transmission import TyxJointTransmission, compile_joint_transmission, has_ball_transmission
 
 MAX_BODIES = 128
 
@@ -29,6 +30,7 @@ class TyxTreeModel(TyxModel):
     gravity: np.ndarray
     # Keyword-only default preserves the independent floating-tree constructor.
     dof_ids: np.ndarray | None = dataclass_field(default=None, kw_only=True)
+    joint_transmission: TyxJointTransmission | None = dataclass_field(default=None, kw_only=True)
 
 
 def _rotation(wxyz):
@@ -63,6 +65,9 @@ def compile_tree_model(
         issues.append(Issue(code, detail))
 
     has_ball = bool(np.any(model.jnt_type == mj.mjtJoint.mjJNT_BALL))
+    ball_target = has_ball_transmission(mj, model)
+    if ball_target and (model.na or np.any(model.actuator_dyntype != mj.mjtDyn.mjDYN_NONE)):
+        issue("joint-motor-activation", "direct BALL motors require every actor to be stateless")
     allowed = (mj.mjtJoint.mjJNT_HINGE, mj.mjtJoint.mjJNT_SLIDE, mj.mjtJoint.mjJNT_BALL)
     if (
         not 1 <= model.nv <= WIDTH
@@ -81,9 +86,11 @@ def compile_tree_model(
             if (
                 model.actuator_trntype[actor] != mj.mjtTrn.mjTRN_JOINT
                 or not 0 <= joint < model.njnt
-                or model.jnt_type[joint] not in (mj.mjtJoint.mjJNT_HINGE, mj.mjtJoint.mjJNT_SLIDE)
+                or model.jnt_type[joint] not in allowed
+                or (model.jnt_type[joint] == mj.mjtJoint.mjJNT_BALL
+                    and model.actuator_biastype[actor] != mj.mjtBias.mjBIAS_NONE)
             ):
-                issue("ball-actuator-domain", "ball trees admit only scalar JOINT actuator targets")
+                issue("ball-actuator-domain", "ball trees require JOINT targets and BIAS_NONE for BALL")
         if np.any(model.jnt_limited) or np.any(model.dof_frictionloss):
             issue("ball-constraint-domain", "BALL1 excludes every joint limit and dry-friction row")
         for joint in range(model.njnt):
@@ -147,6 +154,7 @@ def compile_tree_model(
         issue("passive", "negative reflected inertia/damping is outside T1")
     for actuator in range(model.nu):
         joint = int(model.actuator_trnid[actuator, 0])
+        width = 3 if (0 <= joint < model.njnt and model.jnt_type[joint] == mj.mjtJoint.mjJNT_BALL) else 1
         if (
             model.actuator_trntype[actuator] != mj.mjtTrn.mjTRN_JOINT
             or not 0 <= joint < model.njnt
@@ -160,7 +168,7 @@ def compile_tree_model(
             or model.actuator_gaintype[actuator] != mj.mjtGain.mjGAIN_FIXED
             or model.actuator_biastype[actuator]
             not in (mj.mjtBias.mjBIAS_NONE, mj.mjtBias.mjBIAS_AFFINE)
-            or np.any(model.actuator_gear[actuator, 1:])
+            or np.any(model.actuator_gear[actuator, width:])
             or np.any(model.actuator_gainprm[actuator, 1:])
             or np.any(model.actuator_biasprm[actuator, 3:])
         ):
@@ -179,11 +187,14 @@ def compile_tree_model(
             if (int(model.geom_contype[left]) & int(model.geom_conaffinity[right])) or (
                 int(model.geom_contype[right]) & int(model.geom_conaffinity[left])
             ):
-                if not allow_normal_contacts:
+                if ball_target:
+                    issue("joint-motor-contact", f"direct BALL motor has a possible contact pair {left}/{right}")
+                elif not allow_normal_contacts:
                     issue("contact-domain", f"T1 has a possible native contact pair {left}/{right}")
                 break
     if issues:
         raise MuJoCoTyxUnsupported(issues)
+    transmission = compile_joint_transmission(mj, model) if ball_target else None
     body_data = np.zeros((model.nbody, 25))
     for body in range(model.nbody):
         body_data[body, :3] = model.body_pos[body]
@@ -287,4 +298,5 @@ def compile_tree_model(
         joint_data=fp32(joint_data, "native joint anchors/axes/refs"),
         ancestors=ancestors,
         gravity=fp32(model.opt.gravity, "gravity"),
+        joint_transmission=transmission,
     )

@@ -61,3 +61,22 @@ Capacity and domain checks precede table/device allocations.
 The installed consumer is a later authoring deliverable in the same allowed file list.
 No import, collection, test, numerical probe, formatter, lint, build or install has run in this
 lane. Tests-first is source ordering, not a fabricated RED result.
+
+## Source implementation checkpoint
+
+The four authorized product files now implement the same-stage CSR scatter. M/J/bias,
+physical-M and Euler solves, quaternion integration and accepted-bank commit are unchanged.
+The legacy actor block is preserved with only an enclosing flag-zero branch.
+
+New device storage is four tracked buffers:
+4*(nu+1) + 8*nnz + 12*W*nu bytes, excluding the existing mechanics storage.
+This is exact declared capacity, not measured live memory. Only the actual three-column
+field adds download bytes (12*W*nu) per step; static tables stay source-bound on HOST.
+No new kernel or activation state is introduced. Buffer owners use the existing resource ledger.
+
+Two formerly unsupported declarations are explicitly promoted by this scope: BALL1
+ROTOR plus direct motor gear(1,2,3), and BALL-A's stateless source with its original
+direct hinge motor retargeted to BALL. The NEW file preserves each exact XML/default
+entry and checks two native steps in both modes (4 extra nodes). Parent alone retires
+the corresponding old negative parameters. BALL-C's contact+BALL-motor negative remains.
+Updated authored enumeration: 45 nodes; not a collection or execution result.

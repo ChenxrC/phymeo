@@ -268,3 +268,50 @@ def test_complete_immutable_csr_capacity_and_source_identity():
     for key in ("ids", "gear", "row_offsets", "dof_indices", "moment"):
         with pytest.raises(ValueError):
             getattr(layout,key).setflags(write=True)
+
+
+@pytest.mark.parametrize("mode", MODES)
+@pytest.mark.parametrize("legacy", ("ball1-rotor", "ball-a-stateless"))
+def test_previous_negative_exact_source_default_entry_now_drives(legacy, mode, tmp_path):
+    # Exact source declarations retired by BALL-M1, rather than inferred coverage
+    # from the new eccentric fixture with a different gear or initial state.
+    from test_mujoco_tyx_ball import ROTOR
+    from test_mujoco_tyx_ball_scalar_actuation import source as scalar_source
+    mj = deps()
+    if legacy == "ball1-rotor":
+        text = ROTOR.replace("</mujoco>",
+            '<actuator><motor joint="ball" gear="1 2 3 0 0 0"/></actuator></mujoco>')
+    else:
+        text = scalar_source("stateless").replace(
+            '<motor name="direct" joint="hinge"', '<motor name="direct" joint="ball"')
+    model = mj.MjModel.from_xml_string(text)
+    history = dict(legacy=legacy, source=text, steps=[])
+    with MuJoCoRuntime(compile_mujoco_xml(text, require_asset=False),
+                      mode=mode, implementation="tyx") as runtime:
+        reference = native_data(mj, model, runtime.integration_snapshot()[0])
+        try:
+            for tick in range(2):
+                entry = runtime.integration_snapshot()[0]
+                packet = control(model, tick)
+                same = native_data(mj, model, entry)
+                set_native(same, packet)
+                expected = native_fields(mj, model, same)
+                expected["dense_moment"] = dense_native_moment(mj, model, same)
+                analytic = transmission_oracle(mj, model, entry, packet)
+                mj.mj_step(model, same)
+                set_native(reference, packet); mj.mj_step(model, reference)
+                runtime.set_controls({0:packet})
+                runtime.step(H)
+                result = runtime.integration_snapshot()[0]
+                history["steps"].append(dict(entry=entry, packet=packet, native=expected,
+                    analytic=analytic, output=result, continuous_q=reference.qpos.copy(),
+                    continuous_v=reference.qvel.copy(), continuous_time=reference.time))
+                compare(model,entry,result,expected,analytic)
+                compare_state(result,same); compare_state(result,reference)
+        except BaseException as error:
+            history["failure"] = repr(error)
+            history["retained"] = runtime.integration_snapshot()
+            raise
+        finally:
+            history["counters"] = dict(runtime.counters)
+            save(tmp_path/"legacy-admission.json.gz",history)

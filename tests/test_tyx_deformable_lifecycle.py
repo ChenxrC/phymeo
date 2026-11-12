@@ -261,3 +261,32 @@ def test_checkpoint_binding_and_content_reject_before_launch(bad, tyx_mode):
             batch.restore(capsule, expected_revision=0)
         arrays_equal(batch.snapshot(), saved)
         assert batch.stats()["kernels"] == count and batch.revision == 0
+
+
+def test_borrow_entry_sync_failure_poison_releases_loan_and_allows_close(tyx_mode, monkeypatch, tmp_path):
+    specs = (world(),)
+    batch = TyxDeformableBatch(specs, mode=tyx_mode, settings=SETTINGS)
+    original = batch._buffers.sync
+    before = batch.snapshot()
+    called = []
+    def sync_then_fail():
+        original()
+        called.append(True)
+        raise RuntimeError("known Python observation failure after entry sync")
+    try:
+        with monkeypatch.context() as patch:
+            patch.setattr(batch._buffers, "sync", sync_then_fail)
+            with pytest.raises(RuntimeError, match="after entry sync"):
+                with batch.borrow_vertices(expected_revision=0):
+                    raise AssertionError("loan must not be yielded")
+        assert called == [True] and batch._loan is None and batch.revision == 0
+        with pytest.raises(RuntimeError):
+            batch.step(forces(specs), H, expected_revision=0)
+        with pytest.raises(RuntimeError):
+            with batch.borrow_vertices(expected_revision=0):
+                pass
+        record(tmp_path,"entry-sync-poison",before=before,revision=batch.revision,
+               loan_revoked=batch._loan is None,poisoned=batch._poisoned,stats=batch.stats())
+    finally:
+        batch.close()
+    assert batch.resource_state == "CLOSED"

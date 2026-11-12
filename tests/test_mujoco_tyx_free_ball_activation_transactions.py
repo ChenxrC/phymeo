@@ -190,7 +190,9 @@ def test_free_ball_activation_late_failure_retains_whole_batch(
                                 raise RuntimeError("R3-A final-world transmission refused")
                             return value
 
-                        patch.setattr(transmission_publication, "publish_joint_transmission", refuse)
+                        patch.setattr(
+                            transmission_publication, "publish_joint_transmission", refuse
+                        )
                     else:
                         original = runtime._device.download
 
@@ -215,9 +217,7 @@ def test_free_ball_activation_late_failure_retains_whole_batch(
                         else ["complete-real-download"]
                     )
                     assert reached == expected
-                journal.emit(
-                    "fault-return", fault=fault, reached=reached, error=repr(caught.value)
-                )
+                journal.emit("fault-return", fault=fault, reached=reached, error=repr(caught.value))
                 _retained(runtime, before, raw, revision, journal, fault)
             _retry(runtime, clone, mj, model, before, journal)
     except BaseException as error:
@@ -228,9 +228,11 @@ def test_free_ball_activation_late_failure_retains_whole_batch(
 
 
 def _array(record):
-    return np.frombuffer(
-        base64.b64decode(record["data"], validate=True), dtype=record["$array"]
-    ).reshape(tuple(record["shape"])).copy()
+    return (
+        np.frombuffer(base64.b64decode(record["data"], validate=True), dtype=record["$array"])
+        .reshape(tuple(record["shape"]))
+        .copy()
+    )
 
 
 def _replace_array(record, array):
@@ -258,9 +260,7 @@ def _forge_last_world(raw, corruption):
         array = _array(target["scalar_force"])
         array[0] += np.float32(0.125)
         _replace_array(target["scalar_force"], array)
-    elif corruption in (
-        "fixed-actuation-schema", "fixed-transmission-schema", "fixed-schema-pair"
-    ):
+    elif corruption in ("fixed-actuation-schema", "fixed-transmission-schema", "fixed-schema-pair"):
         if corruption != "fixed-transmission-schema":
             act["schema"] = "native-joint-filterexact-actuation-v1"
         if corruption != "fixed-actuation-schema":
@@ -324,7 +324,9 @@ def test_free_ball_activation_checkpoint_records_cannot_cross_domain(name, mode,
                 )
                 with pytest.raises(ValueError) as caught:
                     runtime.restore(bad, expected_revision=revision)
-                journal.emit("corrupt-restore-return", corruption=corruption, error=str(caught.value))
+                journal.emit(
+                    "corrupt-restore-return", corruption=corruption, error=str(caught.value)
+                )
                 _retained(runtime, before, raw, revision, journal, corruption)
             _retry(runtime, clone, mj, model, before, journal)
     except BaseException as error:

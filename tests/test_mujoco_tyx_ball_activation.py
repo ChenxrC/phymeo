@@ -37,7 +37,7 @@ def test_ball_activation_continuous(name, mode, tmp_path):
 
 
 NEGATIVES = {
-    "free": "free-ball-activation",
+    # The exact former FREE wrapper is a two-step R3-A original-input positive.
     "ball-limit": "ball-constraint-domain",
     "scalar-limit": "ball-constraint-domain",
     "dry": "ball-constraint-domain",

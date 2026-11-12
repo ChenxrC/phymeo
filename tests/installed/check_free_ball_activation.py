@@ -280,7 +280,9 @@ def dense_native_moment(model, data):
 
 def check_transmission(row, entry, native):
     tr, expected = row.transmission, native["analytic"]
-    require(tr.schema == "native-free-ball-joint-motor-transmission-v1", "complete transmission schema")
+    require(
+        tr.schema == "native-free-ball-joint-motor-transmission-v1", "complete transmission schema"
+    )
     for name in ("ids", "gear", "row_offsets", "dof_indices", "moment"):
         np.testing.assert_array_equal(getattr(tr, name), expected[name])
     for name in ("clamped_control", "raw_force", "scalar_force", "generalized_force"):
@@ -326,7 +328,10 @@ def check_activation(row, entry, after, native):
 
     require(type(row) is MuJoCoTyxJointActivationStepReceipt, "typed combined publication")
     act, expected = row.actuation, native["analytic"]
-    require(act.schema == "native-free-ball-joint-filterexact-actuation-v1", "combined activation schema")
+    require(
+        act.schema == "native-free-ball-joint-filterexact-actuation-v1",
+        "combined activation schema",
+    )
     np.testing.assert_array_equal(act.ids, expected["activation_ids"])
     np.testing.assert_array_equal(act.parameters, expected["parameters"])
     exact(act.input_act.astype(np.float64), entry.act, "actual entry activation")
@@ -543,8 +548,14 @@ def _r3_capacity_source(kind, overflow):
     )
 
 
-CASES = ("no-contact-late", "no-contact-early", "feet-normal", "feet-pyramidal",
-         "siblings-normal", "siblings-pyramidal")
+CASES = (
+    "no-contact-late",
+    "no-contact-early",
+    "feet-normal",
+    "feet-pyramidal",
+    "siblings-normal",
+    "siblings-pyramidal",
+)
 
 
 def source(name):
@@ -562,7 +573,7 @@ def source(name):
         if route == "normal":
             original = original.replace('condim="3"', 'condim="1"')
         root = ET.fromstring(original)
-        selected = ({"drive": False} if family == "feet" else {"drive": True, "counter": False})
+        selected = {"drive": False} if family == "feet" else {"drive": True, "counter": False}
         if family == "siblings":
             root.find("option").set("actuatorgroupdisable", "1")
             actor = root.find("actuator").find("general[@name='drive']")
@@ -601,22 +612,28 @@ def negative_source(name):
         return capacity_source("activation", True)
     if name == "nv-overflow":
         text = capacity_source("activation")
-        return text.replace('</worldbody>',
+        return text.replace(
+            "</worldbody>",
             '<body name="extra"><joint name="extra-slide" type="slide"/>'
-            '<inertial mass="1" pos="0 0 0" diaginertia=".1 .1 .1"/></body></worldbody>')
+            '<inertial mass="1" pos="0 0 0" diaginertia=".1 .1 .1"/></body></worldbody>',
+        )
     if name in ("pair-overflow", "slot-overflow"):
         return capacity_source("pairs" if name == "pair-overflow" else "slots", True)
     xml = source("feet-pyramidal")
     if name in ("integrator-dynamics", "filter-dynamics", "muscle-dynamics"):
-        return xml.replace('dyntype="filterexact"', 'dyntype="' + name.split('-')[0] + '"', 1)
+        return xml.replace('dyntype="filterexact"', 'dyntype="' + name.split("-")[0] + '"', 1)
     if name in ("condim4", "condim6"):
         return xml.replace('condim="3"', 'condim="' + name[-1] + '"')
     if name == "elliptic":
         return xml.replace('cone="pyramidal"', 'cone="elliptic"')
     if name == "ball-limit":
-        return xml.replace('name="ball" type="ball"', 'name="ball" type="ball" limited="true" range="0 .8"')
+        return xml.replace(
+            'name="ball" type="ball"', 'name="ball" type="ball" limited="true" range="0 .8"'
+        )
     if name == "scalar-limit":
-        return xml.replace('name="slide" type="slide"', 'name="slide" type="slide" limited="true" range="-.5 .5"')
+        return xml.replace(
+            'name="slide" type="slide"', 'name="slide" type="slide" limited="true" range="-.5 .5"'
+        )
     if name == "dry":
         return xml.replace('name="ball" type="ball"', 'name="ball" type="ball" frictionloss=".1"')
     if name == "spring":
@@ -628,19 +645,28 @@ def negative_source(name):
     if name == "parent-transmission":
         return xml.replace('joint="ball"', 'jointinparent="ball"')
     if name == "explicit-pair":
-        return xml.replace('</mujoco>', '<contact><pair geom1="ground" geom2="toe0"/></contact></mujoco>')
+        return xml.replace(
+            "</mujoco>", '<contact><pair geom1="ground" geom2="toe0"/></contact></mujoco>'
+        )
     if name == "exclude":
-        return xml.replace('</mujoco>', '<contact><exclude body1="foot0" body2="foot1"/></contact></mujoco>')
+        return xml.replace(
+            "</mujoco>", '<contact><exclude body1="foot0" body2="foot1"/></contact></mujoco>'
+        )
     if name == "cylinder":
-        return xml.replace('name="toe0" type="sphere" size=".1"', 'name="toe0" type="cylinder" size=".1 .1"')
+        return xml.replace(
+            'name="toe0" type="sphere" size=".1"', 'name="toe0" type="cylinder" size=".1 .1"'
+        )
     if name == "geom-overflow":
-        masked = ''.join(f'<geom name="masked{i}" size=".01" contype="0" conaffinity="0"/>' for i in range(129))
-        return xml.replace('</worldbody>', masked + '</worldbody>')
+        masked = "".join(
+            f'<geom name="masked{i}" size=".01" contype="0" conaffinity="0"/>' for i in range(129)
+        )
+        return xml.replace("</worldbody>", masked + "</worldbody>")
     raise ValueError(name)
 
 
 def _r2_initial(mj, model, slot=0, sign=False):
     from phymeo.backends.mujoco_runtime import MuJoCoInitialState
+
     q = model.qpos0.copy()
     for joint, kind in enumerate(model.jnt_type):
         qa = int(model.jnt_qposadr[joint])
@@ -682,16 +708,24 @@ def _r3_initial(mj, model, name, slot):
 def initial(mj, model, name, slot):
     from phymeo.backends.mujoco_runtime import MuJoCoInitialState
 
-    original = (_r2_initial(mj, model, slot) if name.startswith("no-contact")
-                else _r3_initial(mj, model, name.split("-")[0], slot))
-    activation = np.asarray([
-        (-1 if address % 2 else 1) * (0.34 + 0.01 * slot + 0.005 * address)
-        for address in range(model.na)], np.float32)
+    original = (
+        _r2_initial(mj, model, slot)
+        if name.startswith("no-contact")
+        else _r3_initial(mj, model, name.split("-")[0], slot)
+    )
+    activation = np.asarray(
+        [
+            (-1 if address % 2 else 1) * (0.34 + 0.01 * slot + 0.005 * address)
+            for address in range(model.na)
+        ],
+        np.float32,
+    )
     return MuJoCoInitialState(original.q, original.v, act=activation, time=original.time)
 
 
 def _r2_control(model, tick, slot=0):
     from phymeo.backends.mujoco_runtime import MuJoCoControl
+
     phase = 1 if tick < 8 else (-1 if tick < 16 else 0)
     ctrl = phase * np.array([(0.18 + 0.01 * a) * (-1 if a % 2 else 1) for a in range(model.nu)])
     qforce = np.zeros(model.nv)
@@ -1141,9 +1175,13 @@ def compare(row, before, after, packet, expected, model):
         )
         np.testing.assert_allclose(body_generalized, from_contact, rtol=4e-5, atol=4e-5)
         contact_power = float(from_contact @ row.input_v)
-        side_power = sum(float(getattr(contact, f"wrench_on_body{side}_world")
-                               @ (dyn.jacobian_com[body] @ row.input_v))
-                         for side, body in enumerate(contact.body_ids, 1))
+        side_power = sum(
+            float(
+                getattr(contact, f"wrench_on_body{side}_world")
+                @ (dyn.jacobian_com[body] @ row.input_v)
+            )
+            for side, body in enumerate(contact.body_ids, 1)
+        )
         np.testing.assert_allclose(side_power, contact_power, rtol=5e-5, atol=5e-5)
         generalized += body_generalized
         if contact.active:
@@ -1195,19 +1233,18 @@ def compare(row, before, after, packet, expected, model):
     else:
         require(not row.contacts and not row.constraints, "no hidden contact rows")
     for target in (expected["native_successor"], expected["continuous"]):
-        np.testing.assert_allclose(
-            after.q, target["q"], rtol=0, atol=Q_ATOL
-        )
-        np.testing.assert_allclose(
-            after.v, target["v"], rtol=0, atol=V_ATOL
-        )
+        np.testing.assert_allclose(after.q, target["q"], rtol=0, atol=Q_ATOL)
+        np.testing.assert_allclose(after.v, target["v"], rtol=0, atol=V_ATOL)
         np.testing.assert_allclose(after.act, target["act"], **ACT)
         require(abs(after.time - target["time"]) <= TIME_ATOL, "native clock")
     for joint, kind in enumerate(model.jnt_type):
         if int(kind) in (0, 1):
             qa = int(model.jnt_qposadr[joint]) + (3 if int(kind) == 0 else 0)
-            require(abs(float(after.q[qa:qa+4] @ after.q[qa:qa+4]) - 1)
-                    <= 8 * np.finfo(np.float32).eps, "root/child quaternion gate")
+            require(
+                abs(float(after.q[qa : qa + 4] @ after.q[qa : qa + 4]) - 1)
+                <= 8 * np.finfo(np.float32).eps,
+                "root/child quaternion gate",
+            )
     np.testing.assert_allclose(
         after.v, before.v + float(np.float32(H)) * row.integration_acceleration, rtol=0, atol=3e-6
     )
@@ -1244,8 +1281,15 @@ def advance(runtime, mj, model, packets, refs, journal, label):
     completed_before = runtime.counters["completed_steps"]
     accepted_before = runtime.counters["accepted_world_steps"]
     launches_before = runtime.counters["completed_kernels"]
-    journal.emit("input", label=label, full_entry=full_entry, entry=entry, requested=packets,
-                 revision=runtime.checkpoint_revision, counters=dict(runtime.counters))
+    journal.emit(
+        "input",
+        label=label,
+        full_entry=full_entry,
+        entry=entry,
+        requested=packets,
+        revision=runtime.checkpoint_revision,
+        counters=dict(runtime.counters),
+    )
     expected = {k: native_fields(mj, model, s, packets[k]) for k, s in entry.items()}
     for key in runtime.world_keys:
         set_control(refs[key], packets[key])
@@ -1335,26 +1379,57 @@ def continuous(name, mode, journal):
     mj, model, compiled, starts, runtime = fixture(name, mode)
     try:
         require(runtime.capabilities["domain"] == domain(name), "precise composed domain")
-        require(model.na > 0 and model.nq > model.nv and model.njnt >= 3,
-                "native FREE/BALL source with real activation")
-        require(not runtime.capabilities.get("joint_limits_supported", False)
-                and not runtime.capabilities.get("dry_friction_supported", False), "bounded domain")
-        require(tuple(runtime.capabilities.get("contact_dimensions", ()))
-                == (() if name.startswith("no-contact") else (1,) if name.endswith("-normal") else (1, 3)),
-                "route-specific contact dimensions")
+        require(
+            model.na > 0 and model.nq > model.nv and model.njnt >= 3,
+            "native FREE/BALL source with real activation",
+        )
+        require(
+            not runtime.capabilities.get("joint_limits_supported", False)
+            and not runtime.capabilities.get("dry_friction_supported", False),
+            "bounded domain",
+        )
+        require(
+            tuple(runtime.capabilities.get("contact_dimensions", ()))
+            == (
+                ()
+                if name.startswith("no-contact")
+                else (1,)
+                if name.endswith("-normal")
+                else (1, 3)
+            ),
+            "route-specific contact dimensions",
+        )
         state = runtime.integration_snapshot()
         start = state
         refs = references(mj, model, state)
-        journal.emit("declaration", name=name, mode=mode, source_xml=source(name),
-                     source_sha256=hashlib.sha256(source(name).encode()).hexdigest(),
-                     compilation=compiled.source, starts=starts, stored=state,
-                     capabilities=runtime.capabilities, joint_types=model.jnt_type.copy(),
-                     qa=model.jnt_qposadr.copy(), dof=model.jnt_dofadr.copy(),
-                     actadr=model.actuator_actadr.copy(), actearly=model.actuator_actearly.copy(),
-                     tolerances=TOL, force_gate=FORCE, contact_force_gate=CONTACT_FORCE,
-                     activation_gate=ACT, acceleration_gate=(dict(rtol=2e-3, atol=4e-3)
-                         if name.startswith("no-contact") else ACC),
-                     q_gate=Q_ATOL, v_gate=V_ATOL, time_gate=TIME_ATOL, steps=24, h=H)
+        journal.emit(
+            "declaration",
+            name=name,
+            mode=mode,
+            source_xml=source(name),
+            source_sha256=hashlib.sha256(source(name).encode()).hexdigest(),
+            compilation=compiled.source,
+            starts=starts,
+            stored=state,
+            capabilities=runtime.capabilities,
+            joint_types=model.jnt_type.copy(),
+            qa=model.jnt_qposadr.copy(),
+            dof=model.jnt_dofadr.copy(),
+            actadr=model.actuator_actadr.copy(),
+            actearly=model.actuator_actearly.copy(),
+            tolerances=TOL,
+            force_gate=FORCE,
+            contact_force_gate=CONTACT_FORCE,
+            activation_gate=ACT,
+            acceleration_gate=(
+                dict(rtol=2e-3, atol=4e-3) if name.startswith("no-contact") else ACC
+            ),
+            q_gate=Q_ATOL,
+            v_gate=V_ATOL,
+            time_gate=TIME_ATOL,
+            steps=24,
+            h=H,
+        )
         active = {key: [] for key in KEYS}
         both_moments = False
         clamped_activation = False
@@ -1367,30 +1442,53 @@ def continuous(name, mode, journal):
                 row = state[key].last_step
                 active[key].append(any(c.active and c.normal_force > 0 for c in row.contacts))
                 require(np.any(row.qfrc_actuator != 0) or tick >= 16, "actual motor drive retained")
-                clamped_control |= bool(np.any(row.actuation.clamped_control != row.actuation.input_control))
+                clamped_control |= bool(
+                    np.any(row.actuation.clamped_control != row.transmission.input_control)
+                )
                 if tick == 0:
-                    clamped_activation |= bool(np.any(np.abs(row.actuation.output_act) == np.float32(.3)))
+                    clamped_activation |= bool(
+                        np.any(np.abs(row.actuation.output_act) == np.float32(0.3))
+                    )
                 for actor, aid in enumerate(row.actuation.ids):
                     adr, early, disabled = map(int, aid[3:6])
                     if adr >= 0:
-                        expected = row.actuation.output_act[adr] if early else row.actuation.input_act[adr]
-                        require(row.actuation.force_input[actor] == expected, "actual early/late source")
-                        early_used |= bool(early and not disabled and expected != row.actuation.input_act[adr])
+                        expected = (
+                            row.actuation.output_act[adr] if early else row.actuation.input_act[adr]
+                        )
+                        require(
+                            row.actuation.force_input[actor] == expected, "actual early/late source"
+                        )
+                        early_used |= bool(
+                            early and not disabled and expected != row.actuation.input_act[adr]
+                        )
                         late_used |= bool(not early and not disabled)
                 if tick >= 16:
                     np.testing.assert_array_equal(row.control.ctrl, np.zeros(model.nu))
                     np.testing.assert_array_equal(row.control.qfrc_applied, np.zeros(model.nv))
-                    np.testing.assert_array_equal(row.control.xfrc_applied, np.zeros((model.nbody, 6)))
+                    np.testing.assert_array_equal(
+                        row.control.xfrc_applied, np.zeros((model.nbody, 6))
+                    )
                 if name.startswith("no-contact"):
                     np.testing.assert_array_equal(row.transmission.moment[-3:], np.zeros(3))
-                    require(row.transmission.ids[-1, 5] == 3, "zero gear retains native CSR columns")
+                    require(
+                        row.transmission.ids[-1, 5] == 3, "zero gear retains native CSR columns"
+                    )
                 if name.startswith("siblings"):
                     require(row.transmission.raw_force[0] == 0, "disabled raw force")
-                    require(row.transmission.scalar_force[0] == np.float32(.1), "disabled positive floor")
+                    require(
+                        row.transmission.scalar_force[0] == np.float32(0.1),
+                        "disabled positive floor",
+                    )
                     adr = int(model.actuator_actadr[0])
-                    require(row.actuation.integration_derivative[adr] == 0, "disabled filter freezes derivative")
-                    both_moments |= any(np.linalg.norm(c.wrench_on_body1_world[3:]) > 0
-                                        and np.linalg.norm(c.wrench_on_body2_world[3:]) > 0 for c in row.contacts)
+                    require(
+                        row.actuation.integration_derivative[adr] == 0,
+                        "disabled filter freezes derivative",
+                    )
+                    both_moments |= any(
+                        np.linalg.norm(c.wrench_on_body1_world[3:]) > 0
+                        and np.linalg.norm(c.wrench_on_body2_world[3:]) > 0
+                        for c in row.contacts
+                    )
         require(clamped_activation, "actual first-step activation clamp")
         if not name.startswith("no-contact"):
             require(clamped_control, "actual contact-path control clamp")
@@ -1401,26 +1499,40 @@ def continuous(name, mode, journal):
         if name.startswith("siblings"):
             for joint in (1, 2):
                 qa = int(model.jnt_qposadr[joint])
-                require(np.any(state[KEYS[0]].q[qa:qa+4] != start[KEYS[0]].q[qa:qa+4]),
-                        "both native BALL branches moved")
+                require(
+                    np.any(state[KEYS[0]].q[qa : qa + 4] != start[KEYS[0]].q[qa : qa + 4]),
+                    "both native BALL branches moved",
+                )
             require(both_moments, "two moving bodies receive COM moments")
         require(runtime.counters["completed_steps"] == 24, "24 real uninterrupted batches")
         require(runtime.counters["accepted_world_steps"] == 48, "48 actual world steps")
-        journal.emit("continuous-complete", name=name, active=active, state=state,
-                     counters=dict(runtime.counters), both_moments=both_moments,
-                     clamped_activation=clamped_activation, clamped_control=clamped_control,
-                     early_used=early_used, late_used=late_used)
+        journal.emit(
+            "continuous-complete",
+            name=name,
+            active=active,
+            state=state,
+            counters=dict(runtime.counters),
+            both_moments=both_moments,
+            clamped_activation=clamped_activation,
+            clamped_control=clamped_control,
+            early_used=early_used,
+            late_used=late_used,
+        )
         return dict(name=name, accepted_world_steps=48, steps=24)
     finally:
         primary = sys.exc_info()[1]
         try:
             runtime.close()
         except BaseException as cleanup:
-            raise BaseExceptionGroup("R3-A continuous and cleanup failures",
-                                     ([primary] if primary is not None else []) + [cleanup]) from None
+            raise BaseExceptionGroup(
+                "R3-A continuous and cleanup failures",
+                ([primary] if primary is not None else []) + [cleanup],
+            ) from None
 
 
-_R1_INERTIA = '<inertial mass="1.3" pos=".04 -.03 .02" fullinertia=".04 .055 .065 .002 -.001 .003"/>'
+_R1_INERTIA = (
+    '<inertial mass="1.3" pos=".04 -.03 .02" fullinertia=".04 .055 .065 .002 -.001 .003"/>'
+)
 _R1_JOINT = 'damping=".12" armature=".04"'
 _R1_SCALAR = 'ref=".07" springref="-.03" stiffness=".2"'
 _R1_HEADER = """<mujoco><compiler angle="radian" fusestatic="false"/>
@@ -1490,7 +1602,12 @@ def _r1_mechanical_source(name):
             gain="1.2",
         )
     xml = (
-        _R1_HEADER + "<worldbody>" + world + "</worldbody><actuator>" + actors + "</actuator></mujoco>"
+        _R1_HEADER
+        + "<worldbody>"
+        + world
+        + "</worldbody><actuator>"
+        + actors
+        + "</actuator></mujoco>"
     )
     if name == "mc6-disabled":
         xml = xml.replace('integrator="Euler"', 'integrator="Euler" actuatorgroupdisable="1"')
@@ -1624,9 +1741,13 @@ def lifecycle(name, mode, journal, keys=KEYS, output_path=None):
             after[keys[-1]].act, np.asarray(starts[keys[-1]].act, np.float32)
         )
         for field in ("q", "v"):
-            np.testing.assert_array_equal(getattr(after[keys[-1]], field),
-                                          np.asarray(getattr(starts[keys[-1]], field), np.float32))
-        require(abs(after[keys[-1]].time - starts[keys[-1]].time) <= TIME_ATOL, "selected initial clock")
+            np.testing.assert_array_equal(
+                getattr(after[keys[-1]], field),
+                np.asarray(getattr(starts[keys[-1]], field), np.float32),
+            )
+        require(
+            abs(after[keys[-1]].time - starts[keys[-1]].time) <= TIME_ATOL, "selected initial clock"
+        )
         refs[keys[-1]] = references(mj, model, {keys[-1]: after[keys[-1]]})[keys[-1]]
         journal.emit(
             "partial-reset",
@@ -1664,10 +1785,15 @@ def original_source(name):
             text = text.replace('condim="3"', 'condim="1"')
         return text.replace('dyntype="none"', 'dyntype="filterexact" dynprm=".02"', 1)
     if name == "r1-free":
-        return _r1_source("r5-mixed").replace(
-            "<worldbody>", '<worldbody><body name="free-root"><freejoint/>'
-            '<inertial mass="1" pos="0 0 0" diaginertia=".1 .1 .1"/>'
-        ).replace("</worldbody>", "</body></worldbody>")
+        return (
+            _r1_source("r5-mixed")
+            .replace(
+                "<worldbody>",
+                '<worldbody><body name="free-root"><freejoint/>'
+                '<inertial mass="1" pos="0 0 0" diaginertia=".1 .1 .1"/>',
+            )
+            .replace("</worldbody>", "</body></worldbody>")
+        )
     raise ValueError(name)
 
 
@@ -1678,6 +1804,7 @@ def original_activation(name, mode, journal):
 
 def capacity(kind, mode, journal):
     import mujoco as mj
+
     from phymeo.backends.mujoco_runtime import MuJoCoRuntime
     from phymeo.builders.mujoco_compiler import compile_mujoco_xml
 
@@ -1685,15 +1812,30 @@ def capacity(kind, mode, journal):
     model = mj.MjModel.from_xml_string(xml)
     require(mj.__version__ == "3.3.7", "fixed native oracle")
     if kind == "activation":
-        require((model.nq, model.nv, model.nu, model.na) == (45, 35, 32, 32), "actual full native widths")
+        require(
+            (model.nq, model.nv, model.nu, model.na) == (45, 35, 32, 32),
+            "actual full native widths",
+        )
     compiled = compile_mujoco_xml(xml, require_asset=False)
     with MuJoCoRuntime(compiled, mode=mode, implementation="tyx", world_keys=KEYS) as runtime:
         state = runtime.integration_snapshot()
-        journal.emit("capacity-input", source=xml, compilation=compiled.source, kind=kind,
-                     state=state, capabilities=runtime.capabilities)
-        output = advance(runtime, mj, model,
-                         {k: control(model, 0, i) for i, k in enumerate(KEYS)},
-                         references(mj, model, state), journal, "exact-static-capacity")
+        journal.emit(
+            "capacity-input",
+            source=xml,
+            compilation=compiled.source,
+            kind=kind,
+            state=state,
+            capabilities=runtime.capabilities,
+        )
+        output = advance(
+            runtime,
+            mj,
+            model,
+            {k: control(model, 0, i) for i, k in enumerate(KEYS)},
+            references(mj, model, state),
+            journal,
+            "exact-static-capacity",
+        )
         if kind != "activation":
             # Public raw slots bind actual 16-pair / 32-slot allocation.
             raw = output[KEYS[0]].last_step.raw_contact_fields
@@ -1703,16 +1845,28 @@ def capacity(kind, mode, journal):
 
 def run(mode, output_path, journal, installed_root):
     continuous_rows = [continuous(name, mode, journal) for name in CASES]
-    life = [lifecycle(name, mode, journal, KEYS, output_path)
-            for name in ("no-contact-late", "feet-normal", "siblings-pyramidal")]
-    legacy = [original_activation(name, mode, journal)
-              for name in ("r2", "r3-normal", "r3-pyramidal", "r1-free")]
+    life = [
+        lifecycle(name, mode, journal, KEYS, output_path)
+        for name in ("no-contact-late", "feet-normal", "siblings-pyramidal")
+    ]
+    legacy = [
+        original_activation(name, mode, journal)
+        for name in ("r2", "r3-normal", "r3-pyramidal", "r1-free")
+    ]
     paths = provenance(installed_root)
     for module in ("_floating_device", "_normal_device", "_constraint_device", "_actuator_kernels"):
-        require("phymeo.backends.mujoco_tyx." + module in paths["loaded"], "actual backend " + module)
-    return dict(continuous=continuous_rows, lifecycle=life, original_inputs=legacy,
-                accepted_world_steps=sum(x["accepted_world_steps"] for x in continuous_rows + life + legacy),
-                final_provenance=paths)
+        require(
+            "phymeo.backends.mujoco_tyx." + module in paths["loaded"], "actual backend " + module
+        )
+    return dict(
+        continuous=continuous_rows,
+        lifecycle=life,
+        original_inputs=legacy,
+        accepted_world_steps=sum(
+            x["accepted_world_steps"] for x in continuous_rows + life + legacy
+        ),
+        final_provenance=paths,
+    )
 
 
 def checkpoint_world_equal(left, right, index):
@@ -1760,7 +1914,7 @@ def main():
         mode=args.mode,
         consumer_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         scope="installed FREE+BALL+R/P; direct JOINT NONE/FILTEREXACT with no/normal/pyramidal contacts",
-        excluded="BALL affine bias, joint limits/springs, dry friction, condim4/6, G1, training",
+        excluded="BALL affine bias, joint limits, BALL/FREE springs, dry friction, condim4/6, G1, training",
     )
     installed_root = None
     primary = None

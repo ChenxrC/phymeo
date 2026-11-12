@@ -271,7 +271,7 @@ def test_free_ball_native_capacity_35_45_32(mode, monkeypatch, tmp_path):
 
 
 NEGATIVES = {
-    "activation": "free-ball-activation",
+    # Exact activation XML now has a two-step R3-A positive in both backends.
     "contact": "free-ball-contact",
     "limit": "free-ball-constraint",
     "dry": "free-ball-constraint",

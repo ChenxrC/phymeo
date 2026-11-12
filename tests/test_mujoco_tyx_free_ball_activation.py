@@ -18,8 +18,12 @@ case = importlib.util.module_from_spec(_SPEC)
 _SPEC.loader.exec_module(case)
 MODES = ("interpret", pytest.param("cuda", marks=pytest.mark.cuda))
 CASES = (
-    "no-contact-late", "no-contact-early", "feet-normal", "feet-pyramidal",
-    "siblings-normal", "siblings-pyramidal",
+    "no-contact-late",
+    "no-contact-early",
+    "feet-normal",
+    "feet-pyramidal",
+    "siblings-normal",
+    "siblings-pyramidal",
 )
 
 
@@ -40,13 +44,18 @@ def test_original_activation_rejection_inputs_now_take_two_steps(name, mode, tmp
     pytest.importorskip("mujoco")
     if name == "r2":
         from test_mujoco_tyx_free_ball import negative_source as old_source
+
         expected = old_source("activation")
     elif name == "r1-free":
         from test_mujoco_tyx_ball_activation import case as old
+
         expected = old.negative_source("free")
     else:
-        module = ("test_mujoco_tyx_free_ball_normal" if name == "r3-normal"
-                  else "test_mujoco_tyx_free_ball_pyramidal")
+        module = (
+            "test_mujoco_tyx_free_ball_normal"
+            if name == "r3-normal"
+            else "test_mujoco_tyx_free_ball_pyramidal"
+        )
         old = __import__(module, fromlist=["case"]).case
         expected = old.negative_source("activation")
     assert case.original_source(name) == expected
@@ -101,7 +110,9 @@ def test_activation_domain_rejected_before_device(negative, monkeypatch, tmp_pat
 
     monkeypatch.setattr(runtime_module.MuJoCoTyxRuntime, "_build_device", forbidden)
     with pytest.raises(MuJoCoTyxUnsupported) as caught:
-        MuJoCoRuntime(compile_mujoco_xml(xml, require_asset=False), mode="interpret", implementation="tyx")
+        MuJoCoRuntime(
+            compile_mujoco_xml(xml, require_asset=False), mode="interpret", implementation="tyx"
+        )
     assert calls == []
     assert NEGATIVES[negative] in {issue.code for issue in caught.value.issues}
     (tmp_path / "source.xml").write_text(xml, encoding="utf-8")
@@ -138,8 +149,13 @@ def test_initial_state_rejected_before_device(bad, mode, monkeypatch, tmp_path):
     monkeypatch.setattr(runtime_module.MuJoCoTyxRuntime, "_build_device", forbidden)
     with pytest.raises(ValueError):
         states = {k: MuJoCoInitialState(q, start.v, act=act, time=start.time) for k in case.KEYS}
-        MuJoCoRuntime(compile_mujoco_xml(xml, require_asset=False), mode=mode,
-                      implementation="tyx", world_keys=case.KEYS, initial_states=states)
+        MuJoCoRuntime(
+            compile_mujoco_xml(xml, require_asset=False),
+            mode=mode,
+            implementation="tyx",
+            world_keys=case.KEYS,
+            initial_states=states,
+        )
     assert calls == []
     journal = case.Journal(tmp_path / "invalid-initial.jsonl.gz")
     try:
@@ -159,10 +175,20 @@ def test_original_capacity_boundary_takes_real_step(capacity, mode, tmp_path):
         journal.close()
 
 
-@pytest.mark.parametrize("corruption", (
-    "duplicate-address", "missing-address", "none-address", "wrong-count",
-    "tau-zero", "tau-nan", "gain-inf", "ctrl-reversed", "act-reversed",
-))
+@pytest.mark.parametrize(
+    "corruption",
+    (
+        "duplicate-address",
+        "missing-address",
+        "none-address",
+        "wrong-count",
+        "tau-zero",
+        "tau-nan",
+        "gain-inf",
+        "ctrl-reversed",
+        "act-reversed",
+    ),
+)
 def test_native_activation_layout_and_parameters_refused(corruption, tmp_path):
     mj = pytest.importorskip("mujoco")
     from phymeo.backends.mujoco_tyx import MuJoCoTyxUnsupported
@@ -194,10 +220,16 @@ def test_native_activation_layout_and_parameters_refused(corruption, tmp_path):
         expected = "activation-range"
     journal = case.Journal(tmp_path / "mutated-native-layout.jsonl.gz")
     try:
-        journal.emit("input", corruption=corruption, actadr=model.actuator_actadr.copy(),
-                     actnum=model.actuator_actnum.copy(), dynprm=model.actuator_dynprm.copy(),
-                     gain=model.actuator_gainprm.copy(), ctrlrange=model.actuator_ctrlrange.copy(),
-                     actrange=model.actuator_actrange.copy())
+        journal.emit(
+            "input",
+            corruption=corruption,
+            actadr=model.actuator_actadr.copy(),
+            actnum=model.actuator_actnum.copy(),
+            dynprm=model.actuator_dynprm.copy(),
+            gain=model.actuator_gainprm.copy(),
+            ctrlrange=model.actuator_ctrlrange.copy(),
+            actrange=model.actuator_actrange.copy(),
+        )
         with pytest.raises(MuJoCoTyxUnsupported) as caught:
             compile_model(mj, model)
         journal.emit("rejected", type=type(caught.value).__name__, reason=str(caught.value))
@@ -214,8 +246,9 @@ def test_allow_flags_do_not_bypass_free_ball_structure(negative):
 
     model = mj.MjModel.from_xml_string(case.negative_source(negative))
     with pytest.raises(MuJoCoTyxUnsupported) as caught:
-        compile_floating_model(mj, model, allow_normal_contacts=True,
-                               allow_constraints=True, allow_activation=True)
+        compile_floating_model(
+            mj, model, allow_normal_contacts=True, allow_constraints=True, allow_activation=True
+        )
     assert NEGATIVES[negative] in {issue.code for issue in caught.value.issues}
 
 
@@ -226,17 +259,25 @@ def test_source_mechanics_and_original_entry_control_are_unchanged(name):
 
     mj = pytest.importorskip("mujoco")
     if name.startswith("no-contact"):
-        from test_mujoco_tyx_free_ball import source as old_source, initial as old_initial, control as old_control
+        from test_mujoco_tyx_free_ball import control as old_control
+        from test_mujoco_tyx_free_ball import initial as old_initial
+        from test_mujoco_tyx_free_ball import source as old_source
+
         original = old_source("mixed")
     else:
-        module = ("test_mujoco_tyx_free_ball_normal" if name.endswith("-normal")
-                  else "test_mujoco_tyx_free_ball_pyramidal")
+        module = (
+            "test_mujoco_tyx_free_ball_normal"
+            if name.endswith("-normal")
+            else "test_mujoco_tyx_free_ball_pyramidal"
+        )
         old = __import__(module, fromlist=["case"]).case
         original = old.source(name.split("-")[0])
     root, previous = ET.fromstring(case.source(name)), ET.fromstring(original)
     for tag in ("compiler", "worldbody", "default"):
         left, right = root.find(tag), previous.find(tag)
-        assert (None if left is None else ET.tostring(left)) == (None if right is None else ET.tostring(right))
+        assert (None if left is None else ET.tostring(left)) == (
+            None if right is None else ET.tostring(right)
+        )
     options = dict(root.find("option").attrib)
     if name.startswith("siblings"):
         assert options.pop("actuatorgroupdisable") == "1"
@@ -244,12 +285,18 @@ def test_source_mechanics_and_original_entry_control_are_unchanged(name):
     model = mj.MjModel.from_xml_string(case.source(name))
     for slot in range(2):
         actual = case.initial(mj, model, name, slot)
-        expected = (old_initial(mj, model, slot) if name.startswith("no-contact")
-                    else old.initial(mj, model, name.split("-")[0], slot))
+        expected = (
+            old_initial(mj, model, slot)
+            if name.startswith("no-contact")
+            else old.initial(mj, model, name.split("-")[0], slot)
+        )
         np.testing.assert_array_equal(actual.q, expected.q)
         np.testing.assert_array_equal(actual.v, expected.v)
         assert actual.time == expected.time
         for tick in (0, 8, 16):
-            command = (old_control(model, tick, slot) if name.startswith("no-contact")
-                       else old.control(model, tick, slot))
+            command = (
+                old_control(model, tick, slot)
+                if name.startswith("no-contact")
+                else old.control(model, tick, slot)
+            )
             case.exact(case.control(model, tick, slot), command, "original three-channel control")

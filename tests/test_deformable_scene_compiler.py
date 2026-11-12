@@ -141,7 +141,7 @@ def test_asset_to_common_response_short_windows(cases, tyx_mode, tmp_path):
                     assert min(np.linalg.norm(np.asarray(current.position[3:]) - q[3:]),
                                np.linalg.norm(np.asarray(current.position[3:]) + q[3:])) <= 2e-4
                 continuous = expected
-                assert result.query.source["source_kind"] == "deformable-floating-entry-device-v1"
+                assert result.query.source_kind == "deformable-floating-entry-device-v1"
 
 
 @pytest.mark.tyx

@@ -35,9 +35,21 @@ def test_free_ball_activation_complete_native_24_steps(name, mode, tmp_path):
 
 
 @pytest.mark.parametrize("mode", MODES)
-@pytest.mark.parametrize("name", ("r2", "r3-normal", "r3-pyramidal"))
+@pytest.mark.parametrize("name", ("r2", "r3-normal", "r3-pyramidal", "r1-free"))
 def test_original_activation_rejection_inputs_now_take_two_steps(name, mode, tmp_path):
     pytest.importorskip("mujoco")
+    if name == "r2":
+        from test_mujoco_tyx_free_ball import negative_source as old_source
+        expected = old_source("activation")
+    elif name == "r1-free":
+        from test_mujoco_tyx_ball_activation import case as old
+        expected = old.negative_source("free")
+    else:
+        module = ("test_mujoco_tyx_free_ball_normal" if name == "r3-normal"
+                  else "test_mujoco_tyx_free_ball_pyramidal")
+        old = __import__(module, fromlist=["case"]).case
+        expected = old.negative_source("activation")
+    assert case.original_source(name) == expected
     journal = case.Journal(tmp_path / "original-input.jsonl.gz")
     try:
         case.original_activation(name, mode, journal)
@@ -145,3 +157,99 @@ def test_original_capacity_boundary_takes_real_step(capacity, mode, tmp_path):
         case.capacity(capacity, mode, journal)
     finally:
         journal.close()
+
+
+@pytest.mark.parametrize("corruption", (
+    "duplicate-address", "missing-address", "none-address", "wrong-count",
+    "tau-zero", "tau-nan", "gain-inf", "ctrl-reversed", "act-reversed",
+))
+def test_native_activation_layout_and_parameters_refused(corruption, tmp_path):
+    mj = pytest.importorskip("mujoco")
+    from phymeo.backends.mujoco_tyx import MuJoCoTyxUnsupported
+    from phymeo.backends.mujoco_tyx._model import compile_model
+
+    model = mj.MjModel.from_xml_string(case.source("no-contact-late"))
+    active = np.flatnonzero(model.actuator_actadr >= 0)
+    a, b = map(int, active[:2])
+    expected = "activation-layout"
+    if corruption == "duplicate-address":
+        model.actuator_actadr[b] = model.actuator_actadr[a]
+    elif corruption == "missing-address":
+        model.actuator_actadr[a] = -1
+    elif corruption == "none-address":
+        model.actuator_actadr[np.flatnonzero(model.actuator_actadr < 0)[0]] = 0
+    elif corruption == "wrong-count":
+        model.actuator_actnum[a] = 2
+    elif corruption in ("tau-zero", "tau-nan"):
+        model.actuator_dynprm[a, 0] = 0 if corruption == "tau-zero" else np.nan
+        expected = "activation-time-constant"
+    elif corruption == "gain-inf":
+        model.actuator_gainprm[a, 0] = np.inf
+        expected = "activation-parameters"
+    elif corruption == "ctrl-reversed":
+        model.actuator_ctrlrange[a] = (1, -1)
+        expected = "activation-range"
+    else:
+        model.actuator_actrange[a] = (1, -1)
+        expected = "activation-range"
+    journal = case.Journal(tmp_path / "mutated-native-layout.jsonl.gz")
+    try:
+        journal.emit("input", corruption=corruption, actadr=model.actuator_actadr.copy(),
+                     actnum=model.actuator_actnum.copy(), dynprm=model.actuator_dynprm.copy(),
+                     gain=model.actuator_gainprm.copy(), ctrlrange=model.actuator_ctrlrange.copy(),
+                     actrange=model.actuator_actrange.copy())
+        with pytest.raises(MuJoCoTyxUnsupported) as caught:
+            compile_model(mj, model)
+        journal.emit("rejected", type=type(caught.value).__name__, reason=str(caught.value))
+        assert expected in {issue.code for issue in caught.value.issues}
+    finally:
+        journal.close()
+
+
+@pytest.mark.parametrize("negative", ("condim4", "condim6", "elliptic", "ball-limit", "dry"))
+def test_allow_flags_do_not_bypass_free_ball_structure(negative):
+    mj = pytest.importorskip("mujoco")
+    from phymeo.backends.mujoco_tyx import MuJoCoTyxUnsupported
+    from phymeo.backends.mujoco_tyx._floating_model import compile_floating_model
+
+    model = mj.MjModel.from_xml_string(case.negative_source(negative))
+    with pytest.raises(MuJoCoTyxUnsupported) as caught:
+        compile_floating_model(mj, model, allow_normal_contacts=True,
+                               allow_constraints=True, allow_activation=True)
+    assert NEGATIVES[negative] in {issue.code for issue in caught.value.issues}
+
+
+@pytest.mark.parametrize("name", CASES)
+def test_source_mechanics_and_original_entry_control_are_unchanged(name):
+    """Compare original declarations, not production-derived expectations."""
+    import xml.etree.ElementTree as ET
+
+    mj = pytest.importorskip("mujoco")
+    if name.startswith("no-contact"):
+        from test_mujoco_tyx_free_ball import source as old_source, initial as old_initial, control as old_control
+        original = old_source("mixed")
+    else:
+        module = ("test_mujoco_tyx_free_ball_normal" if name.endswith("-normal")
+                  else "test_mujoco_tyx_free_ball_pyramidal")
+        old = __import__(module, fromlist=["case"]).case
+        original = old.source(name.split("-")[0])
+    root, previous = ET.fromstring(case.source(name)), ET.fromstring(original)
+    for tag in ("compiler", "worldbody", "default"):
+        left, right = root.find(tag), previous.find(tag)
+        assert (None if left is None else ET.tostring(left)) == (None if right is None else ET.tostring(right))
+    options = dict(root.find("option").attrib)
+    if name.startswith("siblings"):
+        assert options.pop("actuatorgroupdisable") == "1"
+    assert options == previous.find("option").attrib
+    model = mj.MjModel.from_xml_string(case.source(name))
+    for slot in range(2):
+        actual = case.initial(mj, model, name, slot)
+        expected = (old_initial(mj, model, slot) if name.startswith("no-contact")
+                    else old.initial(mj, model, name.split("-")[0], slot))
+        np.testing.assert_array_equal(actual.q, expected.q)
+        np.testing.assert_array_equal(actual.v, expected.v)
+        assert actual.time == expected.time
+        for tick in (0, 8, 16):
+            command = (old_control(model, tick, slot) if name.startswith("no-contact")
+                       else old.control(model, tick, slot))
+            case.exact(case.control(model, tick, slot), command, "original three-channel control")

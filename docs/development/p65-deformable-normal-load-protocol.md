@@ -198,3 +198,19 @@ validation, rather than attributing the observed oscillation to roundoff.
 Run58 additionally passed the eight declaration/statistics-negative/observer
 nodes. The observer negative records the already committed physical prefix;
 it does not pretend a post-return observation failure rolled physics back.
+
+## CUDA full-window outcome and original evidence plot
+
+Run59 stopped after51 completed/checked steps because a generated contact torque was a native FP32 subnormal (0x800000ac, -2.41023336e-43). This was an internal delivery boundary, not a changed user force. The explicit generated-contact delivery repair records raw and delivered bits, signed loss and the smallest-normal bound; caller StepInputs remain strict. Unit/joint runs67/68 passed. See [delivery report](p65-contact-fp32-delivery-20261113.md).
+
+Run69 then completed all3072 CUDA steps and closed normally, retaining the same original physical case and all full-window step gates. Final status is again FAIL / DIAGNOSTIC_ONLY for the original steady windows:
+- mean force24.8393962 /5.41416865 N;
+- rigid velocity RMS .58443762 /.47776549 m/s;
+- center velocity RMS .34035643 /.38428665 m/s;
+- peak69.5469284 N, minimum gap -.0420328047m, minimum original side .0829671953m.
+Nine original short velocity checks failed, maximum2.85153656e-5m/s; no strict PASS is implied.
+
+Run95 reads only these two closed windows, validates their logical trace bytes and extracts all6144 original observations into CSV and a three-panel PNG. It does not rerun a producer or recompute mechanics. Both FAIL labels and original support/peak/gap/RMS gates remain visible; observations cover t=0..T-h, with no invented terminal sample. The interpret run predates the explicit generated-load subnormal repair; CUDA runs with that narrow boundary repair, so they are not falsely labeled identical product snapshots.
+Plot: artifacts/p65-feature-until-0730-20261113-01/95-d4-closed-plot/render/normal-loads.png.
+
+The independent [D6-A contract](../superpowers/specs/2026-11-13-distance-dissipation-design.md) follows primary-source research on explicit internal material dissipation. It does not change this N1 material, its old results or its undeveloped three other grids. An axial-only material has real null modes and cannot promise steady support in this flat membrane.

@@ -140,3 +140,9 @@ the six source cells. Source evidence is under
 This adds original-capacity functional qualification. Live/peak device memory
 is still UNKNOWN and no Newton performance comparison has been performed.
 The fresh installed consumers remain a separate pending stage.
+
+## First installed package qualification
+
+Package113629b3, wheel SHA2569250b9e9cea641992c7a1081fe134686e57bce2b718f9d8b6a8abb6a878b9044, has530 byte-identical product members across source/wheel/site. Runs77/78 execute the complete W16/B3 cell in interpret/CUDA; runs79/80 execute W16/B8 in both. All four report PASS, each27 actual calls /432 accepted worldsteps including the three real lifecycle successors. B8 preserves eight original source identities with two worlds each. W1/W8 installed cells were not rerun; their source qualification is retained explicitly, not promoted to extra installed runs. Every loaded Phymeo module is bound to the source-external installed site.
+
+This closes G2a original-capacity functional qualification. The memory/performance limitations above remain; no new larger-capacity or Newton speed claim.

@@ -190,7 +190,8 @@ def test_host_unknown_release_strongly_retains_scene_and_runtime(phase,tmp_path,
     def exercise():
         with monkeypatch.context() as patch:
             events=[]; arrays=[]
-            scene=ph.ResidentSceneBatch((),mode="interpret")
+            built=s.build(tmp_path/"assets",families=("ordinary",))
+            scene=ph.ResidentSceneBatch(built["participants"],mode="interpret",cache_root=tmp_path/"cache")
             plan=scene.prepare_boundary_query(ph.CollisionModel(()),(),limits=ph.BoundaryDistanceLimits(),memory_limit_bytes=1024)
             batch=scene._service._batch
             runtime=old_protocol.FakeRuntime(events); batch._runtime=runtime

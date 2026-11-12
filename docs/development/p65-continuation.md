@@ -28,13 +28,13 @@
 
 ## 后续从这里开始
 
-下一批 **Batch B**，按[三主线路线](../superpowers/plans/2026-11-12-scene-deformable-scale-roadmap.md)继续：
+当前已启动 **[Batch B](../superpowers/plans/2026-11-12-three-track-batch-b.md)**，状态 AUTHORING / TESTS_PENDING，按[三主线路线](../superpowers/plans/2026-11-12-scene-deformable-scale-roadmap.md)继续：
 
 1. **S3 统一公共场景**：补编译声明到既有 device query 的自动装配和公共流程；增加工具/自由物体的第二类独立安装场景。复用已验 S1/S2，不重做 adapter。
 2. **D2/M2-Q 真实变形查询**：借用 D1 当次 accepted 设备顶点，更新 bounds/BVH，接原有限球/胶囊查询，验证面实际变形、稳定身份与旧 epoch 拒绝。随后 D3 才做合法接触法则、双方力和共同发布；D4/D5 做持续载荷及组合安装。
 3. **R2 FREE+BALL 与异构基础**：核实际树/状态/DOF/activation/constraint 接缝，冻结第一格多案例和资源后实现；异构批只组合已验能力。G1功能、G2规模先于G3公平性能比较，性能超越不是强制条件。
 
-原三位作者可在无交叉依赖的隔离文件内并行编码，父独占共享协议/接缝；全部项目执行串行。当前 Batch A 作者和执行均结束，无新执行 owner；下一批启动时登记新的精确范围和唯一执行 owner，不复活旧运行组。
+原三位作者已接管Batch B的隔离范围，父独占共享协议/接缝并担任唯一串行执行owner。Batch A正式释放及已绿结果保持；新批不复活旧运行组。Batch B精确范围和证据另行登记，尚无本批执行通过结论。
 
 训练 N8 诊断保留为第三线需要时的支撑，不抢占前三主线或触发无假设重训练。允许事先声明且有物理意义的有限穿透、漂移和数值误差，以稳定多案例流程、真实载荷及力/运动一致为验收；不恢复精确相触/无限证明的旧障碍。同一假设两次诊断未缩小问题就保存最小反例并调整假设。
 
@@ -46,6 +46,6 @@ J/R原学习门、G1原46.29秒参考XY门及完整131.48秒动作、R03两项�
 
 父目录 C:/Users/38347/.codex/worktrees/p65-parallel-integration/phymeo，分支 codex/p65-parallel-modules，本地未 push。新证据 artifacts/p65-three-track-a-20261112-01，installed-close.json 绑定520产品及六消费者；installed-wheel-01有143个物理文件/8,196,524 bytes，保完整压缩表示。
 
-原三个作者、源码/安装执行均释放；所有 import/collection/数值/pytest/离线分析/lint/formatter/build/install/profile 在登记单一 owner 与 fresh entrypoint-aware guard 后执行。上一批证据和所有首失败不重审、不恢复旧 session、不全解压。
+Batch A原作者及源码/安装执行已释放；Batch B在同三位作者的隔离新分支推进，证据根 artifacts/p65-three-track-b-20261112-01，父为唯一项目执行owner。所有 import/collection/数值/pytest/离线分析/lint/formatter/build/install/profile 均在 fresh entrypoint-aware guard 后串行执行。上一批证据和所有首失败不重审、不恢复旧 session、不全解压。
 
 保留三个原 K1 未跟踪文件、用户 Torch、当前 venv/pins、原作者稿和旧证据 Junction。无 remote CI、push/mainmerge、发包、环境清理或 P7/P8 扩域。本批关闭不等于整个阶段 complete。

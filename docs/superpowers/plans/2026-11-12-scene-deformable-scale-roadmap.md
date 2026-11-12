@@ -1,6 +1,6 @@
 # 后续三主线计划：统一场景、真实变形、机器人与GPU规模
 
-状态：**BATCH_A_QUALIFIED / 下一批B待实施**。2026-11-12按用户指定的三点调整；实施基线79e3e089，Batch A最终产品d2a18bee。S1/S2、D1及direct BALL FILTEREXACT这一R2格已完成源码与六个源码外解释/CUDA消费者，520产品成员同源；详见[实际结果](../../development/p65-three-track-batch-a-20261112.md)。无新截止；原失败保持，功能优先，性能超越非强制。当前[Batch A](2026-11-12-three-track-batch-a.md)作者与执行槽已释放。
+状态：**BATCH_A_QUALIFIED / BATCH_B_AUTHORING**。2026-11-12按用户指定的三点调整；实施基线79e3e089，Batch A最终产品d2a18bee。S1/S2、D1及direct BALL FILTEREXACT这一R2格已完成源码与六个源码外解释/CUDA消费者，520产品成员同源；详见[实际结果](../../development/p65-three-track-batch-a-20261112.md)。无新截止；原失败保持，功能优先，性能超越非强制。[Batch A](2026-11-12-three-track-batch-a.md)已关闭；[Batch B](2026-11-12-three-track-batch-b.md)从c45a0174启动新隔离开发，尚无本批执行结论。
 
 ## 1. 三条主线与整体完成条件
 

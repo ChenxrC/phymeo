@@ -13,21 +13,37 @@ from phymeo.backends._contact_fp32_delivery import (
     normalize_contact_fp32,
 )
 
-
 BITS = (
-    0x00000001, 0x007FFFFF, 0x80000001, 0x807FFFFF,
-    0x00000000, 0x80000000, 0x00800000, 0x80800000,
-    0x3F800000, 0xBF800000, 0x7F7FFFFF, 0xFF7FFFFF,
+    0x00000001,
+    0x007FFFFF,
+    0x80000001,
+    0x807FFFFF,
+    0x00000000,
+    0x80000000,
+    0x00800000,
+    0x80800000,
+    0x3F800000,
+    0xBF800000,
+    0x7F7FFFFF,
+    0xFF7FFFFF,
     0x800000AC,
 )
 DELIVERED = (
-    0x00000000, 0x00000000, 0x80000000, 0x80000000,
-    0x00000000, 0x80000000, 0x00800000, 0x80800000,
-    0x3F800000, 0xBF800000, 0x7F7FFFFF, 0xFF7FFFFF,
+    0x00000000,
+    0x00000000,
+    0x80000000,
+    0x80000000,
+    0x00000000,
+    0x80000000,
+    0x00800000,
+    0x80800000,
+    0x3F800000,
+    0xBF800000,
+    0x7F7FFFFF,
+    0xFF7FFFFF,
     0x80000000,
 )
-MASK = (True, True, True, True, False, False, False, False,
-        False, False, False, False, True)
+MASK = (True, True, True, True, False, False, False, False, False, False, False, False, True)
 
 
 def raw_bits(bits=BITS):
@@ -43,12 +59,24 @@ def test_fixed_ieee_boundary_patterns_keep_raw_and_exact_signed_loss():
     np.testing.assert_array_equal(receipt.raw.view(np.uint32), BITS)
     np.testing.assert_array_equal(receipt.delivered.view(np.uint32), DELIVERED)
     np.testing.assert_array_equal(receipt.subnormal_mask, MASK)
-    expected_loss = np.array([
-        2.0**-149, (2**23-1)*2.0**-149,
-        -(2.0**-149), -(2**23-1)*2.0**-149,
-        0, 0, 0, 0, 0, 0, 0, 0,
-        -172*2.0**-149,
-    ], dtype=np.float64)
+    expected_loss = np.array(
+        [
+            2.0**-149,
+            (2**23 - 1) * 2.0**-149,
+            -(2.0**-149),
+            -(2**23 - 1) * 2.0**-149,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            -172 * 2.0**-149,
+        ],
+        dtype=np.float64,
+    )
     np.testing.assert_array_equal(receipt.loss, expected_loss)
     np.testing.assert_array_equal(
         receipt.loss_bound,
@@ -65,8 +93,9 @@ def test_fixed_ieee_boundary_patterns_keep_raw_and_exact_signed_loss():
     assert receipt.delivered.view(np.uint32)[-1] == 0x80000000
 
 
-@pytest.mark.parametrize("shape", ((3,), (1, 3), (2, 3), (2, 1, 3),
-                                   (1, 2, 1, 3), (0, 3), (2, 0, 6)))
+@pytest.mark.parametrize(
+    "shape", ((3,), (1, 3), (2, 3), (2, 1, 3), (1, 2, 1, 3), (0, 3), (2, 0, 6))
+)
 def test_explicit_shapes_including_empty_axes_preserve_complete_layout(shape):
     size = int(np.prod(shape))
     bits = np.resize(np.array([0x00000001, 0x80000001, 0x3F800000], np.uint32), size)
@@ -118,12 +147,15 @@ def test_nonfinite_input_is_rejected_not_flushed(bits):
         normalize_contact_fp32(raw_bits((bits,)), expected_shape=(1,))
 
 
-@pytest.mark.parametrize("raw", (
-    np.array([1], np.float64),
-    np.array([1], np.int32),
-    np.array([1], dtype=">f4"),
-    [np.float32(1)],
-))
+@pytest.mark.parametrize(
+    "raw",
+    (
+        np.array([1], np.float64),
+        np.array([1], np.int32),
+        np.array([1], dtype=">f4"),
+        [np.float32(1)],
+    ),
+)
 def test_wrong_input_type_or_dtype_is_not_silently_converted(raw):
     with pytest.raises(TypeError, match="float32"):
         normalize_contact_fp32(raw, expected_shape=(1,))

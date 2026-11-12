@@ -16,7 +16,6 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-
 _SCHEMA = "generated-contact-fp32-delivery-v1"
 _TINY = float.fromhex("0x1.0p-126")
 _SIGN = np.uint32(0x80000000)

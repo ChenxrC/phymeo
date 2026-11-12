@@ -16,6 +16,7 @@ import numpy as np
 from ..core.state import StepInputs
 from ..geometry._triangle_distance_dispatch import BoundaryDistanceLimits
 from ..solvers.collision_loads import NormalLayer
+from ._contact_fp32_delivery import normalize_contact_fp32
 from ._deformable_boundary_source import DeformableBoundaryModel, DeformableBoundarySurface
 from ._deformable_response_source import DeformableResponseBoundaryAdapter
 from ._resident_boundary_query import ResidentBoundaryQueryPlan, _digest
@@ -615,22 +616,32 @@ class TyxDeformableContactBatch:
                 rigid_torque=owned(np.cross(levers[i].astype(np.float64), -f)),
             )
         inputs, world_contact, wrenches = {}, {}, {}
+        node_deliveries, wrench_deliveries = {}, {}
         for i, world in enumerate(self.world_keys):
             start, end = map(int, self._engine.offsets[i : i + 2])
             contact = node_force[start:end]
-            total = as_fp32(
-                self._context["inputs"][world].force + contact.astype(np.float64),
-                "D3 complete uploaded node force",
-                contact.shape,
-            )
-            inputs[world] = StepInputs(total)
+            # External inputs already passed their unchanged strict input guard.
+            # Only this generated aggregate crosses the explicit IEEE delivery
+            # boundary; every discarded subnormal is retained in the receipt.
+            with np.errstate(over="ignore", under="ignore", invalid="ignore"):
+                generated_total = np.asarray(
+                    self._context["inputs"][world].force + contact.astype(np.float64),
+                    np.float32,
+                )
+            node_delivery = normalize_contact_fp32(generated_total, expected_shape=contact.shape)
+            wrench_delivery = normalize_contact_fp32(wrench[i : i + 1], expected_shape=(1, 6))
+            inputs[world] = StepInputs(node_delivery.delivered)
             world_contact[world] = owned(contact)
-            wrenches[self._participants[world]] = owned(wrench[i : i + 1])
+            wrenches[self._participants[world]] = wrench_delivery.delivered
+            node_deliveries[world] = node_delivery
+            wrench_deliveries[world] = wrench_delivery
         self._context.update(
             sites=freeze(sites),
             node_contact_force=freeze(world_contact),
             wrenches=freeze(wrenches),
             complete_node_inputs=freeze(inputs),
+            node_force_delivery=freeze(node_deliveries),
+            rigid_wrench_delivery=freeze(wrench_deliveries),
             mechanical_entry=entry,
             phase="node-candidate",
         )
@@ -726,6 +737,8 @@ class TyxDeformableContactBatch:
                 sites=selected,
                 node_contact_force=payload["node_contact_force"][world],
                 node_total_force=row.force,
+                node_force_delivery=payload["node_force_delivery"][world],
+                rigid_wrench_delivery=payload["rigid_wrench_delivery"][world],
                 rigid_wrench=payload["wrenches"][participant],
                 uploaded_rigid_wrench=owned(
                     np.asarray(payload["wrenches"][participant], np.float32)

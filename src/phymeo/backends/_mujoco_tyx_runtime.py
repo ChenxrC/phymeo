@@ -175,9 +175,9 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
     bounded primitive condim=1 manifold with coupled normal forces.
     Ball extension: fixed-root ball/hinge/slide with at most 8 velocity and 10
     position coordinates, complete SO(3) integration and full M/J/bias. This
-    extension permits scalar JOINT actors and stateless direct BALL motors,
-    with primitive normal/pyramidal3 contact. Direct BALL activation, free-root
-    composition, joint limits and dry friction remain separate capabilities.
+    extension permits scalar JOINT actors and direct BALL motors, including
+    admitted FILTEREXACT activation and primitive normal/pyramidal3 contact.
+    Free-root composition, joint limits and dry friction remain separate capabilities.
     Original domain: 1..8 all-prismatic native DOFs with full coupled static
     mass, stateless direct/affine motors, scalar stiffness/armature/damping; or
     one centered isotropic free body, with native local angular coordinates and
@@ -336,6 +336,8 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                 if getattr(self._plan, "normal_contact", False)
                 else "free-root-scalar-filterexact-v1"
                 if self._plan.kind == 3
+                else "fixed-ball-joint-motor-filterexact-no-contact-v1"
+                if getattr(self._plan, "joint_transmission", None) is not None
                 else "fixed-ball-scalar-filterexact-no-contact-v1"
                 if np.any(self._model.jnt_type == self._mj.mjtJoint.mjJNT_BALL)
                 else "fixed-hinge-slide-filterexact-v1"
@@ -784,18 +786,21 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
 
                         receipt_type = MuJoCoTyxActivationStepReceipt
                         receipt_extra = {"actuation": publish_actuation(self._plan, result, index)}
-                    elif getattr(self._plan, "joint_transmission", None) is not None:
+                    if getattr(self._plan, "joint_transmission", None) is not None:
                         from .mujoco_joint_transmission import (
+                            MuJoCoTyxJointActivationStepReceipt,
                             MuJoCoTyxJointMotorStepReceipt,
                             publish_joint_transmission,
                         )
 
-                        receipt_type = MuJoCoTyxJointMotorStepReceipt
-                        receipt_extra = {
-                            "transmission": publish_joint_transmission(
-                                self._plan, result, index, self._controls[key].ctrl
-                            )
-                        }
+                        receipt_type = (
+                            MuJoCoTyxJointActivationStepReceipt
+                            if hasattr(self._plan, "activation")
+                            else MuJoCoTyxJointMotorStepReceipt
+                        )
+                        receipt_extra["transmission"] = publish_joint_transmission(
+                            self._plan, result, index, self._controls[key].ctrl
+                        )
                     receipts[key] = receipt_type(
                         world=key,
                         tick=ticks[key],

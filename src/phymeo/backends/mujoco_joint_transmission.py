@@ -5,6 +5,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from ._mujoco_tyx_runtime import MuJoCoTyxStepReceipt
+from .mujoco_actuation import MuJoCoTyxActivationStepReceipt, MuJoCoTyxActuation
 
 
 def _freeze(value, dtype):
@@ -76,6 +77,35 @@ class MuJoCoTyxJointTransmission:
 @dataclass(frozen=True, kw_only=True)
 class MuJoCoTyxJointMotorStepReceipt(MuJoCoTyxStepReceipt):
     transmission: MuJoCoTyxJointTransmission
+
+
+@dataclass(frozen=True, kw_only=True)
+class MuJoCoTyxJointActivationStepReceipt(MuJoCoTyxActivationStepReceipt):
+    """One device attempt publishes activation and full native JOINT moments."""
+
+    transmission: MuJoCoTyxJointTransmission
+
+    def __post_init__(self):
+        if (
+            type(self.actuation) is not MuJoCoTyxActuation
+            or type(self.transmission) is not MuJoCoTyxJointTransmission
+            or self.actuation.schema != "native-joint-filterexact-actuation-v1"
+        ):
+            raise ValueError("joint activation receipt requires both typed device records")
+        for name in ("clamped_control", "raw_force", "scalar_force", "generalized_force"):
+            left, right = getattr(self.actuation, name), getattr(self.transmission, name)
+            if (
+                left.dtype != right.dtype
+                or left.shape != right.shape
+                or left.tobytes() != right.tobytes()
+            ):
+                raise ValueError("joint activation same-attempt field differs: " + name)
+        if (
+            self.transmission.input_control.tobytes() != self.control.ctrl.tobytes()
+            or self.transmission.generalized_force.astype(np.float64).tobytes()
+            != self.qfrc_actuator.tobytes()
+        ):
+            raise ValueError("joint activation control or accepted force differs")
 
 
 def publish_joint_transmission(plan, result, index, input_control):

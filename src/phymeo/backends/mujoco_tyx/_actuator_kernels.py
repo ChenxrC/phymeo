@@ -108,9 +108,7 @@ def update(
                 transmission_fields[w, actor, 2] = force
                 for slot in range(transmission_offsets[actor], transmission_offsets[actor + 1]):
                     column = transmission_dofs[slot]
-                    actuator[w, column] = (
-                        actuator[w, column] + transmission_moment[slot] * force
-                    )
+                    actuator[w, column] = actuator[w, column] + transmission_moment[slot] * force
             else:
                 actuator[w, dof] = actuator[w, dof] + gear * force
             if (

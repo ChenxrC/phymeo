@@ -93,13 +93,8 @@ def compile_model(mj, model):
 
     if np.any(model.jnt_type == mj.mjtJoint.mjJNT_BALL):
         # Validate BALL structure before choosing its declared contact route.
-        # Direct stateless JOINT motors compose with admitted primitive contacts.
-        from ._joint_transmission import has_ball_transmission
-
-        if model.na and has_ball_transmission(mj, model):
-            raise MuJoCoTyxUnsupported(
-                (Issue("joint-motor-activation", "direct BALL motors require stateless actors"),)
-            )
+        # Stateful JOINT motors use the activation compiler's explicit domain;
+        # unsupported dynamics/bias are rejected before any device construction.
         if model.na:
             from ._actuator_model import compile_activation_model
 

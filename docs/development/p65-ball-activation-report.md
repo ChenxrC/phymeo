@@ -127,3 +127,10 @@ Original fixed BALL capacities and FP32 gates remain: nv8/nq10, actor/act32,
 every maximal activation/CSR combination. No FREE+BALL, direct BALL affine bias,
 limits/dry, tendon, continuum/soft-body, G1, training, broad MuJoCo parity or speed
 claim follows. A completed author handoff is not acceptance.
+
+
+## Parent source qualification — 2026-11-12
+
+Integrated source passed run 021 (41 non-CUDA nodes, including the 12 one-time preallocation negatives; 29 CUDA nodes deselected) and run 022 (29 CUDA nodes; 41 other nodes deselected), both RAW_EXIT=0. The 70 new nodes include the exact three previously rejected activation XML inputs as positive real-successor controls. Run 023 additionally passed the affected stateless direct BALL and scalar FILTEREXACT source cases on both backends (four robot compatibility nodes; the other two nodes in that run belong to scene compatibility).
+
+The parent implemented composed activation/transmission receipts and checkpoint binding, preserving both reports from one actual actuator publication. Independent text review tightened the consumer EFC check to be selected by the pyramidal solver schema rather than nonempty reported rows, including a correctly shaped empty wrench array. This was fixed before the first functional run; no physical gate or fixture changed. Initial import/format findings and all original sources remain in `artifacts/p65-three-track-a-20261112-01`. Source-external qualification remains pending until the unified Batch A wheel is tested.

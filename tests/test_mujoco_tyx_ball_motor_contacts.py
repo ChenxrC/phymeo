@@ -35,8 +35,8 @@ def test_ball_motor_contact_continuous(name, mode, tmp_path):
 
 
 NEGATIVES = (
-    "activation",
-    "scalar-activation",
+    # Former activation sources remain unchanged in the consumer and are now
+    # qualified by test_mujoco_tyx_ball_activation.
     "free",
     "ball-limit",
     "scalar-limit",
@@ -76,8 +76,6 @@ def test_ball_motor_contact_rejected_before_device(negative, monkeypatch, tmp_pa
         MuJoCoRuntime(compiled, mode="interpret", implementation="tyx")
     assert not calls
     expected_codes = {
-        "activation": "joint-motor-activation",
-        "scalar-activation": "joint-motor-activation",
         "free": "joint-domain",
         "ball-limit": "ball-constraint-domain",
         "scalar-limit": "ball-constraint-domain",

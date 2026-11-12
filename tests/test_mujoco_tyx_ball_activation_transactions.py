@@ -6,7 +6,6 @@ import json
 from contextlib import ExitStack
 
 import numpy as np
-
 import pytest
 from test_mujoco_tyx_ball_activation import MODES, case
 
@@ -27,11 +26,9 @@ def test_ball_activation_checkpoint_clone_partial_reset(name, mode, tmp_path):
 @pytest.mark.parametrize("mode", MODES)
 @pytest.mark.parametrize("name", PATHS)
 @pytest.mark.parametrize("fault", ("status", "readback", "actuation", "transmission", "restore"))
-def test_ball_activation_late_failure_retains_whole_batch(
-    name, fault, mode, monkeypatch, tmp_path
-):
-    import phymeo.backends.mujoco_checkpoint as checkpoint_module
+def test_ball_activation_late_failure_retains_whole_batch(name, fault, mode, monkeypatch, tmp_path):
     import phymeo.backends.mujoco_actuation as activation_publication
+    import phymeo.backends.mujoco_checkpoint as checkpoint_module
     import phymeo.backends.mujoco_joint_transmission as publication
     from phymeo.training.resident_stepper import PhysicsStepFailure
 
@@ -160,7 +157,6 @@ def test_ball_activation_foreign_checkpoint_retains_source(mode, tmp_path):
         journal.close()
 
 
-
 def _tamper_one_record(raw, record_name):
     header, _, encoded = raw.split(b"\n", 2)
     value = json.loads(encoded)
@@ -200,7 +196,9 @@ def test_ball_activation_checkpoint_single_record_tamper_retains_successor(
     try:
         state = runtime.integration_snapshot()
         packets = {k: case.control(model, 0, i) for i, k in enumerate(runtime.world_keys)}
-        case.advance(runtime, mj, model, packets, case.references(mj, model, state), journal, "entry")
+        case.advance(
+            runtime, mj, model, packets, case.references(mj, model, state), journal, "entry"
+        )
         before = runtime.integration_snapshot()
         capsule = runtime.checkpoint()
         raw, revision = capsule.to_bytes(), runtime.checkpoint_revision

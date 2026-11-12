@@ -349,7 +349,7 @@ def negative_source(case):
 
 
 NEGATIVES = {
-    "activation": "joint-motor-activation",
+    # Exact former activation source is qualified in test_mujoco_tyx_ball_activation.
     "affine-ball": "ball-actuator-domain",
     "parent": "ball-actuator-domain",
     "tail-gear": "actuator-domain",

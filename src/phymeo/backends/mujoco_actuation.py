@@ -58,7 +58,11 @@ class MuJoCoTyxActuation:
         if self.generalized_force.ndim != 1:
             raise ValueError("generalized actuator force shape")
         if (
-            self.schema != "native-scalar-filterexact-actuation-v1"
+            self.schema
+            not in (
+                "native-scalar-filterexact-actuation-v1",
+                "native-joint-filterexact-actuation-v1",
+            )
             or self.phase != "tyx-euler-entry-actuation-and-next-activation"
         ):
             raise ValueError("actuation publication schema")
@@ -85,4 +89,9 @@ def publish_actuation(plan, result, index):
         raw_force=actor[:, 2],
         scalar_force=actor[:, 3],
         generalized_force=result["actuator"][index, : plan.nv],
+        schema=(
+            "native-joint-filterexact-actuation-v1"
+            if getattr(plan, "joint_transmission", None) is not None
+            else "native-scalar-filterexact-actuation-v1"
+        ),
     )

@@ -40,6 +40,7 @@ def _records():
     )
     from .mujoco_actuation import MuJoCoTyxActivationStepReceipt, MuJoCoTyxActuation
     from .mujoco_joint_transmission import (
+        MuJoCoTyxJointActivationStepReceipt,
         MuJoCoTyxJointMotorStepReceipt,
         MuJoCoTyxJointTransmission,
     )
@@ -49,6 +50,7 @@ def _records():
     classes = (
         MuJoCoTyxActuation,
         MuJoCoTyxActivationStepReceipt,
+        MuJoCoTyxJointActivationStepReceipt,
         MuJoCoTyxJointMotorStepReceipt,
         MuJoCoTyxJointTransmission,
         MuJoCoControl,
@@ -430,10 +432,15 @@ def restore(runtime, checkpoint, expected_revision):
             from .mujoco_actuation import MuJoCoTyxActivationStepReceipt
 
             receipt_type = MuJoCoTyxActivationStepReceipt
-        elif getattr(runtime._plan, "joint_transmission", None) is not None:
-            from .mujoco_joint_transmission import MuJoCoTyxJointMotorStepReceipt
+        if getattr(runtime._plan, "joint_transmission", None) is not None:
+            from .mujoco_joint_transmission import (
+                MuJoCoTyxJointActivationStepReceipt,
+                MuJoCoTyxJointMotorStepReceipt,
+            )
 
-            receipt_type = MuJoCoTyxJointMotorStepReceipt
+            receipt_type = (
+                MuJoCoTyxJointActivationStepReceipt if stateful else MuJoCoTyxJointMotorStepReceipt
+            )
         _require(
             (receipt is None and tick == 0)
             or (
@@ -453,7 +460,13 @@ def restore(runtime, checkpoint, expected_revision):
                 == candidate.qfrc_actuator.tobytes()
                 and actuation.input_act.shape == (runtime._plan.activation.na,)
                 and actuation.ids.tobytes() == runtime._plan.activation.ids.tobytes()
-                and actuation.parameters.tobytes() == runtime._plan.activation.values.tobytes(),
+                and actuation.parameters.tobytes() == runtime._plan.activation.values.tobytes()
+                and actuation.schema
+                == (
+                    "native-joint-filterexact-actuation-v1"
+                    if getattr(runtime._plan, "joint_transmission", None) is not None
+                    else "native-scalar-filterexact-actuation-v1"
+                ),
                 "stateful receipt/source/accepted activation binding",
             )
         if getattr(runtime._plan, "joint_transmission", None) is not None and receipt is not None:

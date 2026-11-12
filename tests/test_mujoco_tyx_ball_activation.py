@@ -14,8 +14,14 @@ _SPEC.loader.exec_module(case)
 
 MODES = ("interpret", pytest.param("cuda", marks=pytest.mark.cuda))
 CASES = (
-    "r1-late", "r2-early", "r3-normal", "r4-pyramid",
-    "r5-mixed", "r6-shared", "r7-two-ball", "r8-disabled",
+    "r1-late",
+    "r2-early",
+    "r3-normal",
+    "r4-pyramid",
+    "r5-mixed",
+    "r6-shared",
+    "r7-two-ball",
+    "r8-disabled",
 )
 
 

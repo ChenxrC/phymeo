@@ -84,7 +84,9 @@ def compile_activation_model(mj, model):
             or model.jnt_type[joint]
             not in (mj.mjtJoint.mjJNT_HINGE, mj.mjtJoint.mjJNT_SLIDE, mj.mjtJoint.mjJNT_BALL)
         ):
-            issue("activation-transmission", f"actor {actor} requires a scalar or BALL JOINT target")
+            issue(
+                "activation-transmission", f"actor {actor} requires a scalar or BALL JOINT target"
+            )
             continue
         if (
             model.jnt_type[joint] == mj.mjtJoint.mjJNT_BALL

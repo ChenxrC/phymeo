@@ -205,9 +205,14 @@ def analytic(model, entry, packet):
         adr = int(model.actuator_actadr[actor])
         early = bool(model.actuator_actearly[actor])
         disabled = bool(model.opt.disableactuator & (1 << int(model.actuator_group[actor])))
-        masks = tuple(int(x[actor]) for x in (
-            model.actuator_ctrllimited, model.actuator_actlimited, model.actuator_forcelimited
-        ))
+        masks = tuple(
+            int(x[actor])
+            for x in (
+                model.actuator_ctrllimited,
+                model.actuator_actlimited,
+                model.actuator_forcelimited,
+            )
+        )
         activation_ids.append((qa, dof, joint, adr, int(early), int(disabled), *masks))
         bias = model.actuator_biasprm[actor, :3] if model.actuator_biastype[actor] else np.zeros(3)
         require(width == 1 or not model.actuator_biastype[actor], "BALL BIAS_NONE")
@@ -215,10 +220,17 @@ def analytic(model, entry, packet):
         ctrlrange = model.actuator_ctrlrange[actor] if masks[0] else (0.0, 0.0)
         actrange = model.actuator_actrange[actor] if masks[1] else (0.0, 0.0)
         forcerange = model.actuator_forcerange[actor] if masks[2] else (0.0, 0.0)
-        parameters.append((
-            model.actuator_gear[actor, 0], model.actuator_gainprm[actor, 0],
-            *bias, *ctrlrange, *forcerange, tau, *actrange,
-        ))
+        parameters.append(
+            (
+                model.actuator_gear[actor, 0],
+                model.actuator_gainprm[actor, 0],
+                *bias,
+                *ctrlrange,
+                *forcerange,
+                tau,
+                *actrange,
+            )
+        )
         u = float(np.float32(packet.ctrl[actor]))
         if masks[0]:
             u = float(np.clip(u, *ctrlrange))
@@ -473,12 +485,15 @@ def _mechanical_source(name):
     return xml
 
 
-
 BASE_CASES = {
-    "r1-late": "mc1-normal", "r2-early": "mc1-normal",
-    "r3-normal": "mc1-normal", "r4-pyramid": "mc2-friction",
-    "r5-mixed": "mc3-mixed", "r6-shared": "mc4-shared",
-    "r7-two-ball": "mc5-two-ball", "r8-disabled": "mc6-disabled",
+    "r1-late": "mc1-normal",
+    "r2-early": "mc1-normal",
+    "r3-normal": "mc1-normal",
+    "r4-pyramid": "mc2-friction",
+    "r5-mixed": "mc3-mixed",
+    "r6-shared": "mc4-shared",
+    "r7-two-ball": "mc5-two-ball",
+    "r8-disabled": "mc6-disabled",
 }
 
 
@@ -602,10 +617,13 @@ def initial(mj, model, name, slot):
         else:
             q[qa] -= 0.001
             v[dof] = -0.02
-    activation = np.asarray([
-        (-1 if address % 2 else 1) * (0.34 + 0.01 * slot + 0.005 * address)
-        for address in range(model.na)
-    ], np.float32)
+    activation = np.asarray(
+        [
+            (-1 if address % 2 else 1) * (0.34 + 0.01 * slot + 0.005 * address)
+            for address in range(model.na)
+        ],
+        np.float32,
+    )
     return MuJoCoInitialState(q, v.astype(np.float32), act=activation, time=0.125)
 
 
@@ -770,7 +788,8 @@ def compare(row, before, after, packet, expected, model):
         np.testing.assert_allclose(value, expected[field], rtol=rtol, atol=atol, err_msg=field)
     for field in ("qacc", "integration_acceleration"):
         np.testing.assert_allclose(
-            getattr(row, field), expected[field],
+            getattr(row, field),
+            expected[field],
             **(dict(rtol=5e-4, atol=8e-4) if no_contact(row) else ACC),
         )
     np.testing.assert_allclose(row.qfrc_actuator, expected["qfrc_actuator"], **FORCE)
@@ -853,7 +872,7 @@ def compare(row, before, after, packet, expected, model):
             np.testing.assert_array_equal(contact.wrench_contact_frame, np.zeros(6))
     np.testing.assert_allclose(generalized, row.qfrc_constraint, rtol=5e-5, atol=5e-5)
     raw = row.raw_contact_fields
-    if row.constraints:
+    if row.numerical_solver == "pyramidal-box-active-set-v1":
         require(len(row.constraints) == len(native_rows), "complete EFC count")
         ids, values, jac = (np.asarray(raw[k]) for k in ("efc_ids", "efc_data", "efc_J"))
         for i, (constraint, native_index) in enumerate(
@@ -904,7 +923,7 @@ def compare(row, before, after, packet, expected, model):
         )
         np.testing.assert_array_equal(
             np.asarray(raw["contact_wrench"])[: len(row.contacts)],
-            np.asarray([c.wrench_contact_frame for c in row.contacts]),
+            np.asarray([c.wrench_contact_frame for c in row.contacts]).reshape(-1, 6),
         )
     elif "device_rows" in raw:
         rows = np.asarray(raw["device_rows"])
@@ -930,14 +949,20 @@ def compare(row, before, after, packet, expected, model):
             "original KKT gate",
         )
         require(
-            diag.get("iterations", diag.get("face_solves")) <= diag["budget"] == model.opt.iterations,
+            diag.get("iterations", diag.get("face_solves"))
+            <= diag["budget"]
+            == model.opt.iterations,
             "original source budget",
         )
     else:
         require(not row.contacts and not row.constraints, "no hidden contact rows")
     for target in (expected["native_successor"], expected["continuous"]):
-        np.testing.assert_allclose(after.q, target["q"], rtol=0, atol=5e-5 if no_contact(row) else Q_ATOL)
-        np.testing.assert_allclose(after.v, target["v"], rtol=0, atol=3e-4 if no_contact(row) else V_ATOL)
+        np.testing.assert_allclose(
+            after.q, target["q"], rtol=0, atol=5e-5 if no_contact(row) else Q_ATOL
+        )
+        np.testing.assert_allclose(
+            after.v, target["v"], rtol=0, atol=3e-4 if no_contact(row) else V_ATOL
+        )
         np.testing.assert_allclose(after.act, target["act"], **ACT)
         require(abs(after.time - target["time"]) <= TIME_ATOL, "native clock")
     np.testing.assert_allclose(
@@ -1001,7 +1026,9 @@ def advance(runtime, mj, model, packets, refs, journal, label):
             for name in ("mj_step", "mj_step1", "mj_step2", "mj_forward"):
                 guard.enter_context(patch.object(mj, name, forbidden))
             accepted = runtime.step(H)
-        journal.emit("physics-return", label=label, accepted=accepted, counters=dict(runtime.counters))
+        journal.emit(
+            "physics-return", label=label, accepted=accepted, counters=dict(runtime.counters)
+        )
         full, output = observations(runtime)
         journal.emit(
             "step",
@@ -1022,8 +1049,10 @@ def advance(runtime, mj, model, packets, refs, journal, label):
         )
         solver = runtime.capabilities["numerical_solver"]
         stages = (
-            6 if solver == "normal-dual-active-set-v1"
-            else 8 if solver == "pyramidal-box-active-set-v1"
+            6
+            if solver == "normal-dual-active-set-v1"
+            else 8
+            if solver == "pyramidal-box-active-set-v1"
             else 4
         )
         require(
@@ -1097,7 +1126,9 @@ def continuous(name, mode, journal):
             force_gate=FORCE,
             contact_force_gate=CONTACT_FORCE,
             activation_gate=ACT,
-            acceleration_gate=(dict(rtol=5e-4, atol=8e-4) if name in ("r1-late", "r2-early") else ACC),
+            acceleration_gate=(
+                dict(rtol=5e-4, atol=8e-4) if name in ("r1-late", "r2-early") else ACC
+            ),
             q_gate=5e-5 if name in ("r1-late", "r2-early") else Q_ATOL,
             v_gate=3e-4 if name in ("r1-late", "r2-early") else V_ATOL,
             time_gate=TIME_ATOL,
@@ -1300,9 +1331,14 @@ def run(mode, output_path, journal, installed_root):
     life = lifecycle("r5-mixed", mode, journal, KEYS, output_path)
     paths = provenance(installed_root)
     for module in ("_tree_device", "_normal_device", "_constraint_device", "_actuator_kernels"):
-        require("phymeo.backends.mujoco_tyx." + module in paths["loaded"], "actual backend " + module)
+        require(
+            "phymeo.backends.mujoco_tyx." + module in paths["loaded"], "actual backend " + module
+        )
     return dict(
-        tree=tree, normal=normal, pyramid=pyramid, lifecycle=life,
+        tree=tree,
+        normal=normal,
+        pyramid=pyramid,
+        lifecycle=life,
         accepted_world_steps=sum(x["accepted_world_steps"] for x in (tree, normal, pyramid, life)),
         final_provenance=paths,
     )

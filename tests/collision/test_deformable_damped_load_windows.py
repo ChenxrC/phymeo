@@ -103,7 +103,8 @@ def test_independent_damped_reference_keeps_flat_null_mode_and_uses_its_own_stat
 
 def phase_record():
     """Exact one-edge validator fixture, not a physical run or copied output."""
-    own = lambda value, dtype=float: np.frombuffer(np.asarray(value, dtype).tobytes(), dtype=dtype).reshape(np.shape(value))
+    def own(value, dtype=float):
+        return np.frombuffer(np.asarray(value, dtype).tobytes(), dtype=dtype).reshape(np.shape(value))
     spec = SimpleNamespace(
         point_ids=own((11, 23), np.int64),
         constraints=SimpleNamespace(indices=own(((0, 1),), np.int64)),

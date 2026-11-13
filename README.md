@@ -195,3 +195,5 @@ uv 与 pip/venv 的隔离环境、可选 tyx 安装和后续 GPU 计划见[环�
 ## 来源与实现原则
 
 借鉴 Newton 的公开架构与算法论文，独立定义物理数据、接口与实现，不复制其求解器源码。对照来源和 tyx 固定提交见[架构说明](docs/architecture/overview.md)。图表样式基于 Cocoon AI 的 MIT 模板改编，保留[许可声明](docs/architecture/template-LICENSE.txt)；该声明仅覆盖模板，不为整个项目指定许可证。
+
+Transport 原交付与当前接入分支的复用范围、实际原生验证及尚未承接边界见 [Transport 复用记录](docs/transport-reuse.md)。

@@ -15,6 +15,7 @@ from ._deformable_boundary_source import (
     DeformableBoundaryModel,
     _Accepted,
 )
+from ._deformable_response_layout import compile_deformable_response_layout
 from ._resident_boundary_source import (
     LAYOUT,
     ResidentBoundarySourceView,
@@ -65,7 +66,10 @@ class DeformableResponseBoundaryAdapter(DeformableBoundaryAdapter):
         self._moving = {}
         self._world_rigid = {}
         self._rigid_participants = {}
-        self._multibody = False
+        self._rigid_bodies = {}
+        self._response_layout = compile_deformable_response_layout(scene.layout.participants)
+        self._multibody = self._response_layout.multibody
+        self._articulated = self._response_layout.articulated
         self._registration = None
 
     def _participant_sources(self, accepted, mechanical):
@@ -86,6 +90,12 @@ class DeformableResponseBoundaryAdapter(DeformableBoundaryAdapter):
             raise ValueError("D3 participant accepted bank is stale or foreign")
         if not 1 <= len(layout.world_keys) <= 8 or not 1 <= len(layout.participant_keys) <= 8:
             raise ValueError("D3 requires 1..8 worlds and 1..8 total participants")
+        response = self._response_layout
+        if (
+            layout.world_keys != response.worlds
+            or layout.participant_keys != response.participant_keys
+        ):
+            raise ValueError("D3 complete participant layout membership changed")
         if set(mechanical) != set(layout.participant_keys) or len(set(mechanical.values())) != len(
             mechanical
         ):
@@ -105,8 +115,22 @@ class DeformableResponseBoundaryAdapter(DeformableBoundaryAdapter):
         for participant in layout.participants:
             key = participant.key
             entry = layout.entries[key]
-            if entry.family != "floating" or entry.body_count != 1:
-                raise ValueError("D3 supports one ordinary floating body per participant")
+            count = response.participant_body_counts[key]
+            if (
+                entry.family != "floating"
+                or entry.body_count != count
+                or participant.body_count != count
+                or len(participant.body_ids) != count
+            ):
+                raise ValueError("D3 ordinary floating participant body domain differs")
+            for group, body in enumerate(participant.body_ids):
+                body_slot = response.body_slots[(key, group)]
+                if (
+                    response.body_addresses[body_slot] != (key, group, body)
+                    or layout.body_owners.get((key.world, body)) != (key, group)
+                    or layout.body_keys.get((key, group)) != (key.world, body)
+                ):
+                    raise ValueError("D3 full participant body ownership differs")
             native = mechanical[key]
             slot = accepted.slots[native]
             if not 0 <= slot < len(accepted.bindings):
@@ -120,12 +144,17 @@ class DeformableResponseBoundaryAdapter(DeformableBoundaryAdapter):
             original = participant.compiled
             if (
                 binding.tree_spec is not spec
-                or spec.n != 0
+                or spec.n + 1 != count
+                or spec.b != count
                 or spec.topology != original.topology
                 or spec.model_token != entry.model_token
                 or getattr(binding.tree_spec, "graph_token", None) != entry.graph_token
                 or not np.array_equal(spec.anchor, original.anchor)
                 or int(source.rows[native]) != entry.storage_row
+                or len(source.fk.shape) != 3
+                or not 0 <= int(source.rows[native]) < source.fk.shape[0]
+                or source.fk.shape[1] < count
+                or source.fk.shape[2] < 12
             ):
                 raise ValueError("D3 participant physical model/graph/row differs")
             addresses[key] = dict(
@@ -177,6 +206,18 @@ class DeformableResponseBoundaryAdapter(DeformableBoundaryAdapter):
                 raise ValueError("D3 sources require the same real Runtime")
             source, addresses = self._participant_sources(accepted, mechanical)
             self._rigid_participants = freeze(addresses)
+            if self._articulated:
+                self._rigid_bodies = freeze(
+                    {
+                        (key, group): dict(
+                            addresses[key],
+                            group=group,
+                            body_id=body,
+                            body_slot=self._response_layout.body_slots[(key, group)],
+                        )
+                        for key, group, body in self._response_layout.body_addresses
+                    }
+                )
             self._world_rigid = {
                 world: tuple(
                     (key, addresses[key]["slot"])
@@ -184,7 +225,9 @@ class DeformableResponseBoundaryAdapter(DeformableBoundaryAdapter):
                 )
                 for world in self.scene.layout.world_keys
             }
-            self._multibody = any(len(items) > 1 for items in self._world_rigid.values())
+            # Articulated worlds also use the complete body transpose. The old
+            # single-body/multiple-participant decision is unchanged otherwise.
+            self._multibody = self._response_layout.multibody
             for wrapper in wrappers:
                 if type(wrapper) is not ResidentParticipantBinding:
                     raise TypeError("D3 moving rounds require ResidentParticipantBinding")
@@ -194,11 +237,14 @@ class DeformableResponseBoundaryAdapter(DeformableBoundaryAdapter):
                     raise ValueError("D3 moving shape membership differs")
                 participant = wrapper.participant
                 entry = self.scene.layout.entries.get(participant)
-                if entry is None or entry.family != "floating" or entry.body_count != 1:
-                    raise ValueError("D3 supports one ordinary floating body per participant")
-                if type(binding) is not ResidentFloatingTreeBinding or binding.group_index != 0:
-                    raise TypeError("D3 requires a root-body floating binding")
-                if self.scene.layout.body_owners.get((key.world, key.body)) != (participant, 0):
+                if entry is None or entry.family != "floating":
+                    raise ValueError("D3 requires an ordinary floating participant")
+                if type(binding) is not ResidentFloatingTreeBinding:
+                    raise TypeError("D3 requires a physical-body floating binding")
+                group = binding.group_index
+                if not 0 <= group < entry.body_count:
+                    raise ValueError("D3 floating binding group is outside its participant")
+                if self.scene.layout.body_owners.get((key.world, key.body)) != (participant, group):
                     raise ValueError("D3 rigid material body ownership differs")
                 native = mechanical[participant]
                 spec = source.specs[native]
@@ -220,7 +266,7 @@ class DeformableResponseBoundaryAdapter(DeformableBoundaryAdapter):
                     native=native,
                     slot=slot,
                     row=int(source.rows[native]),
-                    group=0,
+                    group=group,
                     topology=spec.topology,
                     model_token=spec.model_token,
                     anchor=owned(spec.anchor, np.float64),
@@ -241,7 +287,9 @@ class DeformableResponseBoundaryAdapter(DeformableBoundaryAdapter):
             row = dict(plan._source_base["bindings"][i])
             if shape.key in self._moving:
                 item = self._moving[shape.key]
-                rigid_meta[i] = (2, item["row"], 0, item["slot"], meta[i, 4], meta[i, 5])
+                rigid_meta[i] = (
+                    2, item["row"], item["group"], item["slot"], meta[i, 4], meta[i, 5]
+                )
                 meta[i, 0] = -1  # D1 gather must not overwrite moving-round output.
                 value, lower, upper = stored_interval(item["anchor"])
                 shifts[i] = np.r_[value, lower, upper]
@@ -252,7 +300,7 @@ class DeformableResponseBoundaryAdapter(DeformableBoundaryAdapter):
                     mechanical_world=item["native"],
                     native_slot=item["slot"],
                     native_row=item["row"],
-                    native_group=0,
+                    native_group=item["group"],
                     topology=item["topology"],
                     model_token=item["model_token"],
                 )
@@ -281,6 +329,12 @@ class DeformableResponseBoundaryAdapter(DeformableBoundaryAdapter):
             plan._source_base.update(
                 rigid_participant_sources=self._rigid_participants,
                 world_rigid_participants=freeze(self._world_rigid),
+            )
+        if self._articulated:
+            plan._source_base.update(
+                rigid_body_addresses=self._response_layout.body_addresses,
+                rigid_body_sources=self._rigid_bodies,
+                participant_body_counts=self._response_layout.participant_body_counts,
             )
         plan._counts["borrowed_device_bytes"] = (
             12 * sum(self.batch._models[w].n for w in plan._world_keys)
@@ -364,8 +418,11 @@ class DeformableResponseBoundaryAdapter(DeformableBoundaryAdapter):
                 )
             ) or not np.array_equal(actual["anchor"], expected["anchor"]):
                 raise ValueError("D3 participant material source differs")
-        for item in self._moving.values():
-            native = lease.mechanical[item["participant"]]
+        for key, item in self._moving.items():
+            participant, group = item["participant"], item["group"]
+            if self.scene.layout.body_owners.get((key.world, key.body)) != (participant, group):
+                raise ValueError("D3 moving body group ownership changed")
+            native = lease.mechanical[participant]
             if (
                 native != item["native"]
                 or lease.rigid.slots[native] != item["slot"]
@@ -500,7 +557,7 @@ class DeformableResponseBoundaryAdapter(DeformableBoundaryAdapter):
                 if rigid_ticks[item["slot"]] != ticks[slots[world]]:
                     raise RuntimeError("D3 node and rigid accepted ticks differ")
                 expected_stamp = (1, ticks[slots[world]], item["slot"], item["row"])
-                native = fk[item["row"], 0, :12]
+                native = fk[item["row"], item["group"], :12]
                 if raw["native_poses"][i].tobytes() != native.tobytes():
                     raise RuntimeError("D3 gathered rigid pose is not its actual FK bank")
                 expected = (

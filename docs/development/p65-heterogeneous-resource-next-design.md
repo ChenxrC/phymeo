@@ -147,4 +147,3 @@ public schema; a separate facade author owns cross-bucket reservations using the
 same leaf descriptors. First qualify original8-model/16-world capacities and
 short lifecycle cases. Do not start W32 or call the partial ledger total live/
 peak memory until the named HOST overlap paths are covered.
-

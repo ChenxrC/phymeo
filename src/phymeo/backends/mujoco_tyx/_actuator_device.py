@@ -30,14 +30,9 @@ def allocate(device, activation):
     from . import _actuator_kernels
 
     device.activation_kernels = (_actuator_kernels.update, _actuator_kernels.update_other)
-    device.act = (device._buffer(activation), device._buffer(activation))
-    device.activation_ids = device._buffer(device.plan.activation.ids)
-    device.activation_values = device._buffer(device.plan.activation.values)
-    device.activation_derivative = device._buffer(np.zeros_like(activation))
-    device.integration_derivative = device._buffer(np.zeros_like(activation))
-    device.actuator_fields = device._buffer(
-        np.zeros((device.nworld, device.plan.nu, 4), np.float32)
-    )
+    device.act = (device._allocate("act.0", activation), device._allocate("act.1", activation))
+    for name in ("activation_ids", "activation_values", "activation_derivative", "integration_derivative", "actuator_fields"):
+        setattr(device, name, device._allocate(name))
 
 
 def advance(device, old, new):

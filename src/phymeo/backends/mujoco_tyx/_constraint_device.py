@@ -1,7 +1,5 @@
 """Resident mixed constraint assembly, bounded face solve and atomic integration."""
 
-import numpy as np
-
 from . import _actuator_device
 from ._device import TyxDevice
 from ._floating_device import TyxFloatingDevice
@@ -10,84 +8,36 @@ from ._tree_device import TyxTreeDevice
 
 class TyxConstraintDevice(TyxDevice):
     def __init__(
-        self, plan, mode, cache_root, q, v, time, nbody, h, capacities, *, activation=None
+        self, plan, mode, cache_root, q, v, time, nbody, h, capacities, *, activation=None, resource_budget=None
     ):
         from . import _constraint_rows, _constraint_solver, _normal_geometry
 
         self._base_type = TyxFloatingDevice if plan.base.kind == 3 else TyxTreeDevice
         self._base_type.__init__(
-            self, plan, mode, cache_root, q, v, time, nbody, h, capacities, activation=activation
+            self, plan, mode, cache_root, q, v, time, nbody, h, capacities, activation=activation, resource_budget=resource_budget
         )
-        self.capacities = tuple(map(int, capacities))
-        self.contacts = (_normal_geometry.contacts, _normal_geometry.contacts_other)
-        self.assemble = (_constraint_rows.assemble, _constraint_rows.assemble_other)
-        self.constraint_solve = _constraint_solver.solve
-        self.decode = _constraint_rows.decode
-        self.extended_contacts = None
-        if plan.extended_contacts:
-            from . import _normal_extended_geometry
-
-            self.extended_contacts = _normal_extended_geometry.extended_contacts
-        self.ngeom, self.npair, self.nslot = plan.ngeom, plan.npair, plan.nslot
-        self.width = max(8, plan.nv)
-        w, vsize, slots = self.nworld, self.width, max(1, plan.nslot)
-        contact_slots, efc_slots = (max(1, cap) for cap in self.capacities)
         try:
+            self.capacities = tuple(map(int, capacities))
+            self.contacts = (_normal_geometry.contacts, _normal_geometry.contacts_other)
+            self.assemble = (_constraint_rows.assemble, _constraint_rows.assemble_other)
+            self.constraint_solve = _constraint_solver.solve
+            self.decode = _constraint_rows.decode
+            self.extended_contacts = None
+            if plan.extended_contacts:
+                from . import _normal_extended_geometry
+
+                self.extended_contacts = _normal_extended_geometry.extended_contacts
+            self.ngeom, self.npair, self.nslot = plan.ngeom, plan.npair, plan.nslot
+            self.width = max(8, plan.nv)
             with self.tx.use_runtime(self.runtime):
-                for name in (
-                    "geom_ids",
-                    "geom_data",
-                    "pair_ids",
-                    "pair_law",
-                    "pair_condim",
-                    "pair_friction",
-                    "slot_ids",
-                    "friction_ids",
-                    "friction_law",
-                    "limit_ids",
-                    "limit_law",
-                ):
-                    setattr(self, name, self._buffer(getattr(plan, name)))
-                arrays = {
-                    "geom_world": (w, max(1, plan.ngeom), 12),
-                    "normal_rows": (w, slots, 32),
-                    "normal_jacobian": (w, slots, vsize),
-                    "contact_work": (w, 8, 3),
-                    "raw_contacts": (w, slots, 11),
-                    "extended_work": (w, 64, 3),
-                    "geometry_diagnostics": (w, 8),
-                    "solver_diagnostics": (w, 10),
-                    "efc_data": (w, efc_slots, 14),
-                    "efc_jacobian": (w, efc_slots, vsize),
-                    "contact_jacobian": (w, contact_slots, 6, vsize),
-                    "contact_wrench": (w, contact_slots, 6),
-                    "physical_factor": (w, vsize, vsize),
-                    "mass_work": (w, vsize),
-                    "smooth_acc": (w, vsize),
-                    "face_matrix": (w, vsize, vsize),
-                    "face_factor": (w, vsize, vsize),
-                    "face_rhs": (w, vsize),
-                    "face_forward": (w, vsize),
-                    "trial_acc": (w, vsize),
-                    "trial_force": (w, efc_slots),
-                    "previous_force": (w, efc_slots),
-                    "mixed_constraint": (w, vsize),
-                    "total_applied": (w, vsize),
-                    "physical_acc": (w, vsize),
-                }
-                for name, shape in arrays.items():
-                    setattr(self, name, self._buffer(np.zeros(shape, np.float32)))
-                for name, shape in {
-                    "efc_ids": (w, efc_slots, 5),
-                    "contact_map": (w, contact_slots, 3),
-                    "constraint_counts": (w, 3),
-                    "working": (w, efc_slots),
-                    "previous_working": (w, efc_slots),
-                    "free_ids": (w, vsize),
-                }.items():
-                    setattr(self, name, self._buffer(np.zeros(shape, np.int32)))
-        except BaseException:
-            self.close()
+                # The complete final-route manifest was reserved by the base.
+                # Only this extension's remaining allocations are materialized.
+                for entry in self.allocation_manifest.entries:
+                    if entry.name not in self._allocated_names:
+                        setattr(self, entry.name, self._allocate(entry.name))
+                self._complete_allocations()
+        except BaseException as primary:
+            self._close_after_construction_failure(primary)
             raise
 
     def advance(self, controls, applied, body_force):

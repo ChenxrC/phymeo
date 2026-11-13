@@ -1,7 +1,5 @@
 """T3 resident glue: unchanged T1/T2 dynamics plus two normal-contact kernels."""
 
-import numpy as np
-
 from . import _actuator_device
 from ._device import TyxDevice
 from ._floating_device import TyxFloatingDevice
@@ -12,7 +10,7 @@ class TyxNormalDevice(TyxDevice):
     """Cold-start normal QP, five/six launches, one publication boundary."""
 
     def __init__(
-        self, plan, mode, cache_root, q, v, time, nbody, h, capacities, *, activation=None
+        self, plan, mode, cache_root, q, v, time, nbody, h, capacities, *, activation=None, resource_budget=None
     ):
         from . import _normal_geometry, _normal_solver
 
@@ -23,61 +21,26 @@ class TyxNormalDevice(TyxDevice):
             extended_contacts = _normal_extended_geometry.extended_contacts
         self._base_type = TyxFloatingDevice if plan.base.kind == 3 else TyxTreeDevice
         self._base_type.__init__(
-            self, plan, mode, cache_root, q, v, time, nbody, h, capacities, activation=activation
+            self, plan, mode, cache_root, q, v, time, nbody, h, capacities, activation=activation, resource_budget=resource_budget
         )
-        self.capacities = tuple(map(int, capacities))
-        self.contacts = (_normal_geometry.contacts, _normal_geometry.contacts_other)
-        self.normal_solve = _normal_solver.solve
-        self.extended_contacts = extended_contacts
-        self.ngeom = len(plan.geom_ids)
-        self.npair = len(plan.pair_ids)
-        self.nslot = len(plan.slot_ids)
-        self.width = max(8, plan.nv)
         try:
+            self.capacities = tuple(map(int, capacities))
+            self.contacts = (_normal_geometry.contacts, _normal_geometry.contacts_other)
+            self.normal_solve = _normal_solver.solve
+            self.extended_contacts = extended_contacts
+            self.ngeom = len(plan.geom_ids)
+            self.npair = len(plan.pair_ids)
+            self.nslot = len(plan.slot_ids)
+            self.width = max(8, plan.nv)
             with self.tx.use_runtime(self.runtime):
-                self.geom_ids = self._buffer(plan.geom_ids)
-                self.geom_data = self._buffer(plan.geom_data)
-                self.pair_ids = self._buffer(plan.pair_ids)
-                self.pair_law = self._buffer(plan.pair_law)
-                self.geom_world = self._buffer(np.zeros((self.nworld, self.ngeom, 12), np.float32))
-                self.normal_rows = self._buffer(np.zeros((self.nworld, self.nslot, 32), np.float32))
-                self.normal_jacobian = self._buffer(
-                    np.zeros((self.nworld, self.nslot, self.width), np.float32)
-                )
-                self.contact_work = self._buffer(np.zeros((self.nworld, 8, 3), np.float32))
-                self.raw_contacts = self._buffer(
-                    np.zeros((self.nworld, self.nslot, 11), np.float32)
-                )
-                self.extended_work = self._buffer(np.zeros((self.nworld, 64, 3), np.float32))
-                self.solver_diagnostics = self._buffer(np.zeros((self.nworld, 8), np.float32))
-                self.normal_factor = self._buffer(
-                    np.zeros((self.nworld, self.width, self.width), np.float32)
-                )
-                self.normal_mass_work = self._buffer(
-                    np.zeros((self.nworld, self.width), np.float32)
-                )
-                self.smooth_acc = self._buffer(np.zeros((self.nworld, self.width), np.float32))
-                self.response = self._buffer(
-                    np.zeros((self.nworld, self.nslot, self.width), np.float32)
-                )
-                self.dual_matrix = self._buffer(
-                    np.zeros((self.nworld, self.nslot, self.nslot), np.float32)
-                )
-                self.normal_linear = self._buffer(np.zeros((self.nworld, self.nslot), np.float32))
-                self.normal_force = self._buffer(np.zeros((self.nworld, self.nslot), np.float32))
-                self.normal_gradient = self._buffer(np.zeros((self.nworld, self.nslot), np.float32))
-                self.normal_working = self._buffer(np.zeros((self.nworld, self.nslot), np.int32))
-                self.face_factor = self._buffer(
-                    np.zeros((self.nworld, self.nslot, self.nslot), np.float32)
-                )
-                self.face_forward = self._buffer(np.zeros((self.nworld, self.nslot), np.float32))
-                self.normal_trial = self._buffer(np.zeros((self.nworld, self.nslot), np.float32))
-                self.normal_constraint = self._buffer(
-                    np.zeros((self.nworld, self.width), np.float32)
-                )
-                self.total_applied = self._buffer(np.zeros((self.nworld, self.width), np.float32))
-        except BaseException:
-            self.close()
+                # The complete final-route manifest was reserved by the base.
+                # Only this extension's remaining allocations are materialized.
+                for entry in self.allocation_manifest.entries:
+                    if entry.name not in self._allocated_names:
+                        setattr(self, entry.name, self._allocate(entry.name))
+                self._complete_allocations()
+        except BaseException as primary:
+            self._close_after_construction_failure(primary)
             raise
 
     def advance(self, controls, applied, body_force):

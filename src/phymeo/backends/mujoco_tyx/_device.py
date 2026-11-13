@@ -1,12 +1,18 @@
 """Owned TYX resident buffers and atomic candidate bank; no host physics step."""
 
+from types import MappingProxyType
+
 import numpy as np
 
+from ..mujoco_resource_budget import DEVICE_PAYLOAD_EXCLUSIONS, MuJoCoTyxResourceBudget
+from ._allocation_manifest import allocation_manifest
 from ._resources import DeviceResources
 
 
 class TyxDevice:
-    def __init__(self, plan, mode, cache_root, q, v, time, nbody, h, capacities):
+    def __init__(
+        self, plan, mode, cache_root, q, v, time, nbody, h, capacities, *, resource_budget=None
+    ):
         import tyx as tx
 
         from . import _kernels
@@ -15,11 +21,6 @@ class TyxDevice:
         self.plan, self.mode, self.h = plan, mode, float(h)
         self.nbody, self.capacities = nbody, capacities
         self.nworld = len(q)
-        self.resources = DeviceResources()
-        self.runtime = tx.Runtime(
-            backend="cuda" if mode == "cuda" else "cpu", cache_root=cache_root
-        )
-        self.resources.set_runtime(self.runtime)
         self.active = 0
         self.counts = dict(
             completed_kernels=0,
@@ -29,38 +30,128 @@ class TyxDevice:
             uploaded_bytes=0,
             downloaded_bytes=0,
         )
+        self._prepare_allocations(plan, self.nworld, nbody, capacities, resource_budget)
         try:
+            self.runtime = tx.Runtime(
+                backend="cuda" if mode == "cuda" else "cpu", cache_root=cache_root
+            )
+            self.resources.set_runtime(self.runtime)
             with tx.use_runtime(self.runtime):
-                self.matrices = self._buffer(plan.matrices)
-                self.vectors = self._buffer(plan.vectors)
-                self.body_jac = self._buffer(plan.body_jacobian)
-                self.point_jac = self._buffer(plan.point_jacobian)
-                self.law = self._buffer(plan.contact)
-                self.act_ids = self._buffer(plan.actuator_ids)
-                self.act_values = self._buffer(plan.actuator_values)
-                self.q = (self._buffer(q), self._buffer(q))
-                self.v = (self._buffer(v), self._buffer(v))
-                self.time = (self._buffer(time), self._buffer(time))
-                self.controls = self._buffer(np.zeros((self.nworld, max(plan.nu, 1)), np.float32))
-                self.applied = self._buffer(np.zeros((self.nworld, 8), np.float32))
-                self.body_force = self._buffer(np.zeros((self.nworld, nbody, 6), np.float32))
-                self.force = self._buffer(np.zeros((self.nworld, 8), np.float32))
-                self.smooth_acc = self._buffer(np.zeros((self.nworld, 8), np.float32))
-                self.acceleration = self._buffer(np.zeros((self.nworld, 8), np.float32))
-                self.integration_acc = self._buffer(np.zeros((self.nworld, 8), np.float32))
-                self.actuator = self._buffer(np.zeros((self.nworld, 8), np.float32))
-                self.constraint = self._buffer(np.zeros((self.nworld, 8), np.float32))
-                self.rows = self._buffer(np.zeros((self.nworld, 20), np.float32))
-                self.status = self._buffer(np.zeros(self.nworld, np.int32))
-        except BaseException:
-            self.close()
+                for name in ("matrices", "vectors", "body_jac", "point_jac", "law", "act_ids", "act_values"):
+                    setattr(self, name, self._allocate(name))
+                self.q = (self._allocate("q.0", q), self._allocate("q.1", q))
+                self.v = (self._allocate("v.0", v), self._allocate("v.1", v))
+                self.time = (self._allocate("time.0", time), self._allocate("time.1", time))
+                for name in ("controls", "applied", "body_force", "force", "smooth_acc", "acceleration", "integration_acc", "actuator", "constraint", "rows", "status"):
+                    setattr(self, name, self._allocate(name))
+                self._complete_allocations()
+        except BaseException as primary:
+            self._close_after_construction_failure(primary)
             raise
 
+    def _prepare_allocations(self, plan, nworld, nbody, capacities, resource_budget):
+        if resource_budget is not None and type(resource_budget) is not MuJoCoTyxResourceBudget:
+            raise TypeError("resource_budget must be MuJoCoTyxResourceBudget or None")
+        self.allocation_manifest = allocation_manifest(plan, nworld, nbody, capacities)
+        self._allocation_entries = {entry.name: entry for entry in self.allocation_manifest.entries}
+        self._allocated_names = set()
+        self._allocation_entry = None
+        self._shared_resource_budget = resource_budget is not None
+        self._allocation_budget = resource_budget
+        self._allocation_reservation = None
+        if self.mode == "cuda":
+            if self._allocation_budget is None:
+                self._allocation_budget = MuJoCoTyxResourceBudget(self.allocation_manifest.payload_bytes)
+            self._allocation_reservation = self._allocation_budget.reserve(
+                self.allocation_manifest.payload_bytes
+            )
+        try:
+            self.resources = DeviceResources(self._allocation_reservation)
+        except BaseException:
+            if self._allocation_reservation is not None:
+                self._allocation_reservation.finish()
+            raise
+
+    def _allocate(self, name, value=None):
+        if name not in self._allocation_entries or name in self._allocated_names:
+            raise RuntimeError("undeclared or duplicate TYX allocation")
+        entry = self._allocation_entries[name]
+        if value is None:
+            if entry.source is None:
+                value = np.zeros(entry.shape, dtype=np.dtype(entry.dtype))
+            elif entry.source.startswith("input:"):
+                raise ValueError("manifest allocation requires its actual packed input")
+            else:
+                value = self.plan
+                for part in entry.source.split("."):
+                    value = getattr(value, part)
+        if (
+            not isinstance(value, np.ndarray)
+            or value.shape != entry.shape
+            or value.dtype != np.dtype(entry.dtype)
+            or value.nbytes != entry.nbytes
+        ):
+            raise ValueError(f"TYX allocation input differs from manifest: {name}")
+        self._allocation_entry = entry
+        self.resources.describe_buffer(entry)
+        try:
+            result = self._buffer(value)
+            self._allocated_names.add(name)
+            return result
+        finally:
+            self._allocation_entry = None
+            # This is metadata cleanup, including when the allocator returned no owner.
+            self.resources._allocation_entry = None
+
+    def _complete_allocations(self):
+        if self._allocated_names != set(self._allocation_entries):
+            raise RuntimeError("TYX constructor omitted manifest allocations")
+        self.resources.finish_reservation()
+
+    def _close_after_construction_failure(self, primary):
+        try:
+            self.close()
+        except BaseException as cleanup:
+            raise BaseExceptionGroup("TYX construction and cleanup failed", [primary, cleanup]) from None
+
+    def allocation_snapshot(self):
+        budget = None if self._allocation_budget is None else self._allocation_budget.snapshot()
+        identity = (
+            None if self._allocation_reservation is None else self._allocation_reservation.owner_id
+        )
+        owner = None if identity is None else next(row for row in budget["owners"] if row["owner_id"] == identity)
+        return MappingProxyType(dict(
+            schema="mujoco-tyx-device-allocation-v1",
+            scope="registered-cuda-array-payload-only",
+            mode=self.mode,
+            manifest=self.allocation_manifest,
+            manifest_payload_bytes=self.allocation_manifest.payload_bytes,
+            allocated_names=tuple(entry.name for entry in self.allocation_manifest.entries if entry.name in self._allocated_names),
+            owner_id=identity,
+            owner=owner,
+            current_bytes=0 if owner is None else owner["current_bytes"],
+            reserved_bytes=0 if owner is None else owner["reserved_bytes"],
+            unknown_retained_bytes=0 if owner is None else owner["unknown_retained_bytes"],
+            shared_budget=self._shared_resource_budget,
+            budget=budget,
+            resources_state=self.resources.state,
+            excluded=DEVICE_PAYLOAD_EXCLUSIONS,
+            host_live_bytes=None,
+            host_peak_bytes=None,
+            total_device_live_bytes=None,
+            total_device_peak_bytes=None,
+        ))
+
     def _buffer(self, value):
+        if self._allocation_entry is None:
+            raise RuntimeError("TYX buffers require a declared allocation")
         if self.mode == "interpret":
             return value.copy()
         result = self.tx.cuda_array(value)
         self.resources.add_buffer(result)
+        entry = self._allocation_entry
+        if tuple(result.shape) != entry.shape or np.dtype(result.dtype) != np.dtype(entry.dtype) or result.nbytes != entry.nbytes:
+            raise RuntimeError("CUDA allocation differs from its manifest")
         self.counts["device_allocations"] += 1
         self.counts["static_uploaded_bytes"] += value.nbytes
         return result

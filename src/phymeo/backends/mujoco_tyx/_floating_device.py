@@ -1,15 +1,12 @@
 """Resident T2 scratch/state banks; same original atomic publication boundary."""
 
-import numpy as np
-
 from . import _actuator_device
 from ._device import TyxDevice
-from ._resources import DeviceResources
 
 
 class TyxFloatingDevice(TyxDevice):
     def __init__(
-        self, plan, mode, cache_root, q, v, time, nbody, h, capacities, *, activation=None
+        self, plan, mode, cache_root, q, v, time, nbody, h, capacities, *, activation=None, resource_budget=None
     ):
         import tyx as tx
 
@@ -21,13 +18,7 @@ class TyxFloatingDevice(TyxDevice):
         self.activation_enabled = _actuator_device.validate(plan, activation, len(q))
         self.tx, self.mode, self.plan = tx, mode, plan
         self.nbody, self.nworld, self.h = nbody, len(q), float(h)
-        width = max(8, plan.nv)
         self.active = 0
-        self.resources = DeviceResources()
-        self.runtime = tx.Runtime(
-            backend="cuda" if mode == "cuda" else "cpu", cache_root=cache_root
-        )
-        self.resources.set_runtime(self.runtime)
         self.counts = dict(
             completed_kernels=0,
             synchronizations=0,
@@ -39,61 +30,32 @@ class TyxFloatingDevice(TyxDevice):
         self.geometry = (kernels.geometry, kernels.geometry_other)
         self.mechanics = (kernels.mechanics, kernels.mechanics_other)
         self.solve = (kernels.solve, kernels.solve_other)
+        self._prepare_allocations(plan, self.nworld, nbody, capacities, resource_budget)
         try:
+            self.runtime = tx.Runtime(
+                backend="cuda" if mode == "cuda" else "cpu", cache_root=cache_root
+            )
+            self.resources.set_runtime(self.runtime)
             with tx.use_runtime(self.runtime):
-                self.parents = self._buffer(plan.parents)
-                self.ranges = self._buffer(plan.body_joint_range)
-                self.body_data = self._buffer(plan.body_data)
-                self.joints = self._buffer(plan.joint_ids)
-                self.dofs = self._buffer(plan.dof_ids)
-                self.joint_data = self._buffer(plan.joint_data)
-                self.ancestors = self._buffer(plan.ancestors)
-                self.gravity = self._buffer(plan.gravity)
-                self.vectors = self._buffer(plan.vectors)
-                self.act_ids = self._buffer(plan.actuator_ids)
-                self.act_values = self._buffer(plan.actuator_values)
-                self.q = (self._buffer(q), self._buffer(q))
-                self.v = (self._buffer(v), self._buffer(v))
-                self.time = (self._buffer(time), self._buffer(time))
+                for name in ("parents", "ranges", "body_data", "joints", "dofs", "joint_data", "ancestors", "gravity", "vectors", "act_ids", "act_values"):
+                    setattr(self, name, self._allocate(name))
+                self.q = (self._allocate("q.0", q), self._allocate("q.1", q))
+                self.v = (self._allocate("v.0", v), self._allocate("v.1", v))
+                self.time = (self._allocate("time.0", time), self._allocate("time.1", time))
                 _actuator_device.allocate(self, activation)
-                self.controls = self._buffer(np.zeros((self.nworld, max(plan.nu, 1)), np.float32))
-                self.applied_input = self._buffer(np.zeros((self.nworld, width), np.float32))
-                self.body_force = self._buffer(np.zeros((self.nworld, nbody, 6), np.float32))
-                self.transmission_offsets = self.parents
-                self.transmission_dofs = self.parents
-                self.transmission_moment = self.gravity
-                self.transmission_fields = self.body_force
+                for name in ("controls", "applied_input", "body_force"):
+                    setattr(self, name, self._allocate(name))
+                for alias, target in self.allocation_manifest.aliases:
+                    setattr(self, alias, getattr(self, target))
                 if self.transmission_enabled:
-                    layout = plan.joint_transmission
-                    self.transmission_offsets = self._buffer(layout.row_offsets)
-                    self.transmission_dofs = self._buffer(layout.dof_indices)
-                    self.transmission_moment = self._buffer(layout.moment)
-                    self.transmission_fields = self._buffer(
-                        np.zeros((self.nworld, plan.nu, 3), np.float32)
-                    )
-                self.motion = self._buffer(np.zeros((self.nworld, nbody, 7, 3), np.float32))
-                self.rotation = self._buffer(np.zeros((self.nworld, nbody, 3, 3), np.float32))
-                self.axes = self._buffer(np.zeros((self.nworld, width, 3), np.float32))
-                self.anchors = self._buffer(np.zeros((self.nworld, width, 3), np.float32))
-                self.work = self._buffer(np.zeros((self.nworld, 8, 3), np.float32))
-                self.work_rotation = self._buffer(np.zeros((self.nworld, 3, 3), np.float32))
-                self.inertia = self._buffer(np.zeros((self.nworld, nbody, 3, 3), np.float32))
-                self.jacobian = self._buffer(np.zeros((self.nworld, nbody, 6, width), np.float32))
-                self.mass = self._buffer(np.zeros((self.nworld, width, width), np.float32))
-                self.factor = self._buffer(np.zeros((self.nworld, width, width), np.float32))
-                self.bias = self._buffer(np.zeros((self.nworld, width), np.float32))
-                self.passive = self._buffer(np.zeros((self.nworld, width), np.float32))
-                self.applied = self._buffer(np.zeros((self.nworld, width), np.float32))
-                self.actuator = self._buffer(np.zeros((self.nworld, width), np.float32))
-                self.constraint = self._buffer(np.zeros((self.nworld, width), np.float32))
-                self.rhs = self._buffer(np.zeros((self.nworld, width), np.float32))
-                self.forward = self._buffer(np.zeros((self.nworld, width), np.float32))
-                self.acceleration = self._buffer(np.zeros((self.nworld, width), np.float32))
-                self.integration_acc = self._buffer(np.zeros((self.nworld, width), np.float32))
-                self.rows = self._buffer(np.zeros((self.nworld, 20), np.float32))
-                self.status = self._buffer(np.zeros(self.nworld, np.int32))
-        except BaseException:
-            self.close()
+                    for name in ("transmission_offsets", "transmission_dofs", "transmission_moment", "transmission_fields"):
+                        setattr(self, name, self._allocate(name))
+                for name in ("motion", "rotation", "axes", "anchors", "work", "work_rotation", "inertia", "jacobian", "mass", "factor", "bias", "passive", "applied", "actuator", "constraint", "rhs", "forward", "acceleration", "integration_acc", "rows", "status"):
+                    setattr(self, name, self._allocate(name))
+                if not getattr(plan, "normal_contact", False) and not getattr(plan, "constraint_contact", False):
+                    self._complete_allocations()
+        except BaseException as primary:
+            self._close_after_construction_failure(primary)
             raise
 
     def advance(self, controls, applied, body_force):

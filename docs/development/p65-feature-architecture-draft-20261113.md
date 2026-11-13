@@ -1,6 +1,6 @@
 # 当前功能连接架构：2026-11-13
 
-状态：**当前连接架构，已加入M-B2非根连杆与BALL-S混合关节约束后继**。最新安装产品d7105a9d，
+状态：**当前连接架构，已加入M-B2、BALL-S与G2b-A共享设备预算/32构型后继**。最新安装产品e1401fbf，
 资格依据为父已报告的源码结果和同次安装summary顶层字段。此更新只读取文本、
 JSON与Git，没有执行项目、数值、保存审计或安装消费者。安装结果只授予对应
 有限范围；D4持续稳态支撑失败、D6原弹性严格精度失败与待执行项分别保留。
@@ -49,12 +49,13 @@ flowchart TD
   Admission --> NativeTYX["原TYX动力学 / primitive接触 / 约束<br/>R3-N/P接触与R3-A FILTEREXACT明确分域"]
   NativeTYX --> NativeRuntime["MuJoCoRuntime<br/>controls / step / snapshot / checkpoint"]
   NativeRuntime --> Train["VecEnv / task-action设备接口<br/>随机reset / control windows / RSL PPO"]
-  Compile --> Buckets["MuJoCoTyxHeterogeneousBatch<br/>完整来源分桶，同模型原runtime"]
+  Compile --> Budget["共享solver-bank CUDA payload预算<br/>manifest / 预留 / 实际分配 / UNKNOWN保留"]
+  Budget --> Buckets["MuJoCoTyxHeterogeneousBatch<br/>32 models/worlds；完整来源分桶"]
   Buckets --> Multi["每桶候选 / 全world验证<br/>一个异构聚合发布"]
 ~~~
 
 图中没有 D3→MuJoCo-TYX 或 ParticipantScene→任意MjSpec 的边：当前没有
-这些通用转换/联合求解。异构桶之间是独立world，不因同一次发布产生跨桶碰撞。
+这些通用转换/联合求解。异构桶之间是独立world，不因同一次发布产生跨桶碰撞。G2b-A已验32无接触构型，solver-bank payload有current/peak，context/JIT/HOST/native等总峰值仍UNKNOWN，不能把预算节点当全进程资源管理。
 M1有限距离也不会自动变成旧刚体HOST patch或MuJoCo-TYX primitive响应。
 
 ## 2. 声明和编译：新增的是可复用入口

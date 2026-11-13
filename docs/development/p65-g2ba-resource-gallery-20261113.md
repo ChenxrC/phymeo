@@ -1,6 +1,6 @@
 # G2b-A：设备分配预算与 32 构型 CUDA 展示
 
-状态：IMPLEMENTING / TESTS_PENDING。2026-11-13，基于 096964e7。
+状态：SOURCE_AND_INSTALLED_QUALIFIED / STRICT_PASS。2026-11-13，产品 e1401fbf；[实际验收](p65-g2ba-resource-gallery-report-20261113.md)记录64项源码通过、536成员包外同源、32构型CUDA256步及视频。本合同下文保留执行前定义；完整G2b-B仍未完成。
 
 用户要求继续下一批，并用真实视频展示几十个不同构型同卡仿真。本批先完成可独立交付的 CUDA 数组 payload 生命周期预算，再扩至一个异构 facade 的 32 个模型 / 32 个 world。完整 HOST / 原生 arena / 编译器 / checkpoint 中间表示峰值仍是后继 G2b-B；本片不是总显存预算。
 
@@ -21,6 +21,8 @@
 3. 同一 CUDA facade 常驻 32 构型，h=1/128 s，连续 256 步=2 s，不逐帧重置、不写回渲染位置。保留全部 endpoint 状态、原输入/模型、实际 GPU 身份、计数、预算与逐步核查。
 4. 从同一次已保存状态离线 FK/渲染；MuJoCo 仅用于模型编译、独立验证和画面几何，不替代 TYX 物理。视频标注模型数、world 数、仿真时间、播放速度与分桶方式；附可核对原轨迹。
 5. 新代码 focused 静态/解释/CUDA、受影响兼容、源码外安装消费；保存报告并更新续作入口。视频本身不是全部功能验收。
+
+展示补充：首版全程固定camera已保存；为看清大行程slider，另输出主camera跟随实际几何且保留固定overview小窗的版本。只改变camera并在画面标注，原257帧状态/物理输入/SHA完全不变；不重跑仿真。默认renderer仍保留原固定模式。
 
 执行前补充：超过旧 8 models / 16 worlds 必须显式提供数组预算；演示使用 256 MiB，不是总显存上限。外部 device-control / task-workspace 独立 owner 的 payload 不包含在六类 solver-bank 清单，明确 UNKNOWN。12 步新短格保持原严格误差门；256 步同入步力学与单步推进仍保持原门，连续参考的原严格 q/v 门完整记录。按用户功能优先要求，长窗额外采用预登记功能门 q 各分量绝对差≤0.01、v≤0.05，严格门失配写 STRICT_FAIL_RECORDED，不能改称严格通过；超过功能门或同入步错误仍停止。此规定先于本批任何项目执行。
 

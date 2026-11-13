@@ -1,22 +1,22 @@
 # Phymeo 当前续作入口
 
-更新：2026-11-13；**BALL-S标量限位／DOF干摩擦组合已完成限定源码及双后端安装验收**。新增132唯一节点＋受影响旧恢复8项通过，包外两端各448worldsteps。发现并修复检查点receipt与accepted mirror的力/加速度绑定缺口，首失败保留。原两作者及父执行槽均释放，无项目执行正在运行。M-B2/M-B1、G2-R0与R3-A原有限验收复用。
+更新：2026-11-13；**G2b-A共享CUDA数组预算与32构型展示已完成限定源码/安装验收**。产品e1401fbf，源码64项通过、新包536成员同字节；包外interpret12步、CUDA256步（8,192worldsteps）均STRICT_PASS。257帧实际CUDA轨迹的视频已生成，见[报告与证据](p65-g2ba-resource-gallery-report-20261113.md)和[公共用法](p65-g2ba-resource-gallery-usage-20261113.md)。原两作者及父执行槽均释放。BALL-S、M-B2/M-B1、G2-R0与R3-A原有限验收复用。
 D5-A、R3-N/P、G2a、D6-A 已获各自有限源码/安装资格；D4 原稳态功能仍 FAIL。
 D6-A 的 FUNCTIONAL_PASS 与旧弹性 STRICT_FAIL_RECORDED 同时保留，不能合并成严格通过。
-整个 P6.5 / Newton 功能对齐未完成。旧07:30计划、M-B2及[BALL-S合同](p65-ball-scalar-constraints-implementation-20261113.md)均已收口。下一独立模块是[G2b完整资源预算](p65-heterogeneous-resource-next-design.md)，当前仍是提案，尚未实现；不继承旧截止或session，不重跑已绿组。
+整个 P6.5 / Newton 功能对齐未完成。旧07:30计划、M-B2、BALL-S与G2b-A均已收口。下一资源模块是G2b-B完整HOST/native/context/JIT等观察与外部owner计量，再另冻更大规模及公平性能格；不继承旧截止或session，不重跑已绿组。
 
 ## 从这里继续
 
-0. [BALL-S验收报告](p65-ball-scalar-constraints-report-20261113.md)、[公共用法](p65-ball-scalar-constraints-usage-20261113.md)：fixed/FREE BALL树中的标量限位、DOF干摩擦、NONE/FILTEREXACT与原condim1/3共同求解。BALL角限位仍不支持。下一G2b先确定实际分配描述与跨owner生命周期预算，再另冻扩容格。
+0. [G2b-A验收报告](p65-g2ba-resource-gallery-report-20261113.md)、[公共用法](p65-g2ba-resource-gallery-usage-20261113.md)：六solver-bank数组manifest/预算及32无接触异构构型；不是总显存预算、融合kernel或跨world接触。[BALL-S](p65-ball-scalar-constraints-report-20261113.md)原混合约束资格复用，BALL角限位仍未实现。
 1. [M-B2验收报告](p65-articulated-deformable-report-20261113.md)及[公共用法](p65-articulated-deformable-usage-20261113.md)：非根连杆、完整J/M投影与共同发布已验；[实施合同](p65-articulated-deformable-implementation-20261113.md)已关闭。[上一批计划](../superpowers/plans/2026-11-13-feature-completion-until-0730.md)仅作历史。
 2. [功能验收矩阵](p65-feature-acceptance-matrix-20261113.md)：源码、后端、安装、应用和性能分列；不估整体完成百分比。
 3. [当前连接架构](p65-feature-architecture-draft-20261113.md)、[统一编译架构](../architecture/unified-scene-compilation.md)：声明、设备来源、查询、载荷与共同发布。
-   [离线架构总览图](p65-functional-architecture-20261113.html)可直接打开；R3-A、M-B1与M-B2均完成各自有限源码/安装资格；图中未连接的域仍明确分开。
+   [离线架构总览图](p65-functional-architecture-20261113.html)保留G2a时点的8/16容量标记，当前32及预算以本页/新版文字架构为准；图中未连接的域仍明确分开。
 4. [八方向差异全景](phymeo-newton-panorama-2026-11-12.md)：下一通用模块与未完成范围；本轮详细事实以验收矩阵及原收据为准。
 5. [D6用法](p65-distance-dissipation-usage.md)、[D6设计](../superpowers/specs/2026-11-13-distance-dissipation-design.md)、[D6-B应用协议](p65-damped-normal-load-application-20261113.md)。
 6. [Batch C](p65-three-track-batch-c-20261112.md)、[Batch B](p65-three-track-batch-b-20261112.md)、[旧历史入口](p65-continuation-history-through-20261112-0035.md)仅按需引用，不恢复旧周期任务或重做旧审计。
 
-当前BALL-S证据：`artifacts/p65-ball-scalar-constraints-20261113-01`，安装快照 `d7105a9d`、25份关闭命令、534成员同源；11:50:45 +08 fresh guard 后执行槽已释放。不要重启run15/19/16/24/25或重新消费已闭轨迹。
+当前G2b-A证据：`artifacts/p65-g2ba-resource-gallery-20261113-01`，产品e1401fbf、536成员同源，22正式CUDA及25/29视频已经结束；完整压缩轨迹/状态/视频保留，不重跑或解压补副本。原BALL-S证据 `artifacts/p65-ball-scalar-constraints-20261113-01`、d7105a9d、534成员资格复用，不重启原已结束组。
 M-B2原证据 `artifacts/p65-articulated-deformable-20261113-01`、快照 `6b4a639c` 与验收 `cdccbe44` 复用；旧D6-B仍以143结束收据覆盖历史pending状态。
 本页是续作导航，不替代原完整输入、输出、原始失败、source snapshots 与保存收据。
 
@@ -24,6 +24,7 @@ M-B2原证据 `artifacts/p65-articulated-deformable-20261113-01`、快照 `6b4a6
 
 | 功能 | 当前资格 | 仍然不能声称 |
 | --- | --- | --- |
+| G2b-A共享数组预算与异构32 | 六solver-bank实际manifest、跨owner/边界峰值、UNKNOWN计费；64源码项；包外W32/B32解释12步与CUDA256步STRICT_PASS，真实视频 | 完整进程资源峰值、融合kernel、跨world接触、更大W、全部约束组合或Newton性能胜出 |
 | BALL-S 球树混合约束 | fixed/FREE BALL/R/P中scalar软限位、DOF dry与NONE/FILTEREXACT、无接触/原condim1/3共同求解；源码132＋恢复兼容8、包外各448worldsteps通过 | BALL角限位、G1长舞、BALL刚柔、更大异构规模；下方R3各行限制是其原首片历史范围 |
 | D5-A 公共刚柔声明 | `ParticipantSceneDeclaration(contact_response="deformable_normal")`＋`ParticipantDeformable` 自动装配唯一 D3 owner，资产球/程序胶囊短窗及生命周期源码、安装通过 | 任意关节机器人或持续稳态支撑；多独立单体见M-B1 |
 | R3-N 浮根球树法向接触 | FREE＋BALL/R/P、NONE JOINT motor、primitive condim1；完整同入步与连续参考及安装通过 | 人形长舞、limits/dry 等全部组合；activation见R3-A |

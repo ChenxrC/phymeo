@@ -1,7 +1,7 @@
 # 2026-11-13 功能验收矩阵：场景、机器人组合、规模与保留的支撑失败
 
 本页是**当前事实截点**，按父任务实际源码结果、已结束命令及安装消费者的小摘要更新。
-最新已验安装产品为 `d7105a9ddde55ce33de8a1f003605073b5a129ea`（BALL-S）；原M-B2 6b4a639c及23757ae6/08d7a1b6/ec0e2997资格按原结果复用。本文仅文本/file IO/Git，
+最新已验安装产品为 `e1401fbf22396e802af18c3b8d7b6d1187d6ffbe`（G2b-A）；536成员同源，W32/B32包外interpret12步与CUDA256步均STRICT_PASS。BALL-S d7105a9d、原M-B2 6b4a639c及23757ae6/08d7a1b6/ec0e2997资格按原结果复用。本文仅文本/file IO/Git，
 没有执行项目、读取大轨迹、重做保存审计或产品字节核对。以下结果引用原父收据，
 后续新应用不得自动继承。整个 P6.5 / Newton 功能对齐仍未完成。
 
@@ -13,6 +13,7 @@
 
 | 公共功能 / 路径 | 源码资格 | interpret / CUDA | 安装包资格 | 完整应用与限制 | 性能 |
 | --- | --- | --- | --- | --- | --- |
+| **G2b-A shared CUDA payload与W32/B32** | 新38＋受影响26＝64项通过；六solver-bank实际分配、精确/少1byte、UNKNOWN、晚桶失败/retry、clone/reset/restore峰值 | HOST/interpret40、CUDA24；四组32真实物理构型短窗严格通过 | e1401fbf新包536成员同源；interpret384、CUDA8192worldsteps均STRICT_PASS；正常关闭 | 257帧实际CUDA视频；固定/FREE R/P/B且无接触。32cap，超过旧8/16需显式预算；非全进程资源、任意接触组合或跨world碰撞 | 同source分桶，未融合kernel；暂无Newton公平比较 |
 | **BALL-S 球树标量限位与DOF干摩擦**：fixed/FREE BALL/R/P、NONE/FILTEREXACT、joint-only或原condim1/3共用完整T4 | 22 HOST＋55 interpret＋55 CUDA＝132唯一节点；公共checkpoint修复另验旧8项；原run15失败保留 | 两后端十二连续窗口、十八原XML与完整事务通过 | 新包534成员同字节；24/25各224batch steps/448worldsteps PASSED，正常关闭、strict installed origins | scalar上下侧/margin/释放、dry滑/粘/零、三类行共同求解、反转卸载；无BALL角限位/G1长舞/BALL刚柔/扩容 | 未比较Newton |
 | **D5-A 公共刚柔声明**：`ParticipantSceneDeclaration(contact_response="deformable_normal")`＋`ParticipantDeformable` → `compile_participant_scene` → 唯一 D3 owner → step/query/reset/restore | 新源码26节点/后端，旧受影响5/后端；坐标修复后资产短窗另各2通过 | 两后端源码及两批安装均通过 | 首包81/74，第二包132/133均 PASS；每次38 calls、57 worldsteps、6显式当前query | 此首片验证资产球/程序胶囊短窗、每world单体；多独立单体后继见M-B1，仍无任意关节机器人或持续稳态资格 | 有HOST载荷/诊断往返；未比较Newton |
 | **R3-N FREE＋BALL法向接触**：原FREE根＋BALL/R/P、NONE JOINT motor、primitive condim1，完整M/J/积分与力运动共同发布 | 完整55节点＋7个原兼容节点通过 | 两后端包含在原固定源码矩阵；首包75/76均 PASS | 首包每后端56 calls /112 worldsteps；未冒称第二包重跑同一N消费者 | feet/siblings各24步非零速度、正反控制与卸载，另生命周期后继；非人形长时支撑/舞蹈 | 未做同模型同质量性能比较 |
@@ -27,7 +28,7 @@
 | **G2-R0 restore候选资源归属** | 178预期RED后185完整12GREEN | 两后端真实晚失败、保原发布、恢复重试与连续后继 | 第四包193源码外12通过；原异常＋cleanup聚合、保留owner并真实释放 | 不注入/重试UNKNOWN；不是完整资源预算或扩容 | 不改变数值核 |
 
 D5减少公共装配成本，M-B1扩多个独立刚体，D4检查持续功能，D6新增明确材料模型，不能互相替代。各R3历史行“不含limits/dry”是原首片范围；当前后继BALL-S已覆盖上述限定组合，不再把它列为整体未实现。
-R3/G2a属于MuJoCo-TYX路径；其支持表不自动与resident刚柔路径作笛卡尔积。
+R3/G2a/G2b-A属于MuJoCo-TYX路径；其支持表不自动与resident刚柔路径作笛卡尔积。G2a行中的8/16与UNKNOWN是该历史首片范围；当前solver-bank已登记payload及32格资格见G2b-A，总进程资源仍UNKNOWN。
 D6的D5带耗散声明已有源码资格；本轮D6安装消费者直接消费D1/D3，D5安装消费者
 验证原场景路径，**不额外声称专用带耗散D5包外矩阵已执行**。
 

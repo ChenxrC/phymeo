@@ -1,6 +1,6 @@
 # Phymeo / Newton 功能差异全景（2026-11-13更新）
 
-本页更新至**2026-11-13 BALL-S混合关节约束有限资格**。最新已验产品d7105a9d，新包534成员同源，BALL-S两后端安装各448worldsteps；M-B2两后端各40worldsteps资格复用；原M-B1产品23757ae6的M-B1及容量两后端安装各68worldsteps/132participantsteps，恢复清理12项包外通过。第三包R3-A及前两包各自有限资格按原记录复用。[当前功能矩阵](p65-feature-acceptance-matrix-20261113.md)分别记录源码、后端、指定安装、完整应用和精度结果；不把历史通过当新包全量回归。
+本页更新至**2026-11-13 G2b-A共享数组预算与32构型CUDA展示资格**。最新已验产品e1401fbf，新包536成员同源；源码64项、包外interpret32×12与CUDA32×256均STRICT_PASS，真实257帧视频已生成。BALL-S/M-B2及此前各片只按原结果复用，不称新包全量回归。[当前功能矩阵](p65-feature-acceptance-matrix-20261113.md)和[G2b-A报告](p65-g2ba-resource-gallery-report-20261113.md)区分范围、精度与完整应用。
 
 **D4原无阻尼N1两后端3秒稳态仍FAIL；D6-A包外是FUNCTIONAL_PASS并保留strict_elastic_precision=FAIL_RECORDED。** 新c4096持续载荷应用D6-B的run143已完成N1 interpret原3072步/3秒，仍为DIAGNOSTIC_ONLY / FAIL；停止该系数CUDA和其余案例，不扫参数。没有从耗散算子或短窗通过推导持续支撑。最新[架构图](p65-feature-architecture-draft-20261113.md)和[统一编译架构](../architecture/unified-scene-compilation.md)区分三条runtime；旧07:20 HTML与Batch A/B/C报告仍是各自版本的历史证据。
 
@@ -71,7 +71,7 @@ Phymeo已连接模型编译、受限机器人动力学、设备接触与约束�
 | --- | --- | --- |
 | **01 场景与机器人** | URDF/MJCF/USD/程序场景、统一编译、PD/IK、四类resident树及新增显式多参与者装配；MuJoCo-TYX自由根标量树、BALL1/A/C、ROB2b、直接BALL JOINT电机/FILTEREXACT及原接触；新公共scene设备查询、D5/M-B1多独立浮体刚柔及R3-N/P/A | 更广关节/闭环/传动、FREE+BALL的limits/dry/condim4/6等组合；FILTEREXACT已由R3-A单独验收；S3/D5公共接线及R3-N/P已通，M-B1多独立单体已通过；M-B2非根R/P关节刚柔已通过；继续补多关节机器人同world、BALL刚柔及工具抓取释放库。单个Panda/G1不替代组合矩阵 |
 | **02 碰撞检测与响应** | 既有RR/RD/DD有限域、S/C/OBB/H设备patch与载荷、七形状support-map查询；COL2/COL3、M1与S1–S3真实设备来源；D1/D2真实变形查询、D5/M-B1公共多运动球/胶囊双向法向响应和D6可选材料耗散 | 斜平行胶囊仍有CONDITIONING。持续稳态支撑（原D4与新D6-B N1均FAIL）、摩擦换面历史、曲面patch、通用CCD响应及更广关节/变形组合；预计算SDF、SDF接触缩减和hydroelastic仍独立缺失 |
-| **03 GPU 与多场景** | TYX批量动力学/约束、W129/W256受载分页、设备action、真实GPU PPO；紧凑镜像、N7 S128/S256两模式；accepted设备FK/持久节点、G2-R0恢复清理、G2a原cap内W1/8/16源矩阵和W16B3/B8安装资格 | 原cap之外的扩容与资源资格、更广异构资产/约束和变形耦合规模、HOST往返优化；live/peak资源与吞吐基线。尚无Newton同模型/精度/输出性能比较 |
+| **03 GPU 与多场景** | TYX批量动力学/约束、同模型W129/W256分页、设备action与真实GPU PPO；G2b-A六solver-bank数组manifest/共享预算与32真实构型包外CUDA256步，完整状态视频 | 全进程HOST/native/context/JIT峰值与外部owner计量；更广接触/资产/变形组合、更大异构W、HOST往返和融合调度。暂无同模型/质量/输出的Newton性能比较 |
 | **04 可微仿真与训练工具** | 实际 CUDA RSL PPO、MLP/GRU、组合 checkpoint、S 持续支撑学习成功、N5 随机状态重置、N6 控制频率窗口与 N7 组合规模资格 | J/R 仍未达学习门；更广机器人训练、模型/环境随机化、可复用任务库。多步物理梯度、辨识与梯度对照仍是独立能力，不能由 PPO 能运行推导已可微 |
 | **05 传感与交互** | 深度/法线/ID、TYX 射线、IMU 基础、真实轨迹 Three.js、G1 传感坐标绑定 | 批量、多传感器时序/坐标协议，更广 RGB/材质/光照和交互编辑工具。单个 gyro 修正不代表完整传感生态 |
 | **06 跨域求解编排** | 事务、点端口、域图与指定刚–布–软体耦合；同 world 多参与者共同发布 | 通用区域/后端选择、异构界面力/约束、耦合迭代、能量与共同失败恢复。resident 多树一次载荷组合不等于跨树隐式 KKT，也不等于通用多求解器耦合 |
@@ -88,7 +88,7 @@ Newton 本身也按 solver/backend 配置提供能力；上表不把所有 Newto
 | --- | --- | --- |
 | **1 / 高：统一场景到设备碰撞/响应** | S1–S3资产/控制/来源到当前查询，D5-A/M-B1多独立浮体及M-B2非根R/P树＋节点共同响应与生命周期，各有指定包外资格 | 非根R/P树首域已接通；下一多关节机器人同world、BALL刚柔及更广工具/物体组合；需明确完整载荷、稳定身份和共同失败发布，不能只放开构造guard或顺序调用两个step |
 | **2 / 高：真实变形到持续载荷** | D1持久bank→D2查询→D3响应→D5声明；D6-A轴向材料算子功能已资格且原strict失败保留 | D4无阻尼与D6-B c4096 N1稳态均FAIL；该系数停止扩跑，不凭更大阻尼或扫描参数追绿。后续须根据真实轨迹另立可辨别合同；摩擦/换面历史、CCD和更广材料/网格独立登记，轴向零模/未解析行/HOST往返仍明示 |
-| **3 / 中高至高：机器人组合与GPU规模** | FREE+BALL/NONE JOINT condim1及pyramidal3、原8模型16world异构源矩阵与指定W16安装已过 | scalar limits/DOF dry的BALL-S及FILTEREXACT R3-A已完成；下一BALL角限位等组合独立多案例；异构W32/128/256须新增完整资源/生命周期资格，随后才做同硬件、同模型/输入/质量/完整输出的Newton1.7.0基线与热点优化 |
+| **3 / 中高至高：机器人组合与GPU规模** | BALL-S、FILTEREXACT R3-A及G2b-A 32构型数组预算/源码外连续轨迹均已验 | 下一G2b-B补完整资源观察与外部owner；再冻结更大W及更广接触组合。BALL角限位另立多案例。最后做同硬件/模型/输入/质量/完整输出的Newton1.7.0基线与热点优化 |
 
 D6-B run143已结束，3072 attempted/returned/checked步、3 controls、close1完整；本次文档只引用父闭合结果，不另算轨迹。两稳态窗支撑均值21.46127079/19.36648514 N，刚体速度RMS .30439415/.21362712、中心RMS .16520125/.11754240 m/s，均未满足原支撑范围/0.1 m/s门。逐步law、耗散phase、算术与长参考通过，另7项旧弹性短精度记录（最大约3.56759e-5 m/s）仍保留；两类失败不互相掩盖。后续源码可以按不交叉owner并行编写，但项目import/测试/数值/build/install仍保持唯一串行。性能超越不是功能验收的替代条件；不可比模型格、live/peak未知项与保留失败必须单列。
 
@@ -136,7 +136,7 @@ D6-B run143已结束，3072 attempted/returned/checked步、3 controls、close1�
 
 [M-B1](p65-multibody-deformable-report-20261113.md)新增的是逐participant稳定body槽、全部真实设备来源、逐体COM wrench与一次共同运动发布；32个新唯一源码节点包括满8参与者/混合布局，旧单体兼容各8仍通过。不是把多个独立step包在循环里，也没有新增RR响应、关节树或摩擦。第四包两后端基础44worldsteps＋容量24worldsteps均通过，完整独立参考、模块来源与关闭证据保存。
 
-[G2-R0](p65-restore-cleanup-report-20261113.md)修复restore候选验证失败且cleanup再失败时的错误丢失/资源归属；原发布保持，源码及安装各12通过。它不是整个显存预算。后续G2b仍须实际allocation、alias、pending/retired/UNKNOWN与边界重叠预留，之后再另冻W32。
+[G2-R0](p65-restore-cleanup-report-20261113.md)修复restore候选验证失败且cleanup再失败时的错误丢失/资源归属；原发布保持，源码及安装各12通过。它不是整个显存预算。后继G2b-A已完成上述solver-bank payload与W32限定资格；完整HOST/native/context资源及更大规模仍待G2b-B。
 
 D4/D6-B稳态FAIL保持；[短试样后继](p65-sustained-support-next-experiments-20261113.md)先区分材料模态、接触共同/相对运动与步内离散，不能把调研建议当已证根因或继续盲扫阻尼。当前没有新的Newton性能比较。
 
@@ -144,7 +144,7 @@ D4/D6-B稳态FAIL保持；[短试样后继](p65-sustained-support-next-experimen
 
 新R/P串联与非对称分支使用真实设备FK，按原body来源取得非根COM点速，把完整B×6载荷投影到整树J/M，与节点状态一次发布。新源码25执行与受影响兼容39执行通过；新包两后端各40worldsteps、恢复/reset真实后继与关闭通过。[报告](p65-articulated-deformable-report-20261113.md)及[用法](p65-articulated-deformable-usage-20261113.md)给出范围。
 
-BALL树标量限位/DOF干摩擦组合已由BALL-S完成限定源码与安装资格；下一独立优先级是**G2b完整资源预算**，先使allocation/释放/峰值具有可信账目，再扩异构world。刚柔后继是更多机器人组合、切向历史/换面/CCD及持续支撑应用，不再把“非根连杆完全未接”列为缺口。没有新增Newton版本调查或性能对比结论。
+BALL树标量限位/DOF干摩擦组合已由BALL-S完成限定源码与安装资格；G2b-A已补solver-bank allocation/释放/峰值账目并完成32构型；下一独立优先级是G2b-B完整资源观察，再扩大规模与性能资格。刚柔后继是更多机器人组合、切向历史/换面/CCD及持续支撑应用，不再把“非根连杆完全未接”列为缺口。没有新增Newton版本调查或性能对比结论。
 
 ## 最新增量：BALL-S 已接完整混合约束
 

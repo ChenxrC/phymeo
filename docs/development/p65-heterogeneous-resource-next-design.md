@@ -1,6 +1,6 @@
 # G2b：异构规模扩展前的生命周期资源合同提案
 
-状态：**PROPOSAL_NOT_GRANTED**。2026-11-13。仅源码、现有协议和测试文本调研；未执行 import、数值、测试或资源测量，不授权本提案实施，不改变 8 models / 16 worlds。
+当前后继：**G2b-A已完成限定源码/安装验收，G2b-B仍待冻结**，详见[报告](p65-g2ba-resource-gallery-report-20261113.md)。当前32models/worlds及六solver-bank数组预算按新合同生效；HOST/native/context等完整资源仍未交付。下文保留2026-11-13最初PROPOSAL_NOT_GRANTED调研时点及原8/16域，不作为当前实现状态。
 
 建议先关闭可独立验证的 **restore 候选清理归属**，再建立真实 buffer 的生命周期账目与边界操作预留；完成后才选择 W32。无需先重跑 G2a，也不以新预算文档代替功能交付。
 

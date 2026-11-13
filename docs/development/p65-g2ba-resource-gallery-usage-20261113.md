@@ -1,6 +1,6 @@
 # G2b-A：共享设备预算与 32 构型展示用法
 
-2026-11-13 使用说明。父任务已报告本批 HOST/解释 40 项、CUDA 24 项通过；正式源码外 CUDA 256 步采集仍在运行，本文不预先声明完整视频或最终安装验收通过。此文中的示例未另行执行。范围与进度以[本批合同](p65-g2ba-resource-gallery-20261113.md)和[当前入口](p65-continuation.md)为准。
+2026-11-13 使用说明。HOST/解释40项、CUDA24项通过；包外32构型interpret12步及CUDA256步均STRICT_PASS，视频已经生成。此文中的示例未另行执行；实际执行记录见[验收报告](p65-g2ba-resource-gallery-report-20261113.md)。范围以[本批合同](p65-g2ba-resource-gallery-20261113.md)和[当前入口](p65-continuation.md)为准。
 
 ## 一个共享预算，多个真实模型
 
@@ -73,7 +73,7 @@ python "$repoPath/scripts/run_heterogeneous_gallery.py" --mode cuda --steps 256 
 
 源码外资格须把 `run_heterogeneous_gallery.py` 和 `heterogeneous_gallery_cases.py` 一起复制到源码外目录，使用已安装包及 `--installed-root <absolute-site>`；脚本检查所有已加载 Phymeo 模块来源。12 步保持原严格连续门；256 步同入步力学与单步推进仍严格，累计连续误差采用预登记功能门并完整保留原严格失配。`FUNCTIONAL_PASS` 同时 `STRICT_FAIL_RECORDED` 不等于严格通过。
 
-采集输出 `manifest.json`、`sources/*.xml`、完整 `trajectory.jsonl.gz`、给渲染器的 `states.jsonl.gz` 及 `summary.json`。后者逐帧含32个世界的真实 q/v/act/time/tick；完整2秒轨迹应有初态加256步，共257帧。XML、物理结构、状态文件及同次 CUDA 身份/计数/预算均有绑定；失败只留下实际 prefix，不伪造剩余帧。
+采集输出 `manifest.json`、`sources/*.xml`、完整 `trajectory.jsonl.gz`、给渲染器的 `states.jsonl.gz` 及 `summary.json`。其中 `states.jsonl.gz` 逐帧含32个世界的真实 q/v/act/time/tick；完整2秒轨迹应有初态加256步，共257帧。XML、物理结构、状态文件及同次 CUDA 身份/计数/预算均有绑定；失败只留下实际 prefix，不伪造剩余帧。
 
 仅完整功能通过的 CUDA 轨迹可以交给[离线渲染器](../../scripts/render_heterogeneous_gallery.py)：
 
@@ -82,4 +82,4 @@ $ffmpegBin = 'C:/Users/38347/AppData/Local/Programs/FFmpeg/8.1.2/ffmpeg-8.1.2-es
 python "$repoPath/scripts/render_heterogeneous_gallery.py" --input C:/Temp/phymeo-gallery-cuda-new --output C:/Temp/phymeo-gallery-video-new --ffmpeg "$ffmpegBin/ffmpeg.exe" --ffprobe "$ffmpegBin/ffprobe.exe"
 ```
 
-渲染仅用保存状态做 native FK 和画面几何，不调用 `mj_step`，不插值运动、不更改 q、不逐帧回中。每个 tile 的 camera 从完整轨迹范围一次选定并固定。257帧以30fps播放约8.57秒，仿真时长仍是2秒，速度标注 `30/128≈0.234375×`。视频、预览及 `render-receipt.json` 绑定同一状态SHA；视频展示不增加接触、长期支撑或性能资格。
+渲染仅用保存状态做 native FK 和画面几何，不调用 `mj_step`，不插值运动、不更改 q。默认camera按完整轨迹一次确定并固定；追加 `--tracking-overview` 可使主镜头跟随实际几何，并在小窗保留原固定视角，画面与收据明确区分。257帧以30fps播放约8.57秒，仿真时长仍是2秒，速度标注 `30/128≈0.234375×`。视频、预览及 `render-receipt.json` 绑定同一状态SHA；视频展示不增加接触、长期支撑或性能资格。

@@ -114,9 +114,7 @@ def compile_tree_model(
         if np.any(model.jnt_limited) or np.any(model.dof_frictionloss):
             if allow_constraints is not True:
                 issue("ball-constraint-domain", "BALL scalar/dry rows require the T4 route")
-        scalar_joints = np.isin(
-            model.jnt_type, (mj.mjtJoint.mjJNT_HINGE, mj.mjtJoint.mjJNT_SLIDE)
-        )
+        scalar_joints = np.isin(model.jnt_type, (mj.mjtJoint.mjJNT_HINGE, mj.mjtJoint.mjJNT_SLIDE))
         if np.any(np.asarray(model.jnt_limited, dtype=bool) & ~scalar_joints):
             issue("ball-constraint-domain", "only HINGE/SLIDE soft limits are supported")
         if model.nexclude:

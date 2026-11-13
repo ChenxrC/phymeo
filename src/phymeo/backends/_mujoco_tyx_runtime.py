@@ -457,8 +457,10 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                 friction=(
                     "native-dof-loss-and-pyramidal-condim1-3"
                     if self._plan.nfriction and self._plan.npair
-                    else "native-dof-loss" if self._plan.nfriction
-                    else "pyramidal-condim1-3-only" if self._plan.npair
+                    else "native-dof-loss"
+                    if self._plan.nfriction
+                    else "pyramidal-condim1-3-only"
+                    if self._plan.npair
                     else "none"
                 ),
                 native_dry_dof_ids=tuple(map(int, self._plan.friction_ids[: self._plan.nfriction])),

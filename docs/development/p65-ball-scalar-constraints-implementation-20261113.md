@@ -1,6 +1,9 @@
 # BALL-S: scalar limits and native DOF dry friction composition
 
-Status: AUTHORING_GRANTED / EXECUTION_PENDING, 2026-11-13. User instruction:
+Status: **SOURCE_AND_INSTALLED_VERIFIED / VALIDATED_ACCEPTED_SLOT_RELEASED**.
+See the [parent acceptance](p65-ball-scalar-constraints-report-20261113.md).
+The original contract and grants below remain historical, not new execution permission.
+2026-11-13. User instruction:
 continue the next functional batch. Parent baseline c6a76052; no new deadline.
 This contract activates only the first module in
 [p65-ball-constraint-next-design.md](p65-ball-constraint-next-design.md).

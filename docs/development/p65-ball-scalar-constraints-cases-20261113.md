@@ -80,7 +80,7 @@ Package consumer runs the twelve new windows plus representative lifecycle using
 Pre-execution admission clarification: reversed scalar range is checked as native XML compilation rejection, before any TYX runtime. Negative margin is not newly classified invalid. Direct native-model mutation covers nonfinite scalar law and negative/nonfinite dry friction only. This preserves original admission semantics; tests-first 2e59ce48 remains historical and was never executed.
 ## 7. Authoring handoff and exact selection (not collected)
 
-Status **CODE_READY_TESTS_PENDING / AUTHORING_SLOT_RELEASED**. No project imports, collection, numerical probes, tests, lint, formatter, build, installation or CI were executed by this author. Parent owns the single execution slot. Source product/admission changes are outside this lane.
+Historical authoring status **CODE_READY_TESTS_PENDING / AUTHORING_SLOT_RELEASED**. Parent subsequently completed the [bounded source and installed acceptance](p65-ball-scalar-constraints-report-20261113.md); the original cases below were frozen before execution. No project imports, collection, numerical probes, tests, lint, formatter, build, installation or CI were executed by this author. Source product/admission changes are outside this lane.
 
 | New source test group | Manual identities per backend | HOST-only identities |
 | --- | ---: | ---: |

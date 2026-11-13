@@ -86,11 +86,11 @@ D6-B的c=4096 N·s/m是另行预登记的物理参数；NormalLayer接触damping
 | R3机器人 | FREE保nv≤35/nq≤45、fixed nv8/nq10、body128、actor32、geom128/pair16/rawslot32及原solver预算；不以cap常量证明全部极限组合。FILTEREXACT由R3-A、scalar limits/DOF dry由BALL-S另验；BALL角限位、更多transmission/shape仍是后继 |
 | G2a异构 | 原完整来源分桶与末桶status/download/aggregate失败、retry及W17/model9前置拒绝已获源码资格；包外只公共正格和边界操作，不冒充重新注入私有故障 |
 | D6材料 | 参数/边序/模型身份、None/全零原路径、fixed反力、late candidate拒绝、真实恢复与UNKNOWN生命周期有对应源码资格；不能把轴向零模或未验应用藏到“已阻尼”中 |
-| 安装与资源 | 主错和cleanup错分开，UNKNOWN不宣称可盲重试；owned-array预算不是RSS，累计分配/上传不是live/peak；所有live/peak及公平Newton速度结论保持UNKNOWN/NOT_COMPARED |
+| 安装与资源 | 主错和cleanup错分开，UNKNOWN不宣称可盲重试；G2b-A已登记六solver-bank数组的共享预算及current/peak/free。该已知payload不是RSS或总显存：全进程HOST/native/context/JIT/外部owner仍未完整计量；公平Newton速度结论保持NOT_COMPARED |
 
 后续按真实缺口登记独立功能合同，不重跑同源已绿组：先完成新应用的既定资格，
 再扩多关节机器人刚柔组合、摩擦/历史/CCD，或BALL角限位等尚缺的通用组合；
-异构扩容须完整生命周期预算后才进入W32/128/256，公平性能比较另立阶段。
+G2b-A已按六solver-bank数组生命周期预算获得32模型/32world限定资格；超过32的异构规模（包括128/256）须另补资源边界和完整案例矩阵，公平性能比较另立阶段。
 旧G1长舞、J/R学习、B-point表示及全布/体软体问题不会随本表关闭。
 
 依据：[D5报告](p65-deformable-scene-report.md)、[R3-N](p65-free-ball-normal-report.md)、
@@ -111,4 +111,4 @@ D6-B的c=4096 N·s/m是另行预登记的物理参数；NormalLayer接触damping
 
 ### BALL-S 后继包
 
-产品d7105a9d，534成员同字节，wheel SHA256 `567a8e98bf93be01d38687b8e7ea3fbfc485bfc36c73181ef18582563c806c37`。新增132唯一节点＋受影响恢复8项，包外两端各448worldsteps/1181事件/332模块strict origins。run15暴露并修复receipt与accepted mirror输出不一致可恢复的问题，未改物理核或门限。完整[验收报告](p65-ball-scalar-constraints-report-20261113.md)及25份已闭命令在 `artifacts/p65-ball-scalar-constraints-20261113-01`。下一G2b生命周期资源预算未实现，不由本包获得扩容或峰值显存资格。
+产品d7105a9d，534成员同字节，wheel SHA256 `567a8e98bf93be01d38687b8e7ea3fbfc485bfc36c73181ef18582563c806c37`。新增132唯一节点＋受影响恢复8项，包外两端各448worldsteps/1181事件/332模块strict origins。run15暴露并修复receipt与accepted mirror输出不一致可恢复的问题，未改物理核或门限。完整[验收报告](p65-ball-scalar-constraints-report-20261113.md)及25份已闭命令在 `artifacts/p65-ball-scalar-constraints-20261113-01`。在BALL-S包的版本边界内尚无G2b资源预算，不由本包获得扩容或峰值显存资格。后继G2b-A已独立验收32模型/32world及已登记数组current/peak预算，仍不代表全进程总内存/总显存资格。

@@ -12,7 +12,7 @@ D6-A 的 FUNCTIONAL_PASS 与旧弹性 STRICT_FAIL_RECORDED 同时保留，不能
 2. [功能验收矩阵](p65-feature-acceptance-matrix-20261113.md)：源码、后端、安装、应用和性能分列；不估整体完成百分比。
 3. [当前连接架构](p65-feature-architecture-draft-20261113.md)、[统一编译架构](../architecture/unified-scene-compilation.md)：声明、设备来源、查询、载荷与共同发布。
    [离线架构总览图](p65-functional-architecture-20261113.html)保留G2a时点的8/16容量标记，当前32及预算以本页/新版文字架构为准；图中未连接的域仍明确分开。
-4. [八方向差异全景](phymeo-newton-panorama-2026-11-12.md)：下一通用模块与未完成范围；本轮详细事实以验收矩阵及原收据为准。
+4. [八方向差异全景](phymeo-newton-panorama-2026-11-12.md)与[新版离线全景图](phymeo-newton-panorama-2026-11-13.html)：下一通用模块与未完成范围；本轮详细事实以验收矩阵及原收据为准。
 5. [D6用法](p65-distance-dissipation-usage.md)、[D6设计](../superpowers/specs/2026-11-13-distance-dissipation-design.md)、[D6-B应用协议](p65-damped-normal-load-application-20261113.md)。
 6. [Batch C](p65-three-track-batch-c-20261112.md)、[Batch B](p65-three-track-batch-b-20261112.md)、[旧历史入口](p65-continuation-history-through-20261112-0035.md)仅按需引用，不恢复旧周期任务或重做旧审计。
 

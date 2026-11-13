@@ -6,6 +6,8 @@
 
 比较对象固定为 **Newton 1.7.0** 官方文档及本地已固定源码，不声称调查了后续最新版本。这里按公共能力、适用范围和可复用案例判断差距，不按测试数或清单数计算总体完成百分比。
 
+[打开新版离线全景图（2026-11-13）](phymeo-newton-panorama-2026-11-13.html)。图中区分已验基础、组合待补和保留失败；32构型展示采用同一GPU上的独立无接触world，不扩大为复杂接触规模资格。
+
 ## 总体判断
 
 Phymeo已连接模型编译、受限机器人动力学、设备接触与约束、批量环境、真实CUDA PPO和恢复；公共声明已能把真实变形节点与多个ordinary独立运动球/胶囊，或一个ordinary R/P关节树的子连杆装配到共同响应，并可声明轴向材料耗散；新关节树的D6组合尚未另验。当前主要差距是**更广组合及完整应用**：多关节机器人同world与BALL刚柔、持续稳定支撑、摩擦换面/CCD、FREE+BALL的其它执行器/约束、复杂机器人训练与批量传感；可微物理、通用跨域、密集软体和杆缆/MPM/流体仍有独立模块缺口。
@@ -22,7 +24,7 @@ Phymeo已连接模型编译、受限机器人动力学、设备接触与约束�
 | resident M1 / 场景边界查询 | 四类direct/from_asset刚性真实accepted设备FK、逻辑world/participant及anchor转换 → gather/bounds/BVH → 有限边界核 → typed发布 | S3公共自动装配已通；该通用查询本身仍不是载荷、CCD或实体内外判定。D3/D5另有有限刚柔响应，不能反向授予M1任意响应 |
 | D1/M2-P与D6-A | 持久设备节点integrate → ordered elastic → reconstruct → 可选一次ordered轴向耗散 → 验证/共同发布 → loan/reset/restore | 普通步无HOST当前坐标回填；None/零保原路径。耗散是显式参数的一阶split，有轴向零模，不是所有振型衰减或全布/体软体迁移 |
 | D5公共装配→D3共同响应 | ParticipantSceneDeclaration＋ParticipantDeformable → 唯一共同owner → 同入步节点/运动球胶囊查询与NormalLayer → 节点材料/可选D6、刚体候选 → 双方力/COM矩/固定反力和运动共同发布 | 每world一个节点模型＋多个ordinary单body浮体，或一个ordinary R/P关节树，完整B×6/J/M；mu0、entry-sampled。旧S8实测4world/8participants，新M-B2实测两world/3–4body树。载荷诊断仍有HOST往返；多机器人同world、BALL刚柔、持续稳态、摩擦/历史和CCD仍缺 |
-| G1/G2a异构原生world | 完整原生来源/cap身份 → 每桶原MuJoCo-TYX runtime → 全world控制/力/运动 → 聚合step/reset/restore | 上限8模型16world；W1/W8/W16源矩阵、指定W16B3/B8安装已过。独立world、非单异构kernel或跨桶碰撞；不包含D5节点模型，也无Newton性能结论 |
+| G1/G2a/G2b-A异构原生world | 完整原生来源/cap身份 → 每桶原MuJoCo-TYX runtime → 全world控制/力/运动 → 聚合step/reset/restore | 当前上限32模型/32world；原G2a的W1/W8/W16资格保留，新增32真实构型包外CUDA256步和六solver-bank数组共享预算。独立world、来源分桶，非单异构kernel或跨桶碰撞；新展示为无接触格，不包含D5节点模型，也无Newton性能结论 |
 
 ## 历史增量、当前资格与保留失败
 
@@ -69,7 +71,7 @@ Phymeo已连接模型编译、受限机器人动力学、设备接触与约束�
 
 | 用户方向 | Phymeo 已有基础与本轮变化 | 与固定 Newton 能力版图相比仍需补齐的模块 |
 | --- | --- | --- |
-| **01 场景与机器人** | URDF/MJCF/USD/程序场景、统一编译、PD/IK、四类resident树及新增显式多参与者装配；MuJoCo-TYX自由根标量树、BALL1/A/C、ROB2b、直接BALL JOINT电机/FILTEREXACT及原接触；新公共scene设备查询、D5/M-B1多独立浮体刚柔及R3-N/P/A | 更广关节/闭环/传动、FREE+BALL的limits/dry/condim4/6等组合；FILTEREXACT已由R3-A单独验收；S3/D5公共接线及R3-N/P已通，M-B1多独立单体已通过；M-B2非根R/P关节刚柔已通过；继续补多关节机器人同world、BALL刚柔及工具抓取释放库。单个Panda/G1不替代组合矩阵 |
+| **01 场景与机器人** | URDF/MJCF/USD/程序场景、统一编译、PD/IK、四类resident树及显式多参与者装配；MuJoCo-TYX自由根标量树、BALL1/A/C、ROB2b、直接BALL JOINT电机/FILTEREXACT及原接触；BALL-S补标量关节限位和DOF干摩擦；公共scene设备查询、M-B1多独立浮体及M-B2非根R/P树刚柔 | 更广传动/闭环、BALL角限位、condim4/6与elliptic等未验组合；标量限位/DOF干摩擦不再列为缺失。刚柔公共装配仍需多关节机器人同world、BALL刚柔及工具抓取释放库。MuJoCo-TYX与resident路径的支持表不能交叉相乘，单个Panda/G1不替代组合矩阵 |
 | **02 碰撞检测与响应** | 既有RR/RD/DD有限域、S/C/OBB/H设备patch与载荷、七形状support-map查询；COL2/COL3、M1与S1–S3真实设备来源；D1/D2真实变形查询、D5/M-B1公共多运动球/胶囊双向法向响应和D6可选材料耗散 | 斜平行胶囊仍有CONDITIONING。持续稳态支撑（原D4与新D6-B N1均FAIL）、摩擦换面历史、曲面patch、通用CCD响应及更广关节/变形组合；预计算SDF、SDF接触缩减和hydroelastic仍独立缺失 |
 | **03 GPU 与多场景** | TYX批量动力学/约束、同模型W129/W256分页、设备action与真实GPU PPO；G2b-A六solver-bank数组manifest/共享预算与32真实构型包外CUDA256步，完整状态视频 | 全进程HOST/native/context/JIT峰值与外部owner计量；更广接触/资产/变形组合、更大异构W、HOST往返和融合调度。暂无同模型/质量/输出的Newton性能比较 |
 | **04 可微仿真与训练工具** | 实际 CUDA RSL PPO、MLP/GRU、组合 checkpoint、S 持续支撑学习成功、N5 随机状态重置、N6 控制频率窗口与 N7 组合规模资格 | J/R 仍未达学习门；更广机器人训练、模型/环境随机化、可复用任务库。多步物理梯度、辨识与梯度对照仍是独立能力，不能由 PPO 能运行推导已可微 |
@@ -78,7 +80,7 @@ Phymeo已连接模型编译、受限机器人动力学、设备接触与约束�
 | **07 布与体软体** | 拉伸/剪切/弯曲、自接触、StVK 四面体、双向载荷和递布基础；新增D1持久节点、D2查询、D5公共D3响应、D6轴向材料耗散及M-B2非根R/P树刚柔 | 持续稳态应用、更多机器人/材料组合、摩擦/换特征、密集折叠、软块抓捏、广泛材料/网格和软布放台。需完整多案例资格，原有限几何/响应范围不扩大为全部柔性碰撞 |
 | **08 杆缆、MPM/流体** | 刚性连杆、粒子与弹性体基础可复用 | 完整弯扭杆缆、粒子–网格转移、塑性/流动、流固边界仍需分别立项；连杆不是柔杆，粒子不是 MPM/流体求解器 |
 
-Newton 本身也按 solver/backend 配置提供能力；上表不把所有 Newton 模块描述为可以任意一起使用。Phymeo 的旧 HOST 曲面几何和部分载荷资格仍可复用，但不自动升级为新 device 支持或完整多场景接口。
+Newton 本身也按 solver/backend 配置提供能力；上表不把所有 Newton 模块描述为可以任意一起使用。[完全异构world](https://newton-physics.github.io/newton/1.7.0/concepts/worlds.html)和[跨求解器耦合](https://newton-physics.github.io/newton/1.7.0/concepts/coupling.html)在固定1.7.0文档中仍标为实验性；[可微能力](https://newton-physics.github.io/newton/1.7.0/solvers/index.html)也依赖具体solver。Phymeo的旧HOST曲面几何和部分载荷资格仍可复用，但不自动升级为新device支持或完整多场景接口。
 
 ## 后续三条主线：从剩余依赖开始
 
@@ -130,7 +132,7 @@ D6-B run143已结束，3072 attempted/returned/checked步、3 controls、close1�
 - [N4a 学习](p65-mujoco-tyx-n4a-report.md)、[N4d 固定消融](p65-n4d-initialization-protocol.md)、[native 紧凑镜像](p65-mujoco-tyx-native-mirror-report.md)、[观察内存诊断](p65-compact-mirror-memory-diagnostic.md)、[G1 保存诊断](g1-drift-diagnosis-20261111.md)。
 - Newton 1.7.0 官方固定参照：[solver 矩阵](https://newton-physics.github.io/newton/1.7.0/solvers/index.html)、[collision](https://newton-physics.github.io/newton/1.7.0/concepts/collisions.html)、[worlds](https://newton-physics.github.io/newton/1.7.0/concepts/worlds.html)、[sensors](https://newton-physics.github.io/newton/1.7.0/concepts/sensors.html)、[coupling](https://newton-physics.github.io/newton/1.7.0/concepts/coupling.html)、[deformable objects](https://newton-physics.github.io/newton/1.7.0/concepts/deformable_objects.html)。仅作功能/架构参照，没有新增 Newton 性能实测。
 
-本页只依据既有源码/安装结果和固定Newton1.7.0参照，没有新增Newton调查、项目执行、性能实测或未执行的通过声明。run143已闭且稳态FAIL保留；后继仍由父按独立合同持唯一串行槽，不从图表推导未执行的组合资格。
+本页依据既有源码/安装结果，并于2026-11-13重新核对固定Newton1.7.0官方solver、collision、worlds、sensors、coupling及deformable文档；本次只更新全景文档与离线图，没有新增项目执行、性能实测或未执行的通过声明。run143已闭且稳态FAIL保留；后继仍由父按独立合同持唯一串行槽，不从图表推导未执行的组合资格。
 
 ## 本轮新增的共同发布与资源边界
 

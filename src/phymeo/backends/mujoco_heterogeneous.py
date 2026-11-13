@@ -7,7 +7,7 @@ cross-world contact, zero-readback execution, or a GPU performance guarantee.
 
 import hashlib
 from collections.abc import Mapping
-from contextlib import ExitStack, contextmanager
+from contextlib import ExitStack, contextmanager, nullcontext
 from dataclasses import dataclass, replace
 from threading import RLock
 from types import MappingProxyType
@@ -28,7 +28,7 @@ from .mujoco_runtime import (
 )
 from .mujoco_tyx_state import MuJoCoTyxIntegrationState
 
-MAX_MODELS, MAX_WORLDS = 8, 16
+MAX_MODELS, MAX_WORLDS = 32, 32
 _CONSTRUCTION_QUARANTINE = []
 
 
@@ -145,18 +145,25 @@ def _model_preflight(spec, mj):
     h = float(model.opt.timestep)
     if not np.isfinite(h) or h <= 0:
         raise ValueError("heterogeneous timestep must be finite and positive")
-    return h, tuple(int(getattr(model, field)) for field in ("nq", "nv", "nu", "na", "nbody"))
+    return h, tuple(int(getattr(model, field)) for field in ("nq", "nv", "nu", "na", "nbody")), plan
 
 
 class MuJoCoTyxHeterogeneousBatch:
-    """Own 1..8 exact-source model buckets and 1..16 independent sparse worlds."""
+    """Own up to 32 exact-source buckets/worlds, with explicit expansion budgets."""
 
-    def __init__(self, models, worlds, *, mode="cuda", cache_root=None):
+    def __init__(self, models, worlds, *, mode="cuda", cache_root=None, resource_budget=None):
+        from .mujoco_resource_budget import MuJoCoTyxResourceBudget
+        from .mujoco_tyx._allocation_manifest import allocation_manifest
+
+        if resource_budget is not None and type(resource_budget) is not MuJoCoTyxResourceBudget:
+            raise TypeError("resource_budget requires MuJoCoTyxResourceBudget")
         if mode not in ("interpret", "cuda"):
             raise ValueError("heterogeneous mode must be interpret or cuda")
         models, worlds = tuple(models), tuple(worlds)
         if not 1 <= len(models) <= MAX_MODELS or not 1 <= len(worlds) <= MAX_WORLDS:
-            raise ValueError("heterogeneous batch requires 1..8 models and 1..16 worlds")
+            raise ValueError("heterogeneous batch requires 1..32 models and 1..32 worlds")
+        if (len(models) > 8 or len(worlds) > 16) and resource_budget is None:
+            raise ValueError("expanded heterogeneous batches require explicit resource_budget")
         if any(type(value) is not MuJoCoTyxModelSpec for value in models):
             raise TypeError("models must contain MuJoCoTyxModelSpec")
         if any(type(value) is not MuJoCoTyxWorldSpec for value in worlds):
@@ -185,6 +192,16 @@ class MuJoCoTyxHeterogeneousBatch:
             tuple(world for world in worlds if model_bucket[world.model_key] == bucket)
             for bucket in range(len(signatures))
         )
+        manifests = tuple(
+            allocation_manifest(
+                metadata[spec.key][2],
+                len(rows),
+                metadata[spec.key][1][4],
+                (spec.contact_capacity, spec.constraint_capacity),
+            )
+            for spec, rows in zip(representatives, members, strict=True)
+        )
+        self._resource_budget, self._allocation_manifests = resource_budget, manifests
         self._lock, self._busy, self._closed = RLock(), False, False
         self._revision, self._last_step = 0, None
         self._mode, self._cache_root, self._h = mode, cache_root, h
@@ -205,19 +222,26 @@ class MuJoCoTyxHeterogeneousBatch:
         )
         built = []
         try:
-            for spec, rows in zip(representatives, members, strict=True):
-                owner = MuJoCoRuntime(
-                    spec.compilation,
-                    world_keys=tuple(row.world for row in rows),
-                    initial_states={row.world: row.initial_state for row in rows},
-                    mode=mode,
-                    implementation="tyx",
-                    contact_capacity=spec.contact_capacity,
-                    constraint_capacity=spec.constraint_capacity,
-                    cache_root=cache_root,
-                )
-                built.append(owner)
-                self._observe_owner(owner)
+            admission = (
+                resource_budget.admit(sum(m.payload_bytes for m in manifests))
+                if resource_budget is not None and mode == "cuda"
+                else nullcontext()
+            )
+            with admission:
+                for spec, rows in zip(representatives, members, strict=True):
+                    owner = MuJoCoRuntime(
+                        spec.compilation,
+                        world_keys=tuple(row.world for row in rows),
+                        initial_states={row.world: row.initial_state for row in rows},
+                        mode=mode,
+                        implementation="tyx",
+                        contact_capacity=spec.contact_capacity,
+                        constraint_capacity=spec.constraint_capacity,
+                        cache_root=cache_root,
+                        resource_budget=resource_budget,
+                    )
+                    built.append(owner)
+                    self._observe_owner(owner)
             self._buckets = tuple(built)
             layout = {}
             for world in worlds:
@@ -252,6 +276,7 @@ class MuJoCoTyxHeterogeneousBatch:
                     host_diagnostics=True,
                     cross_world_contacts=False,
                     scale_qualified=False,
+                    explicit_resource_budget=resource_budget is not None,
                     models=MappingProxyType(
                         {
                             spec.key: self._buckets[model_bucket[spec.key]].capabilities
@@ -416,6 +441,26 @@ class MuJoCoTyxHeterogeneousBatch:
                     "counter_observation_errors": self._counter_errors,
                     "counter_scope": "public-runtime-observed; boundary constructors may replace internal owners",
                 }
+            )
+
+    def resource_snapshot(self):
+        """Budget spans live, candidate and ambiguously retained CUDA arrays."""
+        with self._lock:
+            if self._busy:
+                raise RuntimeError("heterogeneous batch transaction is active")
+            return MappingProxyType(
+                dict(
+                    schema="mujoco-tyx-heterogeneous-resources-v1",
+                    closed=self._closed,
+                    manifests=self._allocation_manifests,
+                    manifest_payload_bytes=sum(m.payload_bytes for m in self._allocation_manifests),
+                    budget=None
+                    if self._resource_budget is None
+                    else self._resource_budget.snapshot(),
+                    buckets=tuple(owner.resource_snapshot() for owner in self._buckets),
+                    retained_owner_count=len(self._retired),
+                    completeness="Solver-bank CUDA payload only; HOST/native/context/JIT/external controls/workspaces unknown",
+                )
             )
 
     def set_controls(self, mapping):
@@ -586,6 +631,32 @@ class MuJoCoTyxHeterogeneousBatch:
         return owner.clone()
 
     def _boundary(self, operation, selected, leaves=None, publication=None):
+        indices = tuple(
+            i
+            for i, owner in enumerate(self._buckets)
+            if operation == "restore" or set(owner.world_keys).intersection(selected)
+        )
+        prepared, peak = 0, 0
+        for i in indices:
+            size = self._allocation_manifests[i].payload_bytes
+            peak = max(peak, prepared + 2 * size)
+            prepared += size
+        admission = (
+            self._resource_budget.admit(max(peak, prepared))
+            if self._resource_budget is not None and self._mode == "cuda"
+            else nullcontext()
+        )
+        admitted = False
+        try:
+            with admission:
+                admitted = True
+                return self._boundary_admitted(operation, selected, leaves, publication)
+        except BaseException:
+            if not admitted:
+                self._stats["boundary_refusals"] += 1
+            raise
+
+    def _boundary_admitted(self, operation, selected, leaves=None, publication=None):
         replacements, pending = {}, []
         indices = tuple(
             i

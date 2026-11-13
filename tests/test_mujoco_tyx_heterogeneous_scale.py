@@ -105,7 +105,7 @@ def test_scaled_last_bucket_failure_retains_and_retries(mode, cell, fault, monke
         run.mark_pass(fault=fault)
 
 
-@pytest.mark.parametrize("limit", ("world17", "model9"))
+@pytest.mark.parametrize("limit", ("world33", "model33"))
 def test_scaled_limits_reject_before_preflight(limit, monkeypatch, tmp_path):
     import phymeo.backends.mujoco_heterogeneous as product
 
@@ -114,14 +114,14 @@ def test_scaled_limits_reject_before_preflight(limit, monkeypatch, tmp_path):
     declaration = runner.declarations("w1-scalar", helper)
     model = declaration["specs"][0]
     first = declaration["worlds"][0]
-    if limit == "world17":
+    if limit == "world33":
         models = (model,)
         worlds = tuple(
-            product.MuJoCoTyxWorldSpec(100 + i, model.key, first.initial_state) for i in range(17)
+            product.MuJoCoTyxWorldSpec(100 + i, model.key, first.initial_state) for i in range(33)
         )
     else:
         models = tuple(
-            product.MuJoCoTyxModelSpec(f"too-many-{i}", model.compilation) for i in range(9)
+            product.MuJoCoTyxModelSpec(f"too-many-{i}", model.compilation) for i in range(33)
         )
         worlds = tuple(
             product.MuJoCoTyxWorldSpec(100 + i, row.key, first.initial_state)
@@ -133,7 +133,7 @@ def test_scaled_limits_reject_before_preflight(limit, monkeypatch, tmp_path):
 
     monkeypatch.setattr(product, "_model_preflight", forbidden)
     monkeypatch.setattr(product, "MuJoCoRuntime", forbidden)
-    with pytest.raises(ValueError, match="1..8 models and 1..16 worlds") as caught:
+    with pytest.raises(ValueError, match="1..32 models and 1..32 worlds") as caught:
         product.MuJoCoTyxHeterogeneousBatch(models, worlds, mode="interpret")
     trace = helper.Journal(tmp_path / "preflight.jsonl.gz")
     try:

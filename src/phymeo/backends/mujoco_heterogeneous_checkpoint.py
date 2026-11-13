@@ -11,7 +11,7 @@ from .mujoco_checkpoint import MuJoCoTyxCheckpoint
 
 MAGIC = b"PHYMEOTYXHET1\n"
 MAX_BYTES = 128 * 1024 * 1024
-MAX_BUCKETS = 8
+MAX_BUCKETS = 32
 
 
 def _plain(value):

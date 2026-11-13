@@ -12,6 +12,7 @@ import copy
 import hashlib
 import json
 from collections.abc import Mapping
+from contextlib import nullcontext
 from dataclasses import dataclass
 from numbers import Integral
 from types import MappingProxyType
@@ -229,7 +230,13 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
         contact_capacity=64,
         constraint_capacity=256,
         cache_root=None,
+        resource_budget=None,
     ):
+        from .mujoco_resource_budget import MuJoCoTyxResourceBudget
+
+        if resource_budget is not None and type(resource_budget) is not MuJoCoTyxResourceBudget:
+            raise TypeError("resource_budget requires MuJoCoTyxResourceBudget")
+        self._resource_budget = resource_budget
         if implementation not in (None, "tyx"):
             raise ValueError("MuJoCoTyxRuntime requires implementation='tyx'")
         if mode not in ("interpret", "cuda"):
@@ -247,6 +254,14 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
         if getattr(self._plan, "constraint_contact", False):
             if self._contact_capacity > 128 or self._constraint_capacity > 512:
                 raise ValueError("T4 contact/constraint capacities cannot exceed 128/512")
+        from .mujoco_tyx._allocation_manifest import allocation_manifest
+
+        self._allocation_manifest = allocation_manifest(
+            self._plan,
+            len(self._world_keys),
+            self._model.nbody,
+            (self._contact_capacity, self._constraint_capacity),
+        )
         self._checkpoint_revision = 0
         self._checkpoint_retired = []
         self._control_packet, self._control_retired = None, []
@@ -481,6 +496,25 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
     def counters(self):
         return MappingProxyType({**self._device.counts, **self._extra_counts})
 
+    def resource_snapshot(self):
+        """CUDA array payload only; native contexts and HOST peaks remain unknown."""
+        with self._lock:
+            device = getattr(self, "_device", None)
+            return MappingProxyType(
+                dict(
+                    schema="mujoco-tyx-runtime-resources-v1",
+                    mode=self._mode,
+                    closed=self._closed,
+                    manifest=self._allocation_manifest,
+                    allocation=None if device is None else device.allocation_snapshot(),
+                    budget=None
+                    if self._resource_budget is None
+                    else self._resource_budget.snapshot(),
+                    retained_owner_count=len(self._checkpoint_retired),
+                    completeness="Solver-bank CUDA payload only; HOST/native/context/JIT/external controls/workspaces unknown",
+                )
+            )
+
     def _initial_data(self, packet):
         # Preserve the original FP64 declaration checks and native initial
         # observer, then release that one arena before constructing another world.
@@ -565,6 +599,7 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
             self._model.nbody,
             self._timestep,
             (self._contact_capacity, self._constraint_capacity),
+            resource_budget=self._resource_budget,
             **activation_args,
         )
         # All device subclasses expose the same transport counters, including
@@ -1362,6 +1397,25 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
         with self._lock:
             self._check_open()
             selected = self._select(world_keys)
+            from .mujoco_tyx._allocation_manifest import allocation_manifest
+
+            size = allocation_manifest(
+                self._plan,
+                len(selected),
+                self._model.nbody,
+                (self._contact_capacity, self._constraint_capacity),
+            ).payload_bytes
+            admission = (
+                self._resource_budget.admit(2 * size)
+                if self._resource_budget is not None and self._mode == "cuda"
+                else nullcontext()
+            )
+            with admission:
+                return self._clone_selected(selected)
+
+    def _clone_selected(self, selected):
+        # Caller holds the source lock and the whole two-owner budget admission.
+        with self._lock:
             cloned = type(self)(
                 self._compilation,
                 world_keys=selected,
@@ -1371,6 +1425,7 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                 contact_capacity=self._contact_capacity,
                 constraint_capacity=self._constraint_capacity,
                 cache_root=self._cache_root,
+                resource_budget=self._resource_budget,
             )
             try:
                 proposed = {}

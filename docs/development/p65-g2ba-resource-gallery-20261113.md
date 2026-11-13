@@ -22,6 +22,8 @@
 4. 从同一次已保存状态离线 FK/渲染；MuJoCo 仅用于模型编译、独立验证和画面几何，不替代 TYX 物理。视频标注模型数、world 数、仿真时间、播放速度与分桶方式；附可核对原轨迹。
 5. 新代码 focused 静态/解释/CUDA、受影响兼容、源码外安装消费；保存报告并更新续作入口。视频本身不是全部功能验收。
 
+执行前补充：超过旧 8 models / 16 worlds 必须显式提供数组预算；演示使用 256 MiB，不是总显存上限。外部 device-control / task-workspace 独立 owner 的 payload 不包含在六类 solver-bank 清单，明确 UNKNOWN。12 步新短格保持原严格误差门；256 步同入步力学与单步推进仍保持原门，连续参考的原严格 q/v 门完整记录。按用户功能优先要求，长窗额外采用预登记功能门 q 各分量绝对差≤0.01、v≤0.05，严格门失配写 STRICT_FAIL_RECORDED，不能改称严格通过；超过功能门或同入步错误仍停止。此规定先于本批任何项目执行。
+
 ## 成功和停止条件
 
 真实 buffer events 与 manifest 同数同字节；精确预算可通过、少 1 byte 在分配前拒绝；边界拒绝保原状态/CAS/receipt且有实际 retry；UNKNOWN 不伪报释放。32 格不能只改名称或初值冒称不同构型。实际 CUDA 运行完成且不 fallback，保存状态通过预定 finite/physics/reference 门，视频各帧绑定这些状态。失败保原样，修实现或明确缺口，不调物理输入/预算掩盖失败。native hidden memory/完整 HOST peak 未观测即 UNKNOWN，性能对比另立阶段。

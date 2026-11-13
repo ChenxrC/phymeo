@@ -98,3 +98,12 @@ the final source result. Update continuation, acceptance matrix and the function
 overview only with observed bounded results; entire P6.5 remains incomplete.
 G2b lifecycle allocation budgets stay the next independent capability, unstarted.
 
+## Source handoff and first serial checks
+
+The original source author has released e19b1689/57fcdbe3; parent reviewed the
+exact three-file diff and the two shared seams. Cases were frozen in
+3cc7769c/c2a52476 before any project execution. Parent may now run exact-five-file
+Ruff/check-format and necessary formatting while the original test author remains
+text-only. Functional execution still waits for the complete tests handoff and
+parent review. This is one parent serial slot, not concurrent project validation.
+

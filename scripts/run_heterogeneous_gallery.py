@@ -329,6 +329,7 @@ class Session:
         require(self.output.is_absolute() and not self.output.exists(), "fresh absolute output required")
         self.indices, self.installed_root, self.supplied_budget = indices, installed_root, resource_budget
         self.batch = self.journal = self.states_log = None
+        self.construction_attempted = False
         self.checked_steps = self.returned_steps = self.attempts = self.strict_failures = 0
         self.first_strict_failure, self.status, self.closed = None, "FAIL", False
         self.max_errors, self.result = {}, None
@@ -385,6 +386,7 @@ class Session:
             from phymeo.backends.mujoco_resource_budget import MuJoCoTyxResourceBudget
             from phymeo.backends.mujoco_heterogeneous import MuJoCoTyxHeterogeneousBatch
             self.budget = self.supplied_budget or MuJoCoTyxResourceBudget(DEVICE_PAYLOAD_LIMIT)
+            self.construction_attempted = True
             with self.timed("construct"):
                 self.batch = MuJoCoTyxHeterogeneousBatch(self.declaration["specs"], self.declaration["worlds"], mode=self.mode, resource_budget=self.budget)
             self.initial = self.batch.integration_snapshot()
@@ -483,7 +485,7 @@ class Session:
                 _RETAINED.append(self.batch)
                 errors.append(error)
         else:
-            self.closed = True  # No returned owner was constructed.
+            self.closed = None if self.construction_attempted else True  # Failed construction has no returned owner to prove closed.
         qualifier = "STRICT_FAIL_RECORDED" if self.strict_failures else "STRICT_PASS"
         result = dict(status=self.status if not errors else "FAIL", qualification=qualifier,
             functional_status="FUNCTIONAL_PASS" if self.status == "PASS" and not errors else "FAIL",
@@ -510,14 +512,26 @@ class Session:
         result["state_records"] = self.states_log.records if self.states_log is not None else 0
         result["status"] = self.status if not errors else "FAIL"
         result["errors"] = [repr(error) for error in errors]
+        result["functional_status"] = "FUNCTIONAL_PASS" if result["status"] == "PASS" else "FAIL"
         self.manifest.update(status=result["status"], qualification=qualifier,
             functional_status=result["functional_status"], actual_state_records=result["state_records"],
             state_sha256=result.get("states", {}).get("sha256"), state_bytes=result.get("states", {}).get("bytes"))
+        before_final_writes = len(errors)
         for name, data in (("summary.json", result), ("manifest.json", self.manifest)):
             try:
                 (self.output / name).write_text(json.dumps(data, indent=2, allow_nan=False), encoding="utf-8")
             except BaseException as error:
                 errors.append(error)
+        if len(errors) != before_final_writes:
+            result.update(status="FAIL", functional_status="FAIL", errors=[repr(error) for error in errors])
+            self.manifest.update(status="FAIL", functional_status="FAIL")
+            # One bounded best-effort failure marker for each independent output;
+            # never retry close, and never discard the original write exception.
+            for name, data in (("summary.json", result), ("manifest.json", self.manifest)):
+                try:
+                    (self.output / name).write_text(json.dumps(data, indent=2, allow_nan=False), encoding="utf-8")
+                except BaseException as error:
+                    errors.append(error)
         self.result = result
         if errors and (len(errors) > 1 or primary is None):
             raise BaseExceptionGroup("gallery primary/observation/cleanup/evidence failures", errors)

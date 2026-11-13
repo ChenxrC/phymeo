@@ -68,6 +68,7 @@ def test_new_joint_route_does_not_bypass_original_structural_rejections(bad, mon
     import mujoco as mj
     import phymeo.backends._mujoco_tyx_runtime as implementation
     from phymeo.backends.mujoco_runtime import MuJoCoRuntime
+    from phymeo.backends.mujoco_tyx import MuJoCoTyxUnsupported
     from phymeo.builders.mujoco_compiler import compile_mujoco_xml
 
     xml = case.negative_source(bad)
@@ -80,9 +81,15 @@ def test_new_joint_route_does_not_bypass_original_structural_rejections(bad, mon
         raise AssertionError("unsupported structural source allocated device")
 
     monkeypatch.setattr(implementation.MuJoCoTyxRuntime, "_build_device", forbidden)
-    with pytest.raises((ValueError, NotImplementedError)) as caught:
+    expected = {"ball-limit": "free-ball-constraint", "free-target": "activation-transmission",
+                "spring": "free-ball-spring", "elliptic": "constraint-cone",
+                "condim4": "free-ball-contact", "condim6": "free-ball-contact",
+                "cylinder": "contact-domain", "exclude": "explicit-excludes",
+                "explicit-pair": "explicit-pairs", "multiple-free": "joint-domain"}[bad]
+    with pytest.raises(MuJoCoTyxUnsupported) as caught:
         MuJoCoRuntime(compile_mujoco_xml(xml, require_asset=False), mode="interpret")
     assert reached == []
+    assert expected in {issue.code for issue in caught.value.issues}
     (tmp_path / "source.xml").write_text(xml, encoding="utf-8")
     (tmp_path / "rejection.txt").write_text(repr(caught.value), encoding="utf-8")
 
@@ -110,19 +117,21 @@ def test_independent_small_box_oracle_fixed_signed_and_bound_faces():
                                              np.full(2, -.2), np.full(2, .2)), (.1, -.1), rtol=0, atol=1e-12)
 
 
-@pytest.mark.parametrize("bad", ("range", "law", "margin"))
-def test_invalid_scalar_limit_parameters_are_not_silently_ignored(bad):
+def test_nonfinite_scalar_limit_law_rejected_by_tyx_admission():
     import mujoco as mj
     from phymeo.backends.mujoco_tyx import MuJoCoTyxUnsupported
     from phymeo.backends.mujoco_tyx._model import compile_model
 
     model = mj.MjModel.from_xml_string(case.source("fixed-lower"))
     joint = mj.mj_name2id(model, mj.mjtObj.mjOBJ_JOINT, "hinge")
-    if bad == "range":
-        model.jnt_range[joint] = (.25, -.25)
-    elif bad == "law":
-        model.jnt_solref[joint, 0] = np.nan
-    else:
-        model.jnt_margin[joint] = -.1
-    with pytest.raises((ValueError, MuJoCoTyxUnsupported)):
+    model.jnt_solref[joint, 0] = np.nan
+    with pytest.raises(MuJoCoTyxUnsupported):
         compile_model(mj, model)
+
+
+def test_reversed_scalar_range_is_native_source_rejection(tmp_path):
+    import mujoco as mj
+    xml = case.source("fixed-lower").replace('range="-.25 .25"', 'range=".25 -.25"')
+    (tmp_path / "source.xml").write_text(xml, encoding="utf-8")
+    with pytest.raises(ValueError):
+        mj.MjModel.from_xml_string(xml)

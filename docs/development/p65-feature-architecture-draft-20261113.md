@@ -1,6 +1,6 @@
 # 当前功能连接架构：2026-11-13
 
-状态：**当前连接架构，已加入M-B2非根连杆后继**。最新安装产品6b4a639c，
+状态：**当前连接架构，已加入M-B2非根连杆与BALL-S混合关节约束后继**。最新安装产品d7105a9d，
 资格依据为父已报告的源码结果和同次安装summary顶层字段。此更新只读取文本、
 JSON与Git，没有执行项目、数值、保存审计或安装消费者。安装结果只授予对应
 有限范围；D4持续稳态支撑失败、D6原弹性严格精度失败与待执行项分别保留。
@@ -255,7 +255,7 @@ D6-B现按闭合run143更新为功能FAIL；[独立结果](p65-damped-normal-loa
 - D5-A之后的M-B1多独立单体和M-B2非根R/P关节刚柔已接受；下一多机器人同world/BALL刚柔等组合仍需独立来源、完整力学和多案例，不能只放开构造guard。
 - D4/D6之后：先单独判断固定持续载荷应用，再扩切向摩擦、换面测度/历史和CCD；耗散phase通过不替代持续支撑。
 - 原节点模型之后：弯曲、密集布和体软体等材料/拓扑，不能用五条距离行代表全部软体。
-- R3-P之后的R3-A activation已接受；下一limits/dry、condim4/6等具体组合，逐项登记真实原生参考；不重复已通过组合。
+- R3-A activation和BALL-S scalar limits/DOF dry已分别接受；下一BALL角限位、condim4/6等具体组合，逐项登记真实原生参考；不重复已通过组合。
 - G2之后：完整生命周期资源/吞吐，再进行同模型同输出的Newton性能比较。
 - 训练/人形：现有真实CUDA PPO和N5/N6/N7连接保留；J/R学习门、G1完整动作、
   传感与可微物理等问题不会由场景装配或法向接触通过自动关闭。
@@ -277,3 +277,9 @@ G2-R0修复restore提交前候选清理双失败的owner归属与异常聚合，
 layout从每participant单body扩为完整canonical `(participant, group, body_id)` 地址；没有collider的root/child也进入source和预算。实际accepted FK/current group提供点速、COM lever与有限步功；设备transpose后按participant切出完整B×6零/非零载荷，原Jᵀ投影、全耦合M、偏置和控制只推进一次。没有新增第二套机器人积分或独立发布。
 
 每world允许原多个独立单体，或一个ordinary R/P树，两个域可跨world混合。本批新源码25、受影响兼容39及安装每后端40worldsteps通过；新包534成员同源。[M-B2报告](p65-articulated-deformable-report-20261113.md)保留完整边界。图中的ordinary树不等于MuJoCo FREE＋BALL；多个关节机器人同world、摩擦/CCD/稳态和带D6的新树组合仍待各自资格。
+
+## 11. BALL-S：把关节行接到既有完整约束路径
+
+fixed/FREE BALL/R/P 的完整结构与 native 地址检查先完成，再按 scalar limit、DOF dry、contact 需要选择原T4；joint-only不会被no-pair早退跳过。已有NONE/FILTEREXACT JOINT与原condim1/3复用同一full-J混合上下界QP、质量方程与一次act/force/motion发布，没有新建一套接触求解器。能力报告区分native行来源、静态上界、请求硬容量和每步实际行。
+
+恢复入口在替换设备前核对已接受mirror与receipt的qacc/qfrc_actuator/qfrc_constraint完整bytes。实际负控曾暴露缺口，修复和首失败均保留。132新唯一节点、8受影响兼容、两后端包外各448worldsteps已验，见[BALL-S报告](p65-ball-scalar-constraints-report-20261113.md)。这条MuJoCo-TYX路径仍不连接resident刚柔，BALL角限位/G1长舞/扩容也未取得资格；前文历史R3范围不代表当前BALL-S仍未实现。

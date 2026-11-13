@@ -1,6 +1,6 @@
 # Phymeo / Newton 功能差异全景（2026-11-13更新）
 
-本页更新至**2026-11-13 M-B2非根连杆刚柔有限资格**。最新已验产品6b4a639c，新包534成员同源，M-B2两后端安装各40worldsteps；原M-B1产品23757ae6的M-B1及容量两后端安装各68worldsteps/132participantsteps，恢复清理12项包外通过。第三包R3-A及前两包各自有限资格按原记录复用。[当前功能矩阵](p65-feature-acceptance-matrix-20261113.md)分别记录源码、后端、指定安装、完整应用和精度结果；不把历史通过当新包全量回归。
+本页更新至**2026-11-13 BALL-S混合关节约束有限资格**。最新已验产品d7105a9d，新包534成员同源，BALL-S两后端安装各448worldsteps；M-B2两后端各40worldsteps资格复用；原M-B1产品23757ae6的M-B1及容量两后端安装各68worldsteps/132participantsteps，恢复清理12项包外通过。第三包R3-A及前两包各自有限资格按原记录复用。[当前功能矩阵](p65-feature-acceptance-matrix-20261113.md)分别记录源码、后端、指定安装、完整应用和精度结果；不把历史通过当新包全量回归。
 
 **D4原无阻尼N1两后端3秒稳态仍FAIL；D6-A包外是FUNCTIONAL_PASS并保留strict_elastic_precision=FAIL_RECORDED。** 新c4096持续载荷应用D6-B的run143已完成N1 interpret原3072步/3秒，仍为DIAGNOSTIC_ONLY / FAIL；停止该系数CUDA和其余案例，不扫参数。没有从耗散算子或短窗通过推导持续支撑。最新[架构图](p65-feature-architecture-draft-20261113.md)和[统一编译架构](../architecture/unified-scene-compilation.md)区分三条runtime；旧07:20 HTML与Batch A/B/C报告仍是各自版本的历史证据。
 
@@ -88,7 +88,7 @@ Newton 本身也按 solver/backend 配置提供能力；上表不把所有 Newto
 | --- | --- | --- |
 | **1 / 高：统一场景到设备碰撞/响应** | S1–S3资产/控制/来源到当前查询，D5-A/M-B1多独立浮体及M-B2非根R/P树＋节点共同响应与生命周期，各有指定包外资格 | 非根R/P树首域已接通；下一多关节机器人同world、BALL刚柔及更广工具/物体组合；需明确完整载荷、稳定身份和共同失败发布，不能只放开构造guard或顺序调用两个step |
 | **2 / 高：真实变形到持续载荷** | D1持久bank→D2查询→D3响应→D5声明；D6-A轴向材料算子功能已资格且原strict失败保留 | D4无阻尼与D6-B c4096 N1稳态均FAIL；该系数停止扩跑，不凭更大阻尼或扫描参数追绿。后续须根据真实轨迹另立可辨别合同；摩擦/换面历史、CCD和更广材料/网格独立登记，轴向零模/未解析行/HOST往返仍明示 |
-| **3 / 中高至高：机器人组合与GPU规模** | FREE+BALL/NONE JOINT condim1及pyramidal3、原8模型16world异构源矩阵与指定W16安装已过 | limits/dry等尚缺组合先独立多案例；FILTEREXACT R3-A已完成；异构W32/128/256须新增完整资源/生命周期资格，随后才做同硬件、同模型/输入/质量/完整输出的Newton1.7.0基线与热点优化 |
+| **3 / 中高至高：机器人组合与GPU规模** | FREE+BALL/NONE JOINT condim1及pyramidal3、原8模型16world异构源矩阵与指定W16安装已过 | scalar limits/DOF dry的BALL-S及FILTEREXACT R3-A已完成；下一BALL角限位等组合独立多案例；异构W32/128/256须新增完整资源/生命周期资格，随后才做同硬件、同模型/输入/质量/完整输出的Newton1.7.0基线与热点优化 |
 
 D6-B run143已结束，3072 attempted/returned/checked步、3 controls、close1完整；本次文档只引用父闭合结果，不另算轨迹。两稳态窗支撑均值21.46127079/19.36648514 N，刚体速度RMS .30439415/.21362712、中心RMS .16520125/.11754240 m/s，均未满足原支撑范围/0.1 m/s门。逐步law、耗散phase、算术与长参考通过，另7项旧弹性短精度记录（最大约3.56759e-5 m/s）仍保留；两类失败不互相掩盖。后续源码可以按不交叉owner并行编写，但项目import/测试/数值/build/install仍保持唯一串行。性能超越不是功能验收的替代条件；不可比模型格、live/peak未知项与保留失败必须单列。
 
@@ -144,4 +144,10 @@ D4/D6-B稳态FAIL保持；[短试样后继](p65-sustained-support-next-experimen
 
 新R/P串联与非对称分支使用真实设备FK，按原body来源取得非根COM点速，把完整B×6载荷投影到整树J/M，与节点状态一次发布。新源码25执行与受影响兼容39执行通过；新包两后端各40worldsteps、恢复/reset真实后继与关闭通过。[报告](p65-articulated-deformable-report-20261113.md)及[用法](p65-articulated-deformable-usage-20261113.md)给出范围。
 
-下一优先级仍是可独立补齐的**BALL树标量限位/DOF干摩擦组合**和**G2b完整资源预算**。后者先使allocation/释放/峰值具有可信账目，再扩异构world。刚柔后继是更多机器人组合、切向历史/换面/CCD及持续支撑应用，不再把“非根连杆完全未接”列为缺口。没有新增Newton版本调查或性能对比结论。
+BALL树标量限位/DOF干摩擦组合已由BALL-S完成限定源码与安装资格；下一独立优先级是**G2b完整资源预算**，先使allocation/释放/峰值具有可信账目，再扩异构world。刚柔后继是更多机器人组合、切向历史/换面/CCD及持续支撑应用，不再把“非根连杆完全未接”列为缺口。没有新增Newton版本调查或性能对比结论。
+
+## 最新增量：BALL-S 已接完整混合约束
+
+fixed/FREE BALL/R/P、scalar HINGE/SLIDE软限位及native DOF dry、NONE/FILTEREXACT与原primitive condim1/3共用T4，joint-only与混合接触均已验证。新源码132唯一节点、公共checkpoint修复兼容8项；源码外两端各448worldsteps、1181完整事件、332模块均来自新site。产品d7105a9d的534成员source/wheel/installed同字节。详见[BALL-S验收](p65-ball-scalar-constraints-report-20261113.md)与[公共用法](p65-ball-scalar-constraints-usage-20261113.md)。
+
+前文BALL/R3表格列出各原首片的历史边界，其中scalar limits/DOF dry的缺口已由本后继覆盖；真正BALL角限位、BALL spring/affine bias、新形状/摩擦维度、BALL刚柔、G1长舞和更大异构规模仍缺。首事务失败揭示的receipt/mirror力与加速度绑定已修复，不改变原物理算子或阈值。原D4/D6-B持续支撑失败保持；无新增Newton版本调查或公平性能结论。

@@ -1,7 +1,7 @@
 # 2026-11-13 功能验收矩阵：场景、机器人组合、规模与保留的支撑失败
 
 本页是**当前事实截点**，按父任务实际源码结果、已结束命令及安装消费者的小摘要更新。
-最新已验安装产品为 `6b4a639c3e3126fcc6b1048b97c7a24cf18497a1`；原23757ae6/08d7a1b6/ec0e2997资格按原结果复用。本文仅文本/file IO/Git，
+最新已验安装产品为 `d7105a9ddde55ce33de8a1f003605073b5a129ea`（BALL-S）；原M-B2 6b4a639c及23757ae6/08d7a1b6/ec0e2997资格按原结果复用。本文仅文本/file IO/Git，
 没有执行项目、读取大轨迹、重做保存审计或产品字节核对。以下结果引用原父收据，
 后续新应用不得自动继承。整个 P6.5 / Newton 功能对齐仍未完成。
 
@@ -13,6 +13,7 @@
 
 | 公共功能 / 路径 | 源码资格 | interpret / CUDA | 安装包资格 | 完整应用与限制 | 性能 |
 | --- | --- | --- | --- | --- | --- |
+| **BALL-S 球树标量限位与DOF干摩擦**：fixed/FREE BALL/R/P、NONE/FILTEREXACT、joint-only或原condim1/3共用完整T4 | 22 HOST＋55 interpret＋55 CUDA＝132唯一节点；公共checkpoint修复另验旧8项；原run15失败保留 | 两后端十二连续窗口、十八原XML与完整事务通过 | 新包534成员同字节；24/25各224batch steps/448worldsteps PASSED，正常关闭、strict installed origins | scalar上下侧/margin/释放、dry滑/粘/零、三类行共同求解、反转卸载；无BALL角限位/G1长舞/BALL刚柔/扩容 | 未比较Newton |
 | **D5-A 公共刚柔声明**：`ParticipantSceneDeclaration(contact_response="deformable_normal")`＋`ParticipantDeformable` → `compile_participant_scene` → 唯一 D3 owner → step/query/reset/restore | 新源码26节点/后端，旧受影响5/后端；坐标修复后资产短窗另各2通过 | 两后端源码及两批安装均通过 | 首包81/74，第二包132/133均 PASS；每次38 calls、57 worldsteps、6显式当前query | 此首片验证资产球/程序胶囊短窗、每world单体；多独立单体后继见M-B1，仍无任意关节机器人或持续稳态资格 | 有HOST载荷/诊断往返；未比较Newton |
 | **R3-N FREE＋BALL法向接触**：原FREE根＋BALL/R/P、NONE JOINT motor、primitive condim1，完整M/J/积分与力运动共同发布 | 完整55节点＋7个原兼容节点通过 | 两后端包含在原固定源码矩阵；首包75/76均 PASS | 首包每后端56 calls /112 worldsteps；未冒称第二包重跑同一N消费者 | feet/siblings各24步非零速度、正反控制与卸载，另生命周期后继；非人形长时支撑/舞蹈 | 未做同模型同质量性能比较 |
 | **R3-P FREE＋BALL pyramidal接触**：复用原约束求解与CSR，primitive condim1/3 | run88完整69通过：31 HOST、19 interpret、19 CUDA；run89原路由兼容4通过 | 新源码及第二包130/131均 PASS | 第二包两后端各56 calls /112 worldsteps，完整native同入步＋独立连续参考 | 正控为condim3；mixed1/3仅编译路由资格。本原R3-P批不含activation；R3-A另验。limits/dry、condim4/6、elliptic3、更多shape仍未放行 | 无Newton对比；不是新求解算法 |
@@ -25,7 +26,7 @@
 | **M-B2 非根关节树—变形共同响应** | 新13解释15＋14CUDA10＝25；受影响旧路径06/07/15/16共39通过 | R/P串联末端胶囊、分支两连杆受载，两world/非零入速/控制变化/连续八步/完整事务通过 | 新包534成员同字节；20/21包外各40worldsteps/40participantsteps、三个owner均关闭成功 | ordinary FloatingRobotTree；每world一个关节participant、完整B×6与J/M；可混旧M-B1 world。无多机器人同world、BALL刚柔、摩擦/CCD或稳态资格 | 有HOST往返；未比较Newton |
 | **G2-R0 restore候选资源归属** | 178预期RED后185完整12GREEN | 两后端真实晚失败、保原发布、恢复重试与连续后继 | 第四包193源码外12通过；原异常＋cleanup聚合、保留owner并真实释放 | 不注入/重试UNKNOWN；不是完整资源预算或扩容 | 不改变数值核 |
 
-D5减少公共装配成本，M-B1扩多个独立刚体，D4检查持续功能，D6新增明确材料模型，不能互相替代。
+D5减少公共装配成本，M-B1扩多个独立刚体，D4检查持续功能，D6新增明确材料模型，不能互相替代。各R3历史行“不含limits/dry”是原首片范围；当前后继BALL-S已覆盖上述限定组合，不再把它列为整体未实现。
 R3/G2a属于MuJoCo-TYX路径；其支持表不自动与resident刚柔路径作笛卡尔积。
 D6的D5带耗散声明已有源码资格；本轮D6安装消费者直接消费D1/D3，D5安装消费者
 验证原场景路径，**不额外声称专用带耗散D5包外矩阵已执行**。
@@ -81,13 +82,13 @@ D6-B的c=4096 N·s/m是另行预登记的物理参数；NormalLayer接触damping
 | 范围 | 已验边界与未完成部分 |
 | --- | --- |
 | D5/D3/M-B1/M-B2刚柔 | 同world多个独立ordinary单body，或单个ordinary R/P关节树＋一个节点模型，sphere/capsule–triangle、入步facet NormalLayer。M-B2实测两world、3/4body树；旧M-B1容量资格保留。HOST往返存在；多关节机器人同world、BALL刚柔、面积压力、摩擦/换面历史、CCD仍缺 |
-| R3机器人 | 保nv≤35/nq≤45、body128、actor32、geom128/pair16/rawslot32及原solver预算；不以cap常量证明全部极限组合。FREE＋BALL FILTEREXACT已由R3-A另验；limits/dry、更多transmission/shape仍是后继 |
+| R3机器人 | FREE保nv≤35/nq≤45、fixed nv8/nq10、body128、actor32、geom128/pair16/rawslot32及原solver预算；不以cap常量证明全部极限组合。FILTEREXACT由R3-A、scalar limits/DOF dry由BALL-S另验；BALL角限位、更多transmission/shape仍是后继 |
 | G2a异构 | 原完整来源分桶与末桶status/download/aggregate失败、retry及W17/model9前置拒绝已获源码资格；包外只公共正格和边界操作，不冒充重新注入私有故障 |
 | D6材料 | 参数/边序/模型身份、None/全零原路径、fixed反力、late candidate拒绝、真实恢复与UNKNOWN生命周期有对应源码资格；不能把轴向零模或未验应用藏到“已阻尼”中 |
 | 安装与资源 | 主错和cleanup错分开，UNKNOWN不宣称可盲重试；owned-array预算不是RSS，累计分配/上传不是live/peak；所有live/peak及公平Newton速度结论保持UNKNOWN/NOT_COMPARED |
 
 后续按真实缺口登记独立功能合同，不重跑同源已绿组：先完成新应用的既定资格，
-再扩多关节机器人刚柔组合、摩擦/历史/CCD，或FREE＋BALL limits/dry等通用组合；
+再扩多关节机器人刚柔组合、摩擦/历史/CCD，或BALL角限位等尚缺的通用组合；
 异构扩容须完整生命周期预算后才进入W32/128/256，公平性能比较另立阶段。
 旧G1长舞、J/R学习、B-point表示及全布/体软体问题不会随本表关闭。
 
@@ -106,3 +107,7 @@ D6-B的c=4096 N·s/m是另行预登记的物理参数；NormalLayer接触damping
 ### M-B2 后继包
 
 产品6b4a639c，534成员完整 source/wheel/installed parity、issues0；wheel SHA256 `c8cdf8d182e120a8c687e9ded18408852135ff475ab57ce0f05b5d47b4e6d642`。新源码25和受影响兼容39全部通过，安装20/21各40worldsteps。完整结果见[M-B2报告](p65-articulated-deformable-report-20261113.md)，新canonical证据为 `artifacts/p65-articulated-deformable-20261113-01`。原D4/D6-B和历史strict失败保持；本包不冒充全部旧功能重新验收。
+
+### BALL-S 后继包
+
+产品d7105a9d，534成员同字节，wheel SHA256 `567a8e98bf93be01d38687b8e7ea3fbfc485bfc36c73181ef18582563c806c37`。新增132唯一节点＋受影响恢复8项，包外两端各448worldsteps/1181事件/332模块strict origins。run15暴露并修复receipt与accepted mirror输出不一致可恢复的问题，未改物理核或门限。完整[验收报告](p65-ball-scalar-constraints-report-20261113.md)及25份已闭命令在 `artifacts/p65-ball-scalar-constraints-20261113-01`。下一G2b生命周期资源预算未实现，不由本包获得扩容或峰值显存资格。

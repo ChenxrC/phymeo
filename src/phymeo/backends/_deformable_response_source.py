@@ -288,7 +288,12 @@ class DeformableResponseBoundaryAdapter(DeformableBoundaryAdapter):
             if shape.key in self._moving:
                 item = self._moving[shape.key]
                 rigid_meta[i] = (
-                    2, item["row"], item["group"], item["slot"], meta[i, 4], meta[i, 5]
+                    2,
+                    item["row"],
+                    item["group"],
+                    item["slot"],
+                    meta[i, 4],
+                    meta[i, 5],
                 )
                 meta[i, 0] = -1  # D1 gather must not overwrite moving-round output.
                 value, lower, upper = stored_interval(item["anchor"])

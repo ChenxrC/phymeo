@@ -65,15 +65,15 @@ Only these original parameter identities are removed from old rejection collecti
 | `test_mujoco_tyx_ball_motor_contacts.py` | `test_ball_motor_contact_rejected_before_device` | `scalar-limit`, `dry` |
 | `test_mujoco_tyx_ball_scalar_actuation.py` | `test_ball_scalar_unsupported_domains_reject_before_device` | `scalar-limit`, `scalar-dry` |
 | `test_mujoco_tyx_ball_activation.py` | `test_ball_activation_rejected_before_device` | `scalar-limit`, `dry` |
-| `test_mujoco_tyx_free_ball.py` | existing NEGATIVES-driven reject node | `dry` |
+| `test_mujoco_tyx_free_ball.py` | `test_free_ball_outside_domain_precedes_device` | `dry` |
 | `test_mujoco_tyx_free_ball_normal.py` | `test_free_ball_normal_unsupported_precedes_device` | `scalar-limit`, `dry` |
-| `test_mujoco_tyx_free_ball_pyramidal.py` | existing NEGATIVES-driven reject node | `scalar-limit`, `dry` |
+| `test_mujoco_tyx_free_ball_pyramidal.py` | `test_free_ball_pyramidal_unsupported_precedes_device` | `scalar-limit`, `dry` |
 | `test_mujoco_tyx_free_ball_activation.py` | `test_activation_domain_rejected_before_device` | `scalar-limit`, `dry` |
 
 The last three files' direct-compiler `allow_constraints=True` negative parameter `dry` is also promoted to a positive structural compile check. `allow_constraints=False` remains a rejection and is separately checked. No original helper/XML is changed. BALL angular-limit/spring, FREE actor, multiple FREE, shape/cone/dimension/explicit-pair/exclude and hard capacity negatives stay rejected. Invalid friction is tested on the native model after compilation when native XML itself refuses it, with native-invalid versus TYX-admission rejection explicitly distinguished.
 
 ## 6. Execution selection and storage
 
-New physical windows: twelve identities, ten24-step windows and four2-step windows? **Exact table is authoritative:** eight24-step identities and four2-step identities, 200steps/world and400worldsteps/backend. Five families include the independent transaction file; its exact parametrized count will be hand-enumerated at code handoff, not inferred from collection. Eighteen original-source promotion identities add two steps each/backend, plus direct-compiler admission checks; these replace changed negatives, not rerun unchanged green suites.
+New physical windows: twelve identities, eight24-step identities and four2-step identities, 200steps/world and400worldsteps/backend. Five families include the independent transaction file; its exact parametrized count will be hand-enumerated at code handoff, not inferred from collection. Eighteen original-source promotion identities add two steps each/backend, plus direct-compiler admission checks; these replace changed negatives, not rerun unchanged green suites.
 
 Package consumer runs the twelve new windows plus representative lifecycle using only installed Phymeo, MuJoCo3.3.7, NumPy and stdlib. Complete raw returns precede assertions, JSONL.gz is streamed with input/receipt/native continuous state and failure prefixes, modules are bound to the installed root, and primary/cleanup failures are retained. Parent alone runs static, functional and fresh package qualification. First failure remains evidence; no output-guided input/capacity/tolerance changes.

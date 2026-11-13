@@ -14,6 +14,7 @@ from ..backends._deformable_boundary_source import (
     DeformableBoundaryModel,
     DeformableBoundarySurface,
 )
+from ..backends._deformable_response_layout import compile_deformable_response_layout
 from ..backends._resident_floating_binding import compile_floating_tree_binding
 from ..backends.tyx_deformable_batch import DeformableNodeWorld, TyxDeformableBatch
 from ..backends.tyx_deformable_contact import TyxDeformableContactBatch
@@ -126,12 +127,9 @@ def prepare_deformable_scene(declaration, rigid_prepared):
         raise ValueError("D5-A site_capacity requires one integer in [0,128]")
     participants = rigid_prepared["participants"]
     worlds = tuple(w.key for w in spec.worlds)
-    if tuple(sorted({p.key.world for p in participants})) != worlds or any(
-        p.family != "floating" or p.body_count != 1 for p in participants
-    ):
-        raise ValueError(
-            "D5-A requires ordinary single-body floating participants in every node world"
-        )
+    response_layout = compile_deformable_response_layout(participants)
+    if response_layout.worlds != worlds:
+        raise ValueError("D5 requires ordinary floating participants in every node world")
     if any(type(row.asset) is not FloatingRobotAsset for row in declaration.articulations):
         raise ValueError("D5-A requires ordinary non-folded FloatingRobotAsset sources")
     rigid_model = rigid_prepared["model"]
@@ -146,8 +144,13 @@ def prepare_deformable_scene(declaration, rigid_prepared):
     shapes = {s.key: s for s in rigid_model.shapes}
     for wrapper in rigid_prepared["bindings"]:
         participant = by_participant.get(wrapper.participant)
-        if participant is None or wrapper.binding.group_index != 0:
-            raise ValueError("D5-A collider is not owned by its original root body")
+        group = wrapper.binding.group_index
+        if (
+            participant is None
+            or not 0 <= group < participant.body_count
+            or participant.body_ids[group] != wrapper.binding.key.body
+        ):
+            raise ValueError("D5 collider is not owned by its original physical body")
         # This is the original source/model-token gate, not a fake direct binding.
         compile_floating_tree_binding(
             shapes[wrapper.binding.key], wrapper.binding, participant.compiled
@@ -175,9 +178,9 @@ def prepare_deformable_scene(declaration, rigid_prepared):
     response_bytes = (
         116 * max(1, declaration.site_capacity)
         + 12 * sum(w.model.particle_count for w in spec.worlds)
-        + 24 * len(participants)
+        + 24 * len(response_layout.body_addresses)
         + 4 * len(worlds)
-        + (8 if len(participants) > len(worlds) else 4) * (len(worlds) + 1)
+        + (8 if response_layout.multibody else 4) * (len(worlds) + 1)
     )
     if response_bytes >= spec.memory_limit_bytes:
         raise MemoryError("response leaves no boundary query reservation")

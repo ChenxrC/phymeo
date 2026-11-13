@@ -89,7 +89,7 @@ class _ResponseEngine:
         self.capacity = capacity
         self.multibody = layout.multibody
         self.body_offsets = layout.body_offsets
-        body_count = len(layout.participant_keys)
+        body_count = len(layout.body_addresses)
         self.arrays = {}
         try:
             with self.tx.use_runtime(self.runtime):
@@ -219,8 +219,9 @@ class _ResponseEngine:
 class TyxDeformableContactBatch:
     """Exclusive common owner; every selected logical world publishes atomically.
 
-    Ordinary six-DOF independent floating bodies share one fixed-topology D1
-    node model per world. Every surface facet is an explicitly declared layer spring.
+    Independent floating bodies, or one ordinary floating R/P tree, share one
+    fixed-topology D1 node model per world. Loads retain each physical body and
+    the original coupled dynamics. Every surface facet is a declared layer spring.
     The class does not promise invariance under arbitrary surface refinement.
     """
 
@@ -273,6 +274,7 @@ class TyxDeformableContactBatch:
             raise ValueError("D3 requires 1..8 registered ordinary floating participants")
         self._response_layout = compile_deformable_response_layout(participants)
         self._multibody = self._response_layout.multibody
+        self._articulated = self._response_layout.articulated
         worlds = self._response_layout.worlds
         if tuple(sorted(w.key for w in node_worlds)) != worlds:
             raise ValueError("D3 node and rigid worlds differ")
@@ -286,7 +288,7 @@ class TyxDeformableContactBatch:
         preflight_bytes = (
             116 * max(1, contact_capacity)
             + 12 * sum(preflight_counts)
-            + 24 * len(participants)
+            + 24 * len(self._response_layout.body_addresses)
             + 4 * len(worlds)
             + (8 if self._multibody else 4) * (len(worlds) + 1)
         )
@@ -349,7 +351,7 @@ class TyxDeformableContactBatch:
             required = (
                 116 * max(1, contact_capacity)
                 + 12 * sum(node_counts)
-                + 24 * len(participants)
+                + 24 * len(self._response_layout.body_addresses)
                 + 4 * len(worlds)
                 + (8 if self._multibody else 4) * (len(worlds) + 1)
             )
@@ -372,9 +374,13 @@ class TyxDeformableContactBatch:
             self.binding_sha256 = _digest(
                 (
                     (
-                        "tyx-deformable-multibody-contact-v1"
-                        if self._multibody
-                        else "tyx-deformable-contact-v1"
+                        "tyx-deformable-articulated-contact-v1"
+                        if self._articulated
+                        else (
+                            "tyx-deformable-multibody-contact-v1"
+                            if self._multibody
+                            else "tyx-deformable-contact-v1"
+                        )
                     ),
                     self._nodes.binding_sha256,
                     self._scene.layout.fingerprint,
@@ -558,7 +564,8 @@ class TyxDeformableContactBatch:
                 if len(sites) >= self._capacity:
                     raise ValueError("D3 active contact capacity exceeded")
                 participant = self._adapter._moving[round_key]["participant"]
-                body_slot = self._response_layout.participant_slots[participant]
+                body_group = self._adapter._moving[round_key]["group"]
+                body_slot = self._response_layout.body_slots[(participant, body_group)]
                 packet = entry[participant]
                 geometry = packet["geometry"]
                 if packet["state"].tick != context["entry"][world].node.tick:
@@ -580,11 +587,11 @@ class TyxDeformableContactBatch:
                 axis_point = origin + np.asarray(row.axis_point_relative_m, np.float64)
                 node_point = origin + np.asarray(row.triangle_point_relative_m, np.float64)
                 rigid_point = axis_point + self._shapes[round_key].radius * normal
-                com = geometry.com_position_m[0]
+                com = geometry.com_position_m[body_group]
                 lever = rigid_point - com
                 vn = beta @ context["entry"][world].node.velocity[np.asarray(node_indices)]
-                vr = geometry.linear_velocity_m_s[0] + np.cross(
-                    geometry.angular_velocity_rad_s[0], lever
+                vr = geometry.linear_velocity_m_s[body_group] + np.cross(
+                    geometry.angular_velocity_rad_s[body_group], lever
                 )
                 relative = vn - vr
                 law_row = np.r_[
@@ -599,11 +606,11 @@ class TyxDeformableContactBatch:
                     law.slip_speed_m_s,
                 ]
                 law_row = as_fp32(law_row, "D3 calibrated layer row", (13,))
-                local_point = geometry.link_rotation[0].T @ (
-                    rigid_point - geometry.link_position_m[0]
+                local_point = geometry.link_rotation[body_group].T @ (
+                    rigid_point - geometry.link_position_m[body_group]
                 )
-                local_axis = geometry.link_rotation[0].T @ (
-                    axis_point - geometry.link_position_m[0]
+                local_axis = geometry.link_rotation[body_group].T @ (
+                    axis_point - geometry.link_position_m[body_group]
                 )
                 site = dict(
                     world=world,
@@ -627,7 +634,7 @@ class TyxDeformableContactBatch:
                     radius=self._shapes[round_key].radius,
                 )
                 if self._multibody:
-                    site.update(participant=participant, body_group=0, body_slot=body_slot)
+                    site.update(participant=participant, body_group=body_group, body_slot=body_slot)
                 sites.append(site)
                 index = slots[world]
                 indices.append((index, *(int(offsets[index]) + n for n in node_indices), body_slot))
@@ -674,8 +681,9 @@ class TyxDeformableContactBatch:
             per_participant = {}
             for participant in self._participants[world]:
                 slot = self._response_layout.participant_slots[participant]
+                body_count = self._response_layout.participant_body_counts[participant]
                 wrench_delivery = normalize_contact_fp32(
-                    wrench[slot : slot + 1], expected_shape=(1, 6)
+                    wrench[slot : slot + body_count], expected_shape=(body_count, 6)
                 )
                 wrenches[participant] = wrench_delivery.delivered
                 per_participant[participant] = wrench_delivery
@@ -761,14 +769,15 @@ class TyxDeformableContactBatch:
                 nodes = np.asarray(site["node_indices"], np.int32)
                 node_after = beta @ state.position[nodes].astype(np.float64)
                 site_participant = site["participant"] if self._multibody else participant
+                body_group = site["body_group"] if self._multibody else 0
                 geometry = candidate[site_participant]["geometry"]
                 rigid_after = (
-                    geometry.link_position_m[0]
-                    + geometry.link_rotation[0] @ site["rigid_point_local"]
+                    geometry.link_position_m[body_group]
+                    + geometry.link_rotation[body_group] @ site["rigid_point_local"]
                 )
                 axis_after = (
-                    geometry.link_position_m[0]
-                    + geometry.link_rotation[0] @ site["rigid_axis_local"]
+                    geometry.link_position_m[body_group]
+                    + geometry.link_rotation[body_group] @ site["rigid_axis_local"]
                 )
                 force = site["law_output"][2:5].astype(np.float64)
                 work += float(
@@ -829,6 +838,17 @@ class TyxDeformableContactBatch:
                     )
                     for key in participants
                 }
+                if self._articulated:
+                    for key, record in world_record["rigid_participants"].items():
+                        start = self._response_layout.participant_slots[key]
+                        end = start + self._response_layout.participant_body_counts[key]
+                        record.update(
+                            body_slots=tuple(range(start, end)),
+                            body_ids=tuple(
+                                address[2]
+                                for address in self._response_layout.body_addresses[start:end]
+                            ),
+                        )
             else:
                 world_record.update(
                     rigid_wrench_delivery=payload["rigid_wrench_delivery"][world],
@@ -857,9 +877,13 @@ class TyxDeformableContactBatch:
         self._context["rigid_publication"] = rigid_publication
         receipt = DeformableContactReceipt(
             (
-                "tyx-deformable-multibody-contact-step-v1"
-                if self._multibody
-                else "tyx-deformable-contact-step-v1"
+                "tyx-deformable-articulated-contact-step-v1"
+                if self._articulated
+                else (
+                    "tyx-deformable-multibody-contact-step-v1"
+                    if self._multibody
+                    else "tyx-deformable-contact-step-v1"
+                )
             ),
             self.binding_sha256,
             self._revision,

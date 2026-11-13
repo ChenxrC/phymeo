@@ -178,8 +178,13 @@ def forge(raw, corruption):
     elif corruption == "foreign-activation-pair":
         fields["actuation"]["fields"]["schema"] = "native-joint-filterexact-actuation-v1"
         fields["transmission"]["fields"]["schema"] = "native-joint-motor-transmission-v1"
-    elif corruption == "force-binding":
-        _change_array(fields["qfrc_constraint"], lambda a: a.__setitem__(-1, a[-1] + 0.125))
+    elif corruption in ("force-binding", "acceleration-binding", "actuator-force-binding"):
+        field = {
+            "force-binding": "qfrc_constraint",
+            "acceleration-binding": "qacc",
+            "actuator-force-binding": "qfrc_actuator",
+        }[corruption]
+        _change_array(fields[field], lambda a: a.__setitem__(-1, a[-1] + 0.125))
     else:
         raise AssertionError(corruption)
     original = json.loads(body)
@@ -215,6 +220,7 @@ def test_ball_scalar_checksum_valid_checkpoint_cannot_cross_schema_or_force(name
                 if name == "fixed-lower"
                 else ("foreign-transmission-schema", "foreign-activation-pair", "force-binding")
             )
+            corruptions += ("acceleration-binding", "actuator-force-binding")
             with case.owned(runtime.clone(), journal) as clone:
                 for corruption in corruptions:
                     changed = forge(raw, corruption)

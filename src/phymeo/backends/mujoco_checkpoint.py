@@ -452,6 +452,21 @@ def restore(runtime, checkpoint, expected_revision):
             ),
             "last receipt binding",
         )
+        if receipt is not None:
+            # These are the same accepted output channels published to both
+            # the immutable receipt and the mirror. Validate their exact
+            # binding before allocating a replacement device; do not recompute
+            # physics or repair either representation during restore.
+            for name in ("qacc", "qfrc_actuator", "qfrc_constraint"):
+                published = getattr(receipt, name)
+                mirrored = getattr(candidate, name)
+                _require(
+                    isinstance(published, np.ndarray)
+                    and published.dtype == np.float64
+                    and published.shape == (runtime._plan.nv,)
+                    and published.tobytes() == mirrored.tobytes(),
+                    "last receipt/accepted mirror binding: " + name,
+                )
         if stateful and receipt is not None:
             from .mujoco_actuation import _actuation_schema
 

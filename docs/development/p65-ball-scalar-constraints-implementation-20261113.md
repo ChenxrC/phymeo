@@ -107,3 +107,20 @@ Ruff/check-format and necessary formatting while the original test author remain
 text-only. Functional execution still waits for the complete tests handoff and
 parent review. This is one parent serial slot, not concurrent project validation.
 
+
+## Diagnosed checkpoint publication binding repair
+
+Run15 exposed a real restore validation gap after 19 successful interpret
+transaction identities: a checksum-valid altered qfrc_constraint receipt was
+accepted although the accepted mirror retained the original force. The exact
+first failure is retained under 15-interpret-transactions. Parent adds only
+src/phymeo/backends/mujoco_checkpoint.py to the shared allowlist: before any
+replacement allocation, compare receipt qacc/qfrc_actuator/qfrc_constraint dtype,
+shape and complete bytes with the accepted mirror. This is consistency checking
+of existing published channels, not authentication, physics recomputation or
+state repair. No solver, row kernel, capacity or numerical gate changes.
+The same existing corruption test checks all three output channels, preserving
+its source inputs and rejection/unchanged-state/actual-successor requirements.
+Affected interpret restore/lifecycle cases are revalidated; subsequent CUDA and
+outside-installed consumers use the corrected source. Unchanged continuous
+physics and original-source promotion results are reused, not rerun.

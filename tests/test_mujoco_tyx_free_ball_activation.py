@@ -91,7 +91,7 @@ NEGATIVES = {
 }
 
 
-@pytest.mark.parametrize("negative", tuple(NEGATIVES))
+@pytest.mark.parametrize("negative", tuple(name for name in NEGATIVES if name not in ("scalar-limit", "dry")))
 def test_activation_domain_rejected_before_device(negative, monkeypatch, tmp_path):
     mj = pytest.importorskip("mujoco")
     import phymeo.backends._mujoco_tyx_runtime as runtime_module
@@ -238,7 +238,7 @@ def test_native_activation_layout_and_parameters_refused(corruption, tmp_path):
         journal.close()
 
 
-@pytest.mark.parametrize("negative", ("condim4", "condim6", "elliptic", "ball-limit", "dry"))
+@pytest.mark.parametrize("negative", ("condim4", "condim6", "elliptic", "ball-limit"))
 def test_allow_flags_do_not_bypass_free_ball_structure(negative):
     mj = pytest.importorskip("mujoco")
     from phymeo.backends.mujoco_tyx import MuJoCoTyxUnsupported

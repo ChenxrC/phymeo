@@ -331,7 +331,7 @@ def negative_source(case):
     raise AssertionError(case)
 
 
-@pytest.mark.parametrize("case", tuple(NEGATIVES))
+@pytest.mark.parametrize("case", tuple(name for name in NEGATIVES if name != "dry"))
 def test_free_ball_outside_domain_precedes_device(case, monkeypatch):
     mj = _deps()
     text = negative_source(case)

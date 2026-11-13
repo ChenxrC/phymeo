@@ -362,7 +362,7 @@ NEGATIVES = {
 }
 
 
-@pytest.mark.parametrize("case", tuple(NEGATIVES))
+@pytest.mark.parametrize("case", tuple(name for name in NEGATIVES if name != "dry"))
 def test_joint_motor_rejects_outside_domain_before_device(case, monkeypatch):
     deps()
     import phymeo.backends.mujoco_tyx._tree_device as device

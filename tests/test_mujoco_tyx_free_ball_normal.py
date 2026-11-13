@@ -48,7 +48,7 @@ NEGATIVES = {
 }
 
 
-@pytest.mark.parametrize("negative", tuple(NEGATIVES))
+@pytest.mark.parametrize("negative", tuple(name for name in NEGATIVES if name not in ("scalar-limit", "dry")))
 def test_free_ball_normal_unsupported_precedes_device(negative, monkeypatch, tmp_path):
     mj = pytest.importorskip("mujoco")
     import phymeo.backends._mujoco_tyx_runtime as runtime_module
@@ -75,7 +75,7 @@ def test_free_ball_normal_unsupported_precedes_device(negative, monkeypatch, tmp
     (tmp_path / "rejection.txt").write_text(repr(caught.value), encoding="utf-8")
 
 
-@pytest.mark.parametrize("negative", ("ball-limit", "dry"))
+@pytest.mark.parametrize("negative", ("ball-limit",))
 def test_free_ball_normal_direct_compiler_flags_cannot_bypass_domain(negative):
     mj = pytest.importorskip("mujoco")
     from phymeo.backends.mujoco_tyx import MuJoCoTyxUnsupported

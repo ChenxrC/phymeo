@@ -453,7 +453,9 @@ NEGATIVES = (
 )
 
 
-@pytest.mark.parametrize("feature", tuple(name for name in NEGATIVES if name not in ("scalar-limit", "scalar-dry")))
+@pytest.mark.parametrize(
+    "feature", tuple(name for name in NEGATIVES if name not in ("scalar-limit", "scalar-dry"))
+)
 def test_ball_scalar_unsupported_domains_reject_before_device(feature, monkeypatch):
     deps()
     from phymeo.backends.mujoco_tyx import MuJoCoTyxUnsupported, _tree_device

@@ -378,7 +378,11 @@ NEGATIVE_XML = (
 )
 
 
-@pytest.mark.parametrize("case", tuple(item for item in NEGATIVE_XML if item[0] not in ("dry", "scalar-limit")), ids=lambda case: case[0])
+@pytest.mark.parametrize(
+    "case",
+    tuple(item for item in NEGATIVE_XML if item[0] not in ("dry", "scalar-limit")),
+    ids=lambda case: case[0],
+)
 def test_ball_unsupported_domains_reject_before_device(case, monkeypatch):
     deps()
     from phymeo.backends.mujoco_tyx import _tree_device

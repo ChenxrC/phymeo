@@ -4,6 +4,7 @@ Inputs are frozen in p65-ball-scalar-constraints-cases-20261113.md.
 Independent decoders are copied from the accepted T4/R3 consumers at c550f9c4;
 this file has no checkout helper import and never advances TYX with native CPU.
 """
+
 import argparse
 import base64
 import copy
@@ -23,6 +24,8 @@ from pathlib import Path
 from unittest.mock import patch
 
 import numpy as np
+
+
 def require(condition, message):
     if not condition:
         raise AssertionError(message)
@@ -188,9 +191,20 @@ TOL = {
     "smooth_acceleration": (2e-3, 4e-3),
 }
 ROW_TOL = dict(rtol=5e-4, atol=4e-4)
-CASES = ("fixed-lower", "fixed-upper", "fixed-margin", "fixed-overlap", "free-filter-limits",
-         "dry-positive", "dry-negative", "dry-stick", "dry-zero", "mixed-normal-none",
-         "mixed-normal-filter", "mixed-pyramid-filter")
+CASES = (
+    "fixed-lower",
+    "fixed-upper",
+    "fixed-margin",
+    "fixed-overlap",
+    "free-filter-limits",
+    "dry-positive",
+    "dry-negative",
+    "dry-stick",
+    "dry-zero",
+    "mixed-normal-none",
+    "mixed-normal-filter",
+    "mixed-pyramid-filter",
+)
 SHORT = {"fixed-margin", "fixed-overlap", "dry-stick", "dry-zero"}
 RETAINED_OWNERS = []
 
@@ -241,7 +255,10 @@ def owned(runtime, journal):
             except BaseException as evidence:
                 failures.append(evidence)
         if failures:
-            raise BaseExceptionGroup("owner cleanup/evidence failure", ([primary] if primary else []) + failures)
+            raise BaseExceptionGroup(
+                "owner cleanup/evidence failure", ([primary] if primary else []) + failures
+            )
+
 
 INERTIA = '<inertial pos=".03 -.02 .04" mass=".7" diaginertia=".035 .045 .055" quat=".9659258262890683 .2588190451025207 0 0"/>'
 
@@ -252,7 +269,7 @@ def source(name):
     activation = free
     mixed = name.startswith("mixed-")
     limited = name.startswith("fixed-") or name == "free-filter-limits" or mixed
-    dry = .2 if (name.startswith("dry-") and name != "dry-zero") or mixed else 0.
+    dry = 0.2 if (name.startswith("dry-") and name != "dry-zero") or mixed else 0.0
     dim = 3 if name == "mixed-pyramid-filter" else 1
     attrs = 'limited="true" range="-.25 .25" margin=".03125"' if limited else 'limited="false"'
     hinge_attrs = attrs
@@ -260,7 +277,7 @@ def source(name):
         attrs = hinge_attrs = 'limited="true" range="-.00390625 .00390625" margin=".0078125"'
     if mixed:
         hinge_attrs = 'limited="true" range="-.015625 .25" margin=".03125"'
-    body = f'''<body name="ball-body" pos="{('0 0 0' if free else '0 0 .4')}">
+    body = f'''<body name="ball-body" pos="{("0 0 0" if free else "0 0 .4")}">
       <joint name="ball" type="ball" limited="false" frictionloss="{dry}"/>{INERTIA}
       <geom type="sphere" size=".035" contype="0" conaffinity="0"/>
       <body name="hinge-body" pos=".12 0 -.1"><joint name="hinge" type="hinge" axis="0 1 0" {hinge_attrs} frictionloss="{dry}"/>{INERTIA}
@@ -270,12 +287,20 @@ def source(name):
       <geom name="tip-shape" type="sphere" size=".1" contype="{int(mixed)}" conaffinity="{int(mixed)}"/>
       </body></body></body>'''
     if free:
-        body = '''<body name="free-body" pos="0 0 .4"><freejoint name="free"/>
+        body = (
+            """<body name="free-body" pos="0 0 .4"><freejoint name="free"/>
         <inertial pos=".04 -.03 .02" mass="2.6" diaginertia=".13 .19 .23" quat=".9659258262890683 0 .2588190451025207 0"/>
-        <geom type="sphere" size=".06" contype="0" conaffinity="0"/>''' + body + '</body>'
-    stateful = ('dyntype="filterexact" dynprm=".004" actearly="false" ctrllimited="true" ctrlrange="-.45 .45" actlimited="true" actrange="-.3 .3"' if activation else 'dyntype="none"')
-    slide_stateful = stateful.replace('.004', '.007').replace('actearly="false"', 'actearly="true"')
-    floor = '<geom name="floor" type="plane" size="2 2 .1"/>' if mixed else ''
+        <geom type="sphere" size=".06" contype="0" conaffinity="0"/>"""
+            + body
+            + "</body>"
+        )
+    stateful = (
+        'dyntype="filterexact" dynprm=".004" actearly="false" ctrllimited="true" ctrlrange="-.45 .45" actlimited="true" actrange="-.3 .3"'
+        if activation
+        else 'dyntype="none"'
+    )
+    slide_stateful = stateful.replace(".004", ".007").replace('actearly="false"', 'actearly="true"')
+    floor = '<geom name="floor" type="plane" size="2 2 .1"/>' if mixed else ""
     return f'''<mujoco model="ball-s-{name}"><compiler angle="radian" autolimits="true" fusestatic="false"/>
     <option timestep=".001" gravity="0 0 0" integrator="Euler" solver="Newton" iterations="128" tolerance="1e-10" jacobian="dense" cone="pyramidal"/>
     <default><joint armature=".003" damping=".04" solreflimit=".02 1" solimplimit=".8 .9 .002 .5 2" solreffriction=".02 1" solimpfriction=".8 .9 .002 .5 2"/>
@@ -290,74 +315,121 @@ def source(name):
 def negative_source(name):
     root = ET.fromstring(source("mixed-pyramid-filter"))
     ball = root.find(".//joint[@name='ball']")
-    if name == "ball-limit": ball.set("limited", "true"); ball.set("range", "0 .2")
-    elif name == "free-target": root.find("actuator/general").set("joint", "free")
-    elif name == "spring": ball.set("stiffness", ".1")
-    elif name == "elliptic": root.find("option").set("cone", "elliptic")
-    elif name in ("condim4", "condim6"): root.find("default/geom").set("condim", name[-1])
-    elif name == "cylinder": root.find(".//geom[@name='tip-shape']").set("type", "cylinder"); root.find(".//geom[@name='tip-shape']").set("size", ".1 .1")
-    elif name == "exclude": ET.SubElement(ET.SubElement(root,"contact"), "exclude", body1="ball-body", body2="tip")
-    elif name == "explicit-pair": ET.SubElement(ET.SubElement(root,"contact"), "pair", geom1="floor", geom2="tip-shape")
+    if name == "ball-limit":
+        ball.set("limited", "true")
+        ball.set("range", "0 .2")
+    elif name == "free-target":
+        root.find("actuator/general").set("joint", "free")
+    elif name == "spring":
+        ball.set("stiffness", ".1")
+    elif name == "elliptic":
+        root.find("option").set("cone", "elliptic")
+    elif name in ("condim4", "condim6"):
+        root.find("default/geom").set("condim", name[-1])
+    elif name == "cylinder":
+        root.find(".//geom[@name='tip-shape']").set("type", "cylinder")
+        root.find(".//geom[@name='tip-shape']").set("size", ".1 .1")
+    elif name == "exclude":
+        ET.SubElement(ET.SubElement(root, "contact"), "exclude", body1="ball-body", body2="tip")
+    elif name == "explicit-pair":
+        ET.SubElement(ET.SubElement(root, "contact"), "pair", geom1="floor", geom2="tip-shape")
     elif name == "multiple-free":
-        b = ET.SubElement(root.find("worldbody"),"body", name="another", pos="1 1 1")
-        ET.SubElement(b,"freejoint"); ET.SubElement(b,"geom",type="sphere",size=".03",contype="0",conaffinity="0")
-    else: raise ValueError(name)
-    return ET.tostring(root,encoding="unicode")
+        b = ET.SubElement(root.find("worldbody"), "body", name="another", pos="1 1 1")
+        ET.SubElement(b, "freejoint")
+        ET.SubElement(b, "geom", type="sphere", size=".03", contype="0", conaffinity="0")
+    else:
+        raise ValueError(name)
+    return ET.tostring(root, encoding="unicode")
 
 
 def initial(mj, model, name, slot):
     from phymeo.backends.mujoco_runtime import MuJoCoInitialState
+
     q, v = model.qpos0.copy(), np.zeros(model.nv)
-    sign = -.75 if slot else 1.
+    sign = -0.75 if slot else 1.0
     for jid, kind in enumerate(model.jnt_type):
         qa, da = int(model.jnt_qposadr[jid]), int(model.jnt_dofadr[jid])
         if kind == 0:
-            quat = np.array((1.,0.,0.,-.125)); q[qa+3:qa+7] = quat / np.linalg.norm(quat)
-            if slot: q[qa:qa+2] += (.03125,-.015625)
-            v[da:da+6] = sign*np.array((.07,-.05,.02,.09,-.06,.04))
+            quat = np.array((1.0, 0.0, 0.0, -0.125))
+            q[qa + 3 : qa + 7] = quat / np.linalg.norm(quat)
+            if slot:
+                q[qa : qa + 2] += (0.03125, -0.015625)
+            v[da : da + 6] = sign * np.array((0.07, -0.05, 0.02, 0.09, -0.06, 0.04))
         elif kind == 1:
-            quat = np.array((1.,0.,0.,.125)); q[qa:qa+4] = quat/np.linalg.norm(quat)
-            v[da:da+3] = sign*np.array((.15,-.2,.1))
-    ids = [mj.mj_name2id(model,mj.mjtObj.mjOBJ_JOINT,x) for x in ("hinge","slide")]
+            quat = np.array((1.0, 0.0, 0.0, 0.125))
+            q[qa : qa + 4] = quat / np.linalg.norm(quat)
+            v[da : da + 3] = sign * np.array((0.15, -0.2, 0.1))
+    ids = [mj.mj_name2id(model, mj.mjtObj.mjOBJ_JOINT, x) for x in ("hinge", "slide")]
     qa, da = model.jnt_qposadr[ids], model.jnt_dofadr[ids]
-    v[da] = sign*np.array((.125,-.1))
-    if name in ("fixed-lower","free-filter-limits"): q[qa]=(-15/64,15/64); v[da]=(1.,-1.)
-    elif name == "fixed-upper": q[qa]=(15/64,-15/64); v[da]=(-1.,1.)
-    elif name == "fixed-margin": q[qa]=(-7/32,7/32); v[da]=(.125,-.125)
-    elif name == "fixed-overlap": v[da]=(1/32,-1/32)
-    elif name == "dry-negative": v *= -1
-    elif name == "dry-stick": v[:] = 0
-    act = np.resize(np.array((.12,-.08)), model.na)
-    return MuJoCoInitialState(q,v,act=act)
+    v[da] = sign * np.array((0.125, -0.1))
+    if name in ("fixed-lower", "free-filter-limits"):
+        q[qa] = (-15 / 64, 15 / 64)
+        v[da] = (1.0, -1.0)
+    elif name == "fixed-upper":
+        q[qa] = (15 / 64, -15 / 64)
+        v[da] = (-1.0, 1.0)
+    elif name == "fixed-margin":
+        q[qa] = (-7 / 32, 7 / 32)
+        v[da] = (0.125, -0.125)
+    elif name == "fixed-overlap":
+        v[da] = (1 / 32, -1 / 32)
+    elif name == "dry-negative":
+        v *= -1
+    elif name == "dry-stick":
+        v[:] = 0
+    act = np.resize(np.array((0.12, -0.08)), model.na)
+    return MuJoCoInitialState(q, v, act=act)
 
 
 def control(model, tick, slot=0, name=None):
     from phymeo.backends.mujoco_runtime import MuJoCoControl
-    phase = 1 if tick<8 else -1 if tick<16 else 0
-    ctrl = phase*(.08+.01*np.arange(model.nu)+.005*slot)
-    qforce = phase*.01*(np.arange(model.nv)+1)
-    wrench = np.zeros((model.nbody,6)); wrench[-1] = phase*np.array((.03,-.02,.04,.002,-.003,.001))
-    if name == "dry-stick": ctrl[:] = .01; qforce[:] = .005; wrench[:] = 0
-    if name is not None and name.startswith("mixed-") and tick>=16:
-        ctrl[:] = 0; qforce[:] = 0; wrench[:] = 0; qforce[-1] = 64.
+
+    phase = 1 if tick < 8 else -1 if tick < 16 else 0
+    ctrl = phase * (0.08 + 0.01 * np.arange(model.nu) + 0.005 * slot)
+    qforce = phase * 0.01 * (np.arange(model.nv) + 1)
+    wrench = np.zeros((model.nbody, 6))
+    wrench[-1] = phase * np.array((0.03, -0.02, 0.04, 0.002, -0.003, 0.001))
+    if name == "dry-stick":
+        ctrl[:] = 0.01
+        qforce[:] = 0.005
+        wrench[:] = 0
+    if name is not None and name.startswith("mixed-") and tick >= 16:
+        ctrl[:] = 0
+        qforce[:] = 0
+        wrench[:] = 0
+        qforce[-1] = 64.0
     # All native comparisons consume the exact FP32 storage values.
-    return MuJoCoControl(ctrl.astype(np.float32).astype(float),
-                         qfrc_applied=qforce.astype(np.float32).astype(float),
-                         xfrc_applied=wrench.astype(np.float32).astype(float))
+    return MuJoCoControl(
+        ctrl.astype(np.float32).astype(float),
+        qfrc_applied=qforce.astype(np.float32).astype(float),
+        xfrc_applied=wrench.astype(np.float32).astype(float),
+    )
 
 
 def fixture(name, mode, keys=KEYS, *, capacities=None, starts_override=None):
     import mujoco as mj
+
     from phymeo.backends.mujoco_runtime import MuJoCoRuntime
     from phymeo.builders.mujoco_compiler import compile_mujoco_xml
+
     require(mj.__version__ == "3.3.7", "fixed CPU oracle")
-    xml=source(name); model=mj.MjModel.from_xml_string(xml)
-    compiled=compile_mujoco_xml(xml,require_asset=False)
-    starts={key:initial(mj,model,name,i) for i,key in enumerate(keys)}
-    if starts_override is not None: starts=starts_override(mj,model,starts)
-    runtime=MuJoCoRuntime(compiled,mode=mode,implementation="tyx",world_keys=keys,
-                         initial_states=dict(reversed(tuple(starts.items()))),**(capacities or {}))
-    return mj,model,compiled,starts,runtime
+    xml = source(name)
+    model = mj.MjModel.from_xml_string(xml)
+    compiled = compile_mujoco_xml(xml, require_asset=False)
+    starts = {key: initial(mj, model, name, i) for i, key in enumerate(keys)}
+    if starts_override is not None:
+        starts = starts_override(mj, model, starts)
+    runtime = MuJoCoRuntime(
+        compiled,
+        mode=mode,
+        implementation="tyx",
+        world_keys=keys,
+        initial_states=dict(reversed(tuple(starts.items()))),
+        **(capacities or {}),
+    )
+    return mj, model, compiled, starts, runtime
+
+
 def analytic(model, entry, packet):
     """Independent MuJoCo 3.3.7 filter law and complete native JOINT moments."""
     offsets, columns, coefficients, ids = [0], [], [], []
@@ -467,9 +539,7 @@ def dense_native_moment(model, data):
 
 def check_transmission(row, entry, native):
     tr, expected = row.transmission, native["analytic"]
-    require(
-        tr.schema == native["transmission_schema"], "complete transmission schema"
-    )
+    require(tr.schema == native["transmission_schema"], "complete transmission schema")
     for name in ("ids", "gear", "row_offsets", "dof_indices", "moment"):
         np.testing.assert_array_equal(getattr(tr, name), expected[name])
     for name in ("clamped_control", "raw_force", "scalar_force", "generalized_force"):
@@ -690,8 +760,10 @@ def native_rows(mj, model, q, v, act, control, time=0.0, *, tiny=False):
         )
     np.testing.assert_allclose(j.T @ force, data.qfrc_constraint, rtol=1e-9, atol=1e-8)
     return dict(
-        native_input=native_state(data), act_dot=data.act_dot.copy(),
-        actuator_force=data.actuator_force.copy(), dense_moment=dense_native_moment(model, data),
+        native_input=native_state(data),
+        act_dot=data.act_dot.copy(),
+        actuator_force=data.actuator_force.copy(),
+        dense_moment=dense_native_moment(model, data),
         body_position=data.xpos.copy(),
         body_rotation=data.xmat.reshape(model.nbody, 3, 3).copy(),
         body_com=data.xipos.copy(),
@@ -1043,285 +1115,581 @@ def checkpoint_world_equal(left, right, index):
         )
 
 
-
 def native_fields(mj, model, entry, packet, *, tiny=False):
     result = native_rows(mj, model, entry.q, entry.v, entry.act, packet, entry.time, tiny=tiny)
-    result['analytic'] = analytic(model, entry, packet)
+    result["analytic"] = analytic(model, entry, packet)
     free = bool(np.any(model.jnt_type == 0))
-    result['transmission_schema'] = ('native-free-ball-joint-motor-transmission-v1' if free else 'native-joint-motor-transmission-v1')
-    result['actuation_schema'] = ('native-free-ball-joint-filterexact-actuation-v1' if free else 'native-joint-filterexact-actuation-v1')
-    successor = references(mj, model, {0:entry})[0]
+    result["transmission_schema"] = (
+        "native-free-ball-joint-motor-transmission-v1"
+        if free
+        else "native-joint-motor-transmission-v1"
+    )
+    result["actuation_schema"] = (
+        "native-free-ball-joint-filterexact-actuation-v1"
+        if free
+        else "native-joint-filterexact-actuation-v1"
+    )
+    successor = references(mj, model, {0: entry})[0]
     set_control(successor, packet)
     mj.mj_step(model, successor)
-    result['native_successor'] = native_state(successor)
+    result["native_successor"] = native_state(successor)
     return result
 
 
 def compare(row, before, after, packet, expected, model):
-    require(row.world == after.world and row.tick == after.tick == before.tick+1, 'world/tick')
-    require(row.input_time == before.time and row.output_time == after.time and row.h == H, 'clock')
-    exact(row.input_q, before.q, 'complete entry q'); exact(row.input_v, before.v, 'complete entry v')
-    exact(row.control, packet, 'requested control')
-    for field in ('ctrl','qfrc_applied','xfrc_applied'):
-        np.testing.assert_array_equal(getattr(row.stored_control, field), np.asarray(getattr(packet,field),np.float32))
-    if 'efc_ids' in row.raw_contact_fields:
-        audit=assert_receipt(row,expected,model)
+    require(row.world == after.world and row.tick == after.tick == before.tick + 1, "world/tick")
+    require(row.input_time == before.time and row.output_time == after.time and row.h == H, "clock")
+    exact(row.input_q, before.q, "complete entry q")
+    exact(row.input_v, before.v, "complete entry v")
+    exact(row.control, packet, "requested control")
+    for field in ("ctrl", "qfrc_applied", "xfrc_applied"):
+        np.testing.assert_array_equal(
+            getattr(row.stored_control, field), np.asarray(getattr(packet, field), np.float32)
+        )
+    if "efc_ids" in row.raw_contact_fields:
+        audit = assert_receipt(row, expected, model)
     else:
-        require(not row.contacts and not row.constraints and not expected['rows'], 'unconstrained route stays empty')
-        for field,(rtol,atol) in TOL.items():
-            np.testing.assert_allclose(getattr(row.dynamics,field),expected[field],rtol=rtol,atol=atol,err_msg=field)
-        for field in ('qacc','integration_acceleration'):
-            np.testing.assert_allclose(getattr(row,field),expected[field],rtol=2e-3,atol=4e-3)
-        np.testing.assert_array_equal(row.qfrc_constraint,0)
-        audit={}
-    np.testing.assert_allclose(row.qfrc_actuator,expected['qfrc_actuator'],**FORCE)
-    np.testing.assert_allclose(row.qfrc_actuator,expected['analytic']['generalized_force'],**FORCE)
-    transmission=getattr(row,'transmission',None)
-    if transmission is not None: check_transmission(row,before,expected)
+        require(
+            not row.contacts and not row.constraints and not expected["rows"],
+            "unconstrained route stays empty",
+        )
+        for field, (rtol, atol) in TOL.items():
+            np.testing.assert_allclose(
+                getattr(row.dynamics, field), expected[field], rtol=rtol, atol=atol, err_msg=field
+            )
+        for field in ("qacc", "integration_acceleration"):
+            np.testing.assert_allclose(getattr(row, field), expected[field], rtol=2e-3, atol=4e-3)
+        np.testing.assert_array_equal(row.qfrc_constraint, 0)
+        audit = {}
+    np.testing.assert_allclose(row.qfrc_actuator, expected["qfrc_actuator"], **FORCE)
+    np.testing.assert_allclose(
+        row.qfrc_actuator, expected["analytic"]["generalized_force"], **FORCE
+    )
+    transmission = getattr(row, "transmission", None)
+    if transmission is not None:
+        check_transmission(row, before, expected)
     if model.na:
-        require(after.act.shape==(model.na,), 'complete native activation shape')
+        require(after.act.shape == (model.na,), "complete native activation shape")
         if transmission is not None:
-            check_activation(row,before,after,expected)
+            check_activation(row, before, after, expected)
         else:
-            activation=row.actuation
-            exact(activation.input_act.astype(float),before.act,'scalar actual input activation')
-            exact(activation.output_act.astype(float),after.act,'scalar actual accepted activation')
-            for field in ('output_act','activation_derivative','integration_derivative','force_input'):
-                np.testing.assert_allclose(getattr(activation,field),expected['analytic'][field],**ACT)
-            np.testing.assert_allclose(activation.activation_derivative,expected['act_dot'],**ACT)
-            for field in ('raw_force','scalar_force','generalized_force'):
-                np.testing.assert_allclose(getattr(activation,field),expected['analytic'][field],**FORCE)
+            activation = row.actuation
+            exact(activation.input_act.astype(float), before.act, "scalar actual input activation")
+            exact(
+                activation.output_act.astype(float), after.act, "scalar actual accepted activation"
+            )
+            for field in (
+                "output_act",
+                "activation_derivative",
+                "integration_derivative",
+                "force_input",
+            ):
+                np.testing.assert_allclose(
+                    getattr(activation, field), expected["analytic"][field], **ACT
+                )
+            np.testing.assert_allclose(activation.activation_derivative, expected["act_dot"], **ACT)
+            for field in ("raw_force", "scalar_force", "generalized_force"):
+                np.testing.assert_allclose(
+                    getattr(activation, field), expected["analytic"][field], **FORCE
+                )
     else:
-        require(after.act.shape==(0,), 'NONE activation empty')
-    for target in (expected['native_successor'],expected['continuous']):
-        np.testing.assert_allclose(after.q,target['q'],rtol=0,atol=Q_ATOL)
-        np.testing.assert_allclose(after.v,target['v'],rtol=0,atol=V_ATOL)
-        np.testing.assert_allclose(after.act,target['act'],**ACT)
-        require(abs(after.time-target['time'])<=TIME_ATOL,'native time')
-    for joint,kind in enumerate(model.jnt_type):
-        if kind in (0,1):
-            qa=int(model.jnt_qposadr[joint])+(3 if kind==0 else 0)
-            require(abs(float(after.q[qa:qa+4] @ after.q[qa:qa+4])-1)<=8*np.finfo(np.float32).eps,'native quaternion gate')
-    np.testing.assert_allclose(after.v,before.v+float(np.float32(H))*row.integration_acceleration,rtol=0,atol=3e-6)
+        require(after.act.shape == (0,), "NONE activation empty")
+    for target in (expected["native_successor"], expected["continuous"]):
+        np.testing.assert_allclose(after.q, target["q"], rtol=0, atol=Q_ATOL)
+        np.testing.assert_allclose(after.v, target["v"], rtol=0, atol=V_ATOL)
+        np.testing.assert_allclose(after.act, target["act"], **ACT)
+        require(abs(after.time - target["time"]) <= TIME_ATOL, "native time")
+    for joint, kind in enumerate(model.jnt_type):
+        if kind in (0, 1):
+            qa = int(model.jnt_qposadr[joint]) + (3 if kind == 0 else 0)
+            require(
+                abs(float(after.q[qa : qa + 4] @ after.q[qa : qa + 4]) - 1)
+                <= 8 * np.finfo(np.float32).eps,
+                "native quaternion gate",
+            )
+    np.testing.assert_allclose(
+        after.v, before.v + float(np.float32(H)) * row.integration_acceleration, rtol=0, atol=3e-6
+    )
     # Include ALL noncontact rows in power, not merely body contact forces.
-    power=sum(r.force*float(r.jacobian@before.v) for r in row.constraints)
-    np.testing.assert_allclose(power,float(row.qfrc_constraint@before.v),rtol=5e-5,atol=5e-5)
+    power = sum(r.force * float(r.jacobian @ before.v) for r in row.constraints)
+    np.testing.assert_allclose(power, float(row.qfrc_constraint @ before.v), rtol=5e-5, atol=5e-5)
     for contact in row.contacts:
-        side_power=sum(float(getattr(contact,f'wrench_on_body{side}_world') @ (row.dynamics.jacobian_com[body] @ before.v))
-                       for side,body in enumerate(contact.body_ids,1))
-        np.testing.assert_allclose(side_power,float(contact.wrench_contact_frame @ (contact.jacobian @ before.v)),rtol=5e-5,atol=5e-5)
+        side_power = sum(
+            float(
+                getattr(contact, f"wrench_on_body{side}_world")
+                @ (row.dynamics.jacobian_com[body] @ before.v)
+            )
+            for side, body in enumerate(contact.body_ids, 1)
+        )
+        np.testing.assert_allclose(
+            side_power,
+            float(contact.wrench_contact_frame @ (contact.jacobian @ before.v)),
+            rtol=5e-5,
+            atol=5e-5,
+        )
     return audit
 
 
 def advance(runtime, mj, model, packets, refs, journal, label, *, tiny=False):
-    full_entry,entry=observations(runtime)
-    before=dict(runtime.counters)
-    journal.emit('input',label=label,full_entry=full_entry,entry=entry,requested=packets,
-                 revision=runtime.checkpoint_revision,counters=before)
-    expected={key:native_fields(mj,model,state,packets[key],tiny=tiny) for key,state in entry.items()}
+    full_entry, entry = observations(runtime)
+    before = dict(runtime.counters)
+    journal.emit(
+        "input",
+        label=label,
+        full_entry=full_entry,
+        entry=entry,
+        requested=packets,
+        revision=runtime.checkpoint_revision,
+        counters=before,
+    )
+    expected = {
+        key: native_fields(mj, model, state, packets[key], tiny=tiny)
+        for key, state in entry.items()
+    }
     for key in runtime.world_keys:
-        set_control(refs[key],packets[key]); mj.mj_step(model,refs[key])
-        expected[key]['continuous']=native_state(refs[key])
+        set_control(refs[key], packets[key])
+        mj.mj_step(model, refs[key])
+        expected[key]["continuous"] = native_state(refs[key])
     runtime.set_controls(packets)
-    journal.emit('attempt',label=label,native=expected,h=H,revision=runtime.checkpoint_revision)
-    def forbidden(*args,**kwargs): raise AssertionError('CPU advancement inside actual TYX step')
+    journal.emit("attempt", label=label, native=expected, h=H, revision=runtime.checkpoint_revision)
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError("CPU advancement inside actual TYX step")
+
     try:
         with ExitStack() as guard:
-            for symbol in ('mj_step','mj_step1','mj_step2','mj_forward'):
-                guard.enter_context(patch.object(mj,symbol,forbidden))
-            accepted=runtime.step(H)
-        journal.emit('physics-return',label=label,accepted=accepted,counters=dict(runtime.counters))
-        full,output=observations(runtime)
-        journal.emit('step',label=label,full=full,state=output,revision=runtime.checkpoint_revision,counters=dict(runtime.counters))
-        require(accepted==dict.fromkeys(runtime.world_keys,True),'all worlds accepted')
-        require(runtime.counters['completed_steps']==before['completed_steps']+1,'one physical batch step')
-        require(runtime.counters['accepted_world_steps']==before['accepted_world_steps']+len(runtime.world_keys),'one step per world')
-        require(runtime.counters['completed_kernels']>before['completed_kernels'],'actual device launches')
-        audits={key:compare(output[key].last_step,entry[key],output[key],packets[key],expected[key],model) for key in runtime.world_keys}
-        journal.emit('independent-audit',label=label,audits=audits)
+            for symbol in ("mj_step", "mj_step1", "mj_step2", "mj_forward"):
+                guard.enter_context(patch.object(mj, symbol, forbidden))
+            accepted = runtime.step(H)
+        journal.emit(
+            "physics-return", label=label, accepted=accepted, counters=dict(runtime.counters)
+        )
+        full, output = observations(runtime)
+        journal.emit(
+            "step",
+            label=label,
+            full=full,
+            state=output,
+            revision=runtime.checkpoint_revision,
+            counters=dict(runtime.counters),
+        )
+        require(accepted == dict.fromkeys(runtime.world_keys, True), "all worlds accepted")
+        require(
+            runtime.counters["completed_steps"] == before["completed_steps"] + 1,
+            "one physical batch step",
+        )
+        require(
+            runtime.counters["accepted_world_steps"]
+            == before["accepted_world_steps"] + len(runtime.world_keys),
+            "one step per world",
+        )
+        require(
+            runtime.counters["completed_kernels"] > before["completed_kernels"],
+            "actual device launches",
+        )
+        audits = {
+            key: compare(
+                output[key].last_step, entry[key], output[key], packets[key], expected[key], model
+            )
+            for key in runtime.world_keys
+        }
+        journal.emit("independent-audit", label=label, audits=audits)
         return output
     except BaseException as primary:
         try:
-            journal.emit('step-failure',label=label,error=repr(primary),traceback=traceback.format_exc(),
-                         published=runtime.integration_snapshot(),counters=dict(runtime.counters))
+            journal.emit(
+                "step-failure",
+                label=label,
+                error=repr(primary),
+                traceback=traceback.format_exc(),
+                published=runtime.integration_snapshot(),
+                counters=dict(runtime.counters),
+            )
         except BaseException as secondary:
-            raise BaseExceptionGroup('original step and evidence failure',[primary,secondary])
+            raise BaseExceptionGroup("original step and evidence failure", [primary, secondary])
         raise
 
 
-def check_capabilities(runtime,model,name):
-    caps=runtime.capabilities
-    dry=tuple(map(int,np.flatnonzero(model.dof_frictionloss>0)))
-    limited=tuple(map(int,np.flatnonzero(model.jnt_limited)))
-    if name=='dry-zero':
-        require('constraints' not in caps['domain'],'zero dry keeps old no-contact domain')
+def check_capabilities(runtime, model, name):
+    caps = runtime.capabilities
+    dry = tuple(map(int, np.flatnonzero(model.dof_frictionloss > 0)))
+    limited = tuple(map(int, np.flatnonzero(model.jnt_limited)))
+    if name == "dry-zero":
+        require("constraints" not in caps["domain"], "zero dry keeps old no-contact domain")
         return
-    free=bool(np.any(model.jnt_type==0)); contact=name.startswith('mixed-')
-    expected=('free' if free else 'fixed')+'-ball-'+('mixed-contact-joint-constraints' if contact else 'joint-constraints')+('-filterexact' if model.na else '')+'-v1'
-    require(caps['domain']==expected,'explicit composed domain')
-    require(caps['joint_limits_supported']==bool(limited) and caps['scalar_joint_limits_supported']==bool(limited),'scalar limits capability')
-    require(not caps['ball_angular_limits_supported'] and not caps['g1_supported'],'no broadened BALL angular/G1 claim')
-    require(caps['dry_friction_supported']==bool(dry) and caps['mixed_articulated_constraints_supported'],'dry and mixed capability')
-    require(caps['floating_mixed_constraints_supported']==free,'FREE capability')
-    require(tuple(caps['native_dry_dof_ids'])==dry,'complete native dry addresses')
-    require(tuple(caps['native_scalar_limit_joint_ids'])==limited,'complete scalar joint addresses')
-    require(caps['dry_constraint_rows']==len(dry) and caps['scalar_limited_joints']==len(limited),'static row census')
-    dimensions=(3,) if name=='mixed-pyramid-filter' else (1,) if contact else ()
-    require(tuple(caps['contact_dimensions'])==dimensions,'declared dimensions')
-    slots=int(caps['candidate_slots']); require(slots==(1 if contact else 0),'complete static candidates')
-    bound=len(dry)+2*len(limited)+slots*(4 if dimensions==(3,) else 1)
-    require(caps['conservative_efc_bound']==bound,'diagnostic E bound')
+    free = bool(np.any(model.jnt_type == 0))
+    contact = name.startswith("mixed-")
+    expected = (
+        ("free" if free else "fixed")
+        + "-ball-"
+        + ("mixed-contact-joint-constraints" if contact else "joint-constraints")
+        + ("-filterexact" if model.na else "")
+        + "-v1"
+    )
+    require(caps["domain"] == expected, "explicit composed domain")
+    require(
+        caps["joint_limits_supported"] == bool(limited)
+        and caps["scalar_joint_limits_supported"] == bool(limited),
+        "scalar limits capability",
+    )
+    require(
+        not caps["ball_angular_limits_supported"] and not caps["g1_supported"],
+        "no broadened BALL angular/G1 claim",
+    )
+    require(
+        caps["dry_friction_supported"] == bool(dry)
+        and caps["mixed_articulated_constraints_supported"],
+        "dry and mixed capability",
+    )
+    require(caps["floating_mixed_constraints_supported"] == free, "FREE capability")
+    require(tuple(caps["native_dry_dof_ids"]) == dry, "complete native dry addresses")
+    require(
+        tuple(caps["native_scalar_limit_joint_ids"]) == limited, "complete scalar joint addresses"
+    )
+    require(
+        caps["dry_constraint_rows"] == len(dry) and caps["scalar_limited_joints"] == len(limited),
+        "static row census",
+    )
+    dimensions = (3,) if name == "mixed-pyramid-filter" else (1,) if contact else ()
+    require(tuple(caps["contact_dimensions"]) == dimensions, "declared dimensions")
+    slots = int(caps["candidate_slots"])
+    require(slots == (1 if contact else 0), "complete static candidates")
+    bound = len(dry) + 2 * len(limited) + slots * (4 if dimensions == (3,) else 1)
+    require(caps["conservative_efc_bound"] == bound, "diagnostic E bound")
 
 
 def light(row):
-    return dict(limits=tuple((r.source_id,r.side_or_edge) for r in row.constraints if r.constraint_type==3),
-                dry=tuple((r.source_id,r.force,float(r.jacobian@row.input_v),r.lower,r.upper) for r in row.constraints if r.constraint_type==1),
-                contacts=len(row.contacts),active_contacts=sum(c.active for c in row.contacts),
-                force=float(sum(c.normal_force for c in row.contacts)),q=np.array(row.input_q),v=np.array(row.input_v))
+    return dict(
+        limits=tuple(
+            (r.source_id, r.side_or_edge) for r in row.constraints if r.constraint_type == 3
+        ),
+        dry=tuple(
+            (r.source_id, r.force, float(r.jacobian @ row.input_v), r.lower, r.upper)
+            for r in row.constraints
+            if r.constraint_type == 1
+        ),
+        contacts=len(row.contacts),
+        active_contacts=sum(c.active for c in row.contacts),
+        force=float(sum(c.normal_force for c in row.contacts)),
+        q=np.array(row.input_q),
+        v=np.array(row.input_v),
+    )
 
 
 def events(name, histories, model, mj):
-    hinge=mj.mj_name2id(model,mj.mjtObj.mjOBJ_JOINT,'hinge')
-    slide=mj.mj_name2id(model,mj.mjtObj.mjOBJ_JOINT,'slide')
-    for key,history in histories.items():
-        if name in ('fixed-lower','fixed-upper','free-filter-limits'):
-            initial_sides=((hinge,1),(slide,-1)) if name=='fixed-upper' else ((hinge,-1),(slide,1))
-            require(set(initial_sides)<=set(history[0]['limits']),f'{key}: initial two actual limit sides')
-            for side in initial_sides: require(any(side not in point['limits'] for point in history[1:]),f'{key}: actual side release {side}')
-        elif name=='fixed-margin': require(all(not point['limits'] for point in history),'exact boundary and inward successor have no limit rows')
-        elif name=='fixed-overlap': require(set(history[0]['limits'])=={(hinge,-1),(hinge,1),(slide,-1),(slide,1)},'both real scalar sides')
-        if name.startswith('dry-'):
-            if name=='dry-zero': require(all(not point['dry'] for point in history),'no zero dry rows')
+    hinge = mj.mj_name2id(model, mj.mjtObj.mjOBJ_JOINT, "hinge")
+    slide = mj.mj_name2id(model, mj.mjtObj.mjOBJ_JOINT, "slide")
+    for key, history in histories.items():
+        if name in ("fixed-lower", "fixed-upper", "free-filter-limits"):
+            initial_sides = (
+                ((hinge, 1), (slide, -1)) if name == "fixed-upper" else ((hinge, -1), (slide, 1))
+            )
+            require(
+                set(initial_sides) <= set(history[0]["limits"]),
+                f"{key}: initial two actual limit sides",
+            )
+            for side in initial_sides:
+                require(
+                    any(side not in point["limits"] for point in history[1:]),
+                    f"{key}: actual side release {side}",
+                )
+        elif name == "fixed-margin":
+            require(
+                all(not point["limits"] for point in history),
+                "exact boundary and inward successor have no limit rows",
+            )
+        elif name == "fixed-overlap":
+            require(
+                set(history[0]["limits"]) == {(hinge, -1), (hinge, 1), (slide, -1), (slide, 1)},
+                "both real scalar sides",
+            )
+        if name.startswith("dry-"):
+            if name == "dry-zero":
+                require(all(not point["dry"] for point in history), "no zero dry rows")
             else:
-                require(all(len(point['dry'])==5 for point in history),'all three BALL and two scalar dry rows')
-                work=sum(sum(force*velocity for _,force,velocity,_,_ in point['dry']) for point in history)
-                require(work<=5e-5,'aggregate signed dry work')
-                if name=='dry-stick':
-                    require(any(abs(force)>1e-6 and lower+2e-7<force<upper-2e-7 for _,force,_,lower,upper in history[0]['dry']),'nonzero interior dry force')
-                else: require(any(abs(force)>=.2-2e-7 for point in history for _,force,_,_,_ in point['dry']),'actual bounded slip')
-        if name.startswith('mixed-'):
-            require(history[0]['active_contacts']>0 and history[0]['limits'] and history[0]['dry'],'initial actual contact/limit/dry coexist')
-            require(any(point['active_contacts']==0 for point in history[16:]),'same trajectory contact unload')
+                require(
+                    all(len(point["dry"]) == 5 for point in history),
+                    "all three BALL and two scalar dry rows",
+                )
+                work = sum(
+                    sum(force * velocity for _, force, velocity, _, _ in point["dry"])
+                    for point in history
+                )
+                require(work <= 5e-5, "aggregate signed dry work")
+                if name == "dry-stick":
+                    require(
+                        any(
+                            abs(force) > 1e-6 and lower + 2e-7 < force < upper - 2e-7
+                            for _, force, _, lower, upper in history[0]["dry"]
+                        ),
+                        "nonzero interior dry force",
+                    )
+                else:
+                    require(
+                        any(
+                            abs(force) >= 0.2 - 2e-7
+                            for point in history
+                            for _, force, _, _, _ in point["dry"]
+                        ),
+                        "actual bounded slip",
+                    )
+        if name.startswith("mixed-"):
+            require(
+                history[0]["active_contacts"] > 0 and history[0]["limits"] and history[0]["dry"],
+                "initial actual contact/limit/dry coexist",
+            )
+            require(
+                any(point["active_contacts"] == 0 for point in history[16:]),
+                "same trajectory contact unload",
+            )
 
 
-def continuous(name,mode,journal):
-    journal.emit('fixture-attempt',name=name,mode=mode,source=source(name))
-    mj,model,_,starts,runtime=fixture(name,mode)
-    with owned(runtime,journal):
-        journal.emit('fixture',name=name,starts=starts,capabilities=dict(runtime.capabilities),counters=dict(runtime.counters))
-        check_capabilities(runtime,model,name)
-        refs=references(mj,model,runtime.integration_snapshot())
-        histories={k:[] for k in runtime.world_keys}
-        native_histories={k:[] for k in runtime.world_keys}
-        count=2 if name in SHORT else 24
+def continuous(name, mode, journal):
+    journal.emit("fixture-attempt", name=name, mode=mode, source=source(name))
+    mj, model, _, starts, runtime = fixture(name, mode)
+    with owned(runtime, journal):
+        journal.emit(
+            "fixture",
+            name=name,
+            starts=starts,
+            capabilities=dict(runtime.capabilities),
+            counters=dict(runtime.counters),
+        )
+        check_capabilities(runtime, model, name)
+        refs = references(mj, model, runtime.integration_snapshot())
+        histories = {k: [] for k in runtime.world_keys}
+        native_histories = {k: [] for k in runtime.world_keys}
+        count = 2 if name in SHORT else 24
         for tick in range(count):
-            packets={k:control(model,tick,i,name) for i,k in reversed(tuple(enumerate(runtime.world_keys)))}
+            packets = {
+                k: control(model, tick, i, name)
+                for i, k in reversed(tuple(enumerate(runtime.world_keys)))
+            }
             # Native event records come from the independent continuous state at
             # its actual entry, not device fields or a native reset each step.
             for key in runtime.world_keys:
-                state=type('Entry',(),dict(q=refs[key].qpos.copy(),v=refs[key].qvel.copy(),act=refs[key].act.copy(),time=float(refs[key].time)))()
-                n=native_rows(mj,model,state.q,state.v,state.act,packets[key],state.time)
-                native_histories[key].append(dict(limits=tuple((r['source_id'],r['side_or_edge']) for r in n['rows'] if r['constraint_type']==3),
-                    dry=tuple((r['source_id'],r['force'],r['velocity'],r['lower'],r['upper']) for r in n['rows'] if r['constraint_type']==1),
-                    active_contacts=sum(c['active'] for c in n['contacts'])))
-            output=advance(runtime,mj,model,packets,refs,journal,f'{name}:{tick}',tiny=tick==0 and name in ('fixed-margin','fixed-overlap','dry-stick'))
-            for key,state in output.items(): histories[key].append(light(state.last_step))
-        native_error=None
-        try: events(name,native_histories,model,mj)
-        except AssertionError as error: native_error=repr(error)
-        journal.emit('events',name=name,actual=histories,native=native_histories,native_event_failure=native_error)
-        if native_error is not None: raise AssertionError('predeclared native event hypothesis failed: '+native_error)
-        events(name,histories,model,mj)
-        return dict(name=name,batch_steps=count,world_steps=count*len(runtime.world_keys))
+                state = type(
+                    "Entry",
+                    (),
+                    dict(
+                        q=refs[key].qpos.copy(),
+                        v=refs[key].qvel.copy(),
+                        act=refs[key].act.copy(),
+                        time=float(refs[key].time),
+                    ),
+                )()
+                n = native_rows(mj, model, state.q, state.v, state.act, packets[key], state.time)
+                native_histories[key].append(
+                    dict(
+                        limits=tuple(
+                            (r["source_id"], r["side_or_edge"])
+                            for r in n["rows"]
+                            if r["constraint_type"] == 3
+                        ),
+                        dry=tuple(
+                            (r["source_id"], r["force"], r["velocity"], r["lower"], r["upper"])
+                            for r in n["rows"]
+                            if r["constraint_type"] == 1
+                        ),
+                        active_contacts=sum(c["active"] for c in n["contacts"]),
+                    )
+                )
+            output = advance(
+                runtime,
+                mj,
+                model,
+                packets,
+                refs,
+                journal,
+                f"{name}:{tick}",
+                tiny=tick == 0 and name in ("fixed-margin", "fixed-overlap", "dry-stick"),
+            )
+            for key, state in output.items():
+                histories[key].append(light(state.last_step))
+        native_error = None
+        try:
+            events(name, native_histories, model, mj)
+        except AssertionError as error:
+            native_error = repr(error)
+        journal.emit(
+            "events",
+            name=name,
+            actual=histories,
+            native=native_histories,
+            native_event_failure=native_error,
+        )
+        if native_error is not None:
+            raise AssertionError("predeclared native event hypothesis failed: " + native_error)
+        events(name, histories, model, mj)
+        return dict(name=name, batch_steps=count, world_steps=count * len(runtime.world_keys))
 
 
-def original(xml,mode,journal,*,label):
+def original(xml, mode, journal, *, label):
     import mujoco as mj
+
+    from phymeo.backends.mujoco_runtime import MuJoCoControl, MuJoCoRuntime
     from phymeo.builders.mujoco_compiler import compile_mujoco_xml
-    from phymeo.backends.mujoco_runtime import MuJoCoRuntime,MuJoCoControl
-    require(mj.__version__=='3.3.7','native pin')
-    model=mj.MjModel.from_xml_string(xml)
+
+    require(mj.__version__ == "3.3.7", "native pin")
+    model = mj.MjModel.from_xml_string(xml)
     # These exact original sources all declared h=.001; no source reserialization.
-    require(model.opt.timestep==H,'original timestep unchanged')
-    compiled=compile_mujoco_xml(xml,require_asset=False)
-    journal.emit('original-source',label=label,source=xml,sha256=hashlib.sha256(xml.encode()).hexdigest())
-    runtime=MuJoCoRuntime(compiled,mode=mode,implementation='tyx',world_keys=(3,))
-    with owned(runtime,journal):
-        refs=references(mj,model,runtime.integration_snapshot())
-        packet=MuJoCoControl(np.zeros(model.nu),qfrc_applied=np.zeros(model.nv),xfrc_applied=np.zeros((model.nbody,6)))
-        for tick in range(2): advance(runtime,mj,model,{3:packet},refs,journal,f'{label}:{tick}')
+    require(model.opt.timestep == H, "original timestep unchanged")
+    compiled = compile_mujoco_xml(xml, require_asset=False)
+    journal.emit(
+        "original-source", label=label, source=xml, sha256=hashlib.sha256(xml.encode()).hexdigest()
+    )
+    runtime = MuJoCoRuntime(compiled, mode=mode, implementation="tyx", world_keys=(3,))
+    with owned(runtime, journal):
+        refs = references(mj, model, runtime.integration_snapshot())
+        packet = MuJoCoControl(
+            np.zeros(model.nu),
+            qfrc_applied=np.zeros(model.nv),
+            xfrc_applied=np.zeros((model.nbody, 6)),
+        )
+        for tick in range(2):
+            advance(runtime, mj, model, {3: packet}, refs, journal, f"{label}:{tick}")
 
 
-def lifecycle(name,mode,journal,keys=KEYS,output_path=None):
+def lifecycle(name, mode, journal, keys=KEYS, output_path=None):
     from phymeo.backends.mujoco_checkpoint import MuJoCoTyxCheckpoint
-    mj,model,_,starts,runtime=fixture(name,mode,keys)
-    with owned(runtime,journal):
-        refs=references(mj,model,runtime.integration_snapshot())
-        for tick in range(3): advance(runtime,mj,model,{k:control(model,tick,i,name) for i,k in enumerate(keys)},refs,journal,'warm')
-        held={k:control(model,8,i,name) for i,k in enumerate(keys)}; runtime.set_controls(held)
-        saved_state=runtime.integration_snapshot(); raw=runtime.checkpoint().to_bytes()
-        capsule=MuJoCoTyxCheckpoint.from_bytes(raw)
-        journal.emit('checkpoint',raw=raw,state=saved_state)
-        if output_path is not None: (Path(output_path)/(name+'-checkpoint.bin')).write_bytes(raw)
-        saved_refs={k:copy.copy(value) for k,value in refs.items()}
-        with owned(runtime.clone(),journal) as clone:
-            exact(clone.integration_snapshot(),saved_state,'clone complete state')
-            a=advance(runtime,mj,model,held,refs,journal,'A')
-            clone_a=advance(clone,mj,model,held,{k:copy.copy(value) for k,value in saved_refs.items()},journal,'clone-A')
-            exact(a,clone_a,'clone actual successor')
-        revision=runtime.checkpoint_revision
-        runtime.restore(capsule,expected_revision=revision)
-        exact(runtime.integration_snapshot(),saved_state,'complete restore')
-        retained=runtime.checkpoint().to_bytes()
-        with expect_raises(ValueError): runtime.restore(capsule,expected_revision=revision)
-        require(runtime.checkpoint().to_bytes()==retained,'stale CAS leaves banks unchanged')
-        refs={k:copy.copy(value) for k,value in saved_refs.items()}
-        b=advance(runtime,mj,model,held,refs,journal,'restore-B'); exact(a,b,'A/B actual continuation')
-        checkpoint_before=runtime.checkpoint(); runtime.reset((keys[-1],))
-        after=runtime.integration_snapshot()
-        for key in keys[:-1]: exact(after[key],b[key],'unselected history'); checkpoint_world_equal(checkpoint_before,runtime.checkpoint(),keys.index(key))
-        require(after[keys[-1]].tick==0 and after[keys[-1]].last_step is None,'selected reset')
-        for field in ('q','v','act'): np.testing.assert_array_equal(getattr(after[keys[-1]],field),np.asarray(getattr(starts[keys[-1]],field),np.float32))
-        refs[keys[-1]]=references(mj,model,{keys[-1]:after[keys[-1]]})[keys[-1]]
-        journal.emit('partial-reset',state=after,checkpoint=runtime.checkpoint().to_bytes())
-        for tick in (16,17): advance(runtime,mj,model,{k:control(model,tick,i,name) for i,k in enumerate(keys)},refs,journal,'reset-successor')
-        return dict(name=name,batch_steps=8,world_steps=8*len(keys))
+
+    mj, model, _, starts, runtime = fixture(name, mode, keys)
+    with owned(runtime, journal):
+        refs = references(mj, model, runtime.integration_snapshot())
+        for tick in range(3):
+            advance(
+                runtime,
+                mj,
+                model,
+                {k: control(model, tick, i, name) for i, k in enumerate(keys)},
+                refs,
+                journal,
+                "warm",
+            )
+        held = {k: control(model, 8, i, name) for i, k in enumerate(keys)}
+        runtime.set_controls(held)
+        saved_state = runtime.integration_snapshot()
+        raw = runtime.checkpoint().to_bytes()
+        capsule = MuJoCoTyxCheckpoint.from_bytes(raw)
+        journal.emit("checkpoint", raw=raw, state=saved_state)
+        if output_path is not None:
+            (Path(output_path) / (name + "-checkpoint.bin")).write_bytes(raw)
+        saved_refs = {k: copy.copy(value) for k, value in refs.items()}
+        with owned(runtime.clone(), journal) as clone:
+            exact(clone.integration_snapshot(), saved_state, "clone complete state")
+            a = advance(runtime, mj, model, held, refs, journal, "A")
+            clone_a = advance(
+                clone,
+                mj,
+                model,
+                held,
+                {k: copy.copy(value) for k, value in saved_refs.items()},
+                journal,
+                "clone-A",
+            )
+            exact(a, clone_a, "clone actual successor")
+        revision = runtime.checkpoint_revision
+        runtime.restore(capsule, expected_revision=revision)
+        exact(runtime.integration_snapshot(), saved_state, "complete restore")
+        retained = runtime.checkpoint().to_bytes()
+        with expect_raises(ValueError):
+            runtime.restore(capsule, expected_revision=revision)
+        require(runtime.checkpoint().to_bytes() == retained, "stale CAS leaves banks unchanged")
+        refs = {k: copy.copy(value) for k, value in saved_refs.items()}
+        b = advance(runtime, mj, model, held, refs, journal, "restore-B")
+        exact(a, b, "A/B actual continuation")
+        checkpoint_before = runtime.checkpoint()
+        runtime.reset((keys[-1],))
+        after = runtime.integration_snapshot()
+        for key in keys[:-1]:
+            exact(after[key], b[key], "unselected history")
+            checkpoint_world_equal(checkpoint_before, runtime.checkpoint(), keys.index(key))
+        require(after[keys[-1]].tick == 0 and after[keys[-1]].last_step is None, "selected reset")
+        for field in ("q", "v", "act"):
+            np.testing.assert_array_equal(
+                getattr(after[keys[-1]], field),
+                np.asarray(getattr(starts[keys[-1]], field), np.float32),
+            )
+        refs[keys[-1]] = references(mj, model, {keys[-1]: after[keys[-1]]})[keys[-1]]
+        journal.emit("partial-reset", state=after, checkpoint=runtime.checkpoint().to_bytes())
+        for tick in (16, 17):
+            advance(
+                runtime,
+                mj,
+                model,
+                {k: control(model, tick, i, name) for i, k in enumerate(keys)},
+                refs,
+                journal,
+                "reset-successor",
+            )
+        return dict(name=name, batch_steps=8, world_steps=8 * len(keys))
 
 
 def main():
-    parser=argparse.ArgumentParser()
-    parser.add_argument('--mode',choices=('interpret','cuda'),required=True)
-    parser.add_argument('--installed-root',type=Path,required=True)
-    parser.add_argument('--output',type=Path,required=True)
-    parser.add_argument('--case',choices=CASES)
-    args=parser.parse_args()
-    require(args.output.is_absolute() and not args.output.exists(),'fresh absolute output')
-    require(args.installed_root.is_absolute(),'absolute installed root')
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--mode", choices=("interpret", "cuda"), required=True)
+    parser.add_argument("--installed-root", type=Path, required=True)
+    parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--case", choices=CASES)
+    args = parser.parse_args()
+    require(args.output.is_absolute() and not args.output.exists(), "fresh absolute output")
+    require(args.installed_root.is_absolute(), "absolute installed root")
     args.output.mkdir(parents=True)
-    result=dict(schema='ball-s-installed-v1',status='FAILED',mode=args.mode,
-                selected=[args.case] if args.case else list(CASES),closed=False)
-    journal=Journal(args.output/'ball-constraints.jsonl.gz'); failures=[]
+    result = dict(
+        schema="ball-s-installed-v1",
+        status="FAILED",
+        mode=args.mode,
+        selected=[args.case] if args.case else list(CASES),
+        closed=False,
+    )
+    journal = Journal(args.output / "ball-constraints.jsonl.gz")
+    failures = []
     try:
-        result['provenance_before']=provenance(args.installed_root.resolve(),preflight=True)
-        journal.emit('begin',selected=result['selected'],consumer_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest())
-        result['windows']=[continuous(name,args.mode,journal) for name in result['selected']]
-        result['lifecycle']=[] if args.case else [lifecycle(name,args.mode,journal,output_path=args.output) for name in ('fixed-lower','free-filter-limits','mixed-pyramid-filter')]
-        result['provenance_after']=provenance(args.installed_root.resolve())
-        result['status']='PASSED'
+        result["provenance_before"] = provenance(args.installed_root.resolve(), preflight=True)
+        journal.emit(
+            "begin",
+            selected=result["selected"],
+            consumer_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+        )
+        result["windows"] = [continuous(name, args.mode, journal) for name in result["selected"]]
+        result["lifecycle"] = (
+            []
+            if args.case
+            else [
+                lifecycle(name, args.mode, journal, output_path=args.output)
+                for name in ("fixed-lower", "free-filter-limits", "mixed-pyramid-filter")
+            ]
+        )
+        result["provenance_after"] = provenance(args.installed_root.resolve())
+        result["status"] = "PASSED"
     except BaseException as error:
-        failures.append(error); result['error']=repr(error); result['traceback']=traceback.format_exc()
-        try: journal.emit('failed',error=repr(error),traceback=result['traceback'])
-        except BaseException as evidence: failures.append(evidence); result['failure_journal_error']=repr(evidence)
+        failures.append(error)
+        result["error"] = repr(error)
+        result["traceback"] = traceback.format_exc()
+        try:
+            journal.emit("failed", error=repr(error), traceback=result["traceback"])
+        except BaseException as evidence:
+            failures.append(evidence)
+            result["failure_journal_error"] = repr(evidence)
     finally:
-        result['closed']=not RETAINED_OWNERS
-        try: result['journal']=journal.close()
+        result["closed"] = not RETAINED_OWNERS
+        try:
+            result["journal"] = journal.close()
         except BaseException as error:
-            failures.append(error); result['journal_error']=repr(error)
-        if failures: result['status']='FAILED'
-        result['errors']=[repr(error) for error in failures]
-        try: (args.output/'summary.json').write_text(json.dumps(result,indent=2,allow_nan=False),encoding='utf-8')
-        except BaseException as error: failures.append(error)
-    if failures: raise BaseExceptionGroup('BALL-S consumer/evidence failures',failures)
+            failures.append(error)
+            result["journal_error"] = repr(error)
+        if failures:
+            result["status"] = "FAILED"
+        result["errors"] = [repr(error) for error in failures]
+        try:
+            (args.output / "summary.json").write_text(
+                json.dumps(result, indent=2, allow_nan=False), encoding="utf-8"
+            )
+        except BaseException as error:
+            failures.append(error)
+    if failures:
+        raise BaseExceptionGroup("BALL-S consumer/evidence failures", failures)
 
 
-if __name__=='__main__': main()
+if __name__ == "__main__":
+    main()

@@ -52,7 +52,9 @@ NEGATIVES = {
 }
 
 
-@pytest.mark.parametrize("negative", tuple(name for name in NEGATIVES if name not in ("scalar-limit", "dry")))
+@pytest.mark.parametrize(
+    "negative", tuple(name for name in NEGATIVES if name not in ("scalar-limit", "dry"))
+)
 def test_free_ball_pyramidal_unsupported_precedes_device(negative, monkeypatch, tmp_path):
     mj = pytest.importorskip("mujoco")
     import phymeo.backends._mujoco_tyx_runtime as runtime_module

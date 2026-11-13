@@ -78,3 +78,30 @@ New physical windows: twelve identities, eight24-step identities and four2-step 
 
 Package consumer runs the twelve new windows plus representative lifecycle using only installed Phymeo, MuJoCo3.3.7, NumPy and stdlib. Complete raw returns precede assertions, JSONL.gz is streamed with input/receipt/native continuous state and failure prefixes, modules are bound to the installed root, and primary/cleanup failures are retained. Parent alone runs static, functional and fresh package qualification. First failure remains evidence; no output-guided input/capacity/tolerance changes.
 Pre-execution admission clarification: reversed scalar range is checked as native XML compilation rejection, before any TYX runtime. Negative margin is not newly classified invalid. Direct native-model mutation covers nonfinite scalar law and negative/nonfinite dry friction only. This preserves original admission semantics; tests-first 2e59ce48 remains historical and was never executed.
+## 7. Authoring handoff and exact selection (not collected)
+
+Status **CODE_READY_TESTS_PENDING / AUTHORING_SLOT_RELEASED**. No project imports, collection, numerical probes, tests, lint, formatter, build, installation or CI were executed by this author. Parent owns the single execution slot. Source product/admission changes are outside this lane.
+
+| New source test group | Manual identities per backend | HOST-only identities |
+| --- | ---: | ---: |
+| Complete new five-family windows | 12 | 0 |
+| Exact original-source promotions | 18 | 0 |
+| Direct compiler explicit opt-in | 0 | 3 |
+| Structural domain rejection | 0 | 10 |
+| Native dry parameter corruption | 0 | 6 |
+| Independent tiny box oracle | 0 | 1 |
+| Nonfinite scalar law / reversed XML range | 0 | 2 |
+| Checkpoint/clone/selected reset successors | 3 | 0 |
+| Final-world status, readback, constraint publication, verified restore; activation/transmission on stateful routes | 16 | 0 |
+| Checksum-valid schema/force record corruption with real successor | 3 | 0 |
+| Actual contact/EFC capacity exact and one fewer | 2 | 0 |
+| Source budget1 bound-hit failure and fixed +256N recovery | 1 | 0 |
+| **Total** | **55 per backend** | **22 once** |
+
+Thus the two new test modules declare 132 combined nodes (110 TYX-mode identities plus22 HOST identities), pending actual collection. The main file is82, transactions50. These are selection counts, not passes or a completeness percentage. Suggested first order: new HOST contracts, twelve interpret windows, exact original-source successors, transactions, then the corresponding55 CUDA identities; do not rerun unrelated old green groups. The source-budget test retains actual first failure scratch before retry, and each late fault captures real completed publication/readback before injection.
+
+Installed CLI (run outside any checkout, with installed dependency profile): `python check_ball_constraints.py --mode interpret|cuda --installed-root ABS_SITE --output FRESH_ABS`. The parent bootstrap may separately consume `--expected-install-root`; this consumer deliberately uses `--installed-root`. Default runs all12 windows (400 worldsteps/backend) plus three representative lifecycle paths (48 worldsteps/backend), total448; `--case` chooses a whole predeclared window and is not a reduced qualification claim. Journal records are streamed, include native same-entry/continuous state and actual returned receipts before assertions, and preserve raw bytes. Every constructed owner closes once; failed close retains a strong reference, and primary/cleanup/evidence errors are aggregated. A storage failure is not called a physics rollback.
+
+The10 modified old test files contain only13 decorator-expression changes:18 ordinary negative identities and the3 duplicate direct-compiler `dry` selections are removed from their respective negative collections. All original `NEGATIVE_XML` elements, source generators, numeric literals and unrelated negative selections are retained. The new tests fetch the exact original XML, execute it without rewriting it, and preserve its hash in evidence. New code uses local copies of the accepted native T4 decoder and R3 activation/transmission oracle; installed execution imports no checkout tests or examples.
+
+Author checkpoints: `3cc7769c` cases, `c2a52476` exact names, `2e59ce48` first main tests, `62719d3d` pre-execution admission clarification, `90f3cc03` transactions, `1288da1c` standalone oracle/consumer, `866720fc` exact old-parameter promotion. All remain unexecuted author snapshots. Any first functional failure remains evidence, including a predeclared event unsupported by the independent native trajectory; no inputs, thresholds, solver budget or row capacity are tuned to obtain a pass.

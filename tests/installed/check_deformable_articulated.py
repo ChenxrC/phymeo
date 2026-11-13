@@ -211,7 +211,6 @@ def close(actual, expected, *, atol=ATOL, rtol=RTOL):
     np.testing.assert_allclose(actual, expected, atol=atol, rtol=rtol)
 
 
-
 def skew(x):
     a, b, c = np.asarray(x, float)
     return np.array([[0.0, -c, b], [c, 0.0, -a], [-b, a, 0.0]])
@@ -449,7 +448,6 @@ def tree_advance(data, q, v, drive, external_packet, h, *, kp=None, kd=None, cap
     return next_q, next_v, dict(**t, external=load, drive=motor, acceleration=a)
 
 
-
 def material_step(item, x, v, force, h, sweeps=None):
     weights = item["node"].model.inverse_mass.astype(float)
     pv = v + h * weights[:, None] * force
@@ -482,7 +480,6 @@ def material_step(item, x, v, force, h, sweeps=None):
     return y, speed, lam
 
 
-
 def initialize():
     global ph, SETTINGS
     import phymeo as product
@@ -511,7 +508,6 @@ def saved(path):
             if primary is not None:
                 raise BaseExceptionGroup("M-B2 original and close failure", [primary, error])
             raise
-
 
 
 def _legacy_fixture(kind="A", *, world=7, extra=False):
@@ -645,7 +641,6 @@ def _legacy_fixture(kind="A", *, world=7, extra=False):
     )
 
 
-
 def declaration(items, *, reverse=False, site_capacity=None, memory_limit_bytes=256 * 1024 * 1024):
     rows = [body["row"] for item in items for body in item["bodies"]]
     if reverse:
@@ -720,7 +715,6 @@ def owned_scene(items, mode, journal, label):
         raise BaseExceptionGroup("M-B2 primary and owner cleanup failures", failures)
 
 
-
 def forces(items):
     return {i["world"]: ph.StepInputs(np.zeros((4, 3), np.float32)) for i in items}
 
@@ -741,7 +735,6 @@ def reference_initial(items):
         )
         for i in items
     }
-
 
 
 def state_equal(left, right, items):
@@ -784,7 +777,6 @@ def check_sources(scene, items):
                 )
 
 
-
 def query(scene, journal):
     revision = scene.revision
     journal.emit("query-attempt", expected_revision=revision, state=scene.snapshot())
@@ -800,16 +792,19 @@ def query(scene, journal):
 # resident_floating_reference.py at base 9c7433d7; geometry/material/serialization
 # from check_deformable_multibody.py at that same base. No runtime helper imports.
 
+
 def command(body, phase=0):
     n = len(body["data"]["children"]["parents"])
     if not n:
         return body["command"]
     sign = 1 if phase == 0 else -1
-    drive = sign * np.column_stack((
-        np.array((1/32, -1/64, 1/64))[:n],
-        np.array((1/64, -1/64, 1/128))[:n],
-        np.array((1/16, -1/32, 1/64))[:n],
-    ))
+    drive = sign * np.column_stack(
+        (
+            np.array((1 / 32, -1 / 64, 1 / 64))[:n],
+            np.array((1 / 64, -1 / 64, 1 / 128))[:n],
+            np.array((1 / 16, -1 / 32, 1 / 64))[:n],
+        )
+    )
     return ph.FloatingRobotCommand(
         ph.RobotCommand(drive[:, 0], target_velocity=drive[:, 1], feedforward=drive[:, 2]),
         ph.FloatingRobotInputs(np.zeros(n), body["external"][:, :3], body["external"][:, 3:]),
@@ -820,10 +815,13 @@ def drive_rows(body, phase=0):
     n = len(body["data"]["children"]["parents"])
     if not n:
         return np.zeros((0, 3))
-    return (1 if phase == 0 else -1) * np.column_stack((
-        np.array((1/32, -1/64, 1/64))[:n], np.array((1/64, -1/64, 1/128))[:n],
-        np.array((1/16, -1/32, 1/64))[:n],
-    ))
+    return (1 if phase == 0 else -1) * np.column_stack(
+        (
+            np.array((1 / 32, -1 / 64, 1 / 64))[:n],
+            np.array((1 / 64, -1 / 64, 1 / 128))[:n],
+            np.array((1 / 16, -1 / 32, 1 / 64))[:n],
+        )
+    )
 
 
 def fixture(kind="C", *, world=7):
@@ -834,76 +832,151 @@ def fixture(kind="C", *, world=7):
     origin = np.array((8, -4, 2) if world == 7 else (-3, 5, -1), float)
     x = np.array(((0, 0, 0), (1, 0, 0), (1, 1, 0), (0, 1, 0)), float) + origin
     node = ph.DeformableNodeWorld(
-        world, ph.ParticleModel(np.array((2, 0, 2, 2), np.float32), np.zeros(3, np.float32)),
+        world,
+        ph.ParticleModel(np.array((2, 0, 2, 2), np.float32), np.zeros(3, np.float32)),
         ph.ParticleState(x.astype(np.float32), np.zeros((4, 3), np.float32)),
-        ph.DistanceConstraints(EDGES, REST, np.full(5, COMPLIANCE)), IDS,
+        ph.DistanceConstraints(EDGES, REST, np.full(5, COMPLIANCE)),
+        IDS,
         (ph.DeformableSurface(23, FACETS, IDS[FACES]),),
     )
     n = 2 if kind == "C" else 3
     children = dict(
         parents=np.array((-1, 0) if kind == "C" else (-1, -1, -1), np.int64),
         kinds=("revolute", "prismatic") if kind == "C" else ("revolute", "prismatic", "revolute"),
-        offsets=np.array(((.25, 0, 0), (.25, 0, 0)) if kind == "C" else
-                         ((.25, -.375, 0), (-.25, .375, 0), (.125, .125, .5)), float),
-        orientations=np.tile((0., 0., 0., 1.), (n, 1)),
+        offsets=np.array(
+            ((0.25, 0, 0), (0.25, 0, 0))
+            if kind == "C"
+            else ((0.25, -0.375, 0), (-0.25, 0.375, 0), (0.125, 0.125, 0.5)),
+            float,
+        ),
+        orientations=np.tile((0.0, 0.0, 0.0, 1.0), (n, 1)),
         axes=np.array(((0, 1, 0), (0, 0, 1), (1, 0, 0)), float)[:n],
-        mass=np.array((1., .75, .5))[:n],
-        com=np.array(((1/32, -1/64, 1/64), (-1/64, 1/32, -1/64), (1/64, -1/64, 1/32)))[:n],
-        inertia=np.array(((.25, .375, .5), (.125, .1875, .25), (.125, .1875, .25)))[:n],
+        mass=np.array((1.0, 0.75, 0.5))[:n],
+        com=np.array(
+            ((1 / 32, -1 / 64, 1 / 64), (-1 / 64, 1 / 32, -1 / 64), (1 / 64, -1 / 64, 1 / 32))
+        )[:n],
+        inertia=np.array(((0.25, 0.375, 0.5), (0.125, 0.1875, 0.25), (0.125, 0.1875, 0.25)))[:n],
     )
-    data = dict(root_mass=2., root_com=np.array((1/32, -1/64, 1/128)),
-                root_inertia=np.array((.5, .625, .75)), root_inertia_frame=np.full(4, .5),
-                gravity=np.zeros(3), children=children)
+    data = dict(
+        root_mass=2.0,
+        root_com=np.array((1 / 32, -1 / 64, 1 / 128)),
+        root_inertia=np.array((0.5, 0.625, 0.75)),
+        root_inertia_frame=np.full(4, 0.5),
+        gravity=np.zeros(3),
+        children=children,
+    )
     model = ph.FloatingRobotModel(
-        ph.RigidBodyModel(np.array((.5,)), data["root_inertia"][None], np.zeros(3)),
+        ph.RigidBodyModel(np.array((0.5,)), data["root_inertia"][None], np.zeros(3)),
         data["root_com"],
-        ph.RobotModel(children["parents"], children["kinds"], children["offsets"],
-                      children["orientations"], children["axes"], children["mass"],
-                      children["com"], children["inertia"], np.zeros(3)),
+        ph.RobotModel(
+            children["parents"],
+            children["kinds"],
+            children["offsets"],
+            children["orientations"],
+            children["axes"],
+            children["mass"],
+            children["com"],
+            children["inertia"],
+            np.zeros(3),
+        ),
         root_inertia_frame_xyzw=data["root_inertia_frame"],
     )
-    center = origin + np.array((.25, .125, 5/32) if kind == "C" else (.5, .5, 5/32))
+    center = origin + np.array((0.25, 0.125, 5 / 32) if kind == "C" else (0.5, 0.5, 5 / 32))
     initial = ph.FloatingRobotState(
-        np.r_[center, (0., 0., 0., 1.), np.zeros(n)],
-        np.r_[(1/128, -1/256, -1/16, 1/128, -1/256, 1/256), np.array((1/32, -1/64, 1/64))[:n]],
+        np.r_[center, (0.0, 0.0, 0.0, 1.0), np.zeros(n)],
+        np.r_[
+            (1 / 128, -1 / 256, -1 / 16, 1 / 128, -1 / 256, 1 / 256),
+            np.array((1 / 32, -1 / 64, 1 / 64))[:n],
+        ],
     )
     body_ids = (202, 211, 223) if kind == "C" else (202, 211, 223, 239)
     names = tuple("link" + str(i + 1) for i in range(n))
     collider_specs = (
-        ((2, "capsule", ((0, 0, 0), (1/16, 1/16, 1/8))),) if kind == "C" else
-        ((1, "sphere", ((0, 0, 0),)), (2, "capsule", ((0, 0, 0), (1/16, 0, 1/8))))
+        ((2, "capsule", ((0, 0, 0), (1 / 16, 1 / 16, 1 / 8))),)
+        if kind == "C"
+        else ((1, "sphere", ((0, 0, 0),)), (2, "capsule", ((0, 0, 0), (1 / 16, 0, 1 / 8))))
     )
     surface = ph.CollisionKey(world, 101, 0)
     collisions, original, mapping, colliders, materials = [], [], {}, [], {}
     for ordinal, (group, primitive, vertices) in enumerate(collider_specs):
         source = ph.CollisionKey(0, 42 + group, 71 + ordinal)
         installed = ph.CollisionKey(world, body_ids[group], ordinal)
-        shape = ph.CollisionShape(source, primitive, tuple(range(41, 41 + len(vertices))), RADIUS, revision=3)
-        collisions.append(LinkCollision("source-" + str(ordinal), names[group - 1], group - 1,
-            (0., 0., 0.), (0., 0., 0., 1.), shape, vertices, True))
+        shape = ph.CollisionShape(
+            source, primitive, tuple(range(41, 41 + len(vertices))), RADIUS, revision=3
+        )
+        collisions.append(
+            LinkCollision(
+                "source-" + str(ordinal),
+                names[group - 1],
+                group - 1,
+                (0.0, 0.0, 0.0),
+                (0.0, 0.0, 0.0, 1.0),
+                shape,
+                vertices,
+                True,
+            )
+        )
         original.append(shape)
         mapping[source] = installed
-        colliders.append(dict(source=source, installed=installed, group=group, kind=primitive,
-                              local=np.array(vertices, float)))
+        colliders.append(
+            dict(
+                source=source,
+                installed=installed,
+                group=group,
+                kind=primitive,
+                local=np.array(vertices, float),
+            )
+        )
         materials[surface, installed] = ph.NormalLayer(WIDTH, STIFFNESS, DAMPING)
     asset = ph.FloatingRobotAsset(
-        "m-b2-" + kind, "root", model, names, tuple("joint" + str(i) for i in range(n)),
-        tuple([-2.] * n), tuple([2.] * n), tuple([4.] * n), tuple([4.] * n),
-        tuple(collisions), ph.CollisionModel(tuple(original)),
+        "m-b2-" + kind,
+        "root",
+        model,
+        names,
+        tuple("joint" + str(i) for i in range(n)),
+        tuple([-2.0] * n),
+        tuple([2.0] * n),
+        tuple([4.0] * n),
+        tuple([4.0] * n),
+        tuple(collisions),
+        ph.CollisionModel(tuple(original)),
     )
     external_wrench = np.zeros((n + 1, 6))
-    external_wrench[0] = (1/64, -1/128, 0, 0, 0, 1/128)
-    external_wrench[2] = (0, 1/64, 0, 1/128, 0, 0)
-    body = dict(key=ph.ResidentParticipantKey(world, 19), body_ids=body_ids, model=model,
-                initial=initial, data=data, external=external_wrench, colliders=tuple(colliders),
-                kp=np.full(n, .25), kd=np.full(n, .125), caps=np.full(n, 4.))
+    external_wrench[0] = (1 / 64, -1 / 128, 0, 0, 0, 1 / 128)
+    external_wrench[2] = (0, 1 / 64, 0, 1 / 128, 0, 0)
+    body = dict(
+        key=ph.ResidentParticipantKey(world, 19),
+        body_ids=body_ids,
+        model=model,
+        initial=initial,
+        data=data,
+        external=external_wrench,
+        colliders=tuple(colliders),
+        kp=np.full(n, 0.25),
+        kd=np.full(n, 0.125),
+        caps=np.full(n, 4.0),
+    )
     body["command"] = command(body)
     body["row"] = ph.ParticipantArticulation(
-        body["key"], asset, initial, kp=body["kp"], kd=body["kd"], effort_limit=body["caps"],
-        body_ids=body_ids, collider_keys=mapping, initial_control=body["command"],
+        body["key"],
+        asset,
+        initial,
+        kp=body["kp"],
+        kd=body["kd"],
+        effort_limit=body["caps"],
+        body_ids=body_ids,
+        collider_keys=mapping,
+        initial_control=body["command"],
     )
-    return dict(kind=kind, world=world, origin=origin, node=node, surface=surface,
-                bodies=(body,), materials=materials)
+    return dict(
+        kind=kind,
+        world=world,
+        origin=origin,
+        node=node,
+        surface=surface,
+        bodies=(body,),
+        materials=materials,
+    )
 
 
 def legacy_fixture(*, world=7):
@@ -912,11 +985,23 @@ def legacy_fixture(*, world=7):
     for body in item["bodies"]:
         body["body_ids"] = (body["body_id"],)
         body["external"] = body["external"][None, :]
-        body["data"] = dict(root_mass=body["mass"], root_com=np.zeros(3),
-            root_inertia=np.full(3, body["inertia"]), root_inertia_frame=np.array((0., 0., 0., 1.)),
-            gravity=np.zeros(3), children=dict(parents=np.zeros(0, np.int64), kinds=(),
-            offsets=np.zeros((0, 3)), orientations=np.zeros((0, 4)), axes=np.zeros((0, 3)),
-            mass=np.zeros(0), com=np.zeros((0, 3)), inertia=np.zeros((0, 3))))
+        body["data"] = dict(
+            root_mass=body["mass"],
+            root_com=np.zeros(3),
+            root_inertia=np.full(3, body["inertia"]),
+            root_inertia_frame=np.array((0.0, 0.0, 0.0, 1.0)),
+            gravity=np.zeros(3),
+            children=dict(
+                parents=np.zeros(0, np.int64),
+                kinds=(),
+                offsets=np.zeros((0, 3)),
+                orientations=np.zeros((0, 4)),
+                axes=np.zeros((0, 3)),
+                mass=np.zeros(0),
+                com=np.zeros((0, 3)),
+                inertia=np.zeros((0, 3)),
+            ),
+        )
         body["kp"], body["kd"], body["caps"] = np.zeros(0), np.zeros(0), np.zeros(0)
         for collider in body["colliders"]:
             collider["group"] = 0
@@ -924,9 +1009,17 @@ def legacy_fixture(*, world=7):
 
 
 def participants(items):
-    return tuple(ph.ResidentParticipant(b["key"], ph.FloatingRobotTree(
-        b["model"], b["initial"], kp=b["kp"], kd=b["kd"], effort_limit=b["caps"]), b["body_ids"])
-        for item in items for b in item["bodies"])
+    return tuple(
+        ph.ResidentParticipant(
+            b["key"],
+            ph.FloatingRobotTree(
+                b["model"], b["initial"], kp=b["kp"], kd=b["kd"], effort_limit=b["caps"]
+            ),
+            b["body_ids"],
+        )
+        for item in items
+        for b in item["bodies"]
+    )
 
 
 def reference_world(item, x, velocity, body_states):
@@ -946,46 +1039,75 @@ def reference_world(item, x, velocity, body_states):
                 distance, s = math.sqrt(float(d2)), float(s)
                 require(distance > 0, "independent undefined normal")
                 beta = np.array([float(value) for value in bary])
-                axis_point = (1-s) * segment[0] + s * segment[1]
+                axis_point = (1 - s) * segment[0] + s * segment[1]
                 node_point = beta @ x[indices]
                 normal = (node_point - axis_point) / distance
                 point = axis_point + RADIUS * normal
                 com = kin["com_position"][group]
-                relative = beta @ velocity[indices] - kin["com_velocity"][group] - np.cross(
-                    kin["angular_velocity"][group], point - com)
+                relative = (
+                    beta @ velocity[indices]
+                    - kin["com_velocity"][group]
+                    - np.cross(kin["angular_velocity"][group], point - com)
+                )
                 rate = float(normal @ relative)
                 gap = distance - RADIUS
-                compression = max(WIDTH - gap, 0) if active_law else 0.
-                force = STIFFNESS * compression * max(1-DAMPING*rate, 0) * normal
+                compression = max(WIDTH - gap, 0) if active_law else 0.0
+                force = STIFFNESS * compression * max(1 - DAMPING * rate, 0) * normal
                 total[indices] += beta[:, None] * force
                 wrenches[body["key"]][group, :3] -= force
-                wrenches[body["key"]][group, 3:] += np.cross(point-com, -force)
+                wrenches[body["key"]][group, 3:] += np.cross(point - com, -force)
                 records[collider["installed"], ordinal] = dict(
-                    ordinal=ordinal, distance=distance, gap=gap, bary=beta, s=s, normal=normal,
-                    node_point=node_point, rigid_point=point, relative=relative, force=force,
-                    compression=compression, rate=rate, active_law=active_law,
+                    ordinal=ordinal,
+                    distance=distance,
+                    gap=gap,
+                    bary=beta,
+                    s=s,
+                    normal=normal,
+                    node_point=node_point,
+                    rigid_point=point,
+                    relative=relative,
+                    force=force,
+                    compression=compression,
+                    rate=rate,
+                    active_law=active_law,
                 )
     return total, wrenches, records
 
 
 def reference_step(body, q, v, contact, phase):
     packet = contact + body["external"]
-    return tree_advance(body["data"], q, v, drive_rows(body, phase),
-        (np.zeros(len(body["kp"])), packet[:, :3], packet[:, 3:]), H,
-        kp=body["kp"], kd=body["kd"], caps=body["caps"])
+    return tree_advance(
+        body["data"],
+        q,
+        v,
+        drive_rows(body, phase),
+        (np.zeros(len(body["kp"])), packet[:, :3], packet[:, 3:]),
+        H,
+        kp=body["kp"],
+        kd=body["kd"],
+        caps=body["caps"],
+    )
 
 
-def quaternion_close(actual, expected, *, atol=ATOL+RTOL):
+def quaternion_close(actual, expected, *, atol=ATOL + RTOL):
     actual, expected = np.asarray(actual), np.asarray(expected)
-    require(min(np.linalg.norm(actual-expected), np.linalg.norm(actual+expected)) <= atol,
-            "independent quaternion")
+    require(
+        min(np.linalg.norm(actual - expected), np.linalg.norm(actual + expected)) <= atol,
+        "independent quaternion",
+    )
 
 
 def geometry_close(actual, terms):
-    for field, independent in (("link_position_m", "position"), ("link_rotation", "rotation"),
-            ("com_position_m", "com_position"), ("linear_velocity_m_s", "com_velocity"),
-            ("angular_velocity_rad_s", "angular_velocity")):
+    for field, independent in (
+        ("link_position_m", "position"),
+        ("link_rotation", "rotation"),
+        ("com_position_m", "com_position"),
+        ("linear_velocity_m_s", "com_velocity"),
+        ("angular_velocity_rad_s", "angular_velocity"),
+    ):
         close(getattr(actual, field), terms[independent])
+
+
 def audit_step(item, entry, after, receipt, phase=0):
     observed = receipt.worlds[item["world"]]
     row = receipt.node_receipt.worlds[item["world"]]
@@ -994,21 +1116,30 @@ def audit_step(item, entry, after, receipt, phase=0):
     bodies = {b["key"]: b for b in item["bodies"]}
     colliders = {c["installed"]: (b, c) for b in item["bodies"] for c in b["colliders"]}
     body_states = {key: (np.asarray(s.position), np.asarray(s.velocity)) for key, s in old.items()}
-    exact_force, exact_wrenches, expected = reference_world(item, x0.astype(float), v0.astype(float), body_states)
+    exact_force, exact_wrenches, expected = reference_world(
+        item, x0.astype(float), v0.astype(float), body_states
+    )
     k0 = {key: mechanics(b["data"], *body_states[key]) for key, b in bodies.items()}
-    k1 = {key: mechanics(b["data"], np.asarray(new[key].position), np.asarray(new[key].velocity))
-          for key, b in bodies.items()}
-    require(receipt.schema == "tyx-deformable-articulated-contact-step-v1", "explicit articulated schema")
+    k1 = {
+        key: mechanics(b["data"], np.asarray(new[key].position), np.asarray(new[key].velocity))
+        for key, b in bodies.items()
+    }
+    require(
+        receipt.schema == "tyx-deformable-articulated-contact-step-v1",
+        "explicit articulated schema",
+    )
     require(set(observed["rigid_participants"]) == set(bodies), "complete participant publication")
     require(after.node.tick == entry.node.tick + 1 == after.rigid.tick, "one common tick")
     np.testing.assert_array_equal(row.input_position, x0)
     np.testing.assert_array_equal(row.input_velocity, v0)
-    require(row.h == H and len(row.trace) == row.sweeps and row.residual <= SETTINGS.tolerance,
-            "complete original material trace")
+    require(
+        row.h == H and len(row.trace) == row.sweeps and row.residual <= SETTINGS.tolerance,
+        "complete original material trace",
+    )
     total = np.zeros((4, 3))
     wrenches = {key: np.zeros((len(b["body_ids"]), 6)) for key, b in bodies.items()}
     seen = set()
-    work = potential0 = potential1 = dissipation = power = 0.
+    work = potential0 = potential1 = dissipation = power = 0.0
     for site in observed["sites"]:
         require(site["surface"] == item["surface"] and site["round"] in colliders, "material owner")
         body, collider = colliders[site["round"]]
@@ -1024,60 +1155,82 @@ def audit_step(item, entry, after, receipt, phase=0):
         np.testing.assert_array_equal(site["node_indices"], indices)
         beta, normal = np.asarray(site["barycentric"]), np.asarray(site["normal"])
         require(beta.shape == (3,) and min(beta) >= 0, "nonnegative barycentric")
-        close(beta.sum(), 1., atol=2e-6, rtol=0)
+        close(beta.sum(), 1.0, atol=2e-6, rtol=0)
         kin, next_kin = k0[key], k1[key]
         local = collider["local"]
         segment = np.vstack((local, local)) if len(local) == 1 else local
         length = local_scale(x0[indices], segment, RADIUS)
-        close(site["gap"], target["gap"], atol=1e-4*length, rtol=0)
+        close(site["gap"], target["gap"], atol=1e-4 * length, rtol=0)
         close(normal, target["normal"], atol=2e-3, rtol=0)
-        close(site["node_point"], target["node_point"], atol=2e-4*length, rtol=0)
-        close(site["rigid_point"], target["rigid_point"], atol=2e-4*length, rtol=0)
+        close(site["node_point"], target["node_point"], atol=2e-4 * length, rtol=0)
+        close(site["rigid_point"], target["rigid_point"], atol=2e-4 * length, rtol=0)
         close(site["axis_parameter"], target["s"], atol=2e-4, rtol=0)
         com = kin["com_position"][group]
         close(site["rigid_com"], com)
         point, node = np.asarray(site["rigid_point"]), np.asarray(site["node_point"])
-        close(node, beta @ x0[indices], atol=2e-4*length, rtol=0)
-        relative = beta @ v0[indices] - kin["com_velocity"][group] - np.cross(
-            kin["angular_velocity"][group], point-com)
+        close(node, beta @ x0[indices], atol=2e-4 * length, rtol=0)
+        relative = (
+            beta @ v0[indices]
+            - kin["com_velocity"][group]
+            - np.cross(kin["angular_velocity"][group], point - com)
+        )
         close(site["relative_velocity"], relative)
         rate = float(normal @ relative)
-        compression = max(WIDTH-site["gap"], 0)
-        magnitude = STIFFNESS*compression*max(1-DAMPING*rate, 0)
-        force = magnitude*normal
-        close(site["law_input"][:11], np.r_[normal, relative, WIDTH, site["gap"], STIFFNESS, 1, DAMPING])
+        compression = max(WIDTH - site["gap"], 0)
+        magnitude = STIFFNESS * compression * max(1 - DAMPING * rate, 0)
+        force = magnitude * normal
+        close(
+            site["law_input"][:11],
+            np.r_[normal, relative, WIDTH, site["gap"], STIFFNESS, 1, DAMPING],
+        )
         close(site["law_output"], np.r_[rate, magnitude, force])
-        close(site["node_forces"], beta[:, None]*force)
+        close(site["node_forces"], beta[:, None] * force)
         close(site["rigid_force"], -force)
-        close(site["rigid_torque"], np.cross(point-com, -force))
-        dg, dr = abs(site["gap"]-target["gap"]), abs(rate-target["rate"])
-        bound = STIFFNESS*(max(1-DAMPING*target["rate"], 0)*dg + target["compression"]*DAMPING*dr + DAMPING*dg*dr)
-        bound += np.linalg.norm(target["force"])*np.linalg.norm(normal-target["normal"])
-        require(np.linalg.norm(force-target["force"]) <= bound+ATOL+RTOL*max(1, magnitude),
-                "independent finite-geometry force")
+        close(site["rigid_torque"], np.cross(point - com, -force))
+        dg, dr = abs(site["gap"] - target["gap"]), abs(rate - target["rate"])
+        bound = STIFFNESS * (
+            max(1 - DAMPING * target["rate"], 0) * dg
+            + target["compression"] * DAMPING * dr
+            + DAMPING * dg * dr
+        )
+        bound += np.linalg.norm(target["force"]) * np.linalg.norm(normal - target["normal"])
+        require(
+            np.linalg.norm(force - target["force"]) <= bound + ATOL + RTOL * max(1, magnitude),
+            "independent finite-geometry force",
+        )
         total[indices] += site["node_forces"]
         wrenches[key][group] += np.r_[site["rigid_force"], site["rigid_torque"]]
-        require(site["body_slot"] == observed["rigid_participants"][key]["body_slots"][group],
-                "full physical body slot")
-        local_point = kin["rotation"][group].T @ (point-kin["position"][group])
-        local_axis = kin["rotation"][group].T @ (point-RADIUS*normal-kin["position"][group])
-        next_point = next_kin["position"][group]+next_kin["rotation"][group]@local_point
-        next_axis = next_kin["position"][group]+next_kin["rotation"][group]@local_axis
+        require(
+            site["body_slot"] == observed["rigid_participants"][key]["body_slots"][group],
+            "full physical body slot",
+        )
+        local_point = kin["rotation"][group].T @ (point - kin["position"][group])
+        local_axis = kin["rotation"][group].T @ (point - RADIUS * normal - kin["position"][group])
+        next_point = next_kin["position"][group] + next_kin["rotation"][group] @ local_point
+        next_axis = next_kin["position"][group] + next_kin["rotation"][group] @ local_axis
         next_node = beta @ after.node.position[indices]
-        power += float(force@relative)
-        work += float(force@(next_node-node)-force@(next_point-point))
-        potential0 += .5*STIFFNESS*compression**2
-        potential1 += .5*STIFFNESS*max(WIDTH-(np.linalg.norm(next_axis-next_node)-RADIUS),0)**2
-        dissipation += (STIFFNESS*compression-magnitude)*rate
-    require({key for key, target in expected.items() if target["compression"] > 0} <= seen,
-            "all independently active addresses")
+        power += float(force @ relative)
+        work += float(force @ (next_node - node) - force @ (next_point - point))
+        potential0 += 0.5 * STIFFNESS * compression**2
+        potential1 += (
+            0.5 * STIFFNESS * max(WIDTH - (np.linalg.norm(next_axis - next_node) - RADIUS), 0) ** 2
+        )
+        dissipation += (STIFFNESS * compression - magnitude) * rate
+    require(
+        {key for key, target in expected.items() if target["compression"] > 0} <= seen,
+        "all independently active addresses",
+    )
     close(observed["node_contact_force"], total)
     close(observed["node_total_force"], total)
     delivery = observed["node_force_delivery"]
     close(delivery.raw, total)
     np.testing.assert_array_equal(row.force, delivery.delivered)
-    close(delivery.raw.astype(float)-delivery.delivered.astype(float), delivery.loss, atol=0, rtol=0)
-    y, speed, multipliers = material_step(item, x0.astype(float), v0.astype(float), row.force.astype(float), H, row.sweeps)
+    close(
+        delivery.raw.astype(float) - delivery.delivered.astype(float), delivery.loss, atol=0, rtol=0
+    )
+    y, speed, multipliers = material_step(
+        item, x0.astype(float), v0.astype(float), row.force.astype(float), H, row.sweeps
+    )
     close(after.node.position, y, atol=2e-5, rtol=2e-5)
     close(after.node.velocity, speed, atol=2e-5, rtol=2e-5)
     close(row.multipliers, multipliers, atol=2e-5, rtol=2e-5)
@@ -1087,75 +1240,112 @@ def audit_step(item, entry, after, receipt, phase=0):
         for e, (a, b) in enumerate(EDGES):
             direction, dl = frame[e, 14:17].astype(float), float(frame[e, 17])
             if dl != 0:
-                separation = frame[e, :3].astype(float)-frame[e, 3:6]
-                close(direction, separation/np.linalg.norm(separation), atol=2e-5, rtol=2e-5)
-            material[a] += direction*dl/H
-            material[b] -= direction*dl/H
+                separation = frame[e, :3].astype(float) - frame[e, 3:6]
+                close(direction, separation / np.linalg.norm(separation), atol=2e-5, rtol=2e-5)
+            material[a] += direction * dl / H
+            material[b] -= direction * dl / H
     close(observed["material_impulse"], material)
     weights = item["node"].model.inverse_mass.astype(float)
     fixed = weights == 0
     reaction = np.zeros((4, 3))
-    reaction[fixed] = -H*row.force[fixed]-material[fixed]
+    reaction[fixed] = -H * row.force[fixed] - material[fixed]
     close(observed["fixed_reaction_impulse"], reaction)
     np.testing.assert_array_equal(after.node.position[fixed], x0[fixed])
     np.testing.assert_array_equal(after.node.velocity[fixed], 0)
-    impulse = (after.node.velocity[~fixed].astype(float)-v0[~fixed])/weights[~fixed, None]
-    close(impulse, H*row.force[~fixed]+material[~fixed])
+    impulse = (after.node.velocity[~fixed].astype(float) - v0[~fixed]) / weights[~fixed, None]
+    close(impulse, H * row.force[~fixed] + material[~fixed])
     resultant = total.sum(axis=0)
     moment = np.cross(x0, total).sum(axis=0)
-    generalized_contact_power = 0.
-    external_power = 0.
+    generalized_contact_power = 0.0
+    external_power = 0.0
     audits = {}
     for key, body in bodies.items():
         record, kin = observed["rigid_participants"][key], k0[key]
-        raw, delivered = record["rigid_wrench_delivery"], np.asarray(record["uploaded_rigid_wrench"])
+        raw, delivered = (
+            record["rigid_wrench_delivery"],
+            np.asarray(record["uploaded_rigid_wrench"]),
+        )
         require(delivered.shape == (len(body["body_ids"]), 6), "no dropped unloaded body")
         require(tuple(record["body_ids"]) == body["body_ids"], "original body ids")
         close(raw.raw, wrenches[key])
         np.testing.assert_array_equal(record["rigid_wrench"], raw.delivered)
         np.testing.assert_array_equal(delivered, raw.delivered)
-        close(raw.raw.astype(float)-raw.delivered.astype(float), raw.loss, atol=0, rtol=0)
+        close(raw.raw.astype(float) - raw.delivered.astype(float), raw.loss, atol=0, rtol=0)
         q0, speed0 = body_states[key]
         q1, speed1 = np.asarray(new[key].position), np.asarray(new[key].velocity)
         target_q, target_v, terms = reference_step(body, q0, speed0, delivered.astype(float), phase)
         diag = receipt.rigid_publication["diagnostics"][key]
         close(diag.entry_position, q0)
         close(diag.entry_velocity, speed0)
-        for field in ("mass", "bias", "linear_jacobian", "angular_jacobian", "external", "drive", "acceleration"):
+        for field in (
+            "mass",
+            "bias",
+            "linear_jacobian",
+            "angular_jacobian",
+            "external",
+            "drive",
+            "acceleration",
+        ):
             close(getattr(diag, field), terms[field], atol=2e-5 if field == "mass" else ATOL)
         projected = applied(kin, np.zeros(len(body["kp"])), delivered[:, :3], delivered[:, 3:])
         close(receipt.rigid_publication["projected"][key], projected)
-        close(diag.mass@diag.acceleration+diag.bias, diag.external+np.r_[np.zeros(6),diag.drive], atol=2e-5)
+        close(
+            diag.mass @ diag.acceleration + diag.bias,
+            diag.external + np.r_[np.zeros(6), diag.drive],
+            atol=2e-5,
+        )
         require(diag.equation_residual <= 2e-5, "complete coupled mass equation")
         close(q1[:3], target_q[:3])
         close(q1[7:], target_q[7:])
         close(speed1, target_v)
         quaternion_close(q1[3:7], target_q[3:7])
-        require(abs(q1[3:7]@q1[3:7]-1) <= 1e-5 and q1[3:7]@q0[3:7] >= 0, "root quaternion contract")
-        require(new[key].tick == after.node.tick and new[key].control == old[key].control, "full tree accepted successor")
+        require(
+            abs(q1[3:7] @ q1[3:7] - 1) <= 1e-5 and q1[3:7] @ q0[3:7] >= 0,
+            "root quaternion contract",
+        )
+        require(
+            new[key].tick == after.node.tick and new[key].control == old[key].control,
+            "full tree accepted successor",
+        )
         geometry_close(receipt.rigid_publication["entry"][key]["geometry"], kin)
         geometry_close(receipt.rigid_publication["candidate"][key]["geometry"], k1[key])
-        ext = applied(kin, np.zeros(len(body["kp"])), body["external"][:, :3], body["external"][:, 3:])
-        close(record["rigid_external_entry_power"], ext@speed0)
-        external_power += float(ext@speed0)
-        generalized_contact_power += float(applied(kin, np.zeros(len(body["kp"])), wrenches[key][:,:3], wrenches[key][:,3:])@speed0)
+        ext = applied(
+            kin, np.zeros(len(body["kp"])), body["external"][:, :3], body["external"][:, 3:]
+        )
+        close(record["rigid_external_entry_power"], ext @ speed0)
+        external_power += float(ext @ speed0)
+        generalized_contact_power += float(
+            applied(kin, np.zeros(len(body["kp"])), wrenches[key][:, :3], wrenches[key][:, 3:])
+            @ speed0
+        )
         resultant += wrenches[key][:, :3].sum(axis=0)
-        moment += (np.cross(kin["com_position"],wrenches[key][:,:3])+wrenches[key][:,3:]).sum(axis=0)
+        moment += (np.cross(kin["com_position"], wrenches[key][:, :3]) + wrenches[key][:, 3:]).sum(
+            axis=0
+        )
         contact_groups = {c["group"] for c in body["colliders"]}
         for group in set(range(len(body["body_ids"]))) - contact_groups:
             np.testing.assert_array_equal(delivered[group], 0)
         independent_end = mechanics(body["data"], target_q, target_v)
         close(k1[key]["momentum"], independent_end["momentum"])
         close(k1[key]["angular_momentum"], independent_end["angular_momentum"])
-        audits[key] = dict(same_entry=terms, projected=projected, next_q=target_q, next_v=target_v,
-            independent_wrench=exact_wrenches[key], actual_wrench=delivered, entry_geometry=kin,
-            end_geometry=k1[key], independent_end=independent_end,
-            contact_power=float(projected@speed0), external_power=float(ext@speed0),
-            motor_power=float(terms["drive"]@speed0[6:]),
+        audits[key] = dict(
+            same_entry=terms,
+            projected=projected,
+            next_q=target_q,
+            next_v=target_v,
+            independent_wrench=exact_wrenches[key],
+            actual_wrench=delivered,
+            entry_geometry=kin,
+            end_geometry=k1[key],
+            independent_end=independent_end,
+            contact_power=float(projected @ speed0),
+            external_power=float(ext @ speed0),
+            motor_power=float(terms["drive"] @ speed0[6:]),
             # Full tree momentum change includes the declared finite drift; no
             # assertion that explicit gyro integration conserves L exactly.
-            angular_change=k1[key]["angular_momentum"]-kin["angular_momentum"])
-    close(power, float(np.sum(total*v0))+generalized_contact_power)
+            angular_change=k1[key]["angular_momentum"] - kin["angular_momentum"],
+        )
+    close(power, float(np.sum(total * v0)) + generalized_contact_power)
     close(resultant, 0)
     close(moment, 0)
     close(observed["rigid_external_entry_power"], external_power)
@@ -1163,16 +1353,27 @@ def audit_step(item, entry, after, receipt, phase=0):
     close(observed["layer_potential_before"], potential0)
     close(observed["layer_potential_after"], potential1)
     close(observed["entry_dissipation_rate"], dissipation)
-    close(observed["work_balance"], work+potential1-potential0+H*dissipation)
+    close(observed["work_balance"], work + potential1 - potential0 + H * dissipation)
     close(observed["node_external_work"], 0)
-    return dict(independent_geometry=expected, independent_node_force=exact_force, per_body=audits,
-        material_impulse=material, fixed_reaction=reaction, resultant=resultant, moment=moment,
-        contact_entry_power=power)
+    return dict(
+        independent_geometry=expected,
+        independent_node_force=exact_force,
+        per_body=audits,
+        material_impulse=material,
+        fixed_reaction=reaction,
+        resultant=resultant,
+        moment=moment,
+        contact_entry_power=power,
+    )
+
+
 def body_addresses(items):
-    return tuple((body["key"], group, body_id)
+    return tuple(
+        (body["key"], group, body_id)
         for item in sorted(items, key=lambda value: value["world"])
         for body in sorted(item["bodies"], key=lambda value: value["key"])
-        for group, body_id in enumerate(body["body_ids"]))
+        for group, body_id in enumerate(body["body_ids"])
+    )
 
 
 def audit_source(receipt, items):
@@ -1181,27 +1382,57 @@ def audit_source(receipt, items):
     require(source["rigid_body_addresses"] == addresses, "complete canonical body address proof")
     expected_keys = {body["key"] for item in items for body in item["bodies"]}
     require(set(source["rigid_participant_sources"]) == expected_keys, "all participants retained")
-    require(set(source["rigid_body_sources"]) == {(key, group) for key, group, _ in addresses},
-            "full loaded and unloaded source proof")
+    require(
+        set(source["rigid_body_sources"]) == {(key, group) for key, group, _ in addresses},
+        "full loaded and unloaded source proof",
+    )
     for item in items:
         world = item["world"]
-        require(tuple(key for key, _ in source["world_rigid_participants"][world]) ==
-                tuple(sorted(b["key"] for b in item["bodies"])), "all world source memberships")
+        require(
+            tuple(key for key, _ in source["world_rigid_participants"][world])
+            == tuple(sorted(b["key"] for b in item["bodies"])),
+            "all world source memberships",
+        )
         for body in item["bodies"]:
             key = body["key"]
-            require(source["participant_body_counts"][key] == len(body["body_ids"]), "body count binding")
+            require(
+                source["participant_body_counts"][key] == len(body["body_ids"]),
+                "body count binding",
+            )
             first = source["rigid_participant_sources"][key]
             record = receipt.worlds[world]["rigid_participants"][key]
-            slots = tuple(addresses.index((key, group, body_id)) for group, body_id in enumerate(body["body_ids"]))
-            require(record["body_slots"] == slots and record["body_slot"] == slots[0], "canonical delivery slots")
+            slots = tuple(
+                addresses.index((key, group, body_id))
+                for group, body_id in enumerate(body["body_ids"])
+            )
+            require(
+                record["body_slots"] == slots and record["body_slot"] == slots[0],
+                "canonical delivery slots",
+            )
             for group, body_id in enumerate(body["body_ids"]):
                 proof = source["rigid_body_sources"][key, group]
-                require(proof["participant"] == key and proof["logical_world"] == world
-                    and proof["group"] == group and proof["body_id"] == body_id
-                    and proof["body_slot"] == slots[group], "original body source identity")
-                require(all(proof[field] == first[field] for field in
-                            ("native", "slot", "row", "topology", "model_token", "graph_token")),
-                        "same accepted tree source for every body")
+                require(
+                    proof["participant"] == key
+                    and proof["logical_world"] == world
+                    and proof["group"] == group
+                    and proof["body_id"] == body_id
+                    and proof["body_slot"] == slots[group],
+                    "original body source identity",
+                )
+                require(
+                    all(
+                        proof[field] == first[field]
+                        for field in (
+                            "native",
+                            "slot",
+                            "row",
+                            "topology",
+                            "model_token",
+                            "graph_token",
+                        )
+                    ),
+                    "same accepted tree source for every body",
+                )
                 close(proof["anchor"], body["initial"].q[:3], atol=0, rtol=0)
                 require(not proof["anchor"].flags.writeable, "immutable body source anchor")
 
@@ -1209,8 +1440,17 @@ def audit_source(receipt, items):
 def advance(scene, items, references, journal, identity, *, phase=0):
     entry, revision, stats = scene.snapshot(), scene.revision, scene.stats()
     inputs = forces(items)
-    journal.emit("step-attempt", identity=identity, state=entry, expected_revision=revision,
-                 inputs=inputs, h=H, stats=stats, independent_entry=references, phase=phase)
+    journal.emit(
+        "step-attempt",
+        identity=identity,
+        state=entry,
+        expected_revision=revision,
+        inputs=inputs,
+        h=H,
+        stats=stats,
+        independent_entry=references,
+        phase=phase,
+    )
     try:
         import phymeo.constraints.distance as material
         import phymeo.dynamics.floating_robot as floating
@@ -1220,19 +1460,33 @@ def advance(scene, items, references, journal, identity, *, phase=0):
             raise AssertionError("M-B2 used HOST current-state physics")
 
         with ExitStack() as guard:
-            for module, name in ((material, "project_distances"), (floating, "floating_kinematics"), (law, "_host_law")):
+            for module, name in (
+                (material, "project_distances"),
+                (floating, "floating_kinematics"),
+                (law, "_host_law"),
+            ):
                 guard.enter_context(patch.object(module, name, forbidden))
             receipt = scene.step(inputs, H, expected_revision=revision)
         journal.emit("step-return", identity=identity, receipt=receipt)
         after, post = scene.snapshot(), scene.stats()
         journal.emit("step-state", identity=identity, state=after, stats=post)
-        require(receipt.source_revision == revision and receipt.destination_revision == scene.revision,
-                "one complete revision publication")
+        require(
+            receipt.source_revision == revision and receipt.destination_revision == scene.revision,
+            "one complete revision publication",
+        )
         require(scene.last_step is receipt, "same accepted receipt")
-        require(post["response"]["launches"] == stats["response"]["launches"]+2, "one law and one transpose")
+        require(
+            post["response"]["launches"] == stats["response"]["launches"] + 2,
+            "one law and one transpose",
+        )
         keys = {b["key"] for item in items for b in item["bodies"]}
-        require(all(set(receipt.rigid_publication[field]) == keys
-                    for field in ("entry", "candidate", "diagnostics", "projected")), "all trees in one attempt")
+        require(
+            all(
+                set(receipt.rigid_publication[field]) == keys
+                for field in ("entry", "candidate", "diagnostics", "projected")
+            ),
+            "all trees in one attempt",
+        )
         audit_source(receipt, items)
         continued, audits = {}, {}
         for item in items:
@@ -1247,9 +1501,16 @@ def advance(scene, items, references, journal, identity, *, phase=0):
                 next_bodies[key] = q, speed
                 independent_terms[key] = terms
             continued[world] = nx, nv, next_bodies
-            journal.emit("independent-before-assert", identity=identity, world=world,
-                         geometry=geometry, force=force, wrenches=wrenches,
-                         state=continued[world], full_tree=independent_terms)
+            journal.emit(
+                "independent-before-assert",
+                identity=identity,
+                world=world,
+                geometry=geometry,
+                force=force,
+                wrenches=wrenches,
+                state=continued[world],
+                full_tree=independent_terms,
+            )
             audits[world] = audit_step(item, entry[world], after[world], receipt, phase)
             close(after[world].node.position, nx, atol=2e-4, rtol=0)
             close(after[world].node.velocity, nv, atol=2e-4, rtol=0)
@@ -1265,7 +1526,9 @@ def advance(scene, items, references, journal, identity, *, phase=0):
         return after, continued, receipt
     except BaseException as primary:
         try:
-            journal.emit("step-failure", identity=identity, error=primary, last_attempt=scene.last_attempt)
+            journal.emit(
+                "step-failure", identity=identity, error=primary, last_attempt=scene.last_attempt
+            )
         except BaseException as secondary:
             raise BaseExceptionGroup("M-B2 physics and capture failures", [primary, secondary])
         raise
@@ -1299,21 +1562,44 @@ def run_window(items, mode, journal, *, steps=8, require_loaded=True):
         for item in items:
             world = item["world"]
             if require_loaded:
-                require(np.max(abs(current[world].node.position-initial[world].node.position)) > 0,
-                        "real node evolution")
+                require(
+                    np.max(abs(current[world].node.position - initial[world].node.position)) > 0,
+                    "real node evolution",
+                )
             for body in item["bodies"]:
                 key = body["key"]
-                require(current[world].rigid.participants[key].tick == steps, "all actual participant steps")
-                require(np.any(np.asarray(current[world].rigid.participants[key].position) !=
-                               np.asarray(initial[world].rigid.participants[key].position)), "true tree motion")
+                require(
+                    current[world].rigid.participants[key].tick == steps,
+                    "all actual participant steps",
+                )
+                require(
+                    np.any(
+                        np.asarray(current[world].rigid.participants[key].position)
+                        != np.asarray(initial[world].rigid.participants[key].position)
+                    ),
+                    "true tree motion",
+                )
                 if require_loaded:
-                    require(loaded[key] == {c["group"] for c in body["colliders"]}, "every declared loaded link carried force")
+                    require(
+                        loaded[key] == {c["group"] for c in body["colliders"]},
+                        "every declared loaded link carried force",
+                    )
                 else:
                     require(not loaded[key], "explicit None laws mean zero response sites")
-        journal.emit("window-complete", final=current, loaded={key: tuple(sorted(value)) for key, value in loaded.items()}, stats=scene.stats())
-    return dict(steps=steps, worldsteps=steps*len(items), participant_steps=steps*sum(len(i["bodies"]) for i in items),
-                physical_body_steps=steps*sum(len(b["body_ids"]) for i in items for b in i["bodies"]),
-                controls=controls, kind=tuple(i["kind"] for i in items))
+        journal.emit(
+            "window-complete",
+            final=current,
+            loaded={key: tuple(sorted(value)) for key, value in loaded.items()},
+            stats=scene.stats(),
+        )
+    return dict(
+        steps=steps,
+        worldsteps=steps * len(items),
+        participant_steps=steps * sum(len(i["bodies"]) for i in items),
+        physical_body_steps=steps * sum(len(b["body_ids"]) for i in items for b in i["bodies"]),
+        controls=controls,
+        kind=tuple(i["kind"] for i in items),
+    )
 
 
 def lifecycle(items, mode, journal):
@@ -1339,7 +1625,12 @@ def lifecycle(items, mode, journal):
         old_query = query(scene, journal)
         scene.reset((selected["world"],), expected_revision=scene.revision)
         after = scene.snapshot()
-        journal.emit("partial-reset-return", selected=selected["world"], state=after, checkpoint=scene.checkpoint())
+        journal.emit(
+            "partial-reset-return",
+            selected=selected["world"],
+            state=after,
+            checkpoint=scene.checkpoint(),
+        )
         state_equal(initial, after, (selected,))
         state_equal(before, after, tuple(item for item in items if item is not selected))
         try:
@@ -1350,7 +1641,12 @@ def lifecycle(items, mode, journal):
             raise AssertionError("reset left old query current")
         refs[selected["world"]] = reference_initial((selected,))[selected["world"]]
         advance(scene, items, refs, journal, "reset-successor")
-    return dict(steps=4, worldsteps=4*len(items), participant_steps=4*sum(len(i["bodies"]) for i in items), queries=2)
+    return dict(
+        steps=4,
+        worldsteps=4 * len(items),
+        participant_steps=4 * sum(len(i["bodies"]) for i in items),
+        queries=2,
+    )
 
 
 def main():
@@ -1359,43 +1655,66 @@ def main():
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--expected-install-root", "--installed-root", type=Path, required=True)
     args = parser.parse_args()
-    require(args.output.is_absolute() and args.expected_install_root.is_absolute(), "absolute paths")
+    require(
+        args.output.is_absolute() and args.expected_install_root.is_absolute(), "absolute paths"
+    )
     args.output.mkdir(parents=True, exist_ok=False)
     root = args.expected_install_root.resolve(strict=True)
     journal = Journal(args.output / "deformable-articulated.jsonl.gz")
-    summary = dict(status="RUNNING", mode=args.mode, physics_scope="M-B2 ordinary floating R/P tree",
-                   consumer_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest())
+    summary = dict(
+        status="RUNNING",
+        mode=args.mode,
+        physics_scope="M-B2 ordinary floating R/P tree",
+        consumer_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+    )
     primary, errors = None, []
     try:
         summary["preflight"] = provenance(root, preflight=True)
         initialize()
-        rows = [run_window(tuple(fixture(kind, world=w) for w in (31, 7)), args.mode, journal, steps=8)
-                for kind in ("C", "D")]
+        rows = [
+            run_window(tuple(fixture(kind, world=w) for w in (31, 7)), args.mode, journal, steps=8)
+            for kind in ("C", "D")
+        ]
         rows.append(lifecycle((fixture("C", world=7), fixture("D", world=31)), args.mode, journal))
-        summary.update(status="PASS", cases=rows, worldsteps=sum(r["worldsteps"] for r in rows),
-                       participant_steps=sum(r["participant_steps"] for r in rows))
-        require(summary["worldsteps"] == 40 and summary["participant_steps"] == 40,
-                "every declared actual world and tree step")
+        summary.update(
+            status="PASS",
+            cases=rows,
+            worldsteps=sum(r["worldsteps"] for r in rows),
+            participant_steps=sum(r["participant_steps"] for r in rows),
+        )
+        require(
+            summary["worldsteps"] == 40 and summary["participant_steps"] == 40,
+            "every declared actual world and tree step",
+        )
     except BaseException as error:
         primary = error
         summary.update(status="FAIL", error=repr(error), traceback=traceback.format_exc())
     finally:
-        for label, operation in (("final_provenance", lambda: provenance(root)), ("trace", journal.close)):
+        for label, operation in (
+            ("final_provenance", lambda: provenance(root)),
+            ("trace", journal.close),
+        ):
             try:
                 summary[label] = operation()
             except BaseException as error:
                 errors.append(error)
                 summary.update(status="FAIL")
-                summary[label+"_failure"] = repr(error)
+                summary[label + "_failure"] = repr(error)
         summary["owner_cleanup"] = [dict(row) for row in _OWNER_CLOSE_RECORDS]
         summary["retained_close_failures"] = len(_RETAINED_CLOSE_FAILURES)
-        summary["closed"] = all(row["close_succeeded"] for row in _OWNER_CLOSE_RECORDS) and "trace" in summary
+        summary["closed"] = (
+            all(row["close_succeeded"] for row in _OWNER_CLOSE_RECORDS) and "trace" in summary
+        )
         try:
-            (args.output / "summary.json").write_text(json.dumps(summary, indent=2, allow_nan=False), encoding="utf-8")
+            (args.output / "summary.json").write_text(
+                json.dumps(summary, indent=2, allow_nan=False), encoding="utf-8"
+            )
         except BaseException as error:
             errors.append(error)
     if errors:
-        raise BaseExceptionGroup("M-B2 consumer or finalization failed", ([primary] if primary else [])+errors)
+        raise BaseExceptionGroup(
+            "M-B2 consumer or finalization failed", ([primary] if primary else []) + errors
+        )
     if primary is not None:
         raise primary
 

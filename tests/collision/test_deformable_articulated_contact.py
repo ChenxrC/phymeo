@@ -58,8 +58,13 @@ def test_checkpoint_partial_reset_restore_and_true_successors(tyx_mode, tmp_path
 
 def retained(scene, items, before, capsule, revision, old, banks, journal):
     state = scene.snapshot()
-    journal.emit("retained", state=state, checkpoint=scene.checkpoint(), stats=scene.stats(),
-                 last_attempt=scene.last_attempt)
+    journal.emit(
+        "retained",
+        state=state,
+        checkpoint=scene.checkpoint(),
+        stats=scene.stats(),
+        last_attempt=scene.last_attempt,
+    )
     case.state_equal(before, state, items)
     assert case.encode(scene.checkpoint()) == case.encode(capsule)
     assert scene.revision == revision and scene.last_step is old
@@ -68,17 +73,27 @@ def retained(scene, items, before, capsule, revision, old, banks, journal):
 
 
 @pytest.mark.parametrize("seam", ("query", "publication", "cross-world-body"))
-def test_complete_late_attempt_preserves_all_owners_and_real_retry(seam, tyx_mode, tmp_path, monkeypatch):
+def test_complete_late_attempt_preserves_all_owners_and_real_retry(
+    seam, tyx_mode, tmp_path, monkeypatch
+):
     items = (case.fixture("C", world=7), case.fixture("D", world=31))
     with case.saved(tmp_path / (seam + ".jsonl.gz")) as journal:
         with case.compile_scene(items, tyx_mode) as scene:
             refs = case.reference_initial(items)
             _, refs, _ = case.advance(scene, items, refs, journal, "warm")
-            before, capsule, revision, old = scene.snapshot(), scene.checkpoint(), scene.revision, scene.last_step
+            before, capsule, revision, old = (
+                scene.snapshot(),
+                scene.checkpoint(),
+                scene.revision,
+                scene.last_step,
+            )
             response = scene._response
             banks = (response._nodes._active, response._scene._service._batch._active)
-            attribute = {"query": "_query_entry", "publication": "_prepare_response_publication",
-                         "cross-world-body": "_law_rows"}[seam]
+            attribute = {
+                "query": "_query_entry",
+                "publication": "_prepare_response_publication",
+                "cross-world-body": "_law_rows",
+            }[seam]
             original = getattr(response, attribute)
             completed = []
 
@@ -98,8 +113,16 @@ def test_complete_late_attempt_preserves_all_owners_and_real_retry(seam, tyx_mod
 
             with monkeypatch.context() as patch:
                 patch.setattr(response, attribute, reject)
-                journal.emit("fault-attempt", before=before, capsule=capsule, inputs=case.forces(items), h=case.H)
-                with pytest.raises((ValueError, RuntimeError, FloatingPointError, case.ph.SolverFailure)) as caught:
+                journal.emit(
+                    "fault-attempt",
+                    before=before,
+                    capsule=capsule,
+                    inputs=case.forces(items),
+                    h=case.H,
+                )
+                with pytest.raises(
+                    (ValueError, RuntimeError, FloatingPointError, case.ph.SolverFailure)
+                ) as caught:
                     scene.step(case.forces(items), case.H, expected_revision=revision)
                 journal.emit("fault-return", error=caught.value, last_attempt=scene.last_attempt)
                 assert len(completed) == 1
@@ -117,16 +140,24 @@ def test_complete_body_native_budget_exact_and_one_less(tyx_mode, tmp_path):
     capacity = 6
     with case.saved(tmp_path / "body-budget.jsonl.gz") as journal:
         with case.compile_scene(items, tyx_mode, site_capacity=capacity) as first:
-            expected, _, _ = case.advance(first, items, case.reference_initial(items), journal, "reference")
+            expected, _, _ = case.advance(
+                first, items, case.reference_initial(items), journal, "reference"
+            )
             stats = first.stats()
             native = 116 * capacity + 12 * 8 + 24 * 7 + 4 * 2 + 8 * 3
             assert stats["response_native_bytes"] == native
             budget = native + stats["query"]["peak_required_bytes"]
             journal.emit("exact-native-budget", bytes=budget, stats=stats)
-        with case.compile_scene(items, tyx_mode, site_capacity=capacity, memory_limit_bytes=budget) as exact:
-            actual, _, _ = case.advance(exact, items, case.reference_initial(items), journal, "exact")
+        with case.compile_scene(
+            items, tyx_mode, site_capacity=capacity, memory_limit_bytes=budget
+        ) as exact:
+            actual, _, _ = case.advance(
+                exact, items, case.reference_initial(items), journal, "exact"
+            )
             case.state_equal(actual, expected, items)
-        with case.compile_scene(items, tyx_mode, site_capacity=capacity, memory_limit_bytes=budget - 1) as short:
+        with case.compile_scene(
+            items, tyx_mode, site_capacity=capacity, memory_limit_bytes=budget - 1
+        ) as short:
             before, capsule, revision = short.snapshot(), short.checkpoint(), short.revision
             journal.emit("one-less-attempt", before=before, capsule=capsule, h=case.H)
             with pytest.raises((MemoryError, ValueError), match="memory|budget|reservation|limit"):
@@ -151,8 +182,12 @@ def test_host_layout_full_addresses_and_same_world_tree_mixture_rejection():
     participants = case.participants(items)
     layout = compile_deformable_response_layout(tuple(reversed(participants)))
     assert layout.articulated and layout.multibody and layout.worlds == (7, 31)
-    expected = tuple((b["key"], group, body_id) for item in sorted(items, key=lambda x: x["world"])
-                     for b in item["bodies"] for group, body_id in enumerate(b["body_ids"]))
+    expected = tuple(
+        (b["key"], group, body_id)
+        for item in sorted(items, key=lambda x: x["world"])
+        for b in item["bodies"]
+        for group, body_id in enumerate(b["body_ids"])
+    )
     assert layout.body_addresses == expected
     np.testing.assert_array_equal(layout.body_offsets, (0, 3, 7))
     for slot, (key, group, _) in enumerate(expected):

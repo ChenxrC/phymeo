@@ -380,8 +380,6 @@ def test_unknown_joint_and_mimic_are_not_dropped(urdf, tmp_path):
         )
     with pytest.raises(ValueError, match="ignore"):
         NativeAssetInstance("a", urdf, joint_defaults=(("kp", 20.0),))
-    with pytest.raises(ValueError, match="ignore nonzero friction"):
-        NativeStaticShape("table", "box", (1, 1, 0.1), contact_dim=3)
 
 
 def test_fanuc_original_meshes_and_contact_policy_survive_assembly():
@@ -669,3 +667,22 @@ def test_mjcf_nonzero_reference_anchor_reconstructs_native_pose(tmp_path, kind):
     position = offset - rotation @ np.array(frame.child_anchor[:3])
     np.testing.assert_allclose(position, data.xpos[1], atol=1e-12, rtol=0)
     np.testing.assert_allclose(rotation, data.xmat[1].reshape(3, 3), atol=1e-12, rtol=0)
+
+
+def test_primitive_contact_dimension_preserves_inactive_material():
+    for dimension in (1, 3, 4, 6):
+        for shape_type, keyword in ((NativeStaticShape, "static_shapes"), (NativeRigidShape, "rigid_shapes")):
+            shape = shape_type("cube", "box", (.1, .1, .1), contact_dim=dimension)
+            template = compile_native_template((), timestep=.01, gravity=(0, -9.81, 0), **{keyword: (shape,)})
+            model = template.compilation.fresh_native_model()
+            assert model.geom("cube").condim == dimension
+            np.testing.assert_array_equal(model.geom("cube").friction, (1., .005, .0001))
+    for invalid in (True, 3., "3", None, 0, 2, 5, 7):
+        with pytest.raises(ValueError, match="contact_dim"):
+            NativeStaticShape("cube", "box", (.1, .1, .1), contact_dim=invalid)
+    default = NativeRigidShape("cube", "box", (.1, .1, .1))
+    a = compile_native_template((), timestep=.01, gravity=(0, -9.81, 0), rigid_shapes=(default,)).compilation.fresh_native_model()
+    b = compile_native_template((), timestep=.01, gravity=(0, -9.81, 0), rigid_shapes=(replace(default, contact_dim=6),)).compilation.fresh_native_model()
+    for name in dir(a):
+        if isinstance(value := getattr(a, name), np.ndarray):
+            np.testing.assert_array_equal(value, getattr(b, name), err_msg=name)

@@ -193,9 +193,8 @@ class NativeStaticShape:
             raise ValueError("friction must be nonnegative")
         if type(self.contact_dim) is not int or self.contact_dim not in (1, 3, 4, 6):
             raise ValueError("contact_dim requires 1, 3, 4 or 6")
-        active = {1: 0, 3: 1, 4: 2, 6: 3}[self.contact_dim]
-        if any(self.friction[active:]):
-            raise ValueError("contact_dim would ignore nonzero friction")
+        # Native contact dimension selects active friction components. Preserve
+        # inactive coefficients as authored; do not silently rewrite materials.
 
 
 @dataclass(frozen=True)
@@ -234,6 +233,7 @@ class NativeAssetIdentity:
 
 @dataclass(frozen=True)
 class NativeTemplate:
+    primitive_contact_contract_version = 1
     mjcf_scalar_contract_version = 1
 
     compilation: object

@@ -1,5 +1,15 @@
 # 原生资产装配与完整初态
 
+## 显式 primitive 接触维度
+
+`NativeTemplate.primitive_contact_contract_version=1`：NativeStaticShape/NativeRigidShape
+的 contact_dim 按原生 1/3/4/6 选择响应维度，friction 三分量始终保留；低维接触
+不使用的扭转/滚动系数不清零，也不再仅因非零尾项拒绝。实际配对维度仍服从
+原生 priority/condim 组合规则。未指定默认 6，被动阻尼、初态与 owner 不变。
+消费者各自声明已验收组合；P2PE 本轮仅接受 box/sphere 显式 3/6。
+test_native_assembly 覆盖静态/动态读回、材料保留、非法值和默认逐数组不变。
+本增量没有热路径操作或额外同步。
+
 ## B8o：按来源 body 设置滑动摩擦
 
 `NativeAssetInstance.body_friction` 接收不可变的 `(source_body_name, sliding_mu)`

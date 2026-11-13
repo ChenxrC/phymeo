@@ -1,22 +1,22 @@
 # Phymeo 当前续作入口
 
-更新：2026-11-13下一批；**M-B2非根连杆刚柔已冻结实施，当前编码与测试作者并行、尚未执行**。M-B1多独立刚体、容量、G2-R0与R3-A原有限验收复用。
+更新：2026-11-13下一批；**M-B2非根连杆刚柔已完成限定源码及安装验收，作者与父执行槽均已释放**。M-B1多独立刚体、容量、G2-R0与R3-A原有限验收复用。
 D5-A、R3-N/P、G2a、D6-A 已获各自有限源码/安装资格；D4 原稳态功能仍 FAIL。
 D6-A 的 FUNCTIONAL_PASS 与旧弹性 STRICT_FAIL_RECORDED 同时保留，不能合并成严格通过。
-整个 P6.5 / Newton 功能对齐未完成。上一轮到07:30计划已收口，见[交付概览](p65-feature-batch-summary-20261113.md)；用户随后明确要求继续，现由[新M-B2实施合同](p65-articulated-deformable-implementation-20261113.md)限定下一批，不继承旧截止或session。
+整个 P6.5 / Newton 功能对齐未完成。上一轮到07:30计划已收口，见[交付概览](p65-feature-batch-summary-20261113.md)；用户随后授权的[M-B2批次](p65-articulated-deformable-implementation-20261113.md)也已完成，下一批从文末两条提案开始，不继承旧截止或session。
 
 ## 从这里继续
 
-1. [当前M-B2实施合同](p65-articulated-deformable-implementation-20261113.md)：非根连杆、完整J/M投影与共同发布；父唯一执行，原两作者隔离编码。[上一批计划](../superpowers/plans/2026-11-13-feature-completion-until-0730.md)仅作历史。
+1. [M-B2验收报告](p65-articulated-deformable-report-20261113.md)及[公共用法](p65-articulated-deformable-usage-20261113.md)：非根连杆、完整J/M投影与共同发布已验；[实施合同](p65-articulated-deformable-implementation-20261113.md)已关闭。[上一批计划](../superpowers/plans/2026-11-13-feature-completion-until-0730.md)仅作历史。
 2. [功能验收矩阵](p65-feature-acceptance-matrix-20261113.md)：源码、后端、安装、应用和性能分列；不估整体完成百分比。
 3. [当前连接架构](p65-feature-architecture-draft-20261113.md)、[统一编译架构](../architecture/unified-scene-compilation.md)：声明、设备来源、查询、载荷与共同发布。
-   [离线架构总览图](p65-functional-architecture-20261113.html)可直接打开；R3-A与M-B1现均完成有限源码/安装资格；图中未连接的域仍明确分开。
+   [离线架构总览图](p65-functional-architecture-20261113.html)可直接打开；R3-A、M-B1与M-B2均完成各自有限源码/安装资格；图中未连接的域仍明确分开。
 4. [八方向差异全景](phymeo-newton-panorama-2026-11-12.md)：下一通用模块与未完成范围；本轮详细事实以验收矩阵及原收据为准。
 5. [D6用法](p65-distance-dissipation-usage.md)、[D6设计](../superpowers/specs/2026-11-13-distance-dissipation-design.md)、[D6-B应用协议](p65-damped-normal-load-application-20261113.md)。
 6. [Batch C](p65-three-track-batch-c-20261112.md)、[Batch B](p65-three-track-batch-b-20261112.md)、[旧历史入口](p65-continuation-history-through-20261112-0035.md)仅按需引用，不恢复旧周期任务或重做旧审计。
 
-本轮证据总入口：`artifacts/p65-feature-until-0730-20261113-01`。
-当前事实依据包含父文档提交 `e25df478`、矩阵 `b1e95c70`、架构 `3e8d0df7`；D6-B以新结束的143收据覆盖旧pending状态。
+当前M-B2证据：`artifacts/p65-articulated-deformable-20261113-01`；上一批证据：`artifacts/p65-feature-until-0730-20261113-01`。
+当前M-B2以产品/测试快照 `6b4a639c`、验收提交 `cdccbe44` 和本批21份命令收据为依据；旧D6-B仍以143结束收据覆盖历史pending状态。
 本页是续作导航，不替代原完整输入、输出、原始失败、source snapshots 与保存收据。
 
 ## 已验公共功能与边界
@@ -31,7 +31,7 @@ D6-A 的 FUNCTIONAL_PASS 与旧弹性 STRICT_FAIL_RECORDED 同时保留，不能
 | D6-A 可选轴向耗散 | 保存 elastic reconstructed velocity 后一次 ordered 速度pass；D1/D3/D5有限源码通过，D1/D3安装 FUNCTIONAL_PASS | 精确守恒、旧elastic短门通过、全网络BE、全局drag、所有膜振型衰减 |
 
 原 S1–S3 resident 多参与者查询、M1/M1-A 资产来源、D1设备节点、D2有限球/胶囊–triangle 与 D3共同发布资格继续复用。
-D3/D5经M-B1扩展为每world一个节点模型＋多个ordinary单body动态球/胶囊；总participants≤8、worlds≤8；入步采样、逐facet NormalLayer、零摩擦，存在HOST载荷/诊断往返。
+D3/D5经M-B1扩展为每world一个节点模型＋多个ordinary单body动态球/胶囊；M-B2另支持每world一个ordinary R/P浮根关节树，子连杆球/胶囊真实受载、完整B×6与J/M共同发布。两类world可混batch。总participants≤8、worlds≤8、每world bodies≤33；入步采样、逐facet NormalLayer、零摩擦，存在HOST载荷/诊断往返。
 原几何 CONDITIONING 不得丢弃后继续施力；查询不自动授予响应、CCD、实体内外或面积压力。
 Resident 刚柔与 MuJoCo-TYX 机器人是分别准入的路径，不能把支持表相乘成任意联合求解。
 
@@ -86,5 +86,12 @@ run143仅补明确的源码外helper路径，已完成3072步/3秒，returned=ch
 - 第四包产品23757ae6：534成员同字节，191/192 M-B1各44worldsteps/88participantsteps；201/202 S8/M3各24/44。S8=4world/8participants，不外推8world满配。
 - G2-R0：178预期RED，185源码12GREEN、193包外12GREEN；实际恢复晚失败保原发布、原异常与cleanup，确切候选强owner及真实关闭。UNKNOWN未被重试，资源完整预算仍未实现。
 - 新canonical `artifacts/p65-feature-until-0730-20261113-01/installed-closed-archive-04/wheel-04`：33文件，原件保留，禁止重复归档/全解压。没有新项目执行owner；已绿同源不重跑。
-- 下一三条独立功能线：M-B2非根关节刚柔；BALL树标量limits/DOF dry与完整mixed checker；G2b真实allocation manifest/生命周期预算。先冻结每片多案例与接口，原作者隔离编码、父共享接缝及唯一串行验证。
+- M-B2已验后，下一两条独立功能线：BALL树标量limits/DOF dry与完整mixed checker；G2b真实allocation manifest/生命周期预算。两者仍为提案，先冻结各自多案例与接口，再由原作者隔离编码、父共享接缝及唯一串行验证。
 - D4/D6-B只按[可否证的短试样后继](p65-sustained-support-next-experiments-20261113.md)另冻实验；不选第二个c盲跑。本轮沒有新增该实验或BALL limits产品执行。
+
+## M-B2 本次交付
+
+- 产品/测试快照6b4a639c：新解释15＋CUDA10，受影响旧路径兼容39项通过；没有功能测试失败或数值修复。
+- 新包534产品成员与源码/安装同字节，包外解释/CUDA各40worldsteps、147完整事件，三个owner均一次关闭成功。完整原始结果、格式首错与source snapshots保留，新安装归档9文件/3,959,181 bytes；原件保留，不重归档或重跑。
+- 实际覆盖R–P串联与非对称R/P分支、两world、真实非零入速/控制变化、完整body来源与力学、晚失败/retry、restore/partial reset。多关节机器人同world、MuJoCo BALL刚柔、摩擦/CCD/持续支撑及新关节D6组合仍未获本批资格。
+- 现无项目执行owner；下一批从上述两条提案选独立节点，不恢复已关闭M-B2任务。

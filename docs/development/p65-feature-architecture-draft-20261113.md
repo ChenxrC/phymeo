@@ -1,6 +1,6 @@
 # 当前功能连接架构：2026-11-13
 
-状态：**当前连接架构，已加入M-B1/R3-A/G2-R0后继**。最新安装产品23757ae6，
+状态：**当前连接架构，已加入M-B2非根连杆后继**。最新安装产品6b4a639c，
 资格依据为父已报告的源码结果和同次安装summary顶层字段。此更新只读取文本、
 JSON与Git，没有执行项目、数值、保存审计或安装消费者。安装结果只授予对应
 有限范围；D4持续稳态支撑失败、D6原弹性严格精度失败与待执行项分别保留。
@@ -30,12 +30,12 @@ flowchart TD
   NodeDecl["ParticipantDeformable<br/>D1节点/距离材料/可选D6耗散/稳定point与facet IDs"]
   NodeDecl --> Factory
   Factory --> D5["deformable_normal<br/>静态lowering和原资产来源核验"]
-  D5 --> Joint["唯一 TyxDeformableContactBatch<br/>同runtime节点与全部独立浮体owner"]
+  D5 --> Joint["唯一 TyxDeformableContactBatch<br/>同runtime节点与独立浮体或单R/P树owner"]
   Joint --> Dual["同入步accepted双来源<br/>节点bank + 刚体FK"]
   Dual --> D2["gather → bounds/BVH → sphere/capsule–triangle有限距离"]
   D2 --> Law["仅合法RESOLVED近接触<br/>原离散facet NormalLayer"]
   Law --> NodeCandidate["节点外力+接触力<br/>原integrate / ordered材料 / reconstruct候选"]
-  Law --> RigidCandidate["反向COM wrench<br/>各body原6DOF J/M与完整刚体候选"]
+  Law --> RigidCandidate["反向COM wrench<br/>按真实group交完整B×6载荷<br/>整树J/M与完整root–joint候选"]
   NodeCandidate --> D6Choice{"显式非零 DistanceDissipation？"}
   D6Choice -->|是| D6["保存reconstructed v → 一次ordered轴向速度耗散<br/>设备status + 完整phase观察/验证"]
   D6Choice -->|None或全零，保持原路径| Commit["所有候选与完整receipt先验证<br/>一次共同发布两个accepted bank"]
@@ -252,7 +252,7 @@ D6-B现按闭合run143更新为功能FAIL；[独立结果](p65-damped-normal-loa
 
 ## 8. 后继连接仍应独立登记
 
-- D5-A之后的M-B1多独立单体已接受；下一非根关节资产与变形节点的共同载荷，不能只放开构造guard。
+- D5-A之后的M-B1多独立单体和M-B2非根R/P关节刚柔已接受；下一多机器人同world/BALL刚柔等组合仍需独立来源、完整力学和多案例，不能只放开构造guard。
 - D4/D6之后：先单独判断固定持续载荷应用，再扩切向摩擦、换面测度/历史和CCD；耗散phase通过不替代持续支撑。
 - 原节点模型之后：弯曲、密集布和体软体等材料/拓扑，不能用五条距离行代表全部软体。
 - R3-P之后的R3-A activation已接受；下一limits/dry、condim4/6等具体组合，逐项登记真实原生参考；不重复已通过组合。
@@ -270,4 +270,10 @@ R3-A在原FREE+BALL/R/P与direct JOINT组合中接入NONE/FILTEREXACT、no-conta
 
 G2-R0修复restore提交前候选清理双失败的owner归属与异常聚合，保原accepted发布并真实恢复/释放；源码及第四包各12项通过，UNKNOWN原语义保留。完整资源manifest/生命周期预算仍是后继。
 
-最新图见[独立HTML](p65-functional-architecture-20261113.html)，实际细目见[功能矩阵](p65-feature-acceptance-matrix-20261113.md)及[M-B1用法](p65-multibody-deformable-usage-20261113.md)。第四包534成员同源；M-B1及容量各后端68worldsteps/132participantsteps，与原D4/D6-B稳态FAIL分别记录。
+当前图见[独立HTML](p65-functional-architecture-20261113.html)，实际细目见[功能矩阵](p65-feature-acceptance-matrix-20261113.md)及[M-B1用法](p65-multibody-deformable-usage-20261113.md)。第四包534成员同源；M-B1及容量各后端68worldsteps/132participantsteps，与原D4/D6-B稳态FAIL分别记录。
+
+## 10. M-B2：完整树载荷接入原共同事务
+
+layout从每participant单body扩为完整canonical `(participant, group, body_id)` 地址；没有collider的root/child也进入source和预算。实际accepted FK/current group提供点速、COM lever与有限步功；设备transpose后按participant切出完整B×6零/非零载荷，原Jᵀ投影、全耦合M、偏置和控制只推进一次。没有新增第二套机器人积分或独立发布。
+
+每world允许原多个独立单体，或一个ordinary R/P树，两个域可跨world混合。本批新源码25、受影响兼容39及安装每后端40worldsteps通过；新包534成员同源。[M-B2报告](p65-articulated-deformable-report-20261113.md)保留完整边界。图中的ordinary树不等于MuJoCo FREE＋BALL；多个关节机器人同world、摩擦/CCD/稳态和带D6的新树组合仍待各自资格。

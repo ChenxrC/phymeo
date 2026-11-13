@@ -1,7 +1,7 @@
 # 2026-11-13 功能验收矩阵：场景、机器人组合、规模与保留的支撑失败
 
 本页是**当前事实截点**，按父任务实际源码结果、已结束命令及安装消费者的小摘要更新。
-最新已验安装产品为 `23757ae6a0d2a5ed3c6b15b0ec762bfd571e3b75`；原08d7a1b6/ec0e2997资格按原结果复用。本文仅文本/file IO/Git，
+最新已验安装产品为 `6b4a639c3e3126fcc6b1048b97c7a24cf18497a1`；原23757ae6/08d7a1b6/ec0e2997资格按原结果复用。本文仅文本/file IO/Git，
 没有执行项目、读取大轨迹、重做保存审计或产品字节核对。以下结果引用原父收据，
 后续新应用不得自动继承。整个 P6.5 / Newton 功能对齐仍未完成。
 
@@ -22,6 +22,7 @@
 | **D4 原无阻尼N1持续法向载荷**：完整入层→承载→卸载→离层→再接触 | 原strict run46第301步速度门FAIL；runner、独立算术审计及诊断路径可用 | run50解释、run69 CUDA均完成原3072步/3秒，但均 **FAIL / DIAGNOSTIC_ONLY** | 没有已通过的完整持续支撑安装资格；不把D5/D6包外短窗代替它 | 两预定稳态窗的支撑力与速度RMS不合格，**不是仅精度问题**；其余原三格未执行 | 原始两窗有计时和保存图；无公平性能比较 |
 | **D6-B 新c=4096持续载荷应用** | 短合同140解释14及141 CUDA单返回故障1通过 | 143解释完整3072步/3秒后 **FAIL / DIAGNOSTIC_ONLY**；其余格按协议停止 | 第二包完整N1解释失败，力/运动及连续参考逐步门完成，但稳态均值/RMS不合格 | 两窗21.4613/19.3665N，刚体RMS .3044/.2136m/s；不扫系数，不改原D4结果，详见[实际结果](p65-damped-normal-load-result-20261113.md) | 无Newton比较 |
 | **M-B1 多独立刚体—变形共同响应** | 186解释16＋187CUDA12＝28唯一节点；199/200容量各2；旧兼容171/172各8 | 两后端均通过，S8实测4world/8participants、M3混合1/2body world | 第四包191/192各44worldsteps/88participantsteps；201/202容量各24/44，全部PASS及关闭成功 | 每participant仍ordinary floating单body，sphere/capsule法向；不含关节树、RR新增响应、摩擦/CCD或稳态 | 未比较Newton |
+| **M-B2 非根关节树—变形共同响应** | 新13解释15＋14CUDA10＝25；受影响旧路径06/07/15/16共39通过 | R/P串联末端胶囊、分支两连杆受载，两world/非零入速/控制变化/连续八步/完整事务通过 | 新包534成员同字节；20/21包外各40worldsteps/40participantsteps、三个owner均关闭成功 | ordinary FloatingRobotTree；每world一个关节participant、完整B×6与J/M；可混旧M-B1 world。无多机器人同world、BALL刚柔、摩擦/CCD或稳态资格 | 有HOST往返；未比较Newton |
 | **G2-R0 restore候选资源归属** | 178预期RED后185完整12GREEN | 两后端真实晚失败、保原发布、恢复重试与连续后继 | 第四包193源码外12通过；原异常＋cleanup聚合、保留owner并真实释放 | 不注入/重试UNKNOWN；不是完整资源预算或扩容 | 不改变数值核 |
 
 D5减少公共装配成本，M-B1扩多个独立刚体，D4检查持续功能，D6新增明确材料模型，不能互相替代。
@@ -79,14 +80,14 @@ D6-B的c=4096 N·s/m是另行预登记的物理参数；NormalLayer接触damping
 
 | 范围 | 已验边界与未完成部分 |
 | --- | --- |
-| D5/D3/M-B1刚柔 | 同world多个独立ordinary单body浮体＋一个节点模型，sphere/capsule–triangle、入步facet NormalLayer；总participants≤8/worlds≤8，实测4world/8participants。HOST载荷往返存在；非根关节刚柔、面积压力、摩擦/换面历史、CCD仍缺 |
+| D5/D3/M-B1/M-B2刚柔 | 同world多个独立ordinary单body，或单个ordinary R/P关节树＋一个节点模型，sphere/capsule–triangle、入步facet NormalLayer。M-B2实测两world、3/4body树；旧M-B1容量资格保留。HOST往返存在；多关节机器人同world、BALL刚柔、面积压力、摩擦/换面历史、CCD仍缺 |
 | R3机器人 | 保nv≤35/nq≤45、body128、actor32、geom128/pair16/rawslot32及原solver预算；不以cap常量证明全部极限组合。FREE＋BALL FILTEREXACT已由R3-A另验；limits/dry、更多transmission/shape仍是后继 |
 | G2a异构 | 原完整来源分桶与末桶status/download/aggregate失败、retry及W17/model9前置拒绝已获源码资格；包外只公共正格和边界操作，不冒充重新注入私有故障 |
 | D6材料 | 参数/边序/模型身份、None/全零原路径、fixed反力、late candidate拒绝、真实恢复与UNKNOWN生命周期有对应源码资格；不能把轴向零模或未验应用藏到“已阻尼”中 |
 | 安装与资源 | 主错和cleanup错分开，UNKNOWN不宣称可盲重试；owned-array预算不是RSS，累计分配/上传不是live/peak；所有live/peak及公平Newton速度结论保持UNKNOWN/NOT_COMPARED |
 
 后续按真实缺口登记独立功能合同，不重跑同源已绿组：先完成新应用的既定资格，
-再扩非根关节刚柔、摩擦/历史/CCD，或FREE＋BALL limits/dry等通用组合；
+再扩多关节机器人刚柔组合、摩擦/历史/CCD，或FREE＋BALL limits/dry等通用组合；
 异构扩容须完整生命周期预算后才进入W32/128/256，公平性能比较另立阶段。
 旧G1长舞、J/R学习、B-point表示及全布/体软体问题不会随本表关闭。
 
@@ -101,3 +102,7 @@ D6-B的c=4096 N·s/m是另行预登记的物理参数；NormalLayer接触damping
 ### 第三、第四包的后继范围
 
 第三包08d7a1b6/532成员、R3-A164/165各352worldsteps已接受。第四包23757ae6/534成员，190 parity BYTE_IDENTICAL/issues0；新M-B1及容量191/192/201/202、R0故障193已接受。第四包没有重新跑完整历史功能；旧资格按对应版本保留。详见[M-B1报告](p65-multibody-deformable-report-20261113.md)、[用法](p65-multibody-deformable-usage-20261113.md)、[恢复清理报告](p65-restore-cleanup-report-20261113.md)。完整canonical结果在本轮evidence的installed-closed-archive-04/wheel-04。
+
+### M-B2 后继包
+
+产品6b4a639c，534成员完整 source/wheel/installed parity、issues0；wheel SHA256 `c8cdf8d182e120a8c687e9ded18408852135ff475ab57ce0f05b5d47b4e6d642`。新源码25和受影响兼容39全部通过，安装20/21各40worldsteps。完整结果见[M-B2报告](p65-articulated-deformable-report-20261113.md)，新canonical证据为 `artifacts/p65-articulated-deformable-20261113-01`。原D4/D6-B和历史strict失败保持；本包不冒充全部旧功能重新验收。

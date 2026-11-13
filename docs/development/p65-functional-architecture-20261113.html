@@ -12,7 +12,7 @@ table{width:100%;border-collapse:collapse;font-size:13px;margin:20px 0}td,th{tex
 @media(max-width:850px){body{padding:18px}.cards{grid-template-columns:1fr}h1{font-size:24px}}@media print{body{padding:0}.diagram{overflow:visible}svg{min-width:0}.card,table{break-inside:avoid}}
 </style></head><body><main class="container">
 <header><div class="eyebrow">PHY MEO / FUNCTIONAL CONNECTIONS</div><h1>已连接的框架，和仍然缺少的连接</h1>
-<span class="stamp">2026-11-13 · 07:30 批次 · 已接受功能快照</span>
+<span class="stamp">2026-11-13 · M-B2 批次 · 已接受功能快照</span>
 <p>功能优先。绿色框表示已有受限资格；黄色框仍在验证；红色框保留真实应用失败。支持表不能相乘成任意联合场景。</p></header>
 <section class="diagram" aria-label="三条实际运行路径架构图"><svg viewBox="0 0 1110 970" role="img" aria-labelledby="diagram-title">
 <title id="diagram-title">公共参与者场景、刚柔共同响应、原生机器人与异构聚合的实际连接</title>
@@ -40,36 +40,36 @@ table{width:100%;border-collapse:collapse;font-size:13px;margin:20px 0}td,th{tex
 <g><rect x="35" y="160" width="500" height="64" rx="6" fill="#0f172a" stroke="#22d3ee" stroke-width="1.5"/><text class="label" x="285" y="185" text-anchor="middle">ParticipantSceneDeclaration</text><text class="sub" x="285" y="205" text-anchor="middle">统一参与者、world、控制、材料声明</text></g>
 <g><rect x="635" y="160" width="440" height="64" rx="6" fill="#0f172a" stroke="#22d3ee" stroke-width="1.5"/><text class="label" x="855" y="185" text-anchor="middle">MuJoCoRuntime / 模型能力检查</text><text class="sub" x="855" y="205" text-anchor="middle">interpret 或默认 CUDA：MuJoCo-TYX</text></g>
 <g><rect x="35" y="292" width="235" height="64" rx="6" fill="#0f172a" stroke="#34d399" stroke-width="1.5"/><text class="label" x="152.5" y="317" text-anchor="middle">多参与者 resident</text><text class="sub" x="152.5" y="337" text-anchor="middle">同 world 机器人 / 工具 / 物体</text></g>
-<g><rect x="300" y="292" width="235" height="64" rx="6" fill="#0f172a" stroke="#34d399" stroke-width="1.5"/><text class="label" x="417.5" y="317" text-anchor="middle">D5 / M-B1 刚柔</text><text class="sub" x="417.5" y="337" text-anchor="middle">每 world：多个独立浮体 + 节点模型</text></g>
+<g><rect x="300" y="292" width="235" height="64" rx="6" fill="#0f172a" stroke="#34d399" stroke-width="1.5"/><text class="label" x="417.5" y="317" text-anchor="middle">D5 / M-B1 / M-B2 刚柔</text><text class="sub" x="417.5" y="337" text-anchor="middle">独立浮体 / 单 R/P 树 + 节点模型</text></g>
 <g><rect x="635" y="292" width="440" height="64" rx="6" fill="#0f172a" stroke="#34d399" stroke-width="1.5"/><text class="label" x="855" y="317" text-anchor="middle">原生完整力学</text><text class="sub" x="855" y="337" text-anchor="middle">FK / M / J / bias / 执行器 / primitive 约束</text></g>
 <g><rect x="35" y="420" width="235" height="64" rx="6" fill="#0f172a" stroke="#34d399" stroke-width="1.5"/><text class="label" x="152.5" y="445" text-anchor="middle">当前设备来源 → 碰撞查询</text><text class="sub" x="152.5" y="465" text-anchor="middle">真实 FK / bounds / BVH / 有限距离</text></g>
 <g><rect x="300" y="420" width="235" height="64" rx="6" fill="#0f172a" stroke="#34d399" stroke-width="1.5"/><text class="label" x="417.5" y="445" text-anchor="middle">持久节点 + 运动球 / 胶囊</text><text class="sub" x="417.5" y="465" text-anchor="middle">查询 → 合法法向载荷 → 双向力矩</text></g>
 <g><rect x="635" y="420" width="440" height="64" rx="6" fill="#0f172a" stroke="#34d399" stroke-width="1.5"/><text class="label" x="855" y="445" text-anchor="middle">R3-N / R3-P：已验组合</text><text class="sub" x="855" y="465" text-anchor="middle">FREE + BALL/R/P + NONE：condim1 / 3</text></g>
 <g><rect x="35" y="548" width="235" height="64" rx="6" fill="#0f172a" stroke="#34d399" stroke-width="1.5"/><text class="label" x="152.5" y="573" text-anchor="middle">原共同载荷与发布</text><text class="sub" x="152.5" y="593" text-anchor="middle">指定域响应；查询不等于通用响应</text></g>
-<g><rect x="300" y="548" width="235" height="64" rx="6" fill="#0f172a" stroke="#34d399" stroke-width="1.5"/><text class="label" x="417.5" y="573" text-anchor="middle">材料与双方共同候选</text><text class="sub" x="417.5" y="593" text-anchor="middle">弹性 → 重构速度 → 可选 D6 耗散</text></g>
+<g><rect x="300" y="548" width="235" height="64" rx="6" fill="#0f172a" stroke="#34d399" stroke-width="1.5"/><text class="label" x="417.5" y="573" text-anchor="middle">材料 + 整树 Jᵀ / M 候选</text><text class="sub" x="417.5" y="593" text-anchor="middle">弹性 → 重构速度 → 可选 D6 耗散</text></g>
 <g><rect x="635" y="548" width="440" height="64" rx="6" fill="#0f172a" stroke="#34d399" stroke-width="1.5"/><text class="label" x="855" y="573" text-anchor="middle">R3-A：有状态执行器组合</text><text class="sub" x="855" y="593" text-anchor="middle">FILTEREXACT：源码117＋安装各352 worldsteps</text></g>
 <g><rect x="35" y="676" width="500" height="64" rx="6" fill="#0f172a" stroke="#34d399" stroke-width="1.5"/><text class="label" x="285" y="701" text-anchor="middle">验证候选 → 一次共同发布</text><text class="sub" x="285" y="721" text-anchor="middle">力 / 运动 / 反力 / 身份一致；恢复与晚失败保留旧状态</text></g>
 <g><rect x="635" y="676" width="440" height="64" rx="6" fill="#0f172a" stroke="#34d399" stroke-width="1.5"/><text class="label" x="855" y="701" text-anchor="middle">独立 world → 来源分桶 → 聚合发布</text><text class="sub" x="855" y="721" text-anchor="middle">G2a：8模型/16world；新组合不自动取得规模资格</text></g>
 <g><rect x="35" y="804" width="500" height="64" rx="6" fill="#0f172a" stroke="#fb7185" stroke-width="1.5"/><text class="label" x="285" y="829" text-anchor="middle">应用验收必须单列</text><text class="sub" x="285" y="849" text-anchor="middle">D4 与 D6-B 稳态支撑 FAIL；不被模块通过抵消</text></g>
 <g><rect x="635" y="804" width="440" height="64" rx="6" fill="#0f172a" stroke="#34d399" stroke-width="1.5"/><text class="label" x="855" y="829" text-anchor="middle">训练与观测接口</text><text class="sub" x="855" y="849" text-anchor="middle">专用 VecEnv / RSL；有 HOST 调度与观察成本</text></g>
-<text x="555" y="918" text-anchor="middle" fill="#fb7185" font-size="14">尚无“关节机器人 ↔ 任意变形模型”的通用联合求解连接</text>
+<text x="555" y="918" text-anchor="middle" fill="#fb7185" font-size="14">已接 ordinary R/P 树刚柔；多机器人、BALL 刚柔与通用跨域仍待补齐</text>
 <text x="555" y="945" text-anchor="middle" fill="#94a3b8" font-size="12">CPU / Warp 为显式独立路线；TYX 不支持的模型不会静默回退。</text>
 </svg></section>
 <section class="cards">
-<div class="card"><h2 class="green">场景与碰撞入口已复用</h2><p>多参与者共享身份、状态与查询入口；D5/M-B1 将节点模型和多个独立球/胶囊的双向响应装入公共场景，已验8参与者容量。</p><p>下一结构缺口：非根关节刚柔，完整 Jᵀ 载荷与共同发布。</p></div>
+<div class="card"><h2 class="green">场景与碰撞入口已复用</h2><p>公共场景已连接独立浮体或一个 R/P 关节树与变形节点。M-B2按真实子连杆传递完整载荷，复用整树质量矩阵与共同发布。</p><p>新关节树两后端安装各40世界步通过；多机器人同world、BALL刚柔仍待补齐。</p></div>
 <div class="card"><h2 class="rose">算子资格 ≠ 持续承载</h2><p>D6 可选轴向耗散的功能与安装验证完成，旧严格精度失败单列。原 D4 和新 D6-B 两个稳态窗均未通过。</p><p>停止扫描系数，先分辨形变模态与接触相对运动，另立可验证模型。</p></div>
 <div class="card"><h2 class="amber">机器人组合与 GPU 规模</h2><p>FREE＋BALL 法向/摩擦接触、原容量内异构矩阵已验；R3-A 有状态执行器已通过限定源码与安装验证。</p><p>恢复失败的资源归属已修；扩容前仍需完整生命周期预算，再做公平性能比较。</p></div>
 </section>
 <table><thead><tr><th>大模块</th><th>下一项实质缺口</th><th>判断成功的依据</th></tr></thead><tbody>
 <tr><td>场景 / 机器人</td><td>标量限位＋DOF 干摩擦的 BALL 树组合；BALL 角限位单独开发</td><td>完整原生约束行、力与运动；多案例、双后端、晚失败与安装消费</td></tr>
-<tr><td>刚柔 / 碰撞</td><td>非根关节刚柔、切向历史、换面、CCD</td><td>完整当前来源、双向载荷与共同发布；持续应用不能只验一次碰撞</td></tr>
+<tr><td>刚柔 / 碰撞</td><td>更多关节机器人组合、切向历史、换面、CCD</td><td>完整当前来源、双向载荷与共同发布；持续应用不能只验一次碰撞</td></tr>
 <tr><td>GPU / 多场景</td><td>超过 8 模型 / 16 world 的异构容量与资源资格</td><td>真实负载、恢复和峰值资源；功能先于吞吐排名</td></tr>
 <tr><td>训练 / 传感 / 跨域</td><td>J/R 学习、G1 长舞、完整传感时序、通用跨后端耦合</td><td>各自原任务门；运行 PPO 不等于物理可微或任务学会</td></tr>
 <tr><td>布 / 体软体 / 杆缆 / 流体</td><td>密集折叠、多材料抓捏、弯扭杆缆、MPM 和流固边界</td><td>独立模型与多场景矩阵；不从五节点膜推导通用软体能力</td></tr>
 </tbody></table>
 <footer>
 来源：<a href="p65-feature-acceptance-matrix-20261113.md">功能验收矩阵</a> · <a href="../architecture/unified-scene-compilation.md">统一编译架构</a> · <a href="phymeo-newton-panorama-2026-11-12.md">八方向差异全景</a> · <a href="p65-damped-normal-load-result-20261113.md">持续载荷失败</a>。<br>
-本图是连接说明，不替代实际结果。Newton 采用既有固定 1.7.0 参照；没有新增公平性能结论或整体完成百分比。M-B1及容量两后端安装各68 worldsteps/132 participant steps；G2-R0安装12项通过。第四包534产品成员同源。持续支撑FAIL保持。
+本图是连接说明，不替代实际结果。Newton 采用既有固定 1.7.0 参照；没有新增公平性能结论或整体完成百分比。M-B2新源码25＋兼容39项通过，安装两后端各40 worldsteps；新包6b4a639c的534产品成员同源。M-B1/R3-A/G2-R0原资格复用。持续支撑FAIL保持。
 </footer></main></body></html>
 <!-- Template adaptation license:
 MIT License

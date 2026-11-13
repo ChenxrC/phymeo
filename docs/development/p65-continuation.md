@@ -1,9 +1,9 @@
 # Phymeo 当前续作入口
 
-更新：2026-11-13下一批；**M-B2非根连杆刚柔已完成限定源码及安装验收，作者与父执行槽均已释放**。M-B1多独立刚体、容量、G2-R0与R3-A原有限验收复用。
+更新：2026-11-13下一批；**BALL-S标量限位／DOF干摩擦组合已冻结作者合同，原两作者并行纯编码，尚未执行验证**。父/root是本批唯一项目执行owner，待案例冻结与交接审阅后串行验证。M-B2非根连杆刚柔已完成限定源码及安装验收；M-B1多独立刚体、容量、G2-R0与R3-A原有限验收复用。
 D5-A、R3-N/P、G2a、D6-A 已获各自有限源码/安装资格；D4 原稳态功能仍 FAIL。
 D6-A 的 FUNCTIONAL_PASS 与旧弹性 STRICT_FAIL_RECORDED 同时保留，不能合并成严格通过。
-整个 P6.5 / Newton 功能对齐未完成。上一轮到07:30计划已收口，见[交付概览](p65-feature-batch-summary-20261113.md)；用户随后授权的[M-B2批次](p65-articulated-deformable-implementation-20261113.md)也已完成，下一批从文末两条提案开始，不继承旧截止或session。
+整个 P6.5 / Newton 功能对齐未完成。上一轮到07:30计划已收口，见[交付概览](p65-feature-batch-summary-20261113.md)；用户随后授权的[M-B2批次](p65-articulated-deformable-implementation-20261113.md)也已完成。当前执行[BALL-S合同](p65-ball-scalar-constraints-implementation-20261113.md)，G2b仍为后继提案，不继承旧截止或session。
 
 ## 从这里继续
 

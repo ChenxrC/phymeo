@@ -99,3 +99,52 @@ G2-R0不以资源计数改变物理；G2b-1不优化clone分配顺序。若优�
 独立测试作者：NEW `tests/test_mujoco_tyx_restore_cleanup.py`、`tests/test_mujoco_tyx_resource_budget.py`、`tests/test_mujoco_tyx_heterogeneous_resources.py`及一个installed资源消费者。测试不通过读取私有device状态来替代公共物理后继；注入点可沿既有内部故障接缝。原G2a文件/physics kernels/solver参数/模型域不改。
 
 执行仍归父唯一串行槽。此提案与正在推进的多刚体—变形响应可独立排队；先补资源归属可明确关闭一个真实工程缺口，完整预算随后再决定规模档，不阻塞已验机器人组合，也不宣称Newton性能优越。
+
+## Allocation route delta after M-B2, 2026-11-13 (text only)
+
+The original source author inspected the current six device constructors while
+BALL-S tests were authored. No allocation probe, numerical execution, resource
+fix or new acceptance was performed; G2b remains PROPOSAL_NOT_GRANTED.
+
+The leaf descriptor belongs after actual route selection and before
+`MuJoCoTyxRuntime._build_device` packs HOST state. Derive it from the complete
+plan, world count, body count, requested capacities and activation/CSR flags.
+All six constructors ultimately use `_device._buffer`; a check only inside
+that method is too late to prevent the preceding NumPy staging allocations.
+Reserve against the descriptor first, then create each declared source/zero
+array lazily. Existing plan/packed HOST arrays and new CUDA copies have distinct
+owners and must be described separately.
+
+| Actual allocation family | Descriptor detail that must remain exact |
+| --- | --- |
+| `_device.py` | Real plan table shapes, two q/v/clock banks, controls/applied/body-force/scratch. Equal bank contents still mean two allocations. |
+| `_tree_device.py` | Mechanical width8; q bank follows packed nq (BALL can be10); static vectors use their actual shape. |
+| `_floating_device.py` | width=max(8,nv); q and v dimensions remain independent. |
+| `_normal_device.py` | Base constructor shares this owner; four static tables, full raw slots and both S-by-S buffers. extended_work is allocated even when its flag is disabled. |
+| `_constraint_device.py` | Existing integer/float shape dictionaries are a direct descriptor source. Retain max(1,logical) padding for geoms/slots/contact/EFC capacities. Base scratch remains resident even when a later public field supersedes it. |
+| `_actuator_device.py` | Appends two activation banks, two static tables, two derivatives and actor fields to the same owner, not another whole base allocation. |
+
+Disabled CSR fields alias parents/gravity/body_force; enabled CSR creates four
+new buffers. Ownership identity, not equality of array contents, decides aliases.
+Constructor `static_uploaded_bytes` includes scratch and is not a static-table
+memory inventory. Tree HOST body-position/body-COM views share a downloaded motion
+owner; smooth-acceleration may alias qacc. Constraint download first obtains base
+arrays, then replaces acceleration/constraint fields, so peak HOST staging cannot
+be inferred from the final returned dictionary alone.
+
+Interpret `_buffer` uses a HOST copy without CUDA resource registration, and
+current close does not delete its array attributes. A surviving owner reference
+therefore prevents claiming that HOST live payload dropped to zero. CUDA release
+failure transfers ownership to failures/quarantine after removing the pending
+entry: pending_buffer_count=0 does not mean UNKNOWN payload was released.
+Carry byte metadata through those transitions; deduct only a successful release.
+Driver/context/JIT and incomplete HOST temporaries remain explicitly UNKNOWN.
+
+Suggested first development split: one resource author owns the shared
+descriptor/budget primitive, all six leaf constructors and _resources; parent
+owns runtime pack/download/clone/reset/checkpoint reservation boundaries and
+public schema; a separate facade author owns cross-bucket reservations using the
+same leaf descriptors. First qualify original8-model/16-world capacities and
+short lifecycle cases. Do not start W32 or call the partial ledger total live/
+peak memory until the named HOST overlap paths are covered.
+

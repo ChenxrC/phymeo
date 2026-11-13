@@ -7,6 +7,7 @@ in-process garbage collection from invoking a retained owner's destructor;
 Python interpreter shutdown/destructor ordering is outside this guarantee.
 """
 
+from contextlib import nullcontext
 from dataclasses import dataclass
 from threading import RLock
 from typing import Any, Callable
@@ -25,6 +26,7 @@ class ReleaseFailure:
 class _Release:
     owner: Any
     callback: Callable[[], None]
+    allocation_name: str | None = None
 
 
 _QUARANTINE: dict[int, "DeviceResources"] = {}
@@ -45,7 +47,9 @@ def quarantined_resources() -> tuple["DeviceResources", ...]:
 class DeviceResources:
     """Two-phase, one-attempt cleanup for one device bank's owned resources."""
 
-    def __init__(self):
+    def __init__(self, reservation=None):
+        self._reservation = reservation
+        self._allocation_entry = None
         self._lock = RLock()
         self._buffers: list[_Release] = []
         self._runtime: _Release | None = None
@@ -99,12 +103,27 @@ class DeviceResources:
                 raise TypeError("device runtime owner must expose close()")
             self._runtime = _Release(owner, callback)
 
+    def describe_buffer(self, entry):
+        """Bind the next original add_buffer call without changing its API."""
+        with self._lock:
+            self._require_registration()
+            self._allocation_entry = entry
+
+    def finish_reservation(self):
+        if self._reservation is not None:
+            self._reservation.finish()
+
+    def _accounting_lock(self):
+        return nullcontext() if self._reservation is None else self._reservation._budget._lock
+
     def add_buffer(self, owner):
         """Own one distinct CUDA buffer; take its callback before cleanup."""
-        with self._lock:
+        with self._accounting_lock(), self._lock:
             self._require_registration()
             if self._runtime is None:
                 raise RuntimeError("register the runtime before device buffers")
+            if self._reservation is not None and self._allocation_entry is None:
+                raise RuntimeError("budgeted buffer requires its manifest entry")
             if owner is self._runtime.owner:
                 raise ValueError("runtime cannot also be a buffer owner")
             if any(item.owner is owner for item in self._buffers):
@@ -112,10 +131,20 @@ class DeviceResources:
             callback = getattr(owner, "free", None)
             if not callable(callback):
                 raise TypeError("device buffer owner must expose free()")
-            self._buffers.append(_Release(owner, callback))
+            release = _Release(owner, callback)
+            self._buffers.append(release)
+            if self._reservation is not None and self._allocation_entry is not None:
+                entry = self._allocation_entry
+                self._reservation.allocated(entry.name, entry.nbytes)
+                self._buffers[-1] = _Release(owner, callback, entry.name)
 
     def _unknown(self, kind, release, error):
         self._failures.append(ReleaseFailure(kind, release.owner, error))
+        if self._reservation is not None:
+            if kind == "runtime":
+                self._reservation.unknown()
+            elif release.allocation_name is not None:
+                self._reservation.unknown(release.allocation_name)
         # Strong ownership must outlive a failed runtime/clone being discarded.
         # Lock ordering is ledger -> quarantine; inspection takes only quarantine.
         with _QUARANTINE_LOCK:
@@ -134,7 +163,7 @@ class DeviceResources:
         available to a later call. Once an actual callback throws, subsequent
         calls only report the original unknown outcome and never invoke it again.
         """
-        with self._lock:
+        with self._accounting_lock(), self._lock:
             if self._closing:
                 raise RuntimeError("recursive device resource cleanup is not supported")
             if self._failures:
@@ -149,6 +178,9 @@ class DeviceResources:
                         release.callback()
                     except BaseException as error:
                         self._unknown("buffer", release, error)
+                    else:
+                        if self._reservation is not None and release.allocation_name is not None:
+                            self._reservation.released(release.allocation_name)
                 if self._failures:
                     # The runtime remains owned and uncalled while any dependent
                     # buffer has an ambiguous release outcome.
@@ -162,4 +194,5 @@ class DeviceResources:
                         self._raise_unknown()
                 self._closed = True
             finally:
+                self.finish_reservation()
                 self._closing = False

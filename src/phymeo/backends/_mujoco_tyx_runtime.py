@@ -205,15 +205,17 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
     position coordinates, complete SO(3) integration and full M/J/bias. This
     extension permits scalar JOINT actors and direct BALL motors, including
     admitted FILTEREXACT activation and primitive normal/pyramidal3 contact.
-    Free-root composition, joint limits and dry friction remain separate capabilities.
+    The same fixed/free BALL trees admit scalar soft limits and native DOF dry
+    friction through the mixed constraint solver. BALL angular limits remain
+    unsupported; capability records distinguish joint-only and contact composition.
     Original domain: 1..8 all-prismatic native DOFs with full coupled static
     mass, stateless direct/affine motors, scalar stiffness/armature/damping; or
     one centered isotropic free body, with native local angular coordinates and
     real world Cartesian body torque. At most one possible static plane/sphere
     pair with condim=1. Its soft-normal QP is solved directly, not replaced with
     a hard-contact projection or force-gap spring. Unsupported semantics fail
-    construction. Finite joint limits are strict-interior guards: entering a
-    limit margin rejects publication, not silently omits a stop response.
+    construction. Legacy direct routes retain strict-interior guards; supported
+    scalar limits select the mixed soft-constraint route before device allocation.
     """
 
     def __init__(
@@ -425,6 +427,50 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                 friction="pyramidal-condim1-3-only" if pyramidal else "none",
                 mixed_articulated_constraints_supported=False,
                 floating_mixed_constraints_supported=False,
+                g1_supported=False,
+            )
+            self._capabilities = MappingProxyType(info)
+
+        if (
+            np.any(self._model.jnt_type == self._mj.mjtJoint.mjJNT_BALL)
+            and getattr(self._plan, "constraint_contact", False)
+            and (self._plan.nfriction or self._plan.nlimit)
+        ):
+            # A T4 wrapper also represents joint-only models. Report its actual
+            # declared row families without borrowing the contact-only labels.
+            family = "free" if self._plan.kind == 3 else "fixed"
+            rows = "mixed-contact-joint-constraints" if self._plan.npair else "joint-constraints"
+            activation = "-filterexact" if hasattr(self._plan, "activation") else ""
+            dimensions = tuple(sorted(set(map(int, self._plan.pair_condim[: self._plan.npair]))))
+            contact_rows = sum(
+                1 if int(self._plan.pair_condim[int(slot[0])]) == 1 else 4
+                for slot in self._plan.slot_ids[: self._plan.nslot]
+            )
+            info.update(
+                domain=f"{family}-ball-{rows}{activation}-v1",
+                contact_dimensions=dimensions,
+                limits="native-scalar-soft-constraints" if self._plan.nlimit else "none",
+                joint_limits_supported=bool(self._plan.nlimit),
+                scalar_joint_limits_supported=bool(self._plan.nlimit),
+                ball_angular_limits_supported=False,
+                dry_friction_supported=bool(self._plan.nfriction),
+                friction=(
+                    "native-dof-loss-and-pyramidal-condim1-3"
+                    if self._plan.nfriction and self._plan.npair
+                    else "native-dof-loss" if self._plan.nfriction
+                    else "pyramidal-condim1-3-only" if self._plan.npair
+                    else "none"
+                ),
+                native_dry_dof_ids=tuple(map(int, self._plan.friction_ids[: self._plan.nfriction])),
+                native_scalar_limit_joint_ids=tuple(
+                    map(int, self._plan.limit_ids[: self._plan.nlimit, 0])
+                ),
+                dry_constraint_rows=self._plan.nfriction,
+                scalar_limited_joints=self._plan.nlimit,
+                conservative_efc_bound=self._plan.nfriction + 2 * self._plan.nlimit + contact_rows,
+                constraint_capacity_policy="actual-active-rows; static-bound-diagnostic-only",
+                mixed_articulated_constraints_supported=True,
+                floating_mixed_constraints_supported=self._plan.kind == 3,
                 g1_supported=False,
             )
             self._capabilities = MappingProxyType(info)

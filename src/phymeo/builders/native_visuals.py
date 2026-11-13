@@ -46,7 +46,7 @@ def capture_urdf_visuals(asset, source_root):
     return export_model(model, prefix=asset.name + "::", role="visual")
 
 
-def export_model(model, *, prefix="", role="native_geom", excluded=(), fallback=()):
+def export_model(model, *, prefix="", role="native_geom", excluded=(), fallback=(), identities=None):
     import mujoco as mj
 
     kinds = {
@@ -125,8 +125,8 @@ def export_model(model, *, prefix="", role="native_geom", excluded=(), fallback=
         item_role = "collision_geometry" if any(name.startswith(p) for p in fallback) else role
         instances.append(
             VisualInstance(
-                prefix + name,
-                prefix + model.body(body).name if body else None,
+                identities["geom"][i] if identities is not None else prefix + name,
+                (identities["body"][body] if identities is not None else prefix + model.body(body).name) if body else None,
                 kind,
                 tuple(map(float, model.geom_size[i, :width])),
                 tuple(map(float, model.geom_pos[i])),

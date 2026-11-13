@@ -271,6 +271,9 @@ class NativeTemplate:
     _source_spec: object = field(default=None, repr=False, compare=False)
     # None means not requested; an empty contract means no logical URDF joints.
     frame_metadata: object = None
+    complete_scene_contract_version: int = 0
+    actuator_bindings: tuple = ()
+    native_identity: tuple = ()
 
     @property
     def scalar_joint_bindings(self):
@@ -342,6 +345,8 @@ class HomogeneousNativeBinding:
 
         if self.template.contract_version != 1:
             raise ValueError("unsupported native integration contract")
+        if type(self.template.complete_scene_contract_version) is not int or self.template.complete_scene_contract_version not in (0, 1):
+            raise ValueError("unsupported complete scene contract")
         if self.template.follower_drive_contract_version != 1:
             raise ValueError("unsupported follower drive contract")
         return PhySolveRuntime(
@@ -351,6 +356,7 @@ class HomogeneousNativeBinding:
             scalar_controls=self.template.scalar_controls,
             follower_drives=self.template.follower_drives,
             nworld=self.nworld,
+            complete_scene=self.template.complete_scene_contract_version == 1,
             **options,
         )
 

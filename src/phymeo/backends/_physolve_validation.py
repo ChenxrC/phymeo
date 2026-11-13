@@ -83,6 +83,8 @@ class PreparedValidation:
         self.flags.copy_to_host(self.host, stream=stream)
         self.readbacks += 1
         bits = int(self.host[0])
+        if bits & 4194304:
+            raise RuntimeError("non-finite PhySolve current-forward observation; not published")
         if bits & 1:
             raise RuntimeError("PhySolve contact/constraint capacity exceeded; not published")
         if bits & 65536:

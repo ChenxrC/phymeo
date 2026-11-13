@@ -38,3 +38,31 @@ articulation 事务 API 并不在该检查点，不能只凭相同包名或版�
 本记录只证明原生能力复用可行。当前安装 P2PE 的完整模型/动作/动力学桥接仍未
 完成，真实 Phyzoic GUI 未执行；不能据此声明整条消费链完成。下一步应按完整模型
 与原生索引映射、控制/观测公开绑定、C ABI无头、GUI的顺序接入。
+
+## 公共接入增量（尚未完成 Transport）
+
+`compile_native_scene` 保留一个完整 MJCF 的原模型、actuator、world geometry，
+公开名称独立绑定，不能按 scalar_pd 资产重建。初态 NPZ 包含 11 个 integration
+字段及根 source/model SHA256；include 资源变化也拒绝旧初态。该模式显式使用
+原交付 FP32 quaternion 合同（1e-5），普通 NativeInitialState 的 strict_v1
+仍为 1e-10，不归一化输入。球关节消费绑定、额外 Stage 物理覆盖仍拒绝。
+
+`PhySolveRuntime.prepare_current_observations(fields)` 只创建一份派生 scratch
+Data 和输出，不增加权威状态。两份捕获分别借用原 accepted/candidate bank，
+warmup 使用当前 active bank；integration D2D copy 字节与刷新计数可查询。
+scratch 原生总显存尚未测量，不宣称零复制或零额外显存。
+
+idle `refresh()` 后必须 `complete()`，否则禁止 begin_execution；候选刷新使用
+runtime.complete_execution，completed 后禁止追加。失败不发布新输出；close
+确认完成后释放 Graph/Host，失败保留 closing owner 供 runtime.close 重试。
+v1 只允许一个 live frame 且固定 stream；已有活跃 frame 时换流明确拒绝。
+公开借用数组只在 owner 存活期内有效，输出是 provisional frame，不是独立物理
+state。qM 保留原生 tiled/padded 格式，不等于已完成 dense mass matrix ABI。
+
+初态、模型与默认合同主机回归通过；当前 forward 的 N1/8/64、F/T sensor
+配置 admission、NaN错误恢复、固定stream拒绝和关闭重试逐项实测。F/T 此处
+仅验证载荷保留/有限，不作为单位与物理量验收。P2PE原actuator C ABI在N1/8/64
+已验证写/读/推进和局部reset。完整Transport的C ABI commit仍因原材质含纹理，
+被native_visuals现有门禁拒绝；未改模型或去掉纹理规避。动力学P2PE绑定、原
+25×2ms控制节奏、任务轨迹、独立安装与GUI均未完成。证据在实验根
+`evidence/transport-public-*`，原失败日志保留，不能由历史原生9/16成功代替。

@@ -87,7 +87,11 @@ class PhySolveRuntime:
         contact_observations=False,
         body_measurements=False,
         body_wrench_lifetime="persistent",
+        complete_scene=False,
     ):
+        if type(complete_scene) is not bool:
+            raise TypeError("complete_scene requires bool")
+        self.complete_scene = complete_scene
         if follower_drives and not scalar_controls:
             raise ValueError("follower drives require independent scalar controls")
         if body_wrench_lifetime not in ("persistent", "one_substep"):
@@ -151,6 +155,7 @@ class PhySolveRuntime:
         self._drive_parameter_rollbacks = 0
         self._drive_parameter_upload_bytes = 0
         self._site_measurements = []
+        self._current_frames = []
         self._ray_queries = []
         self._free_body_updates = None
         self._validation = self._storage = None
@@ -160,7 +165,10 @@ class PhySolveRuntime:
         self._compilation = compilation
         self._cpu_model = cpu
         cpu = self._cpu_model
-        if cpu.nuserdata or cpu.nplugin or cpu.nflex or cpu.nsensor:
+        supported_sensors = complete_scene and np.isin(
+            cpu.sensor_type, [mujoco.mjtSensor.mjSENS_FORCE, mujoco.mjtSensor.mjSENS_TORQUE]
+        ).all()
+        if cpu.nuserdata or cpu.nplugin or cpu.nflex or (cpu.nsensor and not supported_sensors):
             raise NotImplementedError(
                 "PhySolve profile excludes userdata, plugins, flex and sensors"
             )
@@ -174,7 +182,11 @@ class PhySolveRuntime:
         # accounting must be qualified before allowing a sparse request.
         if cpu.opt.jacobian == mujoco.mjtJacobian.mjJAC_SPARSE:
             raise NotImplementedError("sparse Jacobians are not qualified in this profile")
-        cpu.opt.jacobian = mujoco.mjtJacobian.mjJAC_DENSE
+        if complete_scene:
+            if mujoco.mj_isSparse(cpu):
+                raise NotImplementedError("complete scene requires effective dense Jacobians")
+        else:
+            cpu.opt.jacobian = mujoco.mjtJacobian.mjJAC_DENSE
         selected = tx.get_device(device)
         if not selected.is_cuda or selected.arch != 120:
             raise RuntimeError("frozen payload is qualified only on CUDA sm_120")
@@ -598,6 +610,12 @@ class PhySolveRuntime:
                     "body_measurement_copies": 0 if self._body_measurements is None else self._body_measurements.copies,
                     "body_measurement_device_bytes": 0 if self._body_measurements is None else self._body_measurements.allocated_bytes,
                     "site_measurement_device_bytes": sum(plan.allocated_bytes for plan in self._site_measurements),
+                    "current_forward_frames": [dict(
+                        fields=frame.fields, refreshes=frame.refreshes,
+                        integration_copy_bytes_per_refresh=frame.copy_bytes,
+                        output_device_bytes=sum(value.size * 4 for value in frame.targets.values()),
+                        native_scratch_bytes="not_measured", fixed_stream=True)
+                        for frame in self._current_frames if not frame.closed],
                     "ray_queries": [plan.costs() for plan in self._ray_queries],
                     "free_body_update_device_bytes": 0 if self._free_body_updates is None else self._free_body_updates.allocated_bytes,
                     "stream_rebindings": self._stream_rebindings,
@@ -646,6 +664,31 @@ class PhySolveRuntime:
                 raise ValueError("unsupported runtime storage contract")
             return self._storage
 
+    def prepare_current_observations(self, fields):
+        """Prepare device-only current forward, without publishing a physical state."""
+        from ._physolve_current import CurrentForwardFrame
+
+        with self._scope():
+            self._require_idle()
+            if self._stream.is_capturing:
+                raise RuntimeError("cannot prepare current observations during capture")
+            if any(not frame.closed for frame in self._current_frames):
+                raise RuntimeError("reuse the existing current-forward frame")
+            frame = CurrentForwardFrame(self, fields)
+            self._current_frames.append(frame)  # Retain partial construction on failure.
+            try:
+                frame.prepare()
+            except Exception as error:
+                try:
+                    frame.close()
+                except Exception as cleanup:
+                    self._closing = True
+                    error.runtime = self
+                    raise error from cleanup
+                self._current_frames.remove(frame)
+                raise
+            return frame
+
     def _require_idle(self):
         if self._pending is not None:
             raise RuntimeError("an execution is pending; accept or discard it first")
@@ -661,6 +704,8 @@ class PhySolveRuntime:
         """Copy integration once; caller may now enqueue candidate field writes."""
         with self._scope():
             self._require_idle()
+            if any(frame.idle_pending for frame in self._current_frames):
+                raise RuntimeError("complete the idle current-forward sample before execution")
             self._execution_epoch += 1
             ticket = (self._execution_epoch, 1 - self._active)
             self._pending = {"ticket": ticket, "phase": "preparing"}
@@ -1003,6 +1048,9 @@ class PhySolveRuntime:
             for stream in self._stream_retained:
                 self._synchronize_stream(stream)
             self._release_step_graphs()
+            while self._current_frames:
+                self._current_frames[-1].close()
+                self._current_frames.pop()
             while self._ray_queries:
                 self._ray_queries[-1].close()
                 self._ray_queries.pop()

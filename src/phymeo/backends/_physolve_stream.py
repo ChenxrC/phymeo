@@ -18,6 +18,8 @@ def bind_stream(runtime, handle, owner):
         if pointer == int(old.handle):
             old.validate_context()
             return False
+        if any(not frame.closed for frame in runtime._current_frames):
+            raise NotImplementedError("current-forward frame v1 requires a fixed stream")
         candidate = default if pointer == int(default.handle) else runtime._tx.CudaStream.from_external(
             pointer, owner=owner, device=runtime._device.ordinal
         )

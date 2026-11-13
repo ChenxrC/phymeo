@@ -94,18 +94,20 @@ def compile_urdf_frames(model, sources):
     return NativeFrameMetadata(bodies, tuple(joints))
 
 
-def _mjcf_frames(model, instance):
+def _mjcf_frames(model, instance, *, identities=None):
     """Native scalar anchors in compiled SI units, including a world parent."""
     import mujoco as mj
 
     prefix = instance + "::"
     for index in range(model.njnt):
         joint = model.joint(index)
-        if not joint.name.startswith(prefix):
+        if identities is None and not joint.name.startswith(prefix):
             continue
         kind = {int(mj.mjtJoint.mjJNT_HINGE): "revolute",
                 int(mj.mjtJoint.mjJNT_SLIDE): "prismatic"}.get(int(model.jnt_type[index]))
         child = int(model.jnt_bodyid[index])
+        if identities is not None and int(model.jnt_type[index]) == int(mj.mjtJoint.mjJNT_FREE):
+            continue  # Free roots are body-state bindings, not scalar joint frames.
         if kind is None or int(model.body_jntnum[child]) != 1:
             raise NotImplementedError("MJCF frames require one scalar joint per moving body")
         parent = int(model.body_parentid[child])
@@ -122,8 +124,9 @@ def _mjcf_frames(model, instance):
             mj.mju_axisAngle2Quat(correction, axis, -reference)
             mj.mju_mulQuat(composed, model.body_quat[child], correction)
             rotation = composed[[1, 2, 3, 0]]
-        yield NativeJointFrame(instance, joint.name[len(prefix):], kind,
-                               model.body(parent).name if parent else "world", model.body(child).name,
+        yield NativeJointFrame(instance, (identities['joint'][index] if identities is not None else joint.name)[len(prefix):], kind,
+                               (identities['body'][parent] if identities is not None else model.body(parent).name) if parent else "world",
+                               identities['body'][child] if identities is not None else model.body(child).name,
                                tuple(float(x) for x in (*anchor, *rotation)),
                                tuple(float(x) for x in (*position, 0, 0, 0, 1)),
                                tuple(float(x) for x in axis / np.linalg.norm(axis)))

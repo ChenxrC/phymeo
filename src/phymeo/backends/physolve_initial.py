@@ -30,8 +30,11 @@ class NativeInitialState:
 
     model_sha256: str
     fields: tuple[tuple[str, np.ndarray], ...]
+    quaternion_contract: str = "strict_v1"
 
     def __post_init__(self):
+        if self.quaternion_contract not in {"strict_v1", "mujoco_cuda_fp32_v1"}:
+            raise ValueError("unknown initial quaternion contract")
         if tuple(name for name, _ in self.fields) != INTEGRATION_FIELDS:
             raise ValueError("initial state must contain every integration field in schema order")
         owned = []
@@ -43,11 +46,12 @@ class NativeInitialState:
         object.__setattr__(self, "fields", tuple(owned))
 
     @classmethod
-    def from_data(cls, compilation, data):
+    def from_data(cls, compilation, data, *, quaternion_contract="strict_v1"):
         """Capture caller-owned CPU data; validate against a fresh model at use."""
         return cls(
             compilation.source.model_sha256,
             tuple((name, np.asarray(getattr(data, name))) for name in INTEGRATION_FIELDS),
+            quaternion_contract,
         )
 
     def apply(self, compilation, data):
@@ -70,7 +74,9 @@ class NativeInitialState:
             if kind in (0, 1):
                 start = int(address) + (3 if kind == 0 else 0)
                 quaternions.append(fields["qpos"][start : start + 4])
-        if any(abs(float(np.linalg.norm(q)) - 1.0) > 1e-10 for q in quaternions):
+        # Explicit source contract from the delivered FP32 native adapter; no normalization.
+        tolerance = 1e-5 if self.quaternion_contract == "mujoco_cuda_fp32_v1" else 1e-10
+        if any(abs(float(np.linalg.norm(q)) - 1.0) > tolerance for q in quaternions):
             raise ValueError("initial native quaternion must be unit WXYZ")
         for name, value in self.fields:
             if name == "time":

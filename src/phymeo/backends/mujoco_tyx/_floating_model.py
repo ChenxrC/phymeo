@@ -68,8 +68,15 @@ def compile_floating_model(
             issue("activation-capacity", "FREE+BALL admits at most 32 activation coordinates")
         if model.nu > 32:
             issue("free-ball-actuator-capacity", "FREE+BALL admits at most 32 complete actors")
+        if not np.isfinite(model.dof_frictionloss).all() or np.any(model.dof_frictionloss < 0):
+            issue(
+                "constraint-parameters", "FREE+BALL requires finite nonnegative native DOF friction"
+            )
         if np.any(model.jnt_limited) or np.any(model.dof_frictionloss):
-            issue("free-ball-constraint", "FREE+BALL excludes all limits and dry friction")
+            if allow_constraints is not True:
+                issue("free-ball-constraint", "FREE+BALL scalar/dry rows require the T4 route")
+        if np.any(np.asarray(model.jnt_limited, dtype=bool) & ~scalar):
+            issue("free-ball-constraint", "only HINGE/SLIDE soft limits are supported")
         if model.nexclude:
             issue("explicit-excludes", "FREE+BALL does not admit explicit collision excludes")
         for joint in np.flatnonzero(balls):

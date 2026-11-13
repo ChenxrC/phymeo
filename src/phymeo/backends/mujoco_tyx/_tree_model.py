@@ -42,21 +42,26 @@ def _rotation(wxyz):
 
 
 def compile_ball_model(mj, model, *, allow_activation=False):
-    """Compose admitted BALL mechanics with existing declared contact solvers."""
-    from ._constraint_model import compile_constraint_model
-    from ._model import _mix_contact
+    """Compose admitted BALL mechanics with scalar/dry and contact constraints."""
+    from ._constraint_model import compile_constraint_model, needs_constraints
     from ._normal_model import compile_normal_model, possible_pairs
 
     # This structural pass is deliberate: contact wrappers select a floating
     # base for any FREE joint, so BALL must be checked before that dispatch.
     base = compile_tree_model(
-        mj, model, allow_normal_contacts=True, allow_activation=allow_activation
+        mj,
+        model,
+        allow_normal_contacts=True,
+        allow_constraints=True,
+        allow_activation=allow_activation,
     )
     pairs = possible_pairs(model)
+    # Joint-only and condim1 plus scalar/dry rows also require the full T4 solve.
+    # Its own cone/options/law gates apply before any no-contact early return.
+    if needs_constraints(mj, model, pairs):
+        return compile_constraint_model(mj, model, pairs, allow_activation=allow_activation)
     if not pairs:
         return base
-    if any(_mix_contact(model, left, right, mj)[0] == 3 for left, right in pairs):
-        return compile_constraint_model(mj, model, pairs, allow_activation=allow_activation)
     return compile_normal_model(mj, model, pairs, allow_activation=allow_activation)
 
 
@@ -104,8 +109,18 @@ def compile_tree_model(
                     "ball-actuator-domain",
                     "ball trees require JOINT targets and BIAS_NONE for BALL",
                 )
+        if not np.isfinite(model.dof_frictionloss).all() or np.any(model.dof_frictionloss < 0):
+            issue("constraint-parameters", "BALL requires finite nonnegative native DOF friction")
         if np.any(model.jnt_limited) or np.any(model.dof_frictionloss):
-            issue("ball-constraint-domain", "BALL1 excludes every joint limit and dry-friction row")
+            if allow_constraints is not True:
+                issue("ball-constraint-domain", "BALL scalar/dry rows require the T4 route")
+        scalar_joints = np.isin(
+            model.jnt_type, (mj.mjtJoint.mjJNT_HINGE, mj.mjtJoint.mjJNT_SLIDE)
+        )
+        if np.any(np.asarray(model.jnt_limited, dtype=bool) & ~scalar_joints):
+            issue("ball-constraint-domain", "only HINGE/SLIDE soft limits are supported")
+        if model.nexclude:
+            issue("explicit-excludes", "BALL does not admit explicit collision excludes")
         for joint in range(model.njnt):
             if model.jnt_type[joint] == mj.mjtJoint.mjJNT_BALL:
                 if model.jnt_stiffness[joint]:
@@ -118,9 +133,13 @@ def compile_tree_model(
             from ._normal_model import possible_pairs
 
             pairs = possible_pairs(model)
-            slots = sum(
-                PAIR_SLOTS.get(tuple(map(int, model.geom_type[list(pair)])), 0) for pair in pairs
-            )
+            slots = 0
+            for pair in pairs:
+                shape = tuple(map(int, model.geom_type[list(pair)]))
+                if shape not in PAIR_SLOTS:
+                    issue("contact-domain", f"BALL geometry pair {shape} is not migrated")
+                else:
+                    slots += PAIR_SLOTS[shape]
             if pairs and (model.ngeom > 128 or len(pairs) > 16 or slots > 32):
                 issue("ball-contact-capacity", "ball contact permits 128 geoms/16 pairs/32 slots")
             if pairs and int(model.opt.cone) != int(mj.mjtCone.mjCONE_PYRAMIDAL):

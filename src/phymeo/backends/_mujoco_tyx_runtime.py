@@ -250,6 +250,10 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
         super().__init__(
             compilation, world_keys=world_keys, initial_states=initial_states, mode="cpu"
         )
+        # A shared payload budget also serializes its related owner operations.
+        # This prevents public admit() -> owner vs owner -> admit() lock inversion.
+        if resource_budget is not None:
+            self._lock = resource_budget._lock
         self._plan = compile_model(self._mj, self._model)
         if getattr(self._plan, "constraint_contact", False):
             if self._contact_capacity > 128 or self._constraint_capacity > 512:

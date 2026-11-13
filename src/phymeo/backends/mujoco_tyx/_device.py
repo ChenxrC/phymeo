@@ -37,12 +37,32 @@ class TyxDevice:
             )
             self.resources.set_runtime(self.runtime)
             with tx.use_runtime(self.runtime):
-                for name in ("matrices", "vectors", "body_jac", "point_jac", "law", "act_ids", "act_values"):
+                for name in (
+                    "matrices",
+                    "vectors",
+                    "body_jac",
+                    "point_jac",
+                    "law",
+                    "act_ids",
+                    "act_values",
+                ):
                     setattr(self, name, self._allocate(name))
                 self.q = (self._allocate("q.0", q), self._allocate("q.1", q))
                 self.v = (self._allocate("v.0", v), self._allocate("v.1", v))
                 self.time = (self._allocate("time.0", time), self._allocate("time.1", time))
-                for name in ("controls", "applied", "body_force", "force", "smooth_acc", "acceleration", "integration_acc", "actuator", "constraint", "rows", "status"):
+                for name in (
+                    "controls",
+                    "applied",
+                    "body_force",
+                    "force",
+                    "smooth_acc",
+                    "acceleration",
+                    "integration_acc",
+                    "actuator",
+                    "constraint",
+                    "rows",
+                    "status",
+                ):
                     setattr(self, name, self._allocate(name))
                 self._complete_allocations()
         except BaseException as primary:
@@ -61,7 +81,9 @@ class TyxDevice:
         self._allocation_reservation = None
         if self.mode == "cuda":
             if self._allocation_budget is None:
-                self._allocation_budget = MuJoCoTyxResourceBudget(self.allocation_manifest.payload_bytes)
+                self._allocation_budget = MuJoCoTyxResourceBudget(
+                    self.allocation_manifest.payload_bytes
+                )
             self._allocation_reservation = self._allocation_budget.reserve(
                 self.allocation_manifest.payload_bytes
             )
@@ -112,35 +134,47 @@ class TyxDevice:
         try:
             self.close()
         except BaseException as cleanup:
-            raise BaseExceptionGroup("TYX construction and cleanup failed", [primary, cleanup]) from None
+            raise BaseExceptionGroup(
+                "TYX construction and cleanup failed", [primary, cleanup]
+            ) from None
 
     def allocation_snapshot(self):
         budget = None if self._allocation_budget is None else self._allocation_budget.snapshot()
         identity = (
             None if self._allocation_reservation is None else self._allocation_reservation.owner_id
         )
-        owner = None if identity is None else next(row for row in budget["owners"] if row["owner_id"] == identity)
-        return MappingProxyType(dict(
-            schema="mujoco-tyx-device-allocation-v1",
-            scope="registered-cuda-array-payload-only",
-            mode=self.mode,
-            manifest=self.allocation_manifest,
-            manifest_payload_bytes=self.allocation_manifest.payload_bytes,
-            allocated_names=tuple(entry.name for entry in self.allocation_manifest.entries if entry.name in self._allocated_names),
-            owner_id=identity,
-            owner=owner,
-            current_bytes=0 if owner is None else owner["current_bytes"],
-            reserved_bytes=0 if owner is None else owner["reserved_bytes"],
-            unknown_retained_bytes=0 if owner is None else owner["unknown_retained_bytes"],
-            shared_budget=self._shared_resource_budget,
-            budget=budget,
-            resources_state=self.resources.state,
-            excluded=DEVICE_PAYLOAD_EXCLUSIONS,
-            host_live_bytes=None,
-            host_peak_bytes=None,
-            total_device_live_bytes=None,
-            total_device_peak_bytes=None,
-        ))
+        owner = (
+            None
+            if identity is None
+            else next(row for row in budget["owners"] if row["owner_id"] == identity)
+        )
+        return MappingProxyType(
+            dict(
+                schema="mujoco-tyx-device-allocation-v1",
+                scope="registered-cuda-array-payload-only",
+                mode=self.mode,
+                manifest=self.allocation_manifest,
+                manifest_payload_bytes=self.allocation_manifest.payload_bytes,
+                allocated_names=tuple(
+                    entry.name
+                    for entry in self.allocation_manifest.entries
+                    if entry.name in self._allocated_names
+                ),
+                owner_id=identity,
+                owner=owner,
+                current_bytes=0 if owner is None else owner["current_bytes"],
+                reserved_bytes=0 if owner is None else owner["reserved_bytes"],
+                unknown_retained_bytes=0 if owner is None else owner["unknown_retained_bytes"],
+                shared_budget=self._shared_resource_budget,
+                budget=budget,
+                resources_state=self.resources.state,
+                excluded=DEVICE_PAYLOAD_EXCLUSIONS,
+                host_live_bytes=None,
+                host_peak_bytes=None,
+                total_device_live_bytes=None,
+                total_device_peak_bytes=None,
+            )
+        )
 
     def _buffer(self, value):
         if self._allocation_entry is None:
@@ -150,7 +184,11 @@ class TyxDevice:
         result = self.tx.cuda_array(value)
         self.resources.add_buffer(result)
         entry = self._allocation_entry
-        if tuple(result.shape) != entry.shape or np.dtype(result.dtype) != np.dtype(entry.dtype) or result.nbytes != entry.nbytes:
+        if (
+            tuple(result.shape) != entry.shape
+            or np.dtype(result.dtype) != np.dtype(entry.dtype)
+            or result.nbytes != entry.nbytes
+        ):
             raise RuntimeError("CUDA allocation differs from its manifest")
         self.counts["device_allocations"] += 1
         self.counts["static_uploaded_bytes"] += value.nbytes

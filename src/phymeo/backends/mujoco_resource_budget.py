@@ -4,11 +4,16 @@ from contextlib import contextmanager
 from threading import RLock
 from types import MappingProxyType
 
-
 DEVICE_PAYLOAD_EXCLUSIONS = (
-    "context", "jit-cache", "allocator-overhead", "host", "json",
-    "external-device-controls", "external-task-workspaces",
+    "context",
+    "jit-cache",
+    "allocator-overhead",
+    "host",
+    "json",
+    "external-device-controls",
+    "external-task-workspaces",
 )
+
 
 def _bytes(value, name):
     if type(value) is not int or value < 0:
@@ -78,9 +83,7 @@ class MuJoCoTyxResourceBudget:
                     MappingProxyType(dict(name=name, **allocation))
                     for name, allocation in row["allocations"].items()
                 )
-                current = sum(
-                    item["nbytes"] for item in allocations if item["state"] != "RELEASED"
-                )
+                current = sum(item["nbytes"] for item in allocations if item["state"] != "RELEASED")
                 retained = sum(
                     item["nbytes"] for item in allocations if item["state"] == "UNKNOWN_RELEASE"
                 )

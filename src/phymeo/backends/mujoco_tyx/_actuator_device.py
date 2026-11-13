@@ -31,7 +31,13 @@ def allocate(device, activation):
 
     device.activation_kernels = (_actuator_kernels.update, _actuator_kernels.update_other)
     device.act = (device._allocate("act.0", activation), device._allocate("act.1", activation))
-    for name in ("activation_ids", "activation_values", "activation_derivative", "integration_derivative", "actuator_fields"):
+    for name in (
+        "activation_ids",
+        "activation_values",
+        "activation_derivative",
+        "integration_derivative",
+        "actuator_fields",
+    ):
         setattr(device, name, device._allocate(name))
 
 

@@ -1,8 +1,8 @@
 """Exact registered payload and failure ownership; not a total-memory benchmark."""
+
 import gc
-from dataclasses import FrozenInstanceError, replace
-from types import SimpleNamespace
 import weakref
+from dataclasses import FrozenInstanceError, replace
 
 import numpy as np
 import pytest
@@ -17,26 +17,32 @@ ROUTES = ("base", "tree", "floating", "normal", "mixed", "activation-csr")
 
 def gallery():
     from test_mujoco_tyx_heterogeneous_resources import runner
+
     return runner()
 
 
 def declaration(route):
     import mujoco as mj
-    from phymeo.builders.mujoco_compiler import compile_mujoco_xml
+
     from phymeo.backends.mujoco_tyx._model import compile_model
+    from phymeo.builders.mujoco_compiler import compile_mujoco_xml
+
     if route == "base":
-        xml = '''<mujoco><option timestep=".001"/><worldbody><body><joint type="slide" axis="0 0 1"/><geom type="sphere" size=".1" mass="1" contype="0" conaffinity="0"/></body></worldbody></mujoco>'''
+        xml = """<mujoco><option timestep=".001"/><worldbody><body><joint type="slide" axis="0 0 1"/><geom type="sphere" size=".1" mass="1" contype="0" conaffinity="0"/></body></worldbody></mujoco>"""
     elif route in ("tree", "floating"):
         tool = gallery()
         xml = tool.cases.xml(tool.cases.CASES[0 if route == "tree" else 16])
     elif route == "normal":
         from test_mujoco_tyx_normal_contacts import _two_feet
+
         xml = _two_feet()
     elif route == "mixed":
         from test_mujoco_tyx_constraints import slider_xml
-        xml = slider_xml(dim=3, dry=.1, limits=True)
+
+        xml = slider_xml(dim=3, dry=0.1, limits=True)
     else:
         from test_mujoco_tyx_free_ball_activation import case
+
         xml = case.source("no-contact-early")
     model = mj.MjModel.from_xml_string(xml)
     plan = compile_model(mj, model)
@@ -80,7 +86,11 @@ def test_budget_reservations_admission_and_immutable_snapshots():
     owner.allocated("second", 12)
     owner.finish()
     snapshot = budget.snapshot()
-    assert (snapshot["current_bytes"], snapshot["peak_bytes"], snapshot["reserved_bytes"]) == (20, 20, 0)
+    assert (snapshot["current_bytes"], snapshot["peak_bytes"], snapshot["reserved_bytes"]) == (
+        20,
+        20,
+        0,
+    )
     assert zero["current_bytes"] == 0
     with pytest.raises(TypeError):
         snapshot["current_bytes"] = 0
@@ -113,6 +123,7 @@ def test_unknown_free_remains_charged_and_strongly_owned(when):
     class Buffer:
         def __init__(self, name, fail):
             self.name, self.fail, self.freed = name, fail, False
+
         def free(self):
             calls.append(self.name)
             if self.fail and when == "before":
@@ -152,11 +163,14 @@ def test_unknown_free_remains_charged_and_strongly_owned(when):
 @pytest.mark.parametrize("mode", MODES)
 def test_manifest_names_shapes_aliases_match_every_actual_owned_buffer(route, mode, tmp_path):
     from phymeo.backends.mujoco_runtime import MuJoCoRuntime
+
     mj, model, plan, compiled = declaration(route)
     manifest = allocation_manifest(plan, 2, model.nbody, (64, 256))
     entries = {entry.name: entry for entry in manifest.entries}
     assert len(entries) == len(manifest.entries)
-    assert manifest.payload_bytes == sum(np.dtype(entry.dtype).itemsize * int(np.prod(entry.shape)) for entry in entries.values())
+    assert manifest.payload_bytes == sum(
+        np.dtype(entry.dtype).itemsize * int(np.prod(entry.shape)) for entry in entries.values()
+    )
     for bank in (0, 1):
         assert entries[f"q.{bank}"].shape == (2, max(8, model.nq))
         assert entries[f"v.{bank}"].shape == (2, max(8, model.nv))
@@ -166,7 +180,12 @@ def test_manifest_names_shapes_aliases_match_every_actual_owned_buffer(route, mo
     if route == "base":
         assert model.nu == 0 and entries["controls"].shape == (2, 1)
     if route == "tree":
-        assert dict(manifest.aliases) == {"transmission_offsets": "parents", "transmission_dofs": "parents", "transmission_moment": "gravity", "transmission_fields": "body_force"}
+        assert dict(manifest.aliases) == {
+            "transmission_offsets": "parents",
+            "transmission_dofs": "parents",
+            "transmission_moment": "gravity",
+            "transmission_fields": "body_force",
+        }
     if route == "normal":
         slots = len(plan.slot_ids)
         assert entries["dual_matrix"].shape == entries["face_factor"].shape == (2, slots, slots)
@@ -178,7 +197,17 @@ def test_manifest_names_shapes_aliases_match_every_actual_owned_buffer(route, mo
         assert not any(entry.shape == (2, 256, 256) for entry in entries.values())
     if route == "activation-csr":
         assert entries["act.0"].shape == entries["act.1"].shape == (2, model.na)
-        assert {"activation_ids", "activation_values", "activation_derivative", "integration_derivative", "actuator_fields", "transmission_offsets", "transmission_dofs", "transmission_moment", "transmission_fields"} <= entries.keys()
+        assert {
+            "activation_ids",
+            "activation_values",
+            "activation_derivative",
+            "integration_derivative",
+            "actuator_fields",
+            "transmission_offsets",
+            "transmission_dofs",
+            "transmission_moment",
+            "transmission_fields",
+        } <= entries.keys()
         assert not manifest.aliases
     with pytest.raises((FrozenInstanceError, AttributeError)):
         manifest.entries = ()
@@ -202,10 +231,15 @@ def test_manifest_names_shapes_aliases_match_every_actual_owned_buffer(route, mo
             assert device.counts["static_uploaded_bytes"] == manifest.payload_bytes
         snapshot = runtime.resource_snapshot()
         assert snapshot["allocation"]["manifest_payload_bytes"] == manifest.payload_bytes
-        assert budget.snapshot()["current_bytes"] == (manifest.payload_bytes if mode == "cuda" else 0)
+        assert budget.snapshot()["current_bytes"] == (
+            manifest.payload_bytes if mode == "cuda" else 0
+        )
         assert budget.snapshot()["reserved_bytes"] == 0
         tool = gallery()
-        (tmp_path / "manifest.json").write_text(__import__("json").dumps(tool.encode(dict(manifest=manifest, actual=snapshot))), encoding="utf-8")
+        (tmp_path / "manifest.json").write_text(
+            __import__("json").dumps(tool.encode(dict(manifest=manifest, actual=snapshot))),
+            encoding="utf-8",
+        )
     finally:
         runtime.close()
     assert budget.snapshot()["current_bytes"] == budget.snapshot()["reserved_bytes"] == 0
@@ -224,12 +258,16 @@ def test_zero_contact_and_efc_capacity_still_describe_real_padding():
 @pytest.mark.cuda
 def test_one_byte_constructor_refusal_precedes_runtime_or_array_allocation(monkeypatch):
     import tyx as tx
+
     from phymeo.backends.mujoco_runtime import MuJoCoRuntime
+
     _, model, plan, compiled = declaration("tree")
     size = allocation_manifest(plan, 1, model.nbody, (64, 256)).payload_bytes
-    budget = MuJoCoTyxResourceBudget(size-1)
+    budget = MuJoCoTyxResourceBudget(size - 1)
+
     def forbidden(*args, **kwargs):
         raise AssertionError("no context or arrays may precede full budget admission")
+
     monkeypatch.setattr(tx, "Runtime", forbidden)
     monkeypatch.setattr(tx, "cuda_array", forbidden)
     with pytest.raises(MemoryError, match="payload budget"):
@@ -241,34 +279,57 @@ def test_one_byte_constructor_refusal_precedes_runtime_or_array_allocation(monke
 @pytest.mark.parametrize("operation", ("reset", "restore"))
 def test_facade_peak_exact_one_less_keeps_old_banks_and_retries(operation, monkeypatch, tmp_path):
     from phymeo.backends.mujoco_tyx._model import compile_model
+
     tool = gallery()
     decl = tool.declarations((0, 8))
-    sizes = [allocation_manifest(compile_model(decl["mj"], model), 1, model.nbody, (64, 256)).payload_bytes for model in decl["models"].values()]
-    extra = 2*sizes[0] if operation == "reset" else max(2*sizes[0], sizes[0]+2*sizes[1], sum(sizes))
-    budget = MuJoCoTyxResourceBudget(sum(sizes)+extra)
-    with tool.Session("cuda", 12, tmp_path / operation, indices=(0, 8), resource_budget=budget) as run:
+    sizes = [
+        allocation_manifest(
+            compile_model(decl["mj"], model), 1, model.nbody, (64, 256)
+        ).payload_bytes
+        for model in decl["models"].values()
+    ]
+    extra = (
+        2 * sizes[0]
+        if operation == "reset"
+        else max(2 * sizes[0], sizes[0] + 2 * sizes[1], sum(sizes))
+    )
+    budget = MuJoCoTyxResourceBudget(sum(sizes) + extra)
+    with tool.Session(
+        "cuda", 12, tmp_path / operation, indices=(0, 8), resource_budget=budget
+    ) as run:
         run.advance(0)
         checkpoint = run.batch.checkpoint()
         before = run.batch.integration_snapshot()
-        receipt, banks = run.batch.last_step, tuple(owner._device.active for owner in run.batch._buckets)
+        receipt, banks = (
+            run.batch.last_step,
+            tuple(owner._device.active for owner in run.batch._buckets),
+        )
         refs = {key: __import__("copy").copy(data) for key, data in run.refs.items()}
         blocker = budget.reserve(1)  # Competing owner uses exactly the last available byte.
         try:
             with monkeypatch.context() as patch:
+
                 def forbidden(*args, **kwargs):
                     raise AssertionError("peak refusal must precede clone/retirement")
+
                 patch.setattr(run.batch, "_clone_bucket", forbidden)
                 with pytest.raises(MemoryError, match="payload budget"):
                     if operation == "reset":
                         run.batch.reset((run.keys[0],))
                     else:
-                        run.batch.restore(checkpoint, expected_revision=run.batch.checkpoint_revision)
+                        run.batch.restore(
+                            checkpoint, expected_revision=run.batch.checkpoint_revision
+                        )
             assert run.batch.checkpoint().to_bytes() == checkpoint.to_bytes()
             assert run.batch.last_step is receipt
-            tool.exact(run.batch.integration_snapshot(), before, "budget refusal retains complete state")
+            tool.exact(
+                run.batch.integration_snapshot(), before, "budget refusal retains complete state"
+            )
             assert tuple(owner._device.active for owner in run.batch._buckets) == banks
             assert budget.snapshot()["current_bytes"] == sum(sizes)
-            run.emit("one-byte-peak-refusal", operation=operation, state=before, budget=budget.snapshot())
+            run.emit(
+                "one-byte-peak-refusal", operation=operation, state=before, budget=budget.snapshot()
+            )
         finally:
             blocker.finish()
         if operation == "reset":
@@ -278,7 +339,7 @@ def test_facade_peak_exact_one_less_keeps_old_banks_and_retries(operation, monke
             run.batch.restore(checkpoint, expected_revision=run.batch.checkpoint_revision)
             run.refs = refs
         run.emit("exact-peak-success", operation=operation, budget=budget.snapshot())
-        assert budget.snapshot()["peak_bytes"] == sum(sizes)+extra
+        assert budget.snapshot()["peak_bytes"] == sum(sizes) + extra
         assert budget.snapshot()["current_bytes"] == sum(sizes)
         run.advance(1)
         run.mark_pass()
@@ -287,24 +348,35 @@ def test_facade_peak_exact_one_less_keeps_old_banks_and_retries(operation, monke
 @pytest.mark.cuda
 def test_real_free_then_error_retains_charge_without_retry(monkeypatch):
     from phymeo.backends.mujoco_runtime import MuJoCoRuntime
+
     _, model, plan, compiled = declaration("base")
     size = allocation_manifest(plan, 1, model.nbody, (64, 256)).payload_bytes
     budget = MuJoCoTyxResourceBudget(size)
     runtime = MuJoCoRuntime(compiled, mode="cuda", resource_budget=budget)
     ledger = runtime._device.resources
     original = ledger._buffers[-1]
-    entry = next(item for item in runtime._device.allocation_manifest.entries if item.name == original.allocation_name)
+    entry = next(
+        item
+        for item in runtime._device.allocation_manifest.entries
+        if item.name == original.allocation_name
+    )
     calls = []
+
     def broken():
         original.callback()
         calls.append("actually-freed")
         raise RuntimeError("bounded post-free accounting seam")
+
     ledger._buffers[-1] = replace(original, callback=broken)
     for unused in range(2):
         with pytest.raises(BaseExceptionGroup):
             runtime.close()
     assert calls == ["actually-freed"]
     assert ledger.state == "UNKNOWN_RELEASE" and ledger.runtime_pending
-    assert budget.snapshot()["current_bytes"] == budget.snapshot()["unknown_retained_bytes"] == entry.nbytes
+    assert (
+        budget.snapshot()["current_bytes"]
+        == budget.snapshot()["unknown_retained_bytes"]
+        == entry.nbytes
+    )
     assert budget.snapshot()["reserved_bytes"] == 0
     assert ledger in quarantined_resources()

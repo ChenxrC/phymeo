@@ -1,8 +1,8 @@
 """Single immutable shape/source table for all existing TYX leaf allocations."""
 
+import sys
 from dataclasses import dataclass
 from math import prod
-import sys
 
 import numpy as np
 
@@ -80,19 +80,27 @@ def allocation_manifest(plan, nworld, nbody, capacities):
     width = max(8, int(plan.nv)) if kind == 3 else 8
     if tree:
         for name, source in (
-            ("parents", "parents"), ("ranges", "body_joint_range"),
-            ("body_data", "body_data"), ("joints", "joint_ids"),
-            ("dofs", "dof_ids"), ("joint_data", "joint_data"),
-            ("ancestors", "ancestors"), ("gravity", "gravity"),
-            ("vectors", "vectors"), ("act_ids", "actuator_ids"),
+            ("parents", "parents"),
+            ("ranges", "body_joint_range"),
+            ("body_data", "body_data"),
+            ("joints", "joint_ids"),
+            ("dofs", "dof_ids"),
+            ("joint_data", "joint_data"),
+            ("ancestors", "ancestors"),
+            ("gravity", "gravity"),
+            ("vectors", "vectors"),
+            ("act_ids", "actuator_ids"),
             ("act_values", "actuator_values"),
         ):
             static(name, source)
     else:
         for name, source in (
-            ("matrices", "matrices"), ("vectors", "vectors"),
-            ("body_jac", "body_jacobian"), ("point_jac", "point_jacobian"),
-            ("law", "contact"), ("act_ids", "actuator_ids"),
+            ("matrices", "matrices"),
+            ("vectors", "vectors"),
+            ("body_jac", "body_jacobian"),
+            ("point_jac", "point_jacobian"),
+            ("law", "contact"),
+            ("act_ids", "actuator_ids"),
             ("act_values", "actuator_values"),
         ):
             static(name, source)
@@ -103,7 +111,12 @@ def allocation_manifest(plan, nworld, nbody, capacities):
         if not tree:
             raise ValueError("activation allocation requires an original tree base")
         for bank in (0, 1):
-            add(f"act.{bank}", (w, int(plan.activation.na)), role=f"state-bank-{bank}", source="input:act")
+            add(
+                f"act.{bank}",
+                (w, int(plan.activation.na)),
+                role=f"state-bank-{bank}",
+                source="input:act",
+            )
         static("activation_ids", "activation.ids")
         static("activation_values", "activation.values")
         for name in ("activation_derivative", "integration_derivative"):
@@ -122,22 +135,48 @@ def allocation_manifest(plan, nworld, nbody, capacities):
                 static(name, source)
             add("transmission_fields", (w, int(plan.nu), 3))
         else:
-            aliases.extend((
-                ("transmission_offsets", "parents"), ("transmission_dofs", "parents"),
-                ("transmission_moment", "gravity"), ("transmission_fields", "body_force"),
-            ))
+            aliases.extend(
+                (
+                    ("transmission_offsets", "parents"),
+                    ("transmission_dofs", "parents"),
+                    ("transmission_moment", "gravity"),
+                    ("transmission_fields", "body_force"),
+                )
+            )
         for name, shape in (
-            ("motion", (w, nbody, 7, 3)), ("rotation", (w, nbody, 3, 3)),
-            ("axes", (w, width, 3)), ("anchors", (w, width, 3)),
-            ("work", (w, 8, 3)), ("work_rotation", (w, 3, 3)),
-            ("inertia", (w, nbody, 3, 3)), ("jacobian", (w, nbody, 6, width)),
-            ("mass", (w, width, width)), ("factor", (w, width, width)),
+            ("motion", (w, nbody, 7, 3)),
+            ("rotation", (w, nbody, 3, 3)),
+            ("axes", (w, width, 3)),
+            ("anchors", (w, width, 3)),
+            ("work", (w, 8, 3)),
+            ("work_rotation", (w, 3, 3)),
+            ("inertia", (w, nbody, 3, 3)),
+            ("jacobian", (w, nbody, 6, width)),
+            ("mass", (w, width, width)),
+            ("factor", (w, width, width)),
         ):
             add(name, shape)
-        for name in ("bias", "passive", "applied", "actuator", "constraint", "rhs", "forward", "acceleration", "integration_acc"):
+        for name in (
+            "bias",
+            "passive",
+            "applied",
+            "actuator",
+            "constraint",
+            "rhs",
+            "forward",
+            "acceleration",
+            "integration_acc",
+        ):
             add(name, (w, width))
     else:
-        for name in ("force", "smooth_acc", "acceleration", "integration_acc", "actuator", "constraint"):
+        for name in (
+            "force",
+            "smooth_acc",
+            "acceleration",
+            "integration_acc",
+            "actuator",
+            "constraint",
+        ):
             add(name, (w, width))
     add("rows", (w, 20))
     add("status", (w,), "int32")
@@ -146,44 +185,81 @@ def allocation_manifest(plan, nworld, nbody, capacities):
             static(name)
         s, g = len(plan.slot_ids), len(plan.geom_ids)
         for name, shape in (
-            ("geom_world", (w, g, 12)), ("normal_rows", (w, s, 32)),
-            ("normal_jacobian", (w, s, width)), ("contact_work", (w, 8, 3)),
-            ("raw_contacts", (w, s, 11)), ("extended_work", (w, 64, 3)),
-            ("solver_diagnostics", (w, 8)), ("normal_factor", (w, width, width)),
-            ("normal_mass_work", (w, width)), ("smooth_acc", (w, width)),
-            ("response", (w, s, width)), ("dual_matrix", (w, s, s)),
-            ("normal_linear", (w, s)), ("normal_force", (w, s)),
-            ("normal_gradient", (w, s)), ("normal_working", (w, s)),
+            ("geom_world", (w, g, 12)),
+            ("normal_rows", (w, s, 32)),
+            ("normal_jacobian", (w, s, width)),
+            ("contact_work", (w, 8, 3)),
+            ("raw_contacts", (w, s, 11)),
+            ("extended_work", (w, 64, 3)),
+            ("solver_diagnostics", (w, 8)),
+            ("normal_factor", (w, width, width)),
+            ("normal_mass_work", (w, width)),
+            ("smooth_acc", (w, width)),
+            ("response", (w, s, width)),
+            ("dual_matrix", (w, s, s)),
+            ("normal_linear", (w, s)),
+            ("normal_force", (w, s)),
+            ("normal_gradient", (w, s)),
+            ("normal_working", (w, s)),
             ("face_factor", (w, s, s)),
-            ("face_forward", (w, s)), ("normal_trial", (w, s)),
-            ("normal_constraint", (w, width)), ("total_applied", (w, width)),
+            ("face_forward", (w, s)),
+            ("normal_trial", (w, s)),
+            ("normal_constraint", (w, width)),
+            ("total_applied", (w, width)),
         ):
             add(name, shape, "int32" if name == "normal_working" else "float32")
     if constraint:
-        for name in ("geom_ids", "geom_data", "pair_ids", "pair_law", "pair_condim", "pair_friction", "slot_ids", "friction_ids", "friction_law", "limit_ids", "limit_law"):
+        for name in (
+            "geom_ids",
+            "geom_data",
+            "pair_ids",
+            "pair_law",
+            "pair_condim",
+            "pair_friction",
+            "slot_ids",
+            "friction_ids",
+            "friction_law",
+            "limit_ids",
+            "limit_law",
+        ):
             static(name)
         s = max(1, int(plan.nslot))
         c, e = (max(1, cap) for cap in capacities)
         for name, shape in (
             ("geom_world", (w, max(1, int(plan.ngeom)), 12)),
-            ("normal_rows", (w, s, 32)), ("normal_jacobian", (w, s, width)),
-            ("contact_work", (w, 8, 3)), ("raw_contacts", (w, s, 11)),
-            ("extended_work", (w, 64, 3)), ("geometry_diagnostics", (w, 8)),
-            ("solver_diagnostics", (w, 10)), ("efc_data", (w, e, 14)),
-            ("efc_jacobian", (w, e, width)), ("contact_jacobian", (w, c, 6, width)),
-            ("contact_wrench", (w, c, 6)), ("physical_factor", (w, width, width)),
-            ("mass_work", (w, width)), ("smooth_acc", (w, width)),
-            ("face_matrix", (w, width, width)), ("face_factor", (w, width, width)),
-            ("face_rhs", (w, width)), ("face_forward", (w, width)),
-            ("trial_acc", (w, width)), ("trial_force", (w, e)),
-            ("previous_force", (w, e)), ("mixed_constraint", (w, width)),
-            ("total_applied", (w, width)), ("physical_acc", (w, width)),
+            ("normal_rows", (w, s, 32)),
+            ("normal_jacobian", (w, s, width)),
+            ("contact_work", (w, 8, 3)),
+            ("raw_contacts", (w, s, 11)),
+            ("extended_work", (w, 64, 3)),
+            ("geometry_diagnostics", (w, 8)),
+            ("solver_diagnostics", (w, 10)),
+            ("efc_data", (w, e, 14)),
+            ("efc_jacobian", (w, e, width)),
+            ("contact_jacobian", (w, c, 6, width)),
+            ("contact_wrench", (w, c, 6)),
+            ("physical_factor", (w, width, width)),
+            ("mass_work", (w, width)),
+            ("smooth_acc", (w, width)),
+            ("face_matrix", (w, width, width)),
+            ("face_factor", (w, width, width)),
+            ("face_rhs", (w, width)),
+            ("face_forward", (w, width)),
+            ("trial_acc", (w, width)),
+            ("trial_force", (w, e)),
+            ("previous_force", (w, e)),
+            ("mixed_constraint", (w, width)),
+            ("total_applied", (w, width)),
+            ("physical_acc", (w, width)),
         ):
             add(name, shape)
         for name, shape in (
-            ("efc_ids", (w, e, 5)), ("contact_map", (w, c, 3)),
-            ("constraint_counts", (w, 3)), ("working", (w, e)),
-            ("previous_working", (w, e)), ("free_ids", (w, width)),
+            ("efc_ids", (w, e, 5)),
+            ("contact_map", (w, c, 3)),
+            ("constraint_counts", (w, 3)),
+            ("working", (w, e)),
+            ("previous_working", (w, e)),
+            ("free_ids", (w, width)),
         ):
             add(name, shape, "int32")
     manifest = AllocationManifest(tuple(entries), tuple(aliases))

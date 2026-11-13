@@ -8,13 +8,36 @@ from ._tree_device import TyxTreeDevice
 
 class TyxConstraintDevice(TyxDevice):
     def __init__(
-        self, plan, mode, cache_root, q, v, time, nbody, h, capacities, *, activation=None, resource_budget=None
+        self,
+        plan,
+        mode,
+        cache_root,
+        q,
+        v,
+        time,
+        nbody,
+        h,
+        capacities,
+        *,
+        activation=None,
+        resource_budget=None,
     ):
         from . import _constraint_rows, _constraint_solver, _normal_geometry
 
         self._base_type = TyxFloatingDevice if plan.base.kind == 3 else TyxTreeDevice
         self._base_type.__init__(
-            self, plan, mode, cache_root, q, v, time, nbody, h, capacities, activation=activation, resource_budget=resource_budget
+            self,
+            plan,
+            mode,
+            cache_root,
+            q,
+            v,
+            time,
+            nbody,
+            h,
+            capacities,
+            activation=activation,
+            resource_budget=resource_budget,
         )
         try:
             self.capacities = tuple(map(int, capacities))

@@ -6,7 +6,19 @@ from ._device import TyxDevice
 
 class TyxTreeDevice(TyxDevice):
     def __init__(
-        self, plan, mode, cache_root, q, v, time, nbody, h, capacities, *, activation=None, resource_budget=None
+        self,
+        plan,
+        mode,
+        cache_root,
+        q,
+        v,
+        time,
+        nbody,
+        h,
+        capacities,
+        *,
+        activation=None,
+        resource_budget=None,
     ):
         import tyx as tx
 
@@ -37,7 +49,19 @@ class TyxTreeDevice(TyxDevice):
             )
             self.resources.set_runtime(self.runtime)
             with tx.use_runtime(self.runtime):
-                for name in ("parents", "ranges", "body_data", "joints", "dofs", "joint_data", "ancestors", "gravity", "vectors", "act_ids", "act_values"):
+                for name in (
+                    "parents",
+                    "ranges",
+                    "body_data",
+                    "joints",
+                    "dofs",
+                    "joint_data",
+                    "ancestors",
+                    "gravity",
+                    "vectors",
+                    "act_ids",
+                    "act_values",
+                ):
                     setattr(self, name, self._allocate(name))
                 self.q = (self._allocate("q.0", q), self._allocate("q.1", q))
                 self.v = (self._allocate("v.0", v), self._allocate("v.1", v))
@@ -48,11 +72,40 @@ class TyxTreeDevice(TyxDevice):
                 for alias, target in self.allocation_manifest.aliases:
                     setattr(self, alias, getattr(self, target))
                 if self.transmission_enabled:
-                    for name in ("transmission_offsets", "transmission_dofs", "transmission_moment", "transmission_fields"):
+                    for name in (
+                        "transmission_offsets",
+                        "transmission_dofs",
+                        "transmission_moment",
+                        "transmission_fields",
+                    ):
                         setattr(self, name, self._allocate(name))
-                for name in ("motion", "rotation", "axes", "anchors", "work", "work_rotation", "inertia", "jacobian", "mass", "factor", "bias", "passive", "applied", "actuator", "constraint", "rhs", "forward", "acceleration", "integration_acc", "rows", "status"):
+                for name in (
+                    "motion",
+                    "rotation",
+                    "axes",
+                    "anchors",
+                    "work",
+                    "work_rotation",
+                    "inertia",
+                    "jacobian",
+                    "mass",
+                    "factor",
+                    "bias",
+                    "passive",
+                    "applied",
+                    "actuator",
+                    "constraint",
+                    "rhs",
+                    "forward",
+                    "acceleration",
+                    "integration_acc",
+                    "rows",
+                    "status",
+                ):
                     setattr(self, name, self._allocate(name))
-                if not getattr(plan, "normal_contact", False) and not getattr(plan, "constraint_contact", False):
+                if not getattr(plan, "normal_contact", False) and not getattr(
+                    plan, "constraint_contact", False
+                ):
                     self._complete_allocations()
         except BaseException as primary:
             self._close_after_construction_failure(primary)

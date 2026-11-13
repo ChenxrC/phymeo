@@ -1,4 +1,5 @@
 """G2b-A facade qualification; all expected cases/gates precede first execution."""
+
 import copy
 import importlib.util
 import sys
@@ -35,7 +36,9 @@ def test_thirty_two_distinct_models_share_complete_twelve_step_publications(mode
 
 @pytest.mark.parametrize("mode", MODES)
 @pytest.mark.parametrize("fault", ("last-status", "last-download", "late-aggregate"))
-def test_final_bucket_failure_retains_all_thirty_two_and_retries(mode, fault, monkeypatch, tmp_path):
+def test_final_bucket_failure_retains_all_thirty_two_and_retries(
+    mode, fault, monkeypatch, tmp_path
+):
     from phymeo.training.resident_stepper import PhysicsStepFailure
 
     tool = runner()
@@ -49,8 +52,15 @@ def test_final_bucket_failure_retains_all_thirty_two_and_retries(mode, fault, mo
         banks = tuple(owner._device.active for owner in run.batch._buckets)
         counters = dict(run.batch.counters)
         resources = run.batch.resource_snapshot()
-        run.emit("injected-failure-entry", fault=fault, checkpoint=saved, states=states,
-                 banks=banks, resources=resources, controls=packets)
+        run.emit(
+            "injected-failure-entry",
+            fault=fault,
+            checkpoint=saved,
+            states=states,
+            banks=banks,
+            resources=resources,
+            controls=packets,
+        )
         with monkeypatch.context() as patch:
             if fault == "late-aggregate":
                 original = run.batch._before_commit
@@ -78,8 +88,12 @@ def test_final_bucket_failure_retains_all_thirty_two_and_retries(mode, fault, mo
             with pytest.raises(PhysicsStepFailure) as caught:
                 with run.forbid_native():
                     run.batch.step(tool.H)
-        run.emit("injected-failure-return", error=repr(caught.value),
-                 accepted=caught.value.accepted_worlds, states=run.batch.integration_snapshot())
+        run.emit(
+            "injected-failure-return",
+            error=repr(caught.value),
+            accepted=caught.value.accepted_worlds,
+            states=run.batch.integration_snapshot(),
+        )
         assert dict(caught.value.accepted_worlds) == dict.fromkeys(run.keys, False)
         assert run.batch.checkpoint().to_bytes() == saved
         assert run.batch.last_step is receipt
@@ -87,8 +101,14 @@ def test_final_bucket_failure_retains_all_thirty_two_and_retries(mode, fault, mo
         assert tuple(owner._device.active for owner in run.batch._buckets) == banks
         assert run.batch.counters["completed_steps"] == counters["completed_steps"]
         assert run.batch.counters["accepted_world_steps"] == counters["accepted_world_steps"]
-        assert run.batch.counters["bucket_physics_prepares"] - counters["bucket_physics_prepares"] == 32
-        assert run.batch.resource_snapshot()["budget"]["current_bytes"] == resources["budget"]["current_bytes"]
+        assert (
+            run.batch.counters["bucket_physics_prepares"] - counters["bucket_physics_prepares"]
+            == 32
+        )
+        assert (
+            run.batch.resource_snapshot()["budget"]["current_bytes"]
+            == resources["budget"]["current_bytes"]
+        )
         run.advance(1)
         assert run.checked_steps == 2
         run.mark_pass()
@@ -137,18 +157,32 @@ def test_expanded_facade_limits_are_checked_before_model_preflight(limit, monkey
     if "world" in limit:
         count = 33 if limit == "world33" else 17
         specs = (spec,)
-        worlds = tuple(product.MuJoCoTyxWorldSpec(1000+i, spec.key, world.initial_state) for i in range(count))
+        worlds = tuple(
+            product.MuJoCoTyxWorldSpec(1000 + i, spec.key, world.initial_state)
+            for i in range(count)
+        )
     else:
         count = 33 if limit == "model33" else 9
-        specs = tuple(product.MuJoCoTyxModelSpec(f"overflow-{i}", spec.compilation) for i in range(count))
-        worlds = tuple(product.MuJoCoTyxWorldSpec(1000+i, item.key, world.initial_state) for i, item in enumerate(specs))
+        specs = tuple(
+            product.MuJoCoTyxModelSpec(f"overflow-{i}", spec.compilation) for i in range(count)
+        )
+        worlds = tuple(
+            product.MuJoCoTyxWorldSpec(1000 + i, item.key, world.initial_state)
+            for i, item in enumerate(specs)
+        )
 
     def forbidden(*args, **kwargs):
         raise AssertionError("capacity/budget requirement must reject before native preflight")
 
     monkeypatch.setattr(product, "_model_preflight", forbidden)
     monkeypatch.setattr(product, "MuJoCoRuntime", forbidden)
-    budget = None if limit.startswith("no-budget") else MuJoCoTyxResourceBudget(tool.DEVICE_PAYLOAD_LIMIT)
+    budget = (
+        None
+        if limit.startswith("no-budget")
+        else MuJoCoTyxResourceBudget(tool.DEVICE_PAYLOAD_LIMIT)
+    )
     with pytest.raises(ValueError) as caught:
         product.MuJoCoTyxHeterogeneousBatch(specs, worlds, mode="interpret", resource_budget=budget)
-    (tmp_path / "rejection.txt").write_text(f"{limit}\n{type(caught.value).__name__}: {caught.value}\n", encoding="utf-8")
+    (tmp_path / "rejection.txt").write_text(
+        f"{limit}\n{type(caught.value).__name__}: {caught.value}\n", encoding="utf-8"
+    )

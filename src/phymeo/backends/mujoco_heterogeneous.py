@@ -202,7 +202,8 @@ class MuJoCoTyxHeterogeneousBatch:
             for spec, rows in zip(representatives, members, strict=True)
         )
         self._resource_budget, self._allocation_manifests = resource_budget, manifests
-        self._lock, self._busy, self._closed = RLock(), False, False
+        self._lock = RLock() if resource_budget is None else resource_budget._lock
+        self._busy, self._closed = False, False
         self._revision, self._last_step = 0, None
         self._mode, self._cache_root, self._h = mode, cache_root, h
         self._world_keys, self._worlds, self._models = world_keys, worlds, models

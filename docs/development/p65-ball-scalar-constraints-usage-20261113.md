@@ -23,7 +23,7 @@ BALL 自身的角度限位、BALL 弹簧与 BALL affine bias 仍不在该域内�
 
 构造参数是 `implementation="tyx"`，不是 `backend="tyx"`；`backend` 是结果中的描述字段。
 `mode="interpret"` 使用 TYX 解释路径，换成 `mode="cuda"` 使用 TYX CUDA。
-`mode="cpu"` 则是另一条原生 CPU MuJoCo 路径。
+`mode="cpu", implementation="native"` 则是另一条原生 CPU MuJoCo 路径。
 
 下面是无接触的固定根 BALL + HINGE 示例。XML 编译在 CPU 完成；随后状态推进走选定的 TYX 路径。
 

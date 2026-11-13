@@ -1,13 +1,13 @@
 # Phymeo 当前续作入口
 
-更新：2026-11-13；**M-B1多独立刚体刚柔、8参与者容量及mixed布局、G2-R0恢复清理已完成源码与第四包安装资格；R3-A原资格保留**。
+更新：2026-11-13下一批；**M-B2非根连杆刚柔已冻结实施，当前编码与测试作者并行、尚未执行**。M-B1多独立刚体、容量、G2-R0与R3-A原有限验收复用。
 D5-A、R3-N/P、G2a、D6-A 已获各自有限源码/安装资格；D4 原稳态功能仍 FAIL。
 D6-A 的 FUNCTIONAL_PASS 与旧弹性 STRICT_FAIL_RECORDED 同时保留，不能合并成严格通过。
-整个 P6.5 / Newton 功能对齐未完成；到07:30计划内执行与安装已提前收口，见[本批交付概览](p65-feature-batch-summary-20261113.md)，不自动启动后继大域。
+整个 P6.5 / Newton 功能对齐未完成。上一轮到07:30计划已收口，见[交付概览](p65-feature-batch-summary-20261113.md)；用户随后明确要求继续，现由[新M-B2实施合同](p65-articulated-deformable-implementation-20261113.md)限定下一批，不继承旧截止或session。
 
 ## 从这里继续
 
-1. [本轮功能计划与当前队列](../superpowers/plans/2026-11-13-feature-completion-until-0730.md)：冻结范围、唯一执行者、停止条件。
+1. [当前M-B2实施合同](p65-articulated-deformable-implementation-20261113.md)：非根连杆、完整J/M投影与共同发布；父唯一执行，原两作者隔离编码。[上一批计划](../superpowers/plans/2026-11-13-feature-completion-until-0730.md)仅作历史。
 2. [功能验收矩阵](p65-feature-acceptance-matrix-20261113.md)：源码、后端、安装、应用和性能分列；不估整体完成百分比。
 3. [当前连接架构](p65-feature-architecture-draft-20261113.md)、[统一编译架构](../architecture/unified-scene-compilation.md)：声明、设备来源、查询、载荷与共同发布。
    [离线架构总览图](p65-functional-architecture-20261113.html)可直接打开；R3-A与M-B1现均完成有限源码/安装资格；图中未连接的域仍明确分开。
@@ -71,7 +71,7 @@ run143仅补明确的源码外helper路径，已完成3072步/3秒，returned=ch
 父/root独占旧共享接缝、合入及唯一串行项目执行；原三作者仅在既有隔离worktree按allowlist并行作者工作。
 继续前先核实时agents/Git/WIP和当前grant；已释放任务不重派，同源已绿不重跑，同hash证据不重审。
 所有import/collection/数值/probe/pytest/lint/formatter/compile/build/install/profile必须由父fresh entrypoint-aware guard后串行执行。
-06:15冻结新增范围，07:30按真实已验/失败/未执行汇总；时间边界不授权伪造通过或自动扩展任务。
+旧06:15冻结/07:30收口已经结束。新一批按用户继续指令与M-B2合同执行，没有新的时间截止；仍不授权伪造通过或自动扩大模型域。
 不建周期任务，不poll/rerun/dispatch远程CI，不push/mainmerge/发包，不改pin或盲跑寿命stress。
 三份无关未跟踪稿、证据Junction及其canonical归档、用户Torch和当前venv/pins全部保留，不跟随Junction删除或全解压补副本。
 观察器在物理返回后失败不能称物理回滚；UNKNOWN_RELEASE保owner/lease，不能重复free或伪报零live。
@@ -79,7 +79,7 @@ run143仅补明确的源码外helper路径，已完成3072步/3秒，returned=ch
 旧G1长舞46.29s XY门/131.48s完整动作、J/R学习、R03两项净加速度、B-point touch-SE仍开放。
 通用摩擦/换面历史、CCD、更多刚柔机器人组合、传感、可微物理、密集布/体软体、杆缆与MPM/流体仍是后继；本轮不因安装绿而关闭。
 
-第三包R3-A产品08d7a1b6、全部164/165返回和压缩trace已保留canonical installed-closed-archive-01/wheel-03；不重跑同源已绿矩阵。M-B2非根关节树与BALL limits/dry已有独立研究提案，未授实施。
+第三包R3-A产品08d7a1b6、全部164/165返回和压缩trace已保留canonical installed-closed-archive-01/wheel-03；不重跑同源已绿矩阵。M-B2现有独立实施合同，BALL limits/dry与G2b仍为后继提案。
 
 ## 本轮后段接受与下一交付
 

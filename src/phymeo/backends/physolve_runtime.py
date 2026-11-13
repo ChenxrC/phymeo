@@ -70,6 +70,7 @@ class PhySolveRuntime:
     scalar_drive_parameter_contract_version = 1
     staged_update_contract_version = 1
     command_continuation_contract_version = 1
+    current_forward_contract_version = 2
 
     def __init__(
         self,
@@ -614,6 +615,13 @@ class PhySolveRuntime:
                         fields=frame.fields, refreshes=frame.refreshes,
                         integration_copy_bytes_per_refresh=frame.copy_bytes,
                         output_device_bytes=sum(value.size * 4 for value in frame.targets.values()),
+                        logical_extra_device_bytes=sum(value.size * 4 for name, value in frame.logical_arrays.items()
+                            if value is not frame.arrays.get(name)),
+                        mass_address_map_device_bytes=0 if "qM" not in frame.fields else frame.mass_indices.size * 4,
+                        contact_scratch_device_bytes=0 if frame.contact_rows is None else
+                            (frame.contact_rows.size + frame.contact_counts.size) * 4,
+                        contact_dense_clear_and_publish_bytes_per_refresh=0 if frame.contact_rows is None else
+                            (frame.contact_rows.size + frame.contact_counts.size) * 4 * 3,
                         native_scratch_bytes="not_measured", fixed_stream=True)
                         for frame in self._current_frames if not frame.closed],
                     "ray_queries": [plan.costs() for plan in self._ray_queries],
@@ -700,17 +708,25 @@ class PhySolveRuntime:
             raise RuntimeError(f"execution requires {phase} phase")
         return ticket[1]
 
-    def begin_execution(self):
+    def begin_execution(self, *, observations=None):
         """Copy integration once; caller may now enqueue candidate field writes."""
         with self._scope():
             self._require_idle()
-            if any(frame.idle_pending for frame in self._current_frames):
+            pending_frames = [frame for frame in self._current_frames if frame.idle_pending]
+            if observations is not None and (pending_frames != [observations] or observations.closed):
+                raise ValueError("observation continuation requires this runtime's pending frame")
+            if pending_frames and observations is None:
                 raise RuntimeError("complete the idle current-forward sample before execution")
             self._execution_epoch += 1
             ticket = (self._execution_epoch, 1 - self._active)
             self._pending = {"ticket": ticket, "phase": "preparing"}
             # On failure retain the candidate until discard/close confirms completion.
-            self._validation.clear(self._stream)
+            if observations is None:
+                self._validation.clear(self._stream)
+            else:
+                # Transfer the unresolved observation error into this transaction.
+                # No readback, reset of flags or publication occurs at this boundary.
+                observations.idle_pending = False
             self._candidate()
             if self._controls_binding is not None:
                 self._controls_binding.copy(self._active, ticket[1], self._stream)

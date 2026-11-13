@@ -6,7 +6,7 @@ from xml.etree import ElementTree as ET
 
 import numpy as np
 
-from ..geometry.visual import VisualInstance, VisualMesh, VisualScene
+from ..geometry.visual import VisualInstance, VisualMesh, VisualScene, VisualTexture
 
 
 def capture_urdf_visuals(asset, source_root):
@@ -46,7 +46,9 @@ def capture_urdf_visuals(asset, source_root):
     return export_model(model, prefix=asset.name + "::", role="visual")
 
 
-def export_model(model, *, prefix="", role="native_geom", excluded=(), fallback=(), identities=None):
+def export_model(
+    model, *, prefix="", role="native_geom", excluded=(), fallback=(), identities=None
+):
     import mujoco as mj
 
     kinds = {
@@ -62,6 +64,29 @@ def export_model(model, *, prefix="", role="native_geom", excluded=(), fallback=
         )
     }
     instances, meshes = [], {}
+    texture_kinds = {
+        int(mj.mjtTexture.mjTEXTURE_2D): "2d",
+        int(mj.mjtTexture.mjTEXTURE_CUBE): "cube",
+        int(mj.mjtTexture.mjTEXTURE_SKYBOX): "skybox",
+    }
+    textures = []
+    for index in range(model.ntex):
+        height, width, channels = (
+            int(getattr(model, "tex_" + key)[index]) for key in ("height", "width", "nchannel")
+        )
+        start = int(model.tex_adr[index])
+        pixels = model.tex_data[start : start + height * width * channels].reshape(
+            height, width, channels
+        )
+        textures.append(
+            VisualTexture(
+                prefix + f"texture_{index}",
+                texture_kinds[int(model.tex_type[index])],
+                pixels,
+                model.texture(index).name,
+                int(model.tex_colorspace[index]),
+            )
+        )
     visibility = mj.MjvOption().geomgroup
     for i in range(model.ngeom):
         name = model.geom(i).name
@@ -110,15 +135,24 @@ def export_model(model, *, prefix="", role="native_geom", excluded=(), fallback=
         material = []
         mat = int(model.geom_matid[i])
         if mat >= 0:
-            # Keep unsupported texture roles explicit, never publish an apparently
-            # complete untextured asset for a textured source.
-            if np.any(model.mat_texid[mat] >= 0):
-                raise NotImplementedError("native visual texture export is not qualified yet")
             if np.array_equal(rgba, np.array([0.5, 0.5, 0.5, 1], np.float32)):
                 rgba = model.mat_rgba[mat]
             material = [
                 ("roughness", float(model.mat_roughness[mat])),
                 ("metallic", float(model.mat_metallic[mat])),
+                ("specular", float(model.mat_specular[mat])),
+                ("shininess", float(model.mat_shininess[mat])),
+                ("reflectance", float(model.mat_reflectance[mat])),
+                ("texture_repeat", tuple(map(float, model.mat_texrepeat[mat]))),
+                ("texture_uniform", bool(model.mat_texuniform[mat])),
+                (
+                    "texture_bindings",
+                    tuple(
+                        (role, textures[int(index)].name)
+                        for role, index in enumerate(model.mat_texid[mat])
+                        if index >= 0
+                    ),
+                ),
             ]
         q = model.geom_quat[i]
         group = int(model.geom_group[i])
@@ -126,7 +160,13 @@ def export_model(model, *, prefix="", role="native_geom", excluded=(), fallback=
         instances.append(
             VisualInstance(
                 identities["geom"][i] if identities is not None else prefix + name,
-                (identities["body"][body] if identities is not None else prefix + model.body(body).name) if body else None,
+                (
+                    identities["body"][body]
+                    if identities is not None
+                    else prefix + model.body(body).name
+                )
+                if body
+                else None,
                 kind,
                 tuple(map(float, model.geom_size[i, :width])),
                 tuple(map(float, model.geom_pos[i])),
@@ -138,7 +178,9 @@ def export_model(model, *, prefix="", role="native_geom", excluded=(), fallback=
                 tuple(material),
             )
         )
-    return VisualScene(tuple(instances), tuple(meshes.values()))
+    return VisualScene(
+        tuple(instances), tuple(meshes.values()), 2 if textures else 1, tuple(textures)
+    )
 
 
 def assemble_visual_scene(model, captured, assets):
@@ -155,4 +197,5 @@ def assemble_visual_scene(model, captured, assets):
     bodies = {model.body(i).name for i in range(1, model.nbody)}
     if any(i.body is not None and i.body not in bodies for i in instances):
         raise ValueError("visual instance has no retained public physical body")
-    return VisualScene(instances, meshes)
+    textures = base.textures + tuple(t for scene in captured.values() for t in scene.textures)
+    return VisualScene(instances, meshes, 2 if textures else 1, textures)

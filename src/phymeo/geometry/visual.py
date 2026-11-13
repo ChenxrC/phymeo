@@ -40,6 +40,32 @@ class VisualMesh:
 
 
 @dataclass(frozen=True)
+class VisualTexture:
+    """Owned compiled texels; projection is explicit, never inferred from shape."""
+
+    name: str
+    kind: str
+    pixels: np.ndarray
+    source_name: str = ""
+    native_color_space: int = 0
+
+    def __post_init__(self):
+        values = np.asarray(self.pixels)
+        if self.kind not in {"2d", "cube", "skybox"}:
+            raise ValueError("unknown visual texture projection")
+        if (
+            values.dtype != np.uint8
+            or values.ndim != 3
+            or values.shape[2] not in (1, 3, 4)
+            or min(values.shape) <= 0
+        ):
+            raise ValueError("visual texture requires nonempty HWC uint8 texels")
+        object.__setattr__(
+            self, "pixels", np.frombuffer(values.tobytes(), np.uint8).reshape(values.shape)
+        )
+
+
+@dataclass(frozen=True)
 class VisualInstance:
     name: str
     body: str | None
@@ -59,12 +85,21 @@ class VisualScene:
     instances: tuple[VisualInstance, ...]
     meshes: tuple[VisualMesh, ...] = ()
     contract_version: int = 1
+    textures: tuple[VisualTexture, ...] = ()
 
     def __post_init__(self):
         names = [item.name for item in self.instances]
         meshes = [item.name for item in self.meshes]
+        textures = [item.name for item in self.textures]
+        if len(textures) != len(set(textures)):
+            raise ValueError("visual texture identities must be unique")
+        if self.textures and self.contract_version != 2:
+            raise ValueError("visual textures require contract v2")
         if len(names) != len(set(names)) or len(meshes) != len(set(meshes)):
             raise ValueError("visual identities must be unique")
         for item in self.instances:
             if item.mesh is not None and item.mesh not in meshes:
                 raise ValueError("visual instance references an unknown mesh")
+            for _, texture in dict(item.material).get("texture_bindings", ()):
+                if texture not in textures:
+                    raise ValueError("visual material references an unknown texture")

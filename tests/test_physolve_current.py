@@ -32,6 +32,8 @@ def test_current_frame_preserves_authority_and_pending_candidate(payload, nworld
         mass = frame.arrays["qM"].numpy().reshape(nworld, -1)
         np.testing.assert_array_equal(mass[:, 0], 2.0)
         np.testing.assert_array_equal(mass[:, 1:], 0.0)
+        assert frame.logical_arrays["qM"].shape == (nworld, 1, 1)
+        np.testing.assert_array_equal(frame.logical_arrays["qM"].numpy(), 2.0)
         ticket = runtime.begin_execution()
         storage = runtime.storage_binding()
         storage.borrow("qfrc_applied", runtime.writable_bank, write=True).assign(
@@ -56,6 +58,68 @@ def test_current_frame_preserves_authority_and_pending_candidate(payload, nworld
         frame.close()
         with pytest.raises(RuntimeError, match="closed"):
             frame.refresh()
+
+
+@pytest.mark.cuda
+@pytest.mark.parametrize("extra_dofs", [0, 27])
+def test_logical_dense_mass_and_integer_contacts(payload, extra_dofs):
+    import mujoco
+
+    # AUTO nv=33 uses frontend tree storage while CPU MuJoCo remains dense,
+    # matching Transport. Do not widen the explicit sparse-Jacobian profile.
+    extra = ''.join(f'<body name="extra_{i}"><joint type="slide"/>'
+                    '<inertial pos="0 0 0" mass="1" diaginertia=".1 .1 .1"/></body>'
+                    for i in range(extra_dofs))
+    scene = compile_mujoco_xml(f'''<mujoco><option timestep=".002"/><worldbody>
+    <geom type="plane" size="1 1 .1"/><body pos="0 0 .09" quat=".923879532511 0 0 .382683432365"><freejoint/>
+    <geom type="sphere" pos=".02 0 0" size=".1" mass="2"/></body>{extra}</worldbody></mujoco>''', require_asset=False)
+    model = scene.fresh_native_model()
+    data = mujoco.MjData(model)
+    mujoco.mj_forward(model, data)
+    mass = np.zeros((model.nv, model.nv))
+    mujoco.mj_fullM(model, mass, data.qM)
+    assert np.count_nonzero(mass - np.diag(np.diag(mass))) > 0
+    with PhySolveRuntime(scene, payload=payload, nworld=8, complete_scene=True) as runtime:
+        frame = runtime.prepare_current_observations(("qM", "xquat", "contact_geom", "contact_worldid", "nacon"))
+        if extra_dofs:
+            assert frame.arrays["qM"].shape == (8, 1, model.nM)
+        frame.refresh()
+        frame.complete()
+        for world_mass in frame.logical_arrays["qM"].numpy():
+            np.testing.assert_allclose(world_mass, mass, rtol=1e-6, atol=1e-8)
+        for rotations in frame.logical_arrays["xquat"].numpy():
+            np.testing.assert_allclose(rotations, data.xquat, rtol=1e-6, atol=1e-8)
+        counts = frame.logical_arrays["contact_valid_count"].numpy()
+        pairs = frame.logical_arrays["contact_pairs"].numpy()
+        np.testing.assert_array_equal(counts, 1)
+        np.testing.assert_array_equal(np.sort(pairs[:, 0], axis=1), np.broadcast_to([0, 1], (8, 2)))
+        np.testing.assert_array_equal(pairs[:, 1:], -1)
+
+
+@pytest.mark.cuda
+def test_observation_error_continuation_keeps_gate(payload):
+    from test_physolve_runtime import SLIDER
+
+    with PhySolveRuntime(compile_mujoco_xml(SLIDER, require_asset=False), payload=payload) as runtime:
+        frame = runtime.prepare_current_observations(("qvel",))
+        frame.refresh()
+        with pytest.raises(ValueError, match="pending frame"):
+            runtime.begin_execution(observations=object())
+        ticket = runtime.begin_execution(observations=frame)
+        assert not frame.idle_pending
+        runtime.enqueue_step(ticket)
+        runtime.complete_execution(ticket)
+        runtime.accept_execution(ticket)
+        frame.refresh()
+        # Inject the same error bit as the current-forward finite validator.
+        runtime._validation.flags.assign(np.array([4194304], np.int32), stream=runtime._stream)
+        ticket = runtime.begin_execution(observations=frame)
+        runtime.enqueue_step(ticket)
+        with pytest.raises(Exception, match="4194304|finite|validation"):
+            runtime.complete_execution(ticket)
+        runtime.discard_execution(ticket)
+        frame.refresh()
+        frame.complete()
 
 
 @pytest.mark.cuda

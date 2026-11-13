@@ -66,3 +66,37 @@ state。qM 保留原生 tiled/padded 格式，不等于已完成 dense mass matr
 被native_visuals现有门禁拒绝；未改模型或去掉纹理规避。动力学P2PE绑定、原
 25×2ms控制节奏、任务轨迹、独立安装与GUI均未完成。证据在实验根
 `evidence/transport-public-*`，原失败日志保留，不能由历史原生9/16成功代替。
+## Current logical fields and compiled textures
+
+Current-forward contract v2 retains its original native `arrays` contract and adds
+`logical_arrays`: qM expands dense padding or tree-sparse storage to row-major
+`[world,nv,nv]` using a cold address map; structural zeros are not solver changes. Integer contact pairs
+are `[world,shared_pool_capacity,2]` with a separate valid-prefix count. Native
+geom indices retain their compilation identity; unused rows are -1. Atomic row
+ordering is unspecified. Dense contact clear/publication costs
+O(worlds * shared_pool_capacity) per refresh, as does persistent storage.
+This is a correctness-oriented binding, not a claim of scalable performance.
+
+`begin_execution(observations=frame)` explicitly transfers an unresolved idle
+observation error into the next physical transaction without clearing its flags
+or reading them back. The default begin call still refuses unresolved idle work.
+Completion and discard remain mandatory. The existing scratch and both captured
+source bindings remain owned by PhySolveRuntime; six solver CUBIN are unchanged.
+
+Visual contract v2 owns immutable compiled texture pixels and preserves 2D,
+cube and skybox projections, source names, native color-space, material roles,
+repeat/uniform and native material parameters. It does not promise renderer
+support. Untextured scenes retain visual contract v1; URDF texture import is
+still outside this implementation.
+
+Public-binding batch evidence: current-forward tests pass 8 cases, including
+AUTO nv=33 frontend tree storage against CPU MuJoCo dense mass reference,
+nonidentity rotations, typed contacts, error continuation and close retry.
+The actual P2PE ABI Transport run completes N=16/700 ticks/25x2ms with original
+success 13/16, trash 16/16, finite/full-rank 16/16 and selected reset preserving
+the other worlds' qpos/qvel/site positions. This does not qualify GUI: the
+installed consumer rejects original gravity at startup and lacks full visual
+resource bindings. P2PE's transport document owns the cross-repository results.
+All six CUBIN and the native Host remain unchanged. Logical output, sparse
+address-map and contact scratch/clear/publication costs are separately exposed
+by execution_costs; native scratch allocation remains explicitly unmeasured.

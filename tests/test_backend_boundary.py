@@ -30,3 +30,54 @@ def test_private_or_misplaced_import_is_rejected(source, adapter):
 
 def test_public_root_api_is_allowed_in_adapter():
     assert not guard.violations("import tyx as tx\ntx.kernel", in_adapter=True)
+
+
+@pytest.mark.parametrize(
+    "path,source",
+    [
+        ("backends/mujoco_task_workspace.py", "from tyx.torch import to_torch"),
+        ("training/mujoco_tyx_env.py", "from tyx.torch import from_torch, stream_from_torch"),
+        ("training/mujoco_tyx_env.py", "from tyx.torch import from_torch as borrow"),
+        (
+            "training/policy_response_diagnostics.py",
+            "import tyx as tx\ntx.Runtime\ntx.CudaStream\ntx.use_runtime\ntx.CudaArray",
+        ),
+    ],
+)
+def test_declared_public_interop_consumers_are_allowed(path, source):
+    assert not guard.violations(
+        source,
+        in_adapter=path.startswith("backends/"),
+        relative_path=path,
+    )
+
+
+@pytest.mark.parametrize(
+    "path,source",
+    [
+        ("training/arbitrary.py", "from tyx.torch import from_torch"),
+        ("backends/arbitrary.py", "from tyx.torch import from_torch"),
+        ("training/mujoco_tyx_env.py", "from tyx.torch import to_torch"),
+        ("backends/mujoco_task_workspace.py", "from tyx.torch import from_torch"),
+        ("training/mujoco_tyx_env.py", "from tyx.torch import *"),
+        ("training/mujoco_tyx_env.py", "from tyx.torch import _private"),
+        ("training/mujoco_tyx_env.py", "from tyx.torch._internal import from_torch"),
+        ("training/mujoco_tyx_env.py", "import tyx.torch"),
+        ("training/mujoco_tyx_env.py", "from tyx import torch"),
+        ("backends/mujoco_task_workspace.py", "from tyx import torch"),
+        ("backends/mujoco_task_workspace.py", "import tyx as tx\ntx.torch.to_torch"),
+        ("training/mujoco_tyx_env.py", "from tyx.torch import from_torch as ft\nft._private"),
+        ("training/policy_response_diagnostics.py", "import tyx as tx\ntx.kernel"),
+        ("training/policy_response_diagnostics.py", "import tyx as tx\ntx.cuda"),
+        ("training/policy_response_diagnostics.py", "import tyx as tx\ntx.CudaArray._private"),
+        ("training_other/mujoco_tyx_env.py", "from tyx.torch import from_torch"),
+        ("training/mujoco_tyx_env.py.bak", "from tyx.torch import from_torch"),
+        ("backends/example.py", "from tyx import CudaArray as Buffer\nBuffer._private"),
+    ],
+)
+def test_interop_allowlist_preserves_module_symbol_and_private_boundaries(path, source):
+    assert guard.violations(
+        source,
+        in_adapter=path.startswith("backends/"),
+        relative_path=path,
+    )

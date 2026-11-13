@@ -1,6 +1,6 @@
 # M-B2：非根连杆与变形表面实施合同
 
-状态：**IMPLEMENTATION_GRANTED_TESTS_PENDING**。用户在上一批收口后于2026-11-13再次要求继续；本批从父9c7433d7开始，没有继承已结束的07:30截止或旧执行session。按[已有研究](p65-multibody-deformable-next-design.md)补最高优先级的共同响应接线，原M-B1完整结果复用。BALL标量约束组合与G2b预算按各自提案随后排队，不在同一共享文件内混做。
+状态：**VALIDATED_ACCEPTED_SLOT_RELEASED**。用户在上一批收口后于2026-11-13再次要求继续；本批从父9c7433d7开始，没有继承已结束的07:30截止或旧执行session。按[已有研究](p65-multibody-deformable-next-design.md)补最高优先级的共同响应接线，现已完成限定源码及安装资格，详见[父验收报告](p65-articulated-deformable-report-20261113.md#parent-acceptance)。原M-B1完整结果复用。BALL标量约束组合与G2b预算按各自提案随后排队，不在同一共享文件内混做。以下保留原实施合同；不授予重跑已绿组或新域执行。
 
 ## 功能域与不变部分
 

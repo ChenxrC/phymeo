@@ -1,6 +1,6 @@
 # M-B2 articulated/deformable authoring report
 
-Status: **CODE_READY_TESTS_PENDING / AUTHORING_SLOT_RELEASED**. This is an unexecuted authoring handoff, not source or installation acceptance. The parent owns the sole execution slot. [Fixed cases](p65-articulated-deformable-cases-20261113.md) were committed before tests and the checker; the [product contract](p65-articulated-deformable-implementation-20261113.md) remains unchanged.
+Current status: **SOURCE_AND_INSTALLED_VERIFIED / VALIDATED_ACCEPTED_SLOT_RELEASED**. The [parent acceptance](#parent-acceptance) below supersedes the historical authoring status. [Fixed cases](p65-articulated-deformable-cases-20261113.md) were committed before tests and the checker; the [product contract](p65-articulated-deformable-implementation-20261113.md) is unchanged in scope. The delivery hashes and authoring statements below describe the original unexecuted handoff, not the later formatted/tested snapshot.
 
 ## Delivery
 
@@ -49,3 +49,26 @@ python <outside-copy>/check_deformable_articulated.py --mode cuda --expected-ins
 The parent supplies the repository's existing mode flags/environment and source snapshots. No command above has been run by this author. Only textual source/API inspection, file I/O, `git diff --check` and scoped commits were performed. One initial PowerShell text-copy command had a parser error before execution; it wrote no file, was corrected, and is not a product result.
 
 Qualification remains bounded to the original ordinary floating R/P domain, sphere/capsule normal response and short continuous windows. Multiple articulated participants in one world, RR/friction/CCD/steady support/performance remain outside this handoff. A first failure is retained and classified; no input or threshold is tuned to force acceptance.
+
+## Parent acceptance
+
+Tested and installed snapshot: `6b4a639c3e3126fcc6b1048b97c7a24cf18497a1`. Product changes are limited to the original four layout/source/response/lowering files. Source author `e1410564` and test author `129d320f/08d36f0c` were imported without changing the fixed cases. The only post-authoring Python changes were formatter layout; no numerical implementation repair, input change or gate change was needed.
+
+| Actual command | Result | Scope |
+| --- | --- | --- |
+| 01–05 product static | Ruff pass; first format found one tuple layout, repaired and checked | Exact four product files; only the reformatted file rechecked |
+| 08–12 checker static | Ruff pass; first format found two files, repaired and checked | Exact new test and standalone consumer |
+| 13 new interpret | 15 passed / 44.22 s | Ten TYX plus five HOST nodes, no skip |
+| 14 new CUDA | 10 passed / 50.14 s | The ten new TYX nodes; HOST not rerun |
+| 06 / 07 old single-body compatibility | 8 passed / 15.76 s; 8 passed / 16.44 s | Six selected existing selectors per backend |
+| 15 / 16 old M-B1 compatibility | 12 passed / 36.51 s; 11 passed / 27.42 s | Affected mechanics/source/transactions/budget; layout HOST once, unchanged raw transpose test not rerun |
+| 17 / 18 / 19 wheel | Build/install/parity RAW_EXIT=0 | 534 product members source/wheel/installed byte-identical, issues=0 |
+| 20 / 21 outside installed consumer | PASS, RAW_EXIT=0 both | Each 40 worldsteps /40 participant steps, C/D continuous and lifecycle |
+
+The source qualification is **25 new executions plus 39 affected compatibility executions**; these counts describe evidence, not overall engine completion. Each installed run has C 16 worldsteps, D 16 and lifecycle 8; every constructed owner closed once successfully, retained close failures=0. Each trace contains 147 complete event records. Interpret logical bytes 7,878,646 / compressed 845,879; CUDA 7,880,022 /843,533. No package consumer imports repository tests/examples or substitutes HOST current-state physics.
+
+Wheel: 1,727,428 bytes, SHA256 `c8cdf8d182e120a8c687e9ded18408852135ff475ab57ce0f05b5d47b4e6d642`. Standalone tested consumer SHA256 `88b09238c54e4b688c1dded8824f91193fea0dff78a6a2e3e7342c427212e030`. Fresh source staging and full parity are retained; this wheel does not imply a fresh rerun of every historical capability.
+
+Canonical evidence: `artifacts/p65-articulated-deformable-20261113-01`, including all raw exits/logs/guards/source snapshots and the original format failures. Installed compressed evidence, exact scripts, bootstrap receipts and wheel are retained under `installed-closed-archive`; original outside files remain. No gzip payload was rewritten or dropped. Source/layout first failures were formatting only; no functional failure occurred in this batch.
+
+This acceptance adds actual nonroot group/FK/COM/source identity, complete B×6 load delivery and original full-tree J/M projection with node/tree atomic publication. Root and no-collider children are retained. It supports the fixed R/P chain and branch matrix and the stated ordinary-tree domain; it is not MuJoCo FREE＋BALL coupling, multiple articulated participants in one world, friction, CCD, steady support, a dense cloth benchmark or Newton performance parity. The new tree cases do not add a dedicated D6-composition qualification. [Public usage](p65-articulated-deformable-usage-20261113.md) explains the shared interface.

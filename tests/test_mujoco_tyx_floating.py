@@ -663,7 +663,9 @@ def test_floating_control_overflow_is_atomic(mode):
 
 
 @pytest.mark.parametrize("mode", MODES)
-def test_floating_scalar_limit_crossing_rejects_every_world(mode, tmp_path):
+def test_floating_scalar_limit_crossing_matches_native_in_every_world(mode, tmp_path):
+    import test_mujoco_tyx_constraints as mixed
+
     mj = _deps()
     case = CASES[2]
     xml = case.xml.replace(
@@ -677,26 +679,83 @@ def test_floating_scalar_limit_crossing_rejects_every_world(mode, tmp_path):
     q_safe = safe.q.copy()
     q_safe[-1] = 0.02
     initial = {5: MuJoCoInitialState(q, v), 91: MuJoCoInitialState(q_safe, safe.v)}
+    joint = mj.mj_name2id(model, mj.mjtObj.mjOBJ_JOINT, "j0")
+    path = tmp_path / "floating-limit-supported.jsonl"
     with MuJoCoTyxRuntime(
         compile_mujoco_xml(xml, require_asset=False),
         mode=mode,
         world_keys=(5, 91),
         initial_states=initial,
     ) as runtime:
-        before = runtime.snapshot()
-        with pytest.raises(PhysicsStepFailure) as caught:
-            runtime.step(H)
-        assert caught.value.accepted_worlds == {5: False, 91: False}
-        _same(before, runtime.snapshot())
-        _save(
-            tmp_path / "limit-rejection.jsonl",
-            {
-                "source_xml": xml,
-                "before": before,
-                "after": runtime.snapshot(),
-                "mask": caught.value.accepted_worlds,
-            },
-        )
+        starts = runtime.snapshot()
+        references = {key: mj.MjData(model) for key in starts}
+        for key, start in starts.items():
+            references[key].qpos[:], references[key].qvel[:], references[key].time = (
+                start.q,
+                start.v,
+                start.time,
+            )
+        _save(path, {"source_xml": xml, "initial": starts, "steps": 2, "tolerances": TOL})
+        for tick in range(2):
+            before = runtime.snapshot()
+            expected = {}
+            for key, entry in before.items():
+                control = _stored(entry.held_control)
+                expected[key] = mixed.native(mj, model, entry.q, entry.v, control, entry.time)
+                _set_control(references[key], control)
+                mj.mj_step(model, references[key])
+            accepted = runtime.step(H)
+            after = runtime.snapshot()
+            _save(
+                path,
+                {
+                    "before": before,
+                    "oracle": expected,
+                    "actual": after,
+                    "accepted": accepted,
+                    "cpu": {
+                        key: {"q": ref.qpos.copy(), "v": ref.qvel.copy(), "time": ref.time}
+                        for key, ref in references.items()
+                    },
+                },
+            )
+            assert accepted == {5: True, 91: True}
+            for key, state in after.items():
+                row, oracle = state.last_step, expected[key]
+                np.testing.assert_array_equal(row.input_q, before[key].q)
+                np.testing.assert_array_equal(row.input_v, before[key].v)
+                assert row.input_time == before[key].time and row.output_time == state.time
+                assert row.tick == state.tick == tick + 1 and row.contacts == ()
+                mixed.assert_receipt(row, oracle, model)
+                # Keep the original floating dynamics gates; qacc now includes
+                # the native constraint force, unlike the no-contact helper.
+                _assert_dynamics(
+                    row,
+                    {
+                        **oracle,
+                        "native_qacc": oracle["qacc"],
+                        "native_actuator": oracle["qfrc_actuator"],
+                    },
+                )
+                np.testing.assert_allclose(state.q, references[key].qpos, rtol=0, atol=Q_ATOL)
+                np.testing.assert_allclose(state.v, references[key].qvel, rtol=0, atol=V_ATOL)
+                assert state.time == pytest.approx(references[key].time, abs=TIME_ATOL)
+            # Both original entries are outside the activation margin. Only
+            # world 5 reaches the upper constraint on the following step.
+            assert after[91].last_step.constraints == ()
+            np.testing.assert_array_equal(after[91].last_step.qfrc_constraint, 0)
+            if tick == 0:
+                assert after[5].last_step.constraints == ()
+                assert after[5].q[-1] > model.jnt_range[joint, 1]
+            else:
+                rows = after[5].last_step.constraints
+                assert len(rows) == 1
+                assert (rows[0].constraint_type, rows[0].source_id, rows[0].side_or_edge) == (
+                    int(mj.mjtConstraint.mjCNSTR_LIMIT_JOINT),
+                    joint,
+                    1,
+                )
+                assert rows[0].force > 0 and after[5].last_step.qfrc_constraint[-1] < 0
 
 
 BALL_XML = _model(0).replace(

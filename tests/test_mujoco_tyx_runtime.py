@@ -270,10 +270,47 @@ def test_unsupported_source_semantics_have_capability_diagnostics(change, code):
     assert code in {issue.code for issue in error.value.issues}
 
 
-def test_possible_friction_contact_is_rejected_but_not_no_contact_condim3():
-    deps("interpret")
-    with pytest.raises(MuJoCoTyxUnsupported, match="contact-dimension"):
-        MuJoCoTyxRuntime(compile_source(source(condim=3)), mode="interpret")
+def test_possible_friction_contact_and_no_contact_condim3_match_native(tmp_path):
+    import test_mujoco_tyx_constraints as mixed
+
+    mj = deps("interpret")
+    xml = source(condim=3)
+    compilation = compile_source(xml)
+    model = compilation.mj_model
+    native = mj.MjData(model)
+    path = tmp_path / "condim3-supported.jsonl"
+    with MuJoCoTyxRuntime(compilation, mode="interpret") as runtime:
+        start = runtime.snapshot()[0]
+        native.qpos[:], native.qvel[:], native.time = start.q, start.v, start.time
+        mixed._save(path, {"source_xml": xml, "initial": start, "steps": 2})
+        for tick in range(2):
+            before = runtime.snapshot()[0]
+            control = mixed.normal._stored(before.held_control)
+            expected = mixed.native(mj, model, before.q, before.v, control, before.time)
+            mixed.normal._set(native, control)
+            mj.mj_step(model, native)
+            accepted = runtime.step(0.001)
+            state = runtime.snapshot()[0]
+            mixed._save(
+                path,
+                {
+                    "before": before,
+                    "oracle": expected,
+                    "actual": state,
+                    "accepted": accepted,
+                    "cpu_q": native.qpos.copy(),
+                    "cpu_v": native.qvel.copy(),
+                },
+            )
+            assert accepted == {0: True} and state.tick == tick + 1
+            np.testing.assert_array_equal(state.last_step.input_q, before.q)
+            np.testing.assert_array_equal(state.last_step.input_v, before.v)
+            assert state.last_step.input_time == before.time
+            mixed.assert_receipt(state.last_step, expected, model)
+            compare_native(mj, model, native, state)
+            assert state.last_step.contacts and state.last_step.constraints
+            assert all(contact.dimension == 3 for contact in state.last_step.contacts)
+            assert sum(contact.normal_force for contact in state.last_step.contacts) > 0
     with MuJoCoTyxRuntime(compile_source(SLIDER), mode="interpret") as runtime:
         assert runtime.capabilities["possible_contact_pairs"] == 0
 
@@ -362,17 +399,64 @@ def test_fp32_control_overflow_rejects_whole_control_change(mode):
 
 
 @pytest.mark.parametrize("mode", MODES)
-def test_finite_joint_limit_is_guarded_before_publishing_stop_domain(mode):
-    deps(mode)
+def test_finite_joint_limit_crossing_uses_native_soft_constraints(mode, tmp_path):
+    import test_mujoco_tyx_constraints as mixed
+
+    mj = deps(mode)
     xml = SLIDER.replace('name="slide"', 'name="slide" limited="true" range="-.00001 .00001"')
-    with MuJoCoTyxRuntime(compile_source(xml), mode=mode) as runtime:
+    compilation = compile_source(xml)
+    model = compilation.mj_model
+    native = mj.MjData(model)
+    joint = mj.mj_name2id(model, mj.mjtObj.mjOBJ_JOINT, "slide")
+    path = tmp_path / "scalar-limit-supported.jsonl"
+    with MuJoCoTyxRuntime(compilation, mode=mode) as runtime:
         runtime.set_controls({0: MuJoCoControl([5])})
-        before = runtime.snapshot()[0]
-        with pytest.raises(PhysicsStepFailure) as error:
-            runtime.step(0.001)
-        assert "joint_limit_domain" in str(error.value.__cause__)
-        np.testing.assert_array_equal(runtime.snapshot()[0].q, before.q)
-        assert runtime.snapshot()[0].tick == 0
+        start = runtime.snapshot()[0]
+        native.qpos[:], native.qvel[:], native.time = start.q, start.v, start.time
+        mixed._save(path, {"source_xml": xml, "initial": start, "steps": 2})
+        for tick in range(2):
+            before = runtime.snapshot()[0]
+            control = mixed.normal._stored(before.held_control)
+            expected = mixed.native(mj, model, before.q, before.v, control, before.time)
+            mixed.normal._set(native, control)
+            mj.mj_step(model, native)
+            accepted = runtime.step(0.001)
+            state = runtime.snapshot()[0]
+            mixed._save(
+                path,
+                {
+                    "before": before,
+                    "oracle": expected,
+                    "actual": state,
+                    "accepted": accepted,
+                    "cpu_q": native.qpos.copy(),
+                    "cpu_v": native.qvel.copy(),
+                },
+            )
+            assert accepted == {0: True} and state.tick == tick + 1
+            row = state.last_step
+            np.testing.assert_array_equal(row.input_q, before.q)
+            np.testing.assert_array_equal(row.input_v, before.v)
+            assert row.input_time == before.time and row.output_time == state.time
+            mixed.assert_receipt(row, expected, model)
+            compare_native(mj, model, native, state)
+            np.testing.assert_allclose(
+                row.qfrc_actuator, expected["qfrc_actuator"], rtol=4e-4, atol=4e-4
+            )
+            # The original first entry is interior. A crossed endpoint is
+            # accepted; its upper-limit row belongs to the next actual step.
+            if tick == 0:
+                assert row.constraints == ()
+                assert state.q[0] > model.jnt_range[joint, 1]
+            else:
+                assert len(row.constraints) == 1
+                limit = row.constraints[0]
+                assert (limit.constraint_type, limit.source_id, limit.side_or_edge) == (
+                    int(mj.mjtConstraint.mjCNSTR_LIMIT_JOINT),
+                    joint,
+                    1,
+                )
+                assert limit.force > 0 and row.qfrc_constraint[0] < 0
 
 
 @pytest.mark.parametrize("mode", MODES)

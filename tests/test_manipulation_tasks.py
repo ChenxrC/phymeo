@@ -177,3 +177,91 @@ def test_history_rejects_mixed_identity_or_missing_physical_samples(change):
         sample = replace(sample, **{change: getattr(sample, change) + 1})
     with pytest.raises(ValueError):
         evaluate_goal(scene, goal, sample, history)
+
+
+def test_scene_and_target_own_constructor_sequences_and_numeric_scalars():
+    class MutableFloat:
+        def __init__(self, value):
+            self.value = value
+
+        def __float__(self):
+            return float(self.value)
+
+    scene = SCENES[0]
+    fields = ("object_shapes", "targets", "goals", "robot_joint_names",
+              "actuator_names", "finger_geom_names", "initial_object_position", "initial_object_wxyz")
+    inputs = {name: list(getattr(scene, name)) for name in fields}
+    yaw = MutableFloat(scene.targets[0].yaw)
+    target = replace(scene.targets[0], yaw=yaw)
+    inputs["targets"][0] = target
+    scalars = {name: MutableFloat(getattr(scene, name))
+               for name in ("object_mass_kg", "support_top_m", "timestep_s")}
+    owned = replace(scene, **inputs, **scalars)
+    binding = owned.physical_binding
+    for values in inputs.values():
+        values.clear()
+    for value in scalars.values():
+        value.value = math.nan
+    yaw.value = math.nan
+    assert owned.physical_binding == binding
+    for name in fields:
+        assert type(getattr(owned, name)) is tuple
+        assert getattr(owned, name) == getattr(scene, name)
+    for name in scalars:
+        assert type(getattr(owned, name)) is float
+        assert getattr(owned, name) == getattr(scene, name)
+    assert type(target.yaw) is float and target.yaw == scene.targets[0].yaw
+
+
+def test_scene_rejects_invalid_physical_declarations_and_identity_bindings():
+    scene = SCENES[0]
+    invalid = (
+        dict(key=""), dict(object_key=7), dict(robot_kinds="RRBR"),
+        dict(object_mass_kg=0), dict(object_mass_kg=math.inf),
+        dict(timestep_s=0), dict(timestep_s=math.nan), dict(support_top_m=math.nan),
+        dict(initial_object_position=(math.inf, 0, 0)), dict(initial_object_wxyz=(2, 0, 0, 0)),
+        dict(object_shapes=()), dict(object_shapes=(scene.targets[0],)),
+        dict(targets=(scene.goals[0],)), dict(goals=(scene.targets[0],)),
+        dict(targets=(scene.targets[0], scene.targets[0])),
+        dict(robot_joint_names=(*scene.robot_joint_names[:-1], 3)),
+        dict(robot_joint_names=(scene.robot_joint_names[0],)*len(scene.robot_joint_names)),
+        dict(actuator_names=scene.actuator_names[:-1]), dict(finger_geom_names=("one-finger",)),
+        dict(goals=(replace(scene.goals[0], target_key="missing"),)),
+        dict(goals=(replace(scene.goals[0], object_key="other-object"),)),
+        dict(default_goal=True), dict(default_goal=len(scene.goals)),
+    )
+    for updates in invalid:
+        with pytest.raises(ValueError):
+            replace(scene, **updates)
+    for updates in (dict(yaw=math.nan), dict(key=""), dict(label_en=3)):
+        with pytest.raises(ValueError):
+            replace(scene.targets[0], **updates)
+
+
+def test_history_binds_all_scene_physics_even_when_xml_is_identical():
+    scene = SCENES[0]
+    goal = scene.goals[0]
+    history = evaluate_goal(scene, goal, frame(scene)).history
+    replacements = (
+        dict(object_shapes=(replace(scene.object_shapes[0], size=(.026,)),)),
+        dict(object_mass_kg=scene.object_mass_kg + .01), dict(support_top_m=.001),
+        dict(timestep_s=2*H),
+        dict(initial_object_position=(scene.initial_object_position[0] + .01, *scene.initial_object_position[1:])),
+        dict(initial_object_wxyz=(0, 0, 0, 1)),
+        dict(support_geom_name="other-support"), dict(finger_geom_names=("other-left", "other-right")),
+    )
+    for updates in replacements:
+        changed = replace(scene, **updates)
+        assert changed.source_sha256 == scene.source_sha256
+        assert changed.physical_binding != scene.physical_binding
+        with pytest.raises(ValueError, match="history crossed"):
+            evaluate_goal(changed, goal, frame(changed, 1), history)
+
+
+def test_missing_history_cannot_restart_at_a_later_supported_tick():
+    scene = SCENES[2]
+    goal = scene.goals[scene.default_goal]
+    assert not evaluate_goal(scene, goal, frame(scene)).success
+    for tick in (1, 20):
+        with pytest.raises(ValueError, match="tick 0"):
+            evaluate_goal(scene, goal, frame(scene, tick))

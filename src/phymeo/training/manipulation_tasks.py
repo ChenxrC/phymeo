@@ -52,6 +52,10 @@ class Target:
     half_extents: tuple = (0.085, 0.085)
 
     def __post_init__(self):
+        for field in ("key", "label_zh", "label_en"):
+            if type(getattr(self, field)) is not str or not getattr(self, field).strip():
+                raise ValueError("target identifiers and labels must be nonempty strings")
+        object.__setattr__(self, "yaw", float(self.yaw))
         object.__setattr__(self, "position", _vector(self.position, 3, "target position"))
         object.__setattr__(self, "half_extents", _vector(self.half_extents, 2, "target extents"))
         if not math.isfinite(self.yaw) or min(self.half_extents) <= 0:
@@ -121,6 +125,64 @@ class Scene:
     object_label_zh: str = "物体"
     object_label_en: str = "object"
     initial_object_wxyz: tuple = (1.0, 0.0, 0.0, 0.0)
+
+    def __post_init__(self):
+        for field in ("key", "robot_kinds", "mjcf", "object_key", "support_geom_name",
+                      "object_label_zh", "object_label_en"):
+            value = getattr(self, field)
+            if type(value) is not str or not value.strip():
+                raise ValueError("scene identifiers, labels and XML must be nonempty strings")
+        if any(kind not in "RP" for kind in self.robot_kinds):
+            raise ValueError("robot_kinds must describe scalar R/P joints")
+        for field, expected in (("object_shapes", Primitive), ("targets", Target), ("goals", Goal)):
+            values = tuple(getattr(self, field))
+            if not values or any(type(value) is not expected for value in values):
+                raise ValueError(field + " requires nonempty typed declarations")
+            object.__setattr__(self, field, values)
+        for field in ("robot_joint_names", "actuator_names", "finger_geom_names"):
+            values = tuple(getattr(self, field))
+            if any(type(value) is not str or not value.strip() for value in values):
+                raise ValueError(field + " requires nonempty names")
+            if len(set(values)) != len(values):
+                raise ValueError(field + " requires unique names")
+            object.__setattr__(self, field, values)
+        if len(self.finger_geom_names) not in (0, 2):
+            raise ValueError("scene declares no fingers or exactly two contact fingers")
+        count = len(self.robot_joint_names)
+        if count != len(self.robot_kinds) + len(self.finger_geom_names):
+            raise ValueError("robot joint names must cover the arm and declared fingers")
+        if len(self.actuator_names) != count or count + 6 > 35 or count + 7 > 45:
+            raise ValueError("actuators and complete FREE coordinates must fit the declared layout")
+        object.__setattr__(self, "initial_object_position", _vector(self.initial_object_position, 3, "initial position"))
+        object.__setattr__(self, "initial_object_wxyz", _vector(self.initial_object_wxyz, 4, "initial WXYZ"))
+        if abs(sum(q*q for q in self.initial_object_wxyz) - 1) > 2e-5:
+            raise ValueError("initial object orientation must be unit WXYZ")
+        for field in ("object_mass_kg", "support_top_m", "timestep_s"):
+            value = float(getattr(self, field))
+            if not math.isfinite(value) or (field != "support_top_m" and value <= 0):
+                raise ValueError("finite scene scalars and positive mass/timestep required")
+            object.__setattr__(self, field, value)
+        target_keys = {target.key for target in self.targets}
+        if len(target_keys) != len(self.targets):
+            raise ValueError("target keys must be unique")
+        for goal in self.goals:
+            if type(goal.target_key) is not str or goal.target_key not in target_keys:
+                raise ValueError("every goal must name a declared visible target")
+            if type(goal.kind) is not str or type(goal.object_key) is not str or goal.object_key != self.object_key:
+                raise ValueError("every goal must name the declared object")
+            if goal.kind in ("grasp", "place") and len(self.finger_geom_names) != 2:
+                raise ValueError("grasp/place predicates require two declared contact fingers")
+            if goal.kind == "pusht" and (len(self.object_shapes) > 2 or any(s.kind != "box" for s in self.object_shapes)):
+                raise ValueError("PushT footprint requires one or two actual box components")
+        if type(self.default_goal) is not int or not 0 <= self.default_goal < len(self.goals):
+            raise ValueError("default_goal must index the declared goals")
+
+    @property
+    def physical_binding(self):
+        """Bind all owned declarations, including metadata not encoded by XML."""
+        metadata = asdict(self)
+        metadata["mjcf"] = self.source_sha256
+        return sha256(json.dumps(metadata, sort_keys=True, ensure_ascii=False, allow_nan=False).encode()).hexdigest()
 
     @property
     def object_geom_names(self):
@@ -273,11 +335,13 @@ def evaluate_goal(scene, goal, frame, history=None):
         raise ValueError("goal is not bound to this scene/object")
     target = next(t for t in scene.targets if t.key == goal.target_key)
     target_binding = (target.key, target.position, target.yaw, target.half_extents)
-    binding = (scene.source_sha256, goal.binding, target_binding, frame.world, frame.episode)
+    binding = (scene.physical_binding, goal.binding, target_binding, frame.world, frame.episode)
     rotation = _rotation(frame.object_wxyz)
     lower, upper = _bounds(scene.object_shapes, frame.object_position, rotation)
     bottom = lower[2] - scene.support_top_m
     if history is None:
+        if frame.tick != 0:
+            raise ValueError("new episode history must begin at tick 0")
         if not -0.005 <= bottom <= 0.005:
             raise ValueError("episode history must begin with the object at the support surface")
         history = SuccessHistory(binding, frame.tick, frame.time_s, bottom, frame.object_position[:2])

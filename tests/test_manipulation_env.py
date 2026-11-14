@@ -61,8 +61,13 @@ def evidence(path):
     try:
         yield records
     except BaseException as error:
-        records.append({"failure": repr(error), "phase": getattr(error, "phase", None),
-                        "needs_recovery": getattr(error, "needs_recovery", None)})
+        records.append(
+            {
+                "failure": repr(error),
+                "phase": getattr(error, "phase", None),
+                "needs_recovery": getattr(error, "needs_recovery", None),
+            }
+        )
         raise
     finally:
         save(path, owned_host(records))
@@ -73,11 +78,16 @@ def declarations(keys):
     scenes = {key: catalog[key] for key in keys}
     # Model order is deliberately independent of a reversed world order.
     specs = tuple(
-        MuJoCoTyxModelSpec(catalog[key].key, compile_mujoco_xml(catalog[key].mjcf, require_asset=False))
-        for key in KEYS if key in scenes
+        MuJoCoTyxModelSpec(
+            catalog[key].key, compile_mujoco_xml(catalog[key].mjcf, require_asset=False)
+        )
+        for key in KEYS
+        if key in scenes
     )
-    models = {key: next(spec for spec in specs if spec.key == scene.key).compilation.fresh_native_model()
-              for key, scene in scenes.items()}
+    models = {
+        key: next(spec for spec in specs if spec.key == scene.key).compilation.fresh_native_model()
+        for key, scene in scenes.items()
+    }
     return scenes, specs, models
 
 
@@ -85,10 +95,13 @@ def make_env(stack, keys=KEYS, *, assets=None, horizons=None, auto_reset=True, c
     scenes, specs, models = declarations(keys) if assets is None else assets
     selected = {key: scenes[key] for key in keys}
     needed = {scene.key for scene in selected.values()}
-    batch = stack.enter_context(MuJoCoTyxHeterogeneousBatch(
-        tuple(spec for spec in specs if spec.key in needed),
-        tuple(MuJoCoTyxWorldSpec(key, selected[key].key) for key in keys), mode="cuda",
-    ))
+    batch = stack.enter_context(
+        MuJoCoTyxHeterogeneousBatch(
+            tuple(spec for spec in specs if spec.key in needed),
+            tuple(MuJoCoTyxWorldSpec(key, selected[key].key) for key in keys),
+            mode="cuda",
+        )
+    )
     action_specs = {}
     for row, key in enumerate(keys):
         model = models[key]
@@ -98,19 +111,28 @@ def make_env(stack, keys=KEYS, *, assets=None, horizons=None, auto_reset=True, c
             ctrl = (0,) if row == 0 else (0, int(model.nu) - 1)
             width = len(ctrl) + 3
             action_specs[key] = MuJoCoTyxActionSpec(
-                ctrl, (dof,), ((body, 0), (body, 5)),
+                ctrl,
+                (dof,),
+                ((body, 0), (body, 5)),
                 scale=np.linspace(0.01, 0.04, width, dtype=np.float32),
                 bias=np.linspace(-0.02, 0.015, width, dtype=np.float32),
             )
         else:
             action_specs[key] = MuJoCoTyxActionSpec(
-                tuple(range(model.nu)), scale=np.full(model.nu, 0.1, np.float32),
+                tuple(range(model.nu)),
+                scale=np.full(model.nu, 0.1, np.float32),
                 bias=np.full(model.nu, 0.025, np.float32),
             )
-    env = stack.enter_context(HeterogeneousManipulationEnv(
-        batch, selected, goals={key: scene.goals[scene.default_goal] for key, scene in selected.items()},
-        action_specs=action_specs, horizons=horizons or dict.fromkeys(keys, 64), auto_reset=auto_reset,
-    ))
+    env = stack.enter_context(
+        HeterogeneousManipulationEnv(
+            batch,
+            selected,
+            goals={key: scene.goals[scene.default_goal] for key, scene in selected.items()},
+            action_specs=action_specs,
+            horizons=horizons or dict.fromkeys(keys, 64),
+            auto_reset=auto_reset,
+        )
+    )
     return env, batch, selected, models, action_specs
 
 
@@ -123,34 +145,76 @@ def actions(env, *, padding=float("nan")):
 
 
 def step(env, value=None, **kwargs):
-    return env.step(actions(env) if value is None else value, world_keys=env.world_keys,
-                    expected_frame=env.current_frame, **kwargs)
+    return env.step(
+        actions(env) if value is None else value,
+        world_keys=env.world_keys,
+        expected_frame=env.current_frame,
+        **kwargs,
+    )
 
 
 def metadata(env):
-    return {name: dict(getattr(env, name)) for name in
-            ("episode_ids", "episode_lengths", "returns", "history", "goals", "pending_reset")}
+    return {
+        name: dict(getattr(env, name))
+        for name in (
+            "episode_ids",
+            "episode_lengths",
+            "returns",
+            "history",
+            "goals",
+            "pending_reset",
+        )
+    }
 
 
 def physical(batch):
-    return {key: {name: getattr(state, name) for name in PHYSICAL_FIELDS}
-            for key, state in batch.integration_snapshot().items()}
+    return {
+        key: {name: getattr(state, name) for name in PHYSICAL_FIELDS}
+        for key, state in batch.integration_snapshot().items()
+    }
 
 
 def record(records, env, batch, transition=None, **extra):
-    records.append(owned_host(dict(
-        transition=transition, metadata=metadata(env), physical=physical(batch),
-        last_step=batch.last_step, frame=env.current_frame, **extra,
-    )))
+    records.append(
+        owned_host(
+            dict(
+                transition=transition,
+                metadata=metadata(env),
+                physical=physical(batch),
+                last_step=batch.last_step,
+                frame=env.current_frame,
+                **extra,
+            )
+        )
+    )
 
 
 def semantic_transition(transition):
     # CAS revisions, workspace UUIDs and reset-boundary serials are destination-local.
-    return owned_host({name: getattr(transition, name) for name in (
-        "sequence", "world_keys", "observation", "final_observation", "reward", "terminated",
-        "truncated", "final_mask", "episode_id", "episode_length", "episode_return", "action",
-        "native_channels", "accepted_worlds", "success_frames", "results", "goal_bindings",
-    )})
+    return owned_host(
+        {
+            name: getattr(transition, name)
+            for name in (
+                "sequence",
+                "world_keys",
+                "observation",
+                "final_observation",
+                "reward",
+                "terminated",
+                "truncated",
+                "final_mask",
+                "episode_id",
+                "episode_length",
+                "episode_return",
+                "action",
+                "native_channels",
+                "accepted_worlds",
+                "success_frames",
+                "results",
+                "goal_bindings",
+            )
+        }
+    )
 
 
 def same_row(wide, row, narrow):
@@ -209,7 +273,10 @@ def test_eight_scenes_match_independent_w1_and_same_entry_loads(reverse, tmp_pat
             assert dict(transition.accepted_worlds) == dict.fromkeys(keys, True)
             assert not transition.reward.any().item() and not transition.final_mask.any().item()
             assert transition.episode_id.dtype == transition.episode_length.dtype == np.int64
-            assert not transition.episode_id.flags.writeable and not transition.episode_length.flags.writeable
+            assert (
+                not transition.episode_id.flags.writeable
+                and not transition.episode_length.flags.writeable
+            )
             assert transition.reward.dtype == torch.float32 and transition.reward.is_cuda
             assert transition.terminated.dtype == transition.truncated.dtype == torch.bool
             for tensor in transition.observation.values():
@@ -228,15 +295,23 @@ def test_eight_scenes_match_independent_w1_and_same_entry_loads(reverse, tmp_pat
                 assert qa > 0, "M0 object FREE is after robot scalar addresses"
                 assert observed.phase == "accepted-entry" and observed.tick == tick
                 assert observed.time_s == receipt.input_time and observed.episode == 0
-                np.testing.assert_allclose(observed.object_position, receipt.input_q[qa:qa + 3], **POSE_TOL)
-                np.testing.assert_array_equal(observed.object_wxyz, receipt.input_q[qa + 3:qa + 7])
+                np.testing.assert_allclose(
+                    observed.object_position, receipt.input_q[qa : qa + 3], **POSE_TOL
+                )
+                np.testing.assert_array_equal(
+                    observed.object_wxyz, receipt.input_q[qa + 3 : qa + 7]
+                )
                 fingers, support = loads(scenes[key], model, receipt)
-                np.testing.assert_allclose(observed.finger_normal_forces_n, fingers, rtol=3e-3, atol=3e-3)
-                np.testing.assert_allclose(observed.support_up_force_n, support, rtol=3e-3, atol=3e-3)
+                np.testing.assert_allclose(
+                    observed.finger_normal_forces_n, fingers, rtol=3e-3, atol=3e-3
+                )
+                np.testing.assert_allclose(
+                    observed.support_up_force_n, support, rtol=3e-3, atol=3e-3
+                )
                 if support > 0.01:
                     supported.add(key)
-                endpoint = owned_host(transition.observation["q"])[row, qa:qa + 3]
-                if not np.array_equal(endpoint, receipt.input_q[qa:qa + 3]):
+                endpoint = owned_host(transition.observation["q"])[row, qa : qa + 3]
+                if not np.array_equal(endpoint, receipt.input_q[qa : qa + 3]):
                     changed.add(key)
                 if tick in (0, 16, 31):
                     oracle = native_bodies(mj, model, before[key])
@@ -247,7 +322,9 @@ def test_eight_scenes_match_independent_w1_and_same_entry_loads(reverse, tmp_pat
                         ("linear_velocity", "body_linear_velocity", TWIST_TOL),
                         ("angular_velocity", "body_angular_velocity", TWIST_TOL),
                     ):
-                        np.testing.assert_allclose(getattr(observed, field), oracle[source][body], **tolerance)
+                        np.testing.assert_allclose(
+                            getattr(observed, field), oracle[source][body], **tolerance
+                        )
                 assert not transition.results[key].success  # No learned grasp/place/PushT claim.
         assert changed == set(keys), "entry and endpoint must be observably distinct"
         if not reverse:
@@ -263,20 +340,27 @@ def test_action_native_channels_padding_and_copy_ownership(tmp_path):
         with torch.cuda.stream(producer):
             raw = actions(env, padding=float("inf"))
             for row, key in enumerate(env.world_keys):
-                raw[row, :specs[key].width] = torch.linspace(-0.4, 0.3, specs[key].width, device=env.device)
+                raw[row, : specs[key].width] = torch.linspace(
+                    -0.4, 0.3, specs[key].width, device=env.device
+                )
         transition = step(env, raw, producer_stream=producer)
         raw_host = owned_host(raw)
         record(records, env, batch, transition, raw=raw_host, specs=specs)
         mask = owned_host(env.action_mask)
         assert (~mask).any() and mask.dtype == np.bool_
-        assert exact(owned_host(transition.action)) == exact(np.where(mask, raw_host, np.float32(0)))
+        assert exact(owned_host(transition.action)) == exact(
+            np.where(mask, raw_host, np.float32(0))
+        )
         assert transition.action_receipt.world_keys == env.world_keys
         expected = [np.zeros_like(owned_host(value)) for value in transition.native_channels]
         for row, key in enumerate(env.world_keys):
             spec = specs[key]
-            mapped = spec.bias + spec.scale * np.tanh(raw_host[row, :spec.width])
+            mapped = spec.bias + spec.scale * np.tanh(raw_host[row, : spec.width])
             offset = 0
-            for indices, channel in ((spec.ctrl_indices, expected[0]), (spec.qfrc_indices, expected[1])):
+            for indices, channel in (
+                (spec.ctrl_indices, expected[0]),
+                (spec.qfrc_indices, expected[1]),
+            ):
                 for index in indices:
                     channel[row, index] = mapped[offset]
                     offset += 1
@@ -285,9 +369,9 @@ def test_action_native_channels_padding_and_copy_ownership(tmp_path):
                 offset += 1
             control, layout = batch.last_step.receipts[key].control, batch.layout[key]
             for name, reference in (
-                ("ctrl", expected[0][row, :layout.nu]),
-                ("qfrc_applied", expected[1][row, :layout.nv]),
-                ("xfrc_applied", expected[2][row, :layout.nbody]),
+                ("ctrl", expected[0][row, : layout.nu]),
+                ("qfrc_applied", expected[1][row, : layout.nv]),
+                ("xfrc_applied", expected[2][row, : layout.nbody]),
             ):
                 np.testing.assert_allclose(getattr(control, name), reference, rtol=2e-6, atol=2e-7)
         for actual, reference in zip(transition.native_channels, expected, strict=True):
@@ -319,7 +403,9 @@ def test_action_native_channels_padding_and_copy_ownership(tmp_path):
         env.close()
         assert exact(owned_host(held)) == exact(observation)
         # The wrapper owns only its workspace; the borrowed batch still works.
-        batch.set_controls({key: MuJoCoControl(np.zeros(row.nu)) for key, row in batch.layout.items()})
+        batch.set_controls(
+            {key: MuJoCoControl(np.zeros(row.nu)) for key, row in batch.layout.items()}
+        )
         assert batch.step(H) == dict.fromkeys(batch.world_keys, True)
         records.append(owned_host(dict(after_env_close=batch.last_step, held=held)))
 
@@ -347,7 +433,10 @@ def test_independent_horizons_final_observation_and_selected_goal_reset(auto_res
             assert not transition.episode_return.any().item()
             assert transition.sequence == sequence and transition.input_frame is before_frame
             assert transition.evaluation_frame.ticks == tuple(lengths[key] for key in keys)
-            final, output = owned_host(transition.final_observation), owned_host(transition.observation)
+            final, output = (
+                owned_host(transition.final_observation),
+                owned_host(transition.observation),
+            )
             assert np.all(final["entry_meta"][:, 0] == 1)
             for row, key in enumerate(keys):
                 assert transition.success_frames[key].tick == lengths[key] - 1
@@ -359,11 +448,17 @@ def test_independent_horizons_final_observation_and_selected_goal_reset(auto_res
                     assert output["entry_meta"][row, 0] == 0
                     for name in ("q", "v", "act", "clock"):
                         assert exact(output[name][row]) == exact(initial[name][row]), (key, name)
-                    assert transition.output_frame.world_boundaries[row] != before_frame.world_boundaries[row]
+                    assert (
+                        transition.output_frame.world_boundaries[row]
+                        != before_frame.world_boundaries[row]
+                    )
                 else:
                     for name in final:
                         assert exact(output[name][row]) == exact(final[name][row]), (key, name)
-                    assert transition.output_frame.world_boundaries[row] == before_frame.world_boundaries[row]
+                    assert (
+                        transition.output_frame.world_boundaries[row]
+                        == before_frame.world_boundaries[row]
+                    )
                 assert env.goals[key] is before_metadata["goals"][key]
             if selected and not auto_reset:
                 assert transition.output_frame is transition.evaluation_frame
@@ -374,8 +469,10 @@ def test_independent_horizons_final_observation_and_selected_goal_reset(auto_res
                 assert_error(raised.value, "action-preflight")
                 assert env.checkpoint().to_bytes() == checkpoint
                 assert env.last_transition is transition
-                new_goals = {key: scenes[key].goals[(scenes[key].default_goal + 1) % len(scenes[key].goals)]
-                             for key in selected}
+                new_goals = {
+                    key: scenes[key].goals[(scenes[key].default_goal + 1) % len(scenes[key].goals)]
+                    for key in selected
+                }
                 before_reset, revision = physical(batch), batch.checkpoint_revision
                 old_frame = env.current_frame
                 reset_observation = env.reset(selected, goals=new_goals, expected_frame=old_frame)
@@ -384,12 +481,20 @@ def test_independent_horizons_final_observation_and_selected_goal_reset(auto_res
                 for row, key in enumerate(keys):
                     if key in selected:
                         assert env.goals[key] is new_goals[key]
-                        assert env.contexts[key]["instructions_en"] == new_goals[key].instructions_en
+                        assert (
+                            env.contexts[key]["instructions_en"] == new_goals[key].instructions_en
+                        )
                         assert env.history[key] is None and env.episode_lengths[key] == 0
-                        assert env.current_frame.world_boundaries[row] != old_frame.world_boundaries[row]
+                        assert (
+                            env.current_frame.world_boundaries[row]
+                            != old_frame.world_boundaries[row]
+                        )
                     else:
                         assert exact(physical(batch)[key]) == exact(before_reset[key])
-                        assert env.current_frame.world_boundaries[row] == old_frame.world_boundaries[row]
+                        assert (
+                            env.current_frame.world_boundaries[row]
+                            == old_frame.world_boundaries[row]
+                        )
             for key in selected:
                 episodes[key] += 1
                 lengths[key] = 0
@@ -429,7 +534,14 @@ def test_synthetic_success_only_checks_termination_precedence(tmp_path, monkeypa
 
         monkeypatch.setattr(module, "evaluate_goal", scheduling_override)
         transition = step(env)
-        record(records, env, batch, transition, synthetic_scheduler_only=True, real_results=actual_results)
+        record(
+            records,
+            env,
+            batch,
+            transition,
+            synthetic_scheduler_only=True,
+            real_results=actual_results,
+        )
         assert not any(result.success for result in actual_results.values())
         np.testing.assert_array_equal(owned_host(transition.terminated), (True, False))
         np.testing.assert_array_equal(owned_host(transition.truncated), (False, True))
@@ -438,7 +550,10 @@ def test_synthetic_success_only_checks_termination_precedence(tmp_path, monkeypa
         np.testing.assert_array_equal(transition.episode_id, (0, 0))
         np.testing.assert_array_equal(transition.episode_length, (1, 1))
         assert transition.final_mask.all().item()
-        assert transition.evaluation_frame.ticks == (1, 1) and transition.output_frame.ticks == (0, 0)
+        assert transition.evaluation_frame.ticks == (1, 1) and transition.output_frame.ticks == (
+            0,
+            0,
+        )
         assert dict(env.episode_ids) == dict.fromkeys(keys, 1)
         assert dict(env.returns) == dict.fromkeys(keys, 0.0)
         assert dict(env.history) == dict.fromkeys(keys, None)
@@ -453,15 +568,24 @@ def test_invalid_actions_goals_stale_frame_and_external_mutation(tmp_path):
         initial_frame = env.current_frame
         transition = step(env)
         baseline = env.checkpoint()
-        before, observation, revision = physical(batch), owned_host(env.observation), batch.checkpoint_revision
+        before, observation, revision = (
+            physical(batch),
+            owned_host(env.observation),
+            batch.checkpoint_revision,
+        )
         valid = actions(env)
         nan, inf = valid.clone(), valid.clone()
         nan[0, 0], inf[0, 0] = float("nan"), float("inf")
         noncontiguous = torch.zeros((env.num_envs, 2 * env.num_actions), device=env.device)[:, ::2]
         assert not noncontiguous.is_contiguous()
         invalid = (
-            (valid.cpu(), keys), (valid.double(), keys), (valid[:, :-1].contiguous(), keys),
-            (noncontiguous, keys), (nan, keys), (inf, keys), (valid, keys[::-1]),
+            (valid.cpu(), keys),
+            (valid.double(), keys),
+            (valid[:, :-1].contiguous(), keys),
+            (noncontiguous, keys),
+            (nan, keys),
+            (inf, keys),
+            (valid, keys[::-1]),
         )
         for value, order in invalid:
             with pytest.raises(MuJoCoTyxEnvError) as raised:
@@ -474,7 +598,8 @@ def test_invalid_actions_goals_stale_frame_and_external_mutation(tmp_path):
             assert exact(physical(batch)) == exact(before)
             assert exact(owned_host(env.observation)) == exact(observation)
         bad_resets = (
-            ((keys[0], keys[0]), None), ((999999,), None),
+            ((keys[0], keys[0]), None),
+            ((999999,), None),
             ((keys[0],), {keys[1]: env.goals[keys[1]]}),
             ((keys[0],), {keys[0]: env.goals[keys[1]]}),
             ((keys[0],), {keys[0]: replace(env.goals[keys[0]])}),
@@ -491,7 +616,9 @@ def test_invalid_actions_goals_stale_frame_and_external_mutation(tmp_path):
         assert exact(physical(batch)) == exact(before)
         env.restore(baseline, expected_revision=batch.checkpoint_revision)
         assert not env.needs_recovery and env.last_failure is None
-        batch.set_controls({keys[0]: MuJoCoControl(np.zeros(batch.layout[keys[0]].nu))})
+        batch.set_controls(
+            {key: MuJoCoControl(np.zeros(row.nu)) for key, row in batch.layout.items()}
+        )
         external_revision = batch.checkpoint_revision
         with pytest.raises(MuJoCoTyxEnvError) as raised:
             step(env)
@@ -514,7 +641,9 @@ def test_checkpoint_pairing_fresh_replay_and_semantic_rejection(tmp_path, monkey
         step(env)
         step(env)
         old = env.checkpoint()
-        changed_goal = scenes[keys[0]].goals[(scenes[keys[0]].default_goal + 1) % len(scenes[keys[0]].goals)]
+        changed_goal = scenes[keys[0]].goals[
+            (scenes[keys[0]].default_goal + 1) % len(scenes[keys[0]].goals)
+        ]
         env.reset((keys[0],), goals={keys[0]: changed_goal}, expected_frame=env.current_frame)
         step(env)
         checkpoint = env.checkpoint()
@@ -583,8 +712,15 @@ def test_checkpoint_pairing_fresh_replay_and_semantic_rejection(tmp_path, monkey
         with pytest.raises(MuJoCoTyxEnvError) as raised:
             env.restore(mismatch, expected_revision=revision)
         error = raised.value
-        records.append(owned_host(dict(mismatched_capsule=mismatch.to_bytes(), error=repr(error),
-                                       accepted_physics=physical(batch))))
+        records.append(
+            owned_host(
+                dict(
+                    mismatched_capsule=mismatch.to_bytes(),
+                    error=repr(error),
+                    accepted_physics=physical(batch),
+                )
+            )
+        )
         assert error.phase == "training-restore" and error.state_accepted and error.needs_recovery
         assert not error.action_accepted and error.transition is None
         assert batch.checkpoint_revision > revision and env.needs_recovery
@@ -639,8 +775,15 @@ def test_late_failure_poison_and_paired_recovery(phase, tmp_path, monkeypatch):
             with pytest.raises(MuJoCoTyxEnvError) as raised:
                 step(env)
         error = raised.value
-        record(records, env, batch, failure=repr(error), phase=error.phase, calls=calls,
-               action_receipt=error.action_receipt)
+        record(
+            records,
+            env,
+            batch,
+            failure=repr(error),
+            phase=error.phase,
+            calls=calls,
+            action_receipt=error.action_receipt,
+        )
         assert_error(error, phase, accepted=True)
         assert dict(error.accepted_worlds) == dict.fromkeys(keys, True)
         assert error.action_receipt is not None and not error.reset_accepted
@@ -661,7 +804,9 @@ def test_late_failure_poison_and_paired_recovery(phase, tmp_path, monkeypatch):
         ):
             with pytest.raises(MuJoCoTyxEnvError):
                 operation()
-            assert env.last_failure is error, "recovery guards preserve the original accepted failure"
+            assert env.last_failure is error, (
+                "recovery guards preserve the original accepted failure"
+            )
         env.restore(checkpoint, expected_revision=batch.checkpoint_revision)
         assert not env.needs_recovery and env.last_failure is None
         replay = step(env)

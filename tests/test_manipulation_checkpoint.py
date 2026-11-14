@@ -161,3 +161,10 @@ def test_repeated_long_strings_reject_before_json_allocation(physics, monkeypatc
     text = "x" * (codec.MAX_METADATA_BYTES // 2)
     with pytest.raises(ValueError, match="string size"):
         codec.capture_manipulation_checkpoint({}, physics, {"repeated": [text, text, text]})
+
+
+@pytest.mark.parametrize("expected", ({"world": True}, {"world": 1.0}))
+def test_binding_rejects_equal_numeric_values_of_different_json_types(physics, expected):
+    capsule = codec.capture_manipulation_checkpoint({"world": 1}, physics, {})
+    with pytest.raises(ValueError, match="binding"):
+        capsule.read(expected)

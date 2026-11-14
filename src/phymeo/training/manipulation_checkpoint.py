@@ -154,7 +154,9 @@ class ManipulationEnvCheckpoint:
     def read(self, binding):
         """Return an original typed physics capsule and detached JSON metadata."""
         metadata, physics = _decode(self._bytes)
-        if metadata["binding"] != _plain(binding):
+        if json.dumps(metadata["binding"], sort_keys=True) != json.dumps(
+            _plain(binding), sort_keys=True
+        ):
             raise ValueError("manipulation checkpoint source/action/world binding")
         return physics, metadata["state"]
 

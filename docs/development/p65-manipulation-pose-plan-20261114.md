@@ -17,3 +17,10 @@
 [MuJoCo contactForce](https://mujoco.readthedocs.io/en/3.3.7/APIreference/APIfunctions.html#mj-contactforce)输出contact-frame力/力矩。
 [官方滑移说明](https://mujoco.readthedocs.io/en/3.3.7/modeling.html#preventing-slip)区分容量、几何与soft-contact滑移；不直接据此认定本例原因。
 本批不重跑此前已绿组、不安装/构建/push/CI、不清理证据或重启周期任务。
+## 执行前补充：固定候选与一次反馈试验
+
+- 低位目标精确登记：world2=(.4,0,.045)、world3=(.4,0,.052)、world4=(.4,0,.045)。后侧world1与高位world3各1 seed；三个低位各zero和joint索引3/4的(+.35,-.35)、(-.35,+.35)两seed，共11候选。原模型qpos0的FREE/未选坐标全部保留。每结果独立native FK/contact查询，包含失败、穿透与非目标接触，不进入物理。
+- 七个既有轨迹快照实际native比较最大世界接触力差6.789310209587285e-7 N，且球持续相对指垫滑移直至越过下缘。该证据支持优先验证持握反馈，不更改接触定律。
+- 只登记world0一次CUDA反馈对照：同原模型、PD、轨迹、h=.001及2200步窗口，原Goal不变；无增益/摩擦扫描。仅两指参考位置使用BoundedSlipClosure，额外闭合最多.016m、速率.02m/s、滑移死区.015m/s、gain2、双侧normal>=.05N才增加，接触丢失保持、禁用清零且遵守原关节范围。阶段close/lift/hold/transport/lower启用，其余禁用。
+- 反馈来自上一次已接受公共entry的同相位位置/线角速度/接触点/normal；测量时间为entry_clock[0]-entry_clock[1]，不是当前endpoint。以接触点刚体速度之差求切向速率，逐pad累加normal/max slip。相差一物理步的因果反馈不冒即刻载荷；保存input/output tick和receipt。只加位置参考偏置，原参考速度/PD和原physics参数保持。
+- 原0/8结果保留。若该单次对照仍失败，记录明确缺口，不立即改参数重跑。成功也只覆盖world0本窗口，不称八任务或共享网络已完成。

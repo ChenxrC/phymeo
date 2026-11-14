@@ -211,7 +211,8 @@ def filters(output, manifest, records, speed):
             y + 363,
             17,
         )
-        label(textwrap.fill(row["instruction_en"], width=61), x, y + 386, 14, "0xa4b4ca")
+        for line_index, line in enumerate(textwrap.wrap(row["instruction_en"], width=61)):
+            label(line, x, y + 386 + 17 * line_index, 14, "0xa4b4ca")
         start = 0
         for stop in range(1, len(records) + 1):
             state = records[start]["worlds"][index]

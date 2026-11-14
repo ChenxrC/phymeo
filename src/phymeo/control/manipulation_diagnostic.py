@@ -23,8 +23,10 @@ def _readonly(value, dtype=np.float64):
 
 def _vector(value, size, name):
     array = np.asarray(value)
-    _require(array.shape == (size,) and array.dtype.kind in "fiu"
-             and np.isfinite(array).all(), name + " requires a finite native vector")
+    _require(
+        array.shape == (size,) and array.dtype.kind in "fiu" and np.isfinite(array).all(),
+        name + " requires a finite native vector",
+    )
     return np.array(array, dtype=np.float64, copy=True)
 
 
@@ -40,18 +42,28 @@ def _gain(value, size, name):
 def _joints(mj, model, names):
     _require(isinstance(model, mj.MjModel), "an original MuJoCo model is required")
     names = tuple(names)
-    _require(names and all(type(name) is str and name for name in names)
-             and len(set(names)) == len(names), "joint names must be nonempty and distinct")
+    _require(
+        names
+        and all(type(name) is str and name for name in names)
+        and len(set(names)) == len(names),
+        "joint names must be nonempty and distinct",
+    )
     ids = tuple(int(mj.mj_name2id(model, mj.mjtObj.mjOBJ_JOINT, name)) for name in names)
     _require(all(joint >= 0 for joint in ids), "unknown joint name")
     kinds = (int(mj.mjtJoint.mjJNT_HINGE), int(mj.mjtJoint.mjJNT_SLIDE))
-    _require(all(int(model.jnt_type[joint]) in kinds for joint in ids),
-             "only scalar HINGE/SLIDE joints may be commanded")
+    _require(
+        all(int(model.jnt_type[joint]) in kinds for joint in ids),
+        "only scalar HINGE/SLIDE joints may be commanded",
+    )
     qa = tuple(int(model.jnt_qposadr[joint]) for joint in ids)
     va = tuple(int(model.jnt_dofadr[joint]) for joint in ids)
-    _require(len(set(qa)) == len(qa) and len(set(va)) == len(va)
-             and all(0 <= q < model.nq for q in qa) and all(0 <= v < model.nv for v in va),
-             "native joint addresses are invalid")
+    _require(
+        len(set(qa)) == len(qa)
+        and len(set(va)) == len(va)
+        and all(0 <= q < model.nq for q in qa)
+        and all(0 <= v < model.nv for v in va),
+        "native joint addresses are invalid",
+    )
     lower, upper = np.full(len(ids), -np.inf), np.full(len(ids), np.inf)
     for index, joint in enumerate(ids):
         if model.jnt_limited[joint]:
@@ -66,13 +78,15 @@ def _configuration(mj, model, q):
     for joint in range(model.njnt):
         kind, adr = int(model.jnt_type[joint]), int(model.jnt_qposadr[joint])
         if kind == int(mj.mjtJoint.mjJNT_FREE):
-            quaternion = result[adr + 3:adr + 7]
+            quaternion = result[adr + 3 : adr + 7]
         elif kind == int(mj.mjtJoint.mjJNT_BALL):
-            quaternion = result[adr:adr + 4]
+            quaternion = result[adr : adr + 4]
         else:
             continue
-        _require(abs(float(quaternion @ quaternion) - 1.0) <= 4e-5,
-                 "native FREE/BALL quaternion must be unit WXYZ")
+        _require(
+            abs(float(quaternion @ quaternion) - 1.0) <= 4e-5,
+            "native FREE/BALL quaternion must be unit WXYZ",
+        )
     return result
 
 
@@ -113,32 +127,44 @@ class NativeJointPD:
         effort_lower, effort_upper = np.full(len(names), -19.9), np.full(len(names), 19.9)
         transmissions = (int(mj.mjtTrn.mjTRN_JOINT), int(mj.mjtTrn.mjTRN_JOINTINPARENT))
         for index, joint in enumerate(joints):
-            candidates = [actor for actor in range(model.nu)
-                          if int(model.actuator_trntype[actor]) in transmissions
-                          and int(model.actuator_trnid[actor, 0]) == joint]
+            candidates = [
+                actor
+                for actor in range(model.nu)
+                if int(model.actuator_trntype[actor]) in transmissions
+                and int(model.actuator_trnid[actor, 0]) == joint
+            ]
             _require(len(candidates) == 1, "each selected joint requires exactly one native motor")
             actor = candidates[0]
-            _require(int(model.actuator_trntype[actor]) == int(mj.mjtTrn.mjTRN_JOINT)
-                     and int(model.actuator_dyntype[actor]) == int(mj.mjtDyn.mjDYN_NONE)
-                     and int(model.actuator_gaintype[actor]) == int(mj.mjtGain.mjGAIN_FIXED)
-                     and float(model.actuator_gainprm[actor, 0]) == 1.0
-                     and int(model.actuator_biastype[actor]) == int(mj.mjtBias.mjBIAS_NONE),
-                     "selected actuator must be a stateless unit-gain motor without bias")
+            _require(
+                int(model.actuator_trntype[actor]) == int(mj.mjtTrn.mjTRN_JOINT)
+                and int(model.actuator_dyntype[actor]) == int(mj.mjtDyn.mjDYN_NONE)
+                and int(model.actuator_gaintype[actor]) == int(mj.mjtGain.mjGAIN_FIXED)
+                and float(model.actuator_gainprm[actor, 0]) == 1.0
+                and int(model.actuator_biastype[actor]) == int(mj.mjtBias.mjBIAS_NONE),
+                "selected actuator must be a stateless unit-gain motor without bias",
+            )
             gear = model.actuator_gear[actor]
-            _require(np.isfinite(gear).all() and gear[0] == 1.0 and not np.any(gear[1:]),
-                     "selected motor requires unit scalar gear")
+            _require(
+                np.isfinite(gear).all() and gear[0] == 1.0 and not np.any(gear[1:]),
+                "selected motor requires unit scalar gear",
+            )
             for limited, interval in (
                 (model.actuator_ctrllimited[actor], model.actuator_ctrlrange[actor]),
                 (model.actuator_forcelimited[actor], model.actuator_forcerange[actor]),
                 (model.jnt_actfrclimited[joint], model.jnt_actfrcrange[joint]),
             ):
                 if limited:
-                    _require(np.isfinite(interval).all() and interval[0] < interval[1],
-                             "actuator limit range")
+                    _require(
+                        np.isfinite(interval).all() and interval[0] < interval[1],
+                        "actuator limit range",
+                    )
                     effort_lower[index] = max(effort_lower[index], float(interval[0]))
                     effort_upper[index] = min(effort_upper[index], float(interval[1]))
-            _require(effort_lower[index] <= 0 <= effort_upper[index]
-                     and effort_lower[index] < effort_upper[index], "motor limits must admit zero")
+            _require(
+                effort_lower[index] <= 0 <= effort_upper[index]
+                and effort_lower[index] < effort_upper[index],
+                "motor limits must admit zero",
+            )
             actuators.append(actor)
         self.actuator_ids = tuple(actuators)
         self._effort_lower, self._effort_upper = _readonly(effort_lower), _readonly(effort_upper)
@@ -151,10 +177,15 @@ class NativeJointPD:
             position = _configuration(mj, model, q)
             velocity = _vector(v, model.nv, "v")
             target = _vector(desired_q, len(self.joint_names), "desired_q")
-            target_velocity = (np.zeros(len(self.joint_names)) if desired_v is None
-                               else _vector(desired_v, len(self.joint_names), "desired_v"))
-            _require(np.all(target >= self._lower) and np.all(target <= self._upper),
-                     "desired_q exceeds original joint limits")
+            target_velocity = (
+                np.zeros(len(self.joint_names))
+                if desired_v is None
+                else _vector(desired_v, len(self.joint_names), "desired_v")
+            )
+            _require(
+                np.all(target >= self._lower) and np.all(target <= self._upper),
+                "desired_q exceeds original joint limits",
+            )
             data.qpos[:] = position
             data.qvel[:] = velocity
             mj.mj_kinematics(model, data)
@@ -164,16 +195,28 @@ class NativeJointPD:
             mj.mj_rne(model, data, 0, bias)
             qa, va = list(self.qpos_addresses), list(self.dof_addresses)
             with np.errstate(over="raise", invalid="raise"):
-                raw = bias[va] + self.kp * (target - position[qa]) + self.kd * (target_velocity - velocity[va])
+                raw = (
+                    bias[va]
+                    + self.kp * (target - position[qa])
+                    + self.kd * (target_velocity - velocity[va])
+                )
             _require(np.isfinite(bias).all() and np.isfinite(raw).all(), "nonfinite PD effort")
             effort = np.clip(raw, self._effort_lower, self._effort_upper)
             ctrl = np.zeros(model.nu, dtype=np.float64)
             ctrl[list(self.actuator_ids)] = effort
             diagnostic = NativePDDiagnostic(
-                self.joint_names, self.qpos_addresses, self.dof_addresses, self.actuator_ids,
-                _readonly(position[qa]), _readonly(velocity[va]), _readonly(target),
-                _readonly(target_velocity), _readonly(bias[va]), _readonly(raw),
-                _readonly(effort), _readonly(raw != effort, np.bool_),
+                self.joint_names,
+                self.qpos_addresses,
+                self.dof_addresses,
+                self.actuator_ids,
+                _readonly(position[qa]),
+                _readonly(velocity[va]),
+                _readonly(target),
+                _readonly(target_velocity),
+                _readonly(bias[va]),
+                _readonly(raw),
+                _readonly(effort),
+                _readonly(raw != effort, np.bool_),
             )
             return _readonly(ctrl), diagnostic
 
@@ -193,8 +236,17 @@ class NativePointIKResult:
 
 
 def solve_native_point_ik(
-    model, target, q_seed, joint_names, *, body_name="tool", local_point=(0, 0, -0.14),
-    damping=1e-3, max_step=0.15, tolerance_m=5e-4, max_iterations=100,
+    model,
+    target,
+    q_seed,
+    joint_names,
+    *,
+    body_name="tool",
+    local_point=(0, 0, -0.14),
+    damping=1e-3,
+    max_step=0.15,
+    tolerance_m=5e-4,
+    max_iterations=100,
 ):
     """Bounded local position IK, with no claim of global infeasibility on stall.
 
@@ -213,16 +265,22 @@ def solve_native_point_ik(
     while current:
         ancestors.add(current)
         current = int(model.body_parentid[current])
-    _require(all(int(model.jnt_bodyid[joint]) in ancestors for joint in joints),
-             "selected IK joints must be target-body ancestors")
+    _require(
+        all(int(model.jnt_bodyid[joint]) in ancestors for joint in joints),
+        "selected IK joints must be target-body ancestors",
+    )
     target = _vector(target, 3, "target")
     point = _vector(local_point, 3, "local_point")
     q = _configuration(mj, model, q_seed)
     for name, value in (("damping", damping), ("max_step", max_step), ("tolerance_m", tolerance_m)):
-        _require(type(value) in (float, int) and np.isfinite(value) and value > 0,
-                 name + " must be finite and positive")
-    _require(type(max_iterations) is int and 1 <= max_iterations <= 10000,
-             "max_iterations must be a bounded positive integer")
+        _require(
+            type(value) in (float, int) and np.isfinite(value) and value > 0,
+            name + " must be finite and positive",
+        )
+    _require(
+        type(max_iterations) is int and 1 <= max_iterations <= 10000,
+        "max_iterations must be a bounded positive integer",
+    )
     qadr, vadr = list(qa), list(va)
     q[qadr] = np.clip(q[qadr], lower, upper)
     data = mj.MjData(model)
@@ -260,7 +318,7 @@ def solve_native_point_ik(
         accepted = False
         for trial in range(8):
             candidate = q.copy()
-            candidate[qadr] = np.clip(q[qadr] + delta * (0.5 ** trial), lower, upper)
+            candidate[qadr] = np.clip(q[qadr] + delta * (0.5**trial), lower, upper)
             next_position, next_error, next_norm = evaluate(candidate)
             if next_norm < norm:
                 q, position, error, norm = candidate, next_position, next_error, next_norm
@@ -270,5 +328,10 @@ def solve_native_point_ik(
             status = "stalled"
             break
     return NativePointIKResult(
-        _readonly(q), _readonly(q[qadr]), _readonly(position), norm, iterations, status,
+        _readonly(q),
+        _readonly(q[qadr]),
+        _readonly(position),
+        norm,
+        iterations,
+        status,
     )

@@ -34,10 +34,12 @@ def fixture_model(mj, hinge_motor=None, extra_motor=""):
         'axis="0 0 1" limited="true" range="-.1 .1"/>'
         '<geom type="sphere" size=".025" mass=".1"/>'
         '<body name="tool" pos=".15 0 0"><geom type="sphere" size=".015" mass=".03"/>'
-        '</body></body></body></worldbody><actuator>'
+        "</body></body></body></worldbody><actuator>"
         '<motor name="slide-motor" joint="slide" gear="1" ctrllimited="true" '
         'ctrlrange="-20 20" forcelimited="true" forcerange="-20 20"/>'
-        + hinge_motor + extra_motor + '</actuator></mujoco>'
+        + hinge_motor
+        + extra_motor
+        + "</actuator></mujoco>"
     )
 
 
@@ -60,15 +62,19 @@ def forbidden(*args, **kwargs):
 def test_pd_uses_original_addresses_and_independent_native_bias(mj, monkeypatch):
     model = fixture_model(mj)
     names = ("slide", "hinge")
-    q, v, oracle = native_state(mj, model, names, (.03, .22), (-.02, .1))
+    q, v, oracle = native_state(mj, model, names, (0.03, 0.22), (-0.02, 0.1))
     q_before, v_before, q0_before = q.copy(), v.copy(), model.qpos0.copy()
     controller = NativeJointPD(model, names, (250, 25), (12, 3))
     assert controller.qpos_addresses == (8, 7)
     assert controller.dof_addresses == (7, 6)
     assert controller.actuator_ids == (0, 1)
-    target, target_v = np.array((.04, .25)), np.array((.01, -.02))
+    target, target_v = np.array((0.04, 0.25)), np.array((0.01, -0.02))
     expected_bias = oracle.qfrc_bias[list(controller.dof_addresses)].copy()
-    expected = expected_bias + np.array((250, 25)) * (target - q[[8, 7]]) + np.array((12, 3)) * (target_v - v[[7, 6]])
+    expected = (
+        expected_bias
+        + np.array((250, 25)) * (target - q[[8, 7]])
+        + np.array((12, 3)) * (target_v - v[[7, 6]])
+    )
     for name in ("mj_forward", "mj_inverse", "mj_step", "mj_step1", "mj_step2"):
         monkeypatch.setattr(mj, name, forbidden)
     ctrl, diagnostic = controller.command(q, v, target, target_v)
@@ -82,7 +88,7 @@ def test_pd_uses_original_addresses_and_independent_native_bias(mj, monkeypatch)
     with pytest.raises(ValueError):
         diagnostic.bias.flags.writeable = True
     first = ctrl.copy()
-    controller.command(q, v, (.02, .15))
+    controller.command(q, v, (0.02, 0.15))
     np.testing.assert_array_equal(ctrl, first)
 
 
@@ -97,31 +103,38 @@ def test_original_three_morphologies_match_native_bias_without_contact_replay(mj
     ctrl, diagnostic = controller.command(q, v, positions)
     expected = oracle.qfrc_bias[list(controller.dof_addresses)]
     np.testing.assert_allclose(diagnostic.bias, expected, rtol=1e-12, atol=1e-12)
-    np.testing.assert_allclose(ctrl[list(controller.actuator_ids)], np.clip(expected, -19.9, 19.9),
-                               rtol=1e-12, atol=1e-12)
+    np.testing.assert_allclose(
+        ctrl[list(controller.actuator_ids)], np.clip(expected, -19.9, 19.9), rtol=1e-12, atol=1e-12
+    )
     assert np.max(np.abs(ctrl)) <= 19.9
 
 
 def test_pd_clamps_original_force_limits_and_leaves_unselected_motor_zero(mj):
-    model = fixture_model(mj, '<motor name="hinge-motor" joint="hinge" '
-                          'ctrllimited="true" ctrlrange="-2 3" '
-                          'forcelimited="true" forcerange="-.5 .75"/>')
+    model = fixture_model(
+        mj,
+        '<motor name="hinge-motor" joint="hinge" '
+        'ctrllimited="true" ctrlrange="-2 3" '
+        'forcelimited="true" forcerange="-.5 .75"/>',
+    )
     controller = NativeJointPD(model, ("hinge",), 1000, 3)
     ctrl, diagnostic = controller.command(model.qpos0, np.zeros(model.nv), (1.0,))
-    assert ctrl[0] == 0.0 and ctrl[1] == .75 and diagnostic.saturated[0]
+    assert ctrl[0] == 0.0 and ctrl[1] == 0.75 and diagnostic.saturated[0]
     full = NativeJointPD(fixture_model(mj), ("hinge", "slide"), 1000, 3)
-    ctrl, diagnostic = full.command(full.model.qpos0, np.zeros(full.model.nv), (1.0, .1))
+    ctrl, diagnostic = full.command(full.model.qpos0, np.zeros(full.model.nv), (1.0, 0.1))
     assert np.max(np.abs(ctrl)) == 19.9 and np.all(diagnostic.saturated)
     with pytest.raises(ValueError, match="joint limits"):
         controller.command(model.qpos0, np.zeros(model.nv), (2.0,))
 
 
-@pytest.mark.parametrize("actor", (
-    '<motor name="hinge-motor" joint="hinge" gear="2"/>',
-    '<position name="hinge-motor" joint="hinge" kp="10"/>',
-    '<general name="hinge-motor" joint="hinge" dyntype="filter" dynprm=".1"/>',
-    '<general name="hinge-motor" joint="hinge" gaintype="fixed" gainprm="2"/>',
-))
+@pytest.mark.parametrize(
+    "actor",
+    (
+        '<motor name="hinge-motor" joint="hinge" gear="2"/>',
+        '<position name="hinge-motor" joint="hinge" kp="10"/>',
+        '<general name="hinge-motor" joint="hinge" dyntype="filter" dynprm=".1"/>',
+        '<general name="hinge-motor" joint="hinge" gaintype="fixed" gainprm="2"/>',
+    ),
+)
 def test_pd_rejects_non_motor_transmissions(mj, actor):
     with pytest.raises(ValueError, match="motor|gear"):
         NativeJointPD(fixture_model(mj, actor), ("hinge",), 25, 3)
@@ -157,15 +170,22 @@ def test_ik_reprojects_independently_and_preserves_free_object_and_seed(mj, monk
     model = fixture_model(mj)
     seed = model.qpos0.copy()
     known = seed.copy()
-    known[[7, 8]] = (.35, .025)
-    local = np.array((.01, .02, -.04))
+    known[[7, 8]] = (0.35, 0.025)
+    local = np.array((0.01, 0.02, -0.04))
     target = native_point(mj, model, known, "tool", local)
     seed_before, q0_before = seed.copy(), model.qpos0.copy()
     with monkeypatch.context() as guard:
         for name in ("mj_forward", "mj_inverse", "mj_step", "mj_step1", "mj_step2"):
             guard.setattr(mj, name, forbidden)
-        result = solve_native_point_ik(model, target, seed, ("slide", "hinge"),
-                                      local_point=local, tolerance_m=1e-7, max_iterations=100)
+        result = solve_native_point_ik(
+            model,
+            target,
+            seed,
+            ("slide", "hinge"),
+            local_point=local,
+            tolerance_m=1e-7,
+            max_iterations=100,
+        )
     assert result.converged and result.error_m <= 1e-7
     actual = native_point(mj, model, result.configuration, "tool", local)
     np.testing.assert_allclose(actual, target, rtol=0, atol=1e-7)
@@ -175,19 +195,18 @@ def test_ik_reprojects_independently_and_preserves_free_object_and_seed(mj, monk
     np.testing.assert_array_equal(seed, seed_before)
     np.testing.assert_array_equal(model.qpos0, q0_before)
     assert not result.configuration.flags.writeable
-    assert -.1 <= result.configuration[8] <= .1 and -1.5 <= result.configuration[7] <= 1.5
+    assert -0.1 <= result.configuration[8] <= 0.1 and -1.5 <= result.configuration[7] <= 1.5
 
 
 def test_ik_unreachable_reports_bounded_residual_without_publishing_state(mj):
     model = fixture_model(mj)
     seed = model.qpos0.copy()
-    result = solve_native_point_ik(model, (10, 10, 10), seed, ("hinge", "slide"),
-                                  max_iterations=5)
+    result = solve_native_point_ik(model, (10, 10, 10), seed, ("hinge", "slide"), max_iterations=5)
     assert not result.converged and result.status in ("stalled", "iteration-limit")
     assert result.iterations <= 5 and result.error_m > 1
     assert np.isfinite(result.configuration).all()
     np.testing.assert_array_equal(result.configuration[:7], seed[:7])
-    assert -1.5 <= result.configuration[7] <= 1.5 and -.1 <= result.configuration[8] <= .1
+    assert -1.5 <= result.configuration[7] <= 1.5 and -0.1 <= result.configuration[8] <= 0.1
     with pytest.raises(ValueError, match="unknown"):
         solve_native_point_ik(model, (0, 0, 0), seed, ("hinge",), body_name="missing")
     with pytest.raises(ValueError, match="ancestors"):

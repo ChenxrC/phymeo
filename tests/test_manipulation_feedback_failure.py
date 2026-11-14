@@ -60,16 +60,20 @@ def load_runner():
     return module
 
 
-@pytest.mark.parametrize("summary_raises", (False, True), ids=("callback-only", "callback-and-summary"))
+@pytest.mark.parametrize(
+    "summary_raises", (False, True), ids=("callback-only", "callback-and-summary")
+)
 def test_accepted_callback_failure_keeps_current_entry_and_original_error(
-    tmp_path, monkeypatch, summary_raises,
+    tmp_path,
+    monkeypatch,
+    summary_raises,
 ):
     runner = load_runner()
     world = 5
-    initial_q = np.array((.25, -.5), dtype=np.float32)
+    initial_q = np.array((0.25, -0.5), dtype=np.float32)
     endpoint_q = np.array((1.25, 2.5), dtype=np.float32)
     initial_v = np.zeros(2, dtype=np.float32)
-    endpoint_v = np.array((.125, -.25), dtype=np.float32)
+    endpoint_v = np.array((0.125, -0.25), dtype=np.float32)
     current_entry = {
         "entry_q": initial_q[None, :],
         "entry_v": initial_v[None, :],
@@ -79,17 +83,21 @@ def test_accepted_callback_failure_keeps_current_entry_and_original_error(
         "entry_contact_ids": np.array((((1, 1, 1, 2, 1, 2, 0, 3),),), dtype=np.int32),
         "entry_contact_data": np.zeros((1, 1, 20), dtype=np.float32),
         "entry_body_mask": np.ones((1, 3), dtype=np.int32),
-        "entry_body_position": np.array((((0, 0, 0), (.1, .2, .3), (.4, .5, .6)),), dtype=np.float32),
+        "entry_body_position": np.array(
+            (((0, 0, 0), (0.1, 0.2, 0.3), (0.4, 0.5, 0.6)),), dtype=np.float32
+        ),
         "entry_body_rotation": np.tile(np.eye(3, dtype=np.float32), (1, 3, 1, 1)),
         "entry_body_linear_velocity": np.zeros((1, 3, 3), dtype=np.float32),
         "entry_body_angular_velocity": np.zeros((1, 3, 3), dtype=np.float32),
-        "entry_contact_wrench_world": np.array((((2, .5, 0, 0, 0, 0),),), dtype=np.float32),
-        "entry_contact_body_wrench": np.array(((((-2, -.5, 0, 0, 0, 0), (2, .5, 0, 0, 0, 0)),),), dtype=np.float32),
+        "entry_contact_wrench_world": np.array((((2, 0.5, 0, 0, 0, 0),),), dtype=np.float32),
+        "entry_contact_body_wrench": np.array(
+            ((((-2, -0.5, 0, 0, 0, 0), (2, 0.5, 0, 0, 0, 0)),),), dtype=np.float32
+        ),
     }
-    current_entry["entry_contact_data"][0, 0, 0] = -.001
-    current_entry["entry_contact_data"][0, 0, 1:4] = (.1, .2, .3)
+    current_entry["entry_contact_data"][0, 0, 0] = -0.001
+    current_entry["entry_contact_data"][0, 0, 1:4] = (0.1, 0.2, 0.3)
     current_entry["entry_contact_data"][0, 0, 4:13] = np.eye(3).reshape(-1)
-    current_entry["entry_contact_data"][0, 0, 13:19] = (2, .5, 0, 0, 0, 0)
+    current_entry["entry_contact_data"][0, 0, 13:19] = (2, 0.5, 0, 0, 0, 0)
     empty_entry = {name: np.zeros_like(value) for name, value in current_entry.items()}
     expected_entry = {name: value.tolist() for name, value in current_entry.items()}
     calls = dict(step=0, accepted=0, summary=0, reference=0, command=0, batch_exit=0, env_exit=0)
@@ -99,8 +107,12 @@ def test_accepted_callback_failure_keeps_current_entry_and_original_error(
     model = SimpleNamespace(nq=2, nv=2, na=0, nu=1)
     goal = SimpleNamespace(kind="pusht", instructions_en=("HOST failure fixture only",))
     scene = SimpleNamespace(
-        key="host-failure-fixture", robot_kinds="R", mjcf='<mujoco model="host-fake"/>',
-        goals=(goal,), default_goal=0, finger_geom_names=(),
+        key="host-failure-fixture",
+        robot_kinds="R",
+        mjcf='<mujoco model="host-fake"/>',
+        goals=(goal,),
+        default_goal=0,
+        finger_geom_names=(),
     )
     compilation = SimpleNamespace(fresh_native_model=lambda: model)
 
@@ -131,12 +143,15 @@ def test_accepted_callback_failure_keeps_current_entry_and_original_error(
             return False
 
         def integration_snapshot(self):
-            return {world: SimpleNamespace(
-                q=(endpoint_q if self.tick else initial_q).copy(),
-                v=(endpoint_v if self.tick else initial_v).copy(),
-                act=np.empty(0, dtype=np.float32),
-                time=float(np.float32(self.tick * runner.H)), tick=self.tick,
-            )}
+            return {
+                world: SimpleNamespace(
+                    q=(endpoint_q if self.tick else initial_q).copy(),
+                    v=(endpoint_v if self.tick else initial_v).copy(),
+                    act=np.empty(0, dtype=np.float32),
+                    time=float(np.float32(self.tick * runner.H)),
+                    tick=self.tick,
+                )
+            }
 
     class FakeEnv:
         def __init__(self, batch, scenes, *, goals, action_specs, horizons, auto_reset):
@@ -168,19 +183,29 @@ def test_accepted_callback_failure_keeps_current_entry_and_original_error(
             captured["action"] = action.numpy()
             self.batch.tick = 1  # Synthetic owner publication, not a numerical integration.
             frame = Record(
-                world=world, episode=0, tick=0, time_s=0., phase="accepted-entry",
-                object_key="object", finger_normal_forces_n=(0., 0.), support_up_force_n=0.,
+                world=world,
+                episode=0,
+                tick=0,
+                time_s=0.0,
+                phase="accepted-entry",
+                object_key="object",
+                finger_normal_forces_n=(0.0, 0.0),
+                support_up_force_n=0.0,
             )
             result = Record(
-                success=False, metrics=dict(clearance_m=0., speed_m_s=0.),
+                success=False,
+                metrics=dict(clearance_m=0.0, speed_m_s=0.0),
                 history=Record(lifted=False, transported=False),
             )
             captured["result"] = result
             return SimpleNamespace(
-                observation=observation(True), action=action,
-                native_channels={"ctrl": HostTensor(((2.,),))},
-                action_receipt={"host_fake": True}, accepted_worlds={world: True},
-                success_frames={world: frame}, results={world: result},
+                observation=observation(True),
+                action=action,
+                native_channels={"ctrl": HostTensor(((2.0,),))},
+                action_receipt={"host_fake": True},
+                accepted_worlds={world: True},
+                success_frames={world: frame},
+                results={world: result},
                 final_mask=HostTensor((False,)),
             )
 
@@ -189,7 +214,7 @@ def test_accepted_callback_failure_keeps_current_entry_and_original_error(
             calls["command"] += 1
             np.testing.assert_array_equal(q, initial_q)
             np.testing.assert_array_equal(v, initial_v)
-            return np.array((2.,), dtype=np.float32), {"host_fake": True}
+            return np.array((2.0,), dtype=np.float32), {"host_fake": True}
 
     def plan_builder(actual_scene, actual_model):
         assert actual_scene is scene and actual_model is model
@@ -230,7 +255,9 @@ def test_accepted_callback_failure_keeps_current_entry_and_original_error(
         return HostTensor(value)
 
     monkeypatch.setattr(runner, "torch", SimpleNamespace(Tensor=HostTensor, tensor=host_tensor))
-    monkeypatch.setattr(runner, "mj", SimpleNamespace(mj_step=forbidden, mj_step1=forbidden, mj_step2=forbidden))
+    monkeypatch.setattr(
+        runner, "mj", SimpleNamespace(mj_step=forbidden, mj_step1=forbidden, mj_step2=forbidden)
+    )
     monkeypatch.setattr(runner, "manipulation_scenes", lambda: (scene,) * 8)
     monkeypatch.setattr(runner, "compile_mujoco_xml", compile_fake)
     monkeypatch.setattr(runner, "MuJoCoTyxModelSpec", lambda key, compiled: (key, compiled))
@@ -243,32 +270,45 @@ def test_accepted_callback_failure_keeps_current_entry_and_original_error(
     output = tmp_path.resolve() / "failed-host-prefix"
     with pytest.raises(RuntimeError, match="reference feedback failed after accepted") as caught:
         runner.run(
-            output, 3, (world,), plan_builder=plan_builder, record_entry=True,
+            output,
+            3,
+            (world,),
+            plan_builder=plan_builder,
+            record_entry=True,
             reference_driver_factory=driver_factory,
         )
     error = caught.value
     assert error.__cause__ is callback_error
     assert error.phase == "reference-feedback-accepted"
     assert error.action_accepted is True and error.state_accepted is True
-    assert calls == dict(step=1, accepted=1, summary=1, reference=1, command=1, batch_exit=1, env_exit=1)
+    assert calls == dict(
+        step=1, accepted=1, summary=1, reference=1, command=1, batch_exit=1, env_exit=1
+    )
 
     manifest = json.loads((output / "manifest.json").read_text(encoding="utf-8"))
     assert manifest["status"] == "FAILED_PREFIX"
     assert manifest["steps"] == manifest["recorded_steps"] == 1
     assert manifest["requested_steps"] == 3 and manifest["saved_frames"] == 2
     assert manifest["failure"] == dict(
-        type="RuntimeError", message=str(error), phase="reference-feedback-accepted",
-        action_accepted=True, state_accepted=True,
+        type="RuntimeError",
+        message=str(error),
+        phase="reference-feedback-accepted",
+        action_accepted=True,
+        state_accepted=True,
     )
     assert manifest["record_entry"] is True and manifest["reference_feedback"] is True
     assert manifest["worlds"][0]["world"] == world
     assert manifest["worlds"][0]["task_success"] is False
     if summary_raises:
-        assert manifest["driver_summary_failure"] == dict(type="LookupError", message=str(summary_error))
+        assert manifest["driver_summary_failure"] == dict(
+            type="LookupError", message=str(summary_error)
+        )
         assert not (output / "reference-feedback-summary.json").exists()
     else:
         assert "driver_summary_failure" not in manifest
-        summary = json.loads((output / "reference-feedback-summary.json").read_text(encoding="utf-8"))
+        summary = json.loads(
+            (output / "reference-feedback-summary.json").read_text(encoding="utf-8")
+        )
         assert summary == {str(world): {"status": "host-callback-failed", "tick": 1}}
 
     (trace,) = read_lines(output / "trace.jsonl.gz")
@@ -282,12 +322,13 @@ def test_accepted_callback_failure_keeps_current_entry_and_original_error(
     assert trace["contact_world_wrench"] == expected_entry["entry_contact_wrench_world"]
     assert trace["contact_body_wrench"] == expected_entry["entry_contact_body_wrench"]
     assert trace["raw_action"] == captured["action"].tolist()
-    assert trace["native_channels"] == {"ctrl": [[2.]]}
+    assert trace["native_channels"] == {"ctrl": [[2.0]]}
     assert trace["action_receipt"] == {"host_fake": True}
     assert trace["success_frames"][str(world)]["phase"] == "accepted-entry"
     assert trace["results"][str(world)]["success"] is False
     assert trace["reference_feedback"][str(world)] == dict(
-        host_fake=True, callback_error=dict(type="ValueError", message=str(callback_error)),
+        host_fake=True,
+        callback_error=dict(type="ValueError", message=str(callback_error)),
     )
     states = read_lines(output / "states.jsonl.gz")
     assert [state["step"] for state in states] == [0, 1]
@@ -295,6 +336,12 @@ def test_accepted_callback_failure_keeps_current_entry_and_original_error(
     assert states[1]["worlds"][0]["q"] == endpoint_q.tolist()
     assert states[1]["worlds"][0]["tick"] == 1
     assert not (output / "final.checkpoint").exists()
-    for field, filename in (("trace_sha256", "trace.jsonl.gz"), ("state_sha256", "states.jsonl.gz")):
+    for field, filename in (
+        ("trace_sha256", "trace.jsonl.gz"),
+        ("state_sha256", "states.jsonl.gz"),
+    ):
         assert manifest[field] == hashlib.sha256((output / filename).read_bytes()).hexdigest()
-    assert json.loads((output / "summary.json").read_text(encoding="utf-8"))["status"] == "FAILED_PREFIX"
+    assert (
+        json.loads((output / "summary.json").read_text(encoding="utf-8"))["status"]
+        == "FAILED_PREFIX"
+    )

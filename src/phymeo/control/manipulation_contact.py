@@ -65,7 +65,9 @@ def measure_finger_slip(arrays, row, *, object_body, pad_geom_ids):
     _require(isinstance(arrays, Mapping), "arrays must be a public NumPy mapping")
     selected = _index(row, "row")
     body = _index(object_body, "object_body")
-    _require(isinstance(pad_geom_ids, tuple) and len(pad_geom_ids) == 2, "two pad geom IDs required")
+    _require(
+        isinstance(pad_geom_ids, tuple) and len(pad_geom_ids) == 2, "two pad geom IDs required"
+    )
     pads = tuple(_index(value, "pad geom") for value in pad_geom_ids)
     _require(pads[0] != pads[1], "pad geom IDs must differ")
 

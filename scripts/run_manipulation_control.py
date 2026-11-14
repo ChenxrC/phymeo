@@ -24,7 +24,9 @@ from phymeo.backends.mujoco_heterogeneous import (
     MuJoCoTyxWorldSpec,
 )
 from phymeo.builders.mujoco_compiler import compile_mujoco_xml
+from phymeo.control.manipulation_contact import measure_finger_slip
 from phymeo.control.manipulation_diagnostic import NativeJointPD, solve_native_point_ik
+from phymeo.control.manipulation_grip import BoundedSlipClosure
 from phymeo.training.manipulation_env import HeterogeneousManipulationEnv
 from phymeo.training.manipulation_tasks import H, manipulation_scenes
 from phymeo.training.mujoco_tyx_env import MuJoCoTyxActionSpec
@@ -178,7 +180,7 @@ def reference(nodes, seconds):
     return nodes[-1][2], np.zeros_like(nodes[-1][2]), nodes[-1][1]
 
 
-def run(output, steps, indices, preflight_only=False):
+def run(output, steps, indices, preflight_only=False, slip_guard=False):
     if output.exists() or not output.is_absolute():
         raise ValueError("fresh absolute output required")
     if (
@@ -213,6 +215,32 @@ def run(output, steps, indices, preflight_only=False):
                 task_success=False,
             )
         )
+    grip_controls = {}
+    if slip_guard:
+        for i, scene in scenes.items():
+            if len(scene.finger_geom_names) == 2:
+                bounds = np.array(
+                    [
+                        native[i].jnt_range[native[i].joint(n).id]
+                        for n in scene.robot_joint_names[-2:]
+                    ]
+                )
+                grip_controls[i] = BoundedSlipClosure(bounds[:, 0], bounds[:, 1])
+                audits[i]["slip_feedback"] = dict(
+                    addresses=dict(
+                        object_body=native[i].body("object").id,
+                        pads=[native[i].geom(n).id for n in scene.finger_geom_names],
+                    ),
+                    max_correction_m=0.016,
+                    max_rate_m_s=0.02,
+                    slip_deadband_m_s=0.015,
+                    gain=2.0,
+                    min_normal_n=0.05,
+                    max_dt_s=0.01,
+                    measurement="previous accepted input frame, one step causal delay",
+                    actuation="finger position reference bias; original reference velocity retained",
+                    continuation="controller state is traced; final Env checkpoint alone is not a controller resume",
+                )
     write(output / "control-plan.json", audits)
     if preflight_only:
         write(
@@ -229,6 +257,7 @@ def run(output, steps, indices, preflight_only=False):
         mode="cuda",
         status="FAILED_PREFIX",
         controller="diagnostic-native-pd",
+        slip_feedback=bool(slip_guard),
         h=H,
         steps=0,
         requested_steps=steps,
@@ -321,9 +350,63 @@ def run(output, steps, indices, preflight_only=False):
                                 obs = env.observation
                                 q, v = obs["q"].cpu().numpy(), obs["v"].cpu().numpy()
                                 raw = np.zeros((len(indices), env.num_actions), np.float32)
-                                diagnostics = {}
+                                diagnostics, feedback = {}, {}
+                                entry_arrays = (
+                                    {
+                                        name: obs[name].detach().cpu().numpy()
+                                        for name in (
+                                            "entry_meta",
+                                            "entry_clock",
+                                            "entry_contact_ids",
+                                            "entry_contact_data",
+                                            "entry_body_mask",
+                                            "entry_body_position",
+                                            "entry_body_linear_velocity",
+                                            "entry_body_angular_velocity",
+                                        )
+                                    }
+                                    if grip_controls
+                                    else {}
+                                )
                                 for row, i in enumerate(indices):
                                     desired, velocity, stages[i] = reference(plans[i], tick * H)
+                                    if i in grip_controls:
+                                        measurement = measure_finger_slip(
+                                            entry_arrays,
+                                            row,
+                                            object_body=native[i].body("object").id,
+                                            pad_geom_ids=tuple(
+                                                native[i].geom(n).id
+                                                for n in scenes[i].finger_geom_names
+                                            ),
+                                        )
+                                        if measurement is None:
+                                            if tick != 0:
+                                                raise ValueError(
+                                                    "slip feedback lost accepted entry"
+                                                )
+                                            feedback[i] = dict(measurement=None, closure=None)
+                                        else:
+                                            if (
+                                                measurement.input_tick,
+                                                measurement.output_tick,
+                                            ) != (tick - 1, tick):
+                                                raise ValueError(
+                                                    "slip feedback is not the preceding accepted input"
+                                                )
+                                            closure = grip_controls[i].update(
+                                                measurement.time_s,
+                                                desired[-2:],
+                                                measurement.normal_loads,
+                                                measurement.slip_speeds,
+                                                stages[i]
+                                                in ("close", "lift", "hold", "transport", "lower"),
+                                            )
+                                            desired = desired.copy()
+                                            desired[-2:] = closure.targets
+                                            feedback[i] = dict(
+                                                measurement=measurement, closure=closure
+                                            )
                                     ctrl, diagnostics[i] = controls[i].command(
                                         q[row, : native[i].nq],
                                         v[row, : native[i].nv],
@@ -375,6 +458,8 @@ def run(output, steps, indices, preflight_only=False):
                                         success_frames=transition.success_frames,
                                         results=transition.results,
                                         controller=diagnostics,
+                                        slip_feedback=feedback,
+                                        feedback_source=entry_arrays,
                                         contact_ids=transition.observation["entry_contact_ids"],
                                         contact_data=transition.observation["entry_contact_data"],
                                         contact_world_wrench=transition.observation[
@@ -458,5 +543,6 @@ if __name__ == "__main__":
     parser.add_argument("--steps", type=int, default=2200)
     parser.add_argument("--worlds", type=int, nargs="+", default=list(range(8)))
     parser.add_argument("--preflight-only", action="store_true")
+    parser.add_argument("--slip-guard", action="store_true")
     args = parser.parse_args()
-    run(args.output, args.steps, tuple(args.worlds), args.preflight_only)
+    run(args.output, args.steps, tuple(args.worlds), args.preflight_only, args.slip_guard)

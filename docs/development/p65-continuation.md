@@ -1,5 +1,7 @@
 # Phymeo 当前续作入口
 
+> 2026-11-14 第七批：T1a通用PD/有界IK、真实CUDA诊断采集及八画面视频完成，产品5a281455、渲染3bed01fd。12个新HOST通过；原8世界2200步/2.2秒，17600 world-step和221保存帧已核，**任务成功0/8**。world0夹起后滑落，world7推约17mm未到目标，其余6条点IK路线未收敛并保持原参考。见[报告及视频](p65-manipulation-control-report-20261114.md)。没有共享策略、语言模型或optimizer，视频明确标诊断控制。下一批按[计划第15节](../superpowers/plans/2026-11-14-language-conditioned-gpu-manipulation.md)补接触姿态/有限seed、持握与可达推行；当前root和两作者均释放，无新截止/安装/push。下文第六批及以前保留历史。
+
 > 2026-11-14 第六批：B3异构操作Env已完成源码资格，产品 `135752e4`。24项checkpoint边界与10项CUDA生命周期节点通过；原八场景W8/W1、32步支撑、选择性reset/换目标、final observation和配对恢复已验。见[本批报告](p65-manipulation-env-report-20261114.md)与[公共用法](p65-manipulation-env-usage-20261114.md)。下一批按[计划第14节](../superpowers/plans/2026-11-14-language-conditioned-gpu-manipulation.md)从T1a真实抓/放/PushT控制可达性开始，随后扩八构型并接真实语义编码与共享策略。当前尚无操作成功率或训练结果，success评价仍有HOST读取。当前无执行owner，无新截止/安装/push；下文第五批及更早结果保留为历史。
 > 2026-11-14 第五批：M2-B2c/d 公共GPU接触观察与同入步SuccessFrame已完成源码资格，产品 `3ceb77cb`。新增19项（interpret9/CUDA10）和受影响回归52项全部通过；世界力/真实力偶、双侧body-origin力矩、Torch副本、同字节tick0重置与配对恢复已验。见[本批报告](p65-contact-observation-report-20261114.md)和[公共用法](p65-heterogeneous-manipulation-io-usage-20261114.md)。`include_contacts=True` 现在可用，默认仍关闭。下一批按[计划第13节](../superpowers/plans/2026-11-14-language-conditioned-gpu-manipulation.md)完成B3异构Env的动作掩码、目标/episode/history、终止帧和组合checkpoint，再推进T1真实抓放/PushT及语义共享策略。当前无执行owner，无新截止、安装、push或训练结果。下文第四批及更早结果保留为历史。
 

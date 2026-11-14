@@ -229,3 +229,26 @@ body入步观察尚需从保存q/v复用FK，不借用B1端点数据。
 4. **B3→T1→L1/L2**：先Env生命周期及真实操作可控性，再接真实语义编码和共享策略，维持第6节停止条件。
 
 本批执行已结束；未启动训练、模型下载、安装或新的持续任务。原所有预算/精度门保持。
+
+
+## 13. 第五批：公共接触观察与成功帧（2026-11-14）
+
+本批完成第12节B2c公共观察、B2d同入步SuccessFrame与读取边界；
+实际节点/后端/首失败/源码版本以[本批报告](../../development/p65-contact-observation-report-20261114.md)为准。
+公共入口为 `include_contacts=True`，原默认端点接口保持；不把接触点力偶丢掉或混成COM力矩。
+reset的无记录、成功空接触与inactive检测分别表示，controls-only revision不产生新样本。
+成功帧读取器消费input tick一次，public per-world boundary区分同字节tick0重置与重复读取。
+cursor恢复需核对实际已恢复公共物理frame；不允许靠改episode或旧空cursor绕过reset。
+
+### 下一批 B3 的实施与验收节点
+
+| 节点 | 难度 | 具体工作与可判定结果 |
+| --- | --- | --- |
+| B3a 异构Env适配层 | 中高 | 复用已有VecEnv transition/error语义和公共heterogeneous workspace，按每world模型常量映射动作，保留native地址/有效mask。现有MuJoCoTyxVectorEnv依赖单模型task workspace与统一nu/nv，不能直接冒充异构支持。应用不访问私有bucket。 |
+| B3b 目标与终止生命周期 | 中高 | 每world绑定Scene、Goal、episode、history与horizon；物理step后消费同一entry，完整保存input tick/action与endpoint关系。先产final observation/旧episode终止事件，再按选中world reset。terminated/truncated分开，inactive padding不影响动作或评价。 |
+| B3c 组合恢复与失败 | 高 | 在明确update/Env边界同时保存physics、reader cursor、goal/history、episode长度/回报及reset计数；先完整校验来源与形状，再提交。物理已接受而后续观察失败须标needs_recovery，不伪称回滚或生成成功learner transition。 |
+| B3d 多案例源码验收 | 中高 | 原8场景GPU、W1/W8/排列、不同horizon和目标、只reset部分世界、同字节tick0、错目标/错episode、晚world失败、恢复后下一step相同、Torch独立副本；至少两个构型实际接触。所有执行仍串行。 |
+
+B3完成接口测试不等于任务可控性或学习成功。其后T1先以不同构型抓/放/PushT三个独立诊断控制器验证实际操作，
+再覆盖8场景与未参与开发的组合。L1另冻真实预训练语义模型/来源与最小对；不能拿task整数替代语言输入。
+L2/T2只在前置物理和语义门通过后启动固定预算训练，继续遵循第6节的停止条件。

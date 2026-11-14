@@ -105,10 +105,10 @@ FREE/BALL 的原生局部角速度按已有运动学转到世界轴，body-origi
 
 ## 当前边界与下一连接
 
-1. workspace 默认导出 accepted q/v/act/clock；可选 body 字段同为端点相位，contact_tokens 仍为 False。
+1. workspace 默认导出 accepted q/v/act/clock；可选 body 字段同为端点相位。contact_tokens 默认 False，通过 include_contacts=True 启用下文同入步观察。
 2. body_angular_velocity 已转换到世界轴；原生 v 数组仍保留 FREE local angular，不改变原地址协议。
 3. 接触力必须与同一入步位姿/速度成对；M0 的 SuccessFrame 明确只接受 input phase。
-4. body endpoint FK 已完成 B1；accepted-entry contact token、目标/episode checkpoint、final observation/timeout 和异构 PPO 接线仍待 B2/B3。
+4. body endpoint FK 与 accepted-entry contact token/SuccessFrame 已完成 B1/B2；目标/history组合checkpoint、final observation/timeout 和异构 PPO 接线仍待 B3及后续。
 5. 当前 refresh/control 审计有状态/记录读回，叶子求解器也保留现有诊断；不是零 HOST 往返或融合异构 kernel。
 6. 工作区 allocation/显式 readback/D2D 计数单列，不把 solver-bank budget 当总 GPU 内存预算。
 7. M0 三类目标的 HOST 参考判据能拒绝伪抓取/空中放置/中心重合；合成帧测试不代表物理任务成功。
@@ -121,6 +121,67 @@ FREE/BALL 的原生局部角速度按已有运动学转到世界轴，body-origi
 旧胶囊恢复后显式“无历史记录”，下一成功step才生成有效entry；成功空接触是另一个状态。
 详细字段、原始失败和源码资格见[本批报告](p65-entry-record-report-20261114.md)。
 
-公共 workspace 当前仍只提供端点状态及可选body观察，`contact_tokens=False` 保持。
-下一批增加公共entry导出及同入步世界载荷；现在不要把B1端点body位姿/速度与receipt过去接触力拼成SuccessFrame，
-也不要让训练脚本直接依赖私有entry数组。本批尚未提供接触Torch token或目标/episode生命周期。
+第四批结束时公共workspace只提供端点及可选body，contact token尚未连接；这是历史边界。
+第五批新增的公共entry/世界载荷/Torch接触输出见下节。应用继续禁止把B1端点与过去载荷混成SuccessFrame，
+或依赖私有entry数组；目标/history与episode的完整Env生命周期仍待B3。
+
+
+## 公共入步 body 与接触观察（M2-B2c/d）
+
+`batch.prepare_device_workspace(include_contacts=True)` 现在额外输出同一已接受物理步的入步状态和载荷。
+它独立于 `include_bodies`：不启用后者时只有 `entry_body_*`，不会同时分配端点 `body_*`。
+两个开关都启用时，两种相位明确分列。
+
+| 字段 | 形状与意义 |
+| --- | --- |
+| `entry_q/v/act` | [W,各字段最大native宽度]；输入native地址不变，padding零 |
+| `entry_clock` | [W,4]：input high/compensation、output high/compensation |
+| `entry_meta` | int32 [W,6]：valid、input tick、output tick、detected、active、overflow |
+| `entry_contact_ids` | int32 [W,C,8]：valid、active、geom1/2、body1/2、feature、condim |
+| `entry_contact_data` | [W,C,20]：distance、point3、frame三行9、contact-frame六维载荷、include margin |
+| `entry_body_position/rotation` | [W,B,3] / [W,B,3,3]：入步body原点世界位置、body→world矩阵 |
+| `entry_body_linear_velocity/angular_velocity` | [W,B,3]：入步body原点世界线/角速度 |
+| `entry_body_mask` | int32 [W,B]：有效入步body，包含fixed/world body |
+| `entry_contact_wrench_world` | [W,C,6]：作用于geom2、接触点处的世界force/couple |
+| `entry_contact_body_wrench` | [W,C,2,6]：作用于body1/2、各自body原点处的世界force/moment |
+
+除上述整数字段外均为FP32。C取所有模型接触容量最大值，最低一列sentinel。
+contact frame的每一行是一条接触轴；世界力/力偶为 `frame.T @ local`。
+geom1反作用符号相反；body-origin moment额外加 `(contact_point-body_origin) × force`。
+condim4扭转和condim6滚动的真实力偶保留，不把力矩简化为纯力臂项。
+
+`entry_meta.valid=0` 表示无历史记录；entry body mask和输出清零，不构造过去的状态或载荷。
+成功空接触为valid1、count0，仍有有效入步body状态。inactive检测有身份/几何但载荷为零。
+旧格式capsule恢复可有output tick>0且valid0；下一成功step才能产生新的有效entry。
+
+`frame.world_boundaries` 按world顺序提供 `(batch_uuid, serial, operation)`：
+初始为initial，成功reset/reset-states只改变选中world，restore改变所有world；普通step和controls不变。
+这是操作边界元数据，不是物理状态、语言输入或任务编号。它不进入旧物理capsule，恢复不会抹掉实际发生的边界。
+
+### 成功帧消费与恢复
+
+```python
+from phymeo.training.manipulation_observation import ManipulationSuccessReader
+
+# by_world: {world_key: 原始 Scene}; episodes: {world_key: nonnegative int}
+workspace = batch.prepare_device_workspace(include_contacts=True)
+reader = ManipulationSuccessReader(workspace, by_world)
+frame = workspace.refresh(expected_revision=batch.checkpoint_revision)
+success_frames = reader.read(frame, episodes=episodes)
+
+# 在已消费的同一物理点保存；goal/history由调用方分别保存。
+physics_checkpoint = batch.checkpoint()
+cursor_checkpoint = reader.checkpoint()
+
+batch.restore(physics_checkpoint, expected_revision=batch.checkpoint_revision)
+frame = workspace.refresh(expected_revision=batch.checkpoint_revision)
+reader.restore(cursor_checkpoint, frame=frame)
+```
+
+reader是显式HOST诊断/成功判据适配器，使用公共readback；GPU特征生产仍不依赖它。
+它核原始Scene XML、FREE物体地址与named finger/support对应关系，以同入步位姿、速度和载荷构造SuccessFrame。
+重复同一记录返回空映射，跳步、伪episode变化及未配对物理恢复均拒绝；任一world失败不提交任何world游标。
+实际reset需要更大的episode号，首step提供input tick0；即使重置后首步字节与旧首步相同，也不会混淆。
+reset后可以先read空frame并保存tick=-1的游标，也可直接step后read；无效记录均不产生虚构SuccessFrame。
+游标恢复会核对实际公共frame的完整entry内容，再绑定当前边界；旧游标不能绕过实际reset。
+物理、reader cursor、goal/history目前仍是三个明确owner；下一批B3再统一Env checkpoint事务。

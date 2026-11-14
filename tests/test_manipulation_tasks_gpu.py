@@ -64,12 +64,12 @@ def test_eight_manipulation_scenes_public_gpu_io_match_w1_for_32_steps(tmp_path,
             )
             for world, spec in zip(worlds, specs, strict=True)
         }
-        assert batch.world_keys == keys and batch.timestep == H == .001
+        assert batch.world_keys == keys and batch.timestep == H == 0.001
         assert batch.capabilities["bucket_count"] == batch.capabilities["world_count"] == 8
         assert all(owner.capabilities["gpu"] for owner in single.values())
         initial = batch.integration_snapshot()
         frame = ws.refresh(expected_revision=batch.checkpoint_revision)
-        assert frame.ticks == (0,)*8
+        assert frame.ticks == (0,) * 8
         assert ws.binding["phase"] == "accepted-integration-endpoint"
         arrays = ws.to_torch(frame)
         history.append(dict(frame=frame, workspace=io.compare_frame(batch, ws, frame)))
@@ -85,15 +85,22 @@ def test_eight_manipulation_scenes_public_gpu_io_match_w1_for_32_steps(tmp_path,
 
         try:
             with monkeypatch.context() as guard:
-                for name in ("mj_step", "mj_forward", "mj_fullM", "mj_rne", "mj_jac",
-                             "mj_collision", "mj_fwdConstraint"):
+                for name in (
+                    "mj_step",
+                    "mj_forward",
+                    "mj_fullM",
+                    "mj_rne",
+                    "mj_jac",
+                    "mj_collision",
+                    "mj_fwdConstraint",
+                ):
                     guard.setattr(mj, name, forbidden)
                 for name in ("solve", "inv", "cholesky", "lstsq"):
                     guard.setattr(np.linalg, name, forbidden)
                 for tick in range(1, 33):
                     packets = {
                         key: MuJoCoControl(
-                            np.full(batch.layout[key].nu, .025, np.float32),
+                            np.full(batch.layout[key].nu, 0.025, np.float32),
                             qfrc_applied=np.zeros(batch.layout[key].nv, np.float32),
                             xfrc_applied=np.zeros((batch.layout[key].nbody, 6), np.float32),
                         )
@@ -102,18 +109,23 @@ def test_eight_manipulation_scenes_public_gpu_io_match_w1_for_32_steps(tmp_path,
                     with torch.cuda.stream(producer), ExitStack() as inputs:
                         mask = arrays["ctrl_mask"].bool()
                         assert (~mask).any().item(), "heterogeneous actuator padding is exercised"
-                        ctrl = torch.full(mask.shape, .025, device=device, dtype=torch.float32)
+                        ctrl = torch.full(mask.shape, 0.025, device=device, dtype=torch.float32)
                         ctrl[~mask] = float("nan")
                         qfrc = torch.zeros_like(arrays["v"])
                         xfrc = torch.zeros(
                             (8, arrays["body_mask"].shape[1], 6), device=device, dtype=torch.float32
                         )
-                        views = tuple(from_torch(value, backend="cuda") for value in (ctrl, qfrc, xfrc))
+                        views = tuple(
+                            from_torch(value, backend="cuda") for value in (ctrl, qfrc, xfrc)
+                        )
                         for view in views:
                             inputs.callback(view.free)
                         control_receipt = batch.set_controls_from_device(
-                            views[0], qfrc_applied=views[1], xfrc_applied=views[2],
-                            world_keys=keys, expected_revision=batch.checkpoint_revision,
+                            views[0],
+                            qfrc_applied=views[1],
+                            xfrc_applied=views[2],
+                            world_keys=keys,
+                            expected_revision=batch.checkpoint_revision,
                             producer_stream=stream,
                         )
                     for key, owner in single.items():
@@ -121,15 +133,19 @@ def test_eight_manipulation_scenes_public_gpu_io_match_w1_for_32_steps(tmp_path,
                         assert owner.step(H) == {key: True}
                     assert batch.step(H) == dict.fromkeys(keys, True)
                     states = batch.integration_snapshot()
-                    references = {key: owner.integration_snapshot()[key] for key, owner in single.items()}
-                    evidence = dict(batch_step=batch.last_step, controls=control_receipt, w1=references)
+                    references = {
+                        key: owner.integration_snapshot()[key] for key, owner in single.items()
+                    }
+                    evidence = dict(
+                        batch_step=batch.last_step, controls=control_receipt, w1=references
+                    )
                     history.append(evidence)
                     frame = ws.refresh(expected_revision=batch.checkpoint_revision)
                     diagnostic = ws.readback(frame)
                     evidence.update(frame=frame, workspace=diagnostic)
                     arrays = ws.to_torch(frame)
                     io.compare_frame(batch, ws, frame)
-                    assert frame.ticks == (tick,)*8
+                    assert frame.ticks == (tick,) * 8
                     assert batch.last_step.world_keys == keys
                     assert all(batch.last_step.accepted.values())
                     for name, tensor in arrays.items():
@@ -139,7 +155,9 @@ def test_eight_manipulation_scenes_public_gpu_io_match_w1_for_32_steps(tmp_path,
                         state, reference = states[key], references[key]
                         assert state.tick == tick and np.isfinite(state.time)
                         for name in ("q", "v", "act", "ctrl", "time", "tick"):
-                            assert io.exact(getattr(state, name)) == io.exact(getattr(reference, name)), (key, tick, name)
+                            assert io.exact(getattr(state, name)) == io.exact(
+                                getattr(reference, name)
+                            ), (key, tick, name)
                         for name in ("q", "v", "act", "ctrl", "qfrc_applied", "xfrc_applied"):
                             assert np.isfinite(getattr(state, name)).all(), (key, tick, name)
                         assert not state.qfrc_applied.any() and not state.xfrc_applied.any()

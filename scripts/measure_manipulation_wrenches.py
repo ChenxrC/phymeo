@@ -1,8 +1,7 @@
 """Measure saved public entry wrenches without replaying physical motion.
 
-Single-world diagnostic traces with feedback_source are supported. Entry k is
-read from trace k+1 and checked against trace k. The last entry has no following
-feedback source and is explicitly reported as unmeasured, never synthesized.
+Current-entry traces measure every saved step, including the final one. Legacy
+feedback_source traces retain their one-step lag and explicitly unmeasured tail.
 """
 
 import argparse
@@ -41,6 +40,10 @@ def measure_run(
         manifest["status"] == "COMPLETE" and len(manifest["worlds"]) == 1,
         "requires a complete single-world diagnostic trace",
     )
+    direct = manifest.get("record_entry", False)
+    require(type(direct) is bool, "invalid current-entry declaration")
+    if direct:
+        require(manifest.get("recorded_steps") == manifest["steps"], "incomplete recorded entries")
     info = manifest["worlds"][0]
     model_path = (root / info["source_file"]).resolve()
     require(model_path.is_relative_to(root), "model path escapes run")
@@ -64,14 +67,23 @@ def measure_run(
             current = json.loads(line)
             require(current["step"] == last_step + 1, "noncontiguous trace")
             last_step = current["step"]
-            if previous is None:
+            if direct:
+                require(isinstance(current.get("entry"), dict), "missing current entry")
+                previous = current
+            elif previous is None:
                 require(
                     current["feedback_source"]["entry_meta"][0][0] == 0,
                     "first feedback source must be invalid",
                 )
                 previous = current
                 continue
-            saved = current["feedback_source"]
+            saved = current["entry"] if direct else current["feedback_source"]
+            if direct:
+                for key, published in (
+                    ("entry_contact_wrench_world", "contact_world_wrench"),
+                    ("entry_contact_body_wrench", "contact_body_wrench"),
+                ):
+                    require(saved[key] == current[published], "current published wrench differs")
             names = (
                 "entry_meta",
                 "entry_clock",
@@ -94,14 +106,14 @@ def measure_run(
                 np.array_equal(
                     arrays["entry_contact_ids"], np.asarray(previous["contact_ids"], dtype=np.int32)
                 ),
-                "contact identities are not from preceding trace",
+                "contact identities are not from bound trace",
             )
             require(
                 np.array_equal(
                     arrays["entry_contact_data"],
                     np.asarray(previous["contact_data"], dtype=np.float32),
                 ),
-                "contact payload is not from preceding trace",
+                "contact payload is not from bound trace",
             )
             frame = previous["success_frames"][str(info["world"])]
             require(frame["object_key"] == object_name, "task object identity differs")
@@ -121,7 +133,23 @@ def measure_run(
             )
             rotation = np.zeros(9)
             mj.mju_quat2Mat(rotation, quat / np.linalg.norm(quat))
-            com = origin + rotation.reshape(3, 3) @ model.body_ipos[body]
+            rotation = rotation.reshape(3, 3)
+            if direct:
+                stored_rotation = np.asarray(saved["entry_body_rotation"], dtype=np.float64)
+                require(
+                    stored_rotation.shape == (*arrays["entry_body_position"].shape[:2], 3, 3)
+                    and np.isfinite(stored_rotation).all()
+                    and np.max(np.abs(stored_rotation[0, body] - rotation)) < 2e-6,
+                    "current entry rotation differs from task quaternion",
+                )
+                rotation = stored_rotation[0, body]
+            for identities in arrays["entry_contact_ids"][0, : int(arrays["entry_meta"][0, 3])]:
+                for gid, bid in ((identities[2], identities[4]), (identities[3], identities[5])):
+                    require(
+                        0 <= gid < model.ngeom and model.geom_bodyid[gid] == bid,
+                        "contact geometry differs from bound model",
+                    )
+            com = origin + rotation @ model.body_ipos[body]
             measured = measure_object_contact_wrench(
                 arrays, 0, object_body=body, object_com_world=com, group_geom_ids=groups
             )
@@ -192,7 +220,7 @@ def measure_run(
             count += 1
             previous = current
     require(
-        last_step == manifest["steps"] and count == last_step - 1 and count > 0,
+        last_step == manifest["steps"] and count == last_step - (0 if direct else 1) and count > 0,
         "incomplete input trace",
     )
     result = dict(
@@ -206,8 +234,9 @@ def measure_run(
         group_geom_ids=groups,
         measured_entries=count,
         first_entry_step=1,
-        last_entry_step=last_step - 1,
-        unmeasured_entry_steps=[last_step],
+        last_entry_step=last_step if direct else last_step - 1,
+        unmeasured_entry_steps=[] if direct else [last_step],
+        entry_source="current" if direct else "following-feedback",
         output_sha256=sha(output_file),
         max_published_force_difference_n=maximum_force,
         max_published_moment_difference_nm=maximum_moment,

@@ -150,3 +150,75 @@ def test_task_binding_and_phase_are_not_only_positions(tmp_path, field, value, r
     root = write_run(tmp_path, records)
     with pytest.raises(ValueError, match=reason):
         consumer.measure_run(root, tmp_path / "rejected")
+
+
+def current_records():
+    import copy
+
+    first, second = fixture_records()
+    first["entry"] = copy.deepcopy(second["feedback_source"])
+    for key, published in (
+        ("entry_contact_wrench_world", "contact_world_wrench"),
+        ("entry_contact_body_wrench", "contact_body_wrench"),
+    ):
+        first["entry"][key] = copy.deepcopy(first[published])
+    count = len(first["entry"]["entry_body_mask"][0])
+    matrices = np.broadcast_to(np.eye(3), (1, count, 3, 3)).copy()
+    matrices[0, 1] = [[0, -1, 0], [1, 0, 0], [0, 0, 1]]
+    first["entry"]["entry_body_rotation"] = matrices.tolist()
+    last = copy.deepcopy(first)
+    last["step"] = 2
+    last["entry"]["entry_meta"][0][1:3] = [1, 2]
+    last["entry"]["entry_clock"][0] = [0.001, 0, 0.002, 0]
+    last["success_frames"]["0"].update(tick=1, time_s=0.001)
+    return [first, last]
+
+
+def write_current_run(tmp_path, records):
+    root = write_run(tmp_path, records)
+    path = root / "manifest.json"
+    manifest = json.loads(path.read_text(encoding="utf-8"))
+    manifest.update(record_entry=True, recorded_steps=2)
+    path.write_text(json.dumps(manifest), encoding="utf-8")
+    return root
+
+
+def test_current_entries_cover_last_step_and_arbitrary_group(tmp_path):
+    root = write_current_run(tmp_path, current_records())
+    with patch.object(mj, "mj_forward", forbid), patch.object(mj, "mj_step", forbid):
+        result = consumer.measure_run(root, tmp_path / "output", group_names=("left-pad",))
+    assert result["measured_entries"] == 2
+    assert result["last_entry_step"] == 2
+    assert result["unmeasured_entry_steps"] == []
+    assert result["entry_source"] == "current"
+    with gzip.open(tmp_path / "output/wrenches.jsonl.gz", "rt", encoding="utf-8") as stream:
+        rows = [json.loads(line) for line in stream]
+    assert [r["measurement"]["input_tick"] for r in rows] == [0, 1]
+    assert all(r["measurement"]["group_force_world"] == [2, 0, 0] for r in rows)
+    np.testing.assert_allclose(rows[-1]["measurement"]["total_moment_com_world"], (0, 0, -1.5))
+
+
+@pytest.mark.parametrize("fault", ["missing", "stale", "wrench", "contact"])
+def test_current_entry_cannot_borrow_other_step(tmp_path, fault):
+    rows = current_records()
+    if fault == "missing":
+        rows[-1]["entry"] = None
+    elif fault == "stale":
+        rows[-1]["entry"]["entry_meta"][0][1:3] = [0, 1]
+    elif fault == "wrench":
+        rows[-1]["entry"]["entry_contact_wrench_world"][0][0][0] = 3
+    else:
+        rows[-1]["entry"]["entry_contact_data"][0][0][13] = 3
+    root = write_current_run(tmp_path, rows)
+    with pytest.raises(ValueError):
+        consumer.measure_run(root, tmp_path / "rejected")
+
+
+def test_current_entry_partial_recording_is_not_complete(tmp_path):
+    root = write_current_run(tmp_path, current_records())
+    path = root / "manifest.json"
+    manifest = json.loads(path.read_text(encoding="utf-8"))
+    manifest["recorded_steps"] = 1
+    path.write_text(json.dumps(manifest), encoding="utf-8")
+    with pytest.raises(ValueError, match="incomplete recorded"):
+        consumer.measure_run(root, tmp_path / "rejected")

@@ -7,7 +7,6 @@ validation and the single physics/entry publication; this module never publishes
 
 import numpy as np
 
-
 ENTRY_FIELDS = (
     "entry_q",
     "entry_v",

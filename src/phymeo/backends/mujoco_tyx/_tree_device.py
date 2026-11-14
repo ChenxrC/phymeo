@@ -19,6 +19,7 @@ class TyxTreeDevice(TyxDevice):
         *,
         activation=None,
         resource_budget=None,
+        entry_body_ids=None,
     ):
         import tyx as tx
 
@@ -31,6 +32,7 @@ class TyxTreeDevice(TyxDevice):
         self.tx, self.mode, self.plan = tx, mode, plan
         self.nbody, self.nworld, self.h = nbody, len(q), float(h)
         self.active = 0
+        self.capacities = tuple(map(int, capacities))
         self.counts = dict(
             completed_kernels=0,
             synchronizations=0,
@@ -103,6 +105,7 @@ class TyxTreeDevice(TyxDevice):
                     "status",
                 ):
                     setattr(self, name, self._allocate(name))
+                self._allocate_entry(entry_body_ids)
                 if not getattr(plan, "normal_contact", False) and not getattr(
                     plan, "constraint_contact", False
                 ):

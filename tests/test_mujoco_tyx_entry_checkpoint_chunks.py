@@ -15,8 +15,13 @@ from phymeo.backends.mujoco_tyx._entry_storage import entry_layout
 
 CHUNK_SCHEMA = "mujoco-tyx-entry-chunks-v1"
 FIELDS = {
-    "entry_q", "entry_v", "entry_act", "entry_clock", "entry_meta",
-    "entry_contact_ids", "entry_contact_data",
+    "entry_q",
+    "entry_v",
+    "entry_act",
+    "entry_clock",
+    "entry_meta",
+    "entry_contact_ids",
+    "entry_contact_data",
 }
 
 
@@ -51,7 +56,8 @@ def assert_same(actual, expected):
 
 @pytest.mark.parametrize("world_count,contact_capacity", ((1, 64), (1, 65536), (256, 256)))
 def test_entry_chunks_roundtrip_through_original_bounded_checkpoint_codec(
-    world_count, contact_capacity,
+    world_count,
+    contact_capacity,
 ):
     assert capsule.MAX_ARRAY_ITEMS == 1_048_576
     assert capsule.MAX_BYTES == 128 * 1024 * 1024
@@ -78,13 +84,15 @@ def test_entry_chunks_roundtrip_through_original_bounded_checkpoint_codec(
                 assert chunk.ndim == 1 and chunk.dtype == original.dtype
                 assert 0 < chunk.size <= capsule.MAX_ARRAY_ITEMS
                 start = index * capsule.MAX_ARRAY_ITEMS
-                assert chunk.tobytes() == flat[start:start + chunk.size].tobytes()
+                assert chunk.tobytes() == flat[start : start + chunk.size].tobytes()
             # Generic checkpoint arrays retain their original cap; only this
             # entry extension supplies independently bounded chunks.
             with pytest.raises(ValueError, match="array"):
                 capsule._encode(original)
     binding = {
-        "schema": "entry-codec-host-test", "worlds": world_count, "capacity": contact_capacity,
+        "schema": "entry-codec-host-test",
+        "worlds": world_count,
+        "capacity": contact_capacity,
     }
     cp = capsule._make_checkpoint(binding, 17, {"accepted_entry": packed})
     wire = cp.to_bytes()
@@ -122,9 +130,11 @@ def test_malformed_large_chunk_envelopes_reject_before_concatenation(monkeypatch
         "nonfinite-tail": envelope | {"chunks": (chunks[0], nonfinite)},
     }
     with monkeypatch.context() as patch:
-        patch.setattr(entry.np, "concatenate", lambda *a, **kw: pytest.fail(
-            "malformed chunk record reached concatenation"
-        ))
+        patch.setattr(
+            entry.np,
+            "concatenate",
+            lambda *a, **kw: pytest.fail("malformed chunk record reached concatenation"),
+        )
         for label, bad in malformed.items():
             with pytest.raises(ValueError, match="entry"):
                 entry._unpack_entry(owner, packed | {"entry_contact_data": bad})
@@ -137,7 +147,9 @@ def test_small_chunk_envelopes_and_invalid_seven_field_layouts_reject(monkeypatc
     packed = entry._pack_entry(values)
     small = values["entry_q"]
     small_envelope = {
-        "schema": CHUNK_SCHEMA, "shape": small.shape, "dtype": small.dtype.str,
+        "schema": CHUNK_SCHEMA,
+        "shape": small.shape,
+        "dtype": small.dtype.str,
         "chunks": (small.reshape(-1),),
     }
     nonfinite = values["entry_clock"].copy()
@@ -152,9 +164,11 @@ def test_small_chunk_envelopes_and_invalid_seven_field_layouts_reject(monkeypatc
         "nonfinite-small": packed | {"entry_clock": nonfinite},
     }
     with monkeypatch.context() as patch:
-        patch.setattr(entry.np, "concatenate", lambda *a, **kw: pytest.fail(
-            "small or malformed record must not concatenate chunks"
-        ))
+        patch.setattr(
+            entry.np,
+            "concatenate",
+            lambda *a, **kw: pytest.fail("small or malformed record must not concatenate chunks"),
+        )
         assert_same(entry._unpack_entry(owner, packed), values)
         for label, bad in malformed.items():
             with pytest.raises(ValueError, match="entry"):

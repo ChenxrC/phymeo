@@ -11,7 +11,19 @@ from ._resources import DeviceResources
 
 class TyxDevice:
     def __init__(
-        self, plan, mode, cache_root, q, v, time, nbody, h, capacities, *, resource_budget=None
+        self,
+        plan,
+        mode,
+        cache_root,
+        q,
+        v,
+        time,
+        nbody,
+        h,
+        capacities,
+        *,
+        resource_budget=None,
+        entry_body_ids=None,
     ):
         import tyx as tx
 
@@ -64,6 +76,7 @@ class TyxDevice:
                     "status",
                 ):
                     setattr(self, name, self._allocate(name))
+                self._allocate_entry(entry_body_ids)
                 self._complete_allocations()
         except BaseException as primary:
             self._close_after_construction_failure(primary)
@@ -124,6 +137,11 @@ class TyxDevice:
             self._allocation_entry = None
             # This is metadata cleanup, including when the allocator returned no owner.
             self.resources._allocation_entry = None
+
+    def _allocate_entry(self, body_ids):
+        from ._entry_storage import allocate_entry
+
+        allocate_entry(self, body_ids=body_ids)
 
     def _complete_allocations(self):
         if self._allocated_names != set(self._allocation_entries):

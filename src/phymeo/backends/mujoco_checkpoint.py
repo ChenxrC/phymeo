@@ -260,6 +260,9 @@ def _model_binding(runtime):
                 "parameters_sha256": hashlib.sha256(plan.activation.values.tobytes()).hexdigest(),
             },
         )
+    from .mujoco_entry_checkpoint import _entry_binding
+
+    binding["accepted_entry"] = _entry_binding(runtime)
     return binding
 
 
@@ -293,6 +296,8 @@ def _verify_bank(device, packed):
 
 
 def capture(runtime):
+    from .mujoco_entry_checkpoint import _accepted_entry, _pack_entry, _validate_entry
+
     binding = _model_binding(runtime)
     packed = _accepted_bank(runtime._device)
     for got, shape in zip(
@@ -339,7 +344,16 @@ def capture(runtime):
                 "receipt": runtime._receipts[key],
             }
         )
-    state = {"q": packed[0], "v": packed[1], "clock": packed[2], "worlds": worlds}
+    entry = _validate_entry(
+        runtime, _accepted_entry(runtime._device), runtime._ticks, runtime._receipts, packed[2]
+    )
+    state = {
+        "q": packed[0],
+        "v": packed[1],
+        "clock": packed[2],
+        "worlds": worlds,
+        "accepted_entry": _pack_entry(entry),
+    }
     if hasattr(runtime._plan, "activation"):
         state["act"] = packed[3]
     return _make_checkpoint(binding, runtime._checkpoint_revision, state)
@@ -355,9 +369,17 @@ def restore(runtime, checkpoint, expected_revision):
     )
     _require(type(checkpoint) is MuJoCoTyxCheckpoint, "expected MuJoCoTyxCheckpoint")
     binding = _model_binding(runtime)
-    saved = checkpoint._read(binding)
+    has_entry = "accepted_entry" in checkpoint.binding
+    expected_binding = (
+        binding
+        if has_entry
+        else {key: value for key, value in binding.items() if key != "accepted_entry"}
+    )
+    saved = checkpoint._read(expected_binding)
     stateful = hasattr(runtime._plan, "activation")
     expected_fields = {"q", "v", "clock", "worlds"} | ({"act"} if stateful else set())
+    if has_entry:
+        expected_fields.add("accepted_entry")
     _require(isinstance(saved, Mapping) and set(saved) == expected_fields, "state fields")
     nw = len(runtime.world_keys)
     packed = (saved["q"], saved["v"], saved["clock"])
@@ -511,10 +533,19 @@ def restore(runtime, checkpoint, expected_revision):
             receipt,
             item["initial"],
         )
+    from .mujoco_entry_checkpoint import _empty_entry, _unpack_entry, _validate_entry, _write_entry
+
+    entry = (
+        _unpack_entry(runtime, saved["accepted_entry"])
+        if has_entry
+        else _empty_entry(runtime, ticks)
+    )
+    _validate_entry(runtime, entry, ticks, receipts, packed[2])
     replacement = None
     try:
         replacement = runtime._build_device(data, packed=packed)
         _verify_bank(replacement, packed)
+        _write_entry(replacement, entry)
         # All observers use detached scratch before the single publication.
         # mj_forward cannot supply q/v or physics to the restored device.
         for candidate in data.values():

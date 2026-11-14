@@ -21,6 +21,7 @@ class TyxConstraintDevice(TyxDevice):
         *,
         activation=None,
         resource_budget=None,
+        entry_body_ids=None,
     ):
         from . import _constraint_rows, _constraint_solver, _normal_geometry
 
@@ -38,6 +39,7 @@ class TyxConstraintDevice(TyxDevice):
             capacities,
             activation=activation,
             resource_budget=resource_budget,
+            entry_body_ids=entry_body_ids,
         )
         try:
             self.capacities = tuple(map(int, capacities))

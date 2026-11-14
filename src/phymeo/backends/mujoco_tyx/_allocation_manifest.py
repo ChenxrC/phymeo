@@ -262,6 +262,13 @@ def allocation_manifest(plan, nworld, nbody, capacities):
             ("free_ids", (w, width)),
         ):
             add(name, shape, "int32")
+    from ._entry_storage import entry_layout, entry_static_layout
+
+    for name, (shape, dtype) in entry_layout(plan, w, capacities).items():
+        for bank in (0, 1):
+            add(f"{name}.{bank}", shape, dtype, f"accepted-entry-bank-{bank}")
+    for name, (shape, dtype) in entry_static_layout(plan).items():
+        add(name, shape, dtype, "accepted-entry-static")
     manifest = AllocationManifest(tuple(entries), tuple(aliases))
     if manifest.payload_bytes > sys.maxsize:
         raise ValueError("leaf allocation payload exceeds addressable size")

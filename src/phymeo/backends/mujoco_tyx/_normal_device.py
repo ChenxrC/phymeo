@@ -23,6 +23,7 @@ class TyxNormalDevice(TyxDevice):
         *,
         activation=None,
         resource_budget=None,
+        entry_body_ids=None,
     ):
         from . import _normal_geometry, _normal_solver
 
@@ -45,6 +46,7 @@ class TyxNormalDevice(TyxDevice):
             capacities,
             activation=activation,
             resource_budget=resource_budget,
+            entry_body_ids=entry_body_ids,
         )
         try:
             self.capacities = tuple(map(int, capacities))

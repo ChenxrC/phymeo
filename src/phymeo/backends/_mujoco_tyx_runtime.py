@@ -622,6 +622,13 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
             self._timestep,
             (self._contact_capacity, self._constraint_capacity),
             resource_budget=self._resource_budget,
+            entry_body_ids=(
+                tuple(int(v) for v in self._model.geom_bodyid[list(self._plan.pair)])
+                if getattr(self._plan, "pair", None) is not None
+                and not getattr(self._plan, "normal_contact", False)
+                and not getattr(self._plan, "constraint_contact", False)
+                else None
+            ),
             **activation_args,
         )
         # All device subclasses expose the same transport counters, including
@@ -914,7 +921,17 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
             try:
                 ctrl, applied, body_force, stored = self._pack_controls()
                 self._device.advance(ctrl, applied, body_force)
+                from .mujoco_tyx._entry_storage import prepare_entry
+
+                prepare_entry(self._device)
+                with self._device.tx.use_runtime(self._device.runtime):
+                    self._device.runtime.sync()
+                    self._device.counts["synchronizations"] += 1
                 result = self._device.download()
+                with self._device.tx.use_runtime(self._device.runtime):
+                    result["entry_meta"] = self._device._get(
+                        self._device.entry["entry_meta"][1 - self._device.active]
+                    )
                 if np.any(result["status"]):
                     reasons = {
                         1: "contact_or_constraint_capacity",
@@ -1064,6 +1081,16 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                         backend=f"mujoco-tyx-{self._mode}",
                         **receipt_extra,
                     )
+                    expected_entry = (
+                        1,
+                        self._ticks[key],
+                        ticks[key],
+                        len(contacts),
+                        sum(int(c.active) for c in contacts),
+                        0,
+                    )
+                    if not np.array_equal(result["entry_meta"][index], expected_entry):
+                        raise RuntimeError("TYX accepted entry metadata mismatch")
                     data[key] = candidate
             except Exception as error:
                 self._extra_counts["failed_batches"] += 1
@@ -1222,6 +1249,7 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
     def _reset_states_locked(self, states):
         from .mujoco_checkpoint import _accepted_bank, _verify_bank
         from .mujoco_device_controls import invalidate, retirement_list
+        from .mujoco_entry_checkpoint import _accepted_entry, _validate_entry, _write_entry
 
         selected = tuple(key for key in self._world_keys if key in states)
         source = self._compilation.source
@@ -1313,11 +1341,16 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
         )
         retired_controls = retirement_list(self)
         old = self._device
+        entry = _accepted_entry(old)
+        for value in entry.values():
+            value[rows] = 0
+        _validate_entry(self, entry, ticks, receipts, packed[2])
         old_retirement = [*self._checkpoint_retired, old]
         replacement = None
         try:
             replacement = self._build_device(proposed, packed=packed)
             _verify_bank(replacement, packed)
+            _write_entry(replacement, entry)
             for key in selected:
                 self._observe_native(proposed[key])
         except BaseException as error:
@@ -1436,6 +1469,9 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                 return self._clone_selected(selected)
 
     def _clone_selected(self, selected):
+        from .mujoco_checkpoint import _accepted_bank, _verify_bank
+        from .mujoco_entry_checkpoint import _accepted_entry, _validate_entry, _write_entry
+
         # Caller holds the source lock and the whole two-owner budget admission.
         with self._lock:
             cloned = type(self)(
@@ -1456,12 +1492,24 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                     proposed[key] = cloned._mirror_layout.from_parts(
                         copied.cpu_state, {name: getattr(copied, name) for name in MIRROR_FIELDS}
                     )
-                replacement = cloned._build_device(proposed)
+                indices = [self._world_keys.index(key) for key in selected]
+                packed = tuple(value[indices].copy() for value in _accepted_bank(self._device))
+                entry = {
+                    name: value[indices].copy()
+                    for name, value in _accepted_entry(self._device).items()
+                }
+                _validate_entry(cloned, entry, self._ticks, self._receipts, packed[2])
+                replacement = cloned._build_device(proposed, packed=packed)
+                # Retain candidate ownership before any copy/verification can fail.
+                cloned._checkpoint_retired.append(replacement)
+                _verify_bank(replacement, packed)
+                _write_entry(replacement, entry)
                 previous = cloned._device
                 # Own both banks before retirement: a failed close must not
                 # abandon the replacement or the original clone allocation.
                 cloned._checkpoint_retired.append(previous)
                 cloned._device = replacement
+                cloned._checkpoint_retired.remove(replacement)
                 previous.close()
                 cloned._checkpoint_retired.remove(previous)
                 cloned._data = proposed

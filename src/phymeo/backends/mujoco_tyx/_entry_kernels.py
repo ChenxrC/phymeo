@@ -247,8 +247,12 @@ def constraint(
                         active = 1
                     active_seen = active_seen + active
                     if (
-                        pair < 0 or pair >= npair
-                        or ga < 0 or ga >= ngeom or gb < 0 or gb >= ngeom
+                        pair < 0
+                        or pair >= npair
+                        or ga < 0
+                        or ga >= ngeom
+                        or gb < 0
+                        or gb >= ngeom
                         or rows[w, s, 0] != 1.0
                         or (active == 1 and rows[w, s, 1] != 1.0)
                         or (active == 0 and rows[w, s, 1] != 0.0)

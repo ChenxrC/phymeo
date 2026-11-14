@@ -13,7 +13,7 @@ from . import MuJoCoTyxIssue as Issue
 from . import MuJoCoTyxUnsupported
 from ._joint_transmission import compile_joint_transmission
 from ._model import fp32
-from ._tree_model import TyxTreeModel, _rotation
+from ._tree_model import TyxTreeModel, native_frames
 
 MAX_BODIES = 128
 
@@ -216,19 +216,7 @@ def compile_floating_model(
     transmission = (
         compile_joint_transmission(mj, model, capacity=(35, 45)) if has_ball and model.nu else None
     )
-    body_data = np.zeros((model.nbody, 25))
-    for body in range(model.nbody):
-        body_data[body, :3] = model.body_pos[body]
-        body_data[body, 3:12] = _rotation(model.body_quat[body]).reshape(-1)
-        body_data[body, 12:15] = model.body_ipos[body]
-        body_data[body, 15] = model.body_mass[body]
-        principal = _rotation(model.body_iquat[body])
-        body_data[body, 16:25] = (
-            principal @ np.diag(model.body_inertia[body]) @ principal.T
-        ).reshape(-1)
-    joint_rows = model.njnt
-    joint_ids = np.zeros((joint_rows, 4), np.int32)
-    joint_data = np.zeros((joint_rows, 7))
+    body_data, joint_ids, joint_data = native_frames(mj, model)
     dof_ids = np.full((model.nv, 3), -1, np.int32)
     vectors = np.zeros((9, max(8, model.nq)))
     vectors[4, : model.nq] = model.qpos0
@@ -241,10 +229,6 @@ def compile_floating_model(
         kind = (
             3 if is_free else 2 if ball else int(model.jnt_type[joint] == mj.mjtJoint.mjJNT_HINGE)
         )
-        joint_ids[joint] = (kind, q, dof, int(model.jnt_bodyid[joint]))
-        joint_data[joint, :3] = model.jnt_axis[joint]
-        joint_data[joint, 3:6] = model.jnt_pos[joint]
-        joint_data[joint, 6] = model.qpos0[q]
         width = 6 if is_free else 3 if ball else 1
         for column in range(dof, dof + width):
             rotational = column >= dof + 3 if is_free else kind != 0

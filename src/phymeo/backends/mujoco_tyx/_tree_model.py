@@ -41,6 +41,35 @@ def _rotation(wxyz):
     return quaternion_matrix(np.asarray(wxyz)[None, [1, 2, 3, 0]])[0]
 
 
+def native_frames(mj, model):
+    """Shared static frames/addresses only; never compile or step a solver."""
+    body_data = np.zeros((model.nbody, 25))
+    for body in range(model.nbody):
+        body_data[body, :3] = model.body_pos[body]
+        body_data[body, 3:12] = _rotation(model.body_quat[body]).reshape(-1)
+        body_data[body, 12:15] = model.body_ipos[body]
+        body_data[body, 15] = model.body_mass[body]
+        principal = _rotation(model.body_iquat[body])
+        body_data[body, 16:25] = (
+            principal @ np.diag(model.body_inertia[body]) @ principal.T
+        ).reshape(-1)
+    joint_ids = np.empty((model.njnt, 4), np.int32)
+    joint_data = np.empty((model.njnt, 7))
+    kinds = {
+        mj.mjtJoint.mjJNT_FREE: 3,
+        mj.mjtJoint.mjJNT_BALL: 2,
+        mj.mjtJoint.mjJNT_HINGE: 1,
+        mj.mjtJoint.mjJNT_SLIDE: 0,
+    }
+    for joint in range(model.njnt):
+        q, dof = int(model.jnt_qposadr[joint]), int(model.jnt_dofadr[joint])
+        joint_ids[joint] = (kinds[model.jnt_type[joint]], q, dof, int(model.jnt_bodyid[joint]))
+        joint_data[joint, :3] = model.jnt_axis[joint]
+        joint_data[joint, 3:6] = model.jnt_pos[joint]
+        joint_data[joint, 6] = model.qpos0[q]
+    return body_data, joint_ids, joint_data
+
+
 def compile_ball_model(mj, model, *, allow_activation=False):
     """Compose admitted BALL mechanics with scalar/dry and contact constraints."""
     from ._constraint_model import compile_constraint_model, needs_constraints
@@ -232,18 +261,7 @@ def compile_tree_model(
     if issues:
         raise MuJoCoTyxUnsupported(issues)
     transmission = compile_joint_transmission(mj, model) if ball_target else None
-    body_data = np.zeros((model.nbody, 25))
-    for body in range(model.nbody):
-        body_data[body, :3] = model.body_pos[body]
-        body_data[body, 3:12] = _rotation(model.body_quat[body]).reshape(-1)
-        body_data[body, 12:15] = model.body_ipos[body]
-        body_data[body, 15] = model.body_mass[body]
-        principal = _rotation(model.body_iquat[body])
-        body_data[body, 16:25] = (
-            principal @ np.diag(model.body_inertia[body]) @ principal.T
-        ).reshape(-1)
-    joint_ids = np.empty((model.njnt, 4), np.int32)
-    joint_data = np.empty((model.njnt, 7))
+    body_data, joint_ids, joint_data = native_frames(mj, model)
     dof_ids = np.full((WIDTH, 3), -1, np.int32)
     vectors = np.zeros((9, max(WIDTH, int(model.nq))))
     vectors[4, : model.nq] = model.qpos0
@@ -253,10 +271,6 @@ def compile_tree_model(
         q, dof = int(model.jnt_qposadr[joint]), int(model.jnt_dofadr[joint])
         ball = model.jnt_type[joint] == mj.mjtJoint.mjJNT_BALL
         kind = 2 if ball else int(model.jnt_type[joint] == mj.mjtJoint.mjJNT_HINGE)
-        joint_ids[joint] = (kind, q, dof, int(model.jnt_bodyid[joint]))
-        joint_data[joint, :3] = model.jnt_axis[joint]
-        joint_data[joint, 3:6] = model.jnt_pos[joint]
-        joint_data[joint, 6] = model.qpos0[q]
         width = 3 if ball else 1
         for column in range(dof, dof + width):
             dof_ids[column] = (int(kind != 0), -1 if ball else q, joint)

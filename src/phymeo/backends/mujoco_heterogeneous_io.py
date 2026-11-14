@@ -83,10 +83,12 @@ class MuJoCoTyxHeterogeneousWorkspace:
     FREE q is world translation + WXYZ, FREE v world linear + local angular.
     """
 
-    def __init__(self, batch, *, cache_root=None):
+    def __init__(self, batch, *, cache_root=None, include_bodies=False):
         from .mujoco_tyx._heterogeneous_kernels import scatter
         from .mujoco_tyx._resources import DeviceResources
 
+        _require(type(include_bodies) is bool, "include_bodies must be bool")
+        self._body_observer = None
         self._batch, self._lock, self._closed = batch, RLock(), False
         self._storage = []
         self._resources, self._dependencies = DeviceResources(), DeviceResources()
@@ -126,7 +128,9 @@ class MuJoCoTyxHeterogeneousWorkspace:
                     clock="FP32 high-minus-compensation",
                     padding="zero-with-int32-valid-mask",
                     contact_tokens=False,
-                    endpoint_body_kinematics=False,
+                    endpoint_body_kinematics=include_bodies,
+                    body_velocity="world-linear-and-angular-at-body-origin",
+                    body_rotation="body-to-world-matrix",
                 )
             )
             batch._workspaces.add(self)
@@ -176,6 +180,10 @@ class MuJoCoTyxHeterogeneousWorkspace:
                     for i, key in enumerate(batch.world_keys):
                         value[i, : getattr(batch.layout[key], dim)] = 1
                     self._masks[name + "_mask"] = self._buffer(value)
+                if include_bodies:
+                    from .mujoco_tyx._body_observation import BodyObserver
+
+                    self._body_observer = BodyObserver(self)
             except BaseException as primary:
                 try:
                     self.close()
@@ -263,6 +271,8 @@ class MuJoCoTyxHeterogeneousWorkspace:
                                 self._stream.synchronize()
                                 self._counts["status_downloaded_bytes"] += status.nbytes
                             _require(not np.any(status), "nonfinite accepted native state")
+                    if self._body_observer is not None:
+                        self._body_observer.refresh_bucket(i, owner, destination, options)
                 frame = MuJoCoTyxHeterogeneousFrame(
                     self.binding,
                     batch._revision,

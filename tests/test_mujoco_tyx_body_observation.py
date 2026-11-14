@@ -25,10 +25,15 @@ from phymeo.backends.mujoco_runtime import MuJoCoControl, MuJoCoInitialState
 from phymeo.builders.mujoco_compiler import compile_mujoco_xml
 from phymeo.training.manipulation_tasks import H, manipulation_scenes
 
-
 MODES = ("interpret", pytest.param("cuda", marks=pytest.mark.cuda))
 KEYS = (41, 7, 305, 11, 203, 59, 91, 2)
-FAMILY = dict(zip(KEYS, ("t0", "scalar", "ball", "free-ball", "two-free", "tree", "free-ball", "two-free"), strict=True))
+FAMILY = dict(
+    zip(
+        KEYS,
+        ("t0", "scalar", "ball", "free-ball", "two-free", "tree", "free-ball", "two-free"),
+        strict=True,
+    )
+)
 BODY_FIELDS = ("body_position", "body_rotation", "body_linear_velocity", "body_angular_velocity")
 # Existing floating pose gates and fixed/floating Jacobian component gates.
 POSE_TOL = dict(rtol=3e-5, atol=4e-5)
@@ -45,7 +50,10 @@ def declarations(mj, keys=KEYS):
         "two-free": forest.source("two-free", object_first=False),
     }
     names = tuple(dict.fromkeys(FAMILY[key] for key in keys))
-    specs = tuple(MuJoCoTyxModelSpec(name, compile_mujoco_xml(sources[name], require_asset=False)) for name in names)
+    specs = tuple(
+        MuJoCoTyxModelSpec(name, compile_mujoco_xml(sources[name], require_asset=False))
+        for name in names
+    )
     models = {spec.key: spec.compilation.fresh_native_model() for spec in specs}
     worlds = []
     for key in keys:
@@ -59,19 +67,21 @@ def declarations(mj, keys=KEYS):
             initial = forest.initial(mj, model, slot=slot)
         else:
             q = model.qpos0.copy()
-            v = np.linspace(.2, .7, model.nv)
+            v = np.linspace(0.2, 0.7, model.nv)
             if name == "t0":
-                quat = np.array([.9, .17, -.23, .11])
+                quat = np.array([0.9, 0.17, -0.23, 0.11])
                 q[3:7] = quat / np.linalg.norm(quat)
             else:
-                q += .11 + .01*slot
-            initial = MuJoCoInitialState(q, v, time=.125)
+                q += 0.11 + 0.01 * slot
+            initial = MuJoCoInitialState(q, v, time=0.125)
         worlds.append(MuJoCoTyxWorldSpec(key, name, initial))
     return specs, tuple(worlds), models
 
 
 def controls(batch):
-    return {key: MuJoCoControl(np.full(row.nu, .025, np.float32)) for key, row in batch.layout.items()}
+    return {
+        key: MuJoCoControl(np.full(row.nu, 0.025, np.float32)) for key, row in batch.layout.items()
+    }
 
 
 def native_bodies(mj, model, state):
@@ -110,9 +120,12 @@ def check_bodies(batch, ws, frame, expected):
         count = batch.layout[key].nbody
         np.testing.assert_array_equal(values["body_mask"][index], np.arange(width) < count)
         for name in BODY_FIELDS:
-            np.testing.assert_allclose(values[name][index, :count], expected[key][name],
-                                       **(TWIST_TOL if "velocity" in name else POSE_TOL),
-                                       err_msg=f"{key}:{name}")
+            np.testing.assert_allclose(
+                values[name][index, :count],
+                expected[key][name],
+                **(TWIST_TOL if "velocity" in name else POSE_TOL),
+                err_msg=f"{key}:{name}",
+            )
             np.testing.assert_array_equal(values[name][index, count:], 0)
     return values
 
@@ -140,8 +153,18 @@ def refresh_without_host_physics(mj, batch, ws, monkeypatch):
         raise AssertionError("body refresh used HOST physics/state reconstruction")
 
     with monkeypatch.context() as guard:
-        for name in ("mj_step", "mj_forward", "mj_kinematics", "mj_comPos", "mj_comVel",
-                     "mj_jacBody", "mj_jacBodyCom", "mj_fullM", "mj_rne", "mj_jac"):
+        for name in (
+            "mj_step",
+            "mj_forward",
+            "mj_kinematics",
+            "mj_comPos",
+            "mj_comVel",
+            "mj_jacBody",
+            "mj_jacBodyCom",
+            "mj_fullM",
+            "mj_rne",
+            "mj_jac",
+        ):
             guard.setattr(mj, name, forbidden)
         for name in ("solve", "inv", "cholesky", "lstsq"):
             guard.setattr(np.linalg, name, forbidden)
@@ -154,7 +177,9 @@ def refresh_without_host_physics(mj, batch, ws, monkeypatch):
 
 @pytest.mark.parametrize("mode", MODES)
 @pytest.mark.parametrize("reverse", (False, True))
-def test_w8_endpoint_bodies_match_native_and_w1_without_changing_physics(mode, reverse, tmp_path, monkeypatch):
+def test_w8_endpoint_bodies_match_native_and_w1_without_changing_physics(
+    mode, reverse, tmp_path, monkeypatch
+):
     mj = legacy.deps(mode)
     keys = KEYS[::-1] if reverse else KEYS
     specs, worlds, models = declarations(mj, keys)
@@ -166,7 +191,10 @@ def test_w8_endpoint_bodies_match_native_and_w1_without_changing_physics(mode, r
         for world in worlds:
             spec = next(spec for spec in specs if spec.key == world.model_key)
             single = stack.enter_context(MuJoCoTyxHeterogeneousBatch((spec,), (world,), mode=mode))
-            singles[world.world] = (single, stack.enter_context(single.prepare_device_workspace(include_bodies=True)))
+            singles[world.world] = (
+                single,
+                stack.enter_context(single.prepare_device_workspace(include_bodies=True)),
+            )
         source = tuple(spec.compilation.source.primary_xml for spec in specs)
         assert len({row.nbody for row in batch.layout.values()}) > 1
         multi = models["two-free"]
@@ -182,24 +210,38 @@ def test_w8_endpoint_bodies_match_native_and_w1_without_changing_physics(mode, r
             assert io.exact(batch.integration_snapshot()) == before
             assert physical_bytes(batch) == allocations
             assert tuple(spec.compilation.source.primary_xml for spec in specs) == source
-            assert frame.ticks == (tick,)*8
+            assert frame.ticks == (tick,) * 8
             for index, key in enumerate(keys):
                 single, single_ws = singles[key]
                 assert io.exact(single.integration_snapshot()[key]) == io.exact(states[key])
                 single_frame = refresh_without_host_physics(mj, single, single_ws, monkeypatch)
                 single_values = check_bodies(single, single_ws, single_frame, {key: expected[key]})
                 for name in BODY_FIELDS:
-                    assert io.exact(values[name][index, :batch.layout[key].nbody]) == io.exact(single_values[name][0])
+                    assert io.exact(values[name][index, : batch.layout[key].nbody]) == io.exact(
+                        single_values[name][0]
+                    )
                 if tick and states[key].last_step.dynamics is not None:
                     entry = states[key].last_step.dynamics.body_position
-                    assert np.max(np.abs(values["body_position"][index, :len(entry)] - entry)) > 1e-6
+                    assert (
+                        np.max(np.abs(values["body_position"][index, : len(entry)] - entry)) > 1e-6
+                    )
             # Eccentric FREE root: origin velocity differs from COM, angular v is local in qvel.
             root = int(models["free-ball"].body("root").id)
             item = expected[11]
-            assert np.linalg.norm(item["body_linear_velocity"][root] - item["com_linear_velocity"][root]) > 1e-3
+            assert (
+                np.linalg.norm(
+                    item["body_linear_velocity"][root] - item["com_linear_velocity"][root]
+                )
+                > 1e-3
+            )
             qa = int(models["free-ball"].jnt_dofadr[models["free-ball"].joint("free").id])
-            local = states[11].v[qa + 3:qa + 6]
-            np.testing.assert_allclose(item["body_angular_velocity"][root], item["body_rotation"][root] @ local, rtol=0, atol=1e-12)
+            local = states[11].v[qa + 3 : qa + 6]
+            np.testing.assert_allclose(
+                item["body_angular_velocity"][root],
+                item["body_rotation"][root] @ local,
+                rtol=0,
+                atol=1e-12,
+            )
             assert np.linalg.norm(item["body_angular_velocity"][root] - local) > 1e-3
             if tick < 2:
                 packet = controls(batch)
@@ -215,10 +257,23 @@ def test_w8_endpoint_bodies_match_native_and_w1_without_changing_physics(mode, r
 def test_body_observation_is_opt_in_and_keeps_existing_native_fields(mode):
     mj = legacy.deps(mode)
     specs, worlds, _ = declarations(mj, (7, 11))
-    with MuJoCoTyxHeterogeneousBatch(specs, worlds, mode=mode) as batch, batch.prepare_device_workspace() as ws:
+    with (
+        MuJoCoTyxHeterogeneousBatch(specs, worlds, mode=mode) as batch,
+        batch.prepare_device_workspace() as ws,
+    ):
         data = io.compare_frame(batch, ws, ws.refresh(expected_revision=0))
         assert ws.binding["endpoint_body_kinematics"] is False
-        assert set(data) == {"q", "v", "act", "clock", "q_mask", "v_mask", "act_mask", "ctrl_mask", "body_mask"}
+        assert set(data) == {
+            "q",
+            "v",
+            "act",
+            "clock",
+            "q_mask",
+            "v_mask",
+            "act_mask",
+            "ctrl_mask",
+            "body_mask",
+        }
         assert not set(BODY_FIELDS).intersection(data)
 
 
@@ -226,7 +281,10 @@ def test_body_observation_is_opt_in_and_keeps_existing_native_fields(mode):
 def test_last_body_observation_failure_keeps_frame_and_solver_scratch(mode, monkeypatch):
     mj = legacy.deps(mode)
     specs, worlds, models = declarations(mj)
-    with MuJoCoTyxHeterogeneousBatch(specs, worlds, mode=mode) as batch, batch.prepare_device_workspace(include_bodies=True) as ws:
+    with (
+        MuJoCoTyxHeterogeneousBatch(specs, worlds, mode=mode) as batch,
+        batch.prepare_device_workspace(include_bodies=True) as ws,
+    ):
         batch.set_controls(controls(batch))
         batch.step(H)
         old = ws.refresh(expected_revision=batch.checkpoint_revision)
@@ -261,7 +319,10 @@ def test_last_body_observation_failure_keeps_frame_and_solver_scratch(mode, monk
 def test_body_workspace_follows_partial_reset_restore_and_replay(mode, tmp_path, monkeypatch):
     mj = legacy.deps(mode)
     specs, worlds, models = declarations(mj)
-    with MuJoCoTyxHeterogeneousBatch(specs, worlds, mode=mode) as batch, batch.prepare_device_workspace(include_bodies=True) as ws:
+    with (
+        MuJoCoTyxHeterogeneousBatch(specs, worlds, mode=mode) as batch,
+        batch.prepare_device_workspace(include_bodies=True) as ws,
+    ):
         batch.set_controls(controls(batch))
         batch.step(H)
         saved_frame = ws.refresh(expected_revision=batch.checkpoint_revision)
@@ -271,8 +332,11 @@ def test_body_workspace_follows_partial_reset_restore_and_replay(mode, tmp_path,
         successor_states = io.exact(batch.integration_snapshot())
         successor = ws.readback(ws.refresh(expected_revision=batch.checkpoint_revision))
         selection = (91, 2)
-        reset = {world.world: MuJoCoInitialState(world.initial_state.q, -world.initial_state.v)
-                 for world in worlds if world.world in selection}
+        reset = {
+            world.world: MuJoCoInitialState(world.initial_state.q, -world.initial_state.v)
+            for world in worlds
+            if world.world in selection
+        }
         owners = tuple(batch._buckets)
         before_reset = batch.integration_snapshot()
         batch.reset_states(reset, expected_revision=batch.checkpoint_revision)
@@ -299,7 +363,16 @@ def test_body_workspace_follows_partial_reset_restore_and_replay(mode, tmp_path,
         replay = ws.readback(refresh_without_host_physics(mj, batch, ws, monkeypatch))
         assert io.exact(replay) == io.exact(successor)
         assert io.exact(batch.integration_snapshot()) == successor_states
-        save(tmp_path / "body-boundaries.json.gz", dict(saved=saved, reset=reset_values, restored=restored, successor=successor, replay=replay))
+        save(
+            tmp_path / "body-boundaries.json.gz",
+            dict(
+                saved=saved,
+                reset=reset_values,
+                restored=restored,
+                successor=successor,
+                replay=replay,
+            ),
+        )
 
 
 @pytest.mark.cuda
@@ -308,7 +381,10 @@ def test_cuda_body_exports_are_torch_owned_copies(tmp_path):
 
     mj = legacy.deps("cuda")
     specs, worlds, models = declarations(mj, (11, 2))
-    with MuJoCoTyxHeterogeneousBatch(specs, worlds, mode="cuda") as batch, batch.prepare_device_workspace(include_bodies=True) as ws:
+    with (
+        MuJoCoTyxHeterogeneousBatch(specs, worlds, mode="cuda") as batch,
+        batch.prepare_device_workspace(include_bodies=True) as ws,
+    ):
         frame = ws.refresh(expected_revision=0)
         raw = ws.readback(frame)
         exported = ws.to_torch(frame)
@@ -327,7 +403,9 @@ def test_cuda_body_exports_are_torch_owned_copies(tmp_path):
         with pytest.raises(ValueError, match="stale|superseded"):
             ws.to_torch(frame)
         states = batch.integration_snapshot()
-        expected = {key: native_bodies(mj, models[FAMILY[key]], states[key]) for key in batch.world_keys}
+        expected = {
+            key: native_bodies(mj, models[FAMILY[key]], states[key]) for key in batch.world_keys
+        }
         save(tmp_path / "body-torch.json.gz", check_bodies(batch, ws, new_frame, expected))
 
 
@@ -335,11 +413,21 @@ def test_cuda_body_exports_are_torch_owned_copies(tmp_path):
 def test_eight_original_manipulation_scenes_export_native_endpoint_bodies(tmp_path, monkeypatch):
     mj = legacy.deps("cuda")
     scenes = manipulation_scenes()
-    specs = tuple(MuJoCoTyxModelSpec(scene.key, compile_mujoco_xml(scene.mjcf, require_asset=False)) for scene in scenes)
-    worlds = tuple(MuJoCoTyxWorldSpec(key, scene.key) for key, scene in zip(KEYS, scenes, strict=True))
-    models = {key: spec.compilation.fresh_native_model() for key, spec in zip(KEYS, specs, strict=True)}
+    specs = tuple(
+        MuJoCoTyxModelSpec(scene.key, compile_mujoco_xml(scene.mjcf, require_asset=False))
+        for scene in scenes
+    )
+    worlds = tuple(
+        MuJoCoTyxWorldSpec(key, scene.key) for key, scene in zip(KEYS, scenes, strict=True)
+    )
+    models = {
+        key: spec.compilation.fresh_native_model() for key, spec in zip(KEYS, specs, strict=True)
+    }
     history = []
-    with MuJoCoTyxHeterogeneousBatch(specs, worlds, mode="cuda") as batch, batch.prepare_device_workspace(include_bodies=True) as ws:
+    with (
+        MuJoCoTyxHeterogeneousBatch(specs, worlds, mode="cuda") as batch,
+        batch.prepare_device_workspace(include_bodies=True) as ws,
+    ):
         for tick in range(3):
             states = batch.integration_snapshot()
             expected = {key: native_bodies(mj, models[key], states[key]) for key in KEYS}
@@ -350,8 +438,58 @@ def test_eight_original_manipulation_scenes_export_native_endpoint_bodies(tmp_pa
                 assert tensors[name].is_cuda
                 assert io.exact(tensors[name].cpu().numpy()) == io.exact(values[name])
             history.append(dict(frame=frame, values=values, native=expected, step=batch.last_step))
-            assert frame.ticks == (tick,)*8
+            assert frame.ticks == (tick,) * 8
             if tick < 2:
                 batch.set_controls(controls(batch))
                 assert batch.step(H) == dict.fromkeys(KEYS, True)
     save(tmp_path / "manipulation-body-endpoints.json.gz", history)
+
+
+@pytest.mark.parametrize("mode", MODES)
+def test_activation_wrapped_geometry_and_nonfinite_output_are_transactional(mode, monkeypatch):
+    import test_mujoco_tyx_activation as activation
+
+    mj = legacy.deps(mode)
+    spec = MuJoCoTyxModelSpec(
+        "activation",
+        compile_mujoco_xml(activation.source("coupled", early=True), require_asset=False),
+    )
+    model = spec.compilation.fresh_native_model()
+    initial = MuJoCoInitialState(
+        model.qpos0 + 0.06, np.full(model.nv, -0.035), act=np.full(model.na, 0.24), time=0.125
+    )
+    with (
+        MuJoCoTyxHeterogeneousBatch(
+            (spec,), (MuJoCoTyxWorldSpec(41, spec.key, initial),), mode=mode
+        ) as batch,
+        batch.prepare_device_workspace(include_bodies=True) as ws,
+    ):
+        batch.set_controls(controls(batch))
+        batch.step(H)
+        state = batch.integration_snapshot()[41]
+        expected = {41: native_bodies(mj, model, state)}
+        old = refresh_without_host_physics(mj, batch, ws, monkeypatch)
+        previous = io.exact(check_bodies(batch, ws, old, expected))
+        scratch = physical_bytes(batch)
+        original = ws._body_observer.pack
+
+        def poison_rotation(*args, **kwargs):
+            ws._runtime.sync()
+            rotation = args[5]
+            value = rotation.copy() if mode == "interpret" else rotation.to_numpy()
+            value[0, -1, 0, 0] = np.inf
+            if mode == "interpret":
+                np.copyto(rotation, value)
+            else:
+                rotation.copy_from(value)
+                ws._runtime.sync()
+            return original(*args, **kwargs)
+
+        with monkeypatch.context() as fault:
+            fault.setattr(ws._body_observer, "pack", poison_rotation)
+            with pytest.raises(ValueError, match="invalid endpoint body observation"):
+                ws.refresh(expected_revision=batch.checkpoint_revision)
+        assert io.exact(ws.readback(old)) == previous
+        assert physical_bytes(batch) == scratch
+        retry = refresh_without_host_physics(mj, batch, ws, monkeypatch)
+        assert io.exact(check_bodies(batch, ws, retry, expected)) == previous

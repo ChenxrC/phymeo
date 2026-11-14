@@ -278,6 +278,7 @@ class MuJoCoTyxHeterogeneousBatch:
                     host_diagnostics=True,
                     device_native_state=True,
                     device_native_controls=True,
+                    device_endpoint_bodies=True,
                     device_contact_tokens=False,
                     cross_world_contacts=False,
                     scale_qualified=False,
@@ -469,11 +470,13 @@ class MuJoCoTyxHeterogeneousBatch:
                 )
             )
 
-    def prepare_device_workspace(self, *, cache_root=None):
+    def prepare_device_workspace(self, *, cache_root=None, include_bodies=False):
         """Own a padded native-state workspace; no physics or CPU forward."""
         from .mujoco_heterogeneous_io import MuJoCoTyxHeterogeneousWorkspace
 
-        return MuJoCoTyxHeterogeneousWorkspace(self, cache_root=cache_root)
+        return MuJoCoTyxHeterogeneousWorkspace(
+            self, cache_root=cache_root, include_bodies=include_bodies
+        )
 
     def set_controls_from_device(
         self,

@@ -34,6 +34,7 @@ def require(condition, message):
 def measure_run(
     run_directory, output_directory, object_name="object", group_names=("left-pad", "right-pad")
 ):
+    require(object_name == "object", "saved SuccessFrame only binds the task object")
     root, output = Path(run_directory).resolve(), Path(output_directory).resolve()
     manifest = json.loads((root / "manifest.json").read_text(encoding="utf-8-sig"))
     require(
@@ -103,6 +104,7 @@ def measure_run(
                 "contact payload is not from preceding trace",
             )
             frame = previous["success_frames"][str(info["world"])]
+            require(frame["object_key"] == object_name, "task object identity differs")
             origin = np.asarray(frame["object_position"], dtype=np.float64)
             quat = np.asarray(frame["object_wxyz"], dtype=np.float64)
             require(
@@ -136,13 +138,29 @@ def measure_run(
                 and abs(frame["time_s"] - measured.time_s) < 2e-6,
                 "success frame phase mismatch",
             )
+            world_wrenches = np.asarray(previous["contact_world_wrench"], dtype=np.float64)
+            body_wrenches = np.asarray(previous["contact_body_wrench"], dtype=np.float64)
+            capacity = arrays["entry_contact_ids"].shape[1]
+            require(
+                world_wrenches.shape == (1, capacity, 6) and np.isfinite(world_wrenches).all(),
+                "invalid published world wrench shape or finite values",
+            )
+            require(
+                body_wrenches.shape == (1, capacity, 2, 6) and np.isfinite(body_wrenches).all(),
+                "invalid published body wrench shape or finite values",
+            )
+            finger_loads = np.asarray(frame["finger_normal_forces_n"], dtype=np.float64)
+            require(
+                finger_loads.shape == (2,) and np.isfinite(finger_loads).all(),
+                "invalid published finger loads shape or finite values",
+            )
             for contact in measured.contacts:
                 index = contact.index
                 ids = previous["contact_ids"][0][index]
                 side = 0 if ids[4] == body else 1
                 sign = -1 if side == 0 else 1
-                published = sign * np.asarray(previous["contact_world_wrench"][0][index])
-                body_wrench = np.asarray(previous["contact_body_wrench"][0][index][side])
+                published = sign * world_wrenches[0, index]
+                body_wrench = body_wrenches[0, index, side]
                 shifted = body_wrench[3:] + np.cross(origin - com, body_wrench[:3])
                 force_error = max(
                     np.max(np.abs(published[:3] - contact.force_world)),
@@ -157,14 +175,7 @@ def measure_run(
             if group_names == ("left-pad", "right-pad"):
                 maximum_load = max(
                     maximum_load,
-                    float(
-                        np.max(
-                            np.abs(
-                                np.asarray(frame["finger_normal_forces_n"])
-                                - measured.group_normal_loads
-                            )
-                        )
-                    ),
+                    float(np.max(np.abs(finger_loads - measured.group_normal_loads))),
                 )
             require(
                 max(maximum_force, maximum_moment, maximum_load) < 2e-6,

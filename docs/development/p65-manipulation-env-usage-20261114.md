@@ -95,3 +95,18 @@ reset_observation = env.reset(chosen, goals=new_goals, expected_frame=env.curren
 Env借用batch并要求独占其写操作；直接在外部step/set_controls/reset会使Env frame失配。
 `close()`只关闭Env工作区，不关闭借用batch；导出的Torch副本继续有效。
 实际success评价目前有HOST读取与同步，吞吐评估须计入；尚无训练性能结论。
+
+## 候选排序、实际短推与完整 entry（2026-11-15）
+
+`phymeo.control.manipulation_push_rank.rank_planar_push_candidates(query, desired_translation_world, desired_yaw_change)`
+消费 `enumerate_native_planar_push_contacts` 的有界查询，返回不可变排序记录，保留所有候选。期望平移是世界XY向量，yaw为有符号角度；index仅路由，未作为策略输入。排序是几何启发，必须另查整机路径并用实际载荷验证。
+
+`scripts/run_manipulation_push.py` 是本批固定三场景诊断入口：qualify消费绑定的上批候选并保存分阶段路径；execute直接消费已合格冻结节点，各执行一次真实CUDA短推。它不是通用任务规划器或训练器，不用于任意来源文件。
+原脚本 `run_manipulation_control.py --record-entry` 可在诊断trace里保存本transition完整entry，默认关闭。COMPLETE仅在最终保存成功后设置；steps与recorded_steps分别描述接受和记录情况。
+
+`scripts/measure_manipulation_wrenches.py RUN_DIRECTORY OUTPUT_DIRECTORY --groups pusher`
+可读新CURRENT记录，包含最后一步；旧feedback记录仍按真实缺失末条报告，不合成entry。
+COM使用同一入步body rotation和绑定模型body_ipos；顶层q/v为步后端点，不能拿来解释本次入步载荷。other包含所有非分组对象接触，不能一概称台面；total不含重力。
+这是HOST诊断消费，不再执行forward/step，未声称零读回GPU训练路径。
+
+原三构型当前只过完整参考接近与2秒局部传力，完整原PushT目标仍未过；见[结果](p65-manipulation-push-route-report-20261115.md)。

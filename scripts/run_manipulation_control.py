@@ -180,7 +180,18 @@ def reference(nodes, seconds):
     return nodes[-1][2], np.zeros_like(nodes[-1][2]), nodes[-1][1]
 
 
-def run(output, steps, indices, preflight_only=False, slip_guard=False, plan_builder=build_plan):
+def run(
+    output,
+    steps,
+    indices,
+    preflight_only=False,
+    slip_guard=False,
+    plan_builder=build_plan,
+    *,
+    record_entry=False,
+):
+    if type(record_entry) is not bool:
+        raise ValueError("record_entry must be a bool")
     if output.exists() or not output.is_absolute():
         raise ValueError("fresh absolute output required")
     if (
@@ -258,8 +269,10 @@ def run(output, steps, indices, preflight_only=False, slip_guard=False, plan_bui
         status="FAILED_PREFIX",
         controller="diagnostic-native-pd",
         slip_feedback=bool(slip_guard),
+        record_entry=record_entry,
         h=H,
         steps=0,
+        recorded_steps=0,
         requested_steps=steps,
         state_file="states.jsonl.gz",
         worlds=worlds,
@@ -460,6 +473,15 @@ def run(output, steps, indices, preflight_only=False, slip_guard=False, plan_bui
                                         controller=diagnostics,
                                         slip_feedback=feedback,
                                         feedback_source=entry_arrays,
+                                        entry=(
+                                            {
+                                                name: value
+                                                for name, value in transition.observation.items()
+                                                if name.startswith("entry_")
+                                            }
+                                            if record_entry
+                                            else None
+                                        ),
                                         contact_ids=transition.observation["entry_contact_ids"],
                                         contact_data=transition.observation["entry_contact_data"],
                                         contact_world_wrench=transition.observation[
@@ -473,6 +495,7 @@ def run(output, steps, indices, preflight_only=False, slip_guard=False, plan_bui
                                         clock=transition.observation["clock"],
                                     ),
                                 )
+                                manifest["recorded_steps"] = tick + 1
                                 if (tick + 1) % 10 == 0:
                                     sample(batch, state_stream, tick + 1)
                                 if (tick + 1) % 100 == 0:
@@ -492,12 +515,13 @@ def run(output, steps, indices, preflight_only=False, slip_guard=False, plan_bui
                                     break
                             else:
                                 manifest["stopped_reason"] = "registered_window_complete"
-                            manifest["status"] = "COMPLETE"
                         finally:
                             if manifest["steps"] != last_sample:
                                 sample(batch, state_stream, manifest["steps"])
                         (output / "final.checkpoint").write_bytes(env.checkpoint().to_bytes())
+        manifest["status"] = "COMPLETE"
     except BaseException as error:
+        manifest["status"] = "FAILED_PREFIX"
         manifest["failure"] = dict(
             type=type(error).__name__,
             message=str(error),
@@ -544,5 +568,13 @@ if __name__ == "__main__":
     parser.add_argument("--worlds", type=int, nargs="+", default=list(range(8)))
     parser.add_argument("--preflight-only", action="store_true")
     parser.add_argument("--slip-guard", action="store_true")
+    parser.add_argument("--record-entry", action="store_true")
     args = parser.parse_args()
-    run(args.output, args.steps, tuple(args.worlds), args.preflight_only, args.slip_guard)
+    run(
+        args.output,
+        args.steps,
+        tuple(args.worlds),
+        args.preflight_only,
+        args.slip_guard,
+        record_entry=args.record_entry,
+    )

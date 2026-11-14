@@ -82,7 +82,10 @@ def _validate_query(query):
         and all(character in "0123456789abcdef" for character in query.input_binding),
         "query requires its full SHA256 input binding",
     )
-    _require(type(query.q) is np.ndarray and query.q.ndim == 1 and 1 <= query.q.size <= 45, "query q shape")
+    _require(
+        type(query.q) is np.ndarray and query.q.ndim == 1 and 1 <= query.q.size <= 45,
+        "query q shape",
+    )
     _array(query.q, query.q.shape, "query q")
     _array(query.plane_axes_world, (3, 3), "plane axes")
     _integer(query.object_body_id, "object body", 1, 127)
@@ -96,14 +99,21 @@ def _validate_query(query):
     for rectangle in query.rectangles:
         _require(type(rectangle) is PlanarPushRectangle, "query rectangle type")
         geom = _integer(rectangle.geometry_id, "rectangle geometry", 0, 127)
-        _require(geom not in geometry_ids and geom != query.pusher_geom_id, "query geometry identity")
+        _require(
+            geom not in geometry_ids and geom != query.pusher_geom_id, "query geometry identity"
+        )
         geometry_ids.add(geom)
         _require(type(rectangle.geometry_name) is str and rectangle.geometry_name, "rectangle name")
         lower = _vector(rectangle.lower_xy, 2, "rectangle lower")
         upper = _vector(rectangle.upper_xy, 2, "rectangle upper")
         z = _vector(rectangle.z_interval_world, 2, "rectangle Z interval")
-        _require(all(lo < hi for lo, hi in zip(lower, upper, strict=True)) and z[0] < z[1], "rectangle bounds")
-    _require(type(query.boundary) is tuple and 1 <= len(query.boundary) <= 16, "query boundary tuple")
+        _require(
+            all(lo < hi for lo, hi in zip(lower, upper, strict=True)) and z[0] < z[1],
+            "rectangle bounds",
+        )
+    _require(
+        type(query.boundary) is tuple and 1 <= len(query.boundary) <= 16, "query boundary tuple"
+    )
     edges = {}
     for edge in query.boundary:
         _require(type(edge) is PlanarPushBoundaryEdge, "query edge type")
@@ -133,8 +143,11 @@ def _validate_query(query):
             "candidate edge parameter",
         )
         for name in (
-            "point_world", "outward_normal_world", "contact_center_world",
-            "precontact_center_world", "approach_direction_world",
+            "point_world",
+            "outward_normal_world",
+            "contact_center_world",
+            "precontact_center_world",
+            "approach_direction_world",
         ):
             _vector(getattr(candidate, name), 3, name)
         wrench = _vector(candidate.normal_wrench_com_world, 6, "normal wrench")
@@ -143,7 +156,8 @@ def _validate_query(query):
             _require(all(distance >= 0 for distance in distances), "negative analytic distance")
         _require(type(candidate.usable) is bool, "candidate usable must be bool")
         _require(
-            type(candidate.reason) is str and candidate.reason
+            type(candidate.reason) is str
+            and candidate.reason
             and (candidate.reason == "clear") == candidate.usable,
             "candidate reason and usability differ",
         )

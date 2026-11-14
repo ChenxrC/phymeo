@@ -19,3 +19,5 @@
 短推报告接触区间、真实冲量/COM矩时间积分、对象位移/yaw、原Goal；名义Mz不能直接决定yaw，因为台面摩擦/其他载荷也在。短推未到Goal不算故障或整体通过。没有新观测前不加第二窗/扫参数；必要下一步明确据结果修路径或设计同轨迹长目标推进。
 
 整个批次是通用候选排序和路径/真实传力连接，不是共享语言网络训练。无新deadline、CI、安装、push或清理。旧通过集复用。
+
+协议审查补足：检查网格只声明最大采样间隔.001，真实sample times保留，不冒称恰覆盖每个控制tick。保存执行实际qref/vref供后验绑定。collector的COMPLETE只在保存checkpoint和退出上下文成功后设置，异常统一FAILED_PREFIX，并分别保留物理accepted steps及已emit记录数，禁止失败后重跑同窗。最后2000步入步时刻约1.999s，不把.2s计划hold等同通过原dwell。完整记录所有接触（含非pusher对象/机器人接触），report保真实max penetration/force及阶段时间，不隐藏软接触误差。

@@ -111,9 +111,9 @@ def _boundary(rectangles):
             owners = tuple(
                 r.geometry_id
                 for r in rectangles
-                if abs((r.lower_xy if sign < 0 else r.upper_xy)[axis] - fixed)
-                <= QUERY_TOLERANCE_M
-                and r.lower_xy[other] - QUERY_TOLERANCE_M <= middle
+                if abs((r.lower_xy if sign < 0 else r.upper_xy)[axis] - fixed) <= QUERY_TOLERANCE_M
+                and r.lower_xy[other] - QUERY_TOLERANCE_M
+                <= middle
                 <= r.upper_xy[other] + QUERY_TOLERANCE_M
             )
             _require(bool(owners), "exterior edge has no source BOX owner")
@@ -230,7 +230,9 @@ def enumerate_native_planar_push_contacts(
     )
     names = _names(object_geom_names, "object_geom_names", 1, 2)
     _require(type(pusher_geom_name) is str and pusher_geom_name, "pusher geom name is required")
-    fractions = tuple(_number(v, "edge fraction") for v in _items(edge_fractions, "fractions", 1, 8))
+    fractions = tuple(
+        _number(v, "edge fraction") for v in _items(edge_fractions, "fractions", 1, 8)
+    )
     angles = tuple(_number(v, "approach angle") for v in _items(approach_angles, "angles", 1, 5))
     _require(
         len(set(fractions)) == len(fractions) and all(0 < v < 1 for v in fractions),
@@ -246,13 +248,13 @@ def enumerate_native_planar_push_contacts(
         "max_candidates must be an integer in 1..128",
     )
     configuration = _configuration(mj, model, q)
-    objects = tuple(
-        sorted(int(mj.mj_name2id(model, mj.mjtObj.mjOBJ_GEOM, name)) for name in names)
-    )
+    objects = tuple(sorted(int(mj.mj_name2id(model, mj.mjtObj.mjOBJ_GEOM, name)) for name in names))
     pusher = int(mj.mj_name2id(model, mj.mjtObj.mjOBJ_GEOM, pusher_geom_name))
     _require(objects[0] >= 0 and pusher >= 0 and pusher not in objects, "unknown or reused geom")
     body = int(model.geom_bodyid[objects[0]])
-    _require(body > 0 and all(int(model.geom_bodyid[g]) == body for g in objects), "one object body")
+    _require(
+        body > 0 and all(int(model.geom_bodyid[g]) == body for g in objects), "one object body"
+    )
     _require(
         set(objects) == set(map(int, np.flatnonzero(model.geom_bodyid == body))),
         "object geoms must cover the complete native body",
@@ -309,24 +311,35 @@ def enumerate_native_planar_push_contacts(
         center = axes.T @ (data.geom_xpos[geom] - origin)
         lo, hi = center[:2] - half[:2], center[:2] + half[:2]
         z = (float(data.geom_xpos[geom, 2] - half[2]), float(data.geom_xpos[geom, 2] + half[2]))
-        _require(np.isfinite(lo).all() and np.isfinite(hi).all() and all(map(isfinite, z)), "BOX bounds")
+        _require(
+            np.isfinite(lo).all() and np.isfinite(hi).all() and all(map(isfinite, z)), "BOX bounds"
+        )
         rectangles.append(
             PlanarPushRectangle(
-                geom, mj.mj_id2name(model, mj.mjtObj.mjOBJ_GEOM, geom),
-                tuple(map(float, lo)), tuple(map(float, hi)), z,
+                geom,
+                mj.mj_id2name(model, mj.mjtObj.mjOBJ_GEOM, geom),
+                tuple(map(float, lo)),
+                tuple(map(float, hi)),
+                z,
             )
         )
     _require(
         all(
             abs(a - b) <= ALIGNMENT_TOLERANCE
-            for rect in rectangles for a, b in zip(rect.z_interval_world, rectangles[0].z_interval_world)
+            for rect in rectangles
+            for a, b in zip(rect.z_interval_world, rectangles[0].z_interval_world)
         ),
         "BOX geoms do not share a Z interval",
     )
     pusher_center = data.geom_xpos[pusher]
     radius = float(model.geom_size[pusher, 0])
-    half_length = float(model.geom_size[pusher, 1]) if kind == int(mj.mjtGeom.mjGEOM_CAPSULE) else 0.0
-    _require(isfinite(radius) and radius > 0 and isfinite(half_length) and half_length >= 0, "pusher size")
+    half_length = (
+        float(model.geom_size[pusher, 1]) if kind == int(mj.mjtGeom.mjGEOM_CAPSULE) else 0.0
+    )
+    _require(
+        isfinite(radius) and radius > 0 and isfinite(half_length) and half_length >= 0,
+        "pusher size",
+    )
     if kind == int(mj.mjtGeom.mjGEOM_CAPSULE):
         axis = data.geom_xmat[pusher].reshape(3, 3)[:, 2]
         _require(
@@ -337,7 +350,10 @@ def enumerate_native_planar_push_contacts(
     zlo = max(r.z_interval_world[0] for r in rectangles)
     zhi = min(r.z_interval_world[1] for r in rectangles)
     cz = float(pusher_center[2])
-    _require(max(zlo, cz - half_length - radius) < min(zhi, cz + half_length + radius), "no Z volume overlap")
+    _require(
+        max(zlo, cz - half_length - radius) < min(zhi, cz + half_length + radius),
+        "no Z volume overlap",
+    )
     contact_lo, contact_hi = max(zlo, cz - half_length), min(zhi, cz + half_length)
     _require(contact_lo <= contact_hi, "cap-only Z overlap is unsupported for a full-radius query")
     contact_z = 0.5 * (contact_lo + contact_hi)
@@ -349,7 +365,9 @@ def enumerate_native_planar_push_contacts(
     )
 
     def world(xy, height):
-        return _tuple3(origin + axes[:, 0] * xy[0] + axes[:, 1] * xy[1] + (0, 0, height - origin[2]))
+        return _tuple3(
+            origin + axes[:, 0] * xy[0] + axes[:, 1] * xy[1] + (0, 0, height - origin[2])
+        )
 
     boundary, candidates = [], []
     for edge_index, (axis, sign, fixed, owners, low, high) in enumerate(local_edges):
@@ -358,7 +376,9 @@ def enumerate_native_planar_push_contacts(
         start[1 - axis], end[1 - axis] = low, high
         normal_world = _tuple3(axes[:, :2] @ normal)
         boundary.append(
-            PlanarPushBoundaryEdge(edge_index, world(start, contact_z), world(end, contact_z), normal_world, owners)
+            PlanarPushBoundaryEdge(
+                edge_index, world(start, contact_z), world(end, contact_z), normal_world, owners
+            )
         )
         for fraction in fractions:
             point = start + fraction * (end - start)
@@ -370,8 +390,10 @@ def enumerate_native_planar_push_contacts(
             _require(all(map(isfinite, wrench)), "nonfinite nominal wrench")
             for angle in angles:
                 direction = np.array(
-                    (-cos(angle) * normal[0] + sin(angle) * normal[1],
-                     -sin(angle) * normal[0] - cos(angle) * normal[1])
+                    (
+                        -cos(angle) * normal[0] + sin(angle) * normal[1],
+                        -sin(angle) * normal[0] - cos(angle) * normal[1],
+                    )
                 )
                 precontact = center - stand_off * direction
                 _require(np.isfinite(precontact).all(), "nonfinite precontact center")
@@ -386,32 +408,61 @@ def enumerate_native_planar_push_contacts(
                     reason = "contact-occluded"
                 elif not any(
                     abs(distances[index] - radius) <= QUERY_TOLERANCE_M
-                    for index, rect in enumerate(rectangles) if rect.geometry_id in owners
+                    for index, rect in enumerate(rectangles)
+                    if rect.geometry_id in owners
                 ):
                     reason = "no-boundary-contact"
                 elif any(distance < radius - QUERY_TOLERANCE_M for distance in entry):
                     reason = "entry-occluded"
                 candidates.append(
                     NativePlanarPushContactCandidate(
-                        len(candidates), edge_index, fraction, angle, owners, point_world,
-                        normal_world, world(center, cz), world(precontact, cz),
-                        _tuple3(axes[:, :2] @ direction), wrench, distances, entry,
-                        reason == "clear", reason,
+                        len(candidates),
+                        edge_index,
+                        fraction,
+                        angle,
+                        owners,
+                        point_world,
+                        normal_world,
+                        world(center, cz),
+                        world(precontact, cz),
+                        _tuple3(axes[:, :2] @ direction),
+                        wrench,
+                        distances,
+                        entry,
+                        reason == "clear",
+                        reason,
                     )
                 )
     request = json.dumps(
         dict(
-            schema="native-planar-push-contacts-v1", q_fp64=configuration.tobytes().hex(),
-            object_geom_names=[r.geometry_name for r in rectangles], pusher_geom_name=pusher_geom_name,
-            edge_fractions=fractions, approach_angles=angles, stand_off_m=stand_off,
-            max_candidates=int(max_candidates), query_tolerance_m=QUERY_TOLERANCE_M,
+            schema="native-planar-push-contacts-v1",
+            q_fp64=configuration.tobytes().hex(),
+            object_geom_names=[r.geometry_name for r in rectangles],
+            pusher_geom_name=pusher_geom_name,
+            edge_fractions=fractions,
+            approach_angles=angles,
+            stand_off_m=stand_off,
+            max_candidates=int(max_candidates),
+            query_tolerance_m=QUERY_TOLERANCE_M,
             alignment_tolerance=ALIGNMENT_TOLERANCE,
         ),
-        sort_keys=True, separators=(",", ":"), allow_nan=False,
+        sort_keys=True,
+        separators=(",", ":"),
+        allow_nan=False,
     ).encode("utf-8")
     binding = sha256(len(binary).to_bytes(8, "little") + binary + request).hexdigest()
     _require(_model_bytes(mj, model) == binary, "native model changed during push query")
     return NativePlanarPushContacts(
-        binding, _readonly(configuration), body, com, pusher, radius, _tuple3(origin),
-        _readonly(axes), tuple(rectangles), tuple(boundary), tuple(candidates), QUERY_TOLERANCE_M,
+        binding,
+        _readonly(configuration),
+        body,
+        com,
+        pusher,
+        radius,
+        _tuple3(origin),
+        _readonly(axes),
+        tuple(rectangles),
+        tuple(boundary),
+        tuple(candidates),
+        QUERY_TOLERANCE_M,
     )

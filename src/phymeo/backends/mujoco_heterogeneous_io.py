@@ -22,6 +22,7 @@ class MuJoCoTyxHeterogeneousFrame:
     revision: int
     epoch: int
     ticks: tuple
+    world_boundaries: tuple = ()
 
 
 @dataclass(frozen=True)
@@ -58,6 +59,9 @@ def _metadata(batch):
                 "jnt_limited",
                 "jnt_range",
                 "body_parentid",
+                "body_jntadr",
+                "body_jntnum",
+                "geom_bodyid",
                 "body_pos",
                 "body_quat",
                 "body_mass",
@@ -70,6 +74,7 @@ def _metadata(batch):
         }
         fields["joint_names"] = tuple(model.joint(i).name for i in range(model.njnt))
         fields["body_names"] = tuple(model.body(i).name for i in range(model.nbody))
+        fields["geom_names"] = tuple(model.geom(i).name for i in range(model.ngeom))
         fields["actuator_names"] = tuple(model.actuator(i).name for i in range(model.nu))
         result[spec.key] = MappingProxyType(fields)
     return MappingProxyType(result)
@@ -83,11 +88,13 @@ class MuJoCoTyxHeterogeneousWorkspace:
     FREE q is world translation + WXYZ, FREE v world linear + local angular.
     """
 
-    def __init__(self, batch, *, cache_root=None, include_bodies=False):
+    def __init__(self, batch, *, cache_root=None, include_bodies=False, include_contacts=False):
         from .mujoco_tyx._heterogeneous_kernels import scatter
         from .mujoco_tyx._resources import DeviceResources
 
         _require(type(include_bodies) is bool, "include_bodies must be bool")
+        _require(type(include_contacts) is bool, "include_contacts must be bool")
+        self._entry_observer = None
         self._body_observer = None
         self._batch, self._lock, self._closed = batch, RLock(), False
         self._storage = []
@@ -127,7 +134,40 @@ class MuJoCoTyxHeterogeneousWorkspace:
                     free_v="world-linear,body-local-angular",
                     clock="FP32 high-minus-compensation",
                     padding="zero-with-int32-valid-mask",
-                    contact_tokens=False,
+                    contact_tokens=include_contacts,
+                    entry_phase="accepted-step-input" if include_contacts else None,
+                    entry_body_kinematics=include_contacts,
+                    contact_frame="rows-of-contact-axes-in-world",
+                    contact_wrench_world="on-geometry2-at-contact-point:force,couple",
+                    contact_body_wrench="on-body1,body2-at-body-origin:world-force,moment",
+                    entry_meta=(
+                        "valid",
+                        "input_tick",
+                        "output_tick",
+                        "detected",
+                        "active",
+                        "overflow",
+                    ),
+                    entry_contact_ids=(
+                        "valid",
+                        "active",
+                        "geom1",
+                        "geom2",
+                        "body1",
+                        "body2",
+                        "feature",
+                        "condim",
+                    ),
+                    entry_contact_data=(
+                        "distance",
+                        "point3",
+                        "frame-rows9",
+                        "contact-wrench6",
+                        "include_margin",
+                    ),
+                    entry_contact_capacity=max(1, max(o._contact_capacity for o in batch._buckets))
+                    if include_contacts
+                    else 0,
                     endpoint_body_kinematics=include_bodies,
                     body_velocity="world-linear-and-angular-at-body-origin",
                     body_rotation="body-to-world-matrix",
@@ -184,6 +224,10 @@ class MuJoCoTyxHeterogeneousWorkspace:
                     from .mujoco_tyx._body_observation import BodyObserver
 
                     self._body_observer = BodyObserver(self)
+                if include_contacts:
+                    from .mujoco_tyx._entry_observation import EntryObserver
+
+                    self._entry_observer = EntryObserver(self)
             except BaseException as primary:
                 try:
                     self.close()
@@ -273,6 +317,8 @@ class MuJoCoTyxHeterogeneousWorkspace:
                             _require(not np.any(status), "nonfinite accepted native state")
                     if self._body_observer is not None:
                         self._body_observer.refresh_bucket(i, owner, destination, options)
+                    if self._entry_observer is not None:
+                        self._entry_observer.refresh_bucket(i, owner, destination, options)
                 frame = MuJoCoTyxHeterogeneousFrame(
                     self.binding,
                     batch._revision,
@@ -280,6 +326,7 @@ class MuJoCoTyxHeterogeneousWorkspace:
                     tuple(
                         batch._buckets[batch.layout[k].bucket]._ticks[k] for k in batch.world_keys
                     ),
+                    tuple(batch._world_boundaries[k] for k in batch.world_keys),
                 )
             except BaseException:
                 self._counts["failed_refreshes"] += 1

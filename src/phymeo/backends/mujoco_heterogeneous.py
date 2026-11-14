@@ -11,6 +11,7 @@ from contextlib import ExitStack, contextmanager, nullcontext
 from dataclasses import dataclass, replace
 from threading import RLock
 from types import MappingProxyType
+from uuid import uuid4
 from weakref import WeakKeyDictionary
 
 import numpy as np
@@ -205,6 +206,8 @@ class MuJoCoTyxHeterogeneousBatch:
         self._lock = RLock() if resource_budget is None else resource_budget._lock
         self._busy, self._closed = False, False
         self._revision, self._last_step = 0, None
+        lineage = uuid4().hex
+        self._world_boundaries = {k: (lineage, 0, "initial") for k in world_keys}
         self._mode, self._cache_root, self._h = mode, cache_root, h
         self._world_keys, self._worlds, self._models = world_keys, worlds, models
         self._buckets, self._retired, self._cleanup_errors = (), [], ()
@@ -279,7 +282,7 @@ class MuJoCoTyxHeterogeneousBatch:
                     device_native_state=True,
                     device_native_controls=True,
                     device_endpoint_bodies=True,
-                    device_contact_tokens=False,
+                    device_contact_tokens=True,
                     cross_world_contacts=False,
                     scale_qualified=False,
                     explicit_resource_budget=resource_budget is not None,
@@ -470,12 +473,17 @@ class MuJoCoTyxHeterogeneousBatch:
                 )
             )
 
-    def prepare_device_workspace(self, *, cache_root=None, include_bodies=False):
+    def prepare_device_workspace(
+        self, *, cache_root=None, include_bodies=False, include_contacts=False
+    ):
         """Own a padded native-state workspace; no physics or CPU forward."""
         from .mujoco_heterogeneous_io import MuJoCoTyxHeterogeneousWorkspace
 
         return MuJoCoTyxHeterogeneousWorkspace(
-            self, cache_root=cache_root, include_bodies=include_bodies
+            self,
+            cache_root=cache_root,
+            include_bodies=include_bodies,
+            include_contacts=include_contacts,
         )
 
     def set_controls_from_device(
@@ -783,6 +791,10 @@ class MuJoCoTyxHeterogeneousBatch:
                 **self._stats,
                 "boundary_operations": self._stats["boundary_operations"] + 1,
             }
+            boundaries = dict(self._world_boundaries)
+            for key in selected:
+                lineage, serial, _ = boundaries[key]
+                boundaries[key] = (lineage, serial + 1, operation)
             self._before_commit(operation, result)
         except BaseException as primary:
             self._stats["boundary_refusals"] += 1
@@ -793,6 +805,7 @@ class MuJoCoTyxHeterogeneousBatch:
                 ) from None
             raise
         self._buckets, self._last_step = replacement_buckets, restored_publication
+        self._world_boundaries = boundaries
         self._revision, self._stats = result.revision_after, counters
         failures = self._close_owners(retired)
         object.__setattr__(result, "cleanup_errors", tuple(repr(error) for error in failures))

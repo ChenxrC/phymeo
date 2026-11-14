@@ -14,17 +14,18 @@ BODY_FIELDS = ("body_position", "body_rotation", "body_linear_velocity", "body_a
 
 
 class BodyObserver:
-    def __init__(self, workspace):
+    def __init__(self, workspace, *, prefix=""):
         from . import _floating_kernels, _tree_kernels
         from ._body_observation_kernels import pack_bodies
 
         self.workspace = workspace
+        self.fields = tuple(prefix + name for name in BODY_FIELDS)
         self.pack = pack_bodies
         self.scratch, self.static, self.floating = [], [], []
         batch = workspace._batch
         for bank in workspace._banks:
-            for name in BODY_FIELDS:
-                tail = (3, 3) if name == "body_rotation" else (3,)
+            for name in self.fields:
+                tail = (3, 3) if name.endswith("body_rotation") else (3,)
                 bank[name] = workspace._buffer(
                     np.zeros(
                         (len(batch.world_keys), workspace._dimensions["nbody"], *tail), np.float32
@@ -76,7 +77,7 @@ class BodyObserver:
                     )
                 )
 
-    def refresh_bucket(self, index, owner, destination, options):
+    def refresh_bucket(self, index, owner, destination, options, *, q=None, v=None):
         ws, device = self.workspace, owner._device
         fields = self.static[index]
         if fields is None:
@@ -100,8 +101,8 @@ class BodyObserver:
             geometry(
                 *prefix,
                 *inputs,
-                device.q[device.active],
-                device.v[device.active],
+                device.q[device.active] if q is None else q,
+                device.v[device.active] if v is None else v,
                 *(
                     scratch[k]
                     for k in ("motion", "rotation", "axes", "anchors", "work", "work_rotation")
@@ -117,7 +118,7 @@ class BodyObserver:
                 ws._rows[index],
                 scratch["motion"],
                 scratch["rotation"],
-                *(ws._banks[destination][k] for k in BODY_FIELDS),
+                *(ws._banks[destination][k] for k in self.fields),
                 ws._status[index],
                 **options,
             )

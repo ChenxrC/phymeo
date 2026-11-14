@@ -58,7 +58,12 @@ def scatter(
                 status[w] = 2
             elif before + 1 != after:
                 status[w] = 2
-            if detected < 0 or detected > contact_capacity or active_count < 0 or active_count > detected:
+            if (
+                detected < 0
+                or detected > contact_capacity
+                or active_count < 0
+                or active_count > detected
+            ):
                 status[w] = 2
             for k in range(6):
                 meta_out[row, k] = source_meta[w, k]
@@ -160,10 +165,18 @@ def scatter(
                     feature = source_ids[w, c, 6]
                     dim = source_ids[w, c, 7]
                     if (
-                        source_ids[w, c, 0] != 1 or (active != 0 and active != 1)
-                        or geom1 < 0 or geom1 >= ngeom or geom2 < 0 or geom2 >= ngeom
-                        or body1 < 0 or body1 >= nbody or body2 < 0 or body2 >= nbody
-                        or feature < 0 or (dim != 1 and dim != 3 and dim != 4 and dim != 6)
+                        source_ids[w, c, 0] != 1
+                        or (active != 0 and active != 1)
+                        or geom1 < 0
+                        or geom1 >= ngeom
+                        or geom2 < 0
+                        or geom2 >= ngeom
+                        or body1 < 0
+                        or body1 >= nbody
+                        or body2 < 0
+                        or body2 >= nbody
+                        or feature < 0
+                        or (dim != 1 and dim != 3 and dim != 4 and dim != 6)
                     ):
                         status[w] = 2
                     if active == 1:

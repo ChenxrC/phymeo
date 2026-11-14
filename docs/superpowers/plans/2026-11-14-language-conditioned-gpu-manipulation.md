@@ -169,7 +169,7 @@ M2-A产品 `2de488b9`，8场景集成最终快照 `7fed0cc4`；
 
 | 节点 | 难度 | 具体产物与验收 |
 | --- | --- | --- |
-| M2-B1 端点对象/结构特征 | 高 | 从accepted q/v复用现有lowering/FK，在独立工作区导出body世界位姿/速度、FREE local→world角速度和mask。至少多树/非首FREE/BALL/固定体/W1-W8/排列；禁止观察改写physics bank；同入步独立原生对照。 |
+| M2-B1 端点对象/结构特征 | 高 | 从accepted q/v复用现有lowering/FK，在独立工作区导出body世界位姿/速度、FREE local→world角速度和mask。至少多树/非首FREE/BALL/固定体/W1-W8/排列；禁止观察改写physics bank；同端点独立原生对照；第三批源码结果见第11节。 |
 | M2-B2 接触特征与相位绑定 | 高 | 复用原设备接触结果，保留真实geom/body、点/法向/双侧力矩、input tick/time、有效mask及overflow。以输入位姿/速度/接触力共同形成SuccessFrame；不能把旧scratch或旧epoch当端点。覆盖无接触/落地/双侧载荷/最后桶失败及reset后的旧记录拒绝。 |
 | M2-B3 Env生命周期 | 中高 | 在既有VecEnv/RSL接缝扩展异构观察、masked动作、目标/episode绑定、选择性reset、final observation/terminated/truncated与checkpoint；验证目标与物理状态一起恢复，padding不进入概率/损失。 |
 | T1 可控性首批 | 高 | 在八模型矩阵中先选不同构型的抓/放/推各一例，使用真实执行器和同相位载荷证明目标可达与接触有效，再覆盖其他构型；控制器只作物理诊断，失败保留，不当学习结果。 |
@@ -179,3 +179,29 @@ M2-A产品 `2de488b9`，8场景集成最终快照 `7fed0cc4`；
 本批已通过的M2-A用例与M0静态检查按原证据复用，仅改动影响的门和新能力执行。
 若B1/B2发现相位或native地址不一致，先用最小双模型反例修正共享机制，不能通过改数据行顺序/复制HOST状态掩盖。
 32步落地不足以承诺长窗支撑；T1须预先登记任务窗口和物理判据，不能以单步力或平均reward替代完整操作。
+
+## 11. 第三批 B1 与下一批 B2（2026-11-14）
+
+M2-B1 公共 `include_bodies=True` 已完成14项新源码验证（解释6、CUDA8）；
+[详细报告](../../development/p65-body-observation-report-20261114.md)记录受影响兼容结果与证据。
+端点 body origin 世界位姿/线角速度及 body→world 矩阵与 accepted q/v/act/clock 共同发布；
+默认关闭。跨构型、排列、W1/W8、失败、partial reset/restore、Torch及八场景两步已覆盖。
+B1 不提供接触 token，也不授予抓放/PushT 成功或训练资格。
+
+B2 按以下依赖执行，不直接读取旧 scratch，也不将 HOST receipt 再上传伪装为设备观察：
+
+1. **B2a 叶子 accepted-entry bank（高）**：在 step prepare 内 D2D 保存本次真实入步 body 状态与接触结果，
+   output/input tick、补偿时钟、有效性与溢出随全桶物理提交一起接受。单独的 `entry_valid` 区分 reset 后无记录和成功空接触。
+2. **B2b 各接触路由归一（高）**：覆盖 T0/T1 固定 rows、T3 normal_rows、T4 contact_map/contact_wrench；
+   保留原 geom/body/feature/condim、frame/点/距离/实际 wrench。T4 contact index 不等于 slot index，
+   limit/dry 约束行不能当接触。世界力、双侧反作用与力矩参考点须明示。
+3. **B2c 公共观察与完整边界（高）**：workspace 只 scatter 已接受记录；失败保留上一 entry，
+   selected reset 只清所选行，checkpoint/restore 保存/恢复完整 entry 及相位，而非从端点重建过去载荷。
+   controls revision 变化不伪造新的物理 input tick。
+4. **B2d 接成功判据（中）**：SuccessFrame 的位姿、速度、力来自同一 entry，按 input tick 消费一次。
+   reset 后不生成虚构零接触帧；首个成功 step 提供 tick0 入步记录。B3 再连接 goal/episode/history 与物理 checkpoint。
+
+测试矩阵须包含：无记录/有效空集合/非激活检测/实际受载、非共线摩擦与多个接触点、limits/dry混合、
+非首FREE/变构型/行序与padding、W1/W8、最后桶失败/重试、reset/restore/下一步重放、
+Torch副本、分配预算/关闭、禁止HOST状态或receipt重建，以及端点与入步故意不同的相位反例。
+先验两种路由再扩完整既定矩阵；若无法保留原始双侧载荷或边界一致性，停在具体缺失的共享机制，不绕开公共协议做私有训练脚本。

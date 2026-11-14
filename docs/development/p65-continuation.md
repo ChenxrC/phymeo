@@ -1,6 +1,8 @@
 # Phymeo 当前续作入口
 
-> 2026-11-14 第二批：M2-A公共异构GPU状态/动作/reset接口已完成源码资格（2de488b9）；八份真实操作场景静态24项通过，并在同GPU各32步/256环境步与独立CUDA W1逐字节一致、全部出现物体支撑接触。见[本批报告](p65-heterogeneous-manipulation-io-report-20261114.md)及[公共用法](p65-heterogeneous-manipulation-io-usage-20261114.md)。合计143个不同验证节点通过。下一批M2-B是端点对象/接触特征与Env目标生命周期；M0可达性、实际抓放/PushT、语义编码及共享策略训练仍未完成。当前无项目执行owner，无新截止。
+> 2026-11-14 第三批：M2-B1 公共 GPU 端点 body 观察已完成源码资格（`f1c3d9a0`）。`prepare_device_workspace(include_bodies=True)` 从 accepted q/v 导出 body origin 世界位置/线角速度及 body→world 矩阵，与 native 状态共同发布。新增解释6/CUDA8及受影响兼容58项通过，见[本批报告](p65-body-observation-report-20261114.md)和[公共用法](p65-heterogeneous-manipulation-io-usage-20261114.md)。下一批按[计划第11节](../superpowers/plans/2026-11-14-language-conditioned-gpu-manipulation.md)实现 B2 accepted-entry 接触持久双 bank、同相位状态/载荷与 reset/checkpoint，再接 B3 Env 生命周期。接触 token、真实操作可控性、语言编码及共享策略训练仍未完成；无新截止、当前执行槽已释放。
+
+> 2026-11-14 第二批历史：M2-A公共异构GPU状态/动作/reset接口已完成源码资格（2de488b9）；八份真实操作场景静态24项通过，并在同GPU各32步/256环境步与独立CUDA W1逐字节一致、全部出现物体支撑接触。见[本批报告](p65-heterogeneous-manipulation-io-report-20261114.md)及[公共用法](p65-heterogeneous-manipulation-io-usage-20261114.md)。合计143个不同验证节点通过。下一批M2-B是端点对象/接触特征与Env目标生命周期；M0可达性、实际抓放/PushT、语义编码及共享策略训练仍未完成。该批执行已结束。
 
 > 2026-11-14 新应用主线：单GPU上8个异构机器人环境、抓取/放置/PushT共用一个自然语言条件策略。参见[研究与实施计划](../superpowers/plans/2026-11-14-language-conditioned-gpu-manipulation.md)。首批M1共享多树动力学已完成源码资格：产品0c217310，新增28项多树测试和95项受影响兼容节点通过，见[M1报告](p65-mujoco-tyx-forest-report-20261114.md)。固定臂与独立完整FREE物体已可共同进行CUDA接触/运动；下一批是公共异构GPU训练接口及8任务场景。预训练语义编码、共享策略训练、完整抓放/PushT成功率与新安装交付仍待完成。下文原验收保留。
 

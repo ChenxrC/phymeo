@@ -1,6 +1,6 @@
 # 异构 MuJoCo-TYX GPU 状态与动作入口
 
-2026-11-14，M2-A。公共 native 状态与动作路由；完整多任务 Env 和对象/接触 token 后续接入。
+2026-11-14，M2-A 与 M2-B1。公共 native 状态/动作路由及可选端点 body 观察；接触记录与完整多任务 Env 后续接入。
 验证与限制见[本批报告](p65-heterogeneous-manipulation-io-report-20261114.md)。
 
 ## 协议
@@ -79,12 +79,36 @@ with (
 物理 step 的共同发布继续由原 batch 事务负责。发布后退休资源清理失败与发布失败分开报告。
 UNKNOWN_RELEASE 保留 owner/依赖，后续 close 不重试未知 native free。
 
+
+## 可选端点 body 观察（M2-B1）
+
+使用 `batch.prepare_device_workspace(include_bodies=True)`，其余 refresh/to_torch 调用保持不变。
+同一个 accepted endpoint frame 额外包含：
+
+| 字段 | 形状与含义 |
+| --- | --- |
+| `body_position` | FP32 [W,B,3]，body origin 世界位置 |
+| `body_rotation` | FP32 [W,B,3,3]，body→world 旋转矩阵 |
+| `body_linear_velocity` | FP32 [W,B,3]，body origin 世界线速度 |
+| `body_angular_velocity` | FP32 [W,B,3]，世界角速度 |
+| `body_mask` | 既有 int32 [W,B]，body 有效性；包含 fixed/world body |
+
+padding 全零，含旋转 padding；必须先应用 mask，不能将零矩阵当有效姿态。
+FREE/BALL 的原生局部角速度按已有运动学转到世界轴，body-origin 线速度与偏心 COM 线速度不同。
+字段来自 accepted q/v，在工作区自己的 scratch 中复用现有 GPU geometry kernel；
+全部桶成功后与 q/v/act/clock 一起发布。观察失败不覆盖旧 frame，reset/restore 后重新读取当前 owner。
+导出 tensor 仍有独立所有权，修改它们不能改变下一步物理结果。
+
+此接口不执行 CPU FK 或 HOST 动态状态重建；建工作区时的 HOST 静态模型常量与显式诊断读回仍存在。
+`include_bodies=False` 是默认值，不分配上述 body 输出/scratch。
+[源码验证报告](p65-body-observation-report-20261114.md)记录14项新测试及受影响兼容范围。
+
 ## 当前边界与下一连接
 
-1. workspace 只导出 accepted q/v/act/clock，不把入步几何/接触 scratch 当成端点状态。
-2. 对象世界角速度需由实际 FREE body 姿态转换，非直接把 local angular 当 world angular。
+1. workspace 默认导出 accepted q/v/act/clock；可选 body 字段同为端点相位，contact_tokens 仍为 False。
+2. body_angular_velocity 已转换到世界轴；原生 v 数组仍保留 FREE local angular，不改变原地址协议。
 3. 接触力必须与同一入步位姿/速度成对；M0 的 SuccessFrame 明确只接受 input phase。
-4. body endpoint FK、contact token、目标与 episode checkpoint、final observation/timeout 和异构 PPO 接线仍待 M2-B。
+4. body endpoint FK 已完成 B1；accepted-entry contact token、目标/episode checkpoint、final observation/timeout 和异构 PPO 接线仍待 B2/B3。
 5. 当前 refresh/control 审计有状态/记录读回，叶子求解器也保留现有诊断；不是零 HOST 往返或融合异构 kernel。
 6. 工作区 allocation/显式 readback/D2D 计数单列，不把 solver-bank budget 当总 GPU 内存预算。
 7. M0 三类目标的 HOST 参考判据能拒绝伪抓取/空中放置/中心重合；合成帧测试不代表物理任务成功。

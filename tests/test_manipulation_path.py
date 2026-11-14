@@ -26,9 +26,7 @@ def model_fixture(mj, *, wall_y="0", wall_mask="1", extra=""):
         '<geom name="pad" type="sphere" size=".1" mass=".1"/></body>'
         '<body name="other" pos="0 3 1"><joint name="hinge" type="hinge" '
         'axis="0 0 1" limited="true" range="-1 1"/>'
-        '<geom name="other-shape" size=".05" mass=".1"/></body>'
-        + extra
-        + "</worldbody></mujoco>"
+        '<geom name="other-shape" size=".05" mass=".1"/></body>' + extra + "</worldbody></mujoco>"
     )
 
 
@@ -50,7 +48,9 @@ def forbidden(*args, **kwargs):
     raise AssertionError("path query must not forward/inverse-solve or integrate physics")
 
 
-def test_interior_collision_is_found_with_all_samples_and_independent_native_contacts(mj, monkeypatch):
+def test_interior_collision_is_found_with_all_samples_and_independent_native_contacts(
+    mj, monkeypatch
+):
     model = model_fixture(mj)
     q = knots(model)
     source, original_model = q.tobytes(), binary(mj, model)
@@ -82,7 +82,9 @@ def test_interior_collision_is_found_with_all_samples_and_independent_native_con
     assert result.sample_count == len(calls) == len(result.samples) == 5
     assert result.samples[0].sampled_clear and result.samples[-1].sampled_clear
     assert not result.samples[2].sampled_clear
-    assert [sample.time_s for sample in result.samples] == pytest.approx((0, .001, .002, .003, .004))
+    assert [sample.time_s for sample in result.samples] == pytest.approx(
+        (0, 0.001, 0.002, 0.003, 0.004)
+    )
     assert [sample.q[7] for sample in result.samples] == pytest.approx(expected_q)
     for sample, expected in zip(result.samples, oracle, strict=True):
         assert sample.q[:7].tobytes() == q[0, :7].tobytes()
@@ -104,9 +106,9 @@ def test_segment_endpoints_are_exact_and_not_duplicated(mj):
     q = knots(model)
     middle = q[0].copy()
     middle[7] = 0.3
-    result = audit_native_joint_path(model, (0, .002, .005), (q[0], middle, q[1]), ("slide",))
+    result = audit_native_joint_path(model, (0, 0.002, 0.005), (q[0], middle, q[1]), ("slide",))
     assert result.sampled_clear and result.sample_count == 6
-    assert [s.time_s for s in result.samples].count(.002) == 1
+    assert [s.time_s for s in result.samples].count(0.002) == 1
     assert result.samples[0].q.tobytes() == q[0].tobytes()
     assert result.samples[2].q.tobytes() == middle.tobytes()
     assert result.samples[-1].q.tobytes() == q[1].tobytes()
@@ -114,19 +116,19 @@ def test_segment_endpoints_are_exact_and_not_duplicated(mj):
 
 def test_allowed_pair_is_still_recorded_and_excess_remains_unsafe(mj):
     model = model_fixture(mj)
-    q = knots(model, .11, .11)
+    q = knots(model, 0.11, 0.11)
     safe = audit_native_joint_path(
-        model, (0, .002), q, ("slide",), allowed_contacts=(("pad", "wall", .02),)
+        model, (0, 0.002), q, ("slide",), allowed_contacts=(("pad", "wall", 0.02),)
     )
     assert safe.sampled_clear and safe.worst_disallowed_depth_m == 0
     assert all(len(sample.contacts) == 1 for sample in safe.samples)
-    assert all(sample.contacts[0].allowed_depth_m == .02 for sample in safe.samples)
-    assert safe.samples[0].contacts[0].distance_m == pytest.approx(-.01)
+    assert all(sample.contacts[0].allowed_depth_m == 0.02 for sample in safe.samples)
+    assert safe.samples[0].contacts[0].distance_m == pytest.approx(-0.01)
     unsafe = audit_native_joint_path(
-        model, (0, .002), q, ("slide",), allowed_contacts=(("wall", "pad", .005),)
+        model, (0, 0.002), q, ("slide",), allowed_contacts=(("wall", "pad", 0.005),)
     )
     assert not unsafe.sampled_clear
-    assert unsafe.worst_disallowed_depth_m == pytest.approx(.005)
+    assert unsafe.worst_disallowed_depth_m == pytest.approx(0.005)
     assert unsafe.input_binding != safe.input_binding
 
 
@@ -134,9 +136,9 @@ def test_native_contact_masks_and_model_binding_use_original_recompiled_model(mj
     first = model_fixture(mj)
     disabled = model_fixture(mj, wall_mask="0")
     moved = model_fixture(mj, wall_y="1")
-    original = audit_native_joint_path(first, (0, .002), knots(first), ("slide",))
+    original = audit_native_joint_path(first, (0, 0.002), knots(first), ("slide",))
     for model in (disabled, moved):
-        receipt = audit_native_joint_path(model, (0, .002), knots(model), ("slide",))
+        receipt = audit_native_joint_path(model, (0, 0.002), knots(model), ("slide",))
         assert receipt.sampled_clear and all(not sample.contacts for sample in receipt.samples)
         assert receipt.input_binding != original.input_binding
 
@@ -144,18 +146,18 @@ def test_native_contact_masks_and_model_binding_use_original_recompiled_model(mj
 def test_joint_order_maps_native_addresses_and_all_inputs_are_bound(mj):
     model = model_fixture(mj, wall_y="1")
     q = knots(model)
-    first = audit_native_joint_path(model, (0, .002), q, ("hinge", "slide"))
-    second = audit_native_joint_path(model, (0, .002), q, ("slide", "hinge"))
+    first = audit_native_joint_path(model, (0, 0.002), q, ("hinge", "slide"))
+    second = audit_native_joint_path(model, (0, 0.002), q, ("slide", "hinge"))
     assert first.input_binding != second.input_binding
     for left, right in zip(first.samples, second.samples, strict=True):
         np.testing.assert_array_equal(left.q, right.q)
-    changed = audit_native_joint_path(model, (0, .002), q, ("hinge", "slide"), max_samples=100)
+    changed = audit_native_joint_path(model, (0, 0.002), q, ("hinge", "slide"), max_samples=100)
     assert changed.input_binding != first.input_binding
     allowed = audit_native_joint_path(
-        model, (0, .002), q, ("slide",), allowed_contacts=(("wall", "pad", .05),)
+        model, (0, 0.002), q, ("slide",), allowed_contacts=(("wall", "pad", 0.05),)
     )
     reversed_pair = audit_native_joint_path(
-        model, (0, .002), q, ("slide",), allowed_contacts=(("pad", "wall", .05),)
+        model, (0, 0.002), q, ("slide",), allowed_contacts=(("pad", "wall", 0.05),)
     )
     assert allowed.input_binding == reversed_pair.input_binding
 
@@ -164,7 +166,7 @@ def test_joint_order_maps_native_addresses_and_all_inputs_are_bound(mj):
     "options",
     [
         {"times": (0, 0)},
-        {"times": (.001, .002)},
+        {"times": (0.001, 0.002)},
         {"times": (0, 4.001)},
         {"times": (0, np.nan)},
         {"times": (0,)},
@@ -180,17 +182,17 @@ def test_joint_order_maps_native_addresses_and_all_inputs_are_bound(mj):
         {"max_samples": 4098},
         {"max_samples": True},
         {"penetration_tolerance_m": -1e-4},
-        {"penetration_tolerance_m": .000101},
-        {"allowed_contacts": (("wall", "pad", .051),)},
-        {"allowed_contacts": (("wall", "pad", -.001),)},
-        {"allowed_contacts": (("wall", "unknown", .01),)},
-        {"allowed_contacts": (("wall", "wall", .01),)},
-        {"allowed_contacts": (("wall", "pad", .01), ("pad", "wall", .02))},
+        {"penetration_tolerance_m": 0.000101},
+        {"allowed_contacts": (("wall", "pad", 0.051),)},
+        {"allowed_contacts": (("wall", "pad", -0.001),)},
+        {"allowed_contacts": (("wall", "unknown", 0.01),)},
+        {"allowed_contacts": (("wall", "wall", 0.01),)},
+        {"allowed_contacts": (("wall", "pad", 0.01), ("pad", "wall", 0.02))},
     ],
 )
 def test_invalid_requests_fail_before_native_path_queries(mj, monkeypatch, options):
     model = model_fixture(mj)
-    request = dict(times=(0, .004), q_knots=knots(model), joint_names=("slide",))
+    request = dict(times=(0, 0.004), q_knots=knots(model), joint_names=("slide",))
     request.update(options)
     monkeypatch.setattr(mj, "mj_kinematics", forbidden)
     monkeypatch.setattr(mj, "mj_collision", forbidden)
@@ -199,15 +201,17 @@ def test_invalid_requests_fail_before_native_path_queries(mj, monkeypatch, optio
 
 
 @pytest.mark.parametrize("change", ["limit", "nan", "free", "signed-zero", "quaternion", "shape"])
-def test_knot_limits_all_frozen_coordinates_and_quaternions_are_prevalidated(mj, monkeypatch, change):
+def test_knot_limits_all_frozen_coordinates_and_quaternions_are_prevalidated(
+    mj, monkeypatch, change
+):
     model = model_fixture(mj)
     q = knots(model)
     if change == "limit":
-        q[1, 7] = .601
+        q[1, 7] = 0.601
     elif change == "nan":
         q[1, 7] = np.nan
     elif change == "free":
-        q[1, 1] += .001
+        q[1, 1] += 0.001
     elif change == "signed-zero":
         q[1, 0] = 0.0
     elif change == "quaternion":
@@ -218,36 +222,35 @@ def test_knot_limits_all_frozen_coordinates_and_quaternions_are_prevalidated(mj,
     monkeypatch.setattr(mj, "mj_kinematics", forbidden)
     monkeypatch.setattr(mj, "mj_collision", forbidden)
     with pytest.raises(ValueError):
-        audit_native_joint_path(model, (0, .004), q, ("slide",))
+        audit_native_joint_path(model, (0, 0.004), q, ("slide",))
     assert q.tobytes() == before
 
 
 def test_model_dimension_and_binary_caps_precede_queries(mj, monkeypatch):
     extras = "".join(
-        f'<geom name="extra{i}" type="sphere" pos="{i} 10 1" size=".001"/>'
-        for i in range(129)
+        f'<geom name="extra{i}" type="sphere" pos="{i} 10 1" size=".001"/>' for i in range(129)
     )
     too_many = model_fixture(mj, extra=extras)
     with pytest.raises(ValueError, match="dimensions"):
-        audit_native_joint_path(too_many, (0, .002), knots(too_many), ("slide",))
+        audit_native_joint_path(too_many, (0, 0.002), knots(too_many), ("slide",))
     ordinary = model_fixture(mj)
     monkeypatch.setattr(mj, "mj_sizeModel", lambda model: 8 * 1024 * 1024 + 1)
     monkeypatch.setattr(mj, "mj_kinematics", forbidden)
     with pytest.raises(ValueError, match="8 MiB"):
-        audit_native_joint_path(ordinary, (0, .002), knots(ordinary), ("slide",))
+        audit_native_joint_path(ordinary, (0, 0.002), knots(ordinary), ("slide",))
 
 
 def test_outputs_are_owned_immutable_records(mj):
     model = model_fixture(mj)
-    q = knots(model, .11, .11)
-    result = audit_native_joint_path(model, (0, .002), q, ("slide",))
+    q = knots(model, 0.11, 0.11)
+    result = audit_native_joint_path(model, (0, 0.002), q, ("slide",))
     sample, contact = result.samples[0], result.samples[0].contacts[0]
     q[:] = 0
-    assert sample.q[7] == .11
+    assert sample.q[7] == 0.11
     with pytest.raises(FrozenInstanceError):
         result.status = "sampled_clear"
     with pytest.raises(ValueError):
-        sample.q[7] = .2
+        sample.q[7] = 0.2
     with pytest.raises(ValueError):
         sample.q.setflags(write=True)
     with pytest.raises(FrozenInstanceError):
@@ -258,13 +261,13 @@ def test_outputs_are_owned_immutable_records(mj):
 
 def test_total_contact_record_cap_includes_allowed_contacts_across_all_samples(mj, monkeypatch):
     model = model_fixture(mj)
-    q = knots(model, .11, .11)
+    q = knots(model, 0.11, 0.11)
     before = q.tobytes()
     # Exercise the cumulative budget boundary without collecting 65537 contacts.
     assert manipulation_path.MAX_CONTACT_RECORDS == 65536
     monkeypatch.setattr(manipulation_path, "MAX_CONTACT_RECORDS", 1)
     with pytest.raises(ValueError, match="total contact record budget"):
         audit_native_joint_path(
-            model, (0, .002), q, ("slide",), allowed_contacts=(("wall", "pad", .02),)
+            model, (0, 0.002), q, ("slide",), allowed_contacts=(("wall", "pad", 0.02),)
         )
     assert q.tobytes() == before

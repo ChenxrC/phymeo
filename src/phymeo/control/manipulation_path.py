@@ -31,8 +31,7 @@ def _number(value, name):
 
 def _items(values, name, minimum, maximum, rank=1):
     _require(
-        type(values) in (tuple, list)
-        or (isinstance(values, np.ndarray) and values.ndim == rank),
+        type(values) in (tuple, list) or (isinstance(values, np.ndarray) and values.ndim == rank),
         name + " requires an explicit bounded sequence",
     )
     _require(minimum <= len(values) <= maximum, name + " exceeds its item budget")
@@ -179,7 +178,9 @@ def audit_native_joint_path(
         depth = _number(raw_depth, "allowed depth")
         _require(0 <= depth <= 0.05, "allowed reference depth must lie in 0..0.05 metres")
         pair = tuple(
-            sorted(int(mj.mj_name2id(model, mj.mjtObj.mjOBJ_GEOM, name)) for name in (first, second))
+            sorted(
+                int(mj.mj_name2id(model, mj.mjtObj.mjOBJ_GEOM, name)) for name in (first, second)
+            )
         )
         _require(pair[0] >= 0 and pair not in allowances, "unknown or duplicate allowed geom pair")
         allowances[pair] = depth

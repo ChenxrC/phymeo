@@ -20,3 +20,7 @@
 先读这14点新证据，再决定是否有依据登记一次控制变更。若主要是接触几何/力矩支撑不足，补通用接触位置/相对姿态测量或筛选；若是模型规定的软接触creep，保留真实误差并设计有依据的闭环；若native差异实质明显，先定位实现。不得直接扫描摩擦/增益，也不得把双指有法向力当任务成功。不强行为本批凑新GPU成功；产生可复用诊断和已定位缺口本身可验收，整个操作目标仍保留。
 
 依据：[MuJoCo接触模型](https://mujoco.readthedocs.io/en/3.3.7/computation/index.html#contact)与[contactForce接口](https://mujoco.readthedocs.io/en/3.3.7/APIreference/APIfunctions.html#mj-contactforce)，以及已实现public entry轴/载荷schema。无新安装/push/CI/周期任务。
+## 公共保存记录消费验收（执行前追加）
+
+新增 CLI scripts/measure_manipulation_wrenches.py；先原world1、后world3顺序读取每条trace中后一记录的feedback_source，与前一记录的contact IDs/data及SuccessFrame逐项绑定。每世界预期2399个entry，共4798；末步2400因缺少后一条完整public entry而明确未覆盖，不补造数据。使用同entry对象pose和原编译model.body_ipos求显式COM，逐contact独立对照原已发布world force/couple与双侧body-origin矩平移，转换差门2e-6；不是native求解精度或物理成功门。全部entry和摘要保存gzip JSONL，原输入SHA保持。
+只编译原XML/读取model常量，不调用mj_forward/mj_step或新GPU。首失败原输出保留，修复后新目录执行；测试不重复已有物理轨迹。

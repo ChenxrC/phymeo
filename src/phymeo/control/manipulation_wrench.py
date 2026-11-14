@@ -53,7 +53,12 @@ class ObjectContactWrenchMeasurement:
 
 
 def measure_object_contact_wrench(
-    arrays, row, *, object_body, object_com_world, group_geom_ids=(),
+    arrays,
+    row,
+    *,
+    object_body,
+    object_com_world,
+    group_geom_ids=(),
 ):
     """Sum every object contact about the caller-supplied entry COM, in world axes.
 
@@ -73,24 +78,34 @@ def measure_object_contact_wrench(
     """
     _require(isinstance(arrays, Mapping), "arrays must be a public NumPy mapping")
     selected, body = _index(row, "row"), _index(object_body, "object_body")
-    _require(isinstance(group_geom_ids, tuple) and len(group_geom_ids) <= 8,
-             "group_geom_ids must be a tuple of zero to eight IDs")
+    _require(
+        isinstance(group_geom_ids, tuple) and len(group_geom_ids) <= 8,
+        "group_geom_ids must be a tuple of zero to eight IDs",
+    )
     group = tuple(_index(value, "group geom") for value in group_geom_ids)
-    _require(len(set(group)) == len(group) and all(value <= 2147483647 for value in group),
-             "group geom IDs must be unique native int32 identities")
+    _require(
+        len(set(group)) == len(group) and all(value <= 2147483647 for value in group),
+        "group geom IDs must be unique native int32 identities",
+    )
     raw_com = np.asarray(object_com_world)
-    _require(raw_com.shape == (3,) and raw_com.dtype.kind in "fiu" and np.isfinite(raw_com).all(),
-             "object_com_world must be a finite numeric world 3-vector")
+    _require(
+        raw_com.shape == (3,) and raw_com.dtype.kind in "fiu" and np.isfinite(raw_com).all(),
+        "object_com_world must be a finite numeric world 3-vector",
+    )
     with np.errstate(over="ignore", invalid="ignore"):
         com = np.array(raw_com, dtype=np.float64, copy=True)
     _require(np.isfinite(com).all(), "object_com_world is not finite in measurement precision")
     metadata = _array(arrays, "entry_meta", (None, 6), "iu")
     worlds = metadata.shape[0]
-    _require(1 <= worlds <= 64 and selected < worlds and body < 128,
-             "world/row/object body exceeds bounded dimensions")
+    _require(
+        1 <= worlds <= 64 and selected < worlds and body < 128,
+        "world/row/object body exceeds bounded dimensions",
+    )
     valid, before, after, count, active_count, overflow = map(int, metadata[selected])
-    _require(valid in (0, 1) and 0 <= after <= 2147483647 and overflow == 0,
-             "invalid entry validity, output tick or overflow")
+    _require(
+        valid in (0, 1) and 0 <= after <= 2147483647 and overflow == 0,
+        "invalid entry validity, output tick or overflow",
+    )
     if valid == 0:
         _require(before == count == active_count == 0, "invalid empty-entry metadata")
         return None
@@ -108,16 +123,22 @@ def measure_object_contact_wrench(
     _require(0 <= active_count <= count <= capacity, "contact counts exceed storage")
     _require(np.all((mask[selected] == 0) | (mask[selected] == 1)), "invalid body mask")
     _require(body < bodies and mask[selected, body] == 1, "object body is invalid or padded")
-    _require(np.isfinite(clocks[selected]).all() and np.isfinite(positions[selected]).all(),
-             "nonfinite entry clock or body position")
+    _require(
+        np.isfinite(clocks[selected]).all() and np.isfinite(positions[selected]).all(),
+        "nonfinite entry clock or body position",
+    )
     _require(not np.any(positions[selected][mask[selected] == 0]), "nonzero body padding")
     stamp = clocks[selected]
     time_s, output_time = float(stamp[0]) - float(stamp[1]), float(stamp[2]) - float(stamp[3])
-    _require(isfinite(time_s) and isfinite(output_time) and 0 <= time_s < output_time,
-             "entry clock does not advance from input to output")
+    _require(
+        isfinite(time_s) and isfinite(output_time) and 0 <= time_s < output_time,
+        "entry clock does not advance from input to output",
+    )
     contacts, payload = ids[selected], data[selected]
     _require(np.isfinite(payload).all(), "nonfinite contact data")
-    _require(not np.any(contacts[count:]) and not np.any(payload[count:]), "nonzero contact padding")
+    _require(
+        not np.any(contacts[count:]) and not np.any(payload[count:]), "nonzero contact padding"
+    )
 
     records, geom_bodies = [], {}
     grouped = {geom: index for index, geom in enumerate(group)}
@@ -128,22 +149,35 @@ def measure_object_contact_wrench(
     for index in range(count):
         present, active, geom1, geom2, body1, body2, feature, dim = map(int, contacts[index])
         _require(present == 1 and active in (0, 1), "invalid contact prefix flags")
-        _require(0 <= geom1 <= 2147483647 and 0 <= geom2 <= 2147483647 and geom1 != geom2
-                 and 0 <= feature <= 2147483647 and dim in (1, 3, 4, 6),
-                 "invalid contact geometry, feature or dimension")
-        _require(0 <= body1 < bodies and 0 <= body2 < bodies and body1 != body2
-                 and mask[selected, body1] == mask[selected, body2] == 1,
-                 "contact body is invalid or padded")
+        _require(
+            0 <= geom1 <= 2147483647
+            and 0 <= geom2 <= 2147483647
+            and geom1 != geom2
+            and 0 <= feature <= 2147483647
+            and dim in (1, 3, 4, 6),
+            "invalid contact geometry, feature or dimension",
+        )
+        _require(
+            0 <= body1 < bodies
+            and 0 <= body2 < bodies
+            and body1 != body2
+            and mask[selected, body1] == mask[selected, body2] == 1,
+            "contact body is invalid or padded",
+        )
         for geom, owner in ((geom1, body1), (geom2, body2)):
             _require(geom not in geom_bodies or geom_bodies[geom] == owner, "geom changes body")
             geom_bodies[geom] = owner
             _require(geom not in grouped or owner != body, "group geom belongs to the object")
         values = payload[index].astype(np.float64, copy=True)
         frame, wrench = values[4:13].reshape(3, 3), values[13:19]
-        _require(np.allclose(frame @ frame.T, np.eye(3), rtol=0, atol=1e-4)
-                 and abs(float(np.linalg.det(frame)) - 1.0) <= 1e-4,
-                 "contact frame must be proper SO(3)")
-        _require(wrench[0] >= 0 and not np.any(wrench[dim:]), "invalid contact wrench dimension or load")
+        _require(
+            np.allclose(frame @ frame.T, np.eye(3), rtol=0, atol=1e-4)
+            and abs(float(np.linalg.det(frame)) - 1.0) <= 1e-4,
+            "contact frame must be proper SO(3)",
+        )
+        _require(
+            wrench[0] >= 0 and not np.any(wrench[dim:]), "invalid contact wrench dimension or load"
+        )
         _require(active == 1 or not np.any(wrench), "inactive contact carries a wrench")
         seen_active += active
         if body not in (body1, body2):
@@ -155,8 +189,10 @@ def measure_object_contact_wrench(
             force = sign * (frame.T @ wrench[:3])
             couple = sign * (frame.T @ wrench[3:])
             moment = couple + np.cross(point - com, force)
-        _require(np.isfinite(force).all() and np.isfinite(couple).all() and np.isfinite(moment).all(),
-                 "nonfinite derived contact wrench")
+        _require(
+            np.isfinite(force).all() and np.isfinite(couple).all() and np.isfinite(moment).all(),
+            "nonfinite derived contact wrench",
+        )
         member = other_geom in grouped
         with np.errstate(over="ignore", invalid="ignore"):
             if member:
@@ -166,18 +202,49 @@ def measure_object_contact_wrench(
             else:
                 other_force += force
                 other_moment += moment
-        records.append(ObjectContactWrenchRecord(
-            index, bool(active), other_geom, other_body, _tuple3(point), _tuple3(force),
-            _tuple3(couple), _tuple3(moment), float(wrench[0]), member,
-        ))
+        records.append(
+            ObjectContactWrenchRecord(
+                index,
+                bool(active),
+                other_geom,
+                other_body,
+                _tuple3(point),
+                _tuple3(force),
+                _tuple3(couple),
+                _tuple3(moment),
+                float(wrench[0]),
+                member,
+            )
+        )
     _require(seen_active == active_count, "active contact count differs")
     with np.errstate(over="ignore", invalid="ignore"):
         total_force, total_moment = group_force + other_force, group_moment + other_moment
-    _require(all(np.isfinite(value).all() for value in
-                 (total_force, total_moment, group_force, group_moment, other_force, other_moment, loads)),
-             "nonfinite aggregate contact wrench")
+    _require(
+        all(
+            np.isfinite(value).all()
+            for value in (
+                total_force,
+                total_moment,
+                group_force,
+                group_moment,
+                other_force,
+                other_moment,
+                loads,
+            )
+        ),
+        "nonfinite aggregate contact wrench",
+    )
     return ObjectContactWrenchMeasurement(
-        time_s, before, after, _tuple3(com), tuple(records), _tuple3(total_force), _tuple3(total_moment),
-        _tuple3(group_force), _tuple3(group_moment), _tuple3(other_force), _tuple3(other_moment),
+        time_s,
+        before,
+        after,
+        _tuple3(com),
+        tuple(records),
+        _tuple3(total_force),
+        _tuple3(total_moment),
+        _tuple3(group_force),
+        _tuple3(group_moment),
+        _tuple3(other_force),
+        _tuple3(other_moment),
         tuple(float(load) for load in loads),
     )

@@ -189,13 +189,18 @@ def run(
     plan_builder=build_plan,
     *,
     record_entry=False,
+    reference_driver_factory=None,
 ):
     if type(record_entry) is not bool:
         raise ValueError("record_entry must be a bool")
     if output.exists() or not output.is_absolute():
         raise ValueError("fresh absolute output required")
+    if reference_driver_factory is not None and (
+        len(indices) != 1 or not record_entry or slip_guard
+    ):
+        raise ValueError("reference feedback requires one world, full entry and no slip driver")
     if (
-        not 1 <= steps <= 4000
+        not 1 <= steps <= (12000 if reference_driver_factory is not None else 4000)
         or len(set(indices)) != len(indices)
         or any(i not in range(8) for i in indices)
     ):
@@ -226,6 +231,14 @@ def run(
                 task_success=False,
             )
         )
+    drivers = (
+        {}
+        if reference_driver_factory is None
+        else {
+            i: reference_driver_factory(s, native[i], output / (s.key + "-feedback"))
+            for i, s in scenes.items()
+        }
+    )
     grip_controls = {}
     if slip_guard:
         for i, scene in scenes.items():
@@ -270,6 +283,7 @@ def run(
         controller="diagnostic-native-pd",
         slip_feedback=bool(slip_guard),
         record_entry=record_entry,
+        reference_feedback=reference_driver_factory is not None,
         h=H,
         steps=0,
         recorded_steps=0,
@@ -296,6 +310,7 @@ def run(
     last_sample = -1
     ordinal = 0
     accepted_states = None
+    driver_summary_error = None
 
     def sample(batch, state_stream, step):
         nonlocal ordinal, last_sample
@@ -363,7 +378,7 @@ def run(
                                 obs = env.observation
                                 q, v = obs["q"].cpu().numpy(), obs["v"].cpu().numpy()
                                 raw = np.zeros((len(indices), env.num_actions), np.float32)
-                                diagnostics, feedback = {}, {}
+                                diagnostics, feedback, reference_feedback = {}, {}, {}
                                 entry_arrays = (
                                     {
                                         name: obs[name].detach().cpu().numpy()
@@ -378,11 +393,20 @@ def run(
                                             "entry_body_angular_velocity",
                                         )
                                     }
-                                    if grip_controls
+                                    if grip_controls or drivers
                                     else {}
                                 )
                                 for row, i in enumerate(indices):
-                                    desired, velocity, stages[i] = reference(plans[i], tick * H)
+                                    if i in drivers:
+                                        desired, velocity, stages[i], reference_feedback[i] = (
+                                            drivers[i].reference(
+                                                tick, q[row, : native[i].nq], v[row, : native[i].nv]
+                                            )
+                                        )
+                                        if drivers[i].stopped:
+                                            break
+                                    else:
+                                        desired, velocity, stages[i] = reference(plans[i], tick * H)
                                     if i in grip_controls:
                                         measurement = measure_finger_slip(
                                             entry_arrays,
@@ -429,6 +453,11 @@ def run(
                                     raw[row, : native[i].nu] = np.arctanh(
                                         np.asarray(ctrl, np.float32) / np.float32(20.0)
                                     )
+                                if any(d.stopped for d in drivers.values()):
+                                    manifest["stopped_reason"] = (
+                                        "reference_feedback:" + next(iter(drivers.values())).reason
+                                    )
+                                    break
                                 transition = env.step(
                                     torch.tensor(raw, device=env.device),
                                     world_keys=env.world_keys,
@@ -436,6 +465,27 @@ def run(
                                 )
                                 manifest["steps"] = tick + 1
                                 accepted_states = batch.integration_snapshot()
+                                accepted_callback_error = None
+                                if drivers:
+                                    actual_entry = {
+                                        name: value.detach().cpu().numpy()
+                                        for name, value in transition.observation.items()
+                                        if name.startswith("entry_")
+                                    }
+                                    for i, driver in drivers.items():
+                                        try:
+                                            reference_feedback[i]["accepted"] = driver.accepted(
+                                                tick + 1,
+                                                accepted_states[i].q,
+                                                actual_entry,
+                                                transition.results[i],
+                                            )
+                                        except BaseException as callback_error:
+                                            accepted_callback_error = callback_error
+                                            reference_feedback[i]["callback_error"] = dict(
+                                                type=type(callback_error).__name__,
+                                                message=str(callback_error),
+                                            )
                                 for i, result in transition.results.items():
                                     success[i] = result.success
                                     metrics = dict(result.metrics)
@@ -472,6 +522,7 @@ def run(
                                         results=transition.results,
                                         controller=diagnostics,
                                         slip_feedback=feedback,
+                                        reference_feedback=reference_feedback,
                                         feedback_source=entry_arrays,
                                         entry=(
                                             {
@@ -496,6 +547,13 @@ def run(
                                     ),
                                 )
                                 manifest["recorded_steps"] = tick + 1
+                                if accepted_callback_error is not None:
+                                    error = RuntimeError(
+                                        "reference feedback failed after accepted CUDA step"
+                                    )
+                                    error.phase = "reference-feedback-accepted"
+                                    error.action_accepted = error.state_accepted = True
+                                    raise error from accepted_callback_error
                                 if (tick + 1) % 10 == 0:
                                     sample(batch, state_stream, tick + 1)
                                 if (tick + 1) % 100 == 0:
@@ -531,6 +589,18 @@ def run(
         )
         raise
     finally:
+        if drivers:
+            try:
+                write(
+                    output / "reference-feedback-summary.json",
+                    {i: d.summary() for i, d in drivers.items()},
+                )
+            except BaseException as summary_error:
+                driver_summary_error = summary_error
+                manifest["status"] = "FAILED_PREFIX"
+                manifest["driver_summary_failure"] = dict(
+                    type=type(summary_error).__name__, message=str(summary_error)
+                )
         manifest["wall_seconds"] = time.perf_counter() - wall
         manifest["saved_frames"] = ordinal
         for row in worlds:
@@ -558,6 +628,10 @@ def run(
                 },
             ),
         )
+    if driver_summary_error is not None:
+        raise RuntimeError(
+            "reference feedback summary could not be saved"
+        ) from driver_summary_error
     print(json.dumps(plain(manifest)), flush=True)
 
 

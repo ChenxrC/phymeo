@@ -32,3 +32,7 @@ Bauza/Hogan/Rodriguez [CoRL2018](https://proceedings.mlr.press/v87/bauza18a/bauz
 先两新模块与root接缝的独立HOST案例/负控，再三真实窗。同入步完整entry、控制决策/路线绑定、每段预测/实际cost、接触冲量、状态连续、所有接触pair、原Goal逐步评价和checkpoint保存。
 消费者不额外推进物理；最后一条也须完整。源/原始失败/首style结果/所有命令保存。全部测试串行；其他实际执行自然结束，不kill。
 成功分列：通用接口测试、闭环同轨迹发生、原目标真正通过。不能用cost下降/曾推到/视频冒位姿+IoU+低速+dwell成功。失败后的下一步依据新trace选择模型/路径/控制缺口，不扫描摩擦/质量/阈值。
+
+## Execution binding addendum (before first project execution)
+
+Root is the sole serial execution owner for this batch. Three full new HOST files plus affected runner/driver checks precede three one-shot W1 CUDA windows. The driver starts its monitor from the actual published FP32 endpoint, not native qpos0 decimal reconstruction. Every force integral consumes the preceding accepted entry_q and matching adjacent ticks; model COM is transformed from that exact entry configuration. The 12,000-step cap remains enforced by the physical loop even within a partial route. Planning failure stops before another physical step. At a route boundary, robot reference joints are explicitly clipped to original joint limits only if actual soft-limit state lies outside; projection is saved, actual q/v are never altered. Reference C1 qualification applies within each route; measured reference reanchoring across routes is not claimed to be globally C1. The final Env checkpoint is not a full controller-resume artifact.

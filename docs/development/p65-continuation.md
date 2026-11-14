@@ -1,5 +1,8 @@
 # Phymeo 当前续作入口
 
+> 2026-11-14 第十批：公共contact force/COM moment测量、保存读取器与有限PushT外边界已集成（64a6b206/16f6c9ea/b1a521f6），新增82 HOST通过。world1/3共4798条旧entry消费通过；14个native同状态比较中world1第1900步0.0181N差保留未归因。原RR/RRR/PPPR各24候选、22几何usable，两端点单seed IK收敛10/10/14，尚非整机路径/真实推行成功。见[本批报告](p65-manipulation-wrench-push-report-20261114.md)、[计划第18节](../superpowers/plans/2026-11-14-language-conditioned-gpu-manipulation.md)。下一步优先PushT完整接近路径与真实短推，同时以实际pad覆盖/相对姿态证据设计6R持握改进；语义编码和共享训练仍未开始。无新CUDA窗口/视频/安装/push；父和原两作者释放。下方第九批及以前保留历史。
+
+
 > 2026-11-14 第九批：完整姿态IK与C1采样路径检查已集成，产品316df74f，新46个HOST首次通过。world1/3四条参考路径各2402样本合格，各一次2400步CUDA及全部4800步/482帧保存核对通过。盒最高离台26.98mm但原grasp未过；6R胶囊实际抬升38.66mm，仍转动/下滑且原place未过，不称完整放置。见[报告](p65-manipulation-route-report-20261114.md)、[计划第17节](../superpowers/plans/2026-11-14-language-conditioned-gpu-manipulation.md)。下一批先用已存轨迹补接触位置/COM力矩/相对姿态支撑诊断，再登记有依据的持握改进；原PushT边界路线可隔离纯编码并行。root/两作者执行完成后释放；无新截止/安装/push/训练，不重跑这两窗。下文第八批及以前为历史。
 
 

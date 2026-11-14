@@ -24,3 +24,8 @@
 
 新增 CLI scripts/measure_manipulation_wrenches.py；先原world1、后world3顺序读取每条trace中后一记录的feedback_source，与前一记录的contact IDs/data及SuccessFrame逐项绑定。每世界预期2399个entry，共4798；末步2400因缺少后一条完整public entry而明确未覆盖，不补造数据。使用同entry对象pose和原编译model.body_ipos求显式COM，逐contact独立对照原已发布world force/couple与双侧body-origin矩平移，转换差门2e-6；不是native求解精度或物理成功门。全部entry和摘要保存gzip JSONL，原输入SHA保持。
 只编译原XML/读取model常量，不调用mj_forward/mj_step或新GPU。首失败原输出保留，修复后新目录执行；测试不重复已有物理轨迹。
+## PushT 有限候选的原场景集成登记（执行前追加）
+
+原作者交付并经新HOST通过后，父按world5/6/7原三scene.mjcf和model.qpos0各查询一次。输入固定：完整object_geom_names、pusher，edge_fractions=(.25,.5,.75)，approach_angles=(0,)，stand_off=.01m，max_candidates=128。全部边、候选、blocked原因、实际COM与完整输入binding保存，不能只保存成功者。
+对每个usable候选，先以原qpos0唯一seed求precontact_center，再仅从该收敛参考求contact_center；复用原pointIK的100步、.15步长、5e-4m门及原joint限位，不追加seed。pusher局部center=(0,0,-.16)。每个结果按原顺序保留，包括未收敛；仅统计两端点都收敛的候选，不选择输出最好的点再回写输入。mj_forward/step全部封禁；只运动学/Jacobian查询，无真实接触施力。完整FREE坐标与model bytes前后不变。
+该集成只回答原3种机器人是否找到有限pusher边界端点候选；不证明完整机器人接近路径、CCD、接触力/力矩或原PushT目标成功。完整路径与一次短推属于下一控制节点，未取得入口候选时先报告具体失败，不提高预算或调目标。

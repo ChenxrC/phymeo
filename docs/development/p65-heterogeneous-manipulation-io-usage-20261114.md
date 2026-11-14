@@ -185,3 +185,25 @@ reader是显式HOST诊断/成功判据适配器，使用公共readback；GPU特�
 reset后可以先read空frame并保存tick=-1的游标，也可直接step后read；无效记录均不产生虚构SuccessFrame。
 游标恢复会核对实际公共frame的完整entry内容，再绑定当前边界；旧游标不能绕过实际reset。
 物理、reader cursor、goal/history目前仍是三个明确owner；下一批B3再统一Env checkpoint事务。
+
+## 接触力与COM力矩测量、PushT边界候选（T1b-4）
+
+```python
+from phymeo.control.manipulation_wrench import measure_object_contact_wrench
+from phymeo.control.manipulation_push import enumerate_native_planar_push_contacts
+
+# arrays是同一accepted-entry公共NumPy映射；com_world必须来自该模型该入步。
+wrench = measure_object_contact_wrench(
+    arrays, row, object_body=object_body_id,
+    object_com_world=com_world, group_geom_ids=pad_geom_ids,
+)
+# group之外的台面等接触仍在other/total。invalid entry返回None。
+# model/q为CPU native几何查询输入，返回候选不会修改实际GPU state。
+candidates = enumerate_native_planar_push_contacts(
+    model, q, object_geom_names=scene.object_geom_names, pusher_geom_name="pusher",
+)
+```
+
+前者完整世界force/couple以及COM力矩，不以body origin替代COM，不宣称抓稳。保存CLI仅支持原任务object和完整W1反馈trace，见[报告](p65-manipulation-wrench-push-report-20261114.md)。
+
+后者限同body完整1..2个共轴/同Z BOX和球/竖直胶囊，完整外边及进入段对所有BOX检查，候选最多128、failed attempts保留；cap-only高度/倾斜/遗漏几何明确拒绝。该HOST查询的1e-9m容差、名义单位法向wrench、IK端点资格不等于真实碰撞响应或任务成功。后续用原GPU owner推进物理。

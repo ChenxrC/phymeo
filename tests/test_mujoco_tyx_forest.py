@@ -52,11 +52,13 @@ def source(name="rp", *, object_first=False, contact=0):
         axis = "0 0 1" if kind == "R" else ("0 1 0" if index == 0 else "1 0 0")
         if index == 2 and name in ("prp", "two-free"):
             axis = "0 0 1"
-        position = "0 0 .5" if index == 0 else (
-            "-.12 .09 .05" if index == 2 and name != "nine" else ".2 0 0"
+        position = (
+            "0 0 .5"
+            if index == 0
+            else ("-.12 .09 .05" if index == 2 and name != "nine" else ".2 0 0")
         )
         geom = (
-            '<geom name="tip" type="sphere" size=".1" pos=".12 .04 .02" '
+            '<geom name="tip" type="sphere" size=".1" pos=".12 .065 .02" '
             'contype="1" conaffinity="2"/>'
             if index == 1 and contact
             else '<geom type="capsule" size=".025 .06"/>'
@@ -67,8 +69,7 @@ def source(name="rp", *, object_first=False, contact=0):
             f'<joint name="j{index}" type="{"hinge" if kind == "R" else "slide"}" '
             f'axis="{axis}" damping=".08" armature=".025" stiffness=".3" springref=".04"/>'
             '<inertial pos=".06 -.02 .025" mass=".7" '
-            'fullinertia=".025 .03 .035 .001 -.0006 .0008"/>'
-            + geom + children + "</body>"
+            'fullinertia=".025 .03 .035 .001 -.0006 .0008"/>' + geom + children + "</body>"
         )
 
     def payload(index):
@@ -100,7 +101,9 @@ def source(name="rp", *, object_first=False, contact=0):
         'friction=".4 .01 .001" solref=".02 1" solimp=".8 .9 .002 .5 2"/></default>'
         '<worldbody><body name="fixed-marker" pos="-2 1 .4"><geom size=".01"/></body>'
         + (objects + robot if object_first else robot + objects)
-        + "</worldbody><actuator>" + motors + "</actuator></mujoco>"
+        + "</worldbody><actuator>"
+        + motors
+        + "</actuator></mujoco>"
     )
 
 
@@ -112,18 +115,18 @@ def initial(mj, model, *, contact=False, slot=0):
         if model.jnt_type[joint] == mj.mjtJoint.mjJNT_FREE:
             ordinal = int(name.removeprefix("free"))
             if not contact:
-                quat = np.array([.94, .12, -.18, .09 + .02 * ordinal])
+                quat = np.array([0.94, 0.12, -0.18, 0.09 + 0.02 * ordinal])
                 q[qa + 3 : qa + 7] = quat / np.linalg.norm(quat)
-                q[qa : qa + 3] += slot * np.array([.01, -.02, .03])
-            v[dof : dof + 6] = np.array([.018, -.012, .009, .06, -.045, .035]) * (
-                1 + .1 * slot + .2 * ordinal
+                q[qa : qa + 3] += slot * np.array([0.01, -0.02, 0.03])
+            v[dof : dof + 6] = np.array([0.018, -0.012, 0.009, 0.06, -0.045, 0.035]) * (
+                1 + 0.1 * slot + 0.2 * ordinal
             )
         else:
             ordinal = int(name.removeprefix("j"))
             if not contact:
-                q[qa] += (-1 if ordinal % 2 else 1) * (.04 + .003 * ordinal)
-            v[dof] = (-1 if ordinal % 2 else 1) * (.015 + .002 * ordinal) * (1 + .1 * slot)
-    return MuJoCoInitialState(q, v, time=.125)
+                q[qa] += (-1 if ordinal % 2 else 1) * (0.04 + 0.003 * ordinal)
+            v[dof] = (-1 if ordinal % 2 else 1) * (0.015 + 0.002 * ordinal) * (1 + 0.1 * slot)
+    return MuJoCoInitialState(q, v, time=0.125)
 
 
 def packet(model, tick=0, slot=0):
@@ -140,8 +143,11 @@ def packet(model, tick=0, slot=0):
 
 def runtime(xml, mode, states):
     return MuJoCoRuntime(
-        compile_mujoco_xml(xml, require_asset=False), mode=mode, implementation="tyx",
-        world_keys=tuple(states), initial_states=states,
+        compile_mujoco_xml(xml, require_asset=False),
+        mode=mode,
+        implementation="tyx",
+        world_keys=tuple(states),
+        initial_states=states,
     )
 
 
@@ -186,21 +192,34 @@ def assert_successor(mj, model, before, after, command, native, continuous):
 
 
 def free_dofs(mj, model):
-    return np.array([
-        dof for joint in np.flatnonzero(model.jnt_type == mj.mjtJoint.mjJNT_FREE)
-        for dof in range(int(model.jnt_dofadr[joint]), int(model.jnt_dofadr[joint]) + 6)
-    ], dtype=int)
+    return np.array(
+        [
+            dof
+            for joint in np.flatnonzero(model.jnt_type == mj.mjtJoint.mjJNT_FREE)
+            for dof in range(int(model.jnt_dofadr[joint]), int(model.jnt_dofadr[joint]) + 6)
+        ],
+        dtype=int,
+    )
 
 
 @pytest.mark.parametrize("mode", MODES)
 @pytest.mark.parametrize("name,object_first,scalars,free_count", SMOOTH_CASES)
 def test_forest_native_dynamics_and_continuous_motion(
-    mode, name, object_first, scalars, free_count, tmp_path,
+    mode,
+    name,
+    object_first,
+    scalars,
+    free_count,
+    tmp_path,
 ):
     mj = normal._deps()
     xml = source(name, object_first=object_first)
     model = mj.MjModel.from_xml_string(xml)
-    assert (model.nq, model.nv, model.nu) == (scalars + 7 * free_count, scalars + 6 * free_count, scalars)
+    assert (model.nq, model.nv, model.nu) == (
+        scalars + 7 * free_count,
+        scalars + 6 * free_count,
+        scalars,
+    )
     begin = initial(mj, model)
     with runtime(xml, mode, {19: begin}) as owner:
         start = owner.integration_snapshot()[19]
@@ -218,17 +237,28 @@ def test_forest_native_dynamics_and_continuous_motion(
             owner.set_controls({19: command})
             assert owner.step(H) == {19: True}
             after = owner.integration_snapshot()[19]
-            _save(tmp_path / "smooth.jsonl", dict(
-                source=xml if tick == 0 else None, before=before, actual=after,
-                oracle=expected, native_q=local.qpos.copy(), native_v=local.qvel.copy(),
-                continuous_q=continuous.qpos.copy(), continuous_v=continuous.qvel.copy(),
-            ))
+            _save(
+                tmp_path / "smooth.jsonl",
+                dict(
+                    source=xml if tick == 0 else None,
+                    before=before,
+                    actual=after,
+                    oracle=expected,
+                    native_q=local.qpos.copy(),
+                    native_v=local.qvel.copy(),
+                    continuous_q=continuous.qpos.copy(),
+                    continuous_v=continuous.qvel.copy(),
+                ),
+            )
             assert_fields(after.last_step, expected)
             assert_successor(mj, model, before, after, command, local, continuous)
             assert not after.last_step.contacts
             # Separate trees share contact solves, never an invented inertial coupling.
             np.testing.assert_allclose(
-                after.last_step.dynamics.mass_matrix[np.ix_(fcols, rcols)], 0, rtol=0, atol=1e-7,
+                after.last_step.dynamics.mass_matrix[np.ix_(fcols, rcols)],
+                0,
+                rtol=0,
+                atol=1e-7,
             )
         for joint in np.flatnonzero(model.jnt_type == mj.mjtJoint.mjJNT_FREE):
             qa, dof = int(model.jnt_qposadr[joint]), int(model.jnt_dofadr[joint])
@@ -272,13 +302,26 @@ def test_forest_xml_order_preserves_named_physics(mode, name):
             np.testing.assert_allclose(left.v[va], right.v[vb], rtol=0, atol=V_ATOL)
             a, b = left.last_step.dynamics, right.last_step.dynamics
             for field in ("body_position", "body_rotation", "body_com"):
-                np.testing.assert_allclose(getattr(a, field)[ba], getattr(b, field)[bb], rtol=3e-5, atol=4e-5)
-            np.testing.assert_allclose(a.jacobian_com[ba][:, :, va], b.jacobian_com[bb][:, :, vb], rtol=2e-4, atol=5e-5)
-            np.testing.assert_allclose(a.mass_matrix[np.ix_(va, va)], b.mass_matrix[np.ix_(vb, vb)], rtol=3e-4, atol=5e-5)
+                np.testing.assert_allclose(
+                    getattr(a, field)[ba], getattr(b, field)[bb], rtol=3e-5, atol=4e-5
+                )
+            np.testing.assert_allclose(
+                a.jacobian_com[ba][:, :, va], b.jacobian_com[bb][:, :, vb], rtol=2e-4, atol=5e-5
+            )
+            np.testing.assert_allclose(
+                a.mass_matrix[np.ix_(va, va)], b.mass_matrix[np.ix_(vb, vb)], rtol=3e-4, atol=5e-5
+            )
             for field in ("bias", "passive", "applied", "smooth_acceleration"):
                 rtol, atol = normal.TOL[field]
-                np.testing.assert_allclose(getattr(a, field)[va], getattr(b, field)[vb], rtol=rtol, atol=atol)
-            np.testing.assert_allclose(left.last_step.qfrc_actuator[va], right.last_step.qfrc_actuator[vb], rtol=4e-4, atol=4e-4)
+                np.testing.assert_allclose(
+                    getattr(a, field)[va], getattr(b, field)[vb], rtol=rtol, atol=atol
+                )
+            np.testing.assert_allclose(
+                left.last_step.qfrc_actuator[va],
+                right.last_step.qfrc_actuator[vb],
+                rtol=4e-4,
+                atol=4e-4,
+            )
 
 
 @pytest.mark.parametrize("mode", MODES)
@@ -305,25 +348,34 @@ def test_forest_real_contact_couples_robot_and_free_object(mode, name, dim, tmp_
             assert owner.step(H) == {29: True}
             after = owner.integration_snapshot()[29]
             row = after.last_step
-            _save(tmp_path / "contact.jsonl", dict(
-                source=xml if tick == 0 else None, before=before, actual=after,
-                oracle=expected, continuous_q=continuous.qpos.copy(), continuous_v=continuous.qvel.copy(),
-            ))
+            _save(
+                tmp_path / "contact.jsonl",
+                dict(
+                    source=xml if tick == 0 else None,
+                    before=before,
+                    actual=after,
+                    oracle=expected,
+                    continuous_q=continuous.qpos.copy(),
+                    continuous_v=continuous.qvel.copy(),
+                ),
+            )
             (mixed.assert_receipt if dim == 3 else normal._assert_receipt)(row, expected, model)
             assert_successor(mj, model, before, after, command, local, continuous)
             if tick == 0:
-                assert len(row.contacts) == 1 and row.contacts[0].normal_force > .01
-                assert np.linalg.norm(row.qfrc_constraint[rcols]) > .001
-                assert np.linalg.norm(row.qfrc_constraint[fcols[:3]]) > .001
-                assert np.linalg.norm(row.qfrc_constraint[fcols[3:]]) > .0001
+                assert len(row.contacts) == 1 and row.contacts[0].normal_force > 0.01
+                assert np.linalg.norm(row.qfrc_constraint[rcols]) > 0.001
+                assert np.linalg.norm(row.qfrc_constraint[fcols[:3]]) > 0.001
+                assert np.linalg.norm(row.qfrc_constraint[fcols[3:]]) > 0.0001
                 angular_response = row.qacc[fcols[3:]] - row.dynamics.smooth_acceleration[fcols[3:]]
                 assert np.linalg.norm(angular_response) > 0.001
                 contact = row.contacts[0]
-                assert np.linalg.norm(contact.jacobian[..., rcols]) > .01
-                assert np.linalg.norm(contact.jacobian[..., fcols]) > .01
+                assert np.linalg.norm(contact.jacobian[..., rcols]) > 0.01
+                assert np.linalg.norm(contact.jacobian[..., fcols]) > 0.01
                 np.testing.assert_allclose(
                     contact.force_on_geometry1_world + contact.force_on_geometry2_world,
-                    np.zeros(3), rtol=0, atol=1e-6,
+                    np.zeros(3),
+                    rtol=0,
+                    atol=1e-6,
                 )
 
 
@@ -334,12 +386,17 @@ def batch_inputs(mj):
         models[name] = mj.MjModel.from_xml_string(xml)
         specs.append(MuJoCoTyxModelSpec(name, compile_mujoco_xml(xml, require_asset=False)))
     for key, name, slot in ((41, "rp", 0), (7, "prp", 1), (113, "rp", 2)):
-        worlds.append(MuJoCoTyxWorldSpec(key, name, initial(mj, models[name], contact=True, slot=slot)))
+        worlds.append(
+            MuJoCoTyxWorldSpec(key, name, initial(mj, models[name], contact=True, slot=slot))
+        )
     return models, tuple(specs), tuple(worlds)
 
 
 def batch_packets(models, worlds, tick):
-    return {world.world: packet(models[world.model_key], tick, slot) for slot, world in enumerate(worlds)}
+    return {
+        world.world: packet(models[world.model_key], tick, slot)
+        for slot, world in enumerate(worlds)
+    }
 
 
 @pytest.mark.cuda
@@ -349,9 +406,14 @@ def test_forest_heterogeneous_cuda_world_isolation_and_partial_reset(tmp_path):
     with ExitStack() as stack:
         batch = stack.enter_context(MuJoCoTyxHeterogeneousBatch(specs, worlds, mode="cuda"))
         independent = {
-            world.world: stack.enter_context(MuJoCoTyxHeterogeneousBatch(
-                tuple(spec for spec in specs if spec.key == world.model_key), (world,), mode="cuda",
-            )) for world in worlds
+            world.world: stack.enter_context(
+                MuJoCoTyxHeterogeneousBatch(
+                    tuple(spec for spec in specs if spec.key == world.model_key),
+                    (world,),
+                    mode="cuda",
+                )
+            )
+            for world in worlds
         }
         for tick in range(3):
             commands = batch_packets(models, worlds, tick)
@@ -375,7 +437,10 @@ def test_forest_heterogeneous_cuda_world_isolation_and_partial_reset(tmp_path):
             single.set_controls({key: commands[key]})
             single.step(H)
             _same({key: batch.integration_snapshot()[key]}, single.integration_snapshot())
-        _save(tmp_path / "isolation-reset.jsonl", dict(before=before, after=batch.integration_snapshot()))
+        _save(
+            tmp_path / "isolation-reset.jsonl",
+            dict(before=before, after=batch.integration_snapshot()),
+        )
 
 
 @pytest.mark.cuda
@@ -411,7 +476,9 @@ def test_forest_last_bucket_download_failure_retains_all_worlds_and_retries(monk
         _same(states, batch.integration_snapshot())
         assert batch.step(H) == reference.step(H)
         _same(batch.integration_snapshot(), reference.integration_snapshot())
-        _save(tmp_path / "late-failure.jsonl", dict(before=states, retry=batch.integration_snapshot()))
+        _save(
+            tmp_path / "late-failure.jsonl", dict(before=states, retry=batch.integration_snapshot())
+        )
 
 
 @pytest.mark.parametrize("mode", MODES)
@@ -431,8 +498,13 @@ def test_forest_step_has_no_cpu_dynamics_fallback(mode, monkeypatch, tmp_path):
 
         with monkeypatch.context() as patch:
             for name in (
-                "mj_step", "mj_forward", "mj_fullM", "mj_rne", "mj_jac",
-                "mj_collision", "mj_fwdConstraint",
+                "mj_step",
+                "mj_forward",
+                "mj_fullM",
+                "mj_rne",
+                "mj_jac",
+                "mj_collision",
+                "mj_fwdConstraint",
             ):
                 patch.setattr(mj, name, forbidden)
             for name in ("solve", "inv", "cholesky", "lstsq"):

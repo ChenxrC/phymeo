@@ -5,7 +5,7 @@
 
 """Static native tree fields only: no configuration-specific M/J/bias freezing."""
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 import numpy as np
 
@@ -20,8 +20,8 @@ MAX_BODIES = 128
 
 @dataclass(frozen=True)
 class TyxFloatingModel(TyxTreeModel):
-    root_body: int
-    native_joint_layout: bool = field(default=False, kw_only=True)
+    free_root_bodies: tuple[int, ...]
+    native_joint_layout: bool = True
 
 
 def compile_floating_model(
@@ -38,17 +38,16 @@ def compile_floating_model(
     has_ball = bool(np.any(balls))
     ball_count = int(np.count_nonzero(balls))
     if (
-        len(free) != 1
-        or int(free[0]) != 0
-        or not np.all((scalar | balls)[1:])
+        not len(free)
+        or not np.all(scalar | balls | (model.jnt_type == mj.mjtJoint.mjJNT_FREE))
         or not 6 <= model.nv <= 35
-        or model.nq != model.nv + 1 + ball_count
-        or model.njnt != model.nv - 5 - 2 * ball_count
+        or model.nq != model.nv + len(free) + ball_count
+        or model.njnt != model.nv - 5 * len(free) - 2 * ball_count
         or model.nq > 45
     ):
         issue(
             "joint-domain",
-            "floating trees require one leading FREE, native BALL/R/P descendants, nv<=35/nq<=45",
+            "native forests require world-child FREE roots and BALL/R/P joints, nv<=35/nq<=45",
         )
         raise MuJoCoTyxUnsupported(issues)
     if has_ball:
@@ -84,22 +83,12 @@ def compile_floating_model(
                 issue("free-ball-spring", "BALL quaternion springs are not migrated")
             if model.body_jntnum[int(model.jnt_bodyid[joint])] != 1:
                 issue("ball-same-body", "BALL must be its body's only native joint")
-    root = int(model.jnt_bodyid[0])
-    if (
-        model.body_parentid[root] != 0
-        or model.body_jntnum[root] != 1
-        or model.jnt_qposadr[0] != 0
-        or model.jnt_dofadr[0] != 0
-    ):
-        issue("root-domain", "native free root must be a world child with only its free joint")
-    for joint in range(1, model.njnt):
-        cursor = int(model.jnt_bodyid[joint])
-        while cursor and cursor != root:
-            cursor = int(model.body_parentid[cursor])
-        if cursor != root:
-            issue("root-domain", "all articulated joints must descend from the single free root")
-    if model.jnt_stiffness[0] != 0:
-        issue("free-spring", "native quaternion free-joint springs are not migrated")
+    roots = tuple(int(model.jnt_bodyid[joint]) for joint in free)
+    for joint, root in zip(free, roots, strict=True):
+        if model.body_parentid[root] != 0 or model.body_jntnum[root] != 1:
+            issue("root-domain", "each FREE must be its world-child body's only native joint")
+        if model.jnt_stiffness[joint] != 0:
+            issue("free-spring", "native quaternion free-joint springs are not migrated")
     if model.nbody > MAX_BODIES:
         issue("body-capacity", "T2 preserves every body and supports at most 128 native bodies")
     for native_field, code in (
@@ -144,7 +133,8 @@ def compile_floating_model(
         joint = int(model.actuator_trnid[actuator, 0])
         if (
             model.actuator_trntype[actuator] != mj.mjtTrn.mjTRN_JOINT
-            or not 1 <= joint < model.njnt
+            or not 0 <= joint < model.njnt
+            or model.jnt_type[joint] == mj.mjtJoint.mjJNT_FREE
             or model.actuator_dyntype[actuator]
             not in (
                 (mj.mjtDyn.mjDYN_NONE, mj.mjtDyn.mjDYN_FILTEREXACT)
@@ -236,37 +226,32 @@ def compile_floating_model(
         body_data[body, 16:25] = (
             principal @ np.diag(model.body_inertia[body]) @ principal.T
         ).reshape(-1)
-    joint_rows = model.njnt if has_ball else model.nv
+    joint_rows = model.njnt
     joint_ids = np.zeros((joint_rows, 4), np.int32)
     joint_data = np.zeros((joint_rows, 7))
     dof_ids = np.full((model.nv, 3), -1, np.int32)
-    vectors = np.zeros((9, max(8, model.nq) if has_ball else model.nv))
-    if has_ball:
-        vectors[4, : model.nq] = model.qpos0
+    vectors = np.zeros((9, max(8, model.nq)))
+    vectors[4, : model.nq] = model.qpos0
     vectors[7, :] = -np.inf
     vectors[8, :] = np.inf
-    vectors[1, :6] = model.dof_damping[:6]
-    vectors[5, :6] = model.dof_armature[:6]
-    for dof in range(6):
-        dof_ids[dof] = (int(dof >= 3), -1, 0)
-        if not has_ball:
-            joint_ids[dof] = (int(dof >= 3), dof, dof, root)
-    if has_ball:
-        joint_ids[0] = (3, 0, 0, root)
-    for joint in range(1, model.njnt):
+    for joint in range(model.njnt):
         q, dof = int(model.jnt_qposadr[joint]), int(model.jnt_dofadr[joint])
         ball = bool(balls[joint])
-        kind = 2 if ball else int(model.jnt_type[joint] == mj.mjtJoint.mjJNT_HINGE)
-        row = joint if has_ball else dof
-        joint_ids[row] = (kind, q, dof, int(model.jnt_bodyid[joint]))
-        joint_data[row, :3] = model.jnt_axis[joint]
-        joint_data[row, 3:6] = model.jnt_pos[joint]
-        joint_data[row, 6] = model.qpos0[q]
-        for column in range(dof, dof + (3 if ball else 1)):
-            dof_ids[column] = (int(kind != 0), -1 if ball else q, joint)
+        is_free = model.jnt_type[joint] == mj.mjtJoint.mjJNT_FREE
+        kind = (
+            3 if is_free else 2 if ball else int(model.jnt_type[joint] == mj.mjtJoint.mjJNT_HINGE)
+        )
+        joint_ids[joint] = (kind, q, dof, int(model.jnt_bodyid[joint]))
+        joint_data[joint, :3] = model.jnt_axis[joint]
+        joint_data[joint, 3:6] = model.jnt_pos[joint]
+        joint_data[joint, 6] = model.qpos0[q]
+        width = 6 if is_free else 3 if ball else 1
+        for column in range(dof, dof + width):
+            rotational = column >= dof + 3 if is_free else kind != 0
+            dof_ids[column] = (int(rotational), -1 if is_free or ball else q, joint)
             vectors[1, column] = model.dof_damping[column]
             vectors[5, column] = model.dof_armature[column]
-        if not ball:
+        if not ball and not is_free:
             vectors[2, dof] = model.jnt_stiffness[joint]
             vectors[3, dof] = model.qpos_spring[q]
         if model.jnt_limited[joint] and not allow_constraints:
@@ -282,10 +267,14 @@ def compile_floating_model(
             start = int(model.body_jntadr[cursor])
             for joint in range(start, start + int(model.body_jntnum[cursor])):
                 dof = int(model.jnt_dofadr[joint])
-                if joint == 0:
-                    ancestors[body, :6] = 1
-                else:
-                    ancestors[body, dof : dof + (3 if balls[joint] else 1)] = 1
+                width = (
+                    6
+                    if model.jnt_type[joint] == mj.mjtJoint.mjJNT_FREE
+                    else 3
+                    if balls[joint]
+                    else 1
+                )
+                ancestors[body, dof : dof + width] = 1
             cursor = int(model.body_parentid[cursor])
     actuator_ids = np.zeros((max(model.nu, 1), 3), np.int32)
     actuator_values = np.zeros((max(model.nu, 1), 10))
@@ -317,10 +306,10 @@ def compile_floating_model(
         raise MuJoCoTyxUnsupported(issues)
     ranges = np.zeros((model.nbody, 2), np.int32)
     for body in range(1, model.nbody):
-        if body != root and model.body_jntnum[body]:
+        if model.body_jntnum[body]:
             start = int(model.body_jntadr[body])
             ranges[body] = (
-                start if has_ball else int(model.jnt_dofadr[start]),
+                start,
                 int(model.body_jntnum[body]),
             )
     return TyxFloatingModel(
@@ -328,9 +317,8 @@ def compile_floating_model(
         nq=int(model.nq),
         nv=int(model.nv),
         nu=int(model.nu),
-        body=root,
-        root_body=root,
-        native_joint_layout=has_ball,
+        body=-1,
+        free_root_bodies=roots,
         pair=None,
         matrices=np.empty((0, 0, 0), np.float32),
         vectors=fp32(vectors, "tree static vectors"),

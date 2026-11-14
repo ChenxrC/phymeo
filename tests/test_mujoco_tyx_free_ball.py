@@ -27,7 +27,17 @@ from phymeo.backends.mujoco_tyx import MuJoCoTyxUnsupported
 from phymeo.builders.mujoco_compiler import compile_mujoco_xml
 
 KEYS = (3, 29)
-CASES = ("passive", "oblique", "shared", "mixed", "branches", "nested", "clamps-disabled", "sign")
+CASES = (
+    "passive",
+    "oblique",
+    "shared",
+    "mixed",
+    "branches",
+    "nested",
+    "clamps-disabled",
+    "sign",
+    "multiple-free",
+)
 FORCE = dict(rtol=3e-4, atol=2e-4)
 SCHEMA = "native-free-ball-joint-motor-transmission-v1"
 
@@ -57,6 +67,9 @@ def motor(name, target, gear, extra="", gain="1"):
 
 
 def source(case):
+    if case == "multiple-free":
+        # Promote the exact former structural rejection, without changing its XML.
+        return negative_source("multiple-free")
     child = body("ball")
     actors = "" if case == "passive" else motor("drive", "ball", "1 -2 .5", gain=".8")
     if case == "shared":
@@ -283,7 +296,6 @@ NEGATIVES = {
     "nv36": "joint-domain",
     "tiny-y": "fp32-range",
     "tiny-z": "fp32-range",
-    "multiple-free": "joint-domain",
     "ball-same-body": "ball-same-body",
 }
 
@@ -348,7 +360,13 @@ def test_free_ball_outside_domain_precedes_device(case, monkeypatch):
 
     monkeypatch.setattr(implementation.MuJoCoTyxRuntime, "_build_device", forbidden)
     with pytest.raises((MuJoCoTyxUnsupported, ValueError)) as caught:
-        MuJoCoRuntime(compiled, implementation="tyx", mode="interpret")
+        if case == "contact":
+            # R3 admits public contacts; the bare floating compiler still needs opt-in.
+            from phymeo.backends.mujoco_tyx._floating_model import compile_floating_model
+
+            compile_floating_model(mj, mj.MjModel.from_xml_string(text))
+        else:
+            MuJoCoRuntime(compiled, implementation="tyx", mode="interpret")
     assert NEGATIVES[case] in str(caught.value)
     assert not calls
     monkeypatch.setattr(implementation.MuJoCoTyxRuntime, "_build_device", original)

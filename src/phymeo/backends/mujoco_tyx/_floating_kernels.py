@@ -13,7 +13,7 @@ def geometry(
     count: tx.i32,
     nbody: tx.i32,
     nv: tx.i32,
-    root: tx.i32,
+    njnt: tx.i32,
     parents: tx.ndarray(tx.i32, 1),
     body_ranges: tx.ndarray(tx.i32, 2),
     body_data: tx.ndarray(tx.f32, 2),
@@ -32,9 +32,12 @@ def geometry(
 ):
     for w in tx.range(count):
         status[w] = 0
-        for d in range(6, nv):
-            if q[w, d + 1] <= vectors[7, d] or q[w, d + 1] >= vectors[8, d]:
-                status[w] = 3
+        for joint in range(njnt):
+            if joints[joint, 0] < 2:
+                qa = joints[joint, 1]
+                dof = joints[joint, 2]
+                if q[w, qa] <= vectors[7, dof] or q[w, qa] >= vectors[8, dof]:
+                    status[w] = 3
         for b in range(nbody):
             for slot in range(7):
                 for k in range(3):
@@ -77,13 +80,17 @@ def geometry(
                         + motion[w, parent, 2, j] * work[w, 1, k]
                         - motion[w, parent, 2, k] * work[w, 1, j]
                     )
-                if b == root:
+                start = body_ranges[b, 0]
+                number = body_ranges[b, 1]
+                if number == 1 and joints[start, 0] == 3:
+                    qa = joints[start, 1]
+                    dof = joints[start, 2]
                     # Native free qpos is the body origin in world axes and WXYZ.
                     # Normalize a scratch copy; never overwrite the input state bank.
-                    qw = q[w, 3]
-                    qx = q[w, 4]
-                    qy = q[w, 5]
-                    qz = q[w, 6]
+                    qw = q[w, qa + 3]
+                    qx = q[w, qa + 4]
+                    qy = q[w, qa + 5]
+                    qz = q[w, qa + 6]
                     length = tx.sqrt(qw * qw + qx * qx + qy * qy + qz * qz)
                     if not tx.isfinite(length) or length <= 0.0:
                         status[w] = 2
@@ -102,25 +109,24 @@ def geometry(
                     rotation[w, b, 2, 1] = 2.0 * (qy * qz + qw * qx)
                     rotation[w, b, 2, 2] = 1.0 - 2.0 * (qx * qx + qy * qy)
                     for i in range(3):
-                        motion[w, b, 0, i] = q[w, i]
-                        motion[w, b, 1, i] = v[w, i]
+                        motion[w, b, 0, i] = q[w, qa + i]
+                        motion[w, b, 1, i] = v[w, dof + i]
                         motion[w, b, 2, i] = 0.0
                         motion[w, b, 3, i] = 0.0
                         motion[w, b, 4, i] = 0.0
                         for j in range(3):
                             motion[w, b, 2, i] = (
-                                motion[w, b, 2, i] + rotation[w, b, i, j] * v[w, 3 + j]
+                                motion[w, b, 2, i] + rotation[w, b, i, j] * v[w, dof + 3 + j]
                             )
-                            axes[w, j, i] = 0.0
+                            axes[w, dof + j, i] = 0.0
                             if i == j:
-                                axes[w, j, i] = 1.0
-                            axes[w, 3 + j, i] = rotation[w, b, i, j]
-                            anchors[w, j, i] = q[w, i]
-                            anchors[w, 3 + j, i] = q[w, i]
+                                axes[w, dof + j, i] = 1.0
+                            axes[w, dof + 3 + j, i] = rotation[w, b, i, j]
+                            anchors[w, dof + j, i] = q[w, qa + i]
+                            anchors[w, dof + 3 + j, i] = q[w, qa + i]
                     # qddot=0 => origin acceleration=0 and alpha=R(omega x omega)=0.
                     # Descendant and COM centripetal/transport terms remain below.
-                start = body_ranges[b, 0]
-                number = body_ranges[b, 1]
+                    number = 0  # The FREE body has no additional native joints.
                 for offset in range(number):
                     joint = start + offset
                     qa = joints[joint, 1]
@@ -554,16 +560,12 @@ def solve(
     constraint: tx.ndarray(tx.f32, 2),
     rows: tx.ndarray(tx.f32, 2),
     status: tx.ndarray(tx.i32, 1),
-    native_joint_layout: tx.i32,
     nq: tx.i32,
     njnt: tx.i32,
     joints: tx.ndarray(tx.i32, 2),
 ):
     for w in tx.range(count):
-        qcount = nv + 1
-        if native_joint_layout != 0:
-            qcount = nq
-        for i in range(qcount):
+        for i in range(nq):
             qnext[w, i] = q[w, i]
         for i in range(nv):
             vnext[w, i] = v[w, i]
@@ -612,110 +614,68 @@ def solve(
                     integration_acc[w, i] = value / factor[w, i, i]
         for i in range(nv):
             vnext[w, i] = v[w, i] + h * integration_acc[w, i]
-            if native_joint_layout == 0 and i >= 6:
-                qnext[w, i + 1] = q[w, i + 1] + h * vnext[w, i]
-                if qnext[w, i + 1] <= vectors[7, i] or qnext[w, i + 1] >= vectors[8, i]:
-                    status[w] = 3
             if (
                 not tx.isfinite(vnext[w, i])
                 or not tx.isfinite(acceleration[w, i])
                 or not tx.isfinite(integration_acc[w, i])
             ):
                 status[w] = 2
-        for i in range(3):
-            qnext[w, i] = q[w, i] + h * vnext[w, i]
-        qw = q[w, 3]
-        qx = q[w, 4]
-        qy = q[w, 5]
-        qz = q[w, 6]
-        length = tx.sqrt(qw * qw + qx * qx + qy * qy + qz * qz)
-        if not tx.isfinite(length) or length <= 0.0:
-            status[w] = 2
-            length = 1.0
-        qw = qw / length
-        qx = qx / length
-        qy = qy / length
-        qz = qz / length
-        wx = vnext[w, 3]
-        wy = vnext[w, 4]
-        wz = vnext[w, 5]
-        norm = tx.sqrt(wx * wx + wy * wy + wz * wz)
-        scalar = 1.0
-        scale = 0.0
-        if norm > 0.0:
-            scalar = tx.cos(0.5 * h * norm)
-            scale = tx.sin(0.5 * h * norm) / norm
-        dx = scale * wx
-        dy = scale * wy
-        dz = scale * wz
-        # Right multiplication: increment is in native root-local angular axes.
-        nw = qw * scalar - qx * dx - qy * dy - qz * dz
-        nx = qw * dx + qx * scalar + qy * dz - qz * dy
-        ny = qw * dy - qx * dz + qy * scalar + qz * dx
-        nz = qw * dz + qx * dy - qy * dx + qz * scalar
-        length = tx.sqrt(nw * nw + nx * nx + ny * ny + nz * nz)
-        if not tx.isfinite(length) or length <= 0.0:
-            status[w] = 2
-            length = 1.0
-        qnext[w, 3] = nw / length
-        qnext[w, 4] = nx / length
-        qnext[w, 5] = ny / length
-        qnext[w, 6] = nz / length
-        if native_joint_layout != 0:
-            for joint in range(1, njnt):
-                qa = joints[joint, 1]
-                dof = joints[joint, 2]
-                if joints[joint, 0] != 2:
-                    qnext[w, qa] = q[w, qa] + h * vnext[w, dof]
-                    if qnext[w, qa] <= vectors[7, dof] or qnext[w, qa] >= vectors[8, dof]:
-                        status[w] = 3
-                    if not tx.isfinite(qnext[w, qa]):
-                        status[w] = 2
-                else:
-                    # Native local angular velocity integrates by right multiplication.
-                    qw = q[w, qa]
-                    qx = q[w, qa + 1]
-                    qy = q[w, qa + 2]
-                    qz = q[w, qa + 3]
-                    length = tx.sqrt(qw * qw + qx * qx + qy * qy + qz * qz)
-                    if not tx.isfinite(length) or length <= 0.0:
-                        status[w] = 2
-                        length = 1.0
-                    qw = qw / length
-                    qx = qx / length
-                    qy = qy / length
-                    qz = qz / length
-                    wx = vnext[w, dof]
-                    wy = vnext[w, dof + 1]
-                    wz = vnext[w, dof + 2]
-                    speed = tx.sqrt(wx * wx + wy * wy + wz * wz)
-                    dw = 1.0
-                    scale = 0.0
-                    if not tx.isfinite(speed):
-                        status[w] = 2
-                    elif speed > 0.0:
-                        angle = 0.5 * h * speed
-                        dw = tx.cos(angle)
-                        scale = tx.sin(angle) / speed
-                    dx = scale * wx
-                    dy = scale * wy
-                    dz = scale * wz
-                    ow = qw * dw - qx * dx - qy * dy - qz * dz
-                    ox = qw * dx + qx * dw + qy * dz - qz * dy
-                    oy = qw * dy - qx * dz + qy * dw + qz * dx
-                    oz = qw * dz + qx * dy - qy * dx + qz * dw
-                    out_length = tx.sqrt(ow * ow + ox * ox + oy * oy + oz * oz)
-                    if not tx.isfinite(out_length) or out_length <= 0.0:
-                        status[w] = 2
-                        out_length = 1.0
-                    qnext[w, qa] = ow / out_length
-                    qnext[w, qa + 1] = ox / out_length
-                    qnext[w, qa + 2] = oy / out_length
-                    qnext[w, qa + 3] = oz / out_length
-                    for component in range(4):
-                        if not tx.isfinite(qnext[w, qa + component]):
-                            status[w] = 2
-        for i in range(qcount):
+        for joint in range(njnt):
+            kind = joints[joint, 0]
+            qa = joints[joint, 1]
+            dof = joints[joint, 2]
+            if kind < 2:
+                qnext[w, qa] = q[w, qa] + h * vnext[w, dof]
+                if qnext[w, qa] <= vectors[7, dof] or qnext[w, qa] >= vectors[8, dof]:
+                    status[w] = 3
+            else:
+                if kind == 3:
+                    for axis in range(3):
+                        qnext[w, qa + axis] = q[w, qa + axis] + h * vnext[w, dof + axis]
+                    qa = qa + 3
+                    dof = dof + 3
+                # FREE and BALL both use native local angular velocity.
+                # Right multiply the original quaternion by the Euler rotation.
+                qw = q[w, qa]
+                qx = q[w, qa + 1]
+                qy = q[w, qa + 2]
+                qz = q[w, qa + 3]
+                length = tx.sqrt(qw * qw + qx * qx + qy * qy + qz * qz)
+                if not tx.isfinite(length) or length <= 0.0:
+                    status[w] = 2
+                    length = 1.0
+                qw = qw / length
+                qx = qx / length
+                qy = qy / length
+                qz = qz / length
+                wx = vnext[w, dof]
+                wy = vnext[w, dof + 1]
+                wz = vnext[w, dof + 2]
+                speed = tx.sqrt(wx * wx + wy * wy + wz * wz)
+                dw = 1.0
+                scale = 0.0
+                if not tx.isfinite(speed):
+                    status[w] = 2
+                elif speed > 0.0:
+                    angle = 0.5 * h * speed
+                    dw = tx.cos(angle)
+                    scale = tx.sin(angle) / speed
+                dx = scale * wx
+                dy = scale * wy
+                dz = scale * wz
+                ow = qw * dw - qx * dx - qy * dy - qz * dz
+                ox = qw * dx + qx * dw + qy * dz - qz * dy
+                oy = qw * dy - qx * dz + qy * dw + qz * dx
+                oz = qw * dz + qx * dy - qy * dx + qz * dw
+                out_length = tx.sqrt(ow * ow + ox * ox + oy * oy + oz * oz)
+                if not tx.isfinite(out_length) or out_length <= 0.0:
+                    status[w] = 2
+                    out_length = 1.0
+                qnext[w, qa] = ow / out_length
+                qnext[w, qa + 1] = ox / out_length
+                qnext[w, qa + 2] = oy / out_length
+                qnext[w, qa + 3] = oz / out_length
+        for i in range(nq):
             if not tx.isfinite(qnext[w, i]):
                 status[w] = 2
         # Kahan clock: keep the rounding compensation in the transaction buffer.

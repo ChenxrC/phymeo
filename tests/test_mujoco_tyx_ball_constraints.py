@@ -88,7 +88,6 @@ def test_exact_direct_compiler_dry_admission_keeps_explicit_opt_in(module):
         "cylinder",
         "exclude",
         "explicit-pair",
-        "multiple-free",
     ),
 )
 def test_new_joint_route_does_not_bypass_original_structural_rejections(bad, monkeypatch, tmp_path):
@@ -119,7 +118,6 @@ def test_new_joint_route_does_not_bypass_original_structural_rejections(bad, mon
         "cylinder": "contact-domain",
         "exclude": "explicit-excludes",
         "explicit-pair": "explicit-pairs",
-        "multiple-free": "joint-domain",
     }[bad]
     with pytest.raises(MuJoCoTyxUnsupported) as caught:
         MuJoCoRuntime(compile_mujoco_xml(xml, require_asset=False), mode="interpret")
@@ -127,6 +125,12 @@ def test_new_joint_route_does_not_bypass_original_structural_rejections(bad, mon
     assert expected in {issue.code for issue in caught.value.issues}
     (tmp_path / "source.xml").write_text(xml, encoding="utf-8")
     (tmp_path / "rejection.txt").write_text(repr(caught.value), encoding="utf-8")
+
+
+@pytest.mark.parametrize("mode", MODES)
+def test_exact_retired_multiple_free_has_mixed_constraint_successor(mode, tmp_path):
+    with case.saved(tmp_path / "multiple-free.jsonl.gz") as journal:
+        case.original(case.negative_source("multiple-free"), mode, journal, label="multiple-free")
 
 
 @pytest.mark.parametrize("free", (False, True))

@@ -74,7 +74,7 @@ class TyxNormalDevice(TyxDevice):
             self._put(self.body_force, body_force)
             geometry_args = [self.nworld, self.nbody, self.plan.nv]
             if self.plan.base.kind == 3:
-                geometry_args.append(self.plan.root_body)
+                geometry_args.append(len(self.plan.joint_ids))
             self.geometry[old](
                 *geometry_args,
                 self.parents,
@@ -242,7 +242,6 @@ class TyxNormalDevice(TyxDevice):
                 self.status,
                 *(
                     (
-                        int(getattr(self.plan, "native_joint_layout", False)),
                         self.plan.nq,
                         len(self.plan.joint_ids),
                         self.joints,

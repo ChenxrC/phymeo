@@ -63,11 +63,17 @@ def test_independent_free_pair_contact_has_both_angular_reactions(mode, tmp_path
             assert owner.step(forest.H) == {19: True}
             after = owner.integration_snapshot()[19]
             row = after.last_step
-            forest._save(tmp_path / "free-pair.jsonl", dict(
-                source=xml if tick == 0 else None, entry=before, actual=after,
-                oracle=expected, continuous_q=continuous.qpos.copy(),
-                continuous_v=continuous.qvel.copy(),
-            ))
+            forest._save(
+                tmp_path / "free-pair.jsonl",
+                dict(
+                    source=xml if tick == 0 else None,
+                    entry=before,
+                    actual=after,
+                    oracle=expected,
+                    continuous_q=continuous.qpos.copy(),
+                    continuous_v=continuous.qvel.copy(),
+                ),
+            )
             forest.mixed.assert_receipt(row, expected, model)
             forest.assert_successor(mj, model, before, after, command, local, continuous)
             np.testing.assert_allclose(row.qfrc_constraint[robot_columns], 0, rtol=0, atol=1e-7)
@@ -87,7 +93,9 @@ def test_independent_free_pair_contact_has_both_angular_reactions(mode, tmp_path
                     assert np.linalg.norm(np.cross(lever, contact.frame[0])) > 0.02
                 np.testing.assert_allclose(
                     contact.force_on_geometry1_world + contact.force_on_geometry2_world,
-                    np.zeros(3), rtol=0, atol=1e-6,
+                    np.zeros(3),
+                    rtol=0,
+                    atol=1e-6,
                 )
 
 
@@ -125,7 +133,9 @@ def test_first_fixed_joint_constraints_activation_and_nonleading_free_restore(mo
         base = forest.initial(mj, model, slot=slot)
         q = base.q.copy()
         q[int(model.jnt_qposadr[first])] = 0.0195
-        starts[key] = MuJoCoInitialState(q, base.v, act=np.array([0.07 + 0.01 * slot]), time=base.time)
+        starts[key] = MuJoCoInitialState(
+            q, base.v, act=np.array([0.07 + 0.01 * slot]), time=base.time
+        )
     journal = scalar.Journal(tmp_path / "forest-composition.jsonl.gz")
     try:
         journal.emit("source", xml=xml, initial=starts)
@@ -133,9 +143,18 @@ def test_first_fixed_joint_constraints_activation_and_nonleading_free_restore(mo
             stored_initial = owner.integration_snapshot()
             references = scalar.references(mj, model, stored_initial)
             for tick in range(3):
-                commands = {key: forest.packet(model, 2 * tick, slot) for slot, key in enumerate(keys)}
+                commands = {
+                    key: forest.packet(model, 2 * tick, slot) for slot, key in enumerate(keys)
+                }
                 output = scalar.advance(
-                    owner, mj, model, commands, references, journal, f"step-{tick + 1}", tiny=True,
+                    owner,
+                    mj,
+                    model,
+                    commands,
+                    references,
+                    journal,
+                    f"step-{tick + 1}",
+                    tiny=True,
                 )
                 for key in keys:
                     rows = output[key].last_step.constraints
@@ -148,28 +167,53 @@ def test_first_fixed_joint_constraints_activation_and_nonleading_free_restore(mo
             saved = MuJoCoTyxCheckpoint.from_bytes(owner.checkpoint().to_bytes())
             saved_references = {key: copy.copy(data) for key, data in references.items()}
             fourth = scalar.advance(
-                owner, mj, model, commands, references, journal, "step-4", tiny=True,
+                owner,
+                mj,
+                model,
+                commands,
+                references,
+                journal,
+                "step-4",
+                tiny=True,
             )
             owner.restore(saved, expected_revision=owner.checkpoint_revision)
             scalar.exact(owner.integration_snapshot(), saved_state, "complete forest restore")
             references = {key: copy.copy(data) for key, data in saved_references.items()}
             repeated = scalar.advance(
-                owner, mj, model, commands, references, journal, "repeated-step-4", tiny=True,
+                owner,
+                mj,
+                model,
+                commands,
+                references,
+                journal,
+                "repeated-step-4",
+                tiny=True,
             )
             scalar.exact(fourth, repeated, "complete forest state and receipt successor")
             checkpoint_before = owner.checkpoint()
             owner.reset((29,))
             reset = owner.integration_snapshot()
-            scalar.exact(reset[3], repeated[3], "unselected world retains activation and constraints")
+            scalar.exact(
+                reset[3], repeated[3], "unselected world retains activation and constraints"
+            )
             scalar.checkpoint_world_equal(checkpoint_before, owner.checkpoint(), 0)
             assert reset[29].tick == 0 and reset[29].last_step is None
             for field in ("q", "v", "act", "time"):
                 scalar.exact(getattr(reset[29], field), getattr(stored_initial[29], field), field)
-            np.testing.assert_array_equal(reset[29].q[qa : qa + 4], stored_initial[29].q[qa : qa + 4])
+            np.testing.assert_array_equal(
+                reset[29].q[qa : qa + 4], stored_initial[29].q[qa : qa + 4]
+            )
             assert abs(reset[29].q[qa : qa + 4] @ reset[29].q[qa : qa + 4] - 1) < 2e-6
             references[29] = scalar.references(mj, model, {29: reset[29]})[29]
             scalar.advance(
-                owner, mj, model, commands, references, journal, "partial-reset-successor", tiny=True,
+                owner,
+                mj,
+                model,
+                commands,
+                references,
+                journal,
+                "partial-reset-successor",
+                tiny=True,
             )
     finally:
         journal.close()

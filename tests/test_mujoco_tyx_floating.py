@@ -783,8 +783,14 @@ BALL_XML = _model(0).replace(
     ],
 )
 def test_native_valid_outside_floating_domain_has_explicit_diagnostic(xml, code):
-    _deps()
+    mj = _deps()
     compiled = compile_mujoco_xml(xml, require_asset=False)
     with pytest.raises(MuJoCoTyxUnsupported) as caught:
-        MuJoCoTyxRuntime(compiled, mode="interpret")
+        if code == "contact-domain":
+            # T3/T4 already admit public contacts; T2 still requires explicit permission.
+            from phymeo.backends.mujoco_tyx._floating_model import compile_floating_model
+
+            compile_floating_model(mj, mj.MjModel.from_xml_string(xml))
+        else:
+            MuJoCoTyxRuntime(compiled, mode="interpret")
     assert code in {issue.code for issue in caught.value.issues}

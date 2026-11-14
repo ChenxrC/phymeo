@@ -400,7 +400,7 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
             )
             self._capabilities = MappingProxyType(info)
 
-        if self._plan.kind == 3 and getattr(self._plan, "native_joint_layout", False):
+        if self._plan.kind == 3 and np.any(self._model.jnt_type == self._mj.mjtJoint.mjJNT_BALL):
             activation = "-filterexact" if hasattr(self._plan, "activation") else ""
             info.update(
                 domain=(
@@ -429,7 +429,9 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                 if getattr(self._plan, "joint_transmission", None) is not None
                 else "scalar"
             )
-            if self._plan.kind == 3 and getattr(self._plan, "native_joint_layout", False):
+            if self._plan.kind == 3 and np.any(
+                self._model.jnt_type == self._mj.mjtJoint.mjJNT_BALL
+            ):
                 domain = (
                     f"free-ball-joint-motor-{family}-contact{activation}-v1"
                     if getattr(self._plan, "joint_transmission", None) is not None
@@ -494,6 +496,22 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                 floating_mixed_constraints_supported=self._plan.kind == 3,
                 g1_supported=False,
             )
+            self._capabilities = MappingProxyType(info)
+
+        if self._plan.kind == 3:
+            tree_roots = tuple(
+                sorted(set(map(int, self._model.body_rootid[self._model.jnt_bodyid])))
+            )
+            info.update(
+                articulation_layout="native-joint-address-forest-v1",
+                articulation_root_body_ids=tree_roots,
+                free_root_body_ids=self._plan.free_root_bodies,
+                max_generalized_velocities=35,
+                max_generalized_positions=45,
+            )
+            if len(tree_roots) > 1:
+                info["domain"] = info["domain"].replace("free-root-", "forest-")
+                info["g1_supported"] = False
             self._capabilities = MappingProxyType(info)
 
     @property

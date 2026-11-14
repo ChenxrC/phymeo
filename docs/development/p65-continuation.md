@@ -1,5 +1,8 @@
 # Phymeo 当前续作入口
 
+> 2026-11-14 新应用主线：用户要求单GPU上8个异构机器人环境、抓取/放置/PushT共用一个自然语言条件策略。参见[研究与实施计划](../superpowers/plans/2026-11-14-language-conditioned-gpu-manipulation.md)。目标使用预训练语义编码，编号只作日志。当前只完成源码审查/计划；固定臂+独立FREE物体的共享多树动力学、异构设备训练接口及语义策略仍待实现，不能把原无接触gallery称操作训练通过。下文原验收保留。
+
+
 更新：2026-11-13；**G2b-A共享CUDA数组预算与32构型展示已完成限定源码/安装验收**。产品e1401fbf，源码64项通过、新包536成员同字节；包外interpret12步、CUDA256步（8,192worldsteps）均STRICT_PASS。257帧实际CUDA轨迹的视频已生成，见[报告与证据](p65-g2ba-resource-gallery-report-20261113.md)和[公共用法](p65-g2ba-resource-gallery-usage-20261113.md)。原两作者及父执行槽均释放。BALL-S、M-B2/M-B1、G2-R0与R3-A原有限验收复用。
 D5-A、R3-N/P、G2a、D6-A 已获各自有限源码/安装资格；D4 原稳态功能仍 FAIL。
 D6-A 的 FUNCTIONAL_PASS 与旧弹性 STRICT_FAIL_RECORDED 同时保留，不能合并成严格通过。

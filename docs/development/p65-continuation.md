@@ -1,5 +1,9 @@
 # Phymeo 当前续作入口
 
+> 2026-11-14 第九批：完整姿态IK与C1采样路径检查已集成，产品316df74f，新46个HOST首次通过。world1/3四条参考路径各2402样本合格，各一次2400步CUDA及全部4800步/482帧保存核对通过。盒最高离台26.98mm但原grasp未过；6R胶囊实际抬升38.66mm，仍转动/下滑且原place未过，不称完整放置。见[报告](p65-manipulation-route-report-20261114.md)、[计划第17节](../superpowers/plans/2026-11-14-language-conditioned-gpu-manipulation.md)。下一批先用已存轨迹补接触位置/COM力矩/相对姿态支撑诊断，再登记有依据的持握改进；原PushT边界路线可隔离纯编码并行。root/两作者执行完成后释放；无新截止/安装/push/训练，不重跑这两窗。下文第八批及以前为历史。
+
+
+
 > 2026-11-14 第八批：通用姿态审计、公共接触点滑速测量与有界双指反馈已集成，产品02f44795，新增88个HOST通过。固定11候选中4个镜像seed的TCP虽到位却pad穿台，明确需要夹爪方向与全路径约束。world0一次CUDA反馈对照在第2038步通过原短窗抓球Goal（entry约2.037s、离台48.38mm、连续低速保持.2s）；完整保存因果审计通过，原模型/物理/目标保持。仍有缓慢滑移，其他7任务本批未新增操作成功，尚无语言/共享策略训练。见[报告](p65-manipulation-pose-feedback-report-20261114.md)与[计划第16节](../superpowers/plans/2026-11-14-language-conditioned-gpu-manipulation.md)。下一批为方向受限接触姿态/全路径、边界PushT、完整放置与迁移。root和两作者已释放，无新截止/安装/push；下文旧0/8是历史基线。
 
 > 2026-11-14 第七批：T1a通用PD/有界IK、真实CUDA诊断采集及八画面视频完成，产品5a281455、渲染3bed01fd。12个新HOST通过；原8世界2200步/2.2秒，17600 world-step和221保存帧已核，**任务成功0/8**。world0夹起后滑落，world7推约17mm未到目标，其余6条点IK路线未收敛并保持原参考。见[报告及视频](p65-manipulation-control-report-20261114.md)。没有共享策略、语言模型或optimizer，视频明确标诊断控制。下一批按[计划第15节](../superpowers/plans/2026-11-14-language-conditioned-gpu-manipulation.md)补接触姿态/有限seed、持握与可达推行；当前root和两作者均释放，无新截止/安装/push。下文第六批及以前保留历史。

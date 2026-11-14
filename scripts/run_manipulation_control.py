@@ -180,7 +180,7 @@ def reference(nodes, seconds):
     return nodes[-1][2], np.zeros_like(nodes[-1][2]), nodes[-1][1]
 
 
-def run(output, steps, indices, preflight_only=False, slip_guard=False):
+def run(output, steps, indices, preflight_only=False, slip_guard=False, plan_builder=build_plan):
     if output.exists() or not output.is_absolute():
         raise ValueError("fresh absolute output required")
     if (
@@ -196,7 +196,7 @@ def run(output, steps, indices, preflight_only=False, slip_guard=False):
     native = {i: c.fresh_native_model() for i, c in compilations.items()}
     controls, plans, audits, worlds = {}, {}, {}, []
     for i, s in scenes.items():
-        controls[i], plans[i], audits[i] = build_plan(s, native[i])
+        controls[i], plans[i], audits[i] = plan_builder(s, native[i])
         source = output / "sources" / (s.key + ".xml")
         source.write_text(s.mjcf, encoding="utf-8")
         goal = s.goals[s.default_goal]

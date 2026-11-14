@@ -1,5 +1,8 @@
 # Phymeo 当前续作入口
 
+> 2026-11-15 第十二批：目标位姿评分、有限换点/撤离/绕行与进度monitor已接入同一连续CUDA episode，产品32aae3ab。96个新HOST节点（91+3+2）通过；三窗25700步/2573保存帧审计通过。RR/RRR完成各6段，12秒内归一代价下降30.065%/16.201%；PPPR首段下降42.341%，随后撤离路径碰到转动T横梁，1700步明确停止。原完整PushT目标仍0/3，不能把综合代价下降当朝向或IoU成功。见[本批报告](p65-manipulation-push-feedback-report-20261115.md)、[计划第20节](../superpowers/plans/2026-11-14-language-conditioned-gpu-manipulation.md)、[公共用法](p65-manipulation-env-usage-20261114.md)。下一步T1b-2d先做当前几何退出/保持接触与有界模型修正；不是延长固定动作或放宽深度。全部执行与作者槽释放；语义编码/共享训练、完整放置仍未完成，无新截止/视频/安装/push/旧窗重跑。下方旧批次仅保留历史。
+
+
 > 2026-11-15 第十一批：PushT完整接近与真实CUDA短推已接通，产品580b9d3a/5cfb0afc。54新排序＋20 consumer（新6/兼容14）HOST通过；RR/RRR/PPPR各2000步，6000 CURRENT entry及603端点帧审计通过。沿推向实际位移5.926/12.338/17.231mm，原完整PushT目标0/3。RR转向违背目标、PPPR出现偏航；下一步是T1b-2c有界换点与目标位姿闭环，不能只延长固定法向。见[本批报告](p65-manipulation-push-route-report-20261115.md)、[计划第19节](../superpowers/plans/2026-11-14-language-conditioned-gpu-manipulation.md)。原两作者及root执行槽释放，未派下一任务；语义编码/共享训练仍未开始，无新视频/安装/push/期限。下方旧批次只保留历史。
 
 > 2026-11-14 第十批：公共contact force/COM moment测量、保存读取器与有限PushT外边界已集成（64a6b206/16f6c9ea/b1a521f6），新增82 HOST通过。world1/3共4798条旧entry消费通过；14个native同状态比较中world1第1900步0.0181N差保留未归因。原RR/RRR/PPPR各24候选、22几何usable，两端点单seed IK收敛10/10/14，尚非整机路径/真实推行成功。见[本批报告](p65-manipulation-wrench-push-report-20261114.md)、[计划第18节](../superpowers/plans/2026-11-14-language-conditioned-gpu-manipulation.md)。下一步优先PushT完整接近路径与真实短推，同时以实际pad覆盖/相对姿态证据设计6R持握改进；语义编码和共享训练仍未开始。无新CUDA窗口/视频/安装/push；父和原两作者释放。下方第九批及以前保留历史。

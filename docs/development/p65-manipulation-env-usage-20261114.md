@@ -110,3 +110,19 @@ COM使用同一入步body rotation和绑定模型body_ipos；顶层q/v为步后�
 这是HOST诊断消费，不再执行forward/step，未声称零读回GPU训练路径。
 
 原三构型当前只过完整参考接近与2秒局部传力，完整原PushT目标仍未过；见[结果](p65-manipulation-push-route-report-20261115.md)。
+
+## 目标反馈 PushT 与连续 episode（2026-11-15 第十二批）
+
+三个新通用接口：
+- `phymeo.control.manipulation_push_objective.propose_planar_pushes(...)`：给原始边界查询、参考/当前完整刚体位姿与 XY/yaw 目标，返回完整有界 `PROPOSAL_ONLY` 列表。评分同时考虑位置与角度，不把名义力矩当真实运动。保留不可用/负收益候选，原 strict planar 查询没有放宽。
+- `phymeo.control.manipulation_push_planner.NativePushRoutePlanner(...)`：当前完整 q、提案和可选上一推向，尝试撤离、直达或两向绕行、进入、短推/保持；每次 IK 和采样路径都计入预算。`sampled_reference_ready` 只代表有限 native HOST 参考路径检查，实际 GPU 运动可能偏离，不能据此声称 CCD 或无碰撞。
+- `phymeo.control.manipulation_push_progress.BoundedPushProgress(...)`：消费真实段末代价、步数和 pusher 合力模积分；成功信号必须来自原 Goal。停滞、步数、段数分别有终止原因，失败调用不消耗状态。
+
+`scripts/run_manipulation_push_feedback.py --source ORIGINAL_CANDIDATES --output FRESH_ABSOLUTE_DIRECTORY --world 5|6|7`
+执行本批预登记诊断。每世界一个连续 CUDA episode，默认最多12秒/12000步、8完整段；不从旧物理轨迹注入对象状态。初始物理 FP32 q、真实入步速度和全部对象自由度一直保留。`reference-feedback-summary.json` 区分完整路线和末尾部分路线；所有 route 提案、失败 IK/path、选择与完整采样保存在各自 gzip 中。
+
+原 `run_manipulation_control.run(..., reference_driver_factory=...)` 增加显式可选单世界反馈接缝，要求 `record_entry=True`，不可同时启用另一 slip driver。`reference(tick,q,v)` 给参考；`accepted(tick,q,entry,result)` 只消费已接受步。停机在下次 `env.step` 前生效；accepted 回调失败仍保存该完整 CURRENT transition，随后抛出 `phase=reference-feedback-accepted`、`action_accepted/state_accepted=True` 的错误。反馈摘要保存失败不覆盖最初物理异常或阻止主 manifest 记录。
+
+力与运动的相位：接触力属于 `entry_q` 的入步，控制效果代价属于新的 accepted endpoint。原 Goal 仍由 `accepted-entry` SuccessFrame 判断；不能把这些相位混作同一时刻。合力模积分单位 N s，含每段的接近/撤离实际接触；它不是相消向量冲量，也不包含重力。段边界用实际机器人状态重新生成参考，仅参考坐标可裁到原关节限制；原状态不裁。每条路线内部为 C1，跨路线重新绑定不声称全局 C1。
+
+这是 HOST 反馈规划加 CUDA 物理的功能诊断，未消除 HOST 同步，也未实现语义模型、共享策略训练、完整 MPC 或通用任意物体规划。最终 Env checkpoint 不含该诊断 driver 的完整恢复状态。完整操作结果必须另看本批报告。

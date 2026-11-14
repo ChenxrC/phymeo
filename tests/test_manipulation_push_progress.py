@@ -16,16 +16,16 @@ def snapshot(monitor):
 
 def test_initial_state_and_positive_cost_drop():
     monitor = BoundedPushProgress()
-    assert monitor.policy == PushProgressPolicy(8, 12000, .005, 2)
+    assert monitor.policy == PushProgressPolicy(8, 12000, 0.005, 2)
     assert not monitor.started and not monitor.terminal
     assert monitor.status == "not_started" and monitor.history == ()
     assert monitor.start(100, 10) is None
     assert monitor.started and monitor.status == "continue"
-    result = monitor.observe(120, 9, contact_impulse_ns=.25)
+    result = monitor.observe(120, 9, contact_impulse_ns=0.25)
     assert (result.start_step, result.end_step) == (100, 120)
-    assert (result.cost_before, result.cost_after) == (10., 9.)
-    assert result.relative_improvement == .1
-    assert result.contact_impulse_ns == .25
+    assert (result.cost_before, result.cost_after) == (10.0, 9.0)
+    assert result.relative_improvement == 0.1
+    assert result.contact_impulse_ns == 0.25
     assert (result.segment, result.stalls, result.status) == (1, 0, "continue")
     assert monitor.history == (result,) and not monitor.terminal
 
@@ -36,7 +36,7 @@ def test_rising_cost_stalls_and_later_contact_progress_clears_stalls():
     first = monitor.observe(2, 9.5, contact_impulse_ns=1)
     assert first.relative_improvement == pytest.approx(-1 / 18)
     assert first.stalls == 1 and first.status == "continue"
-    second = monitor.observe(9, 9, contact_impulse_ns=.01)
+    second = monitor.observe(9, 9, contact_impulse_ns=0.01)
     assert second.relative_improvement == pytest.approx(1 / 19)
     assert (second.start_step, second.end_step, second.stalls) == (2, 9, 0)
     assert second.status == "continue"
@@ -47,7 +47,7 @@ def test_contact_absence_does_not_count_as_progress_even_with_cost_drop():
     monitor.start(0, 10)
     first = monitor.observe(1, 9, contact_impulse_ns=0)
     second = monitor.observe(2, 8, contact_impulse_ns=0)
-    assert first.relative_improvement == .1 and first.stalls == 1
+    assert first.relative_improvement == 0.1 and first.stalls == 1
     assert second.relative_improvement == pytest.approx(1 / 9)
     assert second.stalls == 2 and second.status == "no_progress"
     assert monitor.terminal
@@ -60,7 +60,7 @@ def test_stall_recovery_uses_last_segment_cost_and_inclusive_threshold():
     second = monitor.observe(20, 99.5, contact_impulse_ns=0)
     third = monitor.observe(21, 99, contact_impulse_ns=1)
     assert (first.stalls, second.stalls, third.stalls) == (1, 2, 0)
-    assert second.relative_improvement == .005
+    assert second.relative_improvement == 0.005
     assert third.relative_improvement == pytest.approx(1 / 199)
     equal = BoundedPushProgress()
     equal.start(0, 100)
@@ -78,8 +78,8 @@ def test_zero_cost_does_not_infer_goal_success_and_floor_is_explicit():
     small.start(3, 5e-13)
     decreased = small.observe(4, 0, contact_impulse_ns=1)
     increased = small.observe(5, 5e-13, contact_impulse_ns=1)
-    assert decreased.relative_improvement == .5
-    assert increased.relative_improvement == -.5
+    assert decreased.relative_improvement == 0.5
+    assert increased.relative_improvement == -0.5
     assert increased.stalls == 1
 
 
@@ -125,7 +125,11 @@ def test_step_budget_counts_from_original_start_with_variable_segment_lengths():
     second = monitor.observe(108, 8, contact_impulse_ns=1)
     third = monitor.observe(110, 7, contact_impulse_ns=1)
     assert [first.status, second.status, third.status] == ["continue", "continue", "step_budget"]
-    assert [(r.start_step, r.end_step) for r in monitor.history] == [(100, 101), (101, 108), (108, 110)]
+    assert [(r.start_step, r.end_step) for r in monitor.history] == [
+        (100, 101),
+        (101, 108),
+        (108, 110),
+    ]
     assert third.segment == 3 and third.stalls == 0
 
 
@@ -168,7 +172,7 @@ class IntegerSubclass(int):
     pass
 
 
-@pytest.mark.parametrize("step", (-1, True, 1., "1", IntegerSubclass(1)))
+@pytest.mark.parametrize("step", (-1, True, 1.0, "1", IntegerSubclass(1)))
 def test_start_rejects_non_builtin_nonnegative_steps_transactionally(step):
     monitor = BoundedPushProgress()
     before = snapshot(monitor)
@@ -179,7 +183,7 @@ def test_start_rejects_non_builtin_nonnegative_steps_transactionally(step):
     assert monitor.started
 
 
-@pytest.mark.parametrize("cost", (-1, True, float("nan"), float("inf"), 10 ** 400, "1", [1], 1j))
+@pytest.mark.parametrize("cost", (-1, True, float("nan"), float("inf"), 10**400, "1", [1], 1j))
 def test_invalid_start_cost_does_not_consume_start(cost):
     monitor = BoundedPushProgress()
     with pytest.raises(ValueError):
@@ -192,12 +196,24 @@ def test_invalid_start_cost_does_not_consume_start(cost):
 @pytest.mark.parametrize(
     "change",
     (
-        dict(step=20), dict(step=19), dict(step=-1), dict(step=True), dict(step=21.),
-        dict(step=IntegerSubclass(21)), dict(cost=-1), dict(cost=True),
-        dict(cost=float("nan")), dict(cost=float("inf")), dict(cost=10 ** 400),
-        dict(contact_impulse_ns=-1), dict(contact_impulse_ns=True),
-        dict(contact_impulse_ns=float("inf")), dict(contact_impulse_ns=float("nan")),
-        dict(contact_impulse_ns=[1]), dict(goal_success=1), dict(goal_success=None),
+        dict(step=20),
+        dict(step=19),
+        dict(step=-1),
+        dict(step=True),
+        dict(step=21.0),
+        dict(step=IntegerSubclass(21)),
+        dict(cost=-1),
+        dict(cost=True),
+        dict(cost=float("nan")),
+        dict(cost=float("inf")),
+        dict(cost=10**400),
+        dict(contact_impulse_ns=-1),
+        dict(contact_impulse_ns=True),
+        dict(contact_impulse_ns=float("inf")),
+        dict(contact_impulse_ns=float("nan")),
+        dict(contact_impulse_ns=[1]),
+        dict(goal_success=1),
+        dict(goal_success=None),
     ),
 )
 def test_invalid_observation_leaves_all_state_unchanged_and_can_retry(change):
@@ -212,7 +228,7 @@ def test_invalid_observation_leaves_all_state_unchanged_and_can_retry(change):
     assert snapshot(monitor) == before
     accepted = monitor.observe(21, 81, contact_impulse_ns=1)
     assert accepted.cost_before == 90 and accepted.segment == 2
-    assert accepted.relative_improvement == .1
+    assert accepted.relative_improvement == 0.1
 
 
 def test_nonfinite_derived_relative_change_rejects_without_advancing():
@@ -229,13 +245,23 @@ def test_nonfinite_derived_relative_change_rejects_without_advancing():
 @pytest.mark.parametrize(
     "options",
     (
-        dict(max_segments=0), dict(max_segments=65), dict(max_segments=True),
-        dict(max_segments=1.), dict(max_segments=IntegerSubclass(1)),
-        dict(max_steps=0), dict(max_steps=1000001), dict(max_steps=True), dict(max_steps=1.),
-        dict(max_stalled_segments=0), dict(max_stalled_segments=65),
-        dict(max_stalled_segments=True), dict(max_stalled_segments=1.),
-        dict(min_relative_improvement=-1), dict(min_relative_improvement=True),
-        dict(min_relative_improvement=float("inf")), dict(min_relative_improvement=float("nan")),
+        dict(max_segments=0),
+        dict(max_segments=65),
+        dict(max_segments=True),
+        dict(max_segments=1.0),
+        dict(max_segments=IntegerSubclass(1)),
+        dict(max_steps=0),
+        dict(max_steps=1000001),
+        dict(max_steps=True),
+        dict(max_steps=1.0),
+        dict(max_stalled_segments=0),
+        dict(max_stalled_segments=65),
+        dict(max_stalled_segments=True),
+        dict(max_stalled_segments=1.0),
+        dict(min_relative_improvement=-1),
+        dict(min_relative_improvement=True),
+        dict(min_relative_improvement=float("inf")),
+        dict(min_relative_improvement=float("nan")),
     ),
 )
 def test_policy_rejects_invalid_or_unbounded_parameters(options):
@@ -258,11 +284,11 @@ def test_maximum_policy_capacities_keep_history_bounded():
 
 
 def test_finite_threshold_above_one_is_not_silently_clamped():
-    monitor = BoundedPushProgress(min_relative_improvement=2.)
+    monitor = BoundedPushProgress(min_relative_improvement=2.0)
     monitor.start(0, 1)
     result = monitor.observe(1, 0, contact_impulse_ns=1)
-    assert result.relative_improvement == 1.
-    assert result.stalls == 1 and monitor.policy.min_relative_improvement == 2.
+    assert result.relative_improvement == 1.0
+    assert result.stalls == 1 and monitor.policy.min_relative_improvement == 2.0
 
 
 def test_policy_records_history_and_state_are_read_only_snapshots():
@@ -276,8 +302,15 @@ def test_policy_records_history_and_state_are_read_only_snapshots():
         first.status = "success"
     with pytest.raises(TypeError):
         history[0] = first
-    for name, value in (("policy", None), ("terminal", True), ("status", "success"),
-                        ("history", ()), ("started", False), ("_state", None), ("_policy", None)):
+    for name, value in (
+        ("policy", None),
+        ("terminal", True),
+        ("status", "success"),
+        ("history", ()),
+        ("started", False),
+        ("_state", None),
+        ("_policy", None),
+    ):
         with pytest.raises(AttributeError):
             setattr(monitor, name, value)
     with pytest.raises(AttributeError):

@@ -37,7 +37,7 @@ def _budget(value, name, maximum):
 class PushProgressPolicy:
     max_segments: int = 8
     max_steps: int = 12000
-    min_relative_improvement: float = .005
+    min_relative_improvement: float = 0.005
     max_stalled_segments: int = 2
 
     def __post_init__(self):
@@ -107,7 +107,7 @@ class BoundedPushProgress:
         *,
         max_segments=8,
         max_steps=12000,
-        min_relative_improvement=.005,
+        min_relative_improvement=0.005,
         max_stalled_segments=2,
     ):
         if hasattr(self, "_state"):
@@ -187,8 +187,15 @@ class BoundedPushProgress:
         else:
             status = "continue"
         record = PushProgressRecord(
-            previous.last_step, step, previous.last_cost, cost, improvement,
-            impulse, segment, stalls, status,
+            previous.last_step,
+            step,
+            previous.last_cost,
+            cost,
+            improvement,
+            impulse,
+            segment,
+            stalls,
+            status,
         )
         state = _ProgressState(
             previous.initial_step, step, cost, stalls, (*previous.history, record), status

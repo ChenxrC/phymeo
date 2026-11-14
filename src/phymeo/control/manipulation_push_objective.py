@@ -51,9 +51,11 @@ def _vector(value, width, name):
 def _rotation(value, name):
     rows = _items(value, name, 3, 3, rank=2)
     result = np.array(tuple(_vector(row, 3, name) for row in rows), dtype=np.float64)
-    _require(np.allclose(result.T @ result, np.eye(3), rtol=0, atol=2e-6)
-             and abs(float(np.linalg.det(result)) - 1.) <= 2e-6,
-             name + " must be proper SO(3) within 2e-6; no repair is applied")
+    _require(
+        np.allclose(result.T @ result, np.eye(3), rtol=0, atol=2e-6)
+        and abs(float(np.linalg.det(result)) - 1.0) <= 2e-6,
+        name + " must be proper SO(3) within 2e-6; no repair is applied",
+    )
     return result
 
 
@@ -75,9 +77,19 @@ def _cost(position, yaw, target, target_yaw, position_tolerance, yaw_tolerance):
 
 
 def propose_planar_pushes(
-    query, *, reference_position, reference_rotation, current_position, current_rotation,
-    target_xy, target_yaw, pusher_height_m, position_tolerance_m, yaw_tolerance_rad,
-    push_distances_m=(.005, .01, .02), stand_off_m=.012,
+    query,
+    *,
+    reference_position,
+    reference_rotation,
+    current_position,
+    current_rotation,
+    target_xy,
+    target_yaw,
+    pusher_height_m,
+    position_tolerance_m,
+    yaw_tolerance_rad,
+    push_distances_m=(0.005, 0.01, 0.02),
+    stand_off_m=0.012,
 ):
     """Return every bounded proposal, sorted by reference usability and pose improvement.
 
@@ -110,24 +122,37 @@ def propose_planar_pushes(
     current = _vector(current_position, 3, "current position")
     reference_r = _rotation(reference_rotation, "reference rotation")
     current_r = _rotation(current_rotation, "current rotation")
-    _require(acos(max(-1., min(1., float(current_r[2, 2])))) <= .1, "current tilt exceeds .1 rad")
+    _require(
+        acos(max(-1.0, min(1.0, float(current_r[2, 2])))) <= 0.1, "current tilt exceeds .1 rad"
+    )
     target = _vector(target_xy, 2, "target XY")
     target_yaw = _number(target_yaw, "target yaw")
     height = _number(pusher_height_m, "pusher height")
     pos_tol = _number(position_tolerance_m, "position tolerance")
     yaw_tol = _number(yaw_tolerance_rad, "yaw tolerance")
     stand_off = _number(stand_off_m, "stand off")
-    _require(pos_tol > 0 and yaw_tol > 0 and stand_off > 0, "tolerances and stand off must be positive")
-    lengths = tuple(_number(value, "push length") for value in _items(push_distances_m, "push lengths", 1, 3))
-    _require(len(set(lengths)) == len(lengths) and all(0 < length <= .03 for length in lengths),
-             "push lengths must be distinct and in (0,.03] metres")
+    _require(
+        pos_tol > 0 and yaw_tol > 0 and stand_off > 0, "tolerances and stand off must be positive"
+    )
+    lengths = tuple(
+        _number(value, "push length") for value in _items(push_distances_m, "push lengths", 1, 3)
+    )
+    _require(
+        len(set(lengths)) == len(lengths) and all(0 < length <= 0.03 for length in lengths),
+        "push lengths must be distinct and in (0,.03] metres",
+    )
     _require(len(query.candidates) * len(lengths) <= 384, "proposal capacity exceeds 384")
     radius = max(
-        hypot(float(point[0]) - float(query.object_com_world[0]),
-              float(point[1]) - float(query.object_com_world[1]))
-        for edge in query.boundary for point in (edge.start_world, edge.end_world)
+        hypot(
+            float(point[0]) - float(query.object_com_world[0]),
+            float(point[1]) - float(query.object_com_world[1]),
+        )
+        for edge in query.boundary
+        for point in (edge.start_world, edge.end_world)
     )
-    _require(isfinite(radius) and radius > 0, "reference mobility radius must be finite and positive")
+    _require(
+        isfinite(radius) and radius > 0, "reference mobility radius must be finite and positive"
+    )
     rotation = current_r @ reference_r.T
     current_array, reference_array = np.asarray(current), np.asarray(reference)
     with np.errstate(over="ignore", invalid="ignore"):
@@ -140,40 +165,73 @@ def propose_planar_pushes(
     saved_query["q"] = query.q.tobytes().hex()
     saved_query["plane_axes_world"] = query.plane_axes_world.tobytes().hex()
     request = dict(
-        schema="native-planar-push-objective-v1", query=saved_query,
-        reference_position=reference, reference_rotation=tuple(_tuple(row) for row in reference_r),
-        current_position=current, current_rotation=tuple(_tuple(row) for row in current_r),
-        target_xy=target, target_yaw=target_yaw, pusher_height_m=height,
-        position_tolerance_m=pos_tol, yaw_tolerance_rad=yaw_tol,
-        push_distances_m=lengths, stand_off_m=stand_off,
-        policy=dict(status="PROPOSAL_ONLY", rotation_tolerance=2e-6, maximum_tilt_rad=.1,
-                    maximum_length_m=.03, maximum_lengths=3, maximum_proposals=384,
-                    transport="Rcur-Rref-transpose-material-geometry; fixed-pusher-world-Z",
-                    normal="minus-unit-XY-projection-of-transported-material-normal",
-                    radius="max-reference-boundary-endpoint-XY-distance-to-query-COM",
-                    translation="l*f*r^2/(r^2+Mz^2)", yaw_change="l*Mz/(r^2+Mz^2)",
-                    prediction="body-origin-XY-plus-translation; wrapped-world-yaw-plus-yaw-change",
-                    objective="squared-XY/posTol plus squared-wrapped-yaw/yawTol",
-                    sorting="reference-unusable, negative-improvement, source-index, distance-ordinal"),
+        schema="native-planar-push-objective-v1",
+        query=saved_query,
+        reference_position=reference,
+        reference_rotation=tuple(_tuple(row) for row in reference_r),
+        current_position=current,
+        current_rotation=tuple(_tuple(row) for row in current_r),
+        target_xy=target,
+        target_yaw=target_yaw,
+        pusher_height_m=height,
+        position_tolerance_m=pos_tol,
+        yaw_tolerance_rad=yaw_tol,
+        push_distances_m=lengths,
+        stand_off_m=stand_off,
+        policy=dict(
+            status="PROPOSAL_ONLY",
+            rotation_tolerance=2e-6,
+            maximum_tilt_rad=0.1,
+            maximum_length_m=0.03,
+            maximum_lengths=3,
+            maximum_proposals=384,
+            transport="Rcur-Rref-transpose-material-geometry; fixed-pusher-world-Z",
+            normal="minus-unit-XY-projection-of-transported-material-normal",
+            radius="max-reference-boundary-endpoint-XY-distance-to-query-COM",
+            translation="l*f*r^2/(r^2+Mz^2)",
+            yaw_change="l*Mz/(r^2+Mz^2)",
+            prediction="body-origin-XY-plus-translation; wrapped-world-yaw-plus-yaw-change",
+            objective="squared-XY/posTol plus squared-wrapped-yaw/yawTol",
+            sorting="reference-unusable, negative-improvement, source-index, distance-ordinal",
+        ),
     )
-    binding = sha256(json.dumps(request, sort_keys=True, separators=(",", ":"), allow_nan=False,
-                               default=lambda value: _number(value, "query scalar")).encode()).hexdigest()
+    binding = sha256(
+        json.dumps(
+            request,
+            sort_keys=True,
+            separators=(",", ":"),
+            allow_nan=False,
+            default=lambda value: _number(value, "query scalar"),
+        ).encode()
+    ).hexdigest()
     records = []
     for candidate in query.candidates:
         with np.errstate(over="ignore", invalid="ignore"):
             point = current_array + rotation @ (np.asarray(candidate.point_world) - reference_array)
             normal = rotation @ np.asarray(candidate.outward_normal_world)
-        _require(np.isfinite(point).all() and np.isfinite(normal).all(), "nonfinite transported material geometry")
+        _require(
+            np.isfinite(point).all() and np.isfinite(normal).all(),
+            "nonfinite transported material geometry",
+        )
         projected = hypot(float(normal[0]), float(normal[1]))
-        _require(isfinite(projected) and projected > 0, "material normal has no finite XY projection")
-        force = np.array((-normal[0] / projected, -normal[1] / projected, 0.))
+        _require(
+            isfinite(projected) and projected > 0, "material normal has no finite XY projection"
+        )
+        force = np.array((-normal[0] / projected, -normal[1] / projected, 0.0))
         with np.errstate(over="ignore", invalid="ignore"):
             moment = float((point[0] - com[0]) * force[1] - (point[1] - com[1]) * force[0])
-            center = np.array((point[0] - query.pusher_radius_m * force[0],
-                               point[1] - query.pusher_radius_m * force[1], height))
+            center = np.array(
+                (
+                    point[0] - query.pusher_radius_m * force[0],
+                    point[1] - query.pusher_radius_m * force[1],
+                    height,
+                )
+            )
             precontact = center - stand_off * force
-        _require(isfinite(moment) and np.isfinite(center).all() and np.isfinite(precontact).all(),
-                 "nonfinite planar contact proposal")
+        _require(
+            isfinite(moment) and np.isfinite(center).all() and np.isfinite(precontact).all(),
+            "nonfinite planar contact proposal",
+        )
         # Scaling r and Mz together is algebraically identical to the stated
         # model, and avoids gratuitous overflow/underflow when squaring either.
         scale = max(radius, abs(moment))
@@ -182,20 +240,50 @@ def propose_planar_pushes(
         for ordinal, length in enumerate(lengths):
             with np.errstate(over="ignore", invalid="ignore", divide="ignore"):
                 translation = length * (r_scaled * r_scaled / denominator) * force[:2]
-                yaw_change = 0. if moment == 0 else float((np.float64(length) / scale) * m_scaled / denominator)
+                yaw_change = (
+                    0.0
+                    if moment == 0
+                    else float((np.float64(length) / scale) * m_scaled / denominator)
+                )
                 predicted = current_array[:2] + translation
                 push = center + length * force
-            _require(np.isfinite(translation).all() and np.isfinite(predicted).all()
-                     and isfinite(yaw_change) and np.isfinite(push).all(), "nonfinite predicted proposal")
+            _require(
+                np.isfinite(translation).all()
+                and np.isfinite(predicted).all()
+                and isfinite(yaw_change)
+                and np.isfinite(push).all(),
+                "nonfinite predicted proposal",
+            )
             predicted_yaw = _wrap(current_yaw + yaw_change)
             after = _cost(predicted, predicted_yaw, target, target_yaw, pos_tol, yaw_tol)
             improvement = before - after
             _require(isfinite(improvement), "nonfinite predicted improvement")
             key = (0 if candidate.usable else 1, -improvement, candidate.index, ordinal)
-            records.append(NativePlanarPushProposal(
-                "PROPOSAL_ONLY", binding, candidate.index, ordinal, length, candidate.usable,
-                _tuple(point), _tuple(normal), _tuple(com), _tuple(center), _tuple(precontact), _tuple(push),
-                _tuple(force), moment, radius, _tuple(translation), yaw_change, _tuple(predicted), predicted_yaw,
-                before, after, improvement, key,
-            ))
+            records.append(
+                NativePlanarPushProposal(
+                    "PROPOSAL_ONLY",
+                    binding,
+                    candidate.index,
+                    ordinal,
+                    length,
+                    candidate.usable,
+                    _tuple(point),
+                    _tuple(normal),
+                    _tuple(com),
+                    _tuple(center),
+                    _tuple(precontact),
+                    _tuple(push),
+                    _tuple(force),
+                    moment,
+                    radius,
+                    _tuple(translation),
+                    yaw_change,
+                    _tuple(predicted),
+                    predicted_yaw,
+                    before,
+                    after,
+                    improvement,
+                    key,
+                )
+            )
     return tuple(sorted(records, key=lambda record: record.sort_key))

@@ -208,6 +208,7 @@ class MuJoCoTyxHeterogeneousBatch:
         self._mode, self._cache_root, self._h = mode, cache_root, h
         self._world_keys, self._worlds, self._models = world_keys, worlds, models
         self._buckets, self._retired, self._cleanup_errors = (), [], ()
+        self._workspaces = set()
         self._counter_errors = ()
         self._observed, self._device_totals = WeakKeyDictionary(), {}
         self._stats = dict(
@@ -275,6 +276,9 @@ class MuJoCoTyxHeterogeneousBatch:
                     scheduling="exact-source-homogeneous-buckets",
                     fused_kernel=False,
                     host_diagnostics=True,
+                    device_native_state=True,
+                    device_native_controls=True,
+                    device_contact_tokens=False,
                     cross_world_contacts=False,
                     scale_qualified=False,
                     explicit_resource_budget=resource_budget is not None,
@@ -460,9 +464,55 @@ class MuJoCoTyxHeterogeneousBatch:
                     else self._resource_budget.snapshot(),
                     buckets=tuple(owner.resource_snapshot() for owner in self._buckets),
                     retained_owner_count=len(self._retired),
+                    device_workspaces=tuple(dict(w.counters) for w in self._workspaces),
                     completeness="Solver-bank CUDA payload only; HOST/native/context/JIT/external controls/workspaces unknown",
                 )
             )
+
+    def prepare_device_workspace(self, *, cache_root=None):
+        """Own a padded native-state workspace; no physics or CPU forward."""
+        from .mujoco_heterogeneous_io import MuJoCoTyxHeterogeneousWorkspace
+
+        return MuJoCoTyxHeterogeneousWorkspace(self, cache_root=cache_root)
+
+    def set_controls_from_device(
+        self,
+        ctrl,
+        *,
+        qfrc_applied=None,
+        xfrc_applied=None,
+        world_keys,
+        expected_revision,
+        producer_stream=None,
+    ):
+        """Copy/audit valid native columns, ignoring padding, then publish all rows.
+
+        Controls are native values, without policy scaling. Omitted forces are
+        fresh zeros. Physics stepping remains a separate atomic transaction.
+        """
+        from .mujoco_heterogeneous_io import submit_controls
+
+        return submit_controls(
+            self, (ctrl, qfrc_applied, xfrc_applied), world_keys, expected_revision, producer_stream
+        )
+
+    def reset_states(self, states, *, expected_revision):
+        """Reset selected native states atomically; original templates stay intact."""
+        with self._transaction():
+            if type(expected_revision) is not int or expected_revision != self._revision:
+                raise ValueError("stale heterogeneous reset revision")
+            if not isinstance(states, Mapping):
+                raise TypeError("reset states require a world-key mapping")
+            selected = self._select(states)
+            prepared = {}
+            for key in selected:
+                packet = states[key]
+                if type(packet) is not MuJoCoInitialState:
+                    raise TypeError("reset states require MuJoCoInitialState")
+                if packet.time != 0.0:
+                    raise ValueError("explicit episode reset time must be zero")
+                prepared[key] = MuJoCoInitialState(packet.q, packet.v, act=packet.act)
+            return self._boundary("reset-states", selected, prepared)
 
     def set_controls(self, mapping):
         with self._transaction():
@@ -676,13 +726,19 @@ class MuJoCoTyxHeterogeneousBatch:
         try:
             for i in indices:
                 owner = self._buckets[i]
-                original = owner.checkpoint() if operation == "reset" else leaves[i]
+                original = leaves[i] if operation == "restore" else owner.checkpoint()
                 candidate = self._clone_bucket(owner)
                 pending.append(candidate)
                 self._observe_owner(candidate)
                 candidate.restore(original, expected_revision=candidate.checkpoint_revision)
                 if operation == "reset":
                     candidate.reset(tuple(key for key in owner.world_keys if key in selected))
+                elif operation == "reset-states":
+                    candidate.reset_states(
+                        {key: leaves[key] for key in owner.world_keys if key in selected},
+                        expected_revision=candidate.checkpoint_revision,
+                    )
+
                 self._observe_owner(candidate)
                 replacements[i] = candidate
             replacement_buckets = tuple(
@@ -758,10 +814,16 @@ class MuJoCoTyxHeterogeneousBatch:
         with self._lock:
             if self._busy:
                 raise RuntimeError("cannot close an active heterogeneous transaction")
-            if self._closed and not self._retired:
+            if self._closed and not self._retired and not self._workspaces:
                 return
             owners = tuple(dict.fromkeys((*self._retired, *self._buckets)))
-            failures = self._close_owners(owners)
+            failures = []
+            for workspace in tuple(self._workspaces):
+                try:
+                    workspace.close()
+                except BaseException as error:
+                    failures.append(error)
+            failures.extend(self._close_owners(owners))
             self._buckets, self._closed = (), True
             if failures:
                 raise BaseExceptionGroup("heterogeneous cleanup retains failed owners", failures)

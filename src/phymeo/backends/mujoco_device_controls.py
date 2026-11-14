@@ -217,7 +217,7 @@ class _DeviceControlPacket:
             # Other resources may still need a retry after this stream closed.
             self.stream = None
 
-    def prepare(self, values, producer_stream):
+    def prepare(self, values, producer_stream, source_rows=None):
         # Compilation belongs to the live physical owner. Packets retain their
         # own buffers/stream, but must never close this borrowed Runtime.
         self.runtime = self.device_owner.runtime
@@ -238,8 +238,31 @@ class _DeviceControlPacket:
             )
             self.padded = self._buffer((self.count, max(8, self.plan.nv)))
             self.status = self._buffer((self.count,), np.int32)
-            for destination, value in zip(self.native, values, strict=True):
-                self._copy_native(destination, value)
+            if source_rows is None:
+                for destination, value in zip(self.native, values, strict=True):
+                    self._copy_native(destination, value)
+            else:
+                from .mujoco_tyx._heterogeneous_kernels import gather, gather_body
+
+                rows = np.asarray(source_rows, dtype=np.int32)
+                if self.mode == "cuda":
+                    rows = self.tx.CudaArray(rows, device=self.ordinal)
+                    self.resources.append(rows.free)
+                    self.counts["control_initial_uploaded_bytes"] += rows.nbytes
+                self.buffers.append(rows)
+                options = {"mode": self.mode}
+                if self.stream is not None:
+                    options["stream"] = self.stream
+                for index, (destination, value) in enumerate(zip(self.native, values, strict=True)):
+                    if value is None:
+                        continue
+                    width = (self.plan.nu, self.plan.nv, self.nbody)[index]
+                    kernel = gather_body if index == 2 else gather
+                    kernel(self.count, width, rows, value, destination, **options)
+                    self.counts["control_pack_kernels"] += 1
+                    self.counts["control_copy_d2d_bytes"] += (
+                        destination.nbytes if self.mode == "cuda" else 0
+                    )
             if self.stream is not None:
                 self.stream.synchronize()
             audit = self._audit()
@@ -320,41 +343,100 @@ def retirement_list(engine):
     ]
 
 
-def submit(engine, values, expected_revision, producer_stream):
+@dataclass
+class _PreparedDeviceControls:
+    engine: object
+    packet: object
+    source_revision: int
+    entry_controls: object
+    entry_epoch: int
+    receipt: object
+    retired: list
+    counts: dict
+    consumed: bool = False
+
+
+def prepare(engine, values, expected_revision, producer_stream, *, source_rows=None):
+    """Stage the existing native packet without publishing any control."""
     _require(
         type(expected_revision) is int and expected_revision == engine._checkpoint_revision,
         "stale device action source revision",
     )
-    _preflight(engine, values, producer_stream)
+    if source_rows is None:
+        _preflight(engine, values, producer_stream)
     packet = _DeviceControlPacket(engine)
-    # Reserve ownership before any device allocation, so a failed staging cleanup
-    # has a durable place even if subsequent preparation raises.
     failed_retirement = [*engine._control_retired, packet]
     try:
-        packet.prepare(values, producer_stream)
-        revision = engine._checkpoint_revision + 1
+        packet.prepare(values, producer_stream, source_rows)
         receipt = MuJoCoTyxDeviceControlReceipt(
             packet.binding,
             expected_revision,
-            revision,
+            expected_revision + 1,
             packet.epoch,
             MappingProxyType(dict(packet.controls)),
         )
-        retired = retirement_list(engine)
         counts = dict(engine._extra_counts)
         for name, value in packet.counts.items():
             counts[name] = counts.get(name, 0) + value
         counts["device_control_submissions"] = counts.get("device_control_submissions", 0) + 1
+        return _PreparedDeviceControls(
+            engine,
+            packet,
+            expected_revision,
+            engine._controls,
+            engine._control_epoch,
+            receipt,
+            retirement_list(engine),
+            counts,
+        )
     except BaseException:
         engine._control_retired = failed_retirement
         for name, value in packet.counts.items():
             engine._extra_counts[name] = engine._extra_counts.get(name, 0) + value
         _cleanup_retired(engine)
         raise
-    # Nothing below can reject a submitted action. The old packet is retired,
-    # and any cleanup fault remains visible separately from this accepted receipt.
+
+
+def validate(engine, draft):
+    _require(
+        type(draft) is _PreparedDeviceControls
+        and draft.engine is engine
+        and not draft.consumed
+        and draft.source_revision == engine._checkpoint_revision
+        and draft.entry_controls is engine._controls
+        and draft.entry_epoch == engine._control_epoch
+        and draft.packet.device_owner is engine._device
+        and not draft.packet.closed,
+        "stale or foreign device controls draft",
+    )
+
+
+def commit(engine, draft):
+    """All participants must validate before the first non-failing publication."""
+    packet = draft.packet
     engine._controls, engine._control_packet = packet.controls, packet
-    engine._control_epoch, engine._checkpoint_revision = packet.epoch, revision
-    engine._control_retired, engine._extra_counts = retired, counts
+    engine._control_epoch, engine._checkpoint_revision = packet.epoch, draft.receipt.revision
+    engine._control_retired, engine._extra_counts = draft.retired, draft.counts
+    draft.consumed = True
+
+
+def discard(engine, draft):
+    if draft.consumed:
+        return
+    draft.consumed = True
+    engine._control_retired = [*engine._control_retired, draft.packet]
+    for name, value in draft.packet.counts.items():
+        engine._extra_counts[name] = engine._extra_counts.get(name, 0) + value
     _cleanup_retired(engine)
-    return receipt
+
+
+def submit(engine, values, expected_revision, producer_stream):
+    draft = prepare(engine, values, expected_revision, producer_stream)
+    try:
+        validate(engine, draft)
+    except BaseException:
+        discard(engine, draft)
+        raise
+    commit(engine, draft)
+    _cleanup_retired(engine)
+    return draft.receipt

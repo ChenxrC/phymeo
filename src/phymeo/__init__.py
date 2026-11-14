@@ -48,6 +48,11 @@ from .backends.mujoco_heterogeneous import (
     MuJoCoTyxWorldSpec,
 )
 from .backends.mujoco_heterogeneous_checkpoint import MuJoCoTyxHeterogeneousCheckpoint
+from .backends.mujoco_heterogeneous_io import (
+    MuJoCoTyxHeterogeneousControlReceipt,
+    MuJoCoTyxHeterogeneousFrame,
+    MuJoCoTyxHeterogeneousWorkspace,
+)
 from .backends.resident_scene import (
     MAX_PARTICIPANTS_PER_WORLD,
     ResidentParticipant,
@@ -468,6 +473,9 @@ __all__ = [
     "MuJoCoTyxHeterogeneousCheckpoint",
     "MuJoCoTyxHeterogeneousStepReceipt",
     "MuJoCoTyxHeterogeneousBoundaryReceipt",
+    "MuJoCoTyxHeterogeneousControlReceipt",
+    "MuJoCoTyxHeterogeneousFrame",
+    "MuJoCoTyxHeterogeneousWorkspace",
     "ResidentBoundaryDistances",
     "ResidentBoundaryNarrowPacket",
     "ResidentBoundaryQueryAttempt",

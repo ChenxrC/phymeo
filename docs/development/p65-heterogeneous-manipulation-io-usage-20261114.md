@@ -112,3 +112,15 @@ FREE/BALL 的原生局部角速度按已有运动学转到世界轴，body-origi
 5. 当前 refresh/control 审计有状态/记录读回，叶子求解器也保留现有诊断；不是零 HOST 往返或融合异构 kernel。
 6. 工作区 allocation/显式 readback/D2D 计数单列，不把 solver-bank budget 当总 GPU 内存预算。
 7. M0 三类目标的 HOST 参考判据能拒绝伪抓取/空中放置/中心重合；合成帧测试不代表物理任务成功。
+
+
+## 持久入步接触记录已连接（B2存储部分）
+
+产品 `994b0842` 已在各叶子求解器内部保存 accepted-entry 双bank，并随物理状态共同提交。
+`batch.checkpoint()/restore()`、reset和clone会自动保留/清除对应记录，无需应用增加私有访问代码。
+旧胶囊恢复后显式“无历史记录”，下一成功step才生成有效entry；成功空接触是另一个状态。
+详细字段、原始失败和源码资格见[本批报告](p65-entry-record-report-20261114.md)。
+
+公共 workspace 当前仍只提供端点状态及可选body观察，`contact_tokens=False` 保持。
+下一批增加公共entry导出及同入步世界载荷；现在不要把B1端点body位姿/速度与receipt过去接触力拼成SuccessFrame，
+也不要让训练脚本直接依赖私有entry数组。本批尚未提供接触Torch token或目标/episode生命周期。

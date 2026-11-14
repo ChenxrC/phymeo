@@ -205,3 +205,27 @@ B2 按以下依赖执行，不直接读取旧 scratch，也不将 HOST receipt �
 非首FREE/变构型/行序与padding、W1/W8、最后桶失败/重试、reset/restore/下一步重放、
 Torch副本、分配预算/关闭、禁止HOST状态或receipt重建，以及端点与入步故意不同的相位反例。
 先验两种路由再扩完整既定矩阵；若无法保留原始双侧载荷或边界一致性，停在具体缺失的共享机制，不绕开公共协议做私有训练脚本。
+
+
+## 12. 第四批：持久记录与路由归一完成（2026-11-14）
+
+产品 `994b0842`；[报告](../../development/p65-entry-record-report-20261114.md)。
+本批完成第11节B2a、B2b及B2c中的reset/clone/checkpoint存储部分：
+真实入步native q/v/act、补偿时钟、身份/接触点/frame/完整六维载荷在设备D2D生成，
+随同原物理bank共同接受；失败保留旧记录，空接触与无历史记录分开。
+body入步观察尚需从保存q/v复用FK，不借用B1端点数据。
+19个新节点（7 interpret/7 CUDA/5 HOST codec）及95项受影响兼容通过；
+原首个力偶fixture失败和诊断修正保留，未降物理门。仅源码资格。
+
+下一批按下列顺序完成剩余连接，不回头重写已验存储：
+
+1. **B2c公共GPU entry观察（高）**：workspace输出保存的input tick/clock/valid/count/mask及contacts；
+   从保存q/v计算同相位body pose/velocity；frame转world wrench，明确双侧符号和body-origin力矩。
+   覆盖W1/W8、native入步oracle、非首FREE、condim4/6、inactive/empty、controls-only revision和相位故意不同反例。
+2. **B2c观察边界（中高）**：最后桶/异常数据拒绝后旧frame保持、reset/restore重新绑定owner、Torch独立D2D副本与alias/close。
+   不从HOST receipt造GPU特征；原记录和物理状态查询前后字节保持。
+3. **B2d成功帧（中）**：SuccessFrame只消费valid的同一input tick一次，无记录不冒空接触；
+   位置/速度/载荷共同来自entry，端点另列。再接B3目标/episode/history。
+4. **B3→T1→L1/L2**：先Env生命周期及真实操作可控性，再接真实语义编码和共享策略，维持第6节停止条件。
+
+本批执行已结束；未启动训练、模型下载、安装或新的持续任务。原所有预算/精度门保持。

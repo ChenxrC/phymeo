@@ -25,20 +25,20 @@ function text(g,t,x,y,c='#bed1de'){g.fillStyle=c;g.fillText(t,x,y)}
 function polygon(g,points,x,y,fill,stroke){if(!points.length)return;g.beginPath();points.forEach((p,i)=>i?g.lineTo(x(p[0]),y(p[1])):g.moveTo(x(p[0]),y(p[1])));g.closePath();if(fill){g.fillStyle=fill;g.fill()}if(stroke){g.strokeStyle=stroke;g.lineWidth=2;g.stroke()}}
 function arrow(g,x,y,dx,dy){const l=Math.hypot(dx,dy);if(l<.2)return;g.strokeStyle=g.fillStyle='#ffb164';g.lineWidth=2.5;g.beginPath();g.moveTo(x,y);g.lineTo(x+dx,y+dy);g.stroke();const a=dx/l,b=dy/l;g.beginPath();g.moveTo(x+dx,y+dy);g.lineTo(x+dx-7*a+4*b,y+dy-7*b-4*a);g.lineTo(x+dx-7*a-4*b,y+dy-7*b+4*a);g.fill()}
 function color(v){const colors=[[40,119,188],[69,201,189],[249,195,92],[243,107,76]],t=Math.max(0,Math.min(1,v/5000))*3,i=Math.min(2,Math.floor(t)),f=t-i;return 'rgb('+colors[i].map((v,j)=>Math.round(v+f*(colors[i+1][j]-v))).join(',')+')'}
-function topView(r){const {g,w,h}=canvas('top'),s=Math.min((w-40)/.14,(h-45)/.10),x=a=>20+(a+.05)*s,y=a=>h/2-a*s;
-polygon(g,r.inputs.support_xy,x,y,'#23485e','#77a8c9');
+function topView(r){const {g,w,h}=canvas('top'),s=Math.min((w-40)/.14,(h-45)/.10),x=a=>w/2+(a-.02)*s,y=a=>h/2-a*s;
+polygon(g,r.inputs.support_xy,x,y,'#23485e','#77a8c9');polygon(g,r.active_polygon_xy,x,y,color(r.pressure_pa.reduce((a,b)=>a+b,0)/Math.max(1,r.pressure_pa.length)),null);
 for(let i=0;i<r.triangles.length;i++){const tri=r.triangles[i].map(j=>r.vertices_world[j]);const pressure=(r.pressure_pa[3*i]+r.pressure_pa[3*i+1]+r.pressure_pa[3*i+2])/3;polygon(g,tri,x,y,color(pressure),null)}
 polygon(g,r.inputs.footprint_xy,x,y,null,'#f2f6f8');
 const cx=r.inputs.com_world[0];text(g,'+',x(cx)-4,y(0)+4,'white');
 if(r.values.cop_world){const p=r.values.cop_world;g.fillStyle='#ffdb68';g.beginPath();g.arc(x(p[0]),y(p[1]),5,0,7);g.fill();text(g,'COP',x(p[0])+8,y(p[1])-8,'#ffdb68')}
 text(g,'x →',w-42,h-10);text(g,'+ 为块中心；接触区按实际多边形裁剪',10,h-10);
 }
-function sideView(r){const {g,w,h}=canvas('side'),s=Math.min((w-40)/.14,(h-65)/.05),x=a=>20+(a+.05)*s,z=a=>h*.72-a*s;
+function sideView(r){const {g,w,h}=canvas('side'),s=Math.min((w-40)/.14,(h-65)/.05),x=a=>w/2+(a-.02)*s,z=a=>h*.72-a*s;
 polygon(g,[[-.04,-.01],[.04,-.01],[.04,0],[-.04,0]],x,z,'#345365','#77a8c9');
 polygon(g,[[-.04,-.002],[.04,-.002],[.04,0],[-.04,0]],x,z,'#64796e',null);
 const cx=r.case.x_m,[a,b,c]=r.inputs.gap_coefficients,L=cx-.02,R=cx+.02,bL=a*L+c,bR=a*R+c;
 polygon(g,[[L,bL],[R,bR],[R,bR+.02],[L,bL+.02]],x,z,'#366f86','#e8f6f9');
-const com=r.inputs.com_world;text(g,'COM',x(com[0])-15,z(com[2])-6);g.fillStyle='white';g.beginPath();g.arc(x(com[0]),z(com[2]),3,0,7);g.fill();
+const com=r.inputs.com_world;text(g,'质心',x(com[0])-15,z(com[2])-6);g.fillStyle='white';g.beginPath();g.arc(x(com[0]),z(com[2]),3,0,7);g.fill();
 if(r.values.cop_world){const cp=r.values.cop_world;arrow(g,x(cp[0]),z(0),r.values.friction_force_n[0]*10,-r.values.normal_force_n[2]*10)}
 text(g,'有限支撑顶面 z=0',10,h-26);text(g,r.case.kind==='tilt'?'独立仿射倾斜面；非自由俯仰':'规定水平姿态；竖向不随承载下降而改变',10,20);
 text(g,'当前中心gap = '+fmt((a*cx+c)*1000,4)+' mm',10,42);
@@ -54,7 +54,7 @@ $('label').textContent=name(c.kind)+' · '+(r.passed?'解析检查通过':'检�
 $('area').textContent=fmt(v.active_area_m2*1e6,1)+' mm²';$('overlap').textContent='投影交叠 '+fmt(v.overlap_area_m2*1e6,1)+' mm²';
 $('force').textContent=fmt(v.normal_force_n[2])+' N';$('cop').textContent=v.cop_world?fmt(v.cop_world[0]*1000,2)+' mm':'无接触中心';$('com').textContent='块中心 x = '+fmt(c.x_m*1000,1)+' mm';
 $('moment').textContent=fmt(v.normal_com_moment_nm[1]*1000,2)+' mN·m';$('total').textContent='含摩擦高度力臂的总矩 '+fmt(v.total_com_moment_nm[1]*1000,2)+' mN·m';
-$('note').textContent=c.kind==='lift'?'抬高对照：足迹仍完全在桌面上，但正间隙没有压入，正压力面积与支撑力均为零。仅检测平面投影重叠是不够的。':c.kind==='tilt'?'倾斜对照：同样的足迹只在gap<0一侧承载，压力沿x变化，COP移向压入更深的一侧。此格用独立解析积分检查，不是从动力学算出的翻倒姿态。':v.active_area_m2===0?'边缘相触或完全越界：没有正面积承载区，全部接触载荷为零，COP不存在。真实物体会如何下落或转动，是后续动力学要解的问题。':c.x_m<=.02?'足迹完整落在桌面内：面积保持1600mm²，固定压入给出4.905N法向承载。橙色力箭头同时包含规定滑动产生的摩擦。':'足迹越过右边缘：面积与法向力下降，COP向剩余接触区迁移；力作用线偏离块COM，产生俯仰矩。这里不自动加深压入来补回体重。';
+$('note').textContent=c.kind==='lift'?'抬高对照：足迹仍完全在桌面上，但正间隙没有压入，正压力面积与支撑力均为零。仅检测平面投影重叠是不够的。':c.kind==='tilt'?'倾斜对照：同样的足迹只在gap<0一侧承载，压力沿x变化，COP移向压入更深的一侧。此格用独立解析积分检查，不是从动力学算出的翻倒姿态。':v.active_area_m2===0?'边缘相触或完全越界：没有正面积承载区，全部接触载荷为零，COP不存在。真实物体会如何下落或转动，是后续动力学要解的问题。':c.x_m<=.02?'足迹完整落在桌面内：面积保持1600mm²，固定压入给出4.905N法向承载。若规定滑动，橙色力箭头还包含相应摩擦。':'足迹越过右边缘：面积与法向力下降，COP向剩余接触区迁移；力作用线偏离块COM，产生俯仰矩。这里不自动加深压入来补回体重。';
 topView(r);sideView(r);graph('ga',r=>r.values.active_area_m2*1e6,1600,r);graph('gf',r=>r.values.normal_force_n[2],5.3,r,true);graph('gc',r=>r.values.cop_world?r.values.cop_world[0]*1000:null,40,r);graph('gm',r=>r.values.normal_com_moment_nm[1]*1000,26,r);
 }
 $('cases').onchange=e=>{if(timer){clearInterval(timer);timer=null;$('play').textContent='播放31个规定位置'}render(+e.target.value)};

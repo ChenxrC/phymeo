@@ -44,3 +44,9 @@ build_finite_patch(footprint_xy,support_xy,*,gap_coefficients=(a,b,c),stiffness_
 
 
 执行前域澄清：深度门只检查footprint∩support上的顶点最小gap；support外的端点不参与。active定义为正压力支撑闭包：overlap上最小gap>=0时active polygon/quad/active area为空/0，投影overlap保留；跨零时才裁gap<=0，保留零压边界。全zero-gap不报告正active area。已同步两独立作者，尚无项目执行。
+
+## 2026-11-15 执行收口
+
+数值源码fdf05a42，首次14新HOST/102固定格通过，34组网格比较通过；两处import和格式修正的完整AST与原作者同，无功能修复/数值重跑。102完整结果与媒体共114文件已绑定，详[实际报告](../../development/area-pressure-finite-support-report-20261115.md)。资格V05_REFERENCE_PASS，仅本计划的规定姿态有限顶面域。
+
+本批全部作者及串行执行槽已释放。下一接触节点是V05/V06独立动力学共同发布，不能再以增加静态网格代替真实运动；原h=1/0.5 ms与总计划工程门保留。V03外部失败不改写，TYX集成/训练未在本批执行。

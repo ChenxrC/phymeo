@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>面积压力静态参考实验</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#edf2f8;color:#162a43;font-family:"Microsoft YaHei",sans-serif}
+header{padding:22px 30px;background:#172d49;color:#fff}h1{font-size:26px;margin:0 0 9px}header p{margin:0;color:#d6e4f5}
+.badge{display:inline-block;margin-top:12px;padding:5px 10px;background:#f9d887;color:#503900;border-radius:5px;font-size:13px}
+nav{padding:16px 30px;display:flex;gap:12px;align-items:center}select,button{font:inherit;padding:7px 10px;border:1px solid #b7c9dc;border-radius:6px;background:white}
+main{padding:0 30px;display:grid;grid-template-columns:1.1fr 1fr 1fr;gap:18px}.panel{background:white;border:1px solid #d5e0ed;border-radius:12px;padding:18px}
+h2{font-size:18px;margin:0 0 15px}canvas{width:100%;height:300px;background:#f8fafd;border-radius:8px}
+.kv{display:grid;grid-template-columns:1fr 1fr;gap:12px}.number{font-size:23px;font-weight:700}.caption{font-size:13px;color:#60748e;margin:5px 0 12px}
+table{width:100%;border-collapse:collapse;font-size:13px}td,th{text-align:left;padding:8px 4px;border-bottom:1px solid #e7edf5}
+.pass{color:#087f5b}.fail{color:#bb3030}.note{font-size:13px;line-height:1.65;color:#526984}
+footer{padding:18px 30px;font-size:13px;color:#526984}.legend{height:10px;background:linear-gradient(90deg,#164caa,#45b9d5,#ffe487,#e66a24,#b52227);margin-top:10px}
+#frame{margin-top:10px;font-size:13px}input[type=range]{width:240px}a{color:#1266bd}
+</style></head><body>
+<header><h1>面积压力接触 · V00 / V01 / V02</h1><p>来自保存的 NumPy 面积积分结果：真实 dA、压力、合力、压力中心与力矩</p>
+<span class="badge">STATIC REFERENCE · 预设几何 / 非自由动力学 · 非 Drake / Newton / TYX 运行</span></header>
+<nav><button id="prev">上一项</button><select id="choice"></select><button id="next">下一项</button><input id="slider" type="range" min="0" value="0"><span id="idx"></span></nav>
+<main>
+<section class="panel"><h2>保存网格与压力热图</h2><canvas id="surface" width="420" height="320"></canvas>
+<div class="legend"></div><div class="caption">固定压力色标：0 — 3000 Pa；材料平面俯视</div>
+<p class="note">三角形颜色为本单元积分点压力均值。黑点为压力中心；浅点为真实积分点。画面不会重新求解。</p></section>
+<section class="panel"><h2 id="case-title"></h2><div class="kv">
+<div><div class="number" id="area"></div><div class="caption">实际离散面积 mm²</div></div>
+<div><div class="number" id="force"></div><div class="caption">压力载荷 N</div></div>
+<div><div class="number" id="points"></div><div class="caption">面积积分点</div></div>
+<div><div class="number" id="max-pressure"></div><div class="caption">最大积分点压力 kPa</div></div></div>
+<table id="details"></table><p id="gate" class="note"></p><p id="inputs" class="note"></p></section>
+<section class="panel"><h2>载荷与独立解析参考</h2><canvas id="curve" width="380" height="320"></canvas>
+<table id="errors"></table><p class="note">蓝色：面积积分；橙色：解析参考。网格/模型误差与物理适用性分别判断；粗网格仍完整展示。</p></section>
+</main>
+<footer>本实验只验证声明的静态压力场与面积积分。V02 不是 Hertz 材料解；没有训练、时间推进或通用 Hydroelastic 集成结论。数据：<a href="results.json">完整 JSON</a> · <a href="summary.csv">CSV</a><div id="frame"></div></footer>
+<script id="data" type="application/json">__RESULTS_JSON__</script>
+<script>
+const saved=JSON.parse(document.getElementById("data").textContent), rows=saved.records;
+const choice=document.getElementById("choice"),slider=document.getElementById("slider");
+rows.forEach((r,i)=>{let o=document.createElement("option");o.value=i;o.textContent=r.case.id;choice.appendChild(o)});slider.max=rows.length-1;
+const palette=[[22,76,170],[69,185,213],[255,228,135],[230,106,36],[181,34,39]];
+function color(p){let u=Math.max(0,Math.min(1,p/3000))*4,i=Math.min(3,Math.floor(u)),f=u-i;return "rgb("+palette[i].map((v,k)=>Math.round(v+(palette[i+1][k]-v)*f)).join(",")+")"}
+function local(point,c){let R=c.rotation_world||[[1,0,0],[0,1,0],[0,0,1]],d=point.map((v,i)=>v-(c.position_world||[0,0,0])[i]);return [0,1,2].map(j=>R.reduce((s,row,k)=>s+row[j]*d[k],0))}
+function fmt(v){return v===null?"—":Number(v).toPrecision(5)}
+function vector(v,scale=1){return v===null?"无正载荷":v.map(x=>fmt(x*scale)).join(", ")}
+function drawSurface(row){
+let c=document.getElementById("surface"),ctx=c.getContext("2d");ctx.clearRect(0,0,c.width,c.height);
+let q=row.result.quadrature,vertices=q.vertices_world.map(x=>local(x,row.case));
+if(!vertices.length){ctx.fillStyle="#60748e";ctx.font="18px sans-serif";ctx.fillText("零压入：空接触面积",110,160);return}
+let span=Math.max(...vertices.flatMap(v=>[Math.abs(v[0]),Math.abs(v[1])]))*1.18;
+const xy=v=>[c.width/2+v[0]/span*140,c.height/2-v[1]/span*140];
+let tris=q.triangles,means=tris.map(()=>[0,0]);
+q.triangle_indices.forEach((t,k)=>{means[t][0]+=row.result.pressure_pa[k];means[t][1]++});
+tris.forEach((t,i)=>{let pts=t.map(j=>xy(vertices[j]));ctx.beginPath();ctx.moveTo(...pts[0]);pts.slice(1).forEach(v=>ctx.lineTo(...v));ctx.closePath();ctx.fillStyle=color(means[i][0]/means[i][1]);ctx.fill();ctx.strokeStyle="#29456255";ctx.lineWidth=.6;ctx.stroke()});
+q.points_world.forEach(p=>{let [x,y]=xy(local(p,row.case));ctx.beginPath();ctx.arc(x,y,1.2,0,Math.PI*2);ctx.fillStyle="#ffffff99";ctx.fill()});
+if(row.result.cop_world){let [x,y]=xy(local(row.result.cop_world,row.case));ctx.beginPath();ctx.arc(x,y,5,0,Math.PI*2);ctx.fillStyle="#13233a";ctx.fill();ctx.fillText("COP",x+9,y-8)}
+ctx.fillStyle="#516078";ctx.font="12px sans-serif";ctx.fillText("显示跨度 ±"+(span*1000).toFixed(2)+" mm",12,304)
+}
+function drawCurve(row){
+let c=document.getElementById("curve"),ctx=c.getContext("2d");ctx.clearRect(0,0,c.width,c.height);
+let family=row.case.family,series=rows.filter(r=>r.case.family===family);
+if(family==="V02")series=series.filter(r=>r.case.resolution_m===row.case.resolution_m);
+if(family==="V00")series=series.filter(r=>r.case.subdivisions[0]===row.case.subdivisions[0]);
+if(family==="V01")series=series.filter(r=>r.case.rotation_world.flat().join(",")===row.case.rotation_world.flat().join(",")&&r.case.position_world.join(",")===row.case.position_world.join(","));
+const xval=r=>family==="V02"?r.case.indentation_m*1000:family==="V00"?r.expected.area_m2*1e6:r.case.subdivisions[0];
+series.sort((a,b)=>xval(a)-xval(b));
+let xmax=Math.max(...series.map(xval),.1),ymax=Math.max(...series.map(r=>r.expected.first_force_n.reduce((s,v)=>s+v*v,0)**.5),.01)*1.2;
+const xy=(x,y)=>[48+x/xmax*300,270-y/ymax*225];
+ctx.strokeStyle="#9baec1";ctx.beginPath();ctx.moveTo(48,30);ctx.lineTo(48,270);ctx.lineTo(350,270);ctx.stroke();
+for(let [label,colour,value] of [["面积积分","#2563eb",r=>r.result.pressure_load_n],["解析参考","#e97824",r=>Math.hypot(...r.expected.first_force_n)]]){
+ctx.strokeStyle=colour;ctx.fillStyle=colour;ctx.beginPath();series.forEach((r,i)=>{let [x,y]=xy(xval(r),value(r));i?ctx.lineTo(x,y):ctx.moveTo(x,y)});ctx.stroke();
+series.forEach(r=>{let [x,y]=xy(xval(r),value(r));ctx.beginPath();ctx.arc(x,y,colour==="#2563eb"?5:2.5,0,Math.PI*2);ctx.fill()});
+}
+ctx.font="12px sans-serif";ctx.fillStyle="#516078";ctx.fillText("Fn [N]",5,22);ctx.fillText(family==="V02"?"压入量 [mm]":family==="V00"?"解析面积 [mm²]":"每边细分数",160,309);ctx.fillText(fmt(ymax),4,45);
+series.forEach(r=>{let [x]=xy(xval(r),0);ctx.fillText(fmt(xval(r)),x-12,291)})
+}
+function render(index){
+index=Math.max(0,Math.min(rows.length-1,Number(index)));choice.value=index;slider.value=index;
+let row=rows[index],r=row.result,e=row.error;document.getElementById("idx").textContent=(index+1)+" / "+rows.length;
+document.getElementById("case-title").textContent=row.case.id;
+document.getElementById("area").textContent=fmt(r.area_m2*1e6);document.getElementById("force").textContent=fmt(r.pressure_load_n);
+document.getElementById("points").textContent=r.quadrature.points_world.length;document.getElementById("max-pressure").textContent=fmt(Math.max(0,...r.pressure_pa)/1000);
+document.getElementById("details").innerHTML=[["F first [N]",vector(r.first_force_n)],["F second [N]",vector(r.second_force_n)],["M first [N·m]",vector(r.first_moment_nm)],["COP world [mm]",vector(r.cop_world,1000)]].map(x=>"<tr><td>"+x[0]+"</td><td>"+x[1]+"</td></tr>").join("");
+document.getElementById("errors").innerHTML=[["面积相对误差",e.area_relative===null?"空域":fmt(e.area_relative*100)+"%"],["合力相对误差",e.force_relative===null?"空域":fmt(e.force_relative*100)+"%"],["力矩误差 [N·m]",fmt(e.moment_absolute_nm)],["作用反作用误差 [N]",fmt(e.action_reaction_n)]].map(x=>"<tr><td>"+x[0]+"</td><td>"+x[1]+"</td></tr>").join("");
+document.getElementById("gate").innerHTML="<span class='"+(row.passed?"pass":"fail")+"'>"+(row.gate==="COARSE_OBSERVATION_NOT_FINEST_GATE"?"粗网格观测（仅有限量与守恒门）":(row.passed?"该项检查通过":"检查失败"))+"</span> · "+row.gate;
+document.getElementById("inputs").textContent=row.case.family==="V02"?"R=20 mm; E=100 kPa; h="+row.case.resolution_m*1000+" mm; δ="+row.case.indentation_m*1000+" mm":"制造压力场；无运动求解或材料标定";
+document.getElementById("frame").textContent=saved.status+" · "+saved.caveat;
+drawSurface(row);drawCurve(row);
+}
+choice.onchange=()=>render(choice.value);slider.oninput=()=>render(slider.value);
+document.getElementById("prev").onclick=()=>render(Number(choice.value)-1);document.getElementById("next").onclick=()=>render(Number(choice.value)+1);
+window.showCase=render;render(0);
+</script></body></html>

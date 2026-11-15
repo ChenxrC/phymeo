@@ -1,0 +1,63 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>V05 · 离开有限支撑时，承载怎样消失</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#101b25;color:#edf5fa;font:16px "Microsoft YaHei",sans-serif}main{max-width:1440px;margin:auto;padding:24px}header{display:flex;justify-content:space-between;align-items:center}h1{font-size:29px;margin:12px 0}p{color:#bdd0dd;line-height:1.65}.badge{display:inline-block;background:#224b60;border-radius:16px;padding:5px 12px;font-size:13px}small{color:#a6bfcd;line-height:1.6}.controls{display:flex;gap:10px;align-items:center;margin:16px 0}select,button{padding:9px;background:#274050;color:white;border:1px solid #628496;border-radius:5px;font:inherit}.panels{display:grid;grid-template-columns:1.15fr 1fr;gap:14px}.card{background:#172d3b;padding:16px;border:1px solid #35566a;border-radius:10px}h2{font-size:20px;margin:0 0 9px}.card canvas{display:block;width:100%;height:305px}.legend{display:flex;gap:16px;font-size:13px;margin-top:10px}.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:14px 0}.metric{background:#223e4e;padding:12px;border-radius:8px}.metric b{font-size:23px;display:block;margin:8px 0}.graphs{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.plot{background:#142a37;border-radius:8px;padding:10px}.plot canvas{display:block;width:100%;height:145px}.note{background:#193b43;border-left:4px solid #83dec7;padding:12px 16px;line-height:1.6;margin-top:14px}.bar{background:linear-gradient(90deg,#2877bc,#45c9bd,#f9c35c,#f36b4c);height:9px;border-radius:6px}.ends{display:flex;justify-content:space-between;font-size:12px;margin-top:4px}.pass{color:#86e3b7}.fail{color:#ffae83}@media(max-width:900px){.panels{grid-template-columns:1fr}.metrics,.graphs{grid-template-columns:1fr 1fr}}
+</style><main>
+<header><div><span class="badge">PRESCRIBED_POSE · 规定位置参考 · 非自由动力学</span><h1>滑出桌面后，支撑力会在哪里消失？</h1></div><b id="status"></b></header>
+<p>压入量只在居中时标定一次。随后保持同一压入量，把块移向边缘：有重叠才有压力，面积变小，承载自然下降。</p>
+<div class="controls"><select id="cases"></select><button id="play">播放31个规定位置</button><span id="label"></span></div>
+<div class="panels">
+<section class="card"><h2>俯视：有限桌面、物体足迹与接触区</h2><canvas id="top"></canvas><div class="legend"><span style="color:#77a8c9">蓝色：80mm有限支撑</span><span>白线：40mm块足迹</span><span style="color:#ffdb68">黄点：压力中心COP</span></div><div class="bar"></div><div class="ends"><span>0 kPa</span><span>固定压力色标</span><span>5 kPa</span></div></section>
+<section class="card"><h2>侧视：显示实际规定位置，不伪造下落</h2><canvas id="side"></canvas><small>橙色箭头是作用在块上的接触合力，桌面在同点受反力。几何按尺寸绘制；箭头长度作力值示意。质量0.5kg仅用于标定与体重比较。</small></section>
+</div>
+<div class="metrics"><div class="metric">正压力面积<b id="area"></b><small id="overlap"></small></div><div class="metric">向上支撑力<b id="force"></b><small>体重 mg = 4.905 N（虚线参考）</small></div><div class="metric">压力中心 x<b id="cop"></b><small id="com"></small></div><div class="metric">关于块COM的法向俯仰矩<b id="moment"></b><small id="total"></small></div></div>
+<div class="graphs"><div class="plot">接触面积 / mm²<canvas id="ga"></canvas></div><div class="plot">支撑力 / N<canvas id="gf"></canvas></div><div class="plot">压力中心 x / mm<canvas id="gc"></canvas></div><div class="plot">COM法向矩 / mN·m<canvas id="gm"></canvas></div></div>
+<div id="note" class="note"></div><p><small>上述曲线只连接31个最细网格的主序列位置，横轴为位移mm，不是时间。抬高、越界和倾斜是独立对照格。模型为有限顶面上的仿射弹性基础层，未证明侧面/背面、自由翻倒或动态稳定支撑。</small></p>
+</main><script>
+const data=__RESULTS_JSON__,$=id=>document.getElementById(id);
+const mainIndices=data.cases.map((r,i)=>r.case.kind==='slide'&&r.case.subdivisions===8?i:-1).filter(i=>i>=0);
+const mainCases=mainIndices.map(i=>data.cases[i]);let current=mainIndices[0],timer=null,pos=0;
+const name=k=>({slide:'沿边缘移动',outside:'完全越界',lift:'居中抬高',tilt:'倾斜压力面'})[k];
+const fmt=(x,n=3)=>Number(x).toFixed(n);
+$('status').textContent=data.status==='V05_REFERENCE_PASS'?'102个参考格通过':'参考检查未通过';$('status').className=data.status==='V05_REFERENCE_PASS'?'pass':'fail';
+data.cases.forEach((r,i)=>{const o=document.createElement('option');o.value=i;o.textContent=(i+1)+'/102 '+name(r.case.kind)+' · x='+fmt(r.case.x_m*1000,0)+'mm · n='+r.case.subdivisions;$('cases').append(o)});
+function canvas(id){const c=$(id),w=c.clientWidth,h=c.clientHeight,d=devicePixelRatio||1;c.width=w*d;c.height=h*d;const g=c.getContext('2d');g.scale(d,d);g.font='13px Microsoft YaHei';return {g,w,h}}
+function text(g,t,x,y,c='#bed1de'){g.fillStyle=c;g.fillText(t,x,y)}
+function polygon(g,points,x,y,fill,stroke){if(!points.length)return;g.beginPath();points.forEach((p,i)=>i?g.lineTo(x(p[0]),y(p[1])):g.moveTo(x(p[0]),y(p[1])));g.closePath();if(fill){g.fillStyle=fill;g.fill()}if(stroke){g.strokeStyle=stroke;g.lineWidth=2;g.stroke()}}
+function arrow(g,x,y,dx,dy){const l=Math.hypot(dx,dy);if(l<.2)return;g.strokeStyle=g.fillStyle='#ffb164';g.lineWidth=2.5;g.beginPath();g.moveTo(x,y);g.lineTo(x+dx,y+dy);g.stroke();const a=dx/l,b=dy/l;g.beginPath();g.moveTo(x+dx,y+dy);g.lineTo(x+dx-7*a+4*b,y+dy-7*b-4*a);g.lineTo(x+dx-7*a-4*b,y+dy-7*b+4*a);g.fill()}
+function color(v){const colors=[[40,119,188],[69,201,189],[249,195,92],[243,107,76]],t=Math.max(0,Math.min(1,v/5000))*3,i=Math.min(2,Math.floor(t)),f=t-i;return 'rgb('+colors[i].map((v,j)=>Math.round(v+f*(colors[i+1][j]-v))).join(',')+')'}
+function topView(r){const {g,w,h}=canvas('top'),s=Math.min((w-40)/.14,(h-45)/.10),x=a=>20+(a+.05)*s,y=a=>h/2-a*s;
+polygon(g,r.inputs.support_xy,x,y,'#23485e','#77a8c9');
+for(let i=0;i<r.triangles.length;i++){const tri=r.triangles[i].map(j=>r.vertices_world[j]);const pressure=(r.pressure_pa[3*i]+r.pressure_pa[3*i+1]+r.pressure_pa[3*i+2])/3;polygon(g,tri,x,y,color(pressure),null)}
+polygon(g,r.inputs.footprint_xy,x,y,null,'#f2f6f8');
+const cx=r.inputs.com_world[0];text(g,'+',x(cx)-4,y(0)+4,'white');
+if(r.values.cop_world){const p=r.values.cop_world;g.fillStyle='#ffdb68';g.beginPath();g.arc(x(p[0]),y(p[1]),5,0,7);g.fill();text(g,'COP',x(p[0])+8,y(p[1])-8,'#ffdb68')}
+text(g,'x →',w-42,h-10);text(g,'+ 为块中心；接触区按实际多边形裁剪',10,h-10);
+}
+function sideView(r){const {g,w,h}=canvas('side'),s=Math.min((w-40)/.14,(h-65)/.05),x=a=>20+(a+.05)*s,z=a=>h*.72-a*s;
+polygon(g,[[-.04,-.01],[.04,-.01],[.04,0],[-.04,0]],x,z,'#345365','#77a8c9');
+polygon(g,[[-.04,-.002],[.04,-.002],[.04,0],[-.04,0]],x,z,'#64796e',null);
+const cx=r.case.x_m,[a,b,c]=r.inputs.gap_coefficients,L=cx-.02,R=cx+.02,bL=a*L+c,bR=a*R+c;
+polygon(g,[[L,bL],[R,bR],[R,bR+.02],[L,bL+.02]],x,z,'#366f86','#e8f6f9');
+const com=r.inputs.com_world;text(g,'COM',x(com[0])-15,z(com[2])-6);g.fillStyle='white';g.beginPath();g.arc(x(com[0]),z(com[2]),3,0,7);g.fill();
+if(r.values.cop_world){const cp=r.values.cop_world;arrow(g,x(cp[0]),z(0),r.values.friction_force_n[0]*10,-r.values.normal_force_n[2]*10)}
+text(g,'有限支撑顶面 z=0',10,h-26);text(g,r.case.kind==='tilt'?'独立仿射倾斜面；非自由俯仰':'规定水平姿态；竖向不随承载下降而改变',10,20);
+text(g,'当前中心gap = '+fmt((a*cx+c)*1000,4)+' mm',10,42);
+}
+function graph(id,accessor,ymax,selected,weight=false){const {g,w,h}=canvas(id),left=34,right=w-12,top=16,bottom=h-25,x=a=>left+a/60*(right-left),y=a=>bottom-a/ymax*(bottom-top);
+g.strokeStyle='#416176';g.beginPath();g.moveTo(left,top);g.lineTo(left,bottom);g.lineTo(right,bottom);g.stroke();text(g,'0',7,bottom);text(g,fmt(ymax,1),0,top);text(g,'0',left,bottom+18);text(g,'60 mm',right-40,bottom+18);
+if(weight){g.setLineDash([4,4]);g.strokeStyle='#f3c86b';g.beginPath();g.moveTo(left,y(4.905));g.lineTo(right,y(4.905));g.stroke();g.setLineDash([])}
+g.strokeStyle='#73d8d1';g.lineWidth=2;g.beginPath();let started=false;for(const r of mainCases){const value=accessor(r);if(value===null){started=false;continue}if(started)g.lineTo(x(r.case.x_m*1000),y(value));else g.moveTo(x(r.case.x_m*1000),y(value));started=true}g.stroke();
+if(selected.case.kind==='slide'){const v=accessor(selected);if(v!==null){g.fillStyle='#ffbd66';g.beginPath();g.arc(x(selected.case.x_m*1000),y(v),4,0,7);g.fill()}}
+}
+function render(i){current=i;$('cases').value=i;const r=data.cases[i],v=r.values,c=r.case;
+$('label').textContent=name(c.kind)+' · '+(r.passed?'解析检查通过':'检查未过');
+$('area').textContent=fmt(v.active_area_m2*1e6,1)+' mm²';$('overlap').textContent='投影交叠 '+fmt(v.overlap_area_m2*1e6,1)+' mm²';
+$('force').textContent=fmt(v.normal_force_n[2])+' N';$('cop').textContent=v.cop_world?fmt(v.cop_world[0]*1000,2)+' mm':'无接触中心';$('com').textContent='块中心 x = '+fmt(c.x_m*1000,1)+' mm';
+$('moment').textContent=fmt(v.normal_com_moment_nm[1]*1000,2)+' mN·m';$('total').textContent='含摩擦高度力臂的总矩 '+fmt(v.total_com_moment_nm[1]*1000,2)+' mN·m';
+$('note').textContent=c.kind==='lift'?'抬高对照：足迹仍完全在桌面上，但正间隙没有压入，正压力面积与支撑力均为零。仅检测平面投影重叠是不够的。':c.kind==='tilt'?'倾斜对照：同样的足迹只在gap<0一侧承载，压力沿x变化，COP移向压入更深的一侧。此格用独立解析积分检查，不是从动力学算出的翻倒姿态。':v.active_area_m2===0?'边缘相触或完全越界：没有正面积承载区，全部接触载荷为零，COP不存在。真实物体会如何下落或转动，是后续动力学要解的问题。':c.x_m<=.02?'足迹完整落在桌面内：面积保持1600mm²，固定压入给出4.905N法向承载。橙色力箭头同时包含规定滑动产生的摩擦。':'足迹越过右边缘：面积与法向力下降，COP向剩余接触区迁移；力作用线偏离块COM，产生俯仰矩。这里不自动加深压入来补回体重。';
+topView(r);sideView(r);graph('ga',r=>r.values.active_area_m2*1e6,1600,r);graph('gf',r=>r.values.normal_force_n[2],5.3,r,true);graph('gc',r=>r.values.cop_world?r.values.cop_world[0]*1000:null,40,r);graph('gm',r=>r.values.normal_com_moment_nm[1]*1000,26,r);
+}
+$('cases').onchange=e=>{if(timer){clearInterval(timer);timer=null;$('play').textContent='播放31个规定位置'}render(+e.target.value)};
+$('play').onclick=()=>{if(timer){clearInterval(timer);timer=null;$('play').textContent='播放31个规定位置';return}pos=0;render(mainIndices[0]);$('play').textContent='暂停';timer=setInterval(()=>{if(++pos>=mainIndices.length){clearInterval(timer);timer=null;$('play').textContent='播放31个规定位置';return}render(mainIndices[pos])},250)};
+window.showCase=render;window.addEventListener('resize',()=>render(current));render(current);
+</script></html>

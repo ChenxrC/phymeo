@@ -41,3 +41,6 @@ build_finite_patch(footprint_xy,support_xy,*,gap_coefficients=(a,b,c),stiffness_
 最多一次有依据实现修复；若原声明模型不适用，保留失败，不移动几何/质量/阈值。安装/外部engine/整机训练不在本批。
 
 可视化基于保存数据：俯视有限支撑/块足迹/真实active压力区/COP；侧视块的规定位置（压入可注明放大）；曲线显示随位移的面积、Fn与mg、COP和COM法向俯仰矩；不伪造块翻倒或自由运动。102格选择器/31主序列播放、关键帧MP4与JSON/CSV。明确“PRESCRIBED_POSE / 非自由动力学”，压力色标固定0..5kPa，零域无COP标记。体重只作比较，支撑下降是固定压入的模型输出，真实下落/旋转留给下一动力学批。
+
+
+执行前域澄清：深度门只检查footprint∩support上的顶点最小gap；support外的端点不参与。active定义为正压力支撑闭包：overlap上最小gap>=0时active polygon/quad/active area为空/0，投影overlap保留；跨零时才裁gap<=0，保留零压边界。全zero-gap不报告正active area。已同步两独立作者，尚无项目执行。

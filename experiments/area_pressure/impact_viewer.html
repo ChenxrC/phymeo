@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>V06 双自由体冲击</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#0e1b25;color:#e5eff5;font:16px "Segoe UI","Microsoft YaHei",sans-serif;padding:24px}h1{font-size:30px;margin:14px 0}p{color:#b8cdd9;line-height:1.6}button,select{font:inherit;background:#264252;color:#eff8ff;border:1px solid #63899d;border-radius:5px;padding:9px;margin-right:8px}button{cursor:pointer}.badge{background:#224a5d;border-radius:15px;padding:5px 14px;font-size:13px}.status{float:right;color:#7ff3c3}.controls{display:flex;align-items:center;gap:10px;margin:18px 0}.controls input{flex:1}.main{display:grid;grid-template-columns:1.1fr 1fr;gap:18px}.panel{padding:16px;border:1px solid #32566a;border-radius:10px;background:#162d3b}h2{font-size:19px;margin:0 0 8px}canvas{width:100%;display:block}.scene{height:350px}.chart{height:135px}.charts{display:grid;grid-template-columns:1fr 1fr;gap:12px}.card{background:#203d4e;padding:13px;border-radius:7px}.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:14px 0}.big{font-size:26px;font-weight:650;margin:7px 0}.small{font-size:13px;color:#abc5d3;line-height:1.5}.note{padding:14px;background:#1b3c47;border-left:4px solid #79d3cb;line-height:1.6}.legend{display:flex;gap:24px;color:#b8cfdb;margin:10px 0}.dot{display:inline-block;width:11px;height:11px;margin-right:5px;border-radius:50%}.footer{margin-top:14px;font-size:13px;color:#a9c3d3;line-height:1.7}
+</style>
+<span class="badge">DYNAMIC · 保存的真实状态 · 独立 NumPy 参考</span><span class="status" id="status"></span>
+<h1>球撞上目标后，双方真的动了吗？</h1>
+<p>0.5 kg 球撞向 1 kg 有限厚目标。两者都可运动，无重力、无外力；接触压力产生相反冲量，共同更新双方速度与位置。</p>
+<div class="controls"><select id="cases"></select><button id="play">慢放真实 0.5 秒</button><input id="time" type="range" min="0" value="0"><span id="clock"></span></div>
+<div class="main">
+ <div class="panel"><h2>同一条轨迹：两个有限质量物体</h2><canvas class="scene" id="scene"></canvas>
+ <div class="legend"><span><i class="dot" style="background:#69d7d0"></i>球 A · 0.5 kg</span><span><i class="dot" style="background:#6fa0da"></i>目标 B · 1 kg</span><span style="color:#ffba72">橙箭头：本步平均接触力</span></div>
+ <div class="small">几何按比例绘制；箭头长度仅示意力。水平位置居中且零转矩，由对称性形成纯法向运动。目标没有固定在地面上。</div></div>
+ <div class="panel"><h2>真实时间曲线与当前采样</h2><div class="charts">
+ <div><canvas class="chart" id="force"></canvas><div class="small">本步平均力 N：实际两次冲量之和 / h</div></div>
+ <div><canvas class="chart" id="velocity"></canvas><div class="small">相对速度 m/s：负为接近，正为分离</div></div>
+ <div><canvas class="chart" id="energy"></canvas><div class="small">机械能 K+U（青）与加回耗散（橙），mJ</div></div>
+ <div><canvas class="chart" id="momentum"></canvas><div class="small">总动量误差，kg·m/s；纵轴固定 ±0.001</div></div>
+ </div><p class="small" id="caseInfo"></p><div class="note" id="phase"></div></div>
+</div>
+<div class="cards">
+ <div class="card">本步平均接触力<div class="big" id="fn"></div><div class="small">并非末端瞬时力</div></div>
+ <div class="card">末端压入 / 间隙<div class="big" id="depth"></div><div class="small">正值压入，负值分离</div></div>
+ <div class="card">累计接触冲量<div class="big" id="impulse"></div><div class="small">A 为 +J；B 为 −J</div></div>
+ <div class="card">当前机械能<div class="big" id="en"></div><div class="small" id="loss"></div></div>
+</div>
+<div class="note">看“相对速度”判断分离：有耗散时，球即使仍沿世界 −z 方向运动，也可能已经比目标退得慢，双方正在分开。零接触力后的运动来自真实剩余速度，不是规定动画。</div>
+<div class="footer">本批验证轴对称双自由体的压力积分 → 两次 kick → 位置漂移 → 同步发布。它尚非一般六自由度/斜碰/侧面碰撞，也未接入 Phymeo 产品或 TYX。空间压力模型沿用 V02 径向场，分辨率 1 mm；时间步长 1 / 0.5 ms。可控压入属于声明的柔顺模型。</div>
+<script>
+const data=__RESULTS_JSON__,$=id=>document.getElementById(id);let selected=1,index=0,timer=null,start=0;
+function fmt(v,n=3){return Number(v).toFixed(n)}
+function canvas(id){const c=$(id),r=c.getBoundingClientRect(),d=devicePixelRatio||1;c.width=r.width*d;c.height=r.height*d;const g=c.getContext('2d');g.scale(d,d);g.font='13px "Microsoft YaHei",sans-serif';return {g,w:r.width,h:r.height}}
+function text(g,t,x,y,color='#bed1dd'){g.fillStyle=color;g.fillText(t,x,y)}
+function arrow(g,x,y,dy){if(Math.abs(dy)<.1)return;g.strokeStyle=g.fillStyle='#ffb96b';g.lineWidth=2.5;g.beginPath();g.moveTo(x,y);g.lineTo(x,y+dy);g.stroke();const s=Math.sign(dy);g.beginPath();g.moveTo(x,y+dy);g.lineTo(x-5,y+dy-s*9);g.lineTo(x+5,y+dy-s*9);g.fill()}
+function drawScene(f){const {g,w,h}=canvas('scene'),s=(h-40)/.16,x=w*.5,z=v=>h/2+.005*s-v*s,ra=.02*s;
+g.strokeStyle='#305263';g.lineWidth=1;g.setLineDash([3,5]);g.beginPath();g.moveTo(x,8);g.lineTo(x,h-8);g.stroke();g.setLineDash([]);
+g.fillStyle='#6fa0da';g.fillRect(x-.04*s,z(f.position_b_m+.005),.08*s,.01*s);
+g.fillStyle='#69d7d0';g.beginPath();g.arc(x,z(f.position_a_m),ra,0,Math.PI*2);g.fill();
+text(g,'A 球',x+ra+12,z(f.position_a_m)-12,'#78e1db');text(g,'vA = '+fmt(f.velocity_a_m_s,4)+' m/s',x+ra+12,z(f.position_a_m)+9);
+text(g,'B 目标',x-.04*s-82,z(f.position_b_m)-14,'#a6cafa');text(g,'vB '+fmt(f.velocity_b_m_s,4),x-.04*s-113,z(f.position_b_m)+7);
+if(f.force_n>0){arrow(g,x-15,z(f.position_a_m),-Math.min(65,8*f.force_n));arrow(g,x+15,z(f.position_b_m),Math.min(65,8*f.force_n))}
+if(f.area_m2>0){const half=Math.sqrt(f.area_m2/Math.PI)*s;g.strokeStyle='#ffd26e';g.lineWidth=4;g.beginPath();g.moveTo(x-half,z(f.position_b_m+.005));g.lineTo(x+half,z(f.position_b_m+.005));g.stroke()}
+text(g,'+z ↑',12,20);text(g,'橙色力采用整步平均；黄色宽度按末端面积等效',12,h-10);
+}
+function plot(id, series, lo,hi, colors){const {g,w,h}=canvas(id),frames=data.cases[selected].frames,l=38,r=w-8,top=14,bot=h-21,X=t=>l+(r-l)*t/.5,Y=v=>bot-(bot-top)*(v-lo)/(hi-lo);
+g.strokeStyle='#3a596a';g.beginPath();g.moveTo(l,top);g.lineTo(l,bot);g.lineTo(r,bot);g.stroke();
+text(g,fmt(hi,hi<.01?3:1),0,top+4);text(g,fmt(lo,lo===0?0:3),0,bot);text(g,'0',l,bot+17);text(g,'0.5 s',r-34,bot+17);
+series.forEach((fn,k)=>{g.strokeStyle=colors[k];g.lineWidth=1.8;g.beginPath();frames.forEach((f,i)=>i?g.lineTo(X(f.time_s),Y(fn(f))):g.moveTo(X(f.time_s),Y(fn(f))));g.stroke()});
+g.strokeStyle='#d9e6ed';g.setLineDash([3,4]);g.beginPath();g.moveTo(X(frames[index].time_s),top);g.lineTo(X(frames[index].time_s),bot);g.stroke();g.setLineDash([]);
+}
+function render(){const c=data.cases[selected],f=c.frames[index],m=c.summary.metrics;$('time').max=c.frames.length-1;$('time').value=index;
+$('clock').textContent='t = '+fmt(f.time_s,4)+' s';$('fn').textContent=fmt(f.force_n)+' N';$('depth').textContent=fmt(f.indentation_m*1000)+' mm';$('impulse').textContent=fmt(f.impulse_n_s,5)+' N·s';$('en').textContent=fmt(f.energy_j*1000,4)+' mJ';$('loss').textContent='本窗初始 10 mJ；K+U+D = '+fmt(f.ledger_j*1000,4)+' mJ';
+$('caseInfo').textContent='本轨迹峰值平均力 '+fmt(m.peak_average_force_n)+' N；最大压入 '+fmt(m.max_indentation_m*1000)+' mm；参数 d='+c.summary.case.dissipation_s_per_m+' s/m，h='+fmt(c.summary.case.dt_s*1000,1)+' ms。';
+$('phase').textContent=f.force_n===0?(f.time_s<.01?'入层前：双方按原速度自由接近，尚无接触力。':'无接触力：检查相对速度与间隙，双方继续按真实速度运动。'):(f.velocity_a_m_s-f.velocity_b_m_s<0?'压缩中：接触压力增大，A获得+z冲量、B获得−z冲量。':'卸载中：相对速度已转为分离，接触压力随压入减小，最终归零。');
+drawScene(f);plot('force',[f=>f.force_n],0,Math.max(1,m.peak_average_force_n*1.1),['#76ddd3']);plot('velocity',[f=>f.velocity_a_m_s-f.velocity_b_m_s],-.22,.22,['#76ddd3']);plot('energy',[f=>f.energy_j*1000,f=>f.ledger_j*1000],0,10.6,['#76ddd3','#ffb96b']);plot('momentum',[f=>f.momentum_error],-.001,.001,['#76ddd3']);
+}
+function stop(){if(timer)cancelAnimationFrame(timer);timer=null;$('play').textContent='慢放真实 0.5 秒'}
+$('cases').innerHTML=data.cases.map((c,i)=>'<option value="'+i+'">'+(c.summary.case.dissipation_s_per_m?'有耗散':'零耗散')+' · h='+fmt(c.summary.case.dt_s*1000,1)+' ms</option>').join('');$('cases').value=selected;
+$('status').textContent=data.summary.status==='V06_DYNAMIC_PASS'?'4 条真实轨迹通过':'保留失败，请看报告';
+$('cases').onchange=e=>{stop();selected=+e.target.value;index=0;render()};
+$('time').oninput=e=>{stop();index=+e.target.value;render()};
+$('play').onclick=()=>{if(timer){stop();return}index=0;start=performance.now();$('play').textContent='暂停';function tick(now){const f=data.cases[selected].frames;index=Math.min(f.length-1,Math.floor((now-start)/15000*(f.length-1)));render();if(index<f.length-1)timer=requestAnimationFrame(tick);else stop()}timer=requestAnimationFrame(tick)};
+window.addEventListener('resize',render);render();
+</script></html>

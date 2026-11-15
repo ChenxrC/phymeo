@@ -29,15 +29,15 @@ def _number(value, name):
 
 @dataclass(frozen=True)
 class AxialImpactConfig:
-    mass_a_kg: float = .5
-    mass_b_kg: float = 1.
-    radius_m: float = .02
-    target_half_width_m: float = .04
-    target_thickness_m: float = .01
+    mass_a_kg: float = 0.5
+    mass_b_kg: float = 1.0
+    radius_m: float = 0.02
+    target_half_width_m: float = 0.04
+    target_thickness_m: float = 0.01
     modulus_pa: float = 1e5
-    resolution_m: float = .001
-    dissipation_s_per_m: float = 0.
-    max_indentation_m: float = .006
+    resolution_m: float = 0.001
+    dissipation_s_per_m: float = 0.0
+    max_indentation_m: float = 0.006
 
     def __post_init__(self):
         for item in fields(self):
@@ -67,8 +67,10 @@ def _check_config(config):
             _need(value >= 0, "dissipation must be nonnegative")
         else:
             _need(value > 0, item.name + " must be positive")
-    _need(config.max_indentation_m <= min(config.radius_m, config.target_thickness_m),
-          "maximum indentation exceeds the sphere or target depth domain")
+    _need(
+        config.max_indentation_m <= min(config.radius_m, config.target_thickness_m),
+        "maximum indentation exceeds the sphere or target depth domain",
+    )
 
 
 def _check_state(state):
@@ -82,7 +84,7 @@ def _geometry(config, state):
     """Read-only checks shared by pressure sampling and energy diagnostics."""
     _check_config(config)
     _check_state(state)
-    top = _number(state.position_b_m + .5 * config.target_thickness_m, "target top")
+    top = _number(state.position_b_m + 0.5 * config.target_thickness_m, "target top")
     depth = _number(config.radius_m + top - state.position_a_m, "signed indentation")
     relative = _number(state.velocity_a_m_s - state.velocity_b_m_s, "relative velocity")
     if depth > 0:
@@ -114,13 +116,18 @@ def sample_contact(config, state):
     """
     depth, top, relative = _geometry(config, state)
     elastic = sphere_plane_case(
-        radius_m=config.radius_m, indentation_m=max(depth, 0.),
-        modulus_pa=config.modulus_pa, resolution_m=config.resolution_m,
-        plane_position_world=(0., 0., top), origin_world=(0., 0., 0.),
+        radius_m=config.radius_m,
+        indentation_m=max(depth, 0.0),
+        modulus_pa=config.modulus_pa,
+        resolution_m=config.resolution_m,
+        plane_position_world=(0.0, 0.0, top),
+        origin_world=(0.0, 0.0, 0.0),
     )
     elastic_force = _number(elastic.first_force_n[2], "sampled elastic force")
     _need(elastic_force >= 0, "sampled elastic force must be nonnegative")
-    factor = max(0., _number(1 - config.dissipation_s_per_m * relative, "instantaneous multiplier"))
+    factor = max(
+        0.0, _number(1 - config.dissipation_s_per_m * relative, "instantaneous multiplier")
+    )
     force = _number(elastic_force * factor, "instantaneous force")
     return ContactSample(depth, relative, elastic, factor, force)
 
@@ -146,21 +153,35 @@ def _kick(config, state, duration):
     elastic_force = sample.elastic.first_force_n[2]
     inverse_mass = _number(1 / config.mass_a_kg + 1 / config.mass_b_kg, "inverse mass sum")
     elastic_impulse = _number(duration * elastic_force, "elastic kick impulse")
-    denominator = _number(1 + .5 * elastic_impulse * config.dissipation_s_per_m * inverse_mass,
-                          "kick denominator")
+    denominator = _number(
+        1 + 0.5 * elastic_impulse * config.dissipation_s_per_m * inverse_mass, "kick denominator"
+    )
     _need(denominator >= 1, "invalid implicit kick denominator")
-    impulse = _number(elastic_impulse * sample.instantaneous_factor / denominator, "contact impulse")
+    impulse = _number(
+        elastic_impulse * sample.instantaneous_factor / denominator, "contact impulse"
+    )
     _need(impulse >= 0, "contact impulse must be nonnegative")
     velocity_a = _number(state.velocity_a_m_s + impulse / config.mass_a_kg, "post-kick velocity A")
     velocity_b = _number(state.velocity_b_m_s - impulse / config.mass_b_kg, "post-kick velocity B")
-    midpoint = _number(sample.relative_velocity_m_s + .5 * inverse_mass * impulse,
-                       "relative midpoint velocity")
-    factor = max(0., _number(1 - config.dissipation_s_per_m * midpoint, "midpoint multiplier"))
+    midpoint = _number(
+        sample.relative_velocity_m_s + 0.5 * inverse_mass * impulse, "relative midpoint velocity"
+    )
+    factor = max(0.0, _number(1 - config.dissipation_s_per_m * midpoint, "midpoint multiplier"))
     # Raw dissipated energy of this fixed-geometry midpoint kick; no energy or
     # velocity correction follows. Preserve any roundoff rather than clamp it.
     dissipated = _number((elastic_impulse - impulse) * midpoint, "kick dissipation")
-    return KickRecord(sample, duration, state.velocity_a_m_s, state.velocity_b_m_s,
-                      velocity_a, velocity_b, midpoint, factor, impulse, dissipated)
+    return KickRecord(
+        sample,
+        duration,
+        state.velocity_a_m_s,
+        state.velocity_b_m_s,
+        velocity_a,
+        velocity_b,
+        midpoint,
+        factor,
+        impulse,
+        dissipated,
+    )
 
 
 @dataclass(frozen=True)
@@ -192,19 +213,25 @@ def step_pair(config, state, dt_s):
     _check_config(config)
     _check_state(state)
     step = _number(dt_s, "step duration")
-    _need(0 < step <= .01, "step duration must be in (0, .01] seconds")
+    _need(0 < step <= 0.01, "step duration must be in (0, .01] seconds")
     next_time = _number(state.time_s + step, "next time")
     _need(next_time > state.time_s, "step time does not advance representably")
-    first = _kick(config, state, .5 * step)
+    first = _kick(config, state, 0.5 * step)
     drifted = AxialPairState(
         next_time,
         state.position_a_m + step * first.velocity_a_after,
         state.position_b_m + step * first.velocity_b_after,
-        first.velocity_a_after, first.velocity_b_after,
+        first.velocity_a_after,
+        first.velocity_b_after,
     )
-    second = _kick(config, drifted, .5 * step)
-    endpoint = AxialPairState(next_time, drifted.position_a_m, drifted.position_b_m,
-                             second.velocity_a_after, second.velocity_b_after)
+    second = _kick(config, drifted, 0.5 * step)
+    endpoint = AxialPairState(
+        next_time,
+        drifted.position_a_m,
+        drifted.position_b_m,
+        second.velocity_a_after,
+        second.velocity_b_after,
+    )
     impulse = _number(first.impulse_n_s + second.impulse_n_s, "step impulse")
     average = _number(impulse / step, "step average force")
     dissipated = _number(first.dissipated_j + second.dissipated_j, "step dissipation")
@@ -219,9 +246,13 @@ def mechanical_energy_j(config, state):
     model domain is required as for contact sampling.
     """
     depth, _, _ = _geometry(config, state)
-    kinetic = (.5 * config.mass_a_kg * state.velocity_a_m_s * state.velocity_a_m_s
-               + .5 * config.mass_b_kg * state.velocity_b_m_s * state.velocity_b_m_s)
-    potential = 0.
+    kinetic = (
+        0.5 * config.mass_a_kg * state.velocity_a_m_s * state.velocity_a_m_s
+        + 0.5 * config.mass_b_kg * state.velocity_b_m_s * state.velocity_b_m_s
+    )
+    potential = 0.0
     if depth > 0:
-        potential = pi * config.modulus_pa * depth * depth * depth * (1 / 3 - depth / (6 * config.radius_m))
+        potential = (
+            pi * config.modulus_pa * depth * depth * depth * (1 / 3 - depth / (6 * config.radius_m))
+        )
     return _number(kinetic + potential, "mechanical energy")

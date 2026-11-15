@@ -51,3 +51,5 @@ disk最多两个互不重叠盘，rings/sectors是正整数且sectors>=8；总me
 
 俯视单/双盘，以箭头区分规定滑动与反向摩擦；固定色标显示牵引大小。并列显示“切向合力接近0，但阻转扭矩不为0”；双盘突出共同转轴与力臂。侧面示意说明A压在B上且压力是规定输入。不画伪自由动力学轨迹，视频按案例讲解且仅消费保存数据。
 下一步仍为V05有限边缘/接触启闭，再V06共同状态/载荷的动力学；本批不能作为机器人支撑通过。
+
+作者前澄清：两个盘允许中心距=2R的边界相切，只拒内部重叠，各自mesh身份保留。FrictionIntegral.qualification固定NUMPY_PRESCRIBED_SLIP_REFERENCE，normal保留原NUMPY_STATIC_REFERENCE。

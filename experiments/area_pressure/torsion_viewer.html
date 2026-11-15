@@ -1,0 +1,43 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>V04 · 摩擦力怎样变成阻转扭矩</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#101b25;color:#e8f2f7;font:16px "Microsoft YaHei",sans-serif}main{max-width:1440px;margin:auto;padding:26px}header{display:flex;justify-content:space-between;align-items:center}h1{font-size:28px;margin:10px 0}p{line-height:1.65;color:#bacdd9}small{color:#9fb8c7}.badge{background:#214658;padding:5px 12px;border-radius:18px;font-size:13px}select,button{padding:9px;background:#243c4c;color:white;border:1px solid #577082;border-radius:6px;font:inherit}.controls{display:flex;gap:12px;align-items:center;margin:16px 0}.panels{display:grid;grid-template-columns:1.4fr 1fr;gap:16px}.card{background:#172a38;border:1px solid #334f62;border-radius:12px;padding:18px}.card h2{font-size:20px;margin:0 0 10px}canvas{width:100%;height:380px;display:block}.legend{display:flex;gap:22px;font-size:14px}.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:15px 0}.metric{padding:15px;background:#223948;border-radius:8px}.metric b{font-size:23px;display:block;margin:8px 0}.explain{border-left:4px solid #78dfc7;padding:12px 18px;background:#19323d;line-height:1.7}.bar{height:12px;background:linear-gradient(90deg,#2867bf,#39cebf,#f7c25e,#f06a4d);border-radius:6px}.ends{display:flex;justify-content:space-between;font-size:13px;margin-top:5px}.pass{color:#84dfb5}.fail{color:#ffad80}@media(max-width:900px){.panels{grid-template-columns:1fr}.metrics{grid-template-columns:1fr 1fr}}
+</style><main>
+<header><div><span class="badge">规定速度下的牵引积分 · 不推进物体运动</span><h1>总摩擦力接近零，为什么仍有阻转扭矩？</h1></div><b id="status"></b></header>
+<p>看接触面上的反向摩擦：各处的力可以相互抵消，但它们围绕转轴产生的阻转扭矩会相加。</p>
+<div class="controls"><select id="cases"></select><button id="play">讲解关键六格</button><span id="label"></span></div>
+<div class="panels"><section class="card"><h2>接触面俯视：滑动与摩擦方向相反</h2><canvas id="field"></canvas><div class="legend"><span style="color:#70e0dd">青箭头：A 相对 B 的滑动</span><span style="color:#ffb276">橙箭头：作用在 A 上的摩擦</span><span>＋：共同转轴</span></div><div class="bar"></div><div class="ends"><span>0 Pa</span><span>切向牵引固定色标</span><span>1000 Pa = μp</span></div><p><small>固定范围 x=±30mm、y=±15mm。颜色显示全部积分点；箭头只抽取部分点以便阅读。B承受反向摩擦。</small></p></section>
+<section class="card"><h2>为什么不能合成一个中心力？</h2><canvas id="couple"></canvas><p id="patchText"></p><small>法向压力是预先给定的 2kPa，盘半径10mm、μ=0.5。平滑模型速度尺度固定1mm/s，没有按结果调参。</small></section></div>
+<div class="metrics">
+<div class="metric">法向承载合力<b id="normal"></b><small>由规定压力 × 真实面积积分</small></div>
+<div class="metric">切向合力大小<b id="force"></b><small>对称时接近零，不代表没有摩擦</small></div>
+<div class="metric">共同转轴上的摩擦扭矩<b id="moment"></b><small id="error"></small></div>
+<div class="metric">摩擦功率<b id="power"></b><small>≤0 表示摩擦不会凭空增加能量</small></div>
+</div><div id="explanation" class="explain"></div><p><small>这是26个固定参数格的参考实验；视频展示六个关键格。静止格只说明该单值摩擦律给零牵引，不代表静摩擦锁止、真实支撑、动力学或Newton/TYX运行。</small></p>
+</main><script>
+const data=__RESULTS_JSON__, $=x=>document.getElementById(x);let current=0,timer=null,step=0;const presentation=[2,8,11,14,20,25];
+const lawName=x=>x==='coulomb'?'充分滑动极限':'低速平滑';
+const fmt=(v,n=4)=>Number(v).toFixed(n);
+$('status').textContent=data.status==='V04_REFERENCE_PASS'?'本批参考检查通过':'本批参考检查未通过';$('status').className=data.status==='V04_REFERENCE_PASS'?'pass':'fail';
+data.cases.forEach((r,i)=>{let o=document.createElement('option');o.value=i;o.textContent=(i+1)+'/26 '+(r.case.layout==='single'?'单盘':'双盘')+' · '+lawName(r.case.law)+' · ω='+r.case.omega_rad_s+' · 网格'+r.case.rings;$('cases').append(o)});
+function canvas(id){let c=$(id),w=c.clientWidth,h=c.clientHeight,d=devicePixelRatio||1;c.width=w*d;c.height=h*d;let g=c.getContext('2d');g.scale(d,d);g.font='14px Microsoft YaHei';return {g,w,h}}
+function txt(g,s,x,y,color='#bfd2df'){g.fillStyle=color;g.fillText(s,x,y)}
+function lineArrow(g,x,y,dx,dy,color){let n=Math.hypot(dx,dy);if(n<.5)return;g.strokeStyle=g.fillStyle=color;g.lineWidth=1.6;g.beginPath();g.moveTo(x,y);g.lineTo(x+dx,y+dy);g.stroke();let ux=dx/n,uy=dy/n;g.beginPath();g.moveTo(x+dx,y+dy);g.lineTo(x+dx-5*ux+3*uy,y+dy-5*uy-3*ux);g.lineTo(x+dx-5*ux-3*uy,y+dy-5*uy+3*ux);g.fill()}
+function color(v){let c=[[40,103,191],[57,206,191],[247,194,94],[240,106,77]],t=Math.max(0,Math.min(1,v/1000))*3,i=Math.min(2,Math.floor(t)),f=t-i;return 'rgb('+c[i].map((a,j)=>Math.round(a+f*(c[i+1][j]-a))).join(',')+')'}
+function drawField(r){let {g,w,h}=canvas('field'),s=Math.min((w-40)/.06,(h-40)/.03),x=v=>w/2+v*s,y=v=>h/2-v*s;
+g.strokeStyle='#36566b';g.lineWidth=1;g.beginPath();g.moveTo(10,h/2);g.lineTo(w-10,h/2);g.moveTo(w/2,10);g.lineTo(w/2,h-10);g.stroke();
+for(let i=0;i<r.points_world.length;i++){let p=r.points_world[i],v=r.traction_pa[i];g.fillStyle=color(Math.hypot(...v));g.beginPath();g.arc(x(p[0]),y(p[1]),Math.max(1.2,Math.sqrt(r.area_weights_m2[i]/Math.PI)*s),0,7);g.fill()}
+for(let c of r.patches){g.strokeStyle='#d4e7ee';g.lineWidth=1.5;g.beginPath();g.arc(x(c.center_world[0]),y(0),.01*s,0,7);g.stroke()}
+let stride=Math.max(1,Math.ceil(r.points_world.length/55));for(let i=0;i<r.points_world.length;i+=stride){let p=r.points_world[i],t=r.traction_pa[i],v=r.slip_velocity_m_s[i];lineArrow(g,x(p[0]),y(p[1]),v[0]/.025*26,-v[1]/.025*26,'#70e0dd');lineArrow(g,x(p[0]),y(p[1]),t[0]/1000*17,-t[1]/1000*17,'#ffb276')}
+g.strokeStyle='white';g.lineWidth=2;g.beginPath();g.moveTo(w/2-6,h/2);g.lineTo(w/2+6,h/2);g.moveTo(w/2,h/2-6);g.lineTo(w/2,h/2+6);g.stroke();txt(g,'所有盘都绕白色 + 转动',12,h-9)}
+function drawCouple(r){let {g,w,h}=canvas('couple'),zero=r.case.omega_rad_s===0,dir=r.case.omega_rad_s>0?1:-1;
+txt(g,'一对相反的切向力',20,28);let cx=w/2,cy=125,arm=90;g.strokeStyle='#7897ab';g.setLineDash([4,4]);g.beginPath();g.moveTo(cx-arm,cy);g.lineTo(cx+arm,cy);g.stroke();g.setLineDash([]);txt(g,'+',cx-5,cy+5,'white');
+if(!zero){lineArrow(g,cx-arm,cy,0,-dir*55,'#ffb276');lineArrow(g,cx+arm,cy,0,dir*55,'#ffb276')}txt(g,'力臂',cx-15,cy+25);
+txt(g,'相加的力：约 0 N',20,220);txt(g,'相加的扭矩：'+fmt(r.friction_moment_nm[2]*1000,3)+' mN·m',20,255,'#ffb276');
+txt(g,'若只在共同中心保留一个合力',20,310);txt(g,'→ 会丢掉这份阻转扭矩',20,340,'#ffb276');txt(g,'示意箭头只说明方向，长度不作力值比例',20,h-9)}
+function render(i){current=i;$('cases').value=i;let r=data.cases[i],c=r.case;let force=Math.hypot(...r.friction_force_n),mz=r.friction_moment_nm[2];$('label').textContent=(c.omega_rad_s===0?'规定静止':c.omega_rad_s>0?'规定逆时针转动':'规定顺时针转动')+' · '+lawName(c.law);$('normal').textContent=fmt(r.normal_force_n[2])+' N';$('force').textContent=force.toExponential(2)+' N';$('moment').textContent=fmt(mz*1000,3)+' mN·m';$('power').textContent=fmt(r.friction_power_w*1000,3)+' mW';$('error').textContent=r.errors.torque_relative==null?'零速度，不计算相对误差':'与独立参考相差 '+fmt(r.errors.torque_relative*100,3)+'%';
+$('patchText').textContent=c.layout==='double'?'两个盘相距30mm。各盘自身的阻转作用，加上盘心到共同转轴的力臂，必须一起计入总扭矩。':'单个接触盘：所有位置的切向力互相抵消，但都在阻碍同一个转动方向。';
+$('explanation').textContent=c.omega_rad_s===0?'零速度：平滑律给零摩擦牵引；法向压力仍存在。本例没有求解维持静止所需的静摩擦力。':(c.law==='regularized'?'低速平滑使靠近转轴的摩擦逐渐变小；它是已固定的模型选择，不能冒充静摩擦锁止。':'充分滑动极限：每个非零滑速点承受大小 μp 的反向牵引。')+(c.layout==='double'?' 双盘绕共同转轴的力臂更长，不能用“两倍单盘自转扭矩”替代。':' 把整块接触面缩成中心的一个力，会看不见这个扭矩。');
+drawField(r);drawCouple(r)}
+$('cases').onchange=e=>render(+e.target.value);$('play').onclick=()=>{if(timer){clearInterval(timer);timer=null;$('play').textContent='讲解关键六格'}else{step=0;render(presentation[0]);timer=setInterval(()=>{if(++step>=presentation.length){clearInterval(timer);timer=null;$('play').textContent='讲解关键六格';return}render(presentation[step])},3000);$('play').textContent='暂停'}};
+window.showCase=render;window.addEventListener('resize',()=>render(current));render(2);
+</script></html>

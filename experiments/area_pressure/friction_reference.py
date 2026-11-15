@@ -41,18 +41,26 @@ def _numeric(value, shape, name):
         rows = value if len(shape) == 2 else (value,)
         width = shape[-1]
         for row in rows:
-            _need(isinstance(row, (tuple, list, np.ndarray))
-                  and (not isinstance(row, np.ndarray) or row.ndim == 1)
-                  and len(row) == width, "invalid " + name)
-            _need(all(isinstance(item, Real) and not isinstance(item, (bool, np.bool_))
-                      for item in row), name + " must contain real non-boolean values")
+            _need(
+                isinstance(row, (tuple, list, np.ndarray))
+                and (not isinstance(row, np.ndarray) or row.ndim == 1)
+                and len(row) == width,
+                "invalid " + name,
+            )
+            _need(
+                all(
+                    isinstance(item, Real) and not isinstance(item, (bool, np.bool_))
+                    for item in row
+                ),
+                name + " must contain real non-boolean values",
+            )
     with np.errstate(over="ignore", invalid="ignore"):
         result = np.array(value, dtype=np.float64, copy=True).reshape(shape)
     _need(np.isfinite(result).all(), "nonfinite " + name)
     return result
 
 
-def disk_quadrature(radius_m=.01, centers_xy=((0., 0.),), *, rings=8, sectors=64):
+def disk_quadrature(radius_m=0.01, centers_xy=((0.0, 0.0),), *, rings=8, sectors=64):
     """One or two inscribed polygonal disks at z=0, n=+ez, with actual triangle dA.
 
     Positive-radius interiors must be disjoint; boundary tangency is allowed.
@@ -61,42 +69,69 @@ def disk_quadrature(radius_m=.01, centers_xy=((0., 0.),), *, rings=8, sectors=64
     """
     radius = _real(radius_m, "disk radius")
     _need(radius > 0 and isfinite(2 * radius), "positive representable radius required")
-    _need(isinstance(centers_xy, (tuple, list, np.ndarray))
-          and (not isinstance(centers_xy, np.ndarray) or centers_xy.ndim == 2)
-          and 1 <= len(centers_xy) <= 2, "one or two disk centers required")
+    _need(
+        isinstance(centers_xy, (tuple, list, np.ndarray))
+        and (not isinstance(centers_xy, np.ndarray) or centers_xy.ndim == 2)
+        and 1 <= len(centers_xy) <= 2,
+        "one or two disk centers required",
+    )
     count = len(centers_xy)
     centers = _numeric(centers_xy, (count, 2), "disk centers")
-    _need(isinstance(rings, Integral) and not isinstance(rings, (bool, np.bool_))
-          and 1 <= rings <= MAX_VERTICES, "rings must be a bounded positive integer")
-    _need(isinstance(sectors, Integral) and not isinstance(sectors, (bool, np.bool_))
-          and 8 <= sectors <= MAX_TRIANGLES, "sectors must be a bounded integer >=8")
+    _need(
+        isinstance(rings, Integral)
+        and not isinstance(rings, (bool, np.bool_))
+        and 1 <= rings <= MAX_VERTICES,
+        "rings must be a bounded positive integer",
+    )
+    _need(
+        isinstance(sectors, Integral)
+        and not isinstance(sectors, (bool, np.bool_))
+        and 8 <= sectors <= MAX_TRIANGLES,
+        "sectors must be a bounded integer >=8",
+    )
     rings, sectors = int(rings), int(sectors)
     vertices_count = count * (1 + rings * sectors)
     triangles_count = count * sectors * (2 * rings - 1)
-    _need(vertices_count <= MAX_VERTICES and triangles_count <= MAX_TRIANGLES
-          and 3 * triangles_count <= MAX_POINTS, "disk mesh exceeds shared quadrature budget")
+    _need(
+        vertices_count <= MAX_VERTICES
+        and triangles_count <= MAX_TRIANGLES
+        and 3 * triangles_count <= MAX_POINTS,
+        "disk mesh exceeds shared quadrature budget",
+    )
     if count == 2:
         with np.errstate(over="ignore", invalid="ignore"):
             displacement = centers[1] - centers[0]
         separation = hypot(float(displacement[0]), float(displacement[1]))
-        _need(isfinite(separation) and separation >= 2 * radius, "disk interiors overlap or separation is nonfinite")
+        _need(
+            isfinite(separation) and separation >= 2 * radius,
+            "disk interiors overlap or separation is nonfinite",
+        )
     vertices, faces = [], []
     for center in centers:
         base = len(vertices)
-        vertices.append((float(center[0]), float(center[1]), 0.))
+        vertices.append((float(center[0]), float(center[1]), 0.0))
         for ring in range(1, rings + 1):
             r = radius * ring / rings
-            vertices.extend((float(center[0]) + r * cos(2 * pi * i / sectors),
-                             float(center[1]) + r * sin(2 * pi * i / sectors), 0.)
-                            for i in range(sectors))
+            vertices.extend(
+                (
+                    float(center[0]) + r * cos(2 * pi * i / sectors),
+                    float(center[1]) + r * sin(2 * pi * i / sectors),
+                    0.0,
+                )
+                for i in range(sectors)
+            )
         faces.extend((base, base + 1 + i, base + 1 + (i + 1) % sectors) for i in range(sectors))
         for ring in range(2, rings + 1):
             inner = base + 1 + (ring - 2) * sectors
             outer = base + 1 + (ring - 1) * sectors
             for i in range(sectors):
                 following = (i + 1) % sectors
-                faces.extend(((inner + i, outer + i, outer + following),
-                              (inner + i, outer + following, inner + following)))
+                faces.extend(
+                    (
+                        (inner + i, outer + i, outer + following),
+                        (inner + i, outer + following, inner + following),
+                    )
+                )
     return triangle_quadrature(vertices, faces)
 
 
@@ -131,8 +166,17 @@ class FrictionIntegral:
         return result
 
 
-def integrate_friction(quadrature, pressure_pa, *, velocity_a_world, velocity_b_world,
-                       mu=.5, law="regularized", slip_speed_m_s=.001, origin_world=(0., 0., 0.)):
+def integrate_friction(
+    quadrature,
+    pressure_pa,
+    *,
+    velocity_a_world,
+    velocity_b_world,
+    mu=0.5,
+    law="regularized",
+    slip_speed_m_s=0.001,
+    origin_world=(0.0, 0.0, 0.0),
+):
     """Integrate prescribed normal pressure and relative tangential sliding traction.
 
     Velocities are explicit [quadrature_point,3] world vectors in m/s, including
@@ -177,16 +221,46 @@ def integrate_friction(quadrature, pressure_pa, *, velocity_a_world, velocity_b_
         total_moment = np.asarray(normal.first_moment_nm) + moment
         power_per_point = np.einsum("ij,ij->i", forces, relative)
         power = float(power_per_point.sum())
-    _need(all(np.isfinite(value).all() for value in
-              (relative, tangent, speed, direction, traction, forces, force, moment,
-               total_force, total_moment, power_per_point)) and isfinite(power),
-          "nonfinite integrated friction")
+    _need(
+        all(
+            np.isfinite(value).all()
+            for value in (
+                relative,
+                tangent,
+                speed,
+                direction,
+                traction,
+                forces,
+                force,
+                moment,
+                total_force,
+                total_moment,
+                power_per_point,
+            )
+        )
+        and isfinite(power),
+        "nonfinite integrated friction",
+    )
     return FrictionIntegral(
-        "NUMPY_PRESCRIBED_SLIP_REFERENCE", law, coefficient, slip_speed, normal,
-        _tuples(velocity_a), _tuples(velocity_b), _tuples(tangent), _tuples(traction),
-        _tuples(forces), _tuples(-forces), tuple(map(float, force)), tuple(map(float, -force)),
-        tuple(map(float, moment)), tuple(map(float, -moment)),
-        tuple(map(float, total_force)), tuple(map(float, -total_force)),
-        tuple(map(float, total_moment)), tuple(map(float, -total_moment)),
-        tuple(map(float, power_per_point)), power,
+        "NUMPY_PRESCRIBED_SLIP_REFERENCE",
+        law,
+        coefficient,
+        slip_speed,
+        normal,
+        _tuples(velocity_a),
+        _tuples(velocity_b),
+        _tuples(tangent),
+        _tuples(traction),
+        _tuples(forces),
+        _tuples(-forces),
+        tuple(map(float, force)),
+        tuple(map(float, -force)),
+        tuple(map(float, moment)),
+        tuple(map(float, -moment)),
+        tuple(map(float, total_force)),
+        tuple(map(float, -total_force)),
+        tuple(map(float, total_moment)),
+        tuple(map(float, -total_moment)),
+        tuple(map(float, power_per_point)),
+        power,
     )

@@ -46,3 +46,8 @@ KDK：entry位置halfkick → 用half速度完整漂移h → exit位置halfkick�
 root唯一串行owner：fresh guard→环境→首lint/format→必要纯style→新短HOST→两真实窗→保存核→媒体。作者无执行slot。仅允许一次明确诊断的实现修复；模型/物理参数/门槛冻结，不调整追绿。若长窗失败，保存并解释失败段，不把几何通过当动力学通过、不重新跑同窗。完成分组commit/push exp，dev保持，按照R4证据选后续集成。
 
 实现补充：max_depth_m取整个body∩support内min(d_i)的最大值，从每个最近边cell裁剪结果全部顶点求max；不能仅看接触Gauss点。area_m2定义正压力接触段闭包的面积，整段p_e恒0不生成points或area。source_edges每点为(support_edge_id,body_nearest_edge_id)，整段tie按最小body edge ID归属而不双计；contact_impulse为三元广义冲量。累计法向冲量独立按sum tau*sum dA*p_n，不用Fz冲量或向量模长替代。support_moment_origin_nm=-(My_COM+z_COM*Fx-x_COM*Fz)。有界Newton失败不暗示全局收敛，不保证固定两个长窗预先通过。
+
+## 2026-11-16 执行收口
+
+数值源码052efc4b；首次20项新HOST、两条完整0.6秒轨迹（1800步）均PASS，无数值修复/参数调整/窗口重跑。实际承载4.905N、最大深度约0.99mm、接触约0.382s结束，side contact两窗均出现；两h峰值差0.01168%，累计法向冲量差0.001039%。完整保存148文件/12事件和36source pairs审计PASS，详[实际报告与视频](../../development/area-pressure-planar-dynamics-report-20261116.md)。首静态失败和纯样式修复保留，三文件raw AST不变。
+root唯一执行及作者均已结束，下一接触节点为R4范围/三维表示/I0–I2接口；本2D挤出参考不冒产品集成。原V03外部FAIL及T-smoke独立状态保持，所有本批已绿组不重跑。

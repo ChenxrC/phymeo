@@ -1,0 +1,54 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>V05 真实有限支撑与边缘退出</title><style>
+body{margin:0;background:#101622;color:#e5eef8;font:16px system-ui}header{padding:18px 26px;display:flex;align-items:center;gap:18px}h1{font-size:22px;margin:0}select,button{background:#23324a;color:white;border:1px solid #57718d;border-radius:6px;padding:8px}input{width:300px}canvas{display:block;width:min(100vw,1440px);height:auto;margin:auto}p{max-width:1300px;margin:10px auto;color:#b7c7da}
+</style><header><h1>压力接触 · 支撑、推动、离开边缘</h1><select id="case"><option value="h0p5ms">h = 0.5 ms</option><option value="h1ms">h = 1 ms</option></select><button id="play">播放</button><input id="time" type="range" min="0" max="120" value="0"><span id="clock"></span></header>
+<canvas id="scene" width="1440" height="1080"></canvas><p>一个自由平面刚体：水平、竖直、俯仰均由真实力更新。灰色支撑固定。紫色箭头是外推力，彩色接触点来自保存的压力积分。二维挤出 NumPy 参考，未接入 TYX 或三维产品求解。</p>
+<script>
+const embedded=__RESULTS_JSON__;
+const canvas=document.querySelector("canvas"),ctx=canvas.getContext("2d");let frames=[],rows=[],summary=null,index=0,playing=false,start=0,startIndex=0;
+const select=document.querySelector("select"),slider=document.querySelector("input");
+function text(s,x,y,size=20,color="#dce8f5"){ctx.fillStyle=color;ctx.font=size+"px system-ui";ctx.fillText(s,x,y)}
+function line(x1,y1,x2,y2,color,width=2){ctx.strokeStyle=color;ctx.lineWidth=width;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke()}
+function arrow(x,y,dx,dy,color,width=4){let l=Math.hypot(dx,dy);if(l<.01)return;line(x,y,x+dx,y+dy,color,width);let a=Math.atan2(dy,dx);line(x+dx,y+dy,x+dx-12*Math.cos(a-.5),y+dy-12*Math.sin(a-.5),color,width);line(x+dx,y+dy,x+dx-12*Math.cos(a+.5),y+dy-12*Math.sin(a+.5),color,width)}
+function polygon(points,map,fill,stroke){ctx.beginPath();points.forEach((p,i)=>{let a=map(p);i?ctx.lineTo(...a):ctx.moveTo(...a)});ctx.closePath();ctx.fillStyle=fill;ctx.fill();ctx.strokeStyle=stroke;ctx.lineWidth=2;ctx.stroke()}
+function panel(x,y,w,h){ctx.fillStyle="#182436";ctx.fillRect(x,y,w,h)}
+function chart(key,x,y,w,h,color,label,unit){panel(x,y,w,h);let data=rows.map(r=>+r[key]),lo=Math.min(0,...data),hi=Math.max(...data);if(hi-lo<1e-9)hi=lo+1;let pad=(hi-lo)*.1;lo-=pad;hi+=pad;text(label,x+16,y+25,18);text(hi.toFixed(2)+" "+unit,x+12,y+48,12,"#95abc3");let map=(t,v)=>[x+62+(w-80)*t/.6,y+h-24-(h-75)*(v-lo)/(hi-lo)];ctx.beginPath();rows.forEach((r,i)=>{let p=map(r.time_s,+r[key]);i?ctx.lineTo(...p):ctx.moveTo(...p)});ctx.strokeStyle=color;ctx.lineWidth=2;ctx.stroke();let t=frames[index].state.time_s;line(map(t,lo)[0],y+45,map(t,lo)[0],y+h-20,"#eaf4ff",1);text("0",x+55,y+h-5,12);text("0.6 s",x+w-50,y+h-5,12)}
+function render(){
+ if(!frames.length)return;index=Math.max(0,Math.min(index,frames.length-1));const f=frames[index],s=f.state,t=s.time_s;
+ slider.value=index;document.querySelector("#clock").textContent=t.toFixed(3)+" s";
+ ctx.fillStyle="#101622";ctx.fillRect(0,0,1440,1080);
+ const result=summary.cases.find(c=>c.id===select.value);
+ text("V05  |  从面积压力到真实边缘运动",30,38,28,"#ffffff");
+ const phase=t<.2?"承载：只有重力":t<.4?"推动：质心施加 4 N 水平力":f.area>0?"撤力后：继续接触运动":"已离开支撑：自由下落";
+ text(phase,30,78,25,"#82d4ff");text("真实时间 "+t.toFixed(3)+" s  /  0.600 s",980,42,22);text(result.status+" · "+select.value,980,77,20,result.status==="PASS"?"#7de2bd":"#ffbc79");
+ panel(25,105,920,620);panel(965,105,450,300);
+ const all=frames.flatMap(f=>f.body),loX=Math.min(-.06,...all.map(p=>p[0]))-.005,hiX=Math.max(.12,...all.map(p=>p[0]))+.02,loZ=Math.min(-.08,...all.map(p=>p[1]))-.015,hiZ=.05,scaleFit=Math.min(880/(hiX-loX),590/(hiZ-loZ));
+ const map=p=>[45+(880-scaleFit*(hiX-loX))/2+(p[0]-loX)*scaleFit,115+(590-scaleFit*(hiZ-loZ))/2+(hiZ-p[1])*scaleFit];
+ const support=[[-.04,-.01],[.04,-.01],[.04,0],[-.04,0]];
+ polygon(support,map,"#65748a","#a9bbd2");
+ for(let z=0;z>=-.12;z-=.04){let a=map([-.05,z]),b=map([.23,z]);line(...a,...b,"#2b3b50",1);text((z*1000).toFixed(0)+" mm",a[0],a[1]-5,13,"#839bb5")}
+ polygon(f.body,map,"#4985b9","#b0dcff");let com=map([s.x_m,s.z_m]);ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(...com,4,0,Math.PI*2);ctx.fill();
+ f.points.forEach((p,j)=>{const a=map(p),pressure=f.pressure[j];ctx.fillStyle="hsl("+(210-200*Math.min(1,pressure/20000))+",90%,60%)";ctx.beginPath();ctx.arc(...a,4,0,Math.PI*2);ctx.fill()});
+ if(t>=.2&&t<.4)arrow(com[0],com[1],85,0,"#df9aff");
+ let fs=Math.hypot(f.force[0],f.force[1]),scale=fs>0?Math.min(95,fs*9)/fs:0;arrow(...com,f.force[0]*scale,-f.force[1]*scale,"#ffcf72");
+ text("固定有限支撑 80 × 10 mm（截面）",45,700,16,"#a9bbd2");text("蓝色块：0.5 kg，40 × 20 mm；挤出宽度 40 mm",45,675,16);
+ text("此刻发生了什么",985,140,22,"#ffffff");
+ text("x = "+(s.x_m*1000).toFixed(1)+" mm",985,180,22);
+ text("z = "+(s.z_m*1000).toFixed(1)+" mm",985,215,22);
+ text("俯仰 = "+(s.angle_rad*180/Math.PI).toFixed(1)+"°",985,250,22);
+ text("接触面积 = "+(f.area*1e6).toFixed(1)+" mm²",985,285,21);
+ text("平均接触力 = ("+f.force[0].toFixed(2)+", "+f.force[1].toFixed(2)+") N",985,320,19);
+ text("平均力矩 = "+(f.force[2]*1000).toFixed(2)+" mN·m",985,355,19);
+ panel(965,425,450,300);
+ text("如何读这个案例",985,461,22,"#ffffff");
+ const notes=["1. 前 0.2 秒：检查能否稳稳承重。","2. 紫箭头出现：施力，不指定位置。","3. 越过边缘：接触区改变并产生俯仰。","4. 接触消失：力归零，块继续下落。","曲线：同一步的平均力与真实角度。","二维挤出参考；不是完整三维仿真。"];
+ notes.forEach((v,i)=>text(v,985,505+i*32,17,i===5?"#ffc68a":"#b7cadf"));
+ chart("force_z_n",25,750,675,280,"#ffd073","竖直接触力（步平均）","N");
+ chart("angle_rad",720,750,695,280,"#88d4ff","俯仰角（真实状态）","rad");
+ text("压力为末次半步中点值，箭头为整步均力；姿态来自真实运动。箭头长度仅作显示缩放。",30,1062,16,"#99aec6");
+}
+async function loadCase(){playing=false;document.querySelector("#play").textContent="播放";const stored=embedded.cases[select.value];frames=stored.frames;summary=embedded.summary;rows=stored.rows.map(row=>Object.fromEntries(Object.entries(row).map(([k,v])=>[k,+v])));slider.max=frames.length-1;index=0;render();window.ready=true}
+slider.oninput=()=>{playing=false;document.querySelector("#play").textContent="播放";index=+slider.value;render()};select.onchange=loadCase;
+document.querySelector("#play").onclick=()=>{playing=!playing;document.querySelector("#play").textContent=playing?"暂停":"播放";if(playing){if(index>=frames.length-1)index=0;start=performance.now();startIndex=index;requestAnimationFrame(tick)}};
+function tick(now){if(!playing)return;index=Math.min(frames.length-1,startIndex+Math.floor(Math.max(0,now-start)/200));render();if(index===frames.length-1){playing=false;document.querySelector("#play").textContent="播放"}else requestAnimationFrame(tick)}
+window.setFrame=i=>{playing=false;index=i;render()};window.selectCase=async id=>{select.value=id;await loadCase()};loadCase();
+</script></html>

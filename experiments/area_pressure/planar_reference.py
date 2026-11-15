@@ -22,12 +22,19 @@ _MAX_SEGMENTS = 256
 _MAX_POINTS = 512
 _MAX_EDGE_SEGMENTS = 29
 _RESIDUAL_TOL = 1e-12
-_ANGULAR_LENGTH = .02
-_BODY = ((-.02, -.01), (.02, -.01), (.02, .01), (-.02, .01))
-_SUPPORT = ((-.04, -.01), (.04, -.01), (.04, 0.), (-.04, 0.))
+_ANGULAR_LENGTH = 0.02
+_BODY = ((-0.02, -0.01), (0.02, -0.01), (0.02, 0.01), (-0.02, 0.01))
+_SUPPORT = ((-0.04, -0.01), (0.04, -0.01), (0.04, 0.0), (-0.04, 0.0))
 _CONFIG_SCALARS = (
-    "width_m", "mass_kg", "inertia_kg_m2", "stiffness_pa_per_m", "max_depth_m",
-    "dissipation_s_per_m", "friction", "slip_speed_m_s", "gravity_m_s2",
+    "width_m",
+    "mass_kg",
+    "inertia_kg_m2",
+    "stiffness_pa_per_m",
+    "max_depth_m",
+    "dissipation_s_per_m",
+    "friction",
+    "slip_speed_m_s",
+    "gravity_m_s2",
 )
 
 
@@ -48,9 +55,12 @@ def _finite(*arrays):
 
 
 def _small_polygon(value, name):
-    _need(isinstance(value, (tuple, list, np.ndarray))
-          and (not isinstance(value, np.ndarray) or value.ndim == 2)
-          and 3 <= len(value) <= 8, name + " requires 3..8 vertices")
+    _need(
+        isinstance(value, (tuple, list, np.ndarray))
+        and (not isinstance(value, np.ndarray) or value.ndim == 2)
+        and 3 <= len(value) <= 8,
+        name + " requires 3..8 vertices",
+    )
     return _polygon(value, name)
 
 
@@ -66,19 +76,23 @@ class _JsonRecord:
 class PlanarConfig(_JsonRecord):
     body_polygon_xz: tuple = _BODY
     support_polygon_xz: tuple = _SUPPORT
-    width_m: float = .04
-    mass_kg: float = .5
+    width_m: float = 0.04
+    mass_kg: float = 0.5
     inertia_kg_m2: float = 1 / 12000
     stiffness_pa_per_m: float = 1e7
-    max_depth_m: float = .002
-    dissipation_s_per_m: float = 20.
-    friction: float = .5
-    slip_speed_m_s: float = .001
+    max_depth_m: float = 0.002
+    dissipation_s_per_m: float = 20.0
+    friction: float = 0.5
+    slip_speed_m_s: float = 0.001
     gravity_m_s2: float = 9.81
 
     def __post_init__(self):
-        object.__setattr__(self, "body_polygon_xz", _small_polygon(self.body_polygon_xz, "body polygon"))
-        object.__setattr__(self, "support_polygon_xz", _small_polygon(self.support_polygon_xz, "support polygon"))
+        object.__setattr__(
+            self, "body_polygon_xz", _small_polygon(self.body_polygon_xz, "body polygon")
+        )
+        object.__setattr__(
+            self, "support_polygon_xz", _small_polygon(self.support_polygon_xz, "support polygon")
+        )
         for name in _CONFIG_SCALARS:
             object.__setattr__(self, name, _number(getattr(self, name), name))
         _check_config(self)
@@ -157,16 +171,20 @@ def _overlap(body, support_starts, support_inward):
 
 def _potential(config, overlap, starts, inward):
     """Affine integration per nearest-edge cell; inspect ALL cell vertices for depth."""
-    potential = 0.
-    maximum = 0.
+    potential = 0.0
+    maximum = 0.0
     for owner in range(len(starts)):
         cell = overlap
         for other in range(len(starts)):
             if owner == other or not cell:
                 continue
-            cell = _clip(cell, lambda point: float(
-                np.dot(inward[other], np.asarray(point) - starts[other])
-                - np.dot(inward[owner], np.asarray(point) - starts[owner])))
+            cell = _clip(
+                cell,
+                lambda point: float(
+                    np.dot(inward[other], np.asarray(point) - starts[other])
+                    - np.dot(inward[owner], np.asarray(point) - starts[owner])
+                ),
+            )
         if not cell:
             continue
         _need(len(cell) <= 40, "nearest-edge cell exceeds vertex budget")
@@ -174,7 +192,7 @@ def _potential(config, overlap, starts, inward):
         depths = _distances(vertices, starts, inward).min(axis=1)
         _finite(depths)
         _need(np.min(depths) >= -_LENGTH_TOL, "cell left the body")
-        maximum = max(maximum, float(depths.max()), 0.)
+        maximum = max(maximum, float(depths.max()), 0.0)
         anchor = vertices[0]
         for i in range(1, len(vertices) - 1):
             triangle = (tuple(anchor), tuple(vertices[i]), tuple(vertices[i + 1]))
@@ -183,14 +201,14 @@ def _potential(config, overlap, starts, inward):
             centroid = anchor + ((vertices[i] - anchor) + (vertices[i + 1] - anchor)) / 3
             depth = float(np.dot(inward[owner], centroid - starts[owner]))
             _need(depth >= -_LENGTH_TOL, "negative cell pressure depth")
-            potential += config.width_m * config.stiffness_pa_per_m * area * max(0., depth)
+            potential += config.width_m * config.stiffness_pa_per_m * area * max(0.0, depth)
     maximum = _number(maximum, "maximum overlap depth")
     _need(maximum <= config.max_depth_m, "overlap exceeds maximum pressure depth")
     return _number(potential, "pressure potential"), maximum
 
 
 def _clipped_interval(start, delta, body_starts, body_inward):
-    low, high = 0., 1.
+    low, high = 0.0, 1.0
     for origin, normal in zip(body_starts, body_inward, strict=True):
         left = float(np.dot(normal, start + low * delta - origin))
         right = float(np.dot(normal, start + high * delta - origin))
@@ -217,7 +235,9 @@ def _boundary_samples(config, body_starts, body_inward, support_edges):
         low, high = interval
         if (high - low) * length <= _LENGTH_TOL:
             continue
-        end_depths = _distances((start + low * delta, start + high * delta), body_starts, body_inward)
+        end_depths = _distances(
+            (start + low * delta, start + high * delta), body_starts, body_inward
+        )
         roots = [low, high]
         for i in range(len(body_starts)):
             for j in range(i + 1, len(body_starts)):
@@ -241,28 +261,32 @@ def _boundary_samples(config, body_starts, body_inward, support_edges):
             cuts.append(high)
         _need(len(cuts) - 1 <= _MAX_EDGE_SEGMENTS, "edge segment budget exceeded")
         for a, b in zip(cuts[:-1], cuts[1:], strict=True):
-            endpoint_depths = _distances((start + a * delta, start + b * delta), body_starts, body_inward)
+            endpoint_depths = _distances(
+                (start + a * delta, start + b * delta), body_starts, body_inward
+            )
             # A coincident body boundary has identically zero pressure. The fixed
             # length cleanup tolerance removes roundoff, not a finite pressure cap.
             if np.any(np.max(np.abs(endpoint_depths), axis=0) <= _LENGTH_TOL):
                 continue
-            midpoint = .5 * (a + b)
+            midpoint = 0.5 * (a + b)
             middle_depths = _distances((start + midpoint * delta,), body_starts, body_inward)[0]
             owner = int(np.argmin(middle_depths))
             if middle_depths[owner] <= 0:
                 continue
             # np.argmin returns the smallest body edge ID in an exact full-segment tie.
-            _need(segment_count < _MAX_SEGMENTS and len(points) + 2 <= _MAX_POINTS,
-                  "contact quadrature budget exceeded")
+            _need(
+                segment_count < _MAX_SEGMENTS and len(points) + 2 <= _MAX_POINTS,
+                "contact quadrature budget exceeded",
+            )
             segment_count += 1
-            half = .5 * (b - a)
+            half = 0.5 * (b - a)
             weight = _number(config.width_m * length * half, "contact area weight")
             _need(weight > 0, "contact area is not representable")
             for coordinate in (midpoint - half / sqrt(3), midpoint + half / sqrt(3)):
                 point = start + coordinate * delta
                 depth = float(_distances((point,), body_starts, body_inward).min())
                 _need(depth >= -_LENGTH_TOL, "contact point left the body")
-                pressure = _number(config.stiffness_pa_per_m * max(0., depth), "contact pressure")
+                pressure = _number(config.stiffness_pa_per_m * max(0.0, depth), "contact pressure")
                 points.append(tuple(map(float, point)))
                 normals.append(tuple(map(float, -support_inward[support_id])))
                 areas.append(weight)
@@ -308,16 +332,27 @@ def sample_contact(config, state):
     potential, maximum = _potential(config, overlap, body_starts, body_inward)
     if overlap:
         points, normals, areas, pressure, sources = _boundary_samples(
-            config, body_starts, body_inward, support_edges)
+            config, body_starts, body_inward, support_edges
+        )
     else:
         points = normals = areas = pressure = sources = ()
     bn, _ = _basis(points, normals, state)
     with np.errstate(over="ignore", invalid="ignore"):
         elastic = (np.asarray(areas) * np.asarray(pressure)) @ bn
     _finite(elastic)
-    return PlanarContact(state, body, points, normals, areas, pressure, sources,
-                         _number(sum(areas), "contact area"), potential, maximum,
-                         tuple(map(float, elastic)))
+    return PlanarContact(
+        state,
+        body,
+        points,
+        normals,
+        areas,
+        pressure,
+        sources,
+        _number(sum(areas), "contact area"),
+        potential,
+        maximum,
+        tuple(map(float, elastic)),
+    )
 
 
 def _contact_arrays(config, sample):
@@ -325,25 +360,41 @@ def _contact_arrays(config, sample):
     _check_state(sample.state)
     body = _small_polygon(sample.body_world_xz, "sample body")
     _need(len(body) == len(config.body_polygon_xz), "sample body edge count differs from config")
-    _need(isinstance(sample.points_xz, (tuple, list, np.ndarray))
-          and (not isinstance(sample.points_xz, np.ndarray) or sample.points_xz.ndim == 2)
-          and len(sample.points_xz) <= _MAX_POINTS, "invalid point capacity")
+    _need(
+        isinstance(sample.points_xz, (tuple, list, np.ndarray))
+        and (not isinstance(sample.points_xz, np.ndarray) or sample.points_xz.ndim == 2)
+        and len(sample.points_xz) <= _MAX_POINTS,
+        "invalid point capacity",
+    )
     count = len(sample.points_xz)
     points = _numeric(sample.points_xz, (count, 2), "sample points")
     normals = _numeric(sample.normals_xz, (count, 2), "sample normals")
     areas = _numeric(sample.area_weights_m2, (count,), "sample areas")
     pressure = _numeric(sample.pressure_pa, (count,), "sample pressure")
-    _need(np.all(np.abs(points) <= 1) and np.all(areas > 0) and np.all(pressure >= 0),
-          "invalid contact point, area or pressure")
-    _need(np.allclose(np.hypot(normals[:, 0], normals[:, 1]), 1., rtol=0, atol=1e-10),
-          "sample normals must be unit length")
-    _need(isinstance(sample.source_edges, (tuple, list)) and len(sample.source_edges) == count,
-          "invalid source edge mapping")
+    _need(
+        np.all(np.abs(points) <= 1) and np.all(areas > 0) and np.all(pressure >= 0),
+        "invalid contact point, area or pressure",
+    )
+    _need(
+        np.allclose(np.hypot(normals[:, 0], normals[:, 1]), 1.0, rtol=0, atol=1e-10),
+        "sample normals must be unit length",
+    )
+    _need(
+        isinstance(sample.source_edges, (tuple, list)) and len(sample.source_edges) == count,
+        "invalid source edge mapping",
+    )
     for pair in sample.source_edges:
-        _need(isinstance(pair, (tuple, list)) and len(pair) == 2
-              and all(isinstance(index, Integral) and not isinstance(index, (bool, np.bool_)) for index in pair)
-              and 0 <= pair[0] < len(config.support_polygon_xz) and 0 <= pair[1] < len(body),
-              "invalid source edge ID")
+        _need(
+            isinstance(pair, (tuple, list))
+            and len(pair) == 2
+            and all(
+                isinstance(index, Integral) and not isinstance(index, (bool, np.bool_))
+                for index in pair
+            )
+            and 0 <= pair[0] < len(config.support_polygon_xz)
+            and 0 <= pair[1] < len(body),
+            "invalid source edge ID",
+        )
     for name in ("area_m2", "potential_j", "max_depth_m"):
         _need(_number(getattr(sample, name), name) >= 0, name + " must be nonnegative")
     _need(sample.max_depth_m <= config.max_depth_m, "sample depth exceeds config")
@@ -357,7 +408,7 @@ def _law(config, bn, bt, areas, elastic, velocity, *, jacobian=False):
     with np.errstate(over="ignore", invalid="ignore", divide="ignore"):
         vn, vt = bn @ velocity, bt @ velocity
         unclipped = 1 - config.dissipation_s_per_m * vn
-        normal = elastic * np.maximum(unclipped, 0.)
+        normal = elastic * np.maximum(unclipped, 0.0)
         speed = np.hypot(vt, config.slip_speed_m_s)
         sliding = vt / speed
         tangent = -config.friction * normal * sliding
@@ -368,7 +419,7 @@ def _law(config, bn, bt, areas, elastic, velocity, *, jacobian=False):
     derivative = None
     if jacobian:
         with np.errstate(over="ignore", invalid="ignore", divide="ignore"):
-            dn = np.where(unclipped > 0, -config.dissipation_s_per_m * elastic, 0.)
+            dn = np.where(unclipped > 0, -config.dissipation_s_per_m * elastic, 0.0)
             ds = (config.slip_speed_m_s / speed) ** 2 / speed
             derivative = bn.T @ ((areas * dn)[:, None] * bn)
             # Cross term d(pt)/d(vn) is essential: friction magnitude depends on pn.
@@ -393,11 +444,20 @@ class PlanarWrench(_JsonRecord):
 def _wrench_record(sample, data):
     generalized, normal, tangent, vn, vt, power, _ = data
     state = sample.state
-    reaction_moment = _number(-(generalized[2] + state.z_m * generalized[0]
-                                - state.x_m * generalized[1]), "support origin moment")
-    return PlanarWrench(tuple(map(float, generalized)), tuple(map(float, -generalized[:2])),
-                        reaction_moment, tuple(map(float, normal)), tuple(map(float, tangent)),
-                        tuple(map(float, vn)), tuple(map(float, vt)), power)
+    reaction_moment = _number(
+        -(generalized[2] + state.z_m * generalized[0] - state.x_m * generalized[1]),
+        "support origin moment",
+    )
+    return PlanarWrench(
+        tuple(map(float, generalized)),
+        tuple(map(float, -generalized[:2])),
+        reaction_moment,
+        tuple(map(float, normal)),
+        tuple(map(float, tangent)),
+        tuple(map(float, vn)),
+        tuple(map(float, vt)),
+        power,
+    )
 
 
 def contact_wrench(config, sample, velocity=None):
@@ -415,9 +475,9 @@ def contact_wrench(config, sample, velocity=None):
 
 def _residual(midpoint, before, duration, inverse_mass, external, generalized):
     with np.errstate(over="ignore", invalid="ignore"):
-        residual = midpoint - before - .5 * duration * inverse_mass * (external + generalized)
+        residual = midpoint - before - 0.5 * duration * inverse_mass * (external + generalized)
     _finite(residual)
-    norm = float(np.max(np.abs(residual) * (1., 1., _ANGULAR_LENGTH)))
+    norm = float(np.max(np.abs(residual) * (1.0, 1.0, _ANGULAR_LENGTH)))
     return residual, norm
 
 
@@ -456,7 +516,7 @@ def _kick(config, state, duration, external):
             accepted_data = data
             break
         _need(iteration < 24, "Newton update budget exhausted")
-        matrix = np.eye(3) - .5 * duration * inverse_mass[:, None] * data[-1]
+        matrix = np.eye(3) - 0.5 * duration * inverse_mass[:, None] * data[-1]
         _finite(matrix)
         try:
             update = np.linalg.solve(matrix, -residual)
@@ -466,12 +526,14 @@ def _kick(config, state, duration, external):
         improved = False
         last_error = None
         for backtrack in range(12):
-            fraction = 2. ** (-backtrack)
+            fraction = 2.0 ** (-backtrack)
             candidate = midpoint + fraction * update
             try:
                 _finite(candidate)
                 trial = _law(config, bn, bt, areas, elastic, candidate)
-                _, candidate_norm = _residual(candidate, before, duration, inverse_mass, external, trial[0])
+                _, candidate_norm = _residual(
+                    candidate, before, duration, inverse_mass, external, trial[0]
+                )
             except ValueError as error:
                 last_error = error
                 continue
@@ -480,7 +542,9 @@ def _kick(config, state, duration, external):
                 improved = True
                 break
         if not improved:
-            raise ValueError("planar pressure reference: Newton line search exhausted") from last_error
+            raise ValueError(
+                "planar pressure reference: Newton line search exhausted"
+            ) from last_error
     _need(accepted_data is not None, "no accepted midpoint solution")
     contact = _wrench_record(sample, accepted_data)
     with np.errstate(over="ignore", invalid="ignore"):
@@ -490,10 +554,21 @@ def _kick(config, state, duration, external):
         dissipated = duration * contact.dissipation_power_w
         external_work = duration * float(np.dot(external, midpoint))
     _finite(after, contact_impulse, external_impulse, dissipated, external_work)
-    return PlanarKick(sample, duration, tuple(map(float, before)), tuple(map(float, after)),
-                       tuple(map(float, midpoint)), contact, tuple(map(float, external)),
-                       tuple(map(float, contact_impulse)), tuple(map(float, external_impulse)),
-                       float(dissipated), float(external_work), iteration, norm)
+    return PlanarKick(
+        sample,
+        duration,
+        tuple(map(float, before)),
+        tuple(map(float, after)),
+        tuple(map(float, midpoint)),
+        contact,
+        tuple(map(float, external)),
+        tuple(map(float, contact_impulse)),
+        tuple(map(float, external_impulse)),
+        float(dissipated),
+        float(external_work),
+        iteration,
+        norm,
+    )
 
 
 @dataclass(frozen=True)
@@ -508,7 +583,7 @@ class PlanarStep(_JsonRecord):
     dissipated_j: float
 
 
-def step_body(config, state, dt_s, external_force_xz_n=(0., 0.), external_moment_nm=0.):
+def step_body(config, state, dt_s, external_force_xz_n=(0.0, 0.0), external_moment_nm=0.0):
     """One transactional KDK step; external input is constant across BOTH kicks.
 
     The caller owns the declared time schedule. Gravity is added here at COM.
@@ -518,28 +593,43 @@ def step_body(config, state, dt_s, external_force_xz_n=(0., 0.), external_moment
     _check_config(config)
     _check_state(state)
     duration = _number(dt_s, "step duration")
-    _need(0 < duration <= .001, "step duration must be in (0,.001] seconds")
+    _need(0 < duration <= 0.001, "step duration must be in (0,.001] seconds")
     next_time = _number(state.time_s + duration, "next time")
     _need(next_time > state.time_s, "time does not advance representably")
     force = _numeric(external_force_xz_n, (2,), "external force")
     moment = _number(external_moment_nm, "external moment")
     external = np.array((force[0], force[1] - config.mass_kg * config.gravity_m_s2, moment))
     _finite(external)
-    first = _kick(config, state, .5 * duration, external)
+    first = _kick(config, state, 0.5 * duration, external)
     half = first.velocity_after
-    drifted = PlanarState(next_time, state.x_m + duration * half[0],
-                          state.z_m + duration * half[1], state.angle_rad + duration * half[2],
-                          half[0], half[1], half[2])
-    second = _kick(config, drifted, .5 * duration, external)
-    endpoint = PlanarState(next_time, drifted.x_m, drifted.z_m, drifted.angle_rad,
-                           *second.velocity_after)
+    drifted = PlanarState(
+        next_time,
+        state.x_m + duration * half[0],
+        state.z_m + duration * half[1],
+        state.angle_rad + duration * half[2],
+        half[0],
+        half[1],
+        half[2],
+    )
+    second = _kick(config, drifted, 0.5 * duration, external)
+    endpoint = PlanarState(
+        next_time, drifted.x_m, drifted.z_m, drifted.angle_rad, *second.velocity_after
+    )
     with np.errstate(over="ignore", invalid="ignore", divide="ignore"):
         impulse = np.asarray(first.contact_impulse) + second.contact_impulse
         average = impulse / duration
         dissipated = first.dissipated_j + second.dissipated_j
     _finite(impulse, average, dissipated)
-    return PlanarStep(state, drifted, endpoint, first, second, tuple(map(float, impulse)),
-                       tuple(map(float, average)), float(dissipated))
+    return PlanarStep(
+        state,
+        drifted,
+        endpoint,
+        first,
+        second,
+        tuple(map(float, impulse)),
+        tuple(map(float, average)),
+        float(dissipated),
+    )
 
 
 def mechanical_energy_j(config, state):
@@ -547,7 +637,7 @@ def mechanical_energy_j(config, state):
     sample = sample_contact(config, state)
     with np.errstate(over="ignore", invalid="ignore"):
         velocity = _velocity(state)
-        kinetic = .5 * config.mass_kg * (velocity[0] * velocity[0] + velocity[1] * velocity[1])
-        kinetic += .5 * config.inertia_kg_m2 * velocity[2] * velocity[2]
+        kinetic = 0.5 * config.mass_kg * (velocity[0] * velocity[0] + velocity[1] * velocity[1])
+        kinetic += 0.5 * config.inertia_kg_m2 * velocity[2] * velocity[2]
         energy = kinetic + sample.potential_j + config.mass_kg * config.gravity_m_s2 * state.z_m
     return _number(energy, "mechanical energy")

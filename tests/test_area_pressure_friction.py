@@ -546,3 +546,19 @@ def test_owned_frozen_finite_json_and_no_engine_import_during_calls(monkeypatch)
     payload["mu"] = 99.0
     payload["normal"]["pressure_pa"] = (99.0,)
     assert result.mu == 0.5 and result.normal.pressure_pa == (3.0,)
+
+
+@pytest.mark.parametrize("law", ("coulomb", "regularized"))
+@pytest.mark.parametrize("scale", (1.0 - 5e-11, 1.0 + 5e-11))
+def test_tolerated_normal_length_error_cannot_create_friction_from_normal_motion(law, scale):
+    quad = replace(_point_quad(), normals_world=((0.0, 0.0, scale),))
+    result = integrate_friction(
+        quad,
+        (3.0,),
+        velocity_a_world=((0.0, 0.0, 7.0),),
+        velocity_b_world=((0.0, 0.0, 0.0),),
+        law=law,
+    )
+    np.testing.assert_array_equal(result.tangential_velocity_world, ((0.0, 0.0, 0.0),))
+    np.testing.assert_array_equal(result.first_friction_force_n, (0.0, 0.0, 0.0))
+    assert result.friction_power_w == 0.0

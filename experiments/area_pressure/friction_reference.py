@@ -206,7 +206,11 @@ def integrate_friction(
     velocity_b = _numeric(velocity_b_world, (count, 3), "velocity B")
     with np.errstate(over="ignore", invalid="ignore", divide="ignore"):
         relative = velocity_a - velocity_b
-        tangent = relative - np.einsum("ij,ij->i", relative, normals)[:, None] * normals
+        # Geometry accepts normals within its declared unit-length tolerance.
+        # Project onto that direction without amplifying length error into
+        # Coulomb sliding; double cross also avoids subtracting the normal part.
+        normal_squared = np.einsum("ij,ij->i", normals, normals)
+        tangent = np.cross(normals, np.cross(relative, normals)) / normal_squared[:, None]
         speed = np.hypot.reduce(tangent, axis=1)
         direction = np.zeros_like(tangent)
         if law == "coulomb":

@@ -60,6 +60,6 @@ $('cases').innerHTML=data.cases.map((c,i)=>'<option value="'+i+'">'+(c.summary.c
 $('status').textContent=data.summary.status==='V06_DYNAMIC_PASS'?'4 条真实轨迹通过':'保留失败，请看报告';
 $('cases').onchange=e=>{stop();selected=+e.target.value;index=0;render()};
 $('time').oninput=e=>{stop();index=+e.target.value;render()};
-$('play').onclick=()=>{if(timer){stop();return}index=0;start=performance.now();$('play').textContent='暂停';function tick(now){const f=data.cases[selected].frames;index=Math.min(f.length-1,Math.floor((now-start)/15000*(f.length-1)));render();if(index<f.length-1)timer=requestAnimationFrame(tick);else stop()}timer=requestAnimationFrame(tick)};
+$('play').onclick=()=>{if(timer){stop();return}index=0;start=performance.now();$('play').textContent='暂停';function tick(now){const f=data.cases[selected].frames;index=Math.max(0,Math.min(f.length-1,Math.floor((now-start)/15000*(f.length-1))));render();if(index<f.length-1)timer=requestAnimationFrame(tick);else stop()}timer=requestAnimationFrame(tick)};
 window.addEventListener('resize',render);render();
 </script></html>

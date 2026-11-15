@@ -268,9 +268,9 @@ def _capture_overflow(pipeline, contacts):
         )
         stage("split_query", _count(source), narrow.split_query_results.shape[0])
     stage("hydro_broad", _count(hydro.block_broad_collide_count), hydro.max_num_blocks_broad)
-    iso_counts = hydro.iso_buffer_counts.numpy()
+    iso_counts = hydro.iso_buffer_counts
     for i in range(3):
-        stage("iso_l" + str(i), int(iso_counts[i + 1]), hydro.iso_max_dims[i])
+        stage("iso_l" + str(i), _count(iso_counts[i + 1]), hydro.iso_max_dims[i])
     stage("iso_voxels", _count(hydro.iso_voxel_count), hydro.max_num_iso_voxels)
     stage("hydro_faces", _count(reducer.contact_count), hydro.max_num_face_contacts)
     stage("rigid_contacts", _count(contacts.rigid_contact_count), contacts.rigid_contact_max)

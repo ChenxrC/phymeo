@@ -1,5 +1,8 @@
 # Phymeo 当前续作入口
 
+> 2026-11-15 用户调整：先跑通真实训练，暂不要求操作成功率。当前已验证产品截点 d7c8195e；合入现有远程 codex/dev，不纳入三份 untracked device-convex-patch 实验。下一开发批是8原CUDA环境的真实状态/目标编码、共享masked策略/PPO更新及恢复，T1b接触切换和抓放效果不再前置。独立接触预研首批为面积缩放、偏心压力、软球压平面；见[小案例与训练计划](../superpowers/plans/2026-11-15-area-pressure-contact-visual-cases.md)、[总计划第21节](../superpowers/plans/2026-11-14-language-conditioned-gpu-manipulation.md)。本轮只合并与规划，无新的训练、压力接触数值结果或安装。下方第十二批及以前是既有验收历史。
+
+
 > 2026-11-15 第十二批：目标位姿评分、有限换点/撤离/绕行与进度monitor已接入同一连续CUDA episode，产品32aae3ab。96个新HOST节点（91+3+2）通过；三窗25700步/2573保存帧审计通过。RR/RRR完成各6段，12秒内归一代价下降30.065%/16.201%；PPPR首段下降42.341%，随后撤离路径碰到转动T横梁，1700步明确停止。原完整PushT目标仍0/3，不能把综合代价下降当朝向或IoU成功。见[本批报告](p65-manipulation-push-feedback-report-20261115.md)、[计划第20节](../superpowers/plans/2026-11-14-language-conditioned-gpu-manipulation.md)、[公共用法](p65-manipulation-env-usage-20261114.md)。下一步T1b-2d先做当前几何退出/保持接触与有界模型修正；不是延长固定动作或放宽深度。全部执行与作者槽释放；语义编码/共享训练、完整放置仍未完成，无新截止/视频/安装/push/旧窗重跑。下方旧批次仅保留历史。
 
 

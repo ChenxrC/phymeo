@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="830" viewBox="0 0 1200 830" role="img" aria-labelledby="title desc">
+<title id="title">面积压力接触小案例规划画板</title>
+<desc id="desc">六张示意卡：面积缩放、偏心压力、软球压平面、两软球、圆盘扭转和双自由体冲击。只表示计划，没有仿真结果。</desc>
+<defs>
+<linearGradient id="pressure" x1="0" x2="1"><stop stop-color="#bae6fd"/><stop offset="1" stop-color="#f97316"/></linearGradient>
+<radialGradient id="disk"><stop stop-color="#f97316"/><stop offset="1" stop-color="#bae6fd"/></radialGradient>
+<marker id="arrow" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0 0L7 3.5L0 7Z" fill="#2563eb"/></marker>
+<style>
+text{font-family:"Microsoft YaHei","Noto Sans CJK SC",sans-serif;fill:#182638}
+.h{font-size:22px;font-weight:700}.small{font-size:15px;fill:#516078}.label{font-size:17px}.line{stroke:#2563eb;stroke-width:3;fill:none;marker-end:url(#arrow)}
+.card{fill:white;stroke:#d8e2ef;stroke-width:1.5}.body{fill:#dce8f5;stroke:#47637f;stroke-width:2}
+</style>
+</defs>
+<rect width="1200" height="830" fill="#f1f5fa"/>
+<text x="36" y="43" font-size="28" font-weight="700">面积压力接触 · 小型可视化案例</text>
+<text x="36" y="72" class="small">计划示意 / 非仿真结果　　首批 V00 → V01 → V02；训练最小闭环独立推进</text>
+<g transform="translate(28,100)">
+<rect class="card" width="368" height="300" rx="14"/>
+<text x="20" y="34" class="h">V00　面积缩放</text>
+<rect x="44" y="104" width="65" height="65" rx="3" fill="#7dd3fc" stroke="#0284c7"/>
+<rect x="175" y="104" width="130" height="65" rx="3" fill="#7dd3fc" stroke="#0284c7"/>
+<path class="line" d="M76 98V66"/><path class="line" d="M240 98V50"/>
+<text x="43" y="198" class="label">20 × 20 mm</text><text x="181" y="198" class="label">40 × 20 mm</text>
+<text x="20" y="238" class="label">相同压力 → 面积翻倍 → 合力翻倍</text>
+<text x="20" y="270" class="small">解析期望：2 kPa → 0.8 N / 1.6 N</text>
+</g>
+<g transform="translate(416,100)">
+<rect class="card" width="368" height="300" rx="14"/>
+<text x="20" y="34" class="h">V01　偏心压力与力矩</text>
+<rect x="55" y="103" width="244" height="72" fill="url(#pressure)" stroke="#64748b"/>
+<line x1="177" y1="87" x2="177" y2="188" stroke="#64748b" stroke-dasharray="4 4"/>
+<circle cx="216" cy="139" r="7" fill="#182638"/>
+<path class="line" d="M216 125V65"/>
+<text x="224" y="85" class="label">COP</text>
+<text x="20" y="238" class="label">显示压力中心，而非几何中心</text>
+<text x="20" y="270" class="small">解析核对 Fn、COP、Mx / My / Mz</text>
+</g>
+<g transform="translate(804,100)">
+<rect class="card" width="368" height="300" rx="14"/>
+<text x="20" y="34" class="h">V02　软球压平面</text>
+<circle class="body" cx="122" cy="113" r="57"/>
+<rect x="37" y="159" width="170" height="14" fill="#64748b"/>
+<ellipse cx="122" cy="159" rx="33" ry="8" fill="url(#disk)" stroke="#ea580c"/>
+<path class="line" d="M122 49V82"/>
+<circle cx="278" cy="128" r="39" fill="url(#disk)" stroke="#0284c7"/>
+<text x="246" y="187" class="small">俯视压力盘</text>
+<text x="20" y="238" class="label">压入量、面积、压力与合力</text>
+<text x="20" y="270" class="small">声明径向压力场；不冒充 Hertz 解</text>
+</g>
+<g transform="translate(28,420)">
+<rect class="card" width="368" height="300" rx="14"/>
+<text x="20" y="34" class="h">V03　两软球的共同界面</text>
+<circle cx="139" cy="127" r="57" fill="#bae6fd" fill-opacity=".8" stroke="#0284c7" stroke-width="2"/>
+<circle cx="231" cy="127" r="57" fill="#fed7aa" fill-opacity=".8" stroke="#ea580c" stroke-width="2"/>
+<path d="M193 95Q177 127 193 159" fill="none" stroke="#7c3aed" stroke-width="5"/>
+<path class="line" d="M119 127H72"/><path class="line" d="M249 127H296"/>
+<text x="20" y="238" class="label">两侧材料不同，界面不能任选中面</text>
+<text x="20" y="270" class="small">检验等压、身份交换及双方力矩</text>
+</g>
+<g transform="translate(416,420)">
+<rect class="card" width="368" height="300" rx="14"/>
+<text x="20" y="34" class="h">V04　分布扭转摩擦</text>
+<ellipse cx="184" cy="131" rx="85" ry="49" fill="#bae6fd" stroke="#0284c7" stroke-width="2"/>
+<path class="line" d="M121 102Q177 65 231 100"/>
+<path class="line" d="M247 156Q187 193 137 159"/>
+<path class="line" d="M151 119L176 104"/><path class="line" d="M209 140L186 157"/>
+<circle cx="184" cy="131" r="5" fill="#182638"/>
+<text x="20" y="238" class="label">切向牵引积分产生真实扭矩</text>
+<text x="20" y="270" class="small">反转转速；检查力矩符号与耗散</text>
+</g>
+<g transform="translate(804,420)">
+<rect class="card" width="368" height="300" rx="14"/>
+<text x="20" y="34" class="h">V06　双自由体冲击</text>
+<circle class="body" cx="91" cy="126" r="37"/>
+<rect class="body" x="211" y="77" width="80" height="98" rx="4"/>
+<path class="line" d="M132 126H190"/>
+<path class="line" d="M280 126H331"/>
+<text x="55" y="198" class="label">0.5 kg</text><text x="234" y="198" class="label">1 kg</text>
+<text x="20" y="238" class="label">冲击 → 压缩 → 卸载 → 分离</text>
+<text x="20" y="270" class="small">同时保存双方运动、冲量及能量</text>
+</g>
+<text x="36" y="761" class="label">后续补 V05 有限边缘支撑与 V07 薄片不适用负控；不以单例通过宣布通用支持。</text>
+<text x="36" y="795" class="small">颜色与箭头仅表达展示设计，无测量值、真实压力帧或运行通过结论。实际结果另存数据与视频。</text>
+</svg>

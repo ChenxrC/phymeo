@@ -1,6 +1,6 @@
 # 面积压力接触：小型可视化预研与训练最小闭环
 
-日期：2026-11-15。状态：**计划已登记，案例与参考实现尚未执行**。
+日期：2026-11-15。状态：**exp 首批 V00/V01/V02 NumPy 静态参考已执行；训练与外部参考待做，见第9节**。
 当前已验证产品截点：`d7c8195e4008828428a9394f8d16fb5fd1921cee`。
 本轮按用户要求合入现有远程 `codex/dev`；三个未提交的 device-convex-patch 实验文件不纳入。
 [当前续作入口](../../development/p65-continuation.md) · [异构训练总计划](2026-11-14-language-conditioned-gpu-manipulation.md)
@@ -124,4 +124,17 @@ R0 先落小型 case manifest：几何、单位、模型公式、材料、初态
 - [ContactMechanics官方文档](https://contactengineering.github.io/ContactMechanics/)：小变形半空间与FFT参考范围。
 - [Newton 1.6.0碰撞管线](https://newton-physics.github.io/newton/1.6.0/concepts/collisions.html)：SDF压力面、采样与缩减；其模型/参数/求解接线须明确后才能跨引擎比较。
 
-本轮只完成规划、源码/资料核对与Git集成。未生成上述案例的数值结果、未移植三种接触模型，也未执行新的训练。
+初次规划时只完成源码/资料核对与Git集成，没有数值结果。最新执行增量见第9节；三种接触模型的正式集成及新训练仍未完成。
+
+## 9. 2026-11-15 exp 首批实际结果
+
+用户要求 dev 保留稳定基线，创建 exp 开始实验。GitHub 默认现为 `codex/dev`；当前独立工作在 `codex/exp`，详[分支清单](../../development/branch-consolidation-20261115.md)。
+
+V00/V01 的面积积分与 V02 声明径向场已完成首批 **NumPy 独立参考**，源码48c4a14b。
+14个新HOST节点通过；固定30格完整输出，0 failed。V02最细档最大面积误差0.506923%、载荷误差0.00307865%，最后两档收敛满足原5%门；粗档全部保留。没有更改参数、门槛或产品物理。
+[实际报告与可视化](../../development/area-pressure-static-reference-report-20261115.md)含离线HTML、JSON/CSV与15秒静态参数扫描MP4。
+
+这一结果覆盖 R0 的首批固定网格与 R2 自身模型静态积分对照，**不完成 R1 Drake/Newton 复现、R3动力学、R4选型或 I0–I5 集成**。
+V02的独立NumPy离散是参考基线，不替代下一批外部参考。T-smoke仍未新增实现/执行，按第1节优先级继续；训练不等待接触模型选型。
+
+下一接触小批：先核现有参考工具与版本 → 相同压力场/网格下V02/V03对照 → 再V04扭转。不得重做本次已通过的几何积分来延后动力学或训练接线。

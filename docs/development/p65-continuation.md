@@ -1,5 +1,8 @@
 # Phymeo 当前续作入口
 
+> 2026-11-15 分支与实验更新：稳定基线及 GitHub 默认分支为 `codex/dev`（76a240d8），当前父工作树为 `codex/exp`。已清理131个已合入本地分支/6个远程分支；12个有独有补丁的本地分支和远程rigid WIP保留，见[整理清单](branch-consolidation-20261115.md)。exp首批V00/V01/V02独立NumPy参考完成：源码48c4a14b，14 HOST通过，30固定格通过，交互压力图和15秒静态参数扫描视频已生成，见[报告](area-pressure-static-reference-report-20261115.md)。仅静态积分/声明压力场，尚无Drake/Newton参考执行、共同动力学或新训练结果。下一步仍是T-smoke共享语义PPO接线，以及独立V02/V03外部参考；已绿本批不重跑。所有项目执行已结束，无新截止或周期任务。下方旧批次均为历史。
+
+
 > 2026-11-15 用户调整：先跑通真实训练，暂不要求操作成功率。当前已验证产品截点 d7c8195e；合入现有远程 codex/dev，不纳入三份 untracked device-convex-patch 实验。下一开发批是8原CUDA环境的真实状态/目标编码、共享masked策略/PPO更新及恢复，T1b接触切换和抓放效果不再前置。独立接触预研首批为面积缩放、偏心压力、软球压平面；见[小案例与训练计划](../superpowers/plans/2026-11-15-area-pressure-contact-visual-cases.md)、[总计划第21节](../superpowers/plans/2026-11-14-language-conditioned-gpu-manipulation.md)。本轮只合并与规划，无新的训练、压力接触数值结果或安装。下方第十二批及以前是既有验收历史。
 
 
@@ -102,12 +105,12 @@ run143仅补明确的源码外helper路径，已完成3072步/3秒，returned=ch
 
 ## 执行与保护边界
 
-父集成：`C:/Users/38347/.codex/worktrees/p65-parallel-integration/phymeo`，分支 `codex/p65-parallel-modules`。
+父集成：`C:/Users/38347/.codex/worktrees/p65-parallel-integration/phymeo`，当前实验分支 `codex/exp`，稳定与默认分支 `codex/dev`。
 父/root独占旧共享接缝、合入及唯一串行项目执行；原三作者仅在既有隔离worktree按allowlist并行作者工作。
 继续前先核实时agents/Git/WIP和当前grant；已释放任务不重派，同源已绿不重跑，同hash证据不重审。
 所有import/collection/数值/probe/pytest/lint/formatter/compile/build/install/profile必须由父fresh entrypoint-aware guard后串行执行。
 旧06:15冻结/07:30收口已经结束。新一批按用户继续指令与M-B2合同执行，没有新的时间截止；仍不授权伪造通过或自动扩大模型域。
-不建周期任务，不poll/rerun/dispatch远程CI，不push/mainmerge/发包，不改pin或盲跑寿命stress。
+不建周期任务，不poll/rerun/dispatch远程CI；按用户授权推送dev/exp，不做mainmerge或发包，不改pin或盲跑寿命stress。
 三份无关未跟踪稿、证据Junction及其canonical归档、用户Torch和当前venv/pins全部保留，不跟随Junction删除或全解压补副本。
 观察器在物理返回后失败不能称物理回滚；UNKNOWN_RELEASE保owner/lease，不能重复free或伪报零live。
 

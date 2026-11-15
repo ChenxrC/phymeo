@@ -11,10 +11,16 @@ from experiments.area_pressure.newton_reference import (
     export_unreduced_surface,
 )
 
-
 STAGES = (
-    "broad_pairs", "sdf_pairs", "hydro_broad", "iso_l0", "iso_l1", "iso_l2",
-    "iso_voxels", "hydro_faces", "rigid_contacts",
+    "broad_pairs",
+    "sdf_pairs",
+    "hydro_broad",
+    "iso_l0",
+    "iso_l1",
+    "iso_l2",
+    "iso_voxels",
+    "hydro_faces",
+    "rigid_contacts",
 )
 
 
@@ -33,10 +39,19 @@ def fixture():
     }
     overflow = {
         "stages": [
-            {"name": name, "count": int(name in ("hydro_faces", "rigid_contacts")), "capacity": 16384}
+            {
+                "name": name,
+                "count": int(name in ("hydro_faces", "rigid_contacts")),
+                "capacity": 16384,
+            }
             for name in STAGES
         ],
-        "dropped": {"hydro_buffer": 0, "hydro_hashtable": 0, "global_buffer": 0, "global_hashtable": 0},
+        "dropped": {
+            "hydro_buffer": 0,
+            "hydro_hashtable": 0,
+            "global_buffer": 0,
+            "global_hashtable": 0,
+        },
     }
     return raw, overflow
 
@@ -75,8 +90,12 @@ def test_swapped_native_pair_preserves_declared_participant_sign():
     raw["shape_pairs"] = raw["surface_pairs"] = [[1, 0]]
     raw["normal_oct"] = [[1.0, 1.0]]
     result = export_unreduced_surface(
-        raw, points_world=[[1, 0, 0]], normals_world=[[0, 0, -1]],
-        shape_a=0, shape_b=1, overflow=counters,
+        raw,
+        points_world=[[1, 0, 0]],
+        normals_world=[[0, 0, -1]],
+        shape_a=0,
+        shape_b=1,
+        overflow=counters,
     )
     assert result["first_force_n"] == [0.0, 0.0, -6.0]
     assert result["first_moment_nm"] == [0.0, 6.0, 0.0]
@@ -86,15 +105,25 @@ def test_rotation_and_translation_use_supplied_world_api_outputs():
     raw, counters = fixture()
     raw["surface_vertices"] = [[2, 1, 1], [2, 3, 1], [2, 2, 4]]
     result = export_unreduced_surface(
-        raw, points_world=[[2, 2, 2]], normals_world=[[1, 0, 0]],
-        shape_a=0, shape_b=1, overflow=counters, axis_world=(1, 0, 0),
+        raw,
+        points_world=[[2, 2, 2]],
+        normals_world=[[1, 0, 0]],
+        shape_a=0,
+        shape_b=1,
+        overflow=counters,
+        axis_world=(1, 0, 0),
     )
     assert result["first_force_n"] == [-6.0, 0.0, 0.0]
     assert result["first_moment_nm"] == [0.0, -12.0, 12.0]
     assert result["projected_area_m2"] == 2.0
     shifted = export_unreduced_surface(
-        raw, points_world=[[2, 2, 2]], normals_world=[[1, 0, 0]],
-        shape_a=0, shape_b=1, overflow=counters, origin_world=(2, 2, 2),
+        raw,
+        points_world=[[2, 2, 2]],
+        normals_world=[[1, 0, 0]],
+        shape_a=0,
+        shape_b=1,
+        overflow=counters,
+        origin_world=(2, 2, 2),
     )
     assert shifted["first_moment_nm"] == [0.0, 0.0, 0.0]
 
@@ -119,28 +148,48 @@ def test_empty_capture_keeps_real_zero_counts():
     for stage in counters["stages"]:
         stage["count"] = 0
     result = export_unreduced_surface(
-        raw, points_world=[], normals_world=[], shape_a=0, shape_b=1, overflow=counters,
+        raw,
+        points_world=[],
+        normals_world=[],
+        shape_a=0,
+        shape_b=1,
+        overflow=counters,
     )
     assert result["first_force_n"] == [0.0, 0.0, 0.0]
     assert result["unreduced_face_count"] == 0
     assert result["cop_world"] is None
 
 
-@pytest.mark.parametrize("encoded,expected", [
-    ((0, 0), (0, 0, 1)), ((1, 0), (1, 0, 0)), ((0, -1), (0, -1, 0)),
-    ((1, 1), (0, 0, -1)), ((0.5, 0), (2**-0.5, 0, 2**-0.5)),
-])
+@pytest.mark.parametrize(
+    "encoded,expected",
+    [
+        ((0, 0), (0, 0, 1)),
+        ((1, 0), (1, 0, 0)),
+        ((0, -1), (0, -1, 0)),
+        ((1, 1), (0, 0, -1)),
+        ((0.5, 0), (2**-0.5, 0, 2**-0.5)),
+    ],
+)
 def test_octahedral_normals_against_hand_vectors(encoded, expected):
     np.testing.assert_allclose(decode_octahedral_normals([encoded]), [expected], atol=1e-15)
 
 
-@pytest.mark.parametrize("field,value", [
-    ("count", True), ("count", 16385), ("contact_area", [-1.0]),
-    ("contact_pressure", [float("nan")]), ("contact_fingerprints", [True]),
-    ("shape_pairs", [[0, 0]]), ("surface_pairs", [[1, 0]]),
-    ("surface_depth", [-0.2]), ("normal_oct", [[2, 0]]),
-    ("surface_vertices", [[0, 0, 0]]), ("position_depth", [[0, 0, 0]]),
-])
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("count", True),
+        ("count", 16385),
+        ("contact_area", [-1.0]),
+        ("contact_pressure", [float("nan")]),
+        ("contact_fingerprints", [True]),
+        ("shape_pairs", [[0, 0]]),
+        ("surface_pairs", [[1, 0]]),
+        ("surface_depth", [-0.2]),
+        ("normal_oct", [[2, 0]]),
+        ("surface_vertices", [[0, 0, 0]]),
+        ("position_depth", [[0, 0, 0]]),
+    ],
+)
 def test_malformed_raw_data_rejected_without_mutation(field, value):
     raw, counters = fixture()
     raw[field] = value
@@ -150,7 +199,9 @@ def test_malformed_raw_data_rejected_without_mutation(field, value):
     assert repr(raw) == repr(before)
 
 
-@pytest.mark.parametrize("name", ["hydro_buffer", "hydro_hashtable", "global_buffer", "global_hashtable"])
+@pytest.mark.parametrize(
+    "name", ["hydro_buffer", "hydro_hashtable", "global_buffer", "global_hashtable"]
+)
 def test_dropped_contacts_reject_even_when_counts_fit_capacity(name):
     raw, counters = fixture()
     counters["dropped"][name] = 1
@@ -197,8 +248,12 @@ def test_multiple_faces_sum_loads_and_keep_complete_raw_order():
         if stage["name"] in ("hydro_faces", "rigid_contacts"):
             stage["count"] = 2
     result = export_unreduced_surface(
-        raw, points_world=[[1, 0, 0], [-1, 0, 0]], normals_world=[[0, 0, 1], [0, 0, -1]],
-        shape_a=0, shape_b=1, overflow=counters,
+        raw,
+        points_world=[[1, 0, 0], [-1, 0, 0]],
+        normals_world=[[0, 0, 1], [0, 0, -1]],
+        shape_a=0,
+        shape_b=1,
+        overflow=counters,
     )
     assert result["raw"]["raw_ids"] == [1, 2]
     assert result["raw"]["contact_fingerprints"] == [7, 8]
@@ -209,16 +264,25 @@ def test_multiple_faces_sum_loads_and_keep_complete_raw_order():
     assert result["pressure_centroid_world"] == [0.5, 0.0, 0.0]
 
 
-@pytest.mark.parametrize("points,normals", [
-    ([], [[0, 0, 1]]), ([[float("inf"), 0, 0]], [[0, 0, 1]]),
-    ([[1, 0, 0]], [[0, 0, 2]]), ([[1, 0, 0]], [[0, float("nan"), 1]]),
-])
+@pytest.mark.parametrize(
+    "points,normals",
+    [
+        ([], [[0, 0, 1]]),
+        ([[float("inf"), 0, 0]], [[0, 0, 1]]),
+        ([[1, 0, 0]], [[0, 0, 2]]),
+        ([[1, 0, 0]], [[0, float("nan"), 1]]),
+    ],
+)
 def test_invalid_world_api_outputs_reject(points, normals):
     raw, counters = fixture()
     with pytest.raises(ValueError):
         export_unreduced_surface(
-            raw, points_world=points, normals_world=normals,
-            shape_a=0, shape_b=1, overflow=counters,
+            raw,
+            points_world=points,
+            normals_world=normals,
+            shape_a=0,
+            shape_b=1,
+            overflow=counters,
         )
 
 

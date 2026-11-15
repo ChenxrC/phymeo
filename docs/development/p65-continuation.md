@@ -1,5 +1,8 @@
 # Phymeo 当前续作入口
 
+> 2026-11-15 V03外部参考更新：codex/exp已执行独立双软球曲面与Newton1.7.0 CUDA七格，43新HOST通过；原计数读取首错已修复并保留。最细力误差约3.4%、面积约6.46%，最后两档收敛也超过原5%门，明确FAIL_RECORDED；不能称交叉验证通过或runtime集成。见[本批报告与28秒说明视频](area-pressure-newton-reference-report-20261115.md)。仅静态碰撞前端，零solver.step；不追加网格追绿。下一接触独立节点V04分布扭转，现有raw误差归因与T-smoke主线分开推进；dev未改。所有数值执行和两作者已释放，下方为历史。
+
+
 > 2026-11-15 分支与实验更新：稳定基线及 GitHub 默认分支为 `codex/dev`（76a240d8），当前父工作树为 `codex/exp`。已清理131个已合入本地分支/6个远程分支；12个有独有补丁的本地分支和远程rigid WIP保留，见[整理清单](branch-consolidation-20261115.md)。exp首批V00/V01/V02独立NumPy参考完成：源码48c4a14b，14 HOST通过，30固定格通过，交互压力图和15秒静态参数扫描视频已生成，见[报告](area-pressure-static-reference-report-20261115.md)。仅静态积分/声明压力场，尚无Drake/Newton参考执行、共同动力学或新训练结果。下一步仍是T-smoke共享语义PPO接线，以及独立V02/V03外部参考；已绿本批不重跑。所有项目执行已结束，无新截止或周期任务。下方旧批次均为历史。
 
 

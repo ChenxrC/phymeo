@@ -56,3 +56,8 @@ Newton 此 hydro 路由要求双方体 SDF，刚平面 V02 暂不纳入；不能
 
 本地 sdf_hydroelastic.py SHA256：59317898aec932dd5c8ca38f1ad4d82310d39e6a66bacad891ae7c535a7c3661。
 实际软件版本、导入路径、设备和其余关键源码哈希在首次执行环境记录中保存。
+
+
+## 实际收口（2026-11-15）
+
+前文为执行前预登记，不是当前pending授权。实际43新HOST通过，独立参考7格与Newton CUDA7格完成；一次list计数读取修复后捕获成功。保存比较按原门返回FAIL_RECORDED：最细面积约6.46%>5%，最后两档变化也>5%。参数/档位未改，本批不再修复或重跑同格。见[完整结果与后续](../../development/area-pressure-newton-reference-report-20261115.md)。两作者、父数值执行槽均释放。

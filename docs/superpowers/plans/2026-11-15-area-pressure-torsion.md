@@ -53,3 +53,8 @@ disk最多两个互不重叠盘，rings/sectors是正整数且sectors>=8；总me
 下一步仍为V05有限边缘/接触启闭，再V06共同状态/载荷的动力学；本批不能作为机器人支撑通过。
 
 作者前澄清：两个盘允许中心距=2R的边界相切，只拒内部重叠，各自mesh身份保留。FrictionIntegral.qualification固定NUMPY_PRESCRIBED_SLIP_REFERENCE，normal保留原NUMPY_STATIC_REFERENCE。
+
+
+## 实际收口
+
+2026-11-15：最终数值源码e13a7216，25 HOST / 1.48秒与26固定案例均通过；保留近单位法向反例及一次方向投影修复，无调参。最细扭矩误差0.17%–0.24%，收敛最大0.7317%；本批牵引/资源/负控门保持。两作者释放、父串行执行结束；说明视频30秒/900帧，只有保存参考数据。详[报告](../../development/area-pressure-torsion-report-20261115.md)。下一节点V05有限边缘，V03外部参考未通过记录不变。本合同只规定滑动积分，非静摩擦或动力学。

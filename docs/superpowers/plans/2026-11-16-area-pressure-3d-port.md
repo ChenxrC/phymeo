@@ -95,3 +95,7 @@ I0 不填旧 solref/solimp 冒充新物理。I2 前必须逐项记录实际旧�
 保现有环境，无安装；root 每条 command fresh entrypoint guard，环境→首静态→必要 style 修复→新完整 HOST 串行。保存所有原始 exit/log/source before-after。原作者不执行。保持父三份无关 untracked 和作者 WIP。
 
 本批成功是代码端口与独立测试通过、R4 与 I1/I2责任明确；不是再做一个视频。若压力梯度准入不能覆盖目标，明确 unsupported 并在 I1 调整表示选择，不靠漏面/调参修饰。源一旦验过，只在新变更或新失败需要时再验证。
+
+## 8. 实际完成结果
+
+测试源码777b7f12，首次两个完整新HOST文件59 passed/1.75s/RAW_EXIT0。I0a/I0b按上述有限范围接受；只有排版/import修正，qualified AST全同，无数值修复、旧组重跑或runtime/GPU执行。原始日志与13项最终source/config核对完成，父/两作者已释放。详[报告](../../development/area-pressure-3d-port-report-20261116.md)。后续I1真实裁剪、I2共同求解及I3–I5均未完成；V03 FAIL、dev基线及独立训练状态保持。

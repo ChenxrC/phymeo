@@ -24,8 +24,11 @@ from experiments.contact_selection.fft_reference import (
 
 @pytest.mark.parametrize(
     "delta,a,force",
-    [(0.00005, 0.001, 1 / 15), (0.0001, np.sqrt(2) / 1000, 2 * np.sqrt(2) / 15),
-     (0.0002, 0.002, 8 / 15)],
+    [
+        (0.00005, 0.001, 1 / 15),
+        (0.0001, np.sqrt(2) / 1000, 2 * np.sqrt(2) / 15),
+        (0.0002, 0.002, 8 / 15),
+    ],
 )
 def test_hertz_fixed_cases_have_independent_si_values(delta, a, force):
     actual = hertz_reference(delta)
@@ -113,7 +116,10 @@ def test_kkt_and_hertz_accuracy_are_separate_and_area_uses_strict_positive_force
     assert assess_fields(fields, reaction, solver_success=True)["contact_pixels"] == 2
 
 
-@pytest.mark.parametrize("fault", ["penetration", "tension", "complementarity", "padding", "elastic", "boundary", "solver"])
+@pytest.mark.parametrize(
+    "fault",
+    ["penetration", "tension", "complementarity", "padding", "elastic", "boundary", "solver"],
+)
 def test_independent_kkt_failures_remain_visible(fault):
     fields, reaction, *_ = _manufactured_fields()
     if fault == "penetration":
@@ -152,14 +158,29 @@ def test_preview_preserves_full_center_line_and_native_local_crop():
 
 def test_frozen_tolerances_have_explicit_si_units_and_no_parameter_overrides():
     config = frozen_config(128, DELTAS_M[0])
-    assert config["solver"] == {"pentol_m": 1e-10, "forcetol_n": 1e-10,
-                                "thermotol": 1e-8, "maxiter": 10000}
+    assert config["solver"] == {
+        "pentol_m": 1e-10,
+        "forcetol_n": 1e-10,
+        "thermotol": 1e-8,
+        "maxiter": 10000,
+    }
     assert (PENTOL_M, FORCETOL_N, THERMOTOL, MAXITER) == (1e-10, 1e-10, 1e-8, 10000)
     config["solver"]["maxiter"] = 1
     assert frozen_config(128, DELTAS_M[0])["solver"]["maxiter"] == 10000
 
 
-@pytest.mark.parametrize("grid,delta", [(True, 0.00005), (127, 0.00005), (1024, 0.00005), (128, True), (128, float("nan")), (128, 0), (128, 0.0003)])
+@pytest.mark.parametrize(
+    "grid,delta",
+    [
+        (True, 0.00005),
+        (127, 0.00005),
+        (1024, 0.00005),
+        (128, True),
+        (128, float("nan")),
+        (128, 0),
+        (128, 0.0003),
+    ],
+)
 def test_unregistered_configuration_is_rejected(grid, delta):
     with pytest.raises(ValueError):
         frozen_config(grid, delta)

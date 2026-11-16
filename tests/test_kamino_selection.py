@@ -131,16 +131,20 @@ def _records():
         held = i < 400
         z, x = (0.01, 0.0) if held else (-0.01, 0.07)
         rotation = [0, 0, 0, 1] if held else [0, math.sin(0.1), 0, math.cos(0.1)]
-        records.append({
-            "input_tick": i, "output_tick": i + 1,
-            "input_time": t, "output_time": (i + 1) / 1000,
-            "phase": "step-input-contact",
-            "entry": {"body_q": [[x, 0, z, *rotation]], "body_qd": [[0] * 6]},
-            "exit": {"body_q": [[x, 0, z, *rotation]], "body_qd": [[0] * 6]},
-            "contact_force_on_box": [0, 0, 4.905 if held else 0],
-            "active_contacts": 4 if held else 0,
-            "solver_status": [{"converged": True}],
-        })
+        records.append(
+            {
+                "input_tick": i,
+                "output_tick": i + 1,
+                "input_time": t,
+                "output_time": (i + 1) / 1000,
+                "phase": "step-input-contact",
+                "entry": {"body_q": [[x, 0, z, *rotation]], "body_qd": [[0] * 6]},
+                "exit": {"body_q": [[x, 0, z, *rotation]], "body_qd": [[0] * 6]},
+                "contact_force_on_box": [0, 0, 4.905 if held else 0],
+                "active_contacts": 4 if held else 0,
+                "solver_status": [{"converged": True}],
+            }
+        )
     records[0]["entry"]["body_q"][0][2] = 0.011
     return records
 
@@ -175,7 +179,6 @@ def test_output_requires_new_absolute_directory(tmp_path):
     wanted = tmp_path / "fresh"
     assert validate_output(wanted) == wanted
     assert not wanted.exists()
-
 
 
 def test_zero_contacts_do_not_consume_finite_stale_padding():

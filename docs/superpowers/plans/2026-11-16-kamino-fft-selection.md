@@ -60,3 +60,10 @@ a=sqrt(Rδ)，F=(4/3)E*sqrt(R)δ^(3/2)，p0=2E*a/(πR)。
 - 原[面积接触实验总计划](2026-11-15-area-pressure-contact-visual-cases.md)第6节固定 FFT 几何/模量/网格。
 
 首次依赖 dry-run 因 PyPI numpyencoder 网络超时退出2，没有安装或修改 Newton/Warp/NumPy/SciPy。记录在 artifacts/contact-selection-20261116-01；这是环境获取失败，尚非物理模型失败。
+
+## 6. 执行前数值配置补充
+
+FFT 固定 pentol=1e-10 m、forcetol=1e-10 N（每像素力）、thermotol=1e-8（相邻迭代总力相对变化），maxiter=10000。首次调用前以实际安装 optimizer 源码确认单位。所有九格相同，不依据输出调整。
+KKT门：优化器success、有限数/原shape/offset一致；min(gap)>=-pentol；min(p)>=-forcetol/dA；正力点max|gap|<=10*pentol；sum|f*gap|/(F_Hertz*δ)<=1e-5；独立恢复弹性力在物理域与f的差、padding恢复力均<=10*forcetol；库free边界检查通过。恢复力的负号、物理域切片和实际dA明确保存。接触面积严格使用f>0的像素面积，不按输出再改阈值。
+
+Kamino四格报告实际constraint convergence与capacity overflow；有限但未收敛可继续保存观察，资格不能PASS。末端无新contact query时不把上一入步载荷绑成端点瞬时力。FFT热图放大中心±4mm并显示实际网格块，不用平滑图像冒精度；全160mm域数据仍保存。

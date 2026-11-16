@@ -34,7 +34,9 @@ MAXITER = 10000
 
 
 def _positive(value, name):
-    if isinstance(value, (bool, np.bool_)) or not isinstance(value, (int, float, np.integer, np.floating)):
+    if isinstance(value, (bool, np.bool_)) or not isinstance(
+        value, (int, float, np.integer, np.floating)
+    ):
         raise ValueError(f"{name} must be a finite positive number")
     value = float(value)
     if not math.isfinite(value) or value <= 0:
@@ -50,26 +52,38 @@ def frozen_config(grid, delta):
     if delta not in DELTAS_M:
         raise ValueError("delta is not a preregistered indentation")
     return {
-        "grid": grid, "delta_m": delta, "radius_m": RADIUS_M,
+        "grid": grid,
+        "delta_m": delta,
+        "radius_m": RADIUS_M,
         "contact_modulus_pa": CONTACT_MODULUS_PA,
         "physical_sizes_m": [DOMAIN_M, DOMAIN_M],
         "computational_grid": [2 * grid, 2 * grid],
         "geometry": "full-domain negative Hertz paraboloid; small-deformation sphere approximation",
         "coordinates": "x_i=(i-n//2)*L/n; first axis x, second y; center node",
         "backend": "ContactMechanics 1.8.3 FreeFFTElasticHalfSpace, CPU serial",
-        "periodic": False, "check_boundaries": True,
-        "external_force": None, "hardness": None,
-        "initial_displacements": None, "initial_forces": None,
-        "solver": {"pentol_m": PENTOL_M, "forcetol_n": FORCETOL_N,
-                   "thermotol": THERMOTOL, "maxiter": MAXITER},
-        "kkt_limits": {"gap_min_m": -PENTOL_M,
-                       "tensile_pixel_force_n": FORCETOL_N,
-                       "active_gap_abs_m": 10 * PENTOL_M,
-                       "complementarity_normalized": 1e-5,
-                       "reconstructed_pixel_force_error_n": 10 * FORCETOL_N,
-                       "padding_pixel_force_n": 10 * FORCETOL_N,
-                       "physical_outer_ring_force_n": 0.0},
-        "hertz_relative_target": 0.05, "fine_grid_target": grid == 512,
+        "periodic": False,
+        "check_boundaries": True,
+        "external_force": None,
+        "hardness": None,
+        "initial_displacements": None,
+        "initial_forces": None,
+        "solver": {
+            "pentol_m": PENTOL_M,
+            "forcetol_n": FORCETOL_N,
+            "thermotol": THERMOTOL,
+            "maxiter": MAXITER,
+        },
+        "kkt_limits": {
+            "gap_min_m": -PENTOL_M,
+            "tensile_pixel_force_n": FORCETOL_N,
+            "active_gap_abs_m": 10 * PENTOL_M,
+            "complementarity_normalized": 1e-5,
+            "reconstructed_pixel_force_error_n": 10 * FORCETOL_N,
+            "padding_pixel_force_n": 10 * FORCETOL_N,
+            "physical_outer_ring_force_n": 0.0,
+        },
+        "hertz_relative_target": 0.05,
+        "fine_grid_target": grid == 512,
         "contact_area_rule": "count(raw positive pixel force > 0) * pixel_area",
     }
 
@@ -80,9 +94,12 @@ def hertz_reference(delta_m, radius_m=RADIUS_M, contact_modulus_pa=CONTACT_MODUL
     radius = _positive(radius_m, "radius_m")
     modulus = _positive(contact_modulus_pa, "contact_modulus_pa")
     a = math.sqrt(radius * delta)
-    result = {"radius_m": a, "area_m2": math.pi * a * a,
-              "force_n": (4 / 3) * modulus * math.sqrt(radius) * delta**1.5,
-              "peak_pressure_pa": 2 * modulus * a / (math.pi * radius)}
+    result = {
+        "radius_m": a,
+        "area_m2": math.pi * a * a,
+        "force_n": (4 / 3) * modulus * math.sqrt(radius) * delta**1.5,
+        "peak_pressure_pa": 2 * modulus * a / (math.pi * radius),
+    }
     if not all(math.isfinite(v) and v > 0 for v in result.values()):
         raise ValueError("Hertz scales are not representable")
     return result
@@ -105,12 +122,15 @@ def hertz_fields(x, delta):
     a = ref["radius_m"]
     inside = radius <= a
     pressure = np.zeros(radius.shape)
-    pressure[inside] = ref["peak_pressure_pa"] * np.sqrt(np.maximum(0.0, 1 - (radius[inside] / a) ** 2))
+    pressure[inside] = ref["peak_pressure_pa"] * np.sqrt(
+        np.maximum(0.0, 1 - (radius[inside] / a) ** 2)
+    )
     displacement = np.empty(radius.shape)
     displacement[inside] = delta - radius[inside] ** 2 / (2 * RADIUS_M)
     r = radius[~inside]
-    displacement[~inside] = ((2 * a * a - r * r) * np.arcsin(a / r)
-                             + a * np.sqrt(r * r - a * a)) / (math.pi * RADIUS_M)
+    displacement[~inside] = (
+        (2 * a * a - r * r) * np.arcsin(a / r) + a * np.sqrt(r * r - a * a)
+    ) / (math.pi * RADIUS_M)
     return pressure, displacement
 
 
@@ -130,9 +150,13 @@ def extract_fields(result, substrate, system, grid, delta):
     if not math.isclose(float(substrate.area_per_pt), area, rel_tol=1e-14, abs_tol=0):
         raise ValueError("external pixel area differs from the frozen physical grid")
     slices = substrate.local_topography_subdomain_slices
-    if not isinstance(slices, tuple) or len(slices) != 2 or any(
-        not isinstance(s, slice) or s.start != 0 or s.stop != grid or s.step not in (None, 1)
-        for s in slices
+    if (
+        not isinstance(slices, tuple)
+        or len(slices) != 2
+        or any(
+            not isinstance(s, slice) or s.start != 0 or s.stop != grid or s.step not in (None, 1)
+            for s in slices
+        )
     ):
         raise ValueError("external serial physical-domain slices are inconsistent")
     if isinstance(result.offset, (bool, np.bool_)) or float(result.offset) != delta:
@@ -144,11 +168,21 @@ def extract_fields(result, substrate, system, grid, delta):
     if not np.allclose(gap, own_gap, rtol=0, atol=1e-14):
         raise ValueError("public gap does not match the saved displacement/height/offset")
     pressure_hertz, displacement_hertz = hertz_fields(x, delta)
-    return {"x": x, "heights": heights, "u_full": u_full,
-            "u": u_full[slices].copy(), "f": force, "p": force / area,
-            "gap": gap, "contact_mask": force > 0,
-            "hertz_pressure": pressure_hertz, "hertz_displacement": displacement_hertz,
-            "grid": grid, "delta": delta, "pixel_area_m2": area}
+    return {
+        "x": x,
+        "heights": heights,
+        "u_full": u_full,
+        "u": u_full[slices].copy(),
+        "f": force,
+        "p": force / area,
+        "gap": gap,
+        "contact_mask": force > 0,
+        "hertz_pressure": pressure_hertz,
+        "hertz_displacement": displacement_hertz,
+        "grid": grid,
+        "delta": delta,
+        "pixel_area_m2": area,
+    }
 
 
 def assess_fields(fields, reconstructed_force_full, *, solver_success):
@@ -179,7 +213,9 @@ def assess_fields(fields, reconstructed_force_full, *, solver_success):
         "padding_force_max_abs_n": float(np.max(np.abs(reaction[padding]))),
         "outer_ring_force_max_abs_n": float(np.max(np.abs(boundary))),
     }
-    kkt["complementarity_normalized"] = kkt["complementarity_abs_work_j"] / (reference["force_n"] * delta)
+    kkt["complementarity_normalized"] = kkt["complementarity_abs_work_j"] / (
+        reference["force_n"] * delta
+    )
     kkt["checks"] = {
         "optimizer": bool(solver_success),
         "pressure": kkt["minimum_pressure_pa"] >= -FORCETOL_N / area,
@@ -194,18 +230,33 @@ def assess_fields(fields, reconstructed_force_full, *, solver_success):
     force = float(np.sum(f))
     contact_area = int(np.count_nonzero(active)) * area
     peak = float(np.max(p))
-    hertz = {"reference": reference,
-             "force_relative_error": abs(force - reference["force_n"]) / reference["force_n"],
-             "area_relative_error": abs(contact_area - reference["area_m2"]) / reference["area_m2"],
-             "peak_pressure_relative_error": abs(peak - reference["peak_pressure_pa"]) / reference["peak_pressure_pa"],
-             "center_pressure_relative_error": abs(float(p[n // 2, n // 2]) - reference["peak_pressure_pa"]) / reference["peak_pressure_pa"],
-             "relative_target": 0.05, "fine_grid_target": n == 512}
-    hertz["target_passed"] = all(hertz[k] <= 0.05 for k in (
-        "force_relative_error", "area_relative_error", "peak_pressure_relative_error"))
-    return {"force_n": force, "area_m2": contact_area, "peak_pressure_pa": peak,
-            "center_pressure_pa": float(p[n // 2, n // 2]),
-            "contact_pixels": int(np.count_nonzero(active)), "pixel_area_m2": area,
-            "kkt": kkt, "hertz": hertz}
+    hertz = {
+        "reference": reference,
+        "force_relative_error": abs(force - reference["force_n"]) / reference["force_n"],
+        "area_relative_error": abs(contact_area - reference["area_m2"]) / reference["area_m2"],
+        "peak_pressure_relative_error": abs(peak - reference["peak_pressure_pa"])
+        / reference["peak_pressure_pa"],
+        "center_pressure_relative_error": abs(
+            float(p[n // 2, n // 2]) - reference["peak_pressure_pa"]
+        )
+        / reference["peak_pressure_pa"],
+        "relative_target": 0.05,
+        "fine_grid_target": n == 512,
+    }
+    hertz["target_passed"] = all(
+        hertz[k] <= 0.05
+        for k in ("force_relative_error", "area_relative_error", "peak_pressure_relative_error")
+    )
+    return {
+        "force_n": force,
+        "area_m2": contact_area,
+        "peak_pressure_pa": peak,
+        "center_pressure_pa": float(p[n // 2, n // 2]),
+        "contact_pixels": int(np.count_nonzero(active)),
+        "pixel_area_m2": area,
+        "kkt": kkt,
+        "hertz": hertz,
+    }
 
 
 def preview_fields(fields):
@@ -214,24 +265,32 @@ def preview_fields(fields):
     local = np.flatnonzero(abs(fields["x"]) <= 0.004)
 
     def image(indices):
-        return {"x_m": fields["x"][indices].tolist(),
-                "y_m": fields["x"][indices].tolist(),
-                "pressure_pa": fields["p"][np.ix_(indices, indices)].tolist(),
-                "displacement_m": fields["u"][np.ix_(indices, indices)].tolist(),
-                "gap_m": fields["gap"][np.ix_(indices, indices)].tolist(),
-                "hertz_pressure_pa": fields["hertz_pressure"][np.ix_(indices, indices)].tolist(),
-                "interpolated": False}
+        return {
+            "x_m": fields["x"][indices].tolist(),
+            "y_m": fields["x"][indices].tolist(),
+            "pressure_pa": fields["p"][np.ix_(indices, indices)].tolist(),
+            "displacement_m": fields["u"][np.ix_(indices, indices)].tolist(),
+            "gap_m": fields["gap"][np.ix_(indices, indices)].tolist(),
+            "hertz_pressure_pa": fields["hertz_pressure"][np.ix_(indices, indices)].tolist(),
+            "interpolated": False,
+        }
 
-    return {"axis_order": "first x, second y; transpose for row-y screen raster",
-            "contact_radius_hertz_m": hertz_reference(fields["delta"])["radius_m"],
-            "full_domain": image(uniform), "contact_zoom": image(local),
-            "zoom_half_width_m": 0.004,
-            "center_line": {"y_m": 0.0, "x_m": fields["x"].tolist(),
-                            "pressure_pa": fields["p"][:, n // 2].tolist(),
-                            "displacement_m": fields["u"][:, n // 2].tolist(),
-                            "gap_m": fields["gap"][:, n // 2].tolist(),
-                            "hertz_pressure_pa": fields["hertz_pressure"][:, n // 2].tolist(),
-                            "hertz_displacement_m": fields["hertz_displacement"][:, n // 2].tolist()}}
+    return {
+        "axis_order": "first x, second y; transpose for row-y screen raster",
+        "contact_radius_hertz_m": hertz_reference(fields["delta"])["radius_m"],
+        "full_domain": image(uniform),
+        "contact_zoom": image(local),
+        "zoom_half_width_m": 0.004,
+        "center_line": {
+            "y_m": 0.0,
+            "x_m": fields["x"].tolist(),
+            "pressure_pa": fields["p"][:, n // 2].tolist(),
+            "displacement_m": fields["u"][:, n // 2].tolist(),
+            "gap_m": fields["gap"][:, n // 2].tolist(),
+            "hertz_pressure_pa": fields["hertz_pressure"][:, n // 2].tolist(),
+            "hertz_displacement_m": fields["hertz_displacement"][:, n // 2].tolist(),
+        },
+    }
 
 
 def _json_value(value):
@@ -262,27 +321,47 @@ def _process_memory():
 
             class Counters(ctypes.Structure):
                 _fields_ = [("cb", wintypes.DWORD), ("PageFaultCount", wintypes.DWORD)] + [
-                    (name, ctypes.c_size_t) for name in (
-                        "PeakWorkingSetSize", "WorkingSetSize", "QuotaPeakPagedPoolUsage",
-                        "QuotaPagedPoolUsage", "QuotaPeakNonPagedPoolUsage",
-                        "QuotaNonPagedPoolUsage", "PagefileUsage", "PeakPagefileUsage")]
+                    (name, ctypes.c_size_t)
+                    for name in (
+                        "PeakWorkingSetSize",
+                        "WorkingSetSize",
+                        "QuotaPeakPagedPoolUsage",
+                        "QuotaPagedPoolUsage",
+                        "QuotaPeakNonPagedPoolUsage",
+                        "QuotaNonPagedPoolUsage",
+                        "PagefileUsage",
+                        "PeakPagefileUsage",
+                    )
+                ]
 
             kernel = ctypes.WinDLL("kernel32", use_last_error=True)
             kernel.GetCurrentProcess.restype = wintypes.HANDLE
             psapi = ctypes.WinDLL("psapi", use_last_error=True)
-            psapi.GetProcessMemoryInfo.argtypes = (wintypes.HANDLE, ctypes.POINTER(Counters), wintypes.DWORD)
+            psapi.GetProcessMemoryInfo.argtypes = (
+                wintypes.HANDLE,
+                ctypes.POINTER(Counters),
+                wintypes.DWORD,
+            )
             psapi.GetProcessMemoryInfo.restype = wintypes.BOOL
             counts = Counters()
             counts.cb = ctypes.sizeof(counts)
-            if not psapi.GetProcessMemoryInfo(kernel.GetCurrentProcess(), ctypes.byref(counts), counts.cb):
+            if not psapi.GetProcessMemoryInfo(
+                kernel.GetCurrentProcess(), ctypes.byref(counts), counts.cb
+            ):
                 raise ctypes.WinError(ctypes.get_last_error())
-            return {"working_set_bytes": int(counts.WorkingSetSize),
-                    "process_lifetime_peak_working_set_bytes": int(counts.PeakWorkingSetSize)}
+            return {
+                "working_set_bytes": int(counts.WorkingSetSize),
+                "process_lifetime_peak_working_set_bytes": int(counts.PeakWorkingSetSize),
+            }
         import resource
 
         peak = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-        return {"working_set_bytes": None,
-                "process_lifetime_peak_working_set_bytes": int(peak if sys.platform == "darwin" else peak * 1024)}
+        return {
+            "working_set_bytes": None,
+            "process_lifetime_peak_working_set_bytes": int(
+                peak if sys.platform == "darwin" else peak * 1024
+            ),
+        }
     except Exception as exc:
         return {"unavailable": f"{type(exc).__name__}: {exc}"}
 
@@ -297,28 +376,55 @@ def _external_api():
     if importlib.metadata.version("ContactMechanics") != "1.8.3":
         raise RuntimeError("this experiment requires exactly ContactMechanics 1.8.3")
     versions = {}
-    for name in ("ContactMechanics", "SurfaceTopography", "muGrid", "NuMPI", "numpy", "scipy", "newton", "warp-lang"):
+    for name in (
+        "ContactMechanics",
+        "SurfaceTopography",
+        "muGrid",
+        "NuMPI",
+        "numpy",
+        "scipy",
+        "newton",
+        "warp-lang",
+    ):
         try:
             versions[name] = importlib.metadata.version(name)
         except importlib.metadata.PackageNotFoundError:
             versions[name] = None
-    sources = {name: _source(inspect.getsourcefile(obj)) for name, obj in (
-        ("FreeFFTElasticHalfSpace", FreeFFTElasticHalfSpace),
-        ("NonSmoothContactSystem", NonSmoothContactSystem),
-        ("constrained_conjugate_gradients", constrained_conjugate_gradients),
-        ("Topography", Topography))}
-    return (Topography, FreeFFTElasticHalfSpace, NonSmoothContactSystem), {"versions": versions, "sources": sources}
+    sources = {
+        name: _source(inspect.getsourcefile(obj))
+        for name, obj in (
+            ("FreeFFTElasticHalfSpace", FreeFFTElasticHalfSpace),
+            ("NonSmoothContactSystem", NonSmoothContactSystem),
+            ("constrained_conjugate_gradients", constrained_conjugate_gradients),
+            ("Topography", Topography),
+        )
+    }
+    return (Topography, FreeFFTElasticHalfSpace, NonSmoothContactSystem), {
+        "versions": versions,
+        "sources": sources,
+    }
 
 
 def _write_json(path, value):
-    path.write_text(json.dumps(_json_value(value), ensure_ascii=False, allow_nan=False, indent=2) + "\n", encoding="utf-8")
+    path.write_text(
+        json.dumps(_json_value(value), ensure_ascii=False, allow_nan=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
 
 
 def _run_case(directory, grid, delta, api, binding):
     started = time.perf_counter()
-    case = {"id": f"n{grid}-d{round(delta * 1e6):03d}um", "grid": grid,
-            "delta": delta, "status": "ERROR", "config": frozen_config(grid, delta),
-            "metrics": None, "timing": {}, "files": {}, "binding": binding}
+    case = {
+        "id": f"n{grid}-d{round(delta * 1e6):03d}um",
+        "grid": grid,
+        "delta": delta,
+        "status": "ERROR",
+        "config": frozen_config(grid, delta),
+        "metrics": None,
+        "timing": {},
+        "files": {},
+        "binding": binding,
+    }
     arrays, system, result = {}, None, None
     memory_before = _process_memory()
     folder = directory / case["id"]
@@ -331,29 +437,45 @@ def _run_case(directory, grid, delta, api, binding):
         surface = Topography(heights, (DOMAIN_M, DOMAIN_M), periodic=False, unit="m")
         case["timing"]["topography_creation_s"] = time.perf_counter() - start
         start = time.perf_counter()
-        substrate = HalfSpace((grid, grid), young=CONTACT_MODULUS_PA,
-                              physical_sizes=(DOMAIN_M, DOMAIN_M), fft="serial",
-                              check_boundaries=True)
+        substrate = HalfSpace(
+            (grid, grid),
+            young=CONTACT_MODULUS_PA,
+            physical_sizes=(DOMAIN_M, DOMAIN_M),
+            fft="serial",
+            check_boundaries=True,
+        )
         case["timing"]["substrate_creation_including_first_fft_s"] = time.perf_counter() - start
         system = ContactSystem(substrate, surface)
         start = time.perf_counter()
         try:
-            result = system.minimize_proxy(offset=delta, external_force=None, hardness=None,
-                                           pentol=PENTOL_M, forcetol=FORCETOL_N,
-                                           thermotol=THERMOTOL, maxiter=MAXITER)
+            result = system.minimize_proxy(
+                offset=delta,
+                external_force=None,
+                hardness=None,
+                pentol=PENTOL_M,
+                forcetol=FORCETOL_N,
+                thermotol=THERMOTOL,
+                maxiter=MAXITER,
+            )
         finally:
             case["timing"]["solver_s"] = time.perf_counter() - start
         metadata = {}
         for key, value in result.items():
             if isinstance(value, np.ndarray):
                 arrays[f"result_{key}"] = value.copy()
-                metadata[key] = {"npz_key": f"result_{key}", "shape": list(value.shape), "dtype": str(value.dtype)}
+                metadata[key] = {
+                    "npz_key": f"result_{key}",
+                    "shape": list(value.shape),
+                    "dtype": str(value.dtype),
+                }
             else:
                 metadata[key] = _json_value(value)
         case["optimizer"] = metadata
-        case["counters"] = {"solver_iterations": int(result.nit),
-                            "solver_function_evaluations": int(result.nfev),
-                            "extra_elastic_force_evaluations": 0}
+        case["counters"] = {
+            "solver_iterations": int(result.nit),
+            "solver_function_evaluations": int(result.nfev),
+            "extra_elastic_force_evaluations": 0,
+        }
         start = time.perf_counter()
         fields = extract_fields(result, substrate, system, grid, delta)
         arrays.update({k: v for k, v in fields.items() if isinstance(v, np.ndarray)})
@@ -377,7 +499,11 @@ def _run_case(directory, grid, delta, api, binding):
         else:
             case["status"] = "PASS"
     except Exception as exc:
-        case["failure"] = {"type": type(exc).__name__, "message": str(exc), "traceback": traceback.format_exc()}
+        case["failure"] = {
+            "type": type(exc).__name__,
+            "message": str(exc),
+            "traceback": traceback.format_exc(),
+        }
         # minimize_proxy publishes these before checking the free boundary. Keep
         # them if that check raises; do not invent unavailable result metadata.
         if result is None and system is not None:
@@ -385,10 +511,13 @@ def _run_case(directory, grid, delta, api, binding):
                 value = getattr(system, name, None)
                 if isinstance(value, np.ndarray):
                     arrays[f"system_{name}_after_exception"] = value.copy()
-    case["memory"] = {"saved_array_bytes_uncompressed": sum(v.nbytes for v in arrays.values()),
-                      "padded_float64_array_bytes": 8 * (2 * grid) ** 2,
-                      "before_case": memory_before, "after_case_before_save": _process_memory(),
-                      "note": "OS peak is process lifetime, not reset between cases. Saved-array bytes are not solver peak working memory."}
+    case["memory"] = {
+        "saved_array_bytes_uncompressed": sum(v.nbytes for v in arrays.values()),
+        "padded_float64_array_bytes": 8 * (2 * grid) ** 2,
+        "before_case": memory_before,
+        "after_case_before_save": _process_memory(),
+        "note": "OS peak is process lifetime, not reset between cases. Saved-array bytes are not solver peak working memory.",
+    }
     start = time.perf_counter()
     if arrays:
         np.savez_compressed(folder / "fields.npz", **arrays)
@@ -410,23 +539,41 @@ def run(output):
         raise ValueError("--output must be an absolute new directory")
     directory.mkdir(parents=True, exist_ok=False)
     started = time.perf_counter()
-    summary = {"schema": SCHEMA, "qualification": "EXTERNAL_CPU_STATIC_ELASTIC_REFERENCE",
-               "cases": [], "python": sys.version, "platform": platform.platform(),
-               "adapter_source": _source(__file__),
-               "timing_note": "CPU wall time; no reruns for timing. Constructor includes FFT kernel construction; postprocessing/saving separate.",
-               "limits": "Hertz paraboloid, elastic half-space; no finite thickness, adhesion, large deformation or dynamics."}
+    summary = {
+        "schema": SCHEMA,
+        "qualification": "EXTERNAL_CPU_STATIC_ELASTIC_REFERENCE",
+        "cases": [],
+        "python": sys.version,
+        "platform": platform.platform(),
+        "adapter_source": _source(__file__),
+        "timing_note": "CPU wall time; no reruns for timing. Constructor includes FFT kernel construction; postprocessing/saving separate.",
+        "limits": "Hertz paraboloid, elastic half-space; no finite thickness, adhesion, large deformation or dynamics.",
+    }
     import_start = time.perf_counter()
     try:
         api, binding = _external_api()
     except Exception as exc:
-        failure = {"type": type(exc).__name__, "message": str(exc), "traceback": traceback.format_exc()}
+        failure = {
+            "type": type(exc).__name__,
+            "message": str(exc),
+            "traceback": traceback.format_exc(),
+        }
         summary["dependency_failure"] = failure
         for delta in DELTAS_M:
             for grid in GRIDS:
-                summary["cases"].append({"id": f"n{grid}-d{round(delta * 1e6):03d}um",
-                                         "grid": grid, "delta": delta, "status": "UNSUPPORTED",
-                                         "config": frozen_config(grid, delta), "metrics": None,
-                                         "timing": {}, "files": {}, "failure": failure})
+                summary["cases"].append(
+                    {
+                        "id": f"n{grid}-d{round(delta * 1e6):03d}um",
+                        "grid": grid,
+                        "delta": delta,
+                        "status": "UNSUPPORTED",
+                        "config": frozen_config(grid, delta),
+                        "metrics": None,
+                        "timing": {},
+                        "files": {},
+                        "failure": failure,
+                    }
+                )
     else:
         summary["binding"] = binding
         summary["external_import_s"] = time.perf_counter() - import_start
@@ -445,11 +592,23 @@ def main(argv=None):
     parser.add_argument("--output", required=True)
     args = parser.parse_args(argv)
     summary = run(args.output)
-    print(json.dumps({"schema": SCHEMA, "cases": [{"id": c["id"], "status": c["status"]} for c in summary["cases"]]}))
+    print(
+        json.dumps(
+            {
+                "schema": SCHEMA,
+                "cases": [{"id": c["id"], "status": c["status"]} for c in summary["cases"]],
+            }
+        )
+    )
     # A coarse-grid Hertz miss is data, not a hidden solver failure. Fine-grid
     # accuracy and all solver/KKT failures remain an explicit nonzero outcome.
-    return int(any(c["status"] in ("ERROR", "UNSUPPORTED", "SOLVER_FAIL", "KKT_FAIL")
-                   or (c["grid"] == 512 and c["status"] != "PASS") for c in summary["cases"]))
+    return int(
+        any(
+            c["status"] in ("ERROR", "UNSUPPORTED", "SOLVER_FAIL", "KKT_FAIL")
+            or (c["grid"] == 512 and c["status"] != "PASS")
+            for c in summary["cases"]
+        )
+    )
 
 
 if __name__ == "__main__":

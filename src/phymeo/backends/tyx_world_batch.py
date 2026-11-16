@@ -1,13 +1,14 @@
 """Opt-in TYX batch of spheres, scalar joints, fixed and floating complete trees."""
 
 from collections.abc import Mapping
-from contextlib import ExitStack, contextmanager
+from contextlib import contextmanager
 from threading import RLock
 from types import MappingProxyType
 
 import numpy as np
 
 from ._resident_affine_tree import AffineRobotTree
+from ._resident_cleanup import ReleaseStack, cleanup_failed_init, close_dependencies
 from ._resident_floating_affine_tree import FloatingAffineRobotTree, FloatingAffineTreeInputs
 from ._resident_floating_tree import FloatingRobotTree, FloatingTreeInputs
 from ._resident_revolute_world import RevoluteRotor
@@ -37,6 +38,7 @@ __all__ = [
     "SpherePlaneWorld",
     "TyxWorldBatch",
     "WorldCheckpoint",
+    "BatchStepRejected",
 ]
 
 
@@ -44,24 +46,44 @@ _BOUNDARY_RUNTIME_QUARANTINE = {}
 _BOUNDARY_RUNTIME_QUARANTINE_LOCK = RLock()
 
 
+class BatchStepRejected(RuntimeError):
+    """An all-world substep was rejected; no candidate state was published."""
+
+    def __init__(self, rejected_worlds):
+        self.rejected_worlds = tuple(rejected_worlds)
+        super().__init__(
+            f"resident batch rejected {len(self.rejected_worlds)} world(s): "
+            f"{self.rejected_worlds[:8]}; no worlds published"
+        )
+
+
 class TyxWorldBatch:
     """Device passes advance independent worlds using a pair of persistent state buffers.
 
     Controls stay held until changed. A step returns a compact per-world acceptance map.
-    Numeric rejection retains the affected world's physical state, tick and delayed packet.
+    By default rejection retains only the affected world's state, tick and delayed packet.
+    require_all=True retains every world's accepted state if any candidate is rejected.
     A failed batch submission leaves its input buffer current. Reading the committed state
     after a device loss requires a functioning driver or a previously saved checkpoint.
     """
 
-    def __init__(self, worlds, mode="cuda", *, cache_root=None):
+    publication_contract_version = 1
+
+    def __init__(self, worlds, mode="cuda", *, cache_root=None, initial_controls=None):
         if mode not in ("cuda", "interpret"):
             raise ValueError("resident mode must be cuda or interpret")
         self._mode = mode
         self._lock = RLock()
         self._closed = False
+        self._closing = False
         self._unavailable = False
-        self._resources = ExitStack()
+        self._control_error = None
+        self._cleanup_drained = False
+        self._resources = ReleaseStack()
+        self._host_buffers = []
         self._readback_plans = set()
+        self._control_plans = set()
+        self._reset_plans = set()
         self._collision_plans = set()
         self._contact_bundles = set()
         self._boundary_plans = set()
@@ -83,6 +105,8 @@ class TyxWorldBatch:
                 "initial_uploaded_bytes",
                 "control_uploaded_bytes",
                 "restore_uploaded_bytes",
+                "reset_plan_uploaded_bytes",
+                "reset_plan_initial_uploaded_bytes",
                 "status_downloaded_bytes",
                 "summary_downloaded_bytes",
                 "snapshot_downloaded_bytes",
@@ -98,6 +122,7 @@ class TyxWorldBatch:
                 "accepted_world_steps",
                 "rejected_world_steps",
                 "failed_steps",
+                "aborted_batch_steps",
                 "recovery_sync_attempts",
                 "revolute_kernel_launches",
             ),
@@ -278,8 +303,13 @@ class TyxWorldBatch:
                     self._floating_affine_trees = FloatingAffineTreeDeviceStorage(
                         self, self._floating_affine_specs
                     )
-        except BaseException:
-            self.close()
+            if initial_controls is not None:
+                self.set_controls(initial_controls)
+                # Construction only: freeze the complete authored reset baseline,
+                # including held commands. Never recapture it in a hot reset.
+                self._initial = self.snapshot()
+        except BaseException as error:
+            cleanup_failed_init(self, error)
             raise
 
     def _tree_storages(self):
@@ -300,14 +330,36 @@ class TyxWorldBatch:
             None if initial is None else np.asarray(initial, dtype=dtype, order="C").reshape(shape)
         )
         if self._mode == "interpret":
-            return np.empty(shape, dtype=dtype) if host is None else host.copy()
+            result = np.empty(shape, dtype=dtype) if host is None else host.copy()
+            self._host_buffers.append(result)
+            return result
         dev = self._tx.cuda_empty(shape, dtype) if host is None else self._tx.cuda_array(host)
-        self._resources.callback(dev.free)
+        self._resources.callback(self._free_buffer, dev, dev.nbytes)
         self._counts["device_allocations"] += 1
         self._counts["device_owned_bytes"] += dev.nbytes
         if host is not None:
             self._counts[category + "_uploaded_bytes"] += host.nbytes
         return dev
+
+    def _free_buffer(self, buffer, size):
+        buffer.free()
+        self._counts["device_owned_bytes"] -= size
+
+    def _host_alias_arrays(self):
+        """Current HOST owners, including unselected coordinate families."""
+        yield from self._host_buffers
+        yield self._held
+        for _, storage in self._tree_storages():
+            yield from storage._host_controls()
+        for plan in self._reset_plans:
+            yield from plan._host_arrays()
+
+    def _ensure_cleanup_ready(self):
+        # Only a failed recovery sync needs another completion attempt. Normal
+        # resident operations already complete before returning to the caller.
+        if self._unavailable and not self._cleanup_drained:
+            self._sync()
+            self._cleanup_drained = True
 
     def _upload(self, buffer, data, category):
         if self._mode == "cuda":
@@ -362,6 +414,12 @@ class TyxWorldBatch:
             raise RuntimeError("boundary cleanup pending; only close may be retried")
         if self._boundary_reading and not allow_boundary_loan:
             raise RuntimeError("resident mutation/reentry during a boundary source loan")
+        if self._closing:
+            raise RuntimeError("resident world batch is closed or closing")
+        if self._control_error is not None:
+            raise RuntimeError(
+                "resident control rollback failed; close and rebuild"
+            ) from self._control_error
         if self._unavailable:
             raise RuntimeError("device cannot synchronize; rebuild from a saved checkpoint")
 
@@ -445,6 +503,7 @@ class TyxWorldBatch:
             if self._boundary_runtime_leases:
                 raise RuntimeError("boundary runtime leases pending; parent retained")
             self._boundary_plans.clear()
+            self._boundary_close_pending = False
         finally:
             self._boundary_closing = False
 
@@ -601,6 +660,12 @@ class TyxWorldBatch:
             for storage, stage in tree_stages:
                 storage.commit_controls(stage)
 
+    def prepare_control_write(self, keys=None, *, fields):
+        """Prepare selected HOST command fields; execution uploads on the next step."""
+        from ._resident_control_plan import ResidentControlPlan
+
+        return ResidentControlPlan(self, keys, fields)
+
     def prepare_contacts(
         self,
         model,
@@ -653,7 +718,7 @@ class TyxWorldBatch:
             device_patch_site_capacity=device_patch_site_capacity,
         )
 
-    def step_contacts(self, plan, h):
+    def step_contacts(self, plan, h, *, require_all=False):
         """Sample entry contact, solve full mechanics and publish one transaction."""
         from ._resident_contact_bundle import ResidentContactBundle
         from ._resident_contact_plan import ResidentContactPlan
@@ -662,15 +727,22 @@ class TyxWorldBatch:
             raise TypeError("expected a ResidentContactPlan or ResidentContactBundle")
         if plan._batch is not self:
             raise ValueError("contact plan belongs to a different owner")
-        return self._step(h, contacts=plan)
+        return self._step(h, contacts=plan, require_all=require_all)
 
-    def step(self, h):
-        """Advance one positive physical substep and return accepted worlds by key."""
-        return self._step(h)
+    def step(self, h, *, require_all=False):
+        """Advance one substep; optionally publish only if all worlds accept it.
 
-    def _step(self, h, *, contacts=None):
+        The default preserves per-world acceptance. With require_all=True, a
+        rejected candidate raises BatchStepRejected without swapping any bank.
+        Explicitly staged controls stay held; no state checkpoint is downloaded.
+        """
+        return self._step(h, require_all=require_all)
+
+    def _step(self, h, *, contacts=None, require_all=False):
         with self._lock:
             self._check_open()
+            if type(require_all) is not bool:
+                raise TypeError("require_all must be bool")
             if contacts is not None:
                 contacts._check_open()
             dt = float(as_fp32(h, "physical substep", ()))
@@ -751,6 +823,15 @@ class TyxWorldBatch:
                         candidate = contacts._read_candidate(attempt, dst)
                         contact_commit = contacts._finish_attempt(attempt, candidate, status)
                         contacts._check_attempt(attempt)
+                # Completion has already succeeded. Reject outside _device so
+                # ordinary numerical rejection adds no recovery synchronization.
+                if require_all and not np.all(status):
+                    self._counts["aborted_batch_steps"] += 1
+                    raise BatchStepRejected(
+                        b.world
+                        for b, value in zip(self._bindings, status, strict=True)
+                        if not value
+                    )
                 results = {
                     b.world: bool(value) for b, value in zip(self._bindings, status, strict=True)
                 }
@@ -860,6 +941,18 @@ class TyxWorldBatch:
 
         return WorldReadbackPlan(self, keys, kind=kind)
 
+    def prepare_field_read(self, keys=None, *, fields=("position", "velocity")):
+        """Freeze a homogeneous physical field layout for direct caller HOST output."""
+        from ._resident_field_read import ResidentFieldReadPlan
+
+        return ResidentFieldReadPlan(self, keys, fields)
+
+    def prepare_body_read(self, keys=None, *, fields=("position", "rotation")):
+        """Prepare accepted-endpoint body observations into caller-owned HOST arrays."""
+        from ._resident_body_read import ResidentBodyReadPlan
+
+        return ResidentBodyReadPlan(self, keys, fields)
+
     def readback(self, plan):
         """Read an owned frame from a plan bound to this exact batch instance."""
         from ._world_readback_plan import readback_for
@@ -968,6 +1061,12 @@ class TyxWorldBatch:
             self._check_open()
             self.restore({key: self._initial[key] for key in self._keys(keys)})
 
+    def prepare_reset(self):
+        """Freeze initial states for repeated HOST-mask reset without snapshots."""
+        from ._resident_reset_plan import ResidentResetPlan
+
+        return ResidentResetPlan(self)
+
     def stats(self):
         with self._lock:
             convex_queries = tuple(
@@ -975,11 +1074,16 @@ class TyxWorldBatch:
             )
             return {
                 **self._counts,
+                "publication_contract_version": self.publication_contract_version,
+                "closed": self._closed,
+                "closing": self._closing,
                 "mode": self._mode,
                 "world_count": self._count,
                 "state_buffer_count": 2 if self._count else 0,
                 "current_buffer": self._active,
                 "readback_plan_live_count": len(self._readback_plans),
+                "control_plan_live_count": len(self._control_plans),
+                "reset_plan_live_count": len(self._reset_plans),
                 "collision_plan_live_count": len(self._collision_plans),
                 "contact_bundle_live_count": len(self._contact_bundles),
                 "convex_query_plan_live_count": len(convex_queries),
@@ -1014,19 +1118,26 @@ class TyxWorldBatch:
 
     def close(self):
         with self._lock:
+            if self._closed:
+                return
             if self._boundary_reading:
                 raise RuntimeError("cannot close during a boundary source loan")
-            if not self._closed:
-                self._close_boundary_resources()
-                self._closed = True
-                try:
-                    with ExitStack() as closing_plans:
-                        for plan in (
-                            *self._readback_plans,
-                            *self._collision_plans,
-                            *self._contact_bundles,
-                        ):
-                            closing_plans.callback(plan.close)
-                finally:
-                    self._resources.close()
-                    self._counts["device_owned_bytes"] = 0
+            self._close_boundary_resources()
+            self._closing = True
+            self._ensure_cleanup_ready()
+            close_dependencies(self)
+            # Bundles depend on pages; pages depend on queries and batch storage.
+            for owners in (
+                self._contact_bundles,
+                self._collision_plans,
+                self._readback_plans,
+                self._control_plans,
+                self._reset_plans,
+            ):
+                for plan in tuple(owners):
+                    plan.close()
+            self._resources.close()
+            self._host_buffers.clear()
+            self._counts["device_owned_bytes"] = 0
+            self._closed = True
+            self._closing = False

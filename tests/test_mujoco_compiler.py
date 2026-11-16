@@ -1,7 +1,7 @@
 """Optional CPU compiler admission and independent MuJoCo kinematic/dynamic oracles.
 
-AUTHORING_ONLY: these cases have not been imported, collected or executed by the author.
 Missing MuJoCo skips only native oracle cases; dependency failure remains testable.
+Version-specific execution evidence is recorded in the compiler documentation.
 """
 
 import importlib
@@ -12,6 +12,7 @@ import pytest
 
 from phymeo.builders import mujoco_compiler as compiler
 from phymeo.builders.floating_urdf import FloatingRobotAsset
+from phymeo.constraints.collision_shapes import CollisionKey
 from phymeo.dynamics.floating_robot import (
     FloatingRobotState,
     floating_kinematics,
@@ -58,6 +59,56 @@ def xml_tree(floating=False, actuators=False, extra=""):
 
 def native():
     return pytest.importorskip("mujoco", reason="optional CPU MuJoCo oracle is not installed")
+
+
+@pytest.mark.parametrize("explicit_pair", [False, True])
+def test_native_only_multi_root_keeps_contact_filters_and_owned_model(explicit_pair):
+    """A solver may consume the full native model without resident tree lowering.
+
+    CPU forward is a compiler oracle here, not evidence of PhySolve execution.
+    An explicit pair must override zero affinity without losing its material.
+    """
+    mj = native()
+    contact = (
+        '<contact><pair geom1="ground" geom2="ball" condim="3" '
+        'friction=".6 .6 .01 .001 .001"/></contact>'
+        if explicit_pair else ""
+    )
+    xml = f"""<mujoco><option timestep=".002" gravity="0 0 -9.81"/>
+      <worldbody>
+        <geom name="ground" type="plane" size="2 2 .1" contype="0" conaffinity="0"/>
+        <body name="payload" pos="0 0 .09"><freejoint name="payload_root"/>
+          <geom name="ball" type="sphere" size=".1" mass="2" contype="0" conaffinity="0"/>
+        </body>
+        <body name="other" pos="1 0 1"><freejoint name="other_root"/>
+          <geom name="box" type="box" size=".1 .2 .3" mass="3"/>
+        </body>
+      </worldbody>{contact}</mujoco>"""
+    record = compiler.compile_mujoco_xml(xml, require_asset=False)
+    assert record.asset is None
+    assert record.lowering_issues
+    with pytest.raises(compiler.MuJoCoLoweringError):
+        compiler.compile_mujoco_xml(xml)
+    first, second = record.fresh_native_model(), record.fresh_native_model()
+    assert (first.nq, first.nv, first.nbody, first.ngeom) == (14, 12, 3, 3)
+    assert first.npair == int(explicit_pair)
+    np.testing.assert_array_equal(first.body_mass, [0, 2, 3])
+    np.testing.assert_array_equal(first.geom_contype[:2], [0, 0])
+    np.testing.assert_array_equal(first.geom_conaffinity[:2], [0, 0])
+    if explicit_pair:
+        np.testing.assert_array_equal(first.pair_friction[0], [.6, .6, .01, .001, .001])
+    data = mj.MjData(first)
+    mj.mj_forward(first, data)
+    assert data.ncon == int(explicit_pair)
+    if explicit_pair:
+        assert {int(data.contact[0].geom1), int(data.contact[0].geom2)} == {0, 1}
+        assert data.contact[0].dist == pytest.approx(-.01, abs=1e-14)
+    first.body_mass[1] = 7
+    first.opt.timestep = .01
+    record.mj_model.body_mass[1] = 11
+    assert second.body_mass[1] == 2
+    assert record.fresh_native_model().body_mass[1] == 2
+    assert second.opt.timestep == .002
 
 
 def test_missing_optional_dependency_has_explicit_error(monkeypatch, tmp_path):
@@ -423,3 +474,203 @@ def test_urdf_uses_cpu_mujoco_compiler_and_preserves_slider_mass(tmp_path):
     dense = np.zeros((model.nv, model.nv))
     mj.mj_fullM(model, dense, data.qM)
     np.testing.assert_allclose(dense, [[0.5]], atol=1e-15)
+
+
+SOURCE_URDF = """<robot name="source-identity">
+  <link name="base"><collision><geometry><sphere radius=".1"/></geometry></collision>
+    <collision name="base-extra"><origin xyz=".3 0 0"/>
+      <geometry><box size=".1 .1 .1"/></geometry></collision></link>
+  <link name="arm"><inertial><mass value="1"/>
+    <inertia ixx=".01" iyy=".01" izz=".01" ixy="0" ixz="0" iyz="0"/></inertial>
+    <collision name="arm-shape"><geometry><sphere radius=".1"/></geometry></collision></link>
+  <joint name="joint" type="continuous"><parent link="base"/><child link="arm"/>
+    <origin xyz="0 0 .15"/><axis xyz="0 0 1"/></joint></robot>"""
+
+
+def test_source_identity_survives_fusion_without_naming_or_native_field_changes(tmp_path):
+    mj = native()
+    from test_physolve_models import native_fields
+
+    path = tmp_path / "source.urdf"
+    path.write_bytes(SOURCE_URDF.encode("utf-8"))
+    direct = mj.MjSpec.from_file(str(path)).compile()
+    record = compiler.compile_mujoco(path, require_asset=False)
+    source = record.collision_source
+    assert not source.issues
+    assert len(source.geoms) == direct.ngeom == 3
+    base = [row for row in source.geoms if row.body_name == "base"]
+    arm = next(row for row in source.geoms if row.body_name == "arm")
+    assert [row.key.shape for row in base] == [0, 1]
+    assert [row.geom_name for row in base] == [None, "base-extra"]
+    assert all(row.native_body_id == 0 for row in base)
+    assert base[0].key.body != arm.key.body
+    reference = native_fields(direct)
+    for field, value in native_fields(record.mj_model).items():
+        np.testing.assert_array_equal(value, reference[field], err_msg=field)
+    # No-rules and empty planning both leave native contacts and dynamics exact.
+    plan = source.plan_exclusions([], source_identity=source.identity)
+    assert plan.excluded == plan.native_geom_pairs == ()
+    a, b = mj.MjData(direct), mj.MjData(record.mj_model)
+    for _ in range(4):
+        mj.mj_step(direct, a)
+        mj.mj_step(record.mj_model, b)
+        for field in ("qpos", "qvel", "qacc", "qfrc_constraint"):
+            np.testing.assert_array_equal(getattr(a, field), getattr(b, field))
+        assert a.ncon == b.ncon > 0
+        np.testing.assert_array_equal(a.contact.geom, b.contact.geom)
+        np.testing.assert_array_equal(a.contact.dist, b.contact.dist)
+    assert source == compiler.compile_mujoco(path, require_asset=False).collision_source
+    assert source == compiler.compile_mujoco_xml(SOURCE_URDF, require_asset=False).collision_source
+
+
+def test_exclusion_plan_is_owned_canonical_and_does_not_apply_filtering():
+    mj = native()
+    record = compiler.compile_mujoco_xml(SOURCE_URDF, require_asset=False)
+    source = record.collision_source
+    a, b, c = [row.key for row in source.geoms]
+    declarations = [[c, a], [b, c]]
+    plan = source.plan_exclusions(declarations, source_identity=source.identity)
+    declarations.clear()
+    assert plan.excluded == ((a, c), (b, c))
+    assert plan.native_geom_pairs == ((0, 2), (1, 2))
+    same = source.plan_exclusions([(c, b), (a, c)], source_identity=source.identity)
+    assert same == plan
+    with pytest.raises(FrozenInstanceError):
+        plan.fingerprint = "changed"
+    with pytest.raises(FrozenInstanceError):
+        source.geoms[0].native_geom_id = 99
+    # A plan is explicitly not an executable compilation; the original source
+    # snapshot still contains its contact, even after native mutable edits.
+    record.mj_model.geom_contype[:] = 0
+    record.mj_spec.geoms[0].name = "changed-after-compile"
+    model = record.fresh_native_model()
+    data = mj.MjData(model)
+    mj.mj_forward(model, data)
+    assert (0, 2) in {tuple(sorted(c.geom)) for c in data.contact}
+    assert source.plan_exclusions(plan.excluded, source_identity=source.identity) == plan
+
+
+@pytest.mark.parametrize("case,message", [
+    ("self", "self or unknown"), ("unknown", "self or unknown"),
+    ("cross-world", "cross-world"), ("duplicate", "duplicate"),
+    ("bad-key", "two CollisionKey"), ("bad-width", "two CollisionKey"),
+    ("stale", "identity mismatch"),
+])
+def test_exclusion_plan_rejects_invalid_batch_before_publication(case, message):
+    native()
+    record = compiler.compile_mujoco_xml(SOURCE_URDF, require_asset=False)
+    source = record.collision_source
+    a, b, c = [row.key for row in source.geoms]
+    invalid = {
+        "self": [(a, a)], "unknown": [(a, CollisionKey(0, 999, 0))],
+        "cross-world": [(a, CollisionKey(1, c.body, c.shape))],
+        "duplicate": [(a, c), (c, a)], "bad-key": [(a, 2)],
+        "bad-width": [(a, b, c)], "stale": [(a, c)],
+    }[case]
+    identity = "old-model" if case == "stale" else source.identity
+    before = record.source.model_binary
+    with pytest.raises(ValueError, match=message):
+        source.plan_exclusions(invalid, source_identity=identity)
+    assert record.source.model_binary == before
+    assert source.plan_exclusions([(a, c)], source_identity=source.identity).excluded == ((a, c),)
+
+
+def test_explicit_native_contact_pair_conflict_and_world_obstacle_identity():
+    native()
+    xml = """<mujoco><compiler fusestatic="true"/><worldbody>
+      <geom name="floor" type="plane" size="1 1 .1"/>
+      <body name="base"><geom name="base-geom" type="sphere" size=".1"/>
+        <body name="arm"><joint/><geom name="arm-geom" type="sphere" size=".1"/></body>
+      </body></worldbody><contact><pair geom1="floor" geom2="arm-geom"/></contact></mujoco>"""
+    record = compiler.compile_mujoco_xml(xml, require_asset=False)
+    source = record.collision_source
+    by_name = {row.geom_name: row for row in source.geoms}
+    floor, base, arm = [by_name[name] for name in ("floor", "base-geom", "arm-geom")]
+    assert floor.key.body != base.key.body
+    with pytest.raises(ValueError, match="explicit contact pair"):
+        source.plan_exclusions([(floor.key, arm.key)], source_identity=source.identity)
+    plan = source.plan_exclusions([(base.key, arm.key)], source_identity=source.identity)
+    assert plan.native_geom_pairs == ((base.native_geom_id, arm.native_geom_id),)
+    assert record.mj_model.npair == 1
+
+
+def test_source_scope_and_resource_changes_invalidate_old_declarations():
+    native()
+    xml = '<mujoco><include file="body.xml"/></mujoco>'
+    body = b'<mujoco><worldbody><body><geom type="sphere" size=".1"/></body></worldbody></mujoco>'
+    first = compiler.compile_mujoco_xml(xml, includes={"body.xml": body}, require_asset=False)
+    other_instance = compiler.compile_mujoco_xml(
+        xml, includes={"body.xml": body}, require_asset=False, instance="robot-b")
+    other_world = compiler.compile_mujoco_xml(
+        xml, includes={"body.xml": body}, require_asset=False, world=8)
+    changed = compiler.compile_mujoco_xml(
+        xml, includes={"body.xml": body.replace(b".1", b".2")}, require_asset=False)
+    assert len({r.collision_source.identity for r in
+                (first, other_instance, other_world, changed)}) == 4
+    assert first.source.primary_sha256 == changed.source.primary_sha256
+    assert first.source.model_binary == other_instance.source.model_binary
+    assert first.source.model_binary == other_world.source.model_binary
+    assert other_world.collision_source.geoms[0].key.world == 8
+    for record in (other_instance, other_world, changed):
+        with pytest.raises(ValueError, match="identity mismatch"):
+            record.collision_source.plan_exclusions([], source_identity=first.collision_source.identity)
+
+
+@pytest.mark.parametrize("kwargs", [{"instance": ""}, {"instance": 1}, {"world": True},
+                                   {"world": -1}, {"world": 1.5}])
+def test_invalid_collision_source_scope_is_rejected(kwargs):
+    native()
+    with pytest.raises(ValueError):
+        compiler.compile_mujoco_xml(SOURCE_URDF, require_asset=False, **kwargs)
+
+
+def test_missing_source_object_identity_retains_no_rule_compilation(monkeypatch):
+    native()
+    monkeypatch.setattr(compiler, "capture_source_geometry",
+                        lambda spec, world: ((), ("test importer lacks stable source objects",)))
+    record = compiler.compile_mujoco_xml(SOURCE_URDF, require_asset=False)
+    assert record.mj_model.ngeom == 3
+    assert record.collision_source.issues
+    with pytest.raises(ValueError, match="mapping unavailable"):
+        record.collision_source.plan_exclusions([], source_identity=record.collision_source.identity)
+
+
+def test_source_objects_follow_compiler_geom_reordering_and_unnamed_bodies():
+    native()
+    xml = """<mujoco><compiler fusestatic="true"/><worldbody>
+      <body><freejoint/><geom name="moving" type="sphere" size=".1"/></body>
+      <body><geom name="fixed" type="box" size=".1 .1 .1"/></body>
+    </worldbody></mujoco>"""
+    record = compiler.compile_mujoco_xml(xml, require_asset=False)
+    source = record.collision_source
+    assert not source.issues
+    moving, fixed = source.geoms
+    assert moving.body_name is fixed.body_name is None
+    assert moving.key.body != fixed.key.body
+    # Static fusion moves the second imported geom ahead of the first native
+    # geom. Mapping by output array order would swap this pair's identities.
+    assert (moving.geom_name, moving.native_geom_id) == ("moving", 1)
+    assert (fixed.geom_name, fixed.native_geom_id) == ("fixed", 0)
+    assert record.mj_model.geom("moving").id == moving.native_geom_id
+    assert record.mj_model.geom("fixed").id == fixed.native_geom_id
+
+
+@pytest.mark.parametrize("ids", [(-1, 1, 2), (0, 0, 2)])
+def test_incomplete_or_aliased_native_source_mapping_is_not_usable(monkeypatch, ids):
+    from types import SimpleNamespace
+
+    native()
+    capture = compiler.capture_source_geometry
+
+    def invalid_ids(spec, world):
+        rows, issues = capture(spec, world)
+        return tuple((SimpleNamespace(id=i), key, body, name)
+                     for i, (_, key, body, name) in zip(ids, rows, strict=True)), issues
+
+    monkeypatch.setattr(compiler, "capture_source_geometry", invalid_ids)
+    record = compiler.compile_mujoco_xml(SOURCE_URDF, require_asset=False)
+    assert record.mj_model.ngeom == 3
+    assert not record.collision_source.geoms
+    assert record.collision_source.issues
+    with pytest.raises(ValueError, match="mapping unavailable"):
+        record.collision_source.plan_exclusions([], source_identity=record.collision_source.identity)

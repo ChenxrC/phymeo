@@ -1,0 +1,194 @@
+"""Read endpoint geometry and contract qdot with ancestor axes on device.
+
+No step-entry dynamics Jacobian is reused, and no geometry or physics is mutated.
+"""
+
+import tyx as tx
+
+from ._tyx_numeric import _add, _mul
+
+
+@tx.func
+def rotation_component(fk: tx.ndarray(tx.f32, 3), w: tx.i32, body: tx.i32, c: tx.i32) -> tx.f32:
+    """Largest-diagonal matrix-to-quaternion conversion of accepted FK only."""
+    r00 = fk[w, body, 3]
+    r11 = fk[w, body, 7]
+    r22 = fk[w, body, 11]
+    x = 0.0
+    y = 0.0
+    z = 0.0
+    scalar = 0.0
+    trace = r00 + r11 + r22
+    if trace > 0.0:
+        scale = 2.0 * tx.sqrt(1.0 + trace)
+        x = (fk[w, body, 10] - fk[w, body, 8]) / scale
+        y = (fk[w, body, 5] - fk[w, body, 9]) / scale
+        z = (fk[w, body, 6] - fk[w, body, 4]) / scale
+        scalar = scale * 0.25
+    elif r00 >= r11 and r00 >= r22:
+        scale = 2.0 * tx.sqrt(1.0 + r00 - r11 - r22)
+        x = scale * 0.25
+        y = (fk[w, body, 4] + fk[w, body, 6]) / scale
+        z = (fk[w, body, 5] + fk[w, body, 9]) / scale
+        scalar = (fk[w, body, 10] - fk[w, body, 8]) / scale
+    elif r11 >= r22:
+        scale = 2.0 * tx.sqrt(1.0 + r11 - r00 - r22)
+        x = (fk[w, body, 4] + fk[w, body, 6]) / scale
+        y = scale * 0.25
+        z = (fk[w, body, 8] + fk[w, body, 10]) / scale
+        scalar = (fk[w, body, 5] - fk[w, body, 9]) / scale
+    else:
+        scale = 2.0 * tx.sqrt(1.0 + r22 - r00 - r11)
+        x = (fk[w, body, 5] + fk[w, body, 9]) / scale
+        y = (fk[w, body, 8] + fk[w, body, 10]) / scale
+        z = scale * 0.25
+        scalar = (fk[w, body, 6] - fk[w, body, 4]) / scale
+    value = scalar
+    if c == 0:
+        value = x
+    elif c == 1:
+        value = y
+    elif c == 2:
+        value = z
+    return value / tx.sqrt(x * x + y * y + z * z + scalar * scalar)
+
+
+def read_sphere_bodies(
+    count: tx.i32,
+    width: tx.i32,
+    rows: tx.ndarray(tx.i32, 2),
+    columns: tx.ndarray(tx.i32, 2),
+    state: tx.ndarray(tx.f32, 2),
+    ticks: tx.ndarray(tx.i32, 1),
+    output: tx.ndarray(tx.f32, 2),
+    output_ticks: tx.ndarray(tx.i32, 1),
+):
+    for i in tx.range(count):
+        w = rows[i, 0]
+        for col in range(width):
+            code = columns[col, 1]
+            value = 0.0
+            if code < 6:
+                value = state[w, code % 3]
+            elif code < 15:
+                if (code - 6) % 4 == 0:
+                    value = 1.0
+            elif code < 21:
+                value = state[w, 3 + code % 3]
+            elif code == 27:
+                value = 1.0
+            output[i, col] = value
+        output_ticks[i] = ticks[rows[i, 1]]
+
+
+def read_tree_bodies(
+    count: tx.i32,
+    width: tx.i32,
+    rows: tx.ndarray(tx.i32, 2),
+    columns: tx.ndarray(tx.i32, 2),
+    state: tx.ndarray(tx.f32, 3),
+    ticks: tx.ndarray(tx.i32, 1),
+    meta: tx.ndarray(tx.i32, 2),
+    parents: tx.ndarray(tx.i32, 2),
+    kinds: tx.ndarray(tx.i32, 2),
+    anchor: tx.ndarray(tx.f32, 2),
+    fk: tx.ndarray(tx.f32, 3),
+    output: tx.ndarray(tx.f32, 2),
+    output_ticks: tx.ndarray(tx.i32, 1),
+):
+    for i in tx.range(count):
+        w = rows[i, 0]
+        for col in range(width):
+            body = columns[col, 0]
+            code = columns[col, 1]
+            axis = code % 3
+            value = 0.0
+            if code < 6:
+                value = anchor[w, axis]
+                offset = axis
+                if code >= 3:
+                    offset += 15
+                value = _add(value, fk[w, body, offset])
+            elif code < 15:
+                value = fk[w, body, code - 3]
+            elif code >= 24:
+                value = rotation_component(fk, w, body, code - 24)
+            else:
+                ancestor = body
+                for depth in range(meta[w, 1]):
+                    if ancestor >= 0:
+                        component = 0.0
+                        if code >= 21:
+                            if kinds[w, ancestor] == 0:
+                                component = fk[w, ancestor, 12 + axis]
+                        elif kinds[w, ancestor] == 1:
+                            component = fk[w, ancestor, 12 + axis]
+                        else:
+                            a = (axis + 1) % 3
+                            b = (axis + 2) % 3
+                            point_offset = 0
+                            if code >= 18:
+                                point_offset = 15
+                            ra = _add(fk[w, body, point_offset + a], -fk[w, ancestor, a])
+                            rb = _add(fk[w, body, point_offset + b], -fk[w, ancestor, b])
+                            component = _add(
+                                _mul(fk[w, ancestor, 12 + a], rb),
+                                -_mul(fk[w, ancestor, 12 + b], ra),
+                            )
+                        value = _add(value, _mul(component, state[w, ancestor, 1]))
+                        ancestor = parents[w, ancestor]
+            output[i, col] = value
+        output_ticks[i] = ticks[rows[i, 1]]
+
+
+def make_body_read_kernels(tree):
+    function = read_tree_bodies if tree else read_sphere_bodies
+    return tx.kernel(function), tx.kernel(function)
+
+
+def read_floating_bodies(
+    count: tx.i32,
+    width: tx.i32,
+    rows: tx.ndarray(tx.i32, 2),
+    columns: tx.ndarray(tx.i32, 2),
+    ticks: tx.ndarray(tx.i32, 1),
+    anchor: tx.ndarray(tx.f32, 2),
+    fk: tx.ndarray(tx.f32, 3),
+    twist: tx.ndarray(tx.f32, 3),
+    output: tx.ndarray(tx.f32, 2),
+    output_ticks: tx.ndarray(tx.i32, 1),
+):
+    for i in tx.range(count):
+        w = rows[i, 0]
+        for col in range(width):
+            body = columns[col, 0]
+            code = columns[col, 1]
+            axis = code % 3
+            value = 0.0
+            if code < 6:
+                offset = axis
+                if code >= 3:
+                    offset += 15
+                value = _add(anchor[w, axis], fk[w, body, offset])
+            elif code < 15:
+                value = fk[w, body, code - 3]
+            elif code >= 24:
+                value = rotation_component(fk, w, body, code - 24)
+            elif code >= 21:
+                value = twist[w, body, 3 + axis]
+            else:
+                value = twist[w, body, axis]
+                if code < 18:
+                    # v_origin = v_COM - omega x (COM-origin), all world frame.
+                    a = (axis + 1) % 3
+                    b = (axis + 2) % 3
+                    ra = _add(fk[w, body, 15 + a], -fk[w, body, a])
+                    rb = _add(fk[w, body, 15 + b], -fk[w, body, b])
+                    value = _add(value, -_mul(twist[w, body, 3 + a], rb))
+                    value = _add(value, _mul(twist[w, body, 3 + b], ra))
+            output[i, col] = value
+        output_ticks[i] = ticks[rows[i, 1]]
+
+
+def make_floating_body_read_kernels():
+    return tx.kernel(read_floating_bodies), tx.kernel(read_floating_bodies)

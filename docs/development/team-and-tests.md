@@ -108,3 +108,34 @@ tyx 着色 XPBD 由 A 持有 runtime/缓冲/内核发布，B 持有着色互斥�
 ## 7. CI 结果判定
 
 没有 GPU 的宿主机允许明确 skip GPU 测试；专用 GPU gate 设置 require-device，缺硬件、零测试收集、全跳过都应失败。分开标注 source-lowering、编译成功和硬件执行。测试失败保留 JUnit、场景配置和种子；不得上传私钥、模型私密数据或训练集原始内容。
+
+## 外部接口 resident 接入验证
+
+`tests/scale/test_resident_publication.py` 固定单子步 publication v1 合同，复用既有
+resident 算法与双 bank。常规验收同时运行 `tests/scale/test_resident_step.py`，
+确认默认逐 world 行为未变。测试自身参数分别执行 interpret 与真实 CUDA；缺 CUDA
+硬失败，不降级为解释器通过。测试可用显式 PHYMEO_RESIDENT_CACHE 复用已有缓存。
+合同、HOST 成本和未接入边界见[公共集成](../architecture/engine-integration.md#resident-publication-v1)。
+
+resident 清理改动同时运行 `tests/scale/test_resident_cleanup.py`：真实 CUDA 释放失败
+不得由 mock 成功替代；成功释放继续使用真实驱动。选测既有 readback、collision、
+contact bundle 的构造/关闭用例与通用 collision pipeline，确认 owner 释放顺序和
+正常路径。合同见[清理重试](../architecture/engine-integration.md#resident-cleanup-retry)。
+
+resident caller-buffer 读取使用 `tests/scale/test_resident_field_read.py`，测试自身覆盖
+interpret/实际 CUDA 与 N=1/8/64，记录所选数据传输量、分配/同步及接受状态。
+拒绝推进的 world 必须读回既有值/tick；不能为数据接口测试放宽物理容差。
+字段与成本合同见[caller buffer](../architecture/engine-integration.md#resident-caller-buffer-fields-v1)。
+
+普通浮根 prepared 读取使用 `tests/scale/test_resident_floating_read.py`，同时回归
+`test_resident_field_read.py` 与 `test_resident_body_read.py`。覆盖解释器/真实 CUDA、
+N=1/8/64、根部/child 索引、自由落体/反冲与偏心 COM、乱序/零 DOF、清理/别名和
+既有 masked reset 保持；它不授予 prepared control/reset 或 P2PE 自由根资格。
+
+B7l 的 `tests/scale/test_resident_floating_control_reset.py` 单独验收普通浮根
+prepared control/reset，并回归 `tests/scale/test_resident_control_plan.py`、
+`tests/scale/test_resident_reset_plan.py` 与 `tests/test_scene_resident_io.py`。
+只验证实际接口、owner、失败恢复和未选世界保持，不重开跨 solver 微差研究。
+
+`tests/scale/test_resident_orientation_read.py` 验证 prepared xyzw 读取与接受 FK
+矩阵的等价关系，回归既有 body/floating read；不把表示转换当作物理算法更改。

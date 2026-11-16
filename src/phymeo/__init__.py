@@ -68,6 +68,8 @@ from .backends.resident_scene import (
     ResidentSceneCheckpoint,
     ResidentSceneReceipt,
 )
+from .backends.physolve_payload import PhySolvePayload
+from .backends.physolve_runtime import PhySolveInputError, PhySolveRuntime
 from .backends.tyx import TyxSemiImplicitSolver
 from .backends.tyx_articulated import (
     TyxArticulatedCouplingProgram,
@@ -499,6 +501,9 @@ __all__ = [
     "ResidentSceneBatch",
     "ResidentSceneCheckpoint",
     "ResidentSceneReceipt",
+    "PhySolvePayload",
+    "PhySolveRuntime",
+    "PhySolveInputError",
     "RobotPlaneCollider",
     "DynamicRobotNormalContactProgram",
     "DynamicRobotFrictionContactProgram",

@@ -566,6 +566,8 @@ class CompiledScene:
     reset; successful worlds are never described as physically rolled back.
     """
 
+    resident_io_contract_version = 1
+
     def __init__(self, declaration, backend, report, *, cache_root=None):
         if (
             not isinstance(report, CompileReport)
@@ -601,7 +603,10 @@ class CompiledScene:
                 self._shape_keys.update(identities)
                 self._models = {world: model for world in self.world_keys}
                 self._raw = TyxWorldBatch(
-                    tuple(self._specs.items()), backend, cache_root=cache_root
+                    tuple(self._specs.items()),
+                    backend,
+                    cache_root=cache_root,
+                    initial_controls=self._device_controls(self._held),
                 )
                 self._owners.append(self._raw)
                 if materials:
@@ -609,12 +614,14 @@ class CompiledScene:
                         model, bindings, materials, candidate_capacity=4096, site_capacity=128
                     )
                     self._owners.append(self._plan)
-            self.set_controls(self._held)
-        except Exception as error:
-            try:
-                self.close()
-            except Exception as cleanup_error:
-                error.add_note("partial scene compilation cleanup failed: " + repr(cleanup_error))
+            if backend == "host":
+                self.set_controls(self._held)
+            else:
+                self._held = None  # The batch owns the only current held controls.
+        except BaseException as error:
+            from ..backends._resident_cleanup import cleanup_failed_init
+
+            cleanup_failed_init(self, error)
             raise
 
     def _host_factory(self, key):
@@ -780,7 +787,28 @@ class CompiledScene:
                 converted = self._device_controls(owned)
             # Complete conversion/validation precedes any held-input replacement.
             self._raw.set_controls(converted)
-            self._held = owned
+            if self.backend == "host":
+                self._held = owned
+
+    def prepare_field_read(self, keys=None, *, fields=("position", "velocity")):
+        from ._scene_resident_io import prepare_scene_io
+
+        return prepare_scene_io(self, "field", keys, fields)
+
+    def prepare_body_read(self, keys=None, *, fields=("position", "rotation")):
+        from ._scene_resident_io import prepare_scene_io
+
+        return prepare_scene_io(self, "body", keys, fields)
+
+    def prepare_control_write(self, keys=None, *, fields):
+        from ._scene_resident_io import prepare_scene_io
+
+        return prepare_scene_io(self, "control", keys, fields)
+
+    def prepare_reset(self):
+        from ._scene_resident_io import prepare_scene_io
+
+        return prepare_scene_io(self, "reset", None, ())
 
     def _acceptance(self, mask):
         if not isinstance(mask, Mapping) or set(mask) != set(self.world_keys):
@@ -799,9 +827,13 @@ class CompiledScene:
             actual = self._plan.last_accepted
             self._receipts.update({key: actual[key] for key in selected if key in actual})
 
-    def step(self, h):
+    def step(self, h, *, require_all=False):
         with self._lock:
             self._check_open(ready=True)
+            if type(require_all) is not bool:
+                raise TypeError("require_all must be boolean")
+            if require_all and self.backend == "host":
+                raise NotImplementedError("all-world publication requires the resident backend")
             if isinstance(h, (bool, np.bool_)) or np.ndim(h) != 0:
                 raise ValueError("physical dt must be a positive finite scalar")
             requested = float(h)
@@ -817,8 +849,10 @@ class CompiledScene:
             self._requested_dt, self._effective_dt = requested, effective
             try:
                 returned = (
-                    self._raw.step_contacts(self._plan, effective)
+                    self._raw.step_contacts(self._plan, effective, require_all=require_all)
                     if self._plan is not None
+                    else self._raw.step(effective, require_all=require_all)
+                    if self.backend != "host"
                     else self._raw.step(effective)
                 )
             except PhysicsStepFailure as error:
@@ -842,6 +876,13 @@ class CompiledScene:
                     error.add_note("publication readback also failed: " + repr(read_error))
                 raise
             except Exception as error:
+                from ..backends.tyx_world_batch import BatchStepRejected
+
+                if isinstance(error, BatchStepRejected):
+                    raise PhysicsStepFailure(
+                        "all-world candidate rejected; no physical state published",
+                        accepted_worlds=dict.fromkeys(self.world_keys, False),
+                    ) from error
                 self._poisoned = True
                 raise PhysicsStepFailure(
                     "physical publication is uncertain; reset all worlds",
@@ -881,7 +922,11 @@ class CompiledScene:
                 raise RuntimeError("reset all worlds after partial or uncertain publication")
             if not selected:
                 return
-            held = {**self._held, **{key: self._worlds[key].initial_control for key in selected}}
+            held = (
+                {**self._held, **{key: self._worlds[key].initial_control for key in selected}}
+                if self.backend == "host"
+                else None
+            )
             try:
                 self._raw.reset(selected)
                 if self.backend == "host":
@@ -891,9 +936,7 @@ class CompiledScene:
                         key: SceneControl({self._worlds[key].robot_body: held[key]})
                         for key in self.world_keys
                     }
-                else:
-                    controls = self._device_controls(held)
-                self._raw.set_controls(controls)
+                    self._raw.set_controls(controls)
                 published = self._raw.snapshot(selected)
                 if any(
                     (published[key].step_number if self.backend == "host" else published[key].tick)
@@ -906,7 +949,8 @@ class CompiledScene:
                 # old bookkeeping and require complete successful recovery.
                 self._poisoned = True
                 raise
-            self._held = held
+            if self.backend == "host":
+                self._held = held
             for key in selected:
                 self._times[key] = 0.0
                 self._receipts.pop(key, None)
@@ -931,18 +975,19 @@ class CompiledScene:
     def close(self):
         with self._lock:
             self._closed = True
-            failed, errors = [], []
-            for owner in reversed(self._owners):
+            from ..backends._resident_cleanup import close_dependencies
+
+            close_dependencies(self)
+            while self._owners:
+                owner = self._owners[-1]
                 try:
                     owner.close()
                 except Exception as error:
-                    failed.append(owner)
-                    errors.append(error)
-            self._owners = list(reversed(failed))
-            if errors:
-                raise RuntimeError(
-                    "compiled scene cleanup failed; close may be retried"
-                ) from errors[0]
+                    raise RuntimeError(
+                        "compiled scene cleanup failed; close may be retried"
+                    ) from error
+                if self._owners and self._owners[-1] is owner:
+                    self._owners.pop()
 
     def __enter__(self):
         with self._lock:

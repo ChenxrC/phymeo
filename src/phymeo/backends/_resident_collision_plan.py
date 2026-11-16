@@ -5,7 +5,6 @@ owns only immutable registrations, collision scratch and complete query results.
 """
 
 from collections.abc import Mapping
-from contextlib import ExitStack
 from dataclasses import dataclass
 from itertools import combinations
 from numbers import Integral
@@ -22,6 +21,7 @@ from ..geometry._collision_bvh import BoundsTree, CollisionTrees
 from ..geometry._collision_spatial import SpatialPairs
 from ..geometry.collision_pipeline import _envelopes, _host_bounds
 from ._resident_affine_binding import ResidentAffineTreeBinding, compile_affine_tree_binding
+from ._resident_cleanup import cleanup_failed_init, close_dependencies
 from ._resident_floating_affine_binding import (
     ResidentFloatingAffineTreeBinding,
     compile_floating_affine_tree_binding,
@@ -151,11 +151,9 @@ class _ResidentCollisionBatch(TyxCollisionBatch):
         self.host_read_calls += 1
         return result
 
-    def close(self):
-        try:
-            super().close()
-        finally:
-            self.resident_device_bytes = 0
+    def _free_device(self, device):
+        super()._free_device(device)
+        self.resident_device_bytes -= int(device.nbytes)
 
 
 def _capacity(value):
@@ -196,6 +194,7 @@ class ResidentCollisionPlan:
         self._model = model
         self._engine = None
         self._closed = False
+        self._closing = False
         self._last = None
         self._convex_bindings = ()
         self._convex_dependents = set()
@@ -225,6 +224,7 @@ class ResidentCollisionPlan:
         self._shape_revisions = tuple(s.revision for s in model.shapes)
         with batch._lock:
             batch._check_open()
+            batch._collision_plans.add(self)
             try:
                 with batch._borrow_collision_state() as view:
                     self._owner = view.owner
@@ -235,9 +235,8 @@ class ResidentCollisionPlan:
                     self._prepare_topology(slots)
                     if model.shapes:
                         self._prepare_device(view, slots, paths)
-                batch._collision_plans.add(self)
-            except BaseException:
-                self.close()
+            except BaseException as error:
+                cleanup_failed_init(self, error)
                 raise
 
     def _validate_bindings(self, view, bindings):
@@ -658,7 +657,7 @@ class ResidentCollisionPlan:
             return self._last
 
     def _check_open(self):
-        if self._closed:
+        if self._closed or self._closing:
             raise RuntimeError("resident collision plan is closed")
         self._batch._check_open()
 
@@ -900,27 +899,29 @@ class ResidentCollisionPlan:
         with self._batch._lock:
             if self._closed:
                 return
+            self._closing = True
+            self._batch._ensure_cleanup_ready()
+            close_dependencies(self)
+            for query in tuple(self._convex_dependents):
+                query.close()
+            self._close_owned_scratch()
+            if self._engine is not None:
+                self._engine.close()
+            self._batch._collision_plans.discard(self)
+            self._kernels = self._slots_device = self._static_device = self._stamp_device = None
+            self._slider_kernels = self._slider_slots_device = self._slider_axes_device = None
+            self._rotor_kernels = self._rotor_slots_device = self._rotor_offsets_device = None
+            self._rotor_points_device = self._rotor_geometry_device = None
+            self._tree_kernels = self._tree_rows_device = self._tree_groups_device = None
+            self._affine_tree_kernels = self._affine_tree_rows_device = None
+            self._floating_tree_kernels = self._floating_tree_rows_device = None
+            self._floating_affine_tree_kernels = self._floating_affine_tree_rows_device = None
+            self._tree_offsets_device = self._tree_points_device = self._tree_geometry_device = None
             self._closed = True
-            try:
-                with ExitStack() as closing:
-                    if self._engine is not None:
-                        closing.callback(self._engine.close)
-                    for query in tuple(self._convex_dependents):
-                        closing.callback(query.close)
-            finally:
-                self._convex_dependents.clear()
-                self._batch._collision_plans.discard(self)
-                self._kernels = self._slots_device = self._static_device = self._stamp_device = None
-                self._slider_kernels = self._slider_slots_device = self._slider_axes_device = None
-                self._rotor_kernels = self._rotor_slots_device = self._rotor_offsets_device = None
-                self._rotor_points_device = self._rotor_geometry_device = None
-                self._tree_kernels = self._tree_rows_device = self._tree_groups_device = None
-                self._affine_tree_kernels = self._affine_tree_rows_device = None
-                self._floating_tree_kernels = self._floating_tree_rows_device = None
-                self._floating_affine_tree_kernels = self._floating_affine_tree_rows_device = None
-                self._tree_offsets_device = self._tree_points_device = (
-                    self._tree_geometry_device
-                ) = None
+            self._closing = False
+
+    def _close_owned_scratch(self):
+        """Subclass storage must release before the collision engine and batch."""
 
     def __enter__(self):
         with self._batch._lock:

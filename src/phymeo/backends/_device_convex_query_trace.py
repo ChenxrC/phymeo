@@ -1,10 +1,11 @@
 """Owned opt-in GJK trace transport. No geometry solver or HOST oracle lives here."""
 
 from collections.abc import Mapping
-from contextlib import ExitStack
 from dataclasses import dataclass
 
 import numpy as np
+
+from ._resident_cleanup import ReleaseStack
 
 SCHEMA = "phymeo-convex-gjk-trace-v1"
 FLOAT_WIDTH = 416
@@ -170,13 +171,14 @@ class _TraceCapture:
     def __init__(self, plan, pairs):
         self.plan = plan
         self.pairs = normalize_trace_pairs(pairs)
-        self.resources = ExitStack()
+        self.resources = ReleaseStack()
         self.buffers = {}
         self.raw = None
         self.result = None
         self.pair_rows = None
         self.shape_rows = None
         self.released = False
+        self.release_failed = False
         self.read_stats = None
         self.allocation_stats = None
         self.clear_launches = 0
@@ -188,7 +190,9 @@ class _TraceCapture:
         return self
 
     def __exit__(self, *_):
-        self.release()
+        # A failed explicit release is retried only through the retained owner.
+        if not self.release_failed:
+            self.release()
 
     def prepare(self, actual_pairs):
         plan = self.plan
@@ -268,11 +272,22 @@ class _TraceCapture:
 
     def release(self):
         if not self.released:
-            # Mark before closing so a failed free is not repeated. ExitStack still
-            # visits all registered allocations; publication remains forbidden.
-            self.released = True
-            self.resources.close()
+            try:
+                self.resources.close()
+            except BaseException:
+                self.release_failed = True
+                self.plan._closing = True
+                if not hasattr(self.plan, "_cleanup_dependencies"):
+                    self.plan._cleanup_dependencies = []
+                if self not in self.plan._cleanup_dependencies:
+                    self.plan._cleanup_dependencies.append(self)
+                raise
             self.buffers.clear()
+            self.released = True
+            self.release_failed = False
+
+    def close(self):
+        self.release()
 
     def build(self, query):
         if not self.released or self.raw is None:

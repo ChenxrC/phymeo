@@ -6,7 +6,6 @@ Accepted poses and every distance/witness come from the borrowed device bank.
 
 from collections import Counter
 from collections.abc import Mapping
-from contextlib import ExitStack
 from dataclasses import dataclass
 from numbers import Integral
 from types import MappingProxyType
@@ -14,6 +13,7 @@ from types import MappingProxyType
 import numpy as np
 
 from ..constraints.collision_shapes import CollisionKey, CollisionMotion
+from ._resident_cleanup import ReleaseStack, cleanup_failed_init, close_dependencies
 
 _STATUS = ("UNWRITTEN", "RESOLVED", "UNKNOWN", "UNSUPPORTED", "RESOURCE_LIMIT")
 _RELATION = ("UNDETERMINED", "SEPARATED", "OVERLAP", "CONTACT_BAND")
@@ -248,9 +248,10 @@ class ConvexQueryPlan:
         if broad._batch is not batch:
             raise ValueError("convex query broad phase belongs to another batch")
         self._batch, self._broad = batch, broad
-        self._resources = ExitStack()
+        self._resources = ReleaseStack()
         self._counts = dict.fromkeys(_COUNTERS, 0)
         self._closed = False
+        self._closing = False
         self._last_result = None
         self._last_diagnostics = None
         self._trace_owner = object()
@@ -299,6 +300,7 @@ class ConvexQueryPlan:
             self._owned_layout = tuple(
                 (name, shape, np.dtype(dtype).str) for name, (shape, dtype, _) in layouts.items()
             )
+            broad._convex_dependents.add(self)
             try:
                 if self._shape_keys:
                     from ._tyx_convex_query_kernels import make_convex_query_kernels
@@ -317,9 +319,8 @@ class ConvexQueryPlan:
                         self._buffers[name] = np.empty(shape, dtype=dtype)
                     else:
                         self._buffers[name] = self._allocate(shape, dtype, initial)
-                broad._convex_dependents.add(self)
-            except BaseException:
-                self.close()
+            except BaseException as error:
+                cleanup_failed_init(self, error)
                 raise
 
     @property
@@ -584,16 +585,14 @@ class ConvexQueryPlan:
         return layouts
 
     def _free(self, buffer, byte_count, device):
-        try:
-            if device:
-                buffer.free()
-        finally:
-            self._counts["live_bytes"] -= byte_count
-            if device:
-                self._batch._counts["device_owned_bytes"] -= byte_count
+        if device:
+            buffer.free()
+        self._counts["live_bytes"] -= byte_count
+        if device:
+            self._batch._counts["device_owned_bytes"] -= byte_count
 
     def _allocate(self, shape, dtype, initial=None, *, resources=None):
-        """Fault seam: a successful return already belongs to the ExitStack."""
+        """Fault seam: a successful return already belongs to the release stack."""
         batch = self._batch
         device = batch._mode == "cuda"
         if device:
@@ -669,8 +668,8 @@ class ConvexQueryPlan:
         self._counts["synchronizations"] += 1
 
     def _check_open(self):
-        if self._closed:
-            raise RuntimeError("convex query plan is closed")
+        if self._closed or self._closing:
+            raise RuntimeError("convex query plan is closed or closing")
         self._batch._check_open()
         self._broad._check_open()
 
@@ -678,14 +677,16 @@ class ConvexQueryPlan:
         with self._batch._lock:
             if self._closed:
                 return
+            self._closing = True
+            self._batch._ensure_cleanup_ready()
+            close_dependencies(self)
+            self._resources.close()
+            self._buffers.clear()
+            self._kernels = None
+            self._patch_kernels = None
+            self._broad._convex_dependents.discard(self)
             self._closed = True
-            try:
-                self._resources.close()
-            finally:
-                self._buffers.clear()
-                self._kernels = None
-                self._patch_kernels = None
-                self._broad._convex_dependents.discard(self)
+            self._closing = False
 
     def __enter__(self):
         self._check_open()

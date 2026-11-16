@@ -180,3 +180,10 @@ V02的独立NumPy离散是参考基线，不替代下一批外部参考。T-smok
 2026-11-16：首个集成候选限定为刚性表面—柔顺PL体压力。当前新增三维真实dA/逐面法向/压力梯度/身份相位，以及 full shared-DOF 双侧力映射，测试源码777b7f12，两个新完整HOST文件首次59pass/1.75s；无数值修复。详[结果](../../development/area-pressure-3d-port-report-20261116.md)、[冻结合同](2026-11-16-area-pressure-3d-port.md)、[实际求解接缝裁定](../../development/area-pressure-3d-integration-decision-20261116.md)。
 
 这里只接受已裁三角输入的I0端口；不称三维碰撞生成/机器人运动/TYX设备化通过。V03失败保留。下一节点I1做真实 tetra–triangle 裁剪、压力连续和边界去重，再I2共同求解；旧native行的physical M与实际阻尼积分差异必须处理。同pair不能两路重复施力。T-smoke独立，不是本研究前置或结果。
+
+
+## 16. I1 实际三维压力面生成
+
+2026-11-16：测试源码9640a1de，首次45新HOST通过；七个真实tetra–finite triangle裁剪案例的面积、压力合力和原点力矩均与解析值一致。shared face去重、跨cell保留、完整边界零压力体、变法向刚面、网格准入和容量拒绝均已验。见[报告和可旋转查看器](../../development/area-pressure-tetra-intersection-report-20261116.md)、[冻结计划](2026-11-16-area-pressure-tetra-intersection.md)。
+
+当前链路为体压力资产→有限刚面裁剪→真实dA积分；没有actual step/GPU通过。full资产仍可能遇到g≤0查询，shared-face gradient kink明确不支持。下一I2固定双自由体/偏心力矩/单关节共同更新，随后关节阻尼；不要重做本批静态几何。dev不变，V03失败及独立T-smoke待接保留。

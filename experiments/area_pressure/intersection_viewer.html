@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>三维压力接触面 · I1 静态案例</title>
+<link rel="icon" href="data:,">
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f2f5f8;color:#172c3f;font:15px/1.65 system-ui,"Microsoft YaHei",sans-serif}
+main{max-width:1400px;margin:24px auto;padding:0 24px}h1{font-size:27px;margin:8px 0}p{margin:8px 0}
+.tag{font-size:12px;letter-spacing:1px;color:#4b647a}.lead{color:#41566b;max-width:1050px}
+.toolbar{display:flex;gap:18px;align-items:center;flex-wrap:wrap;background:white;padding:15px 18px;border:1px solid #d6e0e8;border-radius:12px;margin:20px 0}
+select,button{font:inherit;padding:7px 12px;border:1px solid #c4d2dd;border-radius:6px;background:white;color:inherit}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) 350px;gap:20px}.panel{background:white;border:1px solid #d6e0e8;border-radius:12px;overflow:hidden}
+canvas{width:100%;height:570px;display:block;touch-action:none;cursor:grab}.legend{padding:14px 20px;background:#f9fbfd;border-top:1px solid #e1e7ec;display:flex;gap:20px;flex-wrap:wrap}
+.info{padding:22px}.badge{display:inline-block;background:#e6f1f5;color:#15516c;border-radius:5px;padding:4px 9px;font-size:13px}h2{font-size:20px;margin:14px 0 10px}
+.metrics{font-size:14px;margin:18px 0}.metric{padding:10px 0;border-bottom:1px solid #e5ebef}.metric b{display:block;font:600 18px/1.6 ui-monospace,monospace}
+.note{padding:16px;background:#fff9eb;border-left:3px solid #e7b345;font-size:13px}
+.colorbar{height:10px;width:140px;background:linear-gradient(90deg,#fff1aa,#ef533f);border-radius:4px}.footer{margin:18px 0;color:#536b7e;font-size:13px}
+@media(max-width:950px){.grid{grid-template-columns:1fr}.info{padding:18px}canvas{height:470px}}
+</style>
+<main>
+<div class="tag">PHY MEO · AREA PRESSURE / I1</div>
+<h1>从三维压力体中，截出真正的接触面</h1>
+<p class="lead">蓝线是柔顺体的四面体网格，灰色是有限刚性表面；暖色区域由二者实际相交生成。这里查看的是保存的静态测试结果，尚未进行机器人或物体运动求解。</p>
+<div class="toolbar"><label>固定案例 <select id="case"></select></label><label><input id="rigid" type="checkbox" checked> 显示刚面</label><label><input id="points" type="checkbox" checked> 显示积分点</label><button id="reset">重置视角</button><span style="color:#62798a">拖动旋转视角 · 滚轮缩放</span></div>
+<div class="grid">
+<section class="panel"><canvas id="scene" aria-label="保存的三维压力接触几何"></canvas>
+<div class="legend"><span style="color:#447aab">━ 体网格</span><span style="color:#8795a2">▱ 刚性三角面</span><span style="color:#d75b3a">▰ 生成的接触面</span><span>● 积分点</span><span><div class="colorbar"></div><small id="range"></small></span></div></section>
+<section class="panel info"><span class="badge" id="domain"></span><h2 id="name"></h2><p id="why"></p><div id="metrics" class="metrics"></div>
+<div class="note">旋转的是相机，不是物体。颜色表示每个生成三角形的平均压力，圆点来自保存的真实面积求积。合力与力矩是本次静态压力积分，不能解释为动态求解后的载荷。</div></section>
+</div>
+<p class="footer">所有长度单位 m，压力 Pa，面积 m²，力 N，关于 world origin 的力矩 N·m。局部制造场用于解析对照；“完整压力体”额外通过边界零压力检查。七个案例共享同一通用裁剪接口，无外部网络依赖。</p>
+</main>
+<script id="data" type="application/json">__CASE_DATA__</script>
+<script>
+"use strict";
+const cases=JSON.parse(document.getElementById("data").textContent);
+const descriptions={
+ horizontal:["水平截面","一个有限平面切入单元，接触区域是自动生成的三角形。"],
+ oblique:["倾斜截面","斜面切出四边形；面积按真正的三维表面计算，不使用投影面积。"],
+ finite:["有限刚面切边","刚性三角本身的边界也参与裁剪，所以接触区比无限斜面更小。"],
+ shared_face:["共享面只计一次","两个相邻四面体同时碰到同一个内部面；稳定所有权规则避免重复面积和重复受力。"],
+ cross_cells:["跨两个压力单元","同一刚面跨过两个单元，分片压力在共享边连续，两个有效区域都保留。"],
+ full_body:["完整边界零压力体","外表面压力为零，内部节点压力为正。有限刚面落在正法向梯度的有效区域。"],
+ multiple_faces:["多个方向的刚性面","两个不相交的刚面方向不同；各自生成接触面，合力和力矩共同积分。"]
+};
+const select=document.getElementById("case");
+for(let i=0;i<cases.length;i++){const option=document.createElement("option");option.value=String(i);option.textContent=descriptions[cases[i].name]?.[0]||cases[i].name;select.appendChild(option);}
+const canvas=document.getElementById("scene"),ctx=canvas.getContext("2d");
+let yaw=-0.65,pitch=0.35,zoom=1,drag=null;
+const sub=(a,b)=>a.map((v,i)=>v-b[i]);
+const average=a=>a[0].map((_,j)=>a.reduce((s,p)=>s+p[j],0)/a.length);
+const format=x=>Math.abs(x)>=.001&&Math.abs(x)<1000?x.toFixed(6):x.toExponential(4);
+const vector=a=>"["+a.map(format).join(", ")+"]";
+function data(){return cases[Number(select.value)||0]}
+function refresh(){
+ const c=data(),d=descriptions[c.name]||[c.name,""];
+ document.getElementById("name").textContent=d[0];document.getElementById("why").textContent=d[1];
+ document.getElementById("domain").textContent=c.domain==="full"?"完整压力体 · full":"局部制造场 · local";
+ const rows=[["真实接触面积 / m²",format(c.actual.area)],["压力合力 / N",vector(c.actual.wrench.slice(0,3))],["原点力矩 / N·m",vector(c.actual.wrench.slice(3))],["检查候选对 / 输出多边形",c.result.candidate_pairs+" / "+c.result.polygon_count],["共享面去除的重复片",String(c.result.shared_face_duplicates)]];
+ const box=document.getElementById("metrics");box.replaceChildren();
+ for(const [label,value] of rows){const el=document.createElement("div");el.className="metric";const span=document.createElement("span");span.textContent=label;const b=document.createElement("b");b.textContent=value;b.style.fontSize=value.length>30?"13px":"17px";el.append(span,b);box.appendChild(el);}
+ draw();
+}
+function draw(){
+ const c=data(),box=canvas.getBoundingClientRect(),dpr=window.devicePixelRatio||1;
+ canvas.width=Math.round(box.width*dpr);canvas.height=Math.round(box.height*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);
+ const width=box.width,height=box.height;
+ ctx.fillStyle="#fff";ctx.fillRect(0,0,width,height);
+ const vertices=c.pressure_mesh.world_vertices,center=average(vertices);
+ const all=vertices.concat(c.rigid_mesh.world_vertices);
+ const radius=Math.max(...all.map(p=>Math.hypot(...sub(p,center))),.1);
+ const scale=Math.min(width,height)*.43/radius*zoom;
+ function project(p){
+  const a=sub(p,center),x=Math.cos(yaw)*a[0]-Math.sin(yaw)*a[1],y=Math.sin(yaw)*a[0]+Math.cos(yaw)*a[1],z=a[2];
+  return [width*.5+scale*x,height*.5-scale*(Math.sin(pitch)*y+Math.cos(pitch)*z),Math.cos(pitch)*y-Math.sin(pitch)*z];
+ }
+ function path(v){ctx.beginPath();v.forEach((p,i)=>{const q=project(p);if(i)ctx.lineTo(q[0],q[1]);else ctx.moveTo(q[0],q[1]);});ctx.closePath();}
+ if(document.getElementById("rigid").checked){
+  for(const f of c.rigid_mesh.faces){const v=f.map(i=>c.rigid_mesh.world_vertices[i]);path(v);ctx.fillStyle="rgba(143,158,171,.10)";ctx.fill();ctx.strokeStyle="#aab5bf";ctx.lineWidth=1.4;ctx.setLineDash([6,5]);ctx.stroke();ctx.setLineDash([]);}
+ }
+ const edges=new Set();
+ for(const cell of c.pressure_mesh.cells)for(let i=0;i<4;i++)for(let j=i+1;j<4;j++){const ids=[cell[i],cell[j]].sort((a,b)=>a-b),key=ids.join(":");if(edges.has(key))continue;edges.add(key);const a=project(vertices[ids[0]]),b=project(vertices[ids[1]]);ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.strokeStyle="rgba(55,108,151,.53)";ctx.lineWidth=1.5;ctx.stroke();}
+ const peak=Math.max(...c.result.triangles.flatMap(t=>t.vertex_pressure),0);
+ document.getElementById("range").textContent="0 — "+format(peak)+" Pa";
+ const surfaces=c.result.triangles.map(t=>({t,depth:project(average(t.vertices))[2]})).sort((a,b)=>a.depth-b.depth);
+ for(const {t} of surfaces){const p=t.vertex_pressure.reduce((a,b)=>a+b,0)/3,u=peak?p/peak:0;path(t.vertices);ctx.fillStyle="rgb("+Math.round(255-16*u)+","+Math.round(241-158*u)+","+Math.round(170-107*u)+")";ctx.fill();ctx.strokeStyle="#a54f30";ctx.lineWidth=1.5;ctx.stroke();}
+ if(document.getElementById("points").checked)for(const p of c.quadrature.points){const q=project(p);ctx.beginPath();ctx.arc(q[0],q[1],3,0,Math.PI*2);ctx.fillStyle="#662c24";ctx.fill();}
+ const origin=project([0,0,0]);
+ for(const [axis,color,label] of [[[.22,0,0],"#c04d49","x"],[[0,.22,0],"#309875","y"],[[0,0,.22],"#387dbc","z"]]){const q=project(axis);ctx.beginPath();ctx.moveTo(origin[0],origin[1]);ctx.lineTo(q[0],q[1]);ctx.strokeStyle=color;ctx.lineWidth=2;ctx.stroke();ctx.fillStyle=color;ctx.font="bold 14px sans-serif";ctx.fillText(label,q[0]+5,q[1]-5);}
+ ctx.fillStyle="#607789";ctx.font="13px sans-serif";ctx.fillText("静态截面 · 保存数据 · 无运动求解",18,25);
+}
+select.addEventListener("change",refresh);
+for(const id of ["rigid","points"])document.getElementById(id).addEventListener("change",draw);
+document.getElementById("reset").onclick=()=>{yaw=-.65;pitch=.35;zoom=1;draw();};
+canvas.addEventListener("pointerdown",e=>{drag=[e.clientX,e.clientY];canvas.setPointerCapture(e.pointerId);});
+canvas.addEventListener("pointermove",e=>{if(!drag)return;yaw+=(e.clientX-drag[0])*.008;pitch=Math.max(-1.4,Math.min(1.4,pitch+(e.clientY-drag[1])*.008));drag=[e.clientX,e.clientY];draw();});
+canvas.addEventListener("pointerup",()=>{drag=null;});canvas.addEventListener("pointercancel",()=>{drag=null;});
+canvas.addEventListener("wheel",e=>{e.preventDefault();zoom=Math.max(.4,Math.min(4,zoom*Math.exp(-e.deltaY*.001)));draw();},{passive:false});
+window.addEventListener("resize",draw);refresh();
+</script>
+</html>

@@ -1,5 +1,9 @@
 # Phymeo 当前续作入口
 
+> 2026-11-16 I1：codex/exp测试源码9640a1de，真实三维tetra压力网格—有限刚面裁剪首次45新HOST/2.67s通过。七个同次保存解析案例覆盖斜面、有限边缘、共享面去重、跨cell、完整边界零压力体和多法向；面积/压力力矩及负控/容量均通过。见[报告与三维查看器](area-pressure-tetra-intersection-report-20261116.md)。仅小型HOST静态生成，full/local和g限制保留；下一I2共同实际运动/关节响应，不重跑旧几何。dev76a240d8、V03外部FAIL及独立T-smoke待接不变；父/原两作者全部释放，无期限/周期任务。下文为历史。
+
+
+
 > 2026-11-16 R4/I0：codex/exp测试源码777b7f12，三维面积压力数据与完整双方Jacobian/HOST力映射首次59新HOST通过。真实dA、变法向、线性压力力矩、纯力偶、12DOF及共享关节坐标/虚功已验；原日志与13项绑定已核。见[结果与下一步](area-pressure-3d-port-report-20261116.md)、[接线裁定](area-pressure-3d-integration-decision-20261116.md)。仅接收已裁三角，未接碰撞生成/动态/GPU；下一接触批I1真实tetra–triangle裁剪，再I2共同解。V03 FAIL、dev76a240d8、独立T-smoke待接保持。父/两作者已释放，无新期限/周期任务。下文为历史。
 
 

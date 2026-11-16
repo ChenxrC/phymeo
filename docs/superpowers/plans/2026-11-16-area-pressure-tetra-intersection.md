@@ -91,3 +91,8 @@ full资产：unit tet内部加c=(1/4,1/4,1/4)，p(c)=1，其余p=0；4cells，p=
 ## 6. 收尾与下一步
 
 源码/独立测试作者提交前全文文本自审，明确UNEXECUTED释放。root验证后记录真实结果、源绑定、原失败和提交，并推exp；dev不改。I1成功只代表小型HOST静态几何生成，下一I2仍需actual step、全joint/free-body响应和pair模型归属；g-kink、full3D大规模/动态/设备等不支持项继续明列。
+
+
+## 7. 实际收口
+
+2026-11-16：测试源码9640a1de。两新完整HOST首次45pass/2.67s，七个固定解析案例及完整保存数据通过，无功能修补。首两I001和四文件排版修复保留raw，qualifiedAST通过；未运行旧组。浏览器七例交互已检查，父/作者执行槽释放。见[报告与离线查看器](../../development/area-pressure-tetra-intersection-report-20261116.md)。仅HOST静态几何，下一I2接同一步实际双方运动，full/local与g限制继续保留。

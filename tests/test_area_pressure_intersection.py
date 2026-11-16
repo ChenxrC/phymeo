@@ -24,10 +24,16 @@ from phymeo.geometry.area_pressure_intersection import (
     intersect_area_pressure,
 )
 
-
 RTOL = ATOL = 1e-10
-CASE_NAMES = ("horizontal", "oblique", "finite", "shared_face", "cross_cells", "full_body",
-              "multiple_faces")
+CASE_NAMES = (
+    "horizontal",
+    "oblique",
+    "finite",
+    "shared_face",
+    "cross_cells",
+    "full_body",
+    "multiple_faces",
+)
 
 
 def _identity():
@@ -39,28 +45,42 @@ def _stamp():
 
 
 def _unit_input():
-    return dict(node_ids=("origin", "x", "y", "z"),
-                world_vertices=((0, 0, 0), (1, 0, 0), (0, 1, 0), (0, 0, 1)),
-                cells=((0, 1, 2, 3),), nodal_pressure=(0, 0, 0, 1), cell_ids=("cell-a",))
+    return dict(
+        node_ids=("origin", "x", "y", "z"),
+        world_vertices=((0, 0, 0), (1, 0, 0), (0, 1, 0), (0, 0, 1)),
+        cells=((0, 1, 2, 3),),
+        nodal_pressure=(0, 0, 0, 1),
+        cell_ids=("cell-a",),
+    )
 
 
 def _double_input(last_pressure=1):
-    return dict(node_ids=("origin", "x", "y", "z", "outer"),
-                world_vertices=((0, 0, 0), (1, 0, 0), (0, 1, 0), (0, 0, 1), (1, 1, 1)),
-                cells=((0, 1, 2, 3), (1, 2, 3, 4)), nodal_pressure=(0, 0, 0, 1, last_pressure),
-                cell_ids=("cell-a", "cell-b"))
+    return dict(
+        node_ids=("origin", "x", "y", "z", "outer"),
+        world_vertices=((0, 0, 0), (1, 0, 0), (0, 1, 0), (0, 0, 1), (1, 1, 1)),
+        cells=((0, 1, 2, 3), (1, 2, 3, 4)),
+        nodal_pressure=(0, 0, 0, 1, last_pressure),
+        cell_ids=("cell-a", "cell-b"),
+    )
 
 
 def _full_input():
-    return dict(node_ids=("origin", "x", "y", "z", "inside"),
-                world_vertices=((0, 0, 0), (1, 0, 0), (0, 1, 0), (0, 0, 1), (1 / 4,) * 3),
-                cells=((0, 1, 2, 4), (0, 2, 3, 4), (0, 3, 1, 4), (1, 3, 2, 4)),
-                nodal_pressure=(0, 0, 0, 0, 1), cell_ids=("base", "x-side", "y-side", "slant"))
+    return dict(
+        node_ids=("origin", "x", "y", "z", "inside"),
+        world_vertices=((0, 0, 0), (1, 0, 0), (0, 1, 0), (0, 0, 1), (1 / 4,) * 3),
+        cells=((0, 1, 2, 4), (0, 2, 3, 4), (0, 3, 1, 4), (1, 3, 2, 4)),
+        nodal_pressure=(0, 0, 0, 0, 1),
+        cell_ids=("base", "x-side", "y-side", "slant"),
+    )
 
 
 def _rigid_input(vertices, *, faces=((0, 1, 2),), face_ids=("rigid-face",)):
-    return dict(node_ids=tuple(f"rigid-node-{i}" for i in range(len(vertices))),
-                world_vertices=vertices, faces=faces, face_ids=face_ids)
+    return dict(
+        node_ids=tuple(f"rigid-node-{i}" for i in range(len(vertices))),
+        world_vertices=vertices,
+        faces=faces,
+        face_ids=face_ids,
+    )
 
 
 def _horizontal_vertices(z):
@@ -96,15 +116,21 @@ def _case(name):
         sources.add(("cell-b", "rigid-face"))
     elif name == "full_body":
         pressure, domain = _full_input(), "full"
-        rigid = _rigid_input(((1 / 8, 1 / 8, 1 / 8), (5 / 8, 1 / 8, 1 / 8),
-                              (1 / 8, 5 / 8, 1 / 8)))
+        rigid = _rigid_input(((1 / 8, 1 / 8, 1 / 8), (5 / 8, 1 / 8, 1 / 8), (1 / 8, 5 / 8, 1 / 8)))
         area, wrench = 1 / 8, (0, 0, 1 / 16, 7 / 384, -7 / 384, 0)
         sources = {("base", "rigid-face")}
     elif name == "multiple_faces":
         rigid = _rigid_input(
-            ((1 / 8, 1 / 8, 1 / 4), (1 / 4, 1 / 8, 1 / 4), (1 / 8, 1 / 4, 1 / 4),
-             (1 / 4, 1 / 4, 1 / 4), (3 / 8, 1 / 4, 1 / 8), (1 / 4, 3 / 8, 1 / 4)),
-            faces=((0, 1, 2), (3, 4, 5)), face_ids=("horizontal-face", "sloped-face"),
+            (
+                (1 / 8, 1 / 8, 1 / 4),
+                (1 / 4, 1 / 8, 1 / 4),
+                (1 / 8, 1 / 4, 1 / 4),
+                (1 / 4, 1 / 4, 1 / 4),
+                (3 / 8, 1 / 4, 1 / 8),
+                (1 / 4, 3 / 8, 1 / 4),
+            ),
+            faces=((0, 1, 2), (3, 4, 5)),
+            face_ids=("horizontal-face", "sloped-face"),
         )
         area = (1 + sqrt(2)) / 128
         wrench = (5 / 3072, 0, 11 / 3072, 79 / 98304, -44 / 98304, -47 / 98304)
@@ -122,18 +148,29 @@ def _query(pressure_input, rigid_input, domain):
 
 
 def _triangle_record(triangle):
-    return dict(triangle_id=triangle.triangle_id, compliant_cell_id=triangle.compliant_cell_id,
-                rigid_face_id=triangle.rigid_face_id, vertices=triangle.vertices.tolist(),
-                vertex_pressure=triangle.vertex_pressure.tolist(),
-                pressure_gradient=triangle.pressure_gradient.tolist())
+    return dict(
+        triangle_id=triangle.triangle_id,
+        compliant_cell_id=triangle.compliant_cell_id,
+        rigid_face_id=triangle.rigid_face_id,
+        vertices=triangle.vertices.tolist(),
+        vertex_pressure=triangle.vertex_pressure.tolist(),
+        pressure_gradient=triangle.pressure_gradient.tolist(),
+    )
 
 
 def _quad_record(quad):
-    return dict(identity=asdict(quad.identity), stamp=asdict(quad.stamp),
-                sample_ids=quad.sample_ids, source_ids=quad.source_ids,
-                points=quad.points.tolist(), normals=quad.normals.tolist(), dA=quad.dA.tolist(),
-                pressure=quad.pressure.tolist(), gradient=quad.gradient.tolist(),
-                total_area_m2=quad.total_area_m2)
+    return dict(
+        identity=asdict(quad.identity),
+        stamp=asdict(quad.stamp),
+        sample_ids=quad.sample_ids,
+        source_ids=quad.source_ids,
+        points=quad.points.tolist(),
+        normals=quad.normals.tolist(),
+        dA=quad.dA.tolist(),
+        pressure=quad.pressure.tolist(),
+        gradient=quad.gradient.tolist(),
+        total_area_m2=quad.total_area_m2,
+    )
 
 
 def _actual(quad):
@@ -145,14 +182,24 @@ def _actual(quad):
 
 def _save(path, name, pressure_input, rigid_input, domain, result, quad, actual, area, wrench):
     record = dict(
-        name=name, domain=domain, pressure_mesh=pressure_input, rigid_mesh=rigid_input,
-        identity=asdict(_identity()), stamp=asdict(_stamp()),
-        result=dict(pressure_domain=result.pressure_domain,
-                    identity=asdict(result.surface.identity), stamp=asdict(result.surface.stamp),
-                    candidate_pairs=result.candidate_pairs, polygon_count=result.polygon_count,
-                    shared_face_duplicates=result.shared_face_duplicates,
-                    triangles=[_triangle_record(triangle) for triangle in result.surface.triangles]),
-        quadrature=_quad_record(quad), actual=actual, expected=dict(area=area, wrench=wrench),
+        name=name,
+        domain=domain,
+        pressure_mesh=pressure_input,
+        rigid_mesh=rigid_input,
+        identity=asdict(_identity()),
+        stamp=asdict(_stamp()),
+        result=dict(
+            pressure_domain=result.pressure_domain,
+            identity=asdict(result.surface.identity),
+            stamp=asdict(result.surface.stamp),
+            candidate_pairs=result.candidate_pairs,
+            polygon_count=result.polygon_count,
+            shared_face_duplicates=result.shared_face_duplicates,
+            triangles=[_triangle_record(triangle) for triangle in result.surface.triangles],
+        ),
+        quadrature=_quad_record(quad),
+        actual=actual,
+        expected=dict(area=area, wrench=wrench),
     )
     # Save the same call's evidence before numeric assertions, so a failure is
     # inspectable. No second producer call is used to reconstruct this record.
@@ -169,8 +216,9 @@ def _assert_order_invariance(pressure, rigid, domain, original):
         world_vertices=tuple(pressure["world_vertices"][i] for i in order),
         nodal_pressure=tuple(pressure["nodal_pressure"][i] for i in order),
         cell_ids=tuple(reversed(pressure["cell_ids"])),
-        cells=tuple(tuple(old_to_new[cell[i]] for i in (3, 1, 0, 2))
-                    for cell in reversed(pressure["cells"])),
+        cells=tuple(
+            tuple(old_to_new[cell[i]] for i in (3, 1, 0, 2)) for cell in reversed(pressure["cells"])
+        ),
     )
     rotated_face = dict(rigid, faces=((1, 2, 0),))
     changed = _query(reordered, rotated_face, domain)
@@ -205,8 +253,9 @@ def test_seven_analytic_cases_save_the_same_query_complete_evidence(name, tmp_pa
     # pressure inferred from the expected total force or a global patch normal.
     scale = 4 if domain == "full" else 1
     for triangle in result.surface.triangles:
-        np.testing.assert_allclose(triangle.vertex_pressure, scale * triangle.vertices[:, 2],
-                                   rtol=RTOL, atol=ATOL)
+        np.testing.assert_allclose(
+            triangle.vertex_pressure, scale * triangle.vertices[:, 2], rtol=RTOL, atol=ATOL
+        )
         np.testing.assert_allclose(triangle.pressure_gradient, (0, 0, scale), rtol=RTOL, atol=ATOL)
     if name == "multiple_faces":
         for source, normal, gradient in zip(quad.source_ids, quad.normals, quad.gradient):
@@ -214,8 +263,9 @@ def test_seven_analytic_cases_save_the_same_query_complete_evidence(name, tmp_pa
                 np.testing.assert_allclose(normal, (0, 0, 1), rtol=RTOL, atol=ATOL)
                 assert gradient == pytest.approx(1, rel=RTOL, abs=ATOL)
             else:
-                np.testing.assert_allclose(normal, (1 / sqrt(2), 0, 1 / sqrt(2)),
-                                           rtol=RTOL, atol=ATOL)
+                np.testing.assert_allclose(
+                    normal, (1 / sqrt(2), 0, 1 / sqrt(2)), rtol=RTOL, atol=ATOL
+                )
                 assert gradient == pytest.approx(1 / sqrt(2), rel=RTOL, abs=ATOL)
     if name in ("cross_cells", "shared_face"):
         _assert_order_invariance(pressure, rigid, domain, result)
@@ -230,11 +280,13 @@ def test_seven_analytic_cases_save_the_same_query_complete_evidence(name, tmp_pa
 
 def test_generic_rigid_motion_transforms_true_area_force_and_origin_moment():
     pressure, rigid, domain, area, wrench, _, _, _ = _case("oblique")
-    rotation = np.array(((12 / 13, 0, 5 / 13), (4 / 13, 3 / 5, -48 / 65),
-                         (-3 / 13, 4 / 5, 36 / 65)))
+    rotation = np.array(
+        ((12 / 13, 0, 5 / 13), (4 / 13, 3 / 5, -48 / 65), (-3 / 13, 4 / 5, 36 / 65))
+    )
     translation = np.array((0.7, -1.1, 0.4))
-    pressure = dict(pressure, world_vertices=np.array(pressure["world_vertices"]) @ rotation.T
-                    + translation)
+    pressure = dict(
+        pressure, world_vertices=np.array(pressure["world_vertices"]) @ rotation.T + translation
+    )
     rigid = dict(rigid, world_vertices=np.array(rigid["world_vertices"]) @ rotation.T + translation)
     result = _query(pressure, rigid, domain)
     actual = _actual(quadrature_area_pressure(result.surface))
@@ -264,15 +316,23 @@ def test_zero_area_or_disjoint_queries_publish_empty_surface_not_a_fake_contact(
 def _reject_query(category, pressure, rigid, domain):
     pressure_mesh = TetraPressureMesh(**pressure, pressure_domain=domain)
     rigid_mesh = RigidPressureMesh(**rigid)
-    before = (pressure_mesh.world_vertices.tobytes(), pressure_mesh.cells.tobytes(),
-              pressure_mesh.nodal_pressure.tobytes(), rigid_mesh.world_vertices.tobytes(),
-              rigid_mesh.faces.tobytes())
+    before = (
+        pressure_mesh.world_vertices.tobytes(),
+        pressure_mesh.cells.tobytes(),
+        pressure_mesh.nodal_pressure.tobytes(),
+        rigid_mesh.world_vertices.tobytes(),
+        rigid_mesh.faces.tobytes(),
+    )
     with pytest.raises(AreaPressureIntersectionError) as caught:
         intersect_area_pressure(pressure_mesh, rigid_mesh, identity=_identity(), stamp=_stamp())
     assert caught.value.category == category
-    assert before == (pressure_mesh.world_vertices.tobytes(), pressure_mesh.cells.tobytes(),
-                      pressure_mesh.nodal_pressure.tobytes(), rigid_mesh.world_vertices.tobytes(),
-                      rigid_mesh.faces.tobytes())
+    assert before == (
+        pressure_mesh.world_vertices.tobytes(),
+        pressure_mesh.cells.tobytes(),
+        pressure_mesh.nodal_pressure.tobytes(),
+        rigid_mesh.world_vertices.tobytes(),
+        rigid_mesh.faces.tobytes(),
+    )
 
 
 @pytest.mark.parametrize("kind", ("zero-gradient", "reverse-winding"))
@@ -284,9 +344,13 @@ def test_positive_area_unsupported_gradient_is_not_flipped_or_dropped(kind):
     _reject_query("unsupported_gradient", _unit_input(), rigid, "local")
 
 
-@pytest.mark.parametrize("outer_pressure,category", (
-    (3, "unsupported_shared_face_gradient"), (0, "unsupported_gradient"),
-))
+@pytest.mark.parametrize(
+    "outer_pressure,category",
+    (
+        (3, "unsupported_shared_face_gradient"),
+        (0, "unsupported_gradient"),
+    ),
+)
 def test_shared_face_checks_both_gradients_before_assigning_an_owner(outer_pressure, category):
     # Shared-node pressure is continuous. The second cell's gradient is
     # ((c-1)/2,(c-1)/2,(c+1)/2): c=3 is positive but different; c=0 faces backward.
@@ -297,8 +361,9 @@ def test_shared_face_checks_both_gradients_before_assigning_an_owner(outer_press
 def test_valid_full_asset_can_have_a_query_outside_the_positive_gradient_domain():
     # The base cell's admissible positive-area piece must not be returned alone;
     # other retained cells have g=0 or g<0 at this same wide horizontal section.
-    _reject_query("unsupported_gradient", _full_input(),
-                  _rigid_input(_horizontal_vertices(1 / 8)), "full")
+    _reject_query(
+        "unsupported_gradient", _full_input(), _rigid_input(_horizontal_vertices(1 / 8)), "full"
+    )
 
 
 def test_positive_exact_sliver_cannot_be_silently_lost_during_float_publication():
@@ -307,8 +372,7 @@ def test_positive_exact_sliver_cannot_be_silently_lost_during_float_publication(
     # Both x offsets are O(2^-400), so FP64 publication merges P with the corner.
     # Input ratios fit 256 bits; this is publication loss, not an input quota error.
     small, large = 2.0**-200, 2.0**200
-    rigid = _rigid_input(((3 / 4, small, 1 / 4), (-1 / 4, -large, 1 / 4),
-                          (1, small, 1 / 4)))
+    rigid = _rigid_input(((3 / 4, small, 1 / 4), (-1 / 4, -large, 1 / 4), (1, small, 1 / 4)))
     _reject_query("publication_failure", _unit_input(), rigid, "local")
 
 
@@ -327,19 +391,26 @@ def test_output_triangle_budget_rejects_the_whole_1056_piece_query():
     # below one, all 32 tets have a positive triangular section with g=1.
     # Thus 32*33=1056 output triangles exceed 1024 without any invalid geometry,
     # unsupported gradient, adaptive search, or enlarged input quota.
-    vertices = tuple(point for i in range(32)
-                     for point in ((3 * i, 0, 0), (3 * i + 1, 0, 0),
-                                   (3 * i, 1, 0), (3 * i, 0, 1)))
-    pressure = dict(
-        node_ids=tuple(f"node-{i}" for i in range(128)), world_vertices=vertices,
-        cells=tuple((4 * i, 4 * i + 1, 4 * i + 2, 4 * i + 3) for i in range(32)),
-        nodal_pressure=(0, 0, 0, 1) * 32, cell_ids=tuple(f"cell-{i:02d}" for i in range(32)),
+    vertices = tuple(
+        point
+        for i in range(32)
+        for point in ((3 * i, 0, 0), (3 * i + 1, 0, 0), (3 * i, 1, 0), (3 * i, 0, 1))
     )
-    rigid_vertices = tuple(point for j in range(33)
-                           for point in ((-1, -1, (j + 1) / 64), (100, -1, (j + 1) / 64),
-                                         (-1, 100, (j + 1) / 64)))
+    pressure = dict(
+        node_ids=tuple(f"node-{i}" for i in range(128)),
+        world_vertices=vertices,
+        cells=tuple((4 * i, 4 * i + 1, 4 * i + 2, 4 * i + 3) for i in range(32)),
+        nodal_pressure=(0, 0, 0, 1) * 32,
+        cell_ids=tuple(f"cell-{i:02d}" for i in range(32)),
+    )
+    rigid_vertices = tuple(
+        point
+        for j in range(33)
+        for point in ((-1, -1, (j + 1) / 64), (100, -1, (j + 1) / 64), (-1, 100, (j + 1) / 64))
+    )
     rigid = _rigid_input(
-        rigid_vertices, faces=tuple((3 * j, 3 * j + 1, 3 * j + 2) for j in range(33)),
+        rigid_vertices,
+        faces=tuple((3 * j, 3 * j + 1, 3 * j + 2) for j in range(33)),
         face_ids=tuple(f"plane-{j:02d}" for j in range(33)),
     )
     _reject_query("resource_limit", pressure, rigid, "local")

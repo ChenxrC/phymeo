@@ -5,10 +5,10 @@ rigid; B's winding points toward A. This is static geometry generation, not a
 collision time query, deformation model, state certificate or dynamics step.
 """
 
+import json
 from dataclasses import dataclass, field
 from hashlib import sha256
 from itertools import combinations
-import json
 from numbers import Integral
 from types import MappingProxyType
 
@@ -75,7 +75,11 @@ def _connectivity(value, width, cap, count, name):
             _fail("invalid_input", f"each {name} row needs {width} indices")
         checked = []
         for index in row:
-            if isinstance(index, (bool, np.bool_)) or not isinstance(index, Integral) or not 0 <= index < count:
+            if (
+                isinstance(index, (bool, np.bool_))
+                or not isinstance(index, Integral)
+                or not 0 <= index < count
+            ):
                 _fail("invalid_input", f"{name} index is not a valid node row")
             checked.append(int(index))
         if len(set(checked)) != width:
@@ -94,20 +98,24 @@ def _vertices(value, count):
     vertices = _array(value, (count, 3), "world_vertices")
     if len({tuple(row) for row in vertices}) != count:
         _fail("invalid_mesh", "different node IDs share a world coordinate")
-    coordinates = tuple(tuple(exact.exact_scalar(component) for component in row) for row in vertices)
+    coordinates = tuple(
+        tuple(exact.exact_scalar(component) for component in row) for row in vertices
+    )
     return vertices, coordinates
 
 
 def _tet_geometry(nodes, coordinates, cells, pressures):
     cell_nodes = tuple(tuple(nodes[int(i)] for i in row) for row in cells)
     pieces = tuple(
-        exact.tetrahedron(tuple(coordinates[int(i)] for i in row), tuple(pressures[int(i)] for i in row))
+        exact.tetrahedron(
+            tuple(coordinates[int(i)] for i in row), tuple(pressures[int(i)] for i in row)
+        )
         for row in cells
     )
     incidence = {}
     for cell, ids in enumerate(cell_nodes):
         for opposite in range(4):
-            face = tuple(sorted(ids[:opposite] + ids[opposite + 1:]))
+            face = tuple(sorted(ids[:opposite] + ids[opposite + 1 :]))
             incidence.setdefault(face, []).append((cell, opposite))
     positions = dict(zip(nodes, coordinates, strict=True))
     for face, owners in incidence.items():
@@ -125,7 +133,11 @@ def _tet_geometry(nodes, coordinates, cells, pressures):
     for i, j in combinations(range(len(pieces)), 2):
         vertices = exact.tetrahedron_intersection_vertices(pieces[i], pieces[j])
         exact.check_shared_simplex(pieces[i], cell_nodes[i], cell_nodes[j], vertices)
-    return pieces, cell_nodes, MappingProxyType({face: tuple(owners) for face, owners in incidence.items()})
+    return (
+        pieces,
+        cell_nodes,
+        MappingProxyType({face: tuple(owners) for face, owners in incidence.items()}),
+    )
 
 
 @dataclass(frozen=True, eq=False)
@@ -151,16 +163,27 @@ class TetraPressureMesh:
         exact_pressure = tuple(exact.exact_scalar(value) for value in pressure)
         pieces, cell_nodes, incidence = _tet_geometry(nodes, coordinates, cells, exact_pressure)
         if domain == "full":
-            boundary = {node for face, owners in incidence.items() if len(owners) == 1 for node in face}
+            boundary = {
+                node for face, owners in incidence.items() if len(owners) == 1 for node in face
+            }
             by_node = dict(zip(nodes, exact_pressure, strict=True))
             if any(by_node[node] != 0 for node in boundary):
                 _fail("invalid_mesh", "full pressure bodies require zero boundary pressure")
             if not any(by_node[node] > 0 for node in nodes if node not in boundary):
-                _fail("invalid_mesh", "full pressure bodies require positive pressure at an interior node")
+                _fail(
+                    "invalid_mesh",
+                    "full pressure bodies require positive pressure at an interior node",
+                )
         for name, value in (
-            ("node_ids", nodes), ("world_vertices", vertices), ("cells", cells),
-            ("nodal_pressure", pressure), ("cell_ids", cell_ids), ("pressure_domain", domain),
-            ("_exact_cells", pieces), ("_cell_nodes", cell_nodes), ("_face_owners", incidence),
+            ("node_ids", nodes),
+            ("world_vertices", vertices),
+            ("cells", cells),
+            ("nodal_pressure", pressure),
+            ("cell_ids", cell_ids),
+            ("pressure_domain", domain),
+            ("_exact_cells", pieces),
+            ("_cell_nodes", cell_nodes),
+            ("_face_owners", incidence),
         ):
             object.__setattr__(self, name, value)
 
@@ -197,8 +220,11 @@ class RigidPressureMesh:
             _fail("invalid_input", "face_ids must match faces")
         pieces = _rigid_geometry(nodes, coordinates, faces)
         for name, value in (
-            ("node_ids", nodes), ("world_vertices", vertices), ("faces", faces),
-            ("face_ids", face_ids), ("_exact_faces", pieces),
+            ("node_ids", nodes),
+            ("world_vertices", vertices),
+            ("faces", faces),
+            ("face_ids", face_ids),
+            ("_exact_faces", pieces),
         ):
             object.__setattr__(self, name, value)
 
@@ -214,35 +240,51 @@ class AreaPressureIntersection:
     def __post_init__(self):
         if not isinstance(self.surface, AreaPressureSurface):
             _fail("invalid_input", "intersection requires AreaPressureSurface")
-        surface = AreaPressureSurface(self.surface.identity, self.surface.stamp, self.surface.triangles)
+        surface = AreaPressureSurface(
+            self.surface.identity, self.surface.stamp, self.surface.triangles
+        )
         domain = _domain(self.pressure_domain)
-        counts = tuple(_integer(getattr(self, name), name) for name in (
-            "candidate_pairs", "polygon_count", "shared_face_duplicates"
-        ))
+        counts = tuple(
+            _integer(getattr(self, name), name)
+            for name in ("candidate_pairs", "polygon_count", "shared_face_duplicates")
+        )
         candidates, polygons, duplicates = counts
         if candidates > MAX_CANDIDATE_PAIRS:
             _fail("resource_limit", "candidate pair capacity exceeded")
-        if polygons + duplicates > candidates or not polygons <= len(surface.triangles) <= 5 * polygons:
+        if (
+            polygons + duplicates > candidates
+            or not polygons <= len(surface.triangles) <= 5 * polygons
+        ):
             _fail("invalid_input", "intersection counts do not describe the surface")
         object.__setattr__(self, "surface", surface)
         object.__setattr__(self, "pressure_domain", domain)
-        for name, value in zip(("candidate_pairs", "polygon_count", "shared_face_duplicates"), counts, strict=True):
+        for name, value in zip(
+            ("candidate_pairs", "polygon_count", "shared_face_duplicates"), counts, strict=True
+        ):
             object.__setattr__(self, name, value)
 
 
 def _meshes(pressure_mesh, rigid_mesh):
-    if not isinstance(pressure_mesh, TetraPressureMesh) or not isinstance(rigid_mesh, RigidPressureMesh):
+    if not isinstance(pressure_mesh, TetraPressureMesh) or not isinstance(
+        rigid_mesh, RigidPressureMesh
+    ):
         _fail("invalid_input", "expected TetraPressureMesh and RigidPressureMesh")
     # Rebuild from public owned fields; frozen types or private caches are not
     # accepted as a certificate when an object is supplied by a caller.
     try:
         pressure = TetraPressureMesh(
-            pressure_mesh.node_ids, pressure_mesh.world_vertices, pressure_mesh.cells,
-            pressure_mesh.nodal_pressure, pressure_mesh.cell_ids,
+            pressure_mesh.node_ids,
+            pressure_mesh.world_vertices,
+            pressure_mesh.cells,
+            pressure_mesh.nodal_pressure,
+            pressure_mesh.cell_ids,
             pressure_domain=pressure_mesh.pressure_domain,
         )
         rigid = RigidPressureMesh(
-            rigid_mesh.node_ids, rigid_mesh.world_vertices, rigid_mesh.faces, rigid_mesh.face_ids,
+            rigid_mesh.node_ids,
+            rigid_mesh.world_vertices,
+            rigid_mesh.faces,
+            rigid_mesh.face_ids,
         )
     except AttributeError as error:
         raise AreaPressureIntersectionError("invalid_input", "incomplete mesh object") from error
@@ -252,7 +294,10 @@ def _meshes(pressure_mesh, rigid_mesh):
 def _owns_polygon(mesh, cell_index, face, polygon):
     cell = mesh._exact_cells[cell_index]
     if exact.dot(cell.gradient, face.normal) <= 0:
-        _fail("unsupported_gradient", f"cell {mesh.cell_ids[cell_index]} has nonpositive effective gradient")
+        _fail(
+            "unsupported_gradient",
+            f"cell {mesh.cell_ids[cell_index]} has nonpositive effective gradient",
+        )
     weights = tuple(cell.weights(point) for point in polygon)
     support = tuple(i for i in range(4) if all(weight[i] == 0 for weight in weights))
     if not support:
@@ -261,7 +306,7 @@ def _owns_polygon(mesh, cell_index, face, polygon):
         _fail("invalid_mesh", "positive-area polygon lies on multiple tetrahedral faces")
     ids = mesh._cell_nodes[cell_index]
     opposite = support[0]
-    key = tuple(sorted(ids[:opposite] + ids[opposite + 1:]))
+    key = tuple(sorted(ids[:opposite] + ids[opposite + 1 :]))
     owners = mesh._face_owners[key]
     if len(owners) == 1:
         return True
@@ -269,7 +314,10 @@ def _owns_polygon(mesh, cell_index, face, polygon):
         if exact.dot(mesh._exact_cells[other].gradient, face.normal) <= 0:
             _fail("unsupported_gradient", "a shared-face owner has nonpositive effective gradient")
     if any(mesh._exact_cells[other].gradient != cell.gradient for other, _ in owners):
-        _fail("unsupported_shared_face_gradient", "shared-face owners have different exact world gradients")
+        _fail(
+            "unsupported_shared_face_gradient",
+            "shared-face owners have different exact world gradients",
+        )
     return mesh.cell_ids[cell_index] == min(mesh.cell_ids[other] for other, _ in owners)
 
 
@@ -279,12 +327,16 @@ def _publish_triangle(cell, polygon, cell_id, face_id, fan_index):
     encoded = json.dumps((cell_id, face_id, fan_index), ensure_ascii=True, separators=(",", ":"))
     triangle_id = "i1-" + sha256(encoded.encode("utf-8")).hexdigest()
     try:
-        vertices = np.array(tuple(tuple(float(value) for value in point) for point in points), dtype=np.float64)
+        vertices = np.array(
+            tuple(tuple(float(value) for value in point) for point in points), dtype=np.float64
+        )
         values = np.array(tuple(float(value) for value in pressure), dtype=np.float64)
         gradient = np.array(tuple(float(value) for value in cell.gradient), dtype=np.float64)
         return AreaPressureTriangle(triangle_id, cell_id, face_id, vertices, values, gradient)
     except (ValueError, OverflowError, FloatingPointError) as error:
-        raise AreaPressureIntersectionError("publication_failure", "exact triangle cannot be published through I0") from error
+        raise AreaPressureIntersectionError(
+            "publication_failure", "exact triangle cannot be published through I0"
+        ) from error
 
 
 def intersect_area_pressure(pressure_mesh, rigid_mesh, *, identity, stamp):
@@ -311,11 +363,17 @@ def intersect_area_pressure(pressure_mesh, rigid_mesh, *, identity, stamp):
                 _fail("resource_limit", "intersection exceeds I0 triangle capacity")
             polygon_count += 1
             for fan in range(count):
-                triangles.append(_publish_triangle(cell, polygon, pressure.cell_ids[ci], rigid.face_ids[fi], fan))
+                triangles.append(
+                    _publish_triangle(cell, polygon, pressure.cell_ids[ci], rigid.face_ids[fi], fan)
+                )
     try:
         surface = AreaPressureSurface(identity, stamp, tuple(triangles))
-        return AreaPressureIntersection(surface, pressure.pressure_domain, candidates, polygon_count, duplicates)
+        return AreaPressureIntersection(
+            surface, pressure.pressure_domain, candidates, polygon_count, duplicates
+        )
     except AreaPressureIntersectionError:
         raise
     except (ValueError, OverflowError, FloatingPointError) as error:
-        raise AreaPressureIntersectionError("publication_failure", "intersection cannot be published through I0") from error
+        raise AreaPressureIntersectionError(
+            "publication_failure", "intersection cannot be published through I0"
+        ) from error

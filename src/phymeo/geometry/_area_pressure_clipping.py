@@ -21,8 +21,12 @@ class AreaPressureIntersectionError(ValueError):
 
     def __init__(self, category, message):
         if category not in (
-            "invalid_input", "invalid_mesh", "unsupported_gradient",
-            "unsupported_shared_face_gradient", "resource_limit", "publication_failure",
+            "invalid_input",
+            "invalid_mesh",
+            "unsupported_gradient",
+            "unsupported_shared_face_gradient",
+            "resource_limit",
+            "publication_failure",
         ):
             raise ValueError("unknown area-pressure intersection error category")
         self.category = category
@@ -196,14 +200,22 @@ def check_shared_simplex(first, first_node_ids, second_node_ids, intersection):
     shared = set(first_node_ids).intersection(second_node_ids)
     for point in intersection:
         weights = first.weights(point)
-        if not shared or any(weight != 0 for node, weight in zip(first_node_ids, weights, strict=True) if node not in shared):
-            raise AreaPressureIntersectionError("invalid_mesh", "cell/face intersection exceeds its shared-node simplex")
+        if not shared or any(
+            weight != 0
+            for node, weight in zip(first_node_ids, weights, strict=True)
+            if node not in shared
+        ):
+            raise AreaPressureIntersectionError(
+                "invalid_mesh", "cell/face intersection exceeds its shared-node simplex"
+            )
 
 
 def _unique_polygon(points):
     result = tuple(dict.fromkeys(points))
     if len(result) > MAX_POLYGON_VERTICES:
-        raise AreaPressureIntersectionError("resource_limit", "clipped polygon exceeds seven vertices")
+        raise AreaPressureIntersectionError(
+            "resource_limit", "clipped polygon exceeds seven vertices"
+        )
     return result
 
 
@@ -212,8 +224,13 @@ def _canonical_polygon(points):
     if len(points) < 3:
         return ()
     corners = tuple(
-        point for i, point in enumerate(points)
-        if any(cross(difference(point, points[i - 1]), difference(points[(i + 1) % len(points)], point)))
+        point
+        for i, point in enumerate(points)
+        if any(
+            cross(
+                difference(point, points[i - 1]), difference(points[(i + 1) % len(points)], point)
+            )
+        )
     )
     if len(corners) < 3:
         return ()
@@ -238,7 +255,12 @@ def clip_triangle(cell, face):
             return ()
     polygon = _canonical_polygon(polygon)
     if polygon:
-        winding = dot(face.normal, cross(difference(polygon[1], polygon[0]), difference(polygon[2], polygon[0])))
+        winding = dot(
+            face.normal,
+            cross(difference(polygon[1], polygon[0]), difference(polygon[2], polygon[0])),
+        )
         if winding <= 0:
-            raise AreaPressureIntersectionError("publication_failure", "clipping did not preserve rigid winding")
+            raise AreaPressureIntersectionError(
+                "publication_failure", "clipping did not preserve rigid winding"
+            )
     return polygon

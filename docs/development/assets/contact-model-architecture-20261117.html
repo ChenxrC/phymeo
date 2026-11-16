@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<!--
+Adapted from architecture-diagram-generator/assets/template.html.
+MIT License
+Copyright (c) 2025 Cocoon AI
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+-->
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Phymeo 接触模型目标架构：区分已有接线、HOST 实验与拟议共同动力学；独立离线 SVG。">
+  <title>接触模型：从检测到共同动力学 · 目标架构</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: "Microsoft YaHei", "PingFang SC", system-ui, sans-serif; background: #020617; color: #e2e8f0; padding: 32px; line-height: 1.65; }
+    .container { max-width: 1480px; margin: 0 auto; }
+    .header { margin-bottom: 28px; }
+    .header-row { display: flex; gap: 16px; align-items: center; margin: 16px 0 10px; }
+    .pulse-dot { flex: 0 0 14px; height: 14px; border-radius: 50%; background: #fbbf24; }
+    h1 { font-size: clamp(28px, 3vw, 42px); line-height: 1.35; }
+    .subtitle { color: #cbd5e1; font-size: 20px; max-width: 1120px; }
+    .eyebrow { color: #fbbf24; font-size: 18px; font-weight: 700; letter-spacing: .05em; }
+    .chips { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+    .chip { border: 1px solid #475569; border-radius: 24px; padding: 5px 14px; color: #cbd5e1; font-size: 16px; }
+    .warning { border-left: 4px solid #fbbf24; background: #17170f; padding: 14px 20px; margin: 22px 0; font-size: 19px; }
+    .diagram-container { background: #0b1222; border-radius: 18px; border: 1px solid #334155; padding: 16px; overflow-x: auto; }
+    svg { width: 100%; min-width: 1120px; display: block; }
+    svg text { font-family: "Microsoft YaHei", "PingFang SC", system-ui, sans-serif; }
+    .node-title { fill: #f8fafc; font-size: 29px; font-weight: 700; }
+    .node-copy { fill: #dbe5f1; font-size: 23px; }
+    .node-small { fill: #cbd5e1; font-size: 21px; }
+    .branch-title { fill: #f8fafc; font-size: 27px; font-weight: 700; }
+    .existing { fill: #092c27; stroke: #34d399; stroke-width: 2; }
+    .host { fill: #241c3d; stroke: #a78bfa; stroke-width: 2; }
+    .proposed { fill: #302411; stroke: #fbbf24; stroke-width: 2; }
+    .future { fill: #182233; stroke: #94a3b8; stroke-width: 2; stroke-dasharray: 8 5; }
+    .flow { fill: none; stroke: #94a3b8; stroke-width: 2.5; marker-end: url(#arrow); }
+    .cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; margin-top: 28px; }
+    .card { background: #0f172a; border: 1px solid #334155; border-radius: 14px; padding: 25px; }
+    .card-header { display: flex; gap: 10px; align-items: center; margin-bottom: 12px; }
+    .card-dot { flex: 0 0 10px; height: 10px; border-radius: 50%; }
+    .card h2 { font-size: 23px; }
+    .card p { margin-top: 12px; color: #cbd5e1; font-size: 18px; }
+    .card strong { color: #f8fafc; }
+    .footer { color: #94a3b8; margin: 26px 0 12px; font-size: 16px; }
+    a { color: #7dd3fc; text-underline-offset: 4px; }
+    code { font-family: Consolas, ui-monospace, monospace; }
+    @media (max-width: 1000px) { body { padding: 18px; } .cards { grid-template-columns: 1fr; } }
+    @media print { body { padding: 0; } .diagram-container { overflow: visible; } svg { min-width: 0; } .cards { grid-template-columns: 1fr; } .card { break-inside: avoid; } }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <header class="header">
+      <div class="eyebrow">PHY MEO · 目标架构 / 不是完整实现声明</div>
+      <div class="header-row"><span class="pulse-dot" aria-hidden="true"></span><h1>接触模型：从几何检测到共同动力学</h1></div>
+      <p class="subtitle">检测确定接触域；材料与接触律确定载荷；共同求解决定双方运动。已有事务基础、HOST 面积端口与未来接线，在图中分别标明。</p>
+      <div class="chips"><span class="chip">源码基准 17a1cf4e · 2026-11-17</span><span class="chip">独立 HTML / 内嵌 SVG / 无网络资源</span><span class="chip">双峰参考已完成 · 简化力表未准入</span><span class="chip">父已渲染核对 · 目标方案</span></div>
+    </header>
+    <aside class="warning">一个 pair 的同一物理机制，只走一条生产路径。失败不能偷偷换物理模型；共同发布的已有基础，也不等于跨模型共同求解已经完成。</aside>
+
+    <div class="diagram-container">
+      <svg viewBox="0 0 1400 1840" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="diagram-title diagram-desc">
+        <title id="diagram-title">初始化选型，运行时分型接触，统一广义动力学的目标流程</title>
+        <desc id="diagram-desc">从初始化 ContactPlan，经入步状态、宽相、有限窄相与受支持 CCD、带类型几何候选，分成原生流形、HOST 面积压力和未来非局部算子；经模型与离散接触律进入共同动力学和一致发布。颜色区分已有、HOST 实验、拟议和后续路径。统一接线尚未实现。</desc>
+        <defs>
+          <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e293b" stroke-width=".7"/></pattern>
+          <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8"/></marker>
+        </defs>
+        <rect width="1400" height="1840" rx="12" fill="url(#grid)"/>
+        <rect x="35" y="30" width="1330" height="1685" rx="22" fill="#081121" stroke="#475569" stroke-width="1.5" stroke-dasharray="10 7"/>
+        <text x="65" y="67" fill="#94a3b8" font-size="21">目标数据流 · 统一接线仍需逐阶段验收</text>
+
+        <!-- Edges are painted before opaque nodes and labels; layer gaps are at least 60 units. -->
+        <g aria-hidden="true">
+          <path class="flow" d="M700 255 V315"/>
+          <path class="flow" d="M700 415 V475"/>
+          <path class="flow" d="M700 565 V625"/>
+          <path class="flow" d="M700 730 V790"/>
+          <path class="flow" d="M700 890 V925 H245 V970"/>
+          <path class="flow" d="M700 890 V970"/>
+          <path class="flow" d="M700 890 V925 H1155 V970"/>
+          <path class="flow" d="M245 1125 V1170 H470 V1210"/>
+          <path class="flow" d="M700 1125 V1210"/>
+          <path class="flow" d="M1155 1125 V1170 H930 V1210"/>
+          <path class="flow" d="M700 1315 V1375"/>
+          <path class="flow" d="M700 1505 V1565"/>
+        </g>
+
+        <g>
+          <rect class="proposed" x="150" y="95" width="1100" height="160" rx="16"/>
+          <text class="node-title" x="700" y="134" text-anchor="middle">拟议｜场景编译 / 初始化：选择 ContactPlan</text>
+          <text class="node-copy" x="700" y="173" text-anchor="middle">能力与物理域 → 所需输出与误差证据 → 整步成本 → 固定计划并复用</text>
+          <text class="node-small" x="700" y="209" text-anchor="middle">绑定几何 / 材料版本、时间离散、设备容量、历史状态；无证据不准入</text>
+          <text class="node-small" x="700" y="240" text-anchor="middle">旧选择器只有五个离散 δ 点；公式计时 ≠ 整步成本，不能开放连续范围</text>
+        </g>
+        <g>
+          <rect class="existing" x="150" y="315" width="1100" height="100" rx="16"/>
+          <text class="node-title" x="700" y="355" text-anchor="middle">同一 world 的 accepted 入步状态</text>
+          <text class="node-copy" x="700" y="390" text-anchor="middle">已有 bank / tick / 身份与事务基础；统一消费接线待做，不能混入 endpoint</text>
+        </g>
+        <g>
+          <rect class="existing" x="150" y="475" width="1100" height="90" rx="16"/>
+          <text class="node-title" x="700" y="512" text-anchor="middle">宽相：只筛候选 pair</text>
+          <text class="node-copy" x="700" y="546" text-anchor="middle">已有 bounds / filters / capacity；当前姿态候选不等于接触或 CCD</text>
+        </g>
+        <g>
+          <rect class="proposed" x="150" y="625" width="1100" height="105" rx="16"/>
+          <text class="node-title" x="700" y="665" text-anchor="middle">有限窄相 / 受支持的 CCD</text>
+          <text class="node-copy" x="700" y="701" text-anchor="middle">复用已有有限特征查询；每种形状、运动与证明范围分别准入，不承诺任意 CCD</text>
+        </g>
+        <g>
+          <rect class="proposed" x="150" y="790" width="1100" height="100" rx="16"/>
+          <text class="node-title" x="700" y="829" text-anchor="middle">带类型的几何候选：共同身份，保留模型差异</text>
+          <text class="node-copy" x="700" y="865" text-anchor="middle">world / pair / body / 特征来源 / tick / 相位 / 法向约定；不强塞进单一 gap</text>
+        </g>
+
+        <g>
+          <rect class="existing" x="65" y="970" width="360" height="155" rx="16"/>
+          <text class="branch-title" x="245" y="1008" text-anchor="middle">原生接触流形</text>
+          <text class="node-small" x="245" y="1041" text-anchor="middle">已有｜MuJoCo-TYX</text>
+          <text class="node-small" x="245" y="1075" text-anchor="middle">点 / 框架 / 间距与约束行</text>
+          <text class="node-small" x="245" y="1107" text-anchor="middle">保持原物理域和容量门</text>
+        </g>
+        <g>
+          <rect class="host" x="520" y="970" width="360" height="155" rx="16"/>
+          <text class="branch-title" x="700" y="1008" text-anchor="middle">面积压力曲面</text>
+          <text class="node-small" x="700" y="1041" text-anchor="middle">HOST｜I0 / I1，真实 dA</text>
+          <text class="node-small" x="700" y="1075" text-anchor="middle">有限裁剪、压力与梯度</text>
+          <text class="node-small" x="700" y="1107" text-anchor="middle">尚未接入动态求解</text>
+        </g>
+        <g>
+          <rect class="future" x="975" y="970" width="360" height="155" rx="16"/>
+          <text class="branch-title" x="1155" y="1008" text-anchor="middle">非局部材料算子</text>
+          <text class="node-small" x="1155" y="1041" text-anchor="middle">已有 FFT 静态半空间参考</text>
+          <text class="node-small" x="1155" y="1075" text-anchor="middle">未来：算子与动力学耦合</text>
+          <text class="node-small" x="1155" y="1107" text-anchor="middle">共享材料域可跨多个 pair 耦合</text>
+        </g>
+
+        <g>
+          <rect class="proposed" x="150" y="1210" width="1100" height="105" rx="16"/>
+          <text class="node-title" x="700" y="1251" text-anchor="middle">各模型的接触律、切线、势能 / 耗散与摩擦</text>
+          <text class="node-copy" x="700" y="1288" text-anchor="middle">压力 Pa × 面积 m² → 力 N；力与冲量有不同单位，历史与能量须显式管理</text>
+        </g>
+        <g>
+          <rect class="proposed" x="150" y="1375" width="1100" height="130" rx="16"/>
+          <text class="node-title" x="700" y="1415" text-anchor="middle">目标｜共同 DOF / J / 质量 + 同一次动力学求解</text>
+          <text class="node-copy" x="700" y="1452" text-anchor="middle">双方反作用、关节、阻尼和外载共同响应；不分别推进后拼接</text>
+          <text class="node-small" x="700" y="1484" text-anchor="middle">接线关键：现 T4 接触基于 M，实际积分用 M+h·Cjoint；必须推导一致离散</text>
+        </g>
+        <g>
+          <rect class="existing" x="150" y="1565" width="1100" height="100" rx="16"/>
+          <text class="node-title" x="700" y="1604" text-anchor="middle">一致发布状态 / 实际载荷 / 入步记录，再发布完整观察帧</text>
+          <text class="node-copy" x="700" y="1640" text-anchor="middle">已有原生事务基础；面积路径待接。观察失败不得谎称物理回滚</text>
+        </g>
+
+        <!-- Legend sits outside the architecture boundary, with a 40-unit clear gap. -->
+        <g font-size="21" fill="#dbe5f1">
+          <rect class="existing" x="70" y="1755" width="24" height="24" rx="4"/><text x="106" y="1775">已有基础</text>
+          <rect class="host" x="350" y="1755" width="24" height="24" rx="4"/><text x="386" y="1775">HOST 实验</text>
+          <rect class="proposed" x="660" y="1755" width="24" height="24" rx="4"/><text x="696" y="1775">拟议统一接线</text>
+          <rect class="future" x="1040" y="1755" width="24" height="24" rx="4"/><text x="1076" y="1775">后续路径</text>
+          <text x="700" y="1816" text-anchor="middle" fill="#94a3b8">颜色表示成熟度；箭头表示目标数据流，不表示完整共同求解已经实现。</text>
+        </g>
+      </svg>
+    </div>
+
+    <section class="cards" aria-label="三个关键解释">
+      <article class="card">
+        <div class="card-header"><span class="card-dot" style="background:#34d399" aria-hidden="true"></span><h2>哪些基础已经存在？</h2></div>
+        <p>MuJoCo-TYX 已有原生行、求解、双 bank 入步接触记录和异构共同提交。resident 已有 accepted-state 借用、宽相与有限 HOST 接触事务。</p>
+        <p><strong>边界：</strong>resident 当前姿态宽相不是 CCD；多个机械树共享 publication，也不代表它们已有隐式接触力共同求解。I0/I1 仍是 HOST 几何与代数端口。</p>
+      </article>
+      <article class="card">
+        <div class="card-header"><span class="card-dot" style="background:#a78bfa" aria-hidden="true"></span><h2>面积、材料、求解器不同层</h2></div>
+        <p><strong>归一 weights：</strong>总和为 1，分配全 patch 载荷。<strong>真实 dA：</strong>单位 m²，压力乘面积产生力；还须保留压力分布的力矩。</p>
+        <p>Kamino（本地 Newton 1.7.0）是刚体动力学求解器；FFT 是非局部半空间材料参考；Fourier 只表达几何。三者不能凭同一“接触”名称互换。</p>
+        <p>新计划采用双 C2 紧支撑椭圆峰，非全域凸。12 个固定 FFT 参考已通过；独立峰相加高估总力 8.06%。force-only 插值误差 9.16%，未获 5% 资格，不承诺压力场、CoP、矩或能量。</p>
+      </article>
+      <article class="card">
+        <div class="card-header"><span class="card-dot" style="background:#fbbf24" aria-hidden="true"></span><h2>按什么顺序落地？</h2></div>
+        <p><strong>① I2 单路径：</strong>先在 MuJoCo-TYX 验证面积压力到实际双方速度的离散关系，核 M 与 M+h·Cjoint 的区别。</p>
+        <p><strong>② 设备与生命周期：</strong>容量、失败、entry/endpoint、reset/restore/checkpoint。<strong>③ resident：</strong>共同机械算子完成后再接入。</p>
+        <p><strong>总力表不能直接进入 I2：</strong>还缺完整 wrench 和已验证的增量响应。fallback 不偷换模型；切换前先处理历史、warm start 与能量。</p>
+      </article>
+    </section>
+
+    <footer class="footer">
+      <p>读取实际源码后的目标架构说明 · <a href="../contact-model-architecture-20261117.md">逐项源码路径、行号与接线推导</a></p>
+      <p>本页无脚本、外部字体或外部图像。父已核源码与浏览器渲染；本图不构成新共同动力学验收。新双峰数值结果另见实验报告。</p>
+    </footer>
+  </main>
+</body>
+</html>

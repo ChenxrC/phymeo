@@ -49,3 +49,7 @@ E*=1e6 Pa，物理窗口 Lx=Ly=0.024 m；x_i=(i-n/2)L/n。令 s(r)=max(1-r²,0)^
 架构：场景/能力声明→初始化接触计划→共享设备状态→宽相/窄相/CCD→接触几何→选定本构与离散表示→完整Jacobian和实际速度响应→接触/关节/驱动共同动力学→一次发布状态/力/观察。FFT是材料参考/未来非局部算子；Kamino是刚体动力学求解器，两者不同层。[Kamino 1.7职责](https://newton-physics.github.io/newton/1.7.0/solvers/kamino.html)
 
 产品集成仍先单MuJoCo-TYX I2：保留实际M+h*Cjoint速度响应、唯一pair模型、容量/事务。已有面积端口和I1裁剪只是HOST，不称新动力学已接通。首共同步、含阻尼、摩擦、关节与自由体案例通过后再设备化和resident扩展。
+
+## 本批执行结果
+
+代码8fcfa2b8；最终73新HOST通过，12次固定参考与两网格门全部通过。独立峰相加总力高估8.06%、CoP偏0.1255mm；固定PCHIP在40μm误差9.16%，5%资格拒绝，保留原方案不补点。图、架构及细节见[实验报告](../../development/multiasperity-contact-reference-report-20261117.md)。未准入候选未计时，未接产品动力学。

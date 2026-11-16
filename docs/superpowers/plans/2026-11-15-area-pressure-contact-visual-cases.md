@@ -187,3 +187,8 @@ V02的独立NumPy离散是参考基线，不替代下一批外部参考。T-smok
 2026-11-16：测试源码9640a1de，首次45新HOST通过；七个真实tetra–finite triangle裁剪案例的面积、压力合力和原点力矩均与解析值一致。shared face去重、跨cell保留、完整边界零压力体、变法向刚面、网格准入和容量拒绝均已验。见[报告和可旋转查看器](../../development/area-pressure-tetra-intersection-report-20261116.md)、[冻结计划](2026-11-16-area-pressure-tetra-intersection.md)。
 
 当前链路为体压力资产→有限刚面裁剪→真实dA积分；没有actual step/GPU通过。full资产仍可能遇到g≤0查询，shared-face gradient kink明确不支持。下一I2固定双自由体/偏心力矩/单关节共同更新，随后关节阻尼；不要重做本批静态几何。dev不变，V03失败及独立T-smoke待接保留。
+
+
+## 17. Kamino / FFT独立选择实验（2026-11-16）
+
+根据用户原始研究目的，先完成可理解、可选择的外部参考，暂不自动扩大Hydroelastic产品接线。固定计划见[两个选择实验](2026-11-16-kamino-fft-selection.md)，实际报告和媒体见[结果](../../development/kamino-fft-selection-report-20261116.md)。Kamino四格CUDA支撑/推行/倾覆全通过；FFT九格CPU离散约束通过但原5%面积目标均失败。以适用范围、所需指标和整步成本选择组合，下一优先FFT离线标定→低成本接触律的独立验证；不把两种不同层的耗时直接排名，不重复同一接触施力，不重做原已绿几何。

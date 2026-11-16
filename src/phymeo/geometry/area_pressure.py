@@ -46,6 +46,7 @@ def _sequence(value, cap, name):
 
 def _array(value, shape, name):
     """Check the complete bounded shape before making an owned FP64 copy."""
+
     def check(item, remaining):
         if isinstance(item, np.ndarray):
             if item.shape != remaining or item.dtype.kind not in "fiu":
@@ -106,7 +107,9 @@ class AreaPressureStamp:
         if time < 0:
             raise ValueError("sample_time_s must be nonnegative")
         object.__setattr__(self, "sample_time_s", time)
-        object.__setattr__(self, "configuration_id", _identifier(self.configuration_id, "configuration_id"))
+        object.__setattr__(
+            self, "configuration_id", _identifier(self.configuration_id, "configuration_id")
+        )
 
 
 def _identity(value):
@@ -120,7 +123,9 @@ def _identity(value):
 def _stamp(value):
     if not isinstance(value, AreaPressureStamp):
         raise ValueError("expected AreaPressureStamp")
-    return AreaPressureStamp(value.world_id, value.step_index, value.sample_time_s, value.configuration_id)
+    return AreaPressureStamp(
+        value.world_id, value.step_index, value.sample_time_s, value.configuration_id
+    )
 
 
 def _triangle_geometry(vertices, pressure, gradient):
@@ -185,8 +190,12 @@ class AreaPressureSurface:
             if not isinstance(triangle, AreaPressureTriangle):
                 raise ValueError("surface entries must be AreaPressureTriangle")
             item = AreaPressureTriangle(
-                triangle.triangle_id, triangle.compliant_cell_id, triangle.rigid_face_id,
-                triangle.vertices, triangle.vertex_pressure, triangle.pressure_gradient,
+                triangle.triangle_id,
+                triangle.compliant_cell_id,
+                triangle.rigid_face_id,
+                triangle.vertices,
+                triangle.vertex_pressure,
+                triangle.pressure_gradient,
             )
             if item.triangle_id in seen:
                 raise ValueError("duplicate triangle_id")
@@ -220,7 +229,9 @@ def _source_ids(value, count):
     for entry in entries:
         if not isinstance(entry, (tuple, list)) or len(entry) != 2:
             raise ValueError("source ID must contain compliant cell and rigid face")
-        result.append((_identifier(entry[0], "compliant_cell_id"), _identifier(entry[1], "rigid_face_id")))
+        result.append(
+            (_identifier(entry[0], "compliant_cell_id"), _identifier(entry[1], "rigid_face_id"))
+        )
     return tuple(result)
 
 
@@ -231,7 +242,7 @@ def _triangle_samples(sample_ids, source_ids):
         raise ValueError("quadrature requires three ordered samples per triangle")
     for i in range(0, len(ids), 3):
         expected = tuple((ids[i][0], slot) for slot in range(3))
-        if ids[i:i + 3] != expected or sources[i:i + 3] != (sources[i],) * 3:
+        if ids[i : i + 3] != expected or sources[i : i + 3] != (sources[i],) * 3:
             raise ValueError("sample/source order differs from triangle slots")
     return ids, sources
 
@@ -272,7 +283,11 @@ class AreaPressureQuadrature:
             "pressure": _array(self.pressure, (count,), "pressure"),
             "gradient": _array(self.gradient, (count,), "gradient"),
         }
-        if np.any(values["dA"] <= 0) or np.any(values["gradient"] <= 0) or np.any(values["pressure"] < 0):
+        if (
+            np.any(values["dA"] <= 0)
+            or np.any(values["gradient"] <= 0)
+            or np.any(values["pressure"] < 0)
+        ):
             raise ValueError("quadrature requires positive dA/gradient and nonnegative pressure")
         area = _scalar(self.total_area_m2, "total_area_m2")
         try:
@@ -280,13 +295,20 @@ class AreaPressureQuadrature:
                 summed = float(values["dA"].sum())
         except FloatingPointError as error:
             raise ValueError("total quadrature area overflowed") from error
-        if not np.isfinite(summed) or area < 0 or (count == 0 and area != 0) or (count and area <= 0):
+        if (
+            not np.isfinite(summed)
+            or area < 0
+            or (count == 0 and area != 0)
+            or (count and area <= 0)
+        ):
             raise ValueError("invalid total quadrature area")
         if abs(area - summed) > 1e-12 * max(area, summed):
             raise ValueError("inconsistent total quadrature area")
         for i in range(0, count, 3):
             for name in ("normals", "dA", "gradient"):
-                if not np.array_equal(values[name][i + 1], values[name][i]) or not np.array_equal(values[name][i + 2], values[name][i]):
+                if not np.array_equal(values[name][i + 1], values[name][i]) or not np.array_equal(
+                    values[name][i + 2], values[name][i]
+                ):
                     raise ValueError("triangle samples must retain one normal, dA and gradient")
         for name, value in values.items():
             object.__setattr__(self, name, value)
@@ -299,8 +321,16 @@ def _quadrature(value):
     if not isinstance(value, AreaPressureQuadrature):
         raise ValueError("expected AreaPressureQuadrature")
     return AreaPressureQuadrature(
-        value.identity, value.stamp, value.sample_ids, value.source_ids, value.points,
-        value.normals, value.dA, value.pressure, value.gradient, value.total_area_m2,
+        value.identity,
+        value.stamp,
+        value.sample_ids,
+        value.source_ids,
+        value.points,
+        value.normals,
+        value.dA,
+        value.pressure,
+        value.gradient,
+        value.total_area_m2,
     )
 
 
@@ -332,6 +362,14 @@ def quadrature_area_pressure(surface):
     except FloatingPointError as error:
         raise ValueError("area-pressure quadrature arithmetic overflowed") from error
     return AreaPressureQuadrature(
-        surface.identity, surface.stamp, tuple(sample_ids), tuple(source_ids), points,
-        normals, areas, pressure, gradient, total,
+        surface.identity,
+        surface.stamp,
+        tuple(sample_ids),
+        tuple(source_ids),
+        points,
+        normals,
+        areas,
+        pressure,
+        gradient,
+        total,
     )

@@ -20,8 +20,8 @@ from ..geometry.area_pressure import (
     _same,
     _sample_ids,
     _sequence,
-    _triangle_samples,
     _stamp,
+    _triangle_samples,
 )
 
 MAX_DOFS = 256
@@ -119,7 +119,11 @@ class AreaPressureRows:
             "surrogate_gap": _array(self.surrogate_gap, (count,), "surrogate_gap"),
             "elastic_force": _array(self.elastic_force, (count,), "elastic_force"),
         }
-        if np.any(values["stiffness"] <= 0) or np.any(values["surrogate_gap"] > 0) or np.any(values["elastic_force"] < 0):
+        if (
+            np.any(values["stiffness"] <= 0)
+            or np.any(values["surrogate_gap"] > 0)
+            or np.any(values["elastic_force"] < 0)
+        ):
             raise ValueError("rows require positive stiffness and compressive elastic coefficients")
         expected_j = _normal_jacobian(values["normals"], kin.jacobian_a, kin.jacobian_b)
         _same(values["normal_jacobian"], expected_j, "normal Jacobian")
@@ -146,9 +150,19 @@ def _rows(value):
     if not isinstance(value, AreaPressureRows):
         raise ValueError("expected AreaPressureRows")
     return AreaPressureRows(
-        value.identity, value.stamp, value.sample_ids, value.source_ids, value.dof_ids,
-        value.points, value.normals, value.jacobian_a, value.jacobian_b,
-        value.normal_jacobian, value.stiffness, value.surrogate_gap, value.elastic_force,
+        value.identity,
+        value.stamp,
+        value.sample_ids,
+        value.source_ids,
+        value.dof_ids,
+        value.points,
+        value.normals,
+        value.jacobian_a,
+        value.jacobian_b,
+        value.normal_jacobian,
+        value.stiffness,
+        value.surrogate_gap,
+        value.elastic_force,
     )
 
 
@@ -165,10 +179,19 @@ def assemble_area_pressure_rows(quadrature, kinematics):
     except FloatingPointError as error:
         raise ValueError("area-pressure row arithmetic overflowed") from error
     return AreaPressureRows(
-        quad.identity, quad.stamp, quad.sample_ids, quad.source_ids, kin.dof_ids,
-        quad.points, quad.normals, kin.jacobian_a, kin.jacobian_b,
+        quad.identity,
+        quad.stamp,
+        quad.sample_ids,
+        quad.source_ids,
+        kin.dof_ids,
+        quad.points,
+        quad.normals,
+        kin.jacobian_a,
+        kin.jacobian_b,
         _normal_jacobian(quad.normals, kin.jacobian_a, kin.jacobian_b),
-        stiffness, gap, force,
+        stiffness,
+        gap,
+        force,
     )
 
 
@@ -195,7 +218,9 @@ class AreaPressureLoads:
             name: _array(getattr(self, name), (len(dofs),), name)
             for name in ("generalized_a", "generalized_b", "generalized_total")
         }
-        values.update({name: _array(getattr(self, name), (6,), name) for name in ("wrench_a", "wrench_b")})
+        values.update(
+            {name: _array(getattr(self, name), (6,), name) for name in ("wrench_a", "wrench_b")}
+        )
         try:
             with np.errstate(over="raise", invalid="raise"):
                 total = values["generalized_a"] + values["generalized_b"]
@@ -237,6 +262,14 @@ def map_area_pressure_normal_forces(rows, normal_forces, *, stamp):
     except FloatingPointError as error:
         raise ValueError("area-pressure force pullback arithmetic overflowed") from error
     return AreaPressureLoads(
-        rows.identity, rows.stamp, rows.sample_ids, rows.source_ids, rows.dof_ids,
-        generalized_a, generalized_b, generalized_total, wrench_a, -wrench_a,
+        rows.identity,
+        rows.stamp,
+        rows.sample_ids,
+        rows.source_ids,
+        rows.dof_ids,
+        generalized_a,
+        generalized_b,
+        generalized_total,
+        wrench_a,
+        -wrench_a,
     )

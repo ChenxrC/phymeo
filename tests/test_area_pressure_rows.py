@@ -22,14 +22,16 @@ from phymeo.solvers.area_pressure_rows import (
     map_area_pressure_normal_forces,
 )
 
-
 RTOL = ATOL = 1e-12
 
 
 def _triangle(index=0, **changes):
     values = dict(
-        triangle_id=f"triangle-{index}", compliant_cell_id="cell-4", rigid_face_id="face-9",
-        vertices=((0, 0, 0), (2, 0, 0), (0, 1, 0)), vertex_pressure=(1, 2, 4),
+        triangle_id=f"triangle-{index}",
+        compliant_cell_id="cell-4",
+        rigid_face_id="face-9",
+        vertices=((0, 0, 0), (2, 0, 0), (0, 1, 0)),
+        vertex_pressure=(1, 2, 4),
         pressure_gradient=(0.5, 3, 5),
     )
     values.update(changes)
@@ -51,8 +53,11 @@ def _fixed(quad, dofs=3):
     for axis in range(min(dofs, 3)):
         jacobian_a[:, axis, axis] = 1.0
     return AreaPressureKinematics(
-        quad.stamp, quad.sample_ids, tuple(f"dof-{index}" for index in range(dofs)),
-        jacobian_a, np.zeros_like(jacobian_a),
+        quad.stamp,
+        quad.sample_ids,
+        tuple(f"dof-{index}" for index in range(dofs)),
+        jacobian_a,
+        np.zeros_like(jacobian_a),
     )
 
 
@@ -66,8 +71,11 @@ def _free_body_kinematics(quad, com_a, com_b):
             jacobian_a[row, :, 3 + axis] = np.cross(unit, point - com_a)
             jacobian_b[row, :, 9 + axis] = np.cross(unit, point - com_b)
     return AreaPressureKinematics(
-        quad.stamp, quad.sample_ids, tuple(f"free-dof-{index}" for index in range(12)),
-        jacobian_a, jacobian_b,
+        quad.stamp,
+        quad.sample_ids,
+        tuple(f"free-dof-{index}" for index in range(12)),
+        jacobian_a,
+        jacobian_b,
     )
 
 
@@ -100,16 +108,18 @@ def test_local_stiffness_gap_and_elastic_force_match_independent_pressure_integr
     quad = _quad()
     rows = assemble_area_pressure_rows(quad, _fixed(quad))
     np.testing.assert_allclose(rows.stiffness, (5 / 3,) * 3, rtol=RTOL, atol=ATOL)
-    np.testing.assert_allclose(rows.surrogate_gap, (-1 / 3, -13 / 30, -19 / 30),
-                               rtol=RTOL, atol=ATOL)
-    np.testing.assert_allclose(rows.elastic_force, (5 / 9, 13 / 18, 19 / 18),
-                               rtol=RTOL, atol=ATOL)
+    np.testing.assert_allclose(
+        rows.surrogate_gap, (-1 / 3, -13 / 30, -19 / 30), rtol=RTOL, atol=ATOL
+    )
+    np.testing.assert_allclose(rows.elastic_force, (5 / 9, 13 / 18, 19 / 18), rtol=RTOL, atol=ATOL)
     np.testing.assert_allclose(rows.normal_jacobian, ((0, 0, 1),) * 3, rtol=RTOL, atol=ATOL)
     loads = map_area_pressure_normal_forces(rows, rows.elastic_force, stamp=quad.stamp)
-    np.testing.assert_allclose(loads.wrench_a, (0, 0, 7 / 3, 11 / 12, -3 / 2, 0),
-                               rtol=RTOL, atol=ATOL)
-    np.testing.assert_allclose(loads.wrench_b, (0, 0, -7 / 3, -11 / 12, 3 / 2, 0),
-                               rtol=RTOL, atol=ATOL)
+    np.testing.assert_allclose(
+        loads.wrench_a, (0, 0, 7 / 3, 11 / 12, -3 / 2, 0), rtol=RTOL, atol=ATOL
+    )
+    np.testing.assert_allclose(
+        loads.wrench_b, (0, 0, -7 / 3, -11 / 12, 3 / 2, 0), rtol=RTOL, atol=ATOL
+    )
     np.testing.assert_allclose(loads.generalized_a, (0, 0, 7 / 3), rtol=RTOL, atol=ATOL)
     np.testing.assert_array_equal(loads.generalized_b, np.zeros(3))
     np.testing.assert_allclose(loads.generalized_total, (0, 0, 7 / 3), rtol=RTOL, atol=ATOL)
@@ -127,10 +137,12 @@ def test_separation_decreases_pressure_with_directional_not_gradient_norm_stiffn
     # tangential gradient is not part of the normal pressure derivative.
     shifted = _quad((_triangle(vertex_pressure=(0.95, 1.95, 3.95)),))
     shifted_rows = assemble_area_pressure_rows(shifted, _fixed(shifted))
-    np.testing.assert_allclose(shifted_rows.surrogate_gap - rows.surrogate_gap, separation,
-                               rtol=RTOL, atol=ATOL)
-    np.testing.assert_allclose(shifted_rows.elastic_force - rows.elastic_force, -1 / 60,
-                               rtol=RTOL, atol=ATOL)
+    np.testing.assert_allclose(
+        shifted_rows.surrogate_gap - rows.surrogate_gap, separation, rtol=RTOL, atol=ATOL
+    )
+    np.testing.assert_allclose(
+        shifted_rows.elastic_force - rows.elastic_force, -1 / 60, rtol=RTOL, atol=ATOL
+    )
     np.testing.assert_allclose(shifted_rows.stiffness, rows.stiffness, rtol=RTOL, atol=ATOL)
     assert not np.isclose(rows.stiffness[0], np.sqrt(0.5**2 + 3**2 + 5**2) / 3)
     zero = _quad((_triangle(vertex_pressure=(0, 0, 0), pressure_gradient=(0, 0, 5)),))
@@ -142,19 +154,29 @@ def test_separation_decreases_pressure_with_directional_not_gradient_norm_stiffn
 
 def test_all_twelve_free_body_columns_power_and_common_rigid_motion():
     # Rotate the triangle so every world component of its normal is exercised.
-    rotation = np.array(((12 / 13, 0, 5 / 13), (4 / 13, 3 / 5, -48 / 65),
-                         (-3 / 13, 4 / 5, 36 / 65)))
+    rotation = np.array(
+        ((12 / 13, 0, 5 / 13), (4 / 13, 3 / 5, -48 / 65), (-3 / 13, 4 / 5, 36 / 65))
+    )
     translation = np.array((0.2, -0.3, 0.4))
     vertices = np.array(((0, 0, 0), (2, 0, 0), (0, 1, 0)))
-    quad = _quad((_triangle(vertices=vertices @ rotation.T + translation,
-                            pressure_gradient=rotation @ np.array((0.5, 3, 5))),))
+    quad = _quad(
+        (
+            _triangle(
+                vertices=vertices @ rotation.T + translation,
+                pressure_gradient=rotation @ np.array((0.5, 3, 5)),
+            ),
+        )
+    )
     com_a, com_b = np.array((0.3, -0.4, 0.2)), np.array((-0.7, 0.5, -0.1))
     kinematics = _free_body_kinematics(quad, com_a, com_b)
     rows = assemble_area_pressure_rows(quad, kinematics)
     expected_rows = []
     for point, normal in zip(quad.points, quad.normals):
-        expected_rows.append(np.r_[normal, np.cross(point - com_a, normal),
-                                   -normal, -np.cross(point - com_b, normal)])
+        expected_rows.append(
+            np.r_[
+                normal, np.cross(point - com_a, normal), -normal, -np.cross(point - com_b, normal)
+            ]
+        )
     np.testing.assert_allclose(rows.normal_jacobian, expected_rows, rtol=RTOL, atol=ATOL)
     velocity = np.array((0.2, -0.6, 0.5, 0.8, -0.3, 0.4, -0.7, 0.1, 0.3, -0.2, 0.9, 0.6))
     forces = np.array((2.0, 3.0, 7.0))
@@ -165,21 +187,32 @@ def test_all_twelve_free_body_columns_power_and_common_rigid_motion():
         power += force * np.dot(normal, va - vb)
     loads = map_area_pressure_normal_forces(rows, forces, stamp=quad.stamp)
     assert float(loads.generalized_total @ velocity) == pytest.approx(power, rel=RTOL, abs=ATOL)
-    np.testing.assert_allclose(loads.generalized_total, loads.generalized_a + loads.generalized_b,
-                               rtol=RTOL, atol=ATOL)
+    np.testing.assert_allclose(
+        loads.generalized_total, loads.generalized_a + loads.generalized_b, rtol=RTOL, atol=ATOL
+    )
     force_a, moment_a = loads.wrench_a[:3], loads.wrench_a[3:]
     force_b, moment_b = loads.wrench_b[:3], loads.wrench_b[3:]
-    np.testing.assert_allclose(loads.generalized_a,
-                               np.r_[force_a, moment_a - np.cross(com_a, force_a), np.zeros(6)],
-                               rtol=RTOL, atol=ATOL)
-    np.testing.assert_allclose(loads.generalized_b,
-                               np.r_[np.zeros(6), force_b, moment_b - np.cross(com_b, force_b)],
-                               rtol=RTOL, atol=ATOL)
+    np.testing.assert_allclose(
+        loads.generalized_a,
+        np.r_[force_a, moment_a - np.cross(com_a, force_a), np.zeros(6)],
+        rtol=RTOL,
+        atol=ATOL,
+    )
+    np.testing.assert_allclose(
+        loads.generalized_b,
+        np.r_[np.zeros(6), force_b, moment_b - np.cross(com_b, force_b)],
+        rtol=RTOL,
+        atol=ATOL,
+    )
     np.testing.assert_allclose(loads.wrench_a + loads.wrench_b, np.zeros(6), rtol=RTOL, atol=ATOL)
     assert np.linalg.norm(loads.generalized_total) > 0
     common_v, common_w = np.array((0.7, 0.4, -0.2)), np.array((-0.3, 0.5, 0.9))
-    common = np.r_[common_v + np.cross(common_w, com_a), common_w,
-                   common_v + np.cross(common_w, com_b), common_w]
+    common = np.r_[
+        common_v + np.cross(common_w, com_a),
+        common_w,
+        common_v + np.cross(common_w, com_b),
+        common_w,
+    ]
     np.testing.assert_allclose(rows.normal_jacobian @ common, np.zeros(3), rtol=RTOL, atol=ATOL)
 
 
@@ -191,12 +224,16 @@ def test_shared_coordinates_and_joint_type_jacobians_preserve_both_sides():
     for row, point in enumerate(quad.points):
         ja[row, :, 2] = np.cross((0, 1, 0), point - (0.2, 0, 0))
         jb[row, :, 3] = np.cross((1, 0, 0), point - (0, -0.3, 0))
-    kin = AreaPressureKinematics(quad.stamp, quad.sample_ids,
-                                 ("shared-slide", "opposed-slide", "hinge-a", "hinge-b"), ja, jb)
+    kin = AreaPressureKinematics(
+        quad.stamp, quad.sample_ids, ("shared-slide", "opposed-slide", "hinge-a", "hinge-b"), ja, jb
+    )
     rows = assemble_area_pressure_rows(quad, kin)
-    np.testing.assert_allclose(rows.normal_jacobian,
-                               ((0, 3, -2 / 15, -7 / 15), (0, 3, -17 / 15, -7 / 15),
-                                (0, 3, -2 / 15, -29 / 30)), rtol=RTOL, atol=ATOL)
+    np.testing.assert_allclose(
+        rows.normal_jacobian,
+        ((0, 3, -2 / 15, -7 / 15), (0, 3, -17 / 15, -7 / 15), (0, 3, -2 / 15, -29 / 30)),
+        rtol=RTOL,
+        atol=ATOL,
+    )
     loads = map_area_pressure_normal_forces(rows, (2, 3, 7), stamp=quad.stamp)
     # Hand sums: sum f=12, sum x*f=7, sum y*f=11/2.
     np.testing.assert_allclose(loads.generalized_a, (12, 24, -4.6, 0), rtol=RTOL, atol=ATOL)
@@ -205,31 +242,43 @@ def test_shared_coordinates_and_joint_type_jacobians_preserve_both_sides():
     np.testing.assert_allclose(loads.wrench_a, (0, 0, 12, 5.5, -7, 0), rtol=RTOL, atol=ATOL)
     # Reindexing the shared basis reindexes generalized loads, not world wrench.
     order = (3, 1, 0, 2)
-    permuted = AreaPressureKinematics(quad.stamp, quad.sample_ids,
-                                      tuple(kin.dof_ids[index] for index in order),
-                                      ja[:, :, order], jb[:, :, order])
+    permuted = AreaPressureKinematics(
+        quad.stamp,
+        quad.sample_ids,
+        tuple(kin.dof_ids[index] for index in order),
+        ja[:, :, order],
+        jb[:, :, order],
+    )
     permuted_rows = assemble_area_pressure_rows(quad, permuted)
     permuted_loads = map_area_pressure_normal_forces(permuted_rows, (2, 3, 7), stamp=quad.stamp)
-    np.testing.assert_allclose(permuted_loads.generalized_total,
-                               loads.generalized_total[list(order)], rtol=RTOL, atol=ATOL)
+    np.testing.assert_allclose(
+        permuted_loads.generalized_total, loads.generalized_total[list(order)], rtol=RTOL, atol=ATOL
+    )
     np.testing.assert_allclose(permuted_loads.wrench_a, loads.wrench_a, rtol=RTOL, atol=ATOL)
 
 
 def test_variable_normals_retain_zero_resultant_nonzero_couple():
-    positive = _triangle(0, vertices=((0, 1 / 3, -1 / 3), (0, 7 / 3, -1 / 3),
-                                      (0, 1 / 3, 2 / 3)),
-                         vertex_pressure=(3, 3, 3), pressure_gradient=(5, 0, 0))
-    negative = _triangle(1, vertices=((0, -5 / 3, -1 / 3), (0, -5 / 3, 2 / 3),
-                                      (0, 1 / 3, -1 / 3)),
-                         vertex_pressure=(3, 3, 3), pressure_gradient=(-5, 0, 0))
+    positive = _triangle(
+        0,
+        vertices=((0, 1 / 3, -1 / 3), (0, 7 / 3, -1 / 3), (0, 1 / 3, 2 / 3)),
+        vertex_pressure=(3, 3, 3),
+        pressure_gradient=(5, 0, 0),
+    )
+    negative = _triangle(
+        1,
+        vertices=((0, -5 / 3, -1 / 3), (0, -5 / 3, 2 / 3), (0, 1 / 3, -1 / 3)),
+        vertex_pressure=(3, 3, 3),
+        pressure_gradient=(-5, 0, 0),
+    )
     quad = _quad((positive, negative))
     kin = _free_body_kinematics(quad, np.zeros(3), np.zeros(3))
     rows = assemble_area_pressure_rows(quad, kin)
     loads = map_area_pressure_normal_forces(rows, rows.elastic_force, stamp=quad.stamp)
     np.testing.assert_allclose(loads.wrench_a, (0, 0, 0, 0, 0, -6), rtol=RTOL, atol=ATOL)
     np.testing.assert_allclose(loads.wrench_b, (0, 0, 0, 0, 0, 6), rtol=RTOL, atol=ATOL)
-    np.testing.assert_allclose(loads.generalized_total,
-                               (0, 0, 0, 0, 0, -6, 0, 0, 0, 0, 0, 6), rtol=RTOL, atol=ATOL)
+    np.testing.assert_allclose(
+        loads.generalized_total, (0, 0, 0, 0, 0, -6, 0, 0, 0, 0, 0, 6), rtol=RTOL, atol=ATOL
+    )
 
 
 def test_empty_contact_and_zero_force_keep_shapes_identity_and_phase():
@@ -267,8 +316,16 @@ def test_kinematics_rows_and_loads_are_owned_frozen_and_bytes_backed():
     np.testing.assert_allclose(loads.wrench_a, (0, 0, 12, 5.5, -7, 0), rtol=RTOL, atol=ATOL)
     for name in ("jacobian_a", "jacobian_b"):
         _assert_bytes_backed(getattr(kin, name))
-    for name in ("points", "normals", "jacobian_a", "jacobian_b", "normal_jacobian",
-                 "stiffness", "surrogate_gap", "elastic_force"):
+    for name in (
+        "points",
+        "normals",
+        "jacobian_a",
+        "jacobian_b",
+        "normal_jacobian",
+        "stiffness",
+        "surrogate_gap",
+        "elastic_force",
+    ):
         _assert_bytes_backed(getattr(rows, name))
     for name in ("generalized_a", "generalized_b", "generalized_total", "wrench_a", "wrench_b"):
         _assert_bytes_backed(getattr(loads, name))
@@ -277,10 +334,15 @@ def test_kinematics_rows_and_loads_are_owned_frozen_and_bytes_backed():
             setattr(value, name, ())
 
 
-@pytest.mark.parametrize("change", [
-    {"world_id": "other-world"}, {"step_index": 8}, {"sample_time_s": 0.126},
-    {"configuration_id": "trial-not-accepted"},
-])
+@pytest.mark.parametrize(
+    "change",
+    [
+        {"world_id": "other-world"},
+        {"step_index": 8},
+        {"sample_time_s": 0.126},
+        {"configuration_id": "trial-not-accepted"},
+    ],
+)
 def test_every_stamp_component_must_match_without_implicit_rebinding(change):
     quad = _quad()
     kin = _fixed(quad)
@@ -308,33 +370,47 @@ def test_sample_order_cannot_be_silently_repaired_and_dof_names_are_unique():
         assemble_area_pressure_rows(quad, replace(kin, dof_ids=("x", "y", "z" * 129)))
 
 
-@pytest.mark.parametrize("field,value", [
-    ("points", np.zeros((2, 3))), ("normals", np.tile((0, 0, 2), (3, 1))),
-    ("dA", np.array((-1.0, 1 / 3, 1 / 3))), ("pressure", np.array((1, np.nan, 2))),
-    ("gradient", np.array((5.0, 0.0, 5.0))),
-    ("sample_ids", (("triangle-0", 0),) * 3),
-    ("source_ids", (("cell-4", "face-9"),)),
-])
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("points", np.zeros((2, 3))),
+        ("normals", np.tile((0, 0, 2), (3, 1))),
+        ("dA", np.array((-1.0, 1 / 3, 1 / 3))),
+        ("pressure", np.array((1, np.nan, 2))),
+        ("gradient", np.array((5.0, 0.0, 5.0))),
+        ("sample_ids", (("triangle-0", 0),) * 3),
+        ("source_ids", (("cell-4", "face-9"),)),
+    ],
+)
 def test_assembler_revalidates_forged_quadrature(field, value):
     quad = _quad()
     with pytest.raises(ValueError):
         assemble_area_pressure_rows(_forge(quad, **{field: value}), _fixed(quad))
 
 
-@pytest.mark.parametrize("field,value", [
-    ("jacobian_a", np.zeros((3, 3))), ("jacobian_b", np.full((3, 3, 3), np.nan)),
-    ("dof_ids", ("dup", "dup", "z")),
-])
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("jacobian_a", np.zeros((3, 3))),
+        ("jacobian_b", np.full((3, 3, 3), np.nan)),
+        ("dof_ids", ("dup", "dup", "z")),
+    ],
+)
 def test_assembler_revalidates_forged_kinematics(field, value):
     quad = _quad()
     with pytest.raises(ValueError):
         assemble_area_pressure_rows(quad, _forge(_fixed(quad), **{field: value}))
 
 
-@pytest.mark.parametrize("field,value", [
-    ("normals", np.zeros((3, 3))), ("jacobian_b", np.full((3, 3, 3), np.nan)),
-    ("stiffness", np.full(3, np.inf)), ("source_ids", (("cell-4", "face-9"),)),
-])
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("normals", np.zeros((3, 3))),
+        ("jacobian_b", np.full((3, 3, 3), np.nan)),
+        ("stiffness", np.full(3, np.inf)),
+        ("source_ids", (("cell-4", "face-9"),)),
+    ],
+)
 def test_force_map_revalidates_forged_rows(field, value):
     quad = _quad()
     rows = assemble_area_pressure_rows(quad, _fixed(quad))
@@ -342,9 +418,15 @@ def test_force_map_revalidates_forged_rows(field, value):
         map_area_pressure_normal_forces(_forge(rows, **{field: value}), (1, 2, 3), stamp=quad.stamp)
 
 
-@pytest.mark.parametrize("forces", [
-    (-1, 2, 3), (1, np.nan, 3), (1, 2), ((1,), (2,), (3,)),
-])
+@pytest.mark.parametrize(
+    "forces",
+    [
+        (-1, 2, 3),
+        (1, np.nan, 3),
+        (1, 2),
+        ((1,), (2,), (3,)),
+    ],
+)
 def test_force_preflight_is_atomic_and_does_not_broadcast(forces):
     quad = _quad()
     rows = assemble_area_pressure_rows(quad, _fixed(quad))
@@ -375,12 +457,20 @@ def test_dof_and_jacobian_element_caps_are_independent():
 def test_finite_inputs_with_nonfinite_derived_rows_or_loads_are_rejected():
     with np.errstate(over="ignore", invalid="ignore", divide="ignore"):
         with pytest.raises(ValueError):
-            quad = _quad((_triangle(vertices=((0, 0, 0), (8, 0, 0), (0, 3, 0)),
-                                    vertex_pressure=(1, 1, 1), pressure_gradient=(0, 0, 1e308)),))
+            quad = _quad(
+                (
+                    _triangle(
+                        vertices=((0, 0, 0), (8, 0, 0), (0, 3, 0)),
+                        vertex_pressure=(1, 1, 1),
+                        pressure_gradient=(0, 0, 1e308),
+                    ),
+                )
+            )
             assemble_area_pressure_rows(quad, _fixed(quad))
         with pytest.raises(ValueError):
-            quad = _quad((_triangle(vertex_pressure=(1e308,) * 3,
-                                    pressure_gradient=(0, 0, 1e-308)),))
+            quad = _quad(
+                (_triangle(vertex_pressure=(1e308,) * 3, pressure_gradient=(0, 0, 1e-308)),)
+            )
             assemble_area_pressure_rows(quad, _fixed(quad))
         quad = _quad()
         rows = assemble_area_pressure_rows(quad, _fixed(quad))

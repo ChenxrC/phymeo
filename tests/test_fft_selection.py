@@ -209,3 +209,25 @@ def test_bad_external_export_is_rejected_without_mutating_input(fault):
     with pytest.raises(ValueError):
         extract_fields(result, substrate, system, 128, 0.00005)
     np.testing.assert_array_equal(result.x, before)
+
+
+def test_nested_external_convergence_arrays_keep_values_shape_and_dtype():
+    from experiments.contact_selection.fft_reference import _json_value
+
+    result = _json_value(
+        {
+            "maxcv": {
+                "max_pen": np.array(1e-12),
+                "samples": np.array([1.0, -2.0], dtype=np.float32),
+            },
+            "success": np.bool_(True),
+        }
+    )
+    assert result["maxcv"]["max_pen"] == {"ndarray_data": 1e-12, "dtype": "float64", "shape": []}
+    assert result["maxcv"]["samples"] == {
+        "ndarray_data": [1.0, -2.0],
+        "dtype": "float32",
+        "shape": [2],
+    }
+    assert result["success"] is True
+    assert _json_value(np.array([np.nan]))["ndarray_data"] == [{"nonfinite": "nan"}]

@@ -294,6 +294,12 @@ def preview_fields(fields):
 
 
 def _json_value(value):
+    if isinstance(value, np.ndarray):
+        return {
+            "ndarray_data": _json_value(value.tolist()),
+            "dtype": str(value.dtype),
+            "shape": list(value.shape),
+        }
     if isinstance(value, np.generic):
         value = value.item()
     if value is None or isinstance(value, (str, bool, int)):

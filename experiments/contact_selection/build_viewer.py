@@ -11,10 +11,13 @@ def read(path):
     return json.loads(path.read_text(encoding="utf-8-sig"))
 
 
-def build(kamino, fft, output):
+def build(kamino, fft, output, analysis=None):
     output = Path(output)
     output.mkdir(parents=True, exist_ok=False)
     data = {"kamino": [], "fft": []}
+    phase_costs = (
+        {c["id"]: c["phase_costs"] for c in read(Path(analysis))["cases"]} if analysis else {}
+    )
     ks = read(Path(kamino) / "summary.json")
     for case in ks["cases"]:
         metrics, timing = case["metrics"], case["timing"]
@@ -45,17 +48,20 @@ def build(kamino, fft, output):
                 else timing["steps_after_100ms_mean_s"] * 1000,
                 "frames": frames,
                 "error": error,
-                "caption": "读取实际CUDA轨迹。三维投影；末端若未再查询接触，不显示或补造端点接触力。",
+                "caption": "读取实际CUDA轨迹，按10倍慢放。三维投影；末端若未再查询接触，不显示或补造端点接触力。",
                 "verdict": "功能判据："
                 + ("通过" if metrics["functional_pass"] else "未全部通过")
                 + "；求解器每步收敛："
                 + ("是" if metrics["solver_converged"] else "否")
                 + "。小规模同步耗时包含内部碰撞及接触观察，不代表批量GPU吞吐。",
+                "loaded_step_ms": phase_costs.get(case["id"], {})
+                .get("loaded", {})
+                .get("step_mean_ms"),
                 "raw_metrics": metrics,
                 "raw_timing": timing,
             }
         )
-    fs = read(Path(fft) / "summary.json")
+    fs = read(Path(fft) / "summary.json") if fft is not None else {"cases": []}
     for case in fs["cases"]:
         metrics = case.get("metrics") or {}
         hertz = metrics.get("hertz", {})
@@ -69,6 +75,8 @@ def build(kamino, fft, output):
             "area_error": hertz.get("area_relative_error"),
             "solve_s": case["timing"].get("solver_s"),
             "p0": reference.get("peak_pressure_pa"),
+            "kkt_pass": metrics.get("kkt", {}).get("passed", False),
+            "hertz_pass": hertz.get("target_passed", False),
             "pressure_scale_pa": 70000,
             "preview": None,
             "error": case.get("failure", {}).get("message", ""),
@@ -107,8 +115,9 @@ def build(kamino, fft, output):
         json.dumps(
             {
                 "kamino": str(Path(kamino).resolve()),
-                "fft": str(Path(fft).resolve()),
+                "fft": str(Path(fft).resolve()) if fft is not None else None,
                 "mode": "saved-output-only-no-producer-calls",
+                "analysis": str(Path(analysis).resolve()) if analysis is not None else None,
             },
             indent=2,
         ),
@@ -128,7 +137,8 @@ def build(kamino, fft, output):
 if __name__ == "__main__":
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--kamino", type=Path, required=True)
-    p.add_argument("--fft", type=Path, required=True)
+    p.add_argument("--fft", type=Path)
     p.add_argument("--output", type=Path, required=True)
+    p.add_argument("--analysis", type=Path)
     args = p.parse_args()
-    build(args.kamino, args.fft, args.output)
+    build(args.kamino, args.fft, args.output, args.analysis)

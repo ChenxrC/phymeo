@@ -48,11 +48,14 @@ class NativeJointInput:
         for key, value in vars(self).items():
             if key == "name" or value is None:
                 continue
-            if (
-                isinstance(value, (bool, np.bool_))
-                or not np.isfinite(value)
-                or abs(value) > np.finfo(np.float32).max
-            ):
+            if isinstance(value, (bool, np.bool_)) or not isinstance(value, Real):
+                raise ValueError(f"joint {self.name}.{key} requires a finite scalar")
+            # Freeze accepted real scalars before retaining them; never keep caller storage.
+            try:
+                value = float(value)
+            except (OverflowError, ValueError) as error:
+                raise ValueError(f"joint {self.name}.{key} requires a finite scalar") from error
+            if not np.isfinite(value) or abs(value) > float(np.finfo(np.float32).max):
                 raise ValueError(f"joint {self.name}.{key} requires a finite scalar")
             if (
                 key
@@ -68,6 +71,7 @@ class NativeJointInput:
                 and value < 0
             ):
                 raise ValueError(f"joint {self.name}.{key} must be nonnegative")
+            object.__setattr__(self, key, value)
         if self.lower_limit is not None and self.upper_limit is not None:
             if self.lower_limit >= self.upper_limit:
                 raise ValueError("native position limits require lower < upper")
@@ -144,8 +148,9 @@ class NativeAssetInstance:
             raise ValueError("invalid scalar joint defaults")
         if any(value is None for value in defaults.values()):
             raise ValueError("scalar joint defaults must contain explicit finite values")
-        NativeJointInput("validation", **defaults)
-        object.__setattr__(self, "joint_defaults", tuple(defaults.items()))
+        validated = NativeJointInput("validation", **defaults)
+        object.__setattr__(self, "joint_defaults",
+                           tuple((key, getattr(validated, key)) for key in defaults))
         if (
             self.drive_mode not in {"preserve", "scalar_pd"}
             or type(self.self_collision) is not bool

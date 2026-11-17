@@ -29,6 +29,91 @@ def urdf(tmp_path):
     return str(path)
 
 
+JOINT_SCALAR_FIELDS = tuple(
+    name for name in NativeJointInput.__dataclass_fields__ if name != "name"
+)
+
+
+@pytest.mark.parametrize("field", JOINT_SCALAR_FIELDS)
+@pytest.mark.parametrize("value", [
+    True, np.bool_(False), 1 + 2j, np.complex64(2), "2", [2.0],
+    np.array(2.0), np.array([2.0]), np.array([2.0, 3.0]),
+    np.nan, np.inf, -np.inf, 1e39, 10**1000,
+])
+def test_joint_input_rejects_nonreal_containers_and_out_of_range(field, value):
+    with pytest.raises(ValueError, match="finite scalar"):
+        NativeJointInput("slide", **{field: value})
+
+
+@pytest.mark.parametrize("field", ["kp", "kd", "armature", "damping", "frictionloss"])
+@pytest.mark.parametrize("value", [True, 1 + 0j, np.array(2.), np.array([2.]),
+                                  [2.], "2", np.nan, np.inf, -1.])
+def test_joint_defaults_reject_invalid_scalars(urdf, field, value):
+    with pytest.raises(ValueError):
+        NativeAssetInstance("arm", urdf, drive_mode="scalar_pd",
+                            joint_defaults=((field, value),))
+
+
+def test_joint_inputs_and_defaults_freeze_caller_values(urdf):
+    from dataclasses import FrozenInstanceError
+
+    source = np.array([.125, .25, 4.], dtype=np.float32)
+    arguments = dict(position=source[0], velocity=source[1], applied_force=source[2])
+    row = NativeJointInput("slide", **arguments)
+    rows = [row]
+    defaults = [["kp", np.float32(20)], ["kd", np.float64(2)]]
+    asset = NativeAssetInstance("arm", urdf, drive_mode="scalar_pd",
+                                joints=rows, joint_defaults=defaults)
+    source[:] = np.nan
+    arguments["position"] = 99.
+    rows.clear()
+    defaults[0][1] = np.nan
+    defaults.clear()
+    assert (row.position, row.velocity, row.applied_force) == (.125, .25, 4.)
+    assert asset.joints == (row,)
+    assert asset.joint_defaults == (("kp", 20.), ("kd", 2.))
+    assert all(type(getattr(row, key)) is float for key in arguments)
+    assert all(type(value) is float for _, value in asset.joint_defaults)
+    with pytest.raises(FrozenInstanceError):
+        row.position = 99.
+
+
+def test_python_and_numpy_scalar_models_are_identical(urdf):
+    import mujoco
+
+    values = dict(position=.125, velocity=.25, target_position=.5, target_velocity=.75,
+                  applied_force=2., kp=20., kd=2., armature=.125, damping=.25,
+                  frictionloss=.125, effort_limit=3., lower_limit=-.5,
+                  upper_limit=.75, velocity_limit=2.)
+    for scalar in (float, int, np.float32, np.float64, np.int32, np.int64):
+        # Integral inputs exercise the same contract with exactly representable values.
+        selected = values if scalar in (float, np.float32, np.float64) else {
+            key: int(value) for key, value in values.items()
+        }
+        if scalar in (int, np.int32, np.int64):
+            selected.update(lower_limit=-1, upper_limit=1)
+        row = NativeJointInput("slide", **{key: scalar(v) for key, v in selected.items()})
+        defaults = (("kp", scalar(8)), ("kd", scalar(1)))
+        actual = compile_native_template((NativeAssetInstance("arm", urdf,
+            drive_mode="scalar_pd", joints=(row,), joint_defaults=defaults),),
+            timestep=.002, gravity=(0, 0, 0))
+        reference = compile_native_template((NativeAssetInstance("arm", urdf,
+            drive_mode="scalar_pd", joints=(NativeJointInput("slide", **selected),),
+            joint_defaults=(("kp", 8.), ("kd", 1.))),), timestep=.002, gravity=(0, 0, 0))
+        a, b = actual.compilation.fresh_native_model(), reference.compilation.fresh_native_model()
+        for name in dir(a):
+            value = getattr(a, name)
+            if isinstance(value, np.ndarray):
+                np.testing.assert_array_equal(value, getattr(b, name), err_msg=name)
+        assert actual.scalar_joint_bindings == reference.scalar_joint_bindings
+        assert actual.target_bindings == reference.target_bindings
+        da, db = mujoco.MjData(a), mujoco.MjData(b)
+        actual.initial_state.apply(actual.compilation, da)
+        reference.initial_state.apply(reference.compilation, db)
+        for field in ("qpos", "qvel", "ctrl", "qfrc_applied"):
+            np.testing.assert_array_equal(getattr(da, field), getattr(db, field))
+
+
 def test_source_joint_catalog_needs_no_mesh_or_native_model(urdf):
     from phymeo.builders.native_resources import read_urdf_joint_catalog
     snapshot = URDF.replace('<box size=".2 .2 .2"/>', '<mesh filename="missing.stl"/>')

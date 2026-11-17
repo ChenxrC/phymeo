@@ -1,5 +1,14 @@
 # 原生资产装配与完整初态
 
+## 标量关节输入冻结
+
+`NativeJointInput` 的非空数值字段接受有限且FP32范围内的Python/NumPy实数标量，
+在构造时规范化为独立的Python `float`。布尔、复数、字符串、列表和ndarray
+（含零维、单元素数组）明确拒绝；可选字段的 `None` 行为保持原合同。
+`NativeAssetInstance.joint_defaults` 通过同一规则验证并保存规范化值，复制输入容器。
+后续修改调用方容器不改变已校验输入。非负参数和上下限检查保持原判据；
+不新增FP32舍入、裁剪或模型参数调整。该工作仅发生在冷构造阶段。
+
 ## 显式 primitive 接触维度
 
 `NativeTemplate.primitive_contact_contract_version=1`：NativeStaticShape/NativeRigidShape

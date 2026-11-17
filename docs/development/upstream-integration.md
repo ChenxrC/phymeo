@@ -8,8 +8,8 @@ The old source trees, environments and qualification records remain intact.
 
 Follow-up dependency delivery, module reviews and concrete merge blockers are
 recorded in [candidate merge gates](candidate-merge-gates.md). That review found
-an open native joint scalar ownership defect; this consolidation is not approval
-to merge the complete candidate.
+a native joint scalar ownership defect, subsequently closed by the scalar-freeze
+repair recorded there; the complete candidate still has other merge gates.
 
 The active review branch is `feature/wh/phymeo-candidate-20261117`, based on
 `fb4286b1`. A fresh fetch still resolves official `origin/codex/dev` to

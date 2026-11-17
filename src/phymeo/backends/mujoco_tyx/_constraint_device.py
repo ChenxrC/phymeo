@@ -217,6 +217,7 @@ class TyxConstraintDevice(TyxDevice):
 
                 packet = self.area_packet
                 self._put(self.area_input, packet[0])
+                self._put(self.area_measure_input, packet[4])
                 self._put(self.area_pair_index, packet[1])
                 self._put(self.area_sizes, packet[2])
                 append_rows(

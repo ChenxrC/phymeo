@@ -284,6 +284,8 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
         self._control_packet, self._control_retired = None, []
         self._control_epoch, self._control_cleanup_errors = 0, ()
         self._extra_counts = dict(
+            area_copy_bytes=0,
+            area_copies=0,
             completed_steps=0,
             accepted_world_steps=0,
             failed_batches=0,
@@ -533,7 +535,7 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                 area_pressure_law="frozen-surface-elastic-backward-euler-v1",
                 area_pressure_input="fresh-host-surface-per-world-and-pair",
                 area_pressure_publication="last_step.raw_contact_fields.area_pressure",
-                area_pressure_entry_abi=False,
+                area_pressure_entry_abi="mujoco-tyx-area-device-entry-v1",
                 area_pressure_checkpoint=True,
                 area_pressure_observation="host-owned-accepted-receipt-v1",
                 area_pressure_friction=False,
@@ -982,6 +984,14 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                     result["entry_meta"] = self._device._get(
                         self._device.entry["entry_meta"][1 - self._device.active]
                     )
+                if self._area_pressure_pairs:
+                    from .mujoco_area_pressure_device import AREA_FIELDS
+
+                    with self._device.tx.use_runtime(self._device.runtime):
+                        for name in AREA_FIELDS:
+                            result[name] = self._device._get(
+                                self._device.entry[name][1 - self._device.active]
+                            )
                 if np.any(result["status"]):
                     reasons = {
                         1: "contact_or_constraint_capacity",
@@ -1131,6 +1141,10 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                         backend=f"mujoco-tyx-{self._mode}",
                         **receipt_extra,
                     )
+                    if self._area_pressure_pairs:
+                        from .mujoco_area_pressure_device import validate_row
+
+                        validate_row(result, index, receipts[key])
                     expected_entry = (
                         1,
                         self._ticks[key],
@@ -1443,6 +1457,20 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
         with self._lock:
             self._check_open()
             return self._checkpoint_revision
+
+    @property
+    def area_pressure_device_layout(self):
+        from .mujoco_area_pressure_device import copy_layout
+
+        with self._lock:
+            self._check_open()
+            return copy_layout(self)
+
+    def copy_area_pressure(self, outputs, *, expected_revision):
+        """Copy accepted device area history and endpoints to caller-owned arrays."""
+        from .mujoco_area_pressure_device import copy_accepted
+
+        return copy_accepted(self, outputs, expected_revision)
 
     def area_pressure_snapshot(self, keys=None):
         """Owned HOST history, with input force phase separate from endpoint state."""

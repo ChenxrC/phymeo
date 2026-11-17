@@ -101,7 +101,7 @@ class EntryObserver:
         )
         _require(actual == expected, "entry source layout changed")
         _require(set(device.entry) == set(expected), "entry source fields differ")
-        values = {name: device.entry[name][device.active] for name in ENTRY_FIELDS}
+        values = {name: device.entry[name][device.active] for name in expected}
         checks = [(values[name], shape, dtype) for name, (shape, dtype) in expected.items()]
         checks.extend(
             (

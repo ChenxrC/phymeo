@@ -95,6 +95,7 @@ def pack(runtime, mapping, expected_revision):
         raise ValueError("runtime has no area-pressure declaration")
     storage = max(1, cap)
     data = np.zeros((len(runtime._world_keys), storage, 8), dtype=np.float32)
+    measures = np.zeros((len(runtime._world_keys), storage, 2), dtype=np.int32)
     pair_index = np.zeros((len(runtime._world_keys), storage), dtype=np.int32)
     counts = np.zeros(len(runtime._world_keys), dtype=np.int32)
     metadata = []
@@ -130,11 +131,14 @@ def pack(runtime, mapping, expected_revision):
                 raise ValueError("area-pressure coefficients not representable in FP32")
             data[wi, cursor : cursor + n] = converted
             pair_index[wi, cursor : cursor + n] = pi
+            measures[wi, cursor : cursor + n] = (
+                np.asarray(quad.dA, dtype="<f8").view("<i4").reshape(n, 2)
+            )
             row.append((quad, cursor, n))
             cursor += n
         counts[wi] = cursor
         metadata.append(tuple(row))
-    return data, pair_index, counts, tuple(metadata)
+    return data, pair_index, counts, tuple(metadata), measures
 
 
 def publish(runtime, result, index, fields, native_rows):

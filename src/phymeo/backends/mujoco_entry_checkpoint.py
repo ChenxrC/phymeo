@@ -24,7 +24,7 @@ def _entry_binding(runtime):
         len(runtime.world_keys),
         (runtime._contact_capacity, runtime._constraint_capacity),
     )
-    return {
+    binding = {
         "schema": ENTRY_SCHEMA,
         "phase": "accepted-step-input",
         "clock": "input-high, input-compensation, output-high, output-compensation",
@@ -33,6 +33,12 @@ def _entry_binding(runtime):
         "contact_data": ("distance", "point3", "frame-rows9", "contact-wrench6", "include_margin"),
         "layout": {key: (shape, np.dtype(dtype).str) for key, (shape, dtype) in layout.items()},
     }
+    if runtime._area_pressure_pairs:
+        from .mujoco_area_pressure_device import AREA_SCHEMA
+
+        binding["area_schema"] = AREA_SCHEMA
+        binding["area_measure"] = "IEEE754-binary64-little-endian-low32-high32"
+    return binding
 
 
 def _accepted_entry(device):
@@ -141,6 +147,9 @@ def _validate_entry(runtime, record, ticks, receipts, clock):
                 )
             ).astype(np.float32)
             _require(data[ci].tobytes() == expected_data.tobytes(), "contact device/receipt bytes")
+    from .mujoco_area_pressure_device import validate_entries
+
+    validate_entries(runtime, record, receipts)
     return record
 
 

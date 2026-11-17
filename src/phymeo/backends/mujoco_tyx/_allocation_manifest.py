@@ -267,6 +267,7 @@ def allocation_manifest(plan, nworld, nbody, capacities):
         add("area_input", (w, max(1, capacities[1]), 8), role="step-input")
         add("area_pair_index", (w, max(1, capacities[1])), "int32", "step-input")
         add("area_sizes", (w,), "int32", "step-input")
+        add("area_measure_input", (w, max(1, capacities[1]), 2), "int32", "step-input")
         add("area_response_mass", (w, width, width))
     from ._entry_storage import entry_layout, entry_static_layout
 

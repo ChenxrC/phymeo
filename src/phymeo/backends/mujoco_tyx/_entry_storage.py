@@ -42,7 +42,7 @@ def entry_layout(plan, nworld, capacities):
         raise ValueError("entry storage requires two nonnegative builtin capacities")
     cap = max(1, capacities[0])
     f32, i32 = np.dtype("float32"), np.dtype("int32")
-    return {
+    layout = {
         "entry_q": ((nworld, max(8, int(plan.nq))), f32),
         "entry_v": ((nworld, max(8, int(plan.nv))), f32),
         "entry_act": ((nworld, max(1, _na(plan))), f32),
@@ -51,6 +51,10 @@ def entry_layout(plan, nworld, capacities):
         "entry_contact_ids": ((nworld, cap, 8), i32),
         "entry_contact_data": ((nworld, cap, 20), f32),
     }
+    from ..mujoco_area_pressure_device import area_layout
+
+    layout.update(area_layout(plan, nworld, capacities))
+    return layout
 
 
 def entry_static_layout(plan):
@@ -190,5 +194,29 @@ def prepare_entry(device):
                 mode=device.mode,
             )
         if route != "none":
+            device.counts["completed_kernels"] += 1
+        if hasattr(plan, "area_pair_names"):
+            from ._area_entry_kernels import stage
+
+            stage(
+                device.nworld,
+                max(1, device.capacities[1]),
+                len(plan.area_pair_names),
+                device.area_sizes,
+                device.area_pair_index,
+                device.area_body_ids,
+                device.area_input,
+                device.area_measure_input,
+                device.constraint_counts,
+                device.efc_ids,
+                device.efc_data,
+                device.entry_meta[new],
+                device.area_meta[new],
+                device.area_ids[new],
+                device.area_data[new],
+                device.area_measure_words[new],
+                device.status,
+                mode=device.mode,
+            )
             device.counts["completed_kernels"] += 1
     return new

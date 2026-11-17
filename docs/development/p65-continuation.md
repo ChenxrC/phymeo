@@ -1,5 +1,7 @@
 # Phymeo 当前续作入口
 
+> 2026-11-18 I3f批量候选完成：f8d902ea，12新＋56受影响兼容=68pass，6文件静态通过。全批准入、exact严格分离证空、跨world/pair分块；192pairs中156证空、36设备复核、0HOST裁剪回退，launch48→12，物理/几何/观察同HOST逐字节。短CUDA暖窗1.83064s→1.74645s不足稳定加速结论，默认HOST。详[报告](area-pressure-batched-candidates-report-20261118.md)。按[07:10计划](../superpowers/plans/2026-11-18-area-pressure-through-0710.md)继续I3g每步完整验证一次，之后多规模成本。root唯一串行执行owner，本批运行已结束；原两agent仅author/read，dev未改、无push。下文为历史。
+
 > 2026-11-18 I3e设备裁剪拓扑混合路径完成：实现4489f456，37新＋16兼容节点全部通过，7文件Ruff/format通过。installed TYX保持FP32：设备提出active裁剪拓扑，HOST精确重建/完整边界复核后复用原面积压力与共同求解；空/退化/未证结果显式exact_host或reject，非法count/容量不fallback。同输入几何/力/状态/统一观察逐字节一致，single clone、owner更换、末world设备故障和OPEN准入已验。固定5world/3bucket CUDA后续11步HOST0.9153s、mixed0.9268s，192pairs中36设备复核通过/156HOST回退，无加速证据，默认仍HOST。详[报告、用法与成本](area-pressure-device-topology-report-20261118.md)。下一先缓存不变资产准备、可确认空候选筛选及world/pair批量提交，再同输出整步成本；非全GPU几何/CCD/FFT材料/新训练结论。dev未改、exp本地提交未push；root和原两作者执行/审阅已释放，无期限/周期任务。下文为历史。
 
 > 2026-11-17 I3d异构当前几何连接完成：实现3f6265ad，8新interpret/CUDA＋18受影响兼容节点全部通过，4文件Ruff/format通过。各当前TYX owner的FK→按model key选独立局部资产→HOST有限面生成→整批共同求解已接通；调用者无需每步供应接触面。同桶不同材料/刚面、5世界连续20步与独立运行、解析力/旋转oracle、末几何/容量/物理故障整体保留和重试、选择reset/restore换owner已验。新增scene胶囊绑定完整资产+model key；统一观察原能力复用。详[报告与接口](area-pressure-heterogeneous-scene-report-20261117.md)。下一先设备有限面生成和整步成本，再area body-pair应用适配；仍HOST裁剪、无CCD/FFT非局部材料/新训练成功结论。dev未改，exp本地提交，无push；root与原两作者执行/审阅已释放，无新期限/周期任务。下文为历史。

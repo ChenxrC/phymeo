@@ -620,35 +620,39 @@ class MuJoCoTyxHeterogeneousBatch:
 
     def step_area_pressure(self, h, mapping, *, expected_revision):
         """Preflight all supplied surfaces, then publish every bucket together."""
+        with self._transaction():
+            return self._step_area_pressure_locked(h, mapping, expected_revision=expected_revision)
+
+    def _step_area_pressure_locked(self, h, mapping, *, expected_revision):
+        """Shared area transaction core; caller owns the batch/leaf transaction."""
         from .mujoco_area_pressure import pack
 
-        with self._transaction():
-            if type(expected_revision) is not int or expected_revision != self._revision:
-                raise ValueError("stale heterogeneous area revision")
-            owners = tuple(o for o in self._buckets if o._area_pressure_pairs)
-            keys = {key for owner in owners for key in owner.world_keys}
-            if not owners or not isinstance(mapping, Mapping):
-                raise ValueError("area surfaces require declared area worlds")
-            mapping = dict(mapping)
-            _world_keys(mapping)
-            if set(mapping) != keys:
-                raise ValueError("area surfaces must cover exactly the area worlds")
-            # No packet installation or physics until every world is admitted.
-            packets = tuple(
-                pack(
-                    owner,
-                    {key: mapping[key] for key in owner.world_keys},
-                    owner._checkpoint_revision,
-                )
-                for owner in owners
+        if type(expected_revision) is not int or expected_revision != self._revision:
+            raise ValueError("stale heterogeneous area revision")
+        owners = tuple(o for o in self._buckets if o._area_pressure_pairs)
+        keys = {key for owner in owners for key in owner.world_keys}
+        if not owners or not isinstance(mapping, Mapping):
+            raise ValueError("area surfaces require declared area worlds")
+        mapping = dict(mapping)
+        _world_keys(mapping)
+        if set(mapping) != keys:
+            raise ValueError("area surfaces must cover exactly the area worlds")
+        # No packet installation or physics until every world is admitted.
+        packets = tuple(
+            pack(
+                owner,
+                {key: mapping[key] for key in owner.world_keys},
+                owner._checkpoint_revision,
             )
-            try:
-                for owner, packet in zip(owners, packets, strict=True):
-                    owner._area_packet = packet
-                return self._step_locked(h)
-            finally:
-                for owner in owners:
-                    owner._area_packet = None
+            for owner in owners
+        )
+        try:
+            for owner, packet in zip(owners, packets, strict=True):
+                owner._area_packet = packet
+            return self._step_locked(h)
+        finally:
+            for owner in owners:
+                owner._area_packet = None
 
     def step(self, h):
         with self._transaction():

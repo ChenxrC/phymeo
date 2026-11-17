@@ -136,6 +136,51 @@ def _checked_poses(poses, runtime):
     return result
 
 
+def _prepare_geometry(runtime, assets_by_world):
+    """Prepare all current input geometry without advancing accepted state."""
+    if set(assets_by_world) != set(runtime._world_keys):
+        raise ValueError("assets must cover every world in the current bucket")
+    poses = _checked_poses(_current_body_poses(runtime), runtime)
+    generated, surfaces = {}, {}
+    for key in runtime._world_keys:
+        position, rotation = poses[key]
+        stamp = AreaPressureStamp(
+            str(key),
+            runtime._ticks[key],
+            runtime._data[key].time,
+            runtime.area_pressure_configuration_id(key),
+        )
+        intersections = []
+        for asset, body_ids in zip(assets_by_world[key], runtime._plan.area_body_ids, strict=True):
+            ba, bb = map(int, body_ids)
+            a, b = asset.pressure_local, asset.rigid_local
+            pressure = TetraPressureMesh(
+                a.node_ids,
+                a.world_vertices @ rotation[ba].T + position[ba],
+                a.cells,
+                a.nodal_pressure,
+                a.cell_ids,
+                pressure_domain="full",
+            )
+            rigid = RigidPressureMesh(
+                b.node_ids,
+                b.world_vertices @ rotation[bb].T + position[bb],
+                b.faces,
+                b.face_ids,
+            )
+            intersections.append(
+                intersect_area_pressure(
+                    pressure,
+                    rigid,
+                    identity=asset.identity,
+                    stamp=stamp,
+                )
+            )
+        generated[key] = tuple(intersections)
+        surfaces[key] = tuple(item.surface for item in intersections)
+    return MappingProxyType(generated), surfaces
+
+
 class MuJoCoTyxAreaPressureScene:
     """Immutable local assets, fresh geometry, existing atomic dynamics owner."""
 
@@ -183,47 +228,11 @@ class MuJoCoTyxAreaPressureScene:
                 raise ValueError("stale area scene revision")
             if not np.isfinite(h) or float(h) != runtime._timestep:
                 raise ValueError("scene timestep must equal the compiled timestep")
-            poses = _checked_poses(_current_body_poses(runtime), runtime)
-            generated, surfaces = {}, {}
-            for key in runtime._world_keys:
-                position, rotation = poses[key]
-                stamp = AreaPressureStamp(
-                    str(key),
-                    runtime._ticks[key],
-                    runtime._data[key].time,
-                    runtime.area_pressure_configuration_id(key),
-                )
-                intersections = []
-                for asset, body_ids in zip(self._assets, runtime._plan.area_body_ids, strict=True):
-                    ba, bb = map(int, body_ids)
-                    a, b = asset.pressure_local, asset.rigid_local
-                    pressure = TetraPressureMesh(
-                        a.node_ids,
-                        a.world_vertices @ rotation[ba].T + position[ba],
-                        a.cells,
-                        a.nodal_pressure,
-                        a.cell_ids,
-                        pressure_domain="full",
-                    )
-                    rigid = RigidPressureMesh(
-                        b.node_ids,
-                        b.world_vertices @ rotation[bb].T + position[bb],
-                        b.faces,
-                        b.face_ids,
-                    )
-                    intersections.append(
-                        intersect_area_pressure(
-                            pressure,
-                            rigid,
-                            identity=asset.identity,
-                            stamp=stamp,
-                        )
-                    )
-                generated[key] = tuple(intersections)
-                surfaces[key] = tuple(item.surface for item in intersections)
+            publication, surfaces = _prepare_geometry(
+                runtime, {key: self._assets for key in runtime._world_keys}
+            )
             # Prepare all metadata before physics; only two non-failing pointer
             # assignments remain after the runtime's physical commit.
-            publication = MappingProxyType(generated)
             accepted = runtime.step_area_pressure(h, surfaces, expected_revision=expected_revision)
             self._last_geometry = publication
             self._geometry_revision = runtime._checkpoint_revision

@@ -27,6 +27,7 @@ class AreaPressureIntersectionError(ValueError):
             "unsupported_shared_face_gradient",
             "resource_limit",
             "publication_failure",
+            "device_unresolved",
         ):
             raise ValueError("unknown area-pressure intersection error category")
         self.category = category

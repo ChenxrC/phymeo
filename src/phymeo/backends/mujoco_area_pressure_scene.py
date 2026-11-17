@@ -136,10 +136,21 @@ def _checked_poses(poses, runtime):
     return result
 
 
-def _prepare_geometry(runtime, assets_by_world):
+def _check_intersector(intersector, mode):
+    if intersector is not None:
+        from .tyx_area_pressure_intersection import TyxAreaPressureIntersector
+
+        if not isinstance(intersector, TyxAreaPressureIntersector):
+            raise TypeError("expected TyxAreaPressureIntersector")
+        if intersector._resources.state != "OPEN" or intersector.mode != mode:
+            raise ValueError("intersector must be open and match the physics mode")
+
+
+def _prepare_geometry(runtime, assets_by_world, intersector=None):
     """Prepare all current input geometry without advancing accepted state."""
     if set(assets_by_world) != set(runtime._world_keys):
         raise ValueError("assets must cover every world in the current bucket")
+    clip = intersect_area_pressure if intersector is None else intersector.intersect
     poses = _checked_poses(_current_body_poses(runtime), runtime)
     generated, surfaces = {}, {}
     for key in runtime._world_keys:
@@ -169,7 +180,7 @@ def _prepare_geometry(runtime, assets_by_world):
                 b.face_ids,
             )
             intersections.append(
-                intersect_area_pressure(
+                clip(
                     pressure,
                     rigid,
                     identity=asset.identity,
@@ -184,7 +195,7 @@ def _prepare_geometry(runtime, assets_by_world):
 class MuJoCoTyxAreaPressureScene:
     """Immutable local assets, fresh geometry, existing atomic dynamics owner."""
 
-    def __init__(self, runtime, assets):
+    def __init__(self, runtime, assets, *, intersector=None):
         if not isinstance(assets, tuple) or not 1 <= len(assets) <= 16:
             raise ValueError("assets must contain 1..16 declared pairs")
         owned = []
@@ -196,6 +207,8 @@ class MuJoCoTyxAreaPressureScene:
             )
         with runtime._lock:
             runtime._check_open()
+            _check_intersector(intersector, getattr(runtime, "_mode", None))
+            self._intersector = intersector
             names = tuple((a.identity.compliant_body, a.identity.rigid_body) for a in owned)
             if names != getattr(runtime._plan, "area_pair_names", None):
                 raise ValueError("assets must match all declared area pairs in order")
@@ -229,7 +242,7 @@ class MuJoCoTyxAreaPressureScene:
             if not np.isfinite(h) or float(h) != runtime._timestep:
                 raise ValueError("scene timestep must equal the compiled timestep")
             publication, surfaces = _prepare_geometry(
-                runtime, {key: self._assets for key in runtime._world_keys}
+                runtime, {key: self._assets for key in runtime._world_keys}, self._intersector
             )
             # Prepare all metadata before physics; only two non-failing pointer
             # assignments remain after the runtime's physical commit.
@@ -273,7 +286,7 @@ class MuJoCoTyxAreaPressureScene:
         with self.runtime._lock:
             cloned = self.runtime.clone(world_keys)
             try:
-                return type(self)(cloned, self._assets)
+                return type(self)(cloned, self._assets, intersector=self._intersector)
             except BaseException as error:
                 try:
                     cloned.close()

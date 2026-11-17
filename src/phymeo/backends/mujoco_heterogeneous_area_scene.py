@@ -12,7 +12,7 @@ from types import MappingProxyType
 
 import numpy as np
 
-from .mujoco_area_pressure_scene import BodyAreaPressureAsset, _prepare_geometry
+from .mujoco_area_pressure_scene import BodyAreaPressureAsset, _check_intersector, _prepare_geometry
 from .mujoco_area_pressure_state import asset_digest
 from .mujoco_heterogeneous import MuJoCoTyxHeterogeneousBatch
 from .mujoco_heterogeneous_checkpoint import MAX_BYTES, MuJoCoTyxHeterogeneousCheckpoint
@@ -78,7 +78,7 @@ class MuJoCoTyxHeterogeneousAreaSceneCheckpoint:
 class MuJoCoTyxHeterogeneousAreaPressureScene:
     """Per-model immutable assets; current geometry and physics commit together."""
 
-    def __init__(self, batch, assets):
+    def __init__(self, batch, assets, *, intersector=None):
         if not isinstance(batch, MuJoCoTyxHeterogeneousBatch):
             raise TypeError("expected MuJoCoTyxHeterogeneousBatch")
         if not isinstance(assets, Mapping):
@@ -86,6 +86,8 @@ class MuJoCoTyxHeterogeneousAreaPressureScene:
         assets = dict(assets)
         with batch._lock:
             batch._check()
+            _check_intersector(intersector, batch._mode)
+            self._intersector = intersector
             models = {spec.key: spec for spec in batch._models if spec.area_pressure_pairs}
             if not models or set(assets) != set(models):
                 raise ValueError("assets must cover exactly the declared area model keys")
@@ -139,7 +141,7 @@ class MuJoCoTyxHeterogeneousAreaPressureScene:
                 assets_by_world = {
                     key: self._assets[batch._layout[key].model_key] for key in owner.world_keys
                 }
-                geometry, packets = _prepare_geometry(owner, assets_by_world)
+                geometry, packets = _prepare_geometry(owner, assets_by_world, self._intersector)
                 generated.update(geometry)
                 surfaces.update(packets)
             publication = MappingProxyType(

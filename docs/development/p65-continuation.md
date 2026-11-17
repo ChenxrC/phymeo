@@ -1,3 +1,5 @@
+> 2026-11-18 I3k完成：7a5feee5新增通用native+area BodyContactWrenchReader，保留双方力/真实力偶/材料样本身份，旧native-only诊断遇area显式拒绝。9新+69受影响兼容=78pass，见[报告](area-pressure-body-wrench-report-20261118.md)。原SuccessReader复用同一面积验证层，checkpoint digest保持。下一是连续多world自动几何与真实载荷可视化；异构encoder/PPO仍未实现，不把Env与诊断接通冒充训练。dev不变，07:10继续。
+
 > 2026-11-18 I3j完成：9b928c2d把自动当前几何→共同面积接触求解接入异构任务Env。4新CUDA+6native兼容通过，独立episode/reset、成对恢复、资产身份和晚故障均已验证，见[报告](area-pressure-manipulation-env-report-20261118.md)。area字段留在设备观察，但策略编码/PPO尚未消费；当前frictionless area law和HOST几何默认保持。下一批按07:10计划继续真实策略入口或通用应用缺口；dev不变，不重跑本批。
 # Phymeo 当前续作入口
 

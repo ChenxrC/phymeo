@@ -76,4 +76,3 @@ I3j 已完成9b928c2d：4新CUDA/48.22s、6native兼容/82.34s，当前状态自
 旧native-only wrench/slip入口若选中行声明area，必须明确拒绝，不能忽略area返回少算载荷。无area旧路径保持。
 
 固定HOST手向量：native p=(1,2,3),F=(1,2,4),couple=(.5,-.25,.75)；area p=(-1,0,2),n=ey,Fn总3N,dA总.02m²，以3与12目录样本细分。总F=(1,5,4),M0=(-3.5,-1.25,-2.25)；参考r=(.2,-.3,.4)后的M=(-.3,-.85,-3.55)。不同bodypair避免双算；测试双方反力、组别、真实面积、坏身份/phase/mask/矩表示与缺省。实际CUDA只复用I3j固定cube/3world自动几何，最长4stepcalls，不改物理门；已受影响I3i/legacy readers需相应兼容核。完成后优先同一真实连续轨迹与可视化，不宣称共享训练完成。
-

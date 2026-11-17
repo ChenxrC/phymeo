@@ -249,6 +249,7 @@ API：AreaFrictionPairLaw(identity,mu,slip_speed_m_s)；MuJoCoAreaFrictionAdapte
 由A同入步分别构造mu=.5与mu=0、vs=.001，B构造mu=.5空面；一个新CUDA solve_many共同求三条counterfactual问题。保存完整来源和结果；新律用I3u固定FP32残差/力矩门，µ0用独立全active线性解（先核所有Fn>0）或有限active-set oracle，不能调用旧solver当唯一oracle；D空解独立解析。全部新输出不回写场景；调用前后snapshot与revision保持。负控含错source/layout/phase/qv/time/identity/遗漏pair/非area rows/129样本/immutable alias，不能通过删字段或放宽误差门。
 
 I3v完成后构建包含新增backend/adapter的fresh wheel，旧I3t混合场景证据仍绑定旧wheel；新源码外consumer仅一真实128点CUDA解及完整原始输出比对。06:35起收尾，07:10停止。
+
 ## 05:55 I3w：设备驻留布局直接装配的下一原子批
 
 I3v首次3节点通过，新wheel源码外128点消费通过。剩余时间增加一个独立设备接缝，不改旧advance/积分/Scene/type7/v1，不把历史输入重放称为live零读回生产。新增且仅新增 backends/_tyx_area_friction_entry.py、tests/test_tyx_area_friction_entry_pack.py、固定fixtures/area_friction_entry/entry.json.gz与README；原scene agent author模块，原training agent author测试，root唯一执行。父只复制I3v完整原证据72010B/SHA50583f6e9f6875a77e09c3c3fa645588aa30c33b7b7d4b6113b1d1731bccd1b6作为可移植fixture，不重新运行scene。
@@ -264,3 +265,7 @@ I3v首次3节点通过，新wheel源码外128点消费通过。剩余时间增�
 错误覆盖：最后world上游失败、非法count/pair/body索引、NaN/zero normal/非法mu/vs/k/phi/h、算术溢出；不能越界/静默降级/回旧solver成功。metadata非法extent/dtype/alias先拒零launch；设备失败完整保原始字，不以成功前缀冒整批发布。允许原pipeline失败后明确新输入重试，所有状态从本次完整清理得到。
 
 目标06:20纯author交接、06:35前首次focused验证；若出现实现问题只修明确根因、不改fixture/门槛。没有时间则保UNEXECUTED/失败原证据并报告，不把独立pack包装成F3。07:10停止。
+
+I3w准入补足（首次执行前）：源物理M逐位对称（现mechanics明确复制对称项），SPD仍由原共同kernel的Cholesky拒绝；D>=0、normal原FP32平方范数距1不超过2e-6、两body不同。B<=128、pairs<=16、source C<=512但完整count<=128。wrapper只验证实际可读metadata和设备区间别名，不虚构跨runtime provenance。
+
+真正F3的精确源码入口、积分一致性门、观察版本与五组后续测试见[交接说明](../../development/area-friction-live-integration-handoff-20261118.md)。该说明为纯源码设计，不能用来替代执行结果。

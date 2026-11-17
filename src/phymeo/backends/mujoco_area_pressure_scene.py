@@ -146,13 +146,14 @@ def _check_intersector(intersector, mode):
             raise ValueError("intersector must be open and match the physics mode")
 
 
-def _prepare_geometry(runtime, assets_by_world, intersector=None):
-    """Prepare all current input geometry without advancing accepted state."""
+def _geometry_requests(runtime, assets_by_world):
+    """Collect owned current meshes before any intersection or dynamics work."""
+    from .tyx_area_pressure_intersection import AreaPressureIntersectionRequest
+
     if set(assets_by_world) != set(runtime._world_keys):
         raise ValueError("assets must cover every world in the current bucket")
-    clip = intersect_area_pressure if intersector is None else intersector.intersect
     poses = _checked_poses(_current_body_poses(runtime), runtime)
-    generated, surfaces = {}, {}
+    requests_by_world = {}
     for key in runtime._world_keys:
         position, rotation = poses[key]
         stamp = AreaPressureStamp(
@@ -161,7 +162,7 @@ def _prepare_geometry(runtime, assets_by_world, intersector=None):
             runtime._data[key].time,
             runtime.area_pressure_configuration_id(key),
         )
-        intersections = []
+        requests = []
         for asset, body_ids in zip(assets_by_world[key], runtime._plan.area_body_ids, strict=True):
             ba, bb = map(int, body_ids)
             a, b = asset.pressure_local, asset.rigid_local
@@ -179,17 +180,37 @@ def _prepare_geometry(runtime, assets_by_world, intersector=None):
                 b.faces,
                 b.face_ids,
             )
-            intersections.append(
-                clip(
-                    pressure,
-                    rigid,
-                    identity=asset.identity,
-                    stamp=stamp,
-                )
+            requests.append(AreaPressureIntersectionRequest(pressure, rigid, asset.identity, stamp))
+        requests_by_world[key] = tuple(requests)
+    return requests_by_world
+
+
+def _intersect_requests(requests_by_world, intersector=None):
+    requests = tuple(request for group in requests_by_world.values() for request in group)
+    if intersector is None:
+        results = tuple(
+            intersect_area_pressure(
+                request.pressure_mesh,
+                request.rigid_mesh,
+                identity=request.identity,
+                stamp=request.stamp,
             )
-        generated[key] = tuple(intersections)
+            for request in requests
+        )
+    else:
+        results = intersector.intersect_many(requests)
+    generated, surfaces, offset = {}, {}, 0
+    for key, group in requests_by_world.items():
+        intersections = results[offset : offset + len(group)]
+        offset += len(group)
+        generated[key] = intersections
         surfaces[key] = tuple(item.surface for item in intersections)
     return MappingProxyType(generated), surfaces
+
+
+def _prepare_geometry(runtime, assets_by_world, intersector=None):
+    """Prepare all current input geometry without advancing accepted state."""
+    return _intersect_requests(_geometry_requests(runtime, assets_by_world), intersector)
 
 
 class MuJoCoTyxAreaPressureScene:

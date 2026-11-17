@@ -161,7 +161,10 @@ def test_fixed_cases_match_exact_canonical_output_and_analytic_wrench(mode, name
         assert actual.candidate_pairs == len(meshes[0].cells) * len(meshes[1].faces)
         routes = intersector.last_routes
         assert isinstance(routes, tuple) and len(routes) == actual.candidate_pairs
-        assert all(route == "device" or route.startswith("exact_host:") for route in routes)
+        assert all(
+            route == "device" or route.startswith(("exact_host:", "exact_empty:"))
+            for route in routes
+        )
         stats = _stats(intersector)
         assert stats["attempts"] == 1 and stats["launches"] >= 1
         if mode == "cuda":
@@ -241,7 +244,7 @@ def test_empty_degenerate_fallback_reject_and_unsupported_queries_preserve_publi
         ((-1, -1, 2), (2, -1, -1), (-1, 2, 2)),
     )
     with TyxAreaPressureIntersector(mode=mode, capacity=8) as intersector:
-        for vertices in empty_vertices:
+        for index, vertices in enumerate(empty_vertices):
             meshes = _meshes(_unit_input(), _rigid_input(vertices))
             before = _stats(intersector)
             actual = _run(intersector, meshes)
@@ -249,8 +252,9 @@ def test_empty_degenerate_fallback_reject_and_unsupported_queries_preserve_publi
             assert actual.surface.triangles == ()
             assert _actual(quad) == dict(area=0.0, wrench=[0.0] * 6)
             assert len(intersector.last_routes) == 1
-            assert intersector.last_routes[0].startswith("exact_host:")
-            assert _stats(intersector)["fallback_pairs"] == before["fallback_pairs"] + 1
+            expected_route = "exact_empty:aabb" if index == 0 else "exact_host:"
+            assert intersector.last_routes[0].startswith(expected_route)
+            assert _stats(intersector)["fallback_pairs"] == before["fallback_pairs"] + (index != 0)
 
         accepted = intersector.last_result
         shared_rigid = _rigid_input(((1, 0, 0), (0, 1, 0), (0, 0, 1)))
@@ -291,8 +295,13 @@ def test_empty_degenerate_fallback_reject_and_unsupported_queries_preserve_publi
     with TyxAreaPressureIntersector(mode=mode, capacity=8, fallback="reject") as intersector:
         positive = _meshes(_unit_input(), _rigid_input(_horizontal_vertices(1 / 4)))
         accepted = _run(intersector, positive)
-        for vertices in empty_vertices:
+        for index, vertices in enumerate(empty_vertices):
             meshes = _meshes(_unit_input(), _rigid_input(vertices))
+            if index == 0:
+                accepted = _run(intersector, meshes)
+                _same_result(accepted, _reference(meshes))
+                assert intersector.last_routes == ("exact_empty:aabb",)
+                continue
             with pytest.raises(AreaPressureIntersectionError) as error:
                 _run(intersector, meshes)
             assert error.value.category == "device_unresolved"

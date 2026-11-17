@@ -12,7 +12,12 @@ from types import MappingProxyType
 
 import numpy as np
 
-from .mujoco_area_pressure_scene import BodyAreaPressureAsset, _check_intersector, _prepare_geometry
+from .mujoco_area_pressure_scene import (
+    BodyAreaPressureAsset,
+    _check_intersector,
+    _geometry_requests,
+    _intersect_requests,
+)
 from .mujoco_area_pressure_state import asset_digest
 from .mujoco_heterogeneous import MuJoCoTyxHeterogeneousBatch
 from .mujoco_heterogeneous_checkpoint import MAX_BYTES, MuJoCoTyxHeterogeneousCheckpoint
@@ -132,7 +137,7 @@ class MuJoCoTyxHeterogeneousAreaPressureScene:
                 raise ValueError("stale heterogeneous area scene revision")
             if not np.isfinite(h) or float(h) != batch._h:
                 raise ValueError("scene timestep must equal every compiled timestep")
-            generated, surfaces = {}, {}
+            requests_by_world = {}
             # Reset/restore replace owners. Resolve the current buckets each call;
             # models sharing a bucket may still carry different local materials.
             for owner in batch._buckets:
@@ -141,9 +146,8 @@ class MuJoCoTyxHeterogeneousAreaPressureScene:
                 assets_by_world = {
                     key: self._assets[batch._layout[key].model_key] for key in owner.world_keys
                 }
-                geometry, packets = _prepare_geometry(owner, assets_by_world, self._intersector)
-                generated.update(geometry)
-                surfaces.update(packets)
+                requests_by_world.update(_geometry_requests(owner, assets_by_world))
+            generated, surfaces = _intersect_requests(requests_by_world, self._intersector)
             publication = MappingProxyType(
                 {key: generated[key] for key in batch._world_keys if key in generated}
             )

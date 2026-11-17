@@ -100,11 +100,14 @@ def test_heterogeneous_mixed_geometry_complete_steps_and_cost(mode, tmp_path):
             _same(batches["mixed"].integration_snapshot(), batches["host"].integration_snapshot())
             _same(scenes["mixed"].last_geometry, scenes["host"].last_geometry)
             _same(outputs["mixed"], outputs["host"])
-            routes.append(intersector.last_routes)
+            routes.append(intersector.last_batch_routes)
         stats = dict(intersector.stats)
-        assert stats["attempts"] == 48 and stats["launches"] == 48
+        assert stats["attempts"] == 48 and stats["batch_calls"] == 12
+        assert 0 < stats["launches"] <= 24
         assert stats["device_polygons"] > 0
-        assert stats["device_polygons"] + stats["fallback_pairs"] == 192
+        assert stats["candidate_pairs"] == 192
+        assert stats["culled_pairs"] > 0
+        assert stats["device_polygons"] + stats["fallback_pairs"] + stats["culled_pairs"] == 192
         assert intersector.last_routes
         # Geometry is stateless across new physical owners after selective reset.
         for name in ("host", "mixed"):
@@ -114,7 +117,7 @@ def test_heterogeneous_mixed_geometry_complete_steps_and_cost(mode, tmp_path):
         _same(batches["mixed"].integration_snapshot(), batches["host"].integration_snapshot())
         _same(scenes["mixed"].last_geometry, scenes["host"].last_geometry)
         payload = dict(
-            schema="area-device-topology-cost-v1",
+            schema="area-batched-candidate-cost-v1",
             mode=mode,
             steps=12,
             h=H,
@@ -169,7 +172,7 @@ def test_single_scene_clone_shares_caller_owned_intersector(mode):
 
 
 @pytest.mark.parametrize("mode", ("interpret", pytest.param("cuda", marks=pytest.mark.cuda)))
-def test_last_world_device_failure_preserves_batch_and_geometry(mode, monkeypatch):
+def test_last_world_query_failure_preserves_batch_and_geometry(mode, monkeypatch):
     from test_mujoco_tyx_area_pressure_heterogeneous_scene import _make, _refresh, _retained
 
     with ExitStack() as stack:
@@ -180,20 +183,20 @@ def test_last_world_device_failure_preserves_batch_and_geometry(mode, monkeypatc
         frame, arrays = _refresh(batch, workspace)
         state, geometry = batch.integration_snapshot(), scene.last_geometry
         capsule, revision = batch.checkpoint().to_bytes(), batch.checkpoint_revision
-        original, seen = query._device_clip, []
+        original, seen = query._publish_query, []
 
-        def fail_last(coefficients, count):
-            output = original(coefficients, count)
-            seen.append(count)
+        def fail_last(*args):
+            output = original(*args)
+            seen.append(output.surface.stamp.world_id)
             if len(seen) == 4:
-                raise RuntimeError("last world topology readback failure")
+                raise RuntimeError("last world query publication failure")
             return output
 
         with monkeypatch.context() as patch:
-            patch.setattr(query, "_device_clip", fail_last)
-            with pytest.raises(RuntimeError, match="last world topology"):
+            patch.setattr(query, "_publish_query", fail_last)
+            with pytest.raises(RuntimeError, match="last world query"):
                 scene.step(H, expected_revision=revision)
-        assert seen == [4, 4, 4, 4]
+        assert len(seen) == 4 and set(seen) == {"41", "11", "305", "91"}
         _retained(batch, scene, workspace, state, geometry, frame, arrays, capsule, revision)
         scene.step(H, expected_revision=revision)
         assert all(s.tick == state[k].tick + 1 for k, s in batch.integration_snapshot().items())

@@ -10,7 +10,7 @@ from math import isfinite
 
 import numpy as np
 
-from .manipulation_contact import _array, _index
+from .manipulation_contact import _array, _index, _reject_area_entry
 
 
 def _require(condition, message):
@@ -101,6 +101,7 @@ def measure_object_contact_wrench(
         1 <= worlds <= 64 and selected < worlds and body < 128,
         "world/row/object body exceeds bounded dimensions",
     )
+    _reject_area_entry(arrays, selected, worlds)
     valid, before, after, count, active_count, overflow = map(int, metadata[selected])
     _require(
         valid in (0, 1) and 0 <= after <= 2147483647 and overflow == 0,

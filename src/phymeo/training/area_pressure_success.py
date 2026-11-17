@@ -4,32 +4,18 @@ This HOST evaluator consumes solved forces in newtons, not a new contact model.
 Native contact and area sample identities remain separate.
 """
 
-import json
 from collections.abc import Mapping
 from dataclasses import dataclass
-from hashlib import sha256
 
 import numpy as np
 
-from ..geometry.area_pressure import AreaPressureIdentity, _identity, _stamp, _triangle_samples
-
-FIELDS = ("area_meta", "area_ids", "area_data", "area_measure_words", "area_declared_mask")
-IDENTITY_FIELDS = ("compliant_body", "rigid_body", "compliant_material", "rigid_material")
-ABI = (
-    "mujoco-tyx-area-device-entry-v1",
-    "on-compliant-A; B opposite",
-    "common-world-origin; area_ids[...,5] validity",
-    "little-endian binary64 low32,high32 in i32 words",
-)
+from ..backends.area_pressure_readback import ABI, AreaPressureEntryReader, _identity_key
+from ..geometry.area_pressure import AreaPressureIdentity, _identity
 
 
 def _require(ok, message):
     if not ok:
         raise ValueError("manipulation area entry: " + message)
-
-
-def _identity_key(value):
-    return tuple(getattr(value, name) for name in IDENTITY_FIELDS)
 
 
 @dataclass(frozen=True)
@@ -142,170 +128,28 @@ class AreaSuccessAdapter:
             )
         self.binding = ("manipulation-area-success-v1", ABI, tuple(signature))
 
-    def validate(self, arrays, frame):
-        """Return loads and digest additions; do not mutate cursor or physics."""
-        n, cap = len(self.keys), self.capacity
-        layouts = {
-            "area_meta": ((n, 4), np.int32),
-            "area_ids": ((n, cap, 6), np.int32),
-            "area_data": ((n, cap, 15), np.float32),
-            "area_measure_words": ((n, cap, 2), np.int32),
-            "area_declared_mask": ((n, 1), np.int32),
-        }
-        for name, (shape, dtype) in layouts.items():
-            value = arrays.get(name)
-            _require(
-                type(value) is np.ndarray and value.shape == shape and value.dtype == dtype,
-                "area array layout differs: " + name,
-            )
-        _require(
-            isinstance(frame.area_catalogs, Mapping) and set(frame.area_catalogs) == set(self.keys),
-            "area catalog world set differs",
+        self._entries = AreaPressureEntryReader(
+            workspace,
+            {key: tuple(role.identity for role in values) for key, values in roles.items()},
         )
+
+    def validate(self, arrays, frame):
+        """Decode once, then aggregate task roles without changing the digest."""
+        entries = self._entries.validate(arrays, frame)
         result = {}
-        for row, world in enumerate(self.keys):
-            configured, geom_bodies = self.worlds[world]
-            catalog = frame.area_catalogs[world]
-            _require(type(catalog) is tuple, "area catalog must be ordered")
-            meta = arrays["area_meta"][row]
-            ids, data, words = (
-                arrays[k][row] for k in ("area_ids", "area_data", "area_measure_words")
-            )
-            valid, count, active, overflow = map(int, meta)
-            entry_valid, tick, after, native_count, *_ = map(int, arrays["entry_meta"][row])
-            _require(
-                int(arrays["area_declared_mask"][row, 0]) == bool(configured),
-                "area declaration mask",
-            )
-            _require(np.isfinite(data).all(), "nonfinite area payload")
-            loads, support_z, canonical = [0.0, 0.0], 0.0, []
-            if not configured or entry_valid == 0:
-                _require(
-                    not catalog and not any(np.any(v) for v in (meta, ids, data, words)),
-                    "unavailable area record contains history",
-                )
-            else:
-                _require(
-                    entry_valid == valid == 1 and overflow == 0 and after == tick + 1,
-                    "area/native accepted phases differ",
-                )
-                _require(0 <= active <= count <= cap, "area counts/capacity")
-                _require(len(catalog) == len(configured), "area catalog pair count")
-                _require(not any(np.any(v[count:]) for v in (ids, data, words)), "area padding")
-                _require(
-                    active == int(np.count_nonzero(data[:count, 8] > 0)),
-                    "positive-force sample count",
-                )
-                stamp_parts = arrays["entry_clock"][row]
-                time_s = float(stamp_parts[0]) - float(stamp_parts[1])
-                offset = 0
-                for ordinal, (item, (role, body_a, body_b)) in enumerate(
-                    zip(catalog, configured, strict=True)
-                ):
-                    _require(
-                        isinstance(item, Mapping)
-                        and set(item) == {"identity", "stamp", "sample_ids", "source_ids"},
-                        "area catalog fields",
+        for world in self.keys:
+            configured, _ = self.worlds[world]
+            loads, support_z = [0.0, 0.0], 0.0
+            for ordinal, (role, _, _) in enumerate(configured):
+                samples = tuple(s for s in entries[world].samples if s.pair_index == ordinal)
+                if role.role.startswith("finger"):
+                    loads[int(role.role[-1])] += float(
+                        np.sum([s.normal_force_n for s in samples], dtype=np.float64)
                     )
-                    identity, stamp = _identity(item["identity"]), _stamp(item["stamp"])
-                    _require(identity == role.identity, "area material identity differs from role")
-                    _require(
-                        stamp.world_id == str(world)
-                        and stamp.step_index == tick
-                        and stamp.sample_time_s == time_s,
-                        "area catalog historical input stamp differs",
+                elif role.role == "support":
+                    sign = 1 if role.object_side == "A" else -1
+                    support_z += sign * float(
+                        np.sum([s.force_on_a_world[2] for s in samples], dtype=np.float64)
                     )
-                    sample_ids, source_ids = _triangle_samples(
-                        item["sample_ids"], item["source_ids"]
-                    )
-                    stop = offset + len(sample_ids)
-                    _require(stop <= count, "area catalog exceeds sample prefix")
-                    block, values, measures = (
-                        ids[offset:stop],
-                        data[offset:stop],
-                        words[offset:stop],
-                    )
-                    expected_ids = np.zeros((stop - offset, 5), dtype=np.int32)
-                    expected_ids[:, 0] = 1
-                    expected_ids[:, 1] = ordinal
-                    expected_ids[:, 2] = np.arange(offset, stop)
-                    expected_ids[:, 3:5] = (body_a, body_b)
-                    _require(
-                        np.array_equal(block[:, :5], expected_ids), "area sample/body/pair order"
-                    )
-                    _require(np.isin(block[:, 5], (0, 1)).all(), "area moment validity")
-                    _require(
-                        not np.any(values[block[:, 5] == 0, 12:15]), "unavailable moment sentinel"
-                    )
-                    d_area = np.asarray(measures, dtype="<i4").tobytes()
-                    d_area = np.frombuffer(d_area, dtype="<f8")
-                    _require(
-                        np.isfinite(d_area).all() and np.all(d_area > 0),
-                        "positive finite true area",
-                    )
-                    _require(
-                        np.all(values[:, 6] > 0) and np.all(values[:, 8] >= 0),
-                        "area stiffness/load",
-                    )
-                    _require(
-                        np.allclose(
-                            np.sum(values[:, 3:6].astype(np.float64) ** 2, axis=1),
-                            1,
-                            rtol=3e-5,
-                            atol=2e-6,
-                        ),
-                        "area unit normal",
-                    )
-                    _require(
-                        np.allclose(
-                            values[:, 9:12],
-                            values[:, 3:6].astype(np.float64) * values[:, 8:9],
-                            rtol=3e-5,
-                            atol=2e-6,
-                        ),
-                        "area force direction",
-                    )
-                    if role.role.startswith("finger"):
-                        loads[int(role.role[-1])] += float(np.sum(values[:, 8], dtype=np.float64))
-                    elif role.role == "support":
-                        sign = 1 if role.object_side == "A" else -1
-                        support_z += sign * float(np.sum(values[:, 11], dtype=np.float64))
-                    canonical.append(
-                        (
-                            _identity_key(identity),
-                            (
-                                stamp.world_id,
-                                stamp.step_index,
-                                stamp.sample_time_s,
-                                stamp.configuration_id,
-                            ),
-                            sample_ids,
-                            source_ids,
-                        )
-                    )
-                    offset = stop
-                _require(offset == count, "area catalog does not cover sample prefix")
-            _require(
-                0 <= native_count <= arrays["entry_contact_ids"].shape[1], "native contact capacity"
-            )
-            declared_bodies = {frozenset((a, b)) for _, a, b in configured}
-            for item in arrays["entry_contact_ids"][row, :native_count]:
-                _require(item[0] == 1, "native contact prefix")
-                first, second = map(int, item[2:4])
-                _require(
-                    0 <= first < len(geom_bodies) and 0 <= second < len(geom_bodies),
-                    "native contact geometry identity",
-                )
-                _require(
-                    frozenset((geom_bodies[first], geom_bodies[second])) not in declared_bodies,
-                    "native contact duplicates a declared area body pair",
-                )
-            digest = sha256()
-            for name in FIELDS:
-                digest.update(name.encode("ascii"))
-                digest.update(arrays[name][row].tobytes())
-            digest.update(
-                json.dumps(canonical, separators=(",", ":"), ensure_ascii=True).encode("ascii")
-            )
-            result[world] = (tuple(loads), support_z, digest.hexdigest())
+            result[world] = (tuple(loads), support_z, entries[world].digest)
         return result

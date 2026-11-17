@@ -39,6 +39,20 @@ def _array(arrays, name, shape, kind):
     return value
 
 
+def _reject_area_entry(arrays, row, worlds):
+    """Keep legacy native-only diagnostics from silently omitting area loads."""
+    fields = {"area_meta", "area_ids", "area_data", "area_measure_words"}
+    if "area_declared_mask" not in arrays:
+        _require(not fields.intersection(arrays), "area fields require a declaration mask")
+        return
+    declared = _array(arrays, "area_declared_mask", (worlds, 1), "iu")
+    _require(np.isin(declared, (0, 1)).all(), "invalid area declaration mask")
+    _require(
+        declared[row, 0] == 0,
+        "native-only diagnostic cannot consume declared area contact; use BodyContactWrenchReader",
+    )
+
+
 @dataclass(frozen=True)
 class FingerSlipMeasurement:
     time_s: float
@@ -74,6 +88,7 @@ def measure_finger_slip(arrays, row, *, object_body, pad_geom_ids):
     metadata = _array(arrays, "entry_meta", (None, 6), "iu")
     worlds = metadata.shape[0]
     _require(selected < worlds, "row is outside the world array")
+    _reject_area_entry(arrays, selected, worlds)
     valid, before, after, count, active_count, overflow = map(int, metadata[selected])
     _require(
         valid in (0, 1) and 0 <= after <= 2147483647 and overflow == 0,

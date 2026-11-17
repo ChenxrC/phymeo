@@ -23,6 +23,42 @@ def _vector(value):
     return tuple(map(float, value))
 
 
+MAX_BODY_WRENCH_REQUESTS = 1024
+
+
+@dataclass(frozen=True)
+class BodyContactWrenchRequest:
+    """Owned named query at an explicit accepted-input world reference point."""
+
+    world_key: int
+    body_name: str
+    reference_point_world: tuple
+    group_body_names: tuple = ()
+
+    def __post_init__(self):
+        _require(type(self.world_key) is int, "unknown world key")
+        _require(type(self.body_name) is str and bool(self.body_name), "unknown body name")
+        group = self.group_body_names
+        _require(
+            type(group) is tuple
+            and len(group) <= 128
+            and all(type(v) is str and bool(v) for v in group)
+            and len(set(group)) == len(group)
+            and self.body_name not in group,
+            "invalid counterpart body group",
+        )
+        raw = np.asarray(self.reference_point_world)
+        _require(
+            raw.shape == (3,) and raw.dtype.kind in "fiu" and np.isfinite(raw).all(),
+            "reference point must be a finite numeric 3-vector",
+        )
+        with np.errstate(over="ignore", invalid="ignore"):
+            reference = np.array(raw, dtype=np.float64, copy=True)
+        _require(np.isfinite(reference).all(), "reference point overflow")
+        object.__setattr__(self, "reference_point_world", _vector(reference))
+        object.__setattr__(self, "group_body_names", tuple(group))
+
+
 @dataclass(frozen=True)
 class BodyContactWrenchRecord:
     source: str
@@ -107,39 +143,61 @@ class BodyContactWrenchReader:
         _require(set(worlds) == set(self._keys), "world metadata differs")
         self._worlds = MappingProxyType(worlds)
 
-    def measure(self, frame, *, world_key, body_name, reference_point_world, group_body_names=()):
-        _require(type(world_key) is int and world_key in self._worlds, "unknown world key")
-        names, geom_bodies = self._worlds[world_key]
-        _require(
-            type(body_name) is str and bool(body_name) and names.count(body_name) == 1,
-            "unknown body name",
+    def _prepare(self, request):
+        _require(type(request) is BodyContactWrenchRequest, "expected BodyContactWrenchRequest")
+        # Revalidate even a frozen instance: no public attribute is an oracle.
+        request = BodyContactWrenchRequest(
+            request.world_key,
+            request.body_name,
+            request.reference_point_world,
+            request.group_body_names,
         )
-        body = names.index(body_name)
+        world_key = request.world_key
+        _require(world_key in self._worlds, "unknown world key")
+        names, geom_bodies = self._worlds[world_key]
+        _require(names.count(request.body_name) == 1, "unknown body name")
         _require(
-            type(group_body_names) is tuple
-            and len(group_body_names) <= 128
-            and all(type(v) is str and bool(v) and names.count(v) == 1 for v in group_body_names)
-            and len(set(group_body_names)) == len(group_body_names)
-            and body_name not in group_body_names,
+            all(names.count(v) == 1 for v in request.group_body_names),
             "invalid counterpart body group",
         )
-        group = tuple(names.index(v) for v in group_body_names)
-        raw = np.asarray(reference_point_world)
-        _require(
-            raw.shape == (3,) and raw.dtype.kind in "fiu" and np.isfinite(raw).all(),
-            "reference point must be a finite numeric 3-vector",
+        return (
+            world_key,
+            names,
+            geom_bodies,
+            names.index(request.body_name),
+            tuple(names.index(v) for v in request.group_body_names),
+            np.asarray(request.reference_point_world, dtype=np.float64),
         )
-        with np.errstate(over="ignore", invalid="ignore"):
-            reference = np.array(raw, dtype=np.float64, copy=True)
-        _require(np.isfinite(reference).all(), "reference point overflow")
-        # Exactly one D2H read. The workspace rejects stale/foreign/superseded frames.
+
+    def measure(self, frame, *, world_key, body_name, reference_point_world, group_body_names=()):
+        request = BodyContactWrenchRequest(
+            world_key, body_name, reference_point_world, group_body_names
+        )
+        return self.measure_many(frame, (request,))[0]
+
+    def measure_many(self, frame, requests):
+        """Return ordered complete results from one fresh public readback.
+
+        All queries are checked before D2H. Repeated queries are allowed. No
+        intermediate result or cross-frame cache is published on failure.
+        """
+        _require(
+            type(requests) is tuple and 1 <= len(requests) <= MAX_BODY_WRENCH_REQUESTS,
+            "requests must contain 1..1024 immutable body queries",
+        )
+        prepared = tuple(self._prepare(request) for request in requests)
         arrays = self._workspace.readback(frame)
         _require(isinstance(arrays, Mapping), "owned public arrays required")
         area_rows = self._area.validate(arrays, frame) if self._area is not None else None
-        row = self._keys.index(world_key)
-        # This explicit native partition is only consumed after area validation;
-        # the result below includes both sources, unlike the legacy native API.
+        # This native partition is consumed only after complete area validation.
         native_arrays = {k: v for k, v in arrays.items() if not k.startswith("area_")}
+        return tuple(
+            self._measure(frame, query, arrays, native_arrays, area_rows) for query in prepared
+        )
+
+    def _measure(self, frame, query, arrays, native_arrays, area_rows):
+        world_key, names, geom_bodies, body, group, reference = query
+        row = self._keys.index(world_key)
         native = measure_object_contact_wrench(
             native_arrays,
             row,

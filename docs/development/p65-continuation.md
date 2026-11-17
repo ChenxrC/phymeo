@@ -1,3 +1,4 @@
+> 2026-11-18 I3m完成：01afd760，measure_many一次读回完整有序多body wrench，单measure保持。8新+8旧HOST=16pass，真实CUDA7query 1对7读回/验证，结果逐字段同；末失败/无缓存/reset/paired restore已验。见[报告](area-pressure-wrench-batch-report-20261118.md)。I3n可携带资产正由root串行验证，原两agent只读下一真实缺口，07:10收尾；dev未改，无push。
 > 2026-11-18 I3l连续窗口完成：267c6e34，4world/3model、450整批步/1800world-step，3新节点通过。三个area均入层→承重→加压→离层，最大压入1.314331mm，平台/偏心矩/逐步BE/能量工程门全过；23秒视频与450步离线查看器已核。见[报告与媒体](area-pressure-heterogeneous-support-report-20261118.md)。范围为有竖直导轨的CUDA动力学＋HOST自动有限面，非自由抓持/训练。下一I3m单次读回多body观察、I3n可携带资产正在按07:10计划推进；dev未改，无push。下文历史保持。
 > 2026-11-18 I3k完成：7a5feee5新增通用native+area BodyContactWrenchReader，保留双方力/真实力偶/材料样本身份，旧native-only诊断遇area显式拒绝。9新+69受影响兼容=78pass，见[报告](area-pressure-body-wrench-report-20261118.md)。原SuccessReader复用同一面积验证层，checkpoint digest保持。下一是连续多world自动几何与真实载荷可视化；异构encoder/PPO仍未实现，不把Env与诊断接通冒充训练。dev不变，07:10继续。
 

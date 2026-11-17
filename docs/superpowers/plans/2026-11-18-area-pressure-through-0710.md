@@ -217,3 +217,19 @@ I3t不重跑长窗，验证本轮新增生产模块确实进入可安装wheel并
 仅四次真实整批step：step1→checkpoint→step2→restorecheckpoint→重复step2→selected reset(305)→step3。step2/replay比较actual q/v/time/tick及完整raw numeric arrays逐字节；owner/revision等token逐项独立绑定，不任意normalize。reset后只选定世界清历史，其他世界保留；fresh后继标签独立核。每次一次公开measure_many，area双方多参考点合力/矩与raw积分独立核，native世界面积计数零且存在原生接触载荷。全部world状态实际改变、Fn非零，raw dA正/身份与对应frame绑定；sum(dA)仍真实面，不再归一。checkpoint仅相同配置恢复；固定失败路径/可恢复错误沿现公共API，不另改生产实现。
 
 保完整资产bytes、每步原输入/输出、raw观察、wrench、checkpoint、reset观察、intersector统计、依赖/模块origin和文件hash。CLI接收--site、--output绝对路径且output新建；原本脚本在repo存放，实际执行复制到外部consumer目录。若新wheel暴露导出/包数据或导入问题，只修该问题，不跑旧全套或调物理参数。06:35优先报告/收口，07:10停止；不push/devmerge/发包。
+
+## 05:05 I3u：可复用128点设备摩擦求解模块
+
+I3r的8点参考不足以容纳完整有限面。I3u只将已验证算术提升为可安装backend模块并扩完整样本容量，不接scene/type7/v1观察，不推进q，不称生产摩擦已接通。新增且仅新增 src/phymeo/solvers/area_friction.py（owned问题/样本）、src/phymeo/backends/tyx_area_friction.py、src/phymeo/backends/_tyx_area_friction_kernels.py 和 tests/test_tyx_area_friction.py。原scene agent只author三source，原training agent只author测试；root唯一执行与旧接缝owner。原experiment I3q/r保持不变，不重跑已绿旧组。
+
+公开 AreaFrictionSample/AreaFrictionProblem 字段沿I3q；TyxAreaFrictionWorkspace(capacity=32,mode="cuda").solve_many(tuple(problem),max_iterations=24,max_backtracks=12)，返回TyxAreaFrictionResult，owned原/FP32问题、全部Fn/Ft/双方world0矩/广义力/trace/独立代回与原严格门诊断沿I3r。LAW="final_normal_smooth_v1"明确只此律。最大32world、6DOF、128完整samples；0sample合法，129/7DOF/33world先拒，无截断/自动降级。必须修改schema、pack、设备初始化及样本loop全部相关边界，不能误改8个vector scratch slot。不共享experiment高级实现；生产文件不能import experiments。沿原DeviceResources/原子last_results/失败poison/UNKNOWN_RELEASE语义。
+
+手计14buffers每world 23076+252*S字节，S128/W32=1770624B；每solve上传761216B、下载1009408B，trace两数组705280B不增。24updates×12backtracks仍最多289次样本评价，满32×128最多1183744次samplelaw与42614784次6×6 Jacobian项更新。保留非对称Jacobian、部分选主元、原FP32门（设备1e-5质量scale、HOST代回2e-5），原HOST1e-10只如实报告。没有速度通过门。
+
+固定新128点制造例是两个可动平面刚体的6DOF，origins zA=.01/zB=-.01，128个不同x_i=(2i-127)*.000125、point=(x_i,0,0)。JA x行=(1,0,-.01,0,0,0)、z行=(0,1,-x_i,0,0,0)；JB x行=(0,0,0,1,0,.01)、z行=(0,0,0,0,1,-x_i)，y行0，n=ez。v*=(.00575,-.002,.4,.002,.001,-.1)，vt=.00075 ex、vn_i=-.003-.5*x_i，vs=.001，所以Ft=-.6 mu Fn ex精确有理。k_i=50+10*(i%4)、phi_i=-(.0004+.00001*(i%5))、mu_i=.1*(1+i%3)，全点不同杠杆/载荷且压紧。Mdiag=(.5,.5,.0002,1.25,1.25,.0003)、D=(1,2,.001,2,3,.002)、h=.001、v0=0；独立Fraction计算Fn与Q，再设f=(M+hD)v*/h-Q。禁止调用新solver制造oracle或重复一点拆k。
+
+另固定12点holdout：将上述前12点及所有JA/JB/point/n统一旋转Q，其columns为((.6,.8,0),(-.8,.6,0),(0,0,1))，得到两个非零世界切向分量；所有标量/M/D/v*及独立制造f按对应12点重新算。不是新物理窗口；用于防仅x切向/忽略JB错误。128案例另以完整样本逆序核总载荷和速度工程等价，保存原顺序，不要求异序求和bitwise。
+
+验证新schema owned/非法dtype与非SPD/正参数FP32下溢；单world128与单world12；32world交替128/12/0，原v0/f固定、最后world128，按身份与W1工程比较；128点原序/逆序；坏最后problem零launch、数值预算0末world失败保last_results、随后可重试、关闭释放。沿原速度5e-5*(1+abs(ref))、力.002+.002rel、矩1e-5+.002rel，另外直接代回实际上传问题/实际设备v核全部方程及最终Fn容量；不只比较制造目标。全部buffer/trace/字节和真实时间留存，不把新容量叫真实32机器人场景。一个首次focused组，失败保前缀并只诊断对应问题，不放宽门。
+
+完成后新wheel须包含这三文件并验证安装来源，原I3t混合场景结果仍绑定其原wheel，不倒灌新版本。若06:35仍未通过则保明确未完成状态并收尾，不赶时间接新scene或改旧合同。07:10交本轮总览。

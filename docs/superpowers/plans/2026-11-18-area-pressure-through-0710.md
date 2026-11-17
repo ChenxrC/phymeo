@@ -50,3 +50,13 @@ root 负责共享源码和串行执行。multitask_scene_review 只读检查数�
 验收固定新明示协议夹具：D=0、unlimited、真实3P+3motor，独立FREE球(.08kg,R=.05m,z=.049m)，h=.0005，gravity=-9.81，最多3步。A/B/split/native 四world；每pair真实面积1e-4m²、g=2e6Pa/m、delta=.001m，split仅四分同面积与压力。独立receipt全样本oracle、A/B方向、细分载荷、缺声明/身份与目录故障、同tick变化、controls-only/reset/成对restore。此节点只接HOST评估reader，不改Env、actor特征或声称任务训练成功。
 
 I3h 首20-world在构造时发现夹具漏传已有expanded-batch资源预算；未进入20-world仿真。修正为每条比较路径独立64MiB registered CUDA payload预算（不含context/JIT/allocator/host等），不改公共32上限，不调整几何/物理参数。保留5-world已绿结果，只续20/32，报告预算实用峰值与排除项。
+
+## I3j 执行前合同：自动当前几何接入任务 Env
+
+仅新增 `area_scene=None, area_roles=None` 可选参数；面积声明要求两者齐备、Scene.borrowed batch恰为Env batch。Scene公开只读asset_sha256。构造前置核所有asset identity与role完整相符；Env静态binding加入asset SHA和reader角色binding，native-only原结构不变。动作通过原_submit接受之后，用新的batch revision调用area_scene.step一次推进全部native/area worlds，然后原export→reader→evaluate_goal。调用者不逐步供应surface。
+
+自动/显式reset沿scene.reset；checkpoint保持现codec，保存scene capsule的原batch_checkpoint、静态asset身份绑定在Env元数据。恢复先验证binding，再用既有SceneCheckpoint.make资产封套调用scene.restore，随后配对新reader。不会重新生成历史数值，也不保存诊断routes作为资产。动作已接受后geometry失败必须needs_recovery；物理已接受后观察失败仍须成对恢复，不能返回旧transition冒成功。
+
+新固定真实CUDA夹具：复用I3i的D=0/unlimited/真实3P+motors，object改为质量.08kg、半宽(.05,.05,.05)m的独立FREE box，center z=.049，h=.0005，g=-9.81；support为halfwidth(.01,.01,.005) box，中心z=-.005，顶面z=0。对象压力资产为与box相同边界的8corner+center/12tet完整立方体，corner压力0，center压力100000Pa；第二area model仅center125000Pa、独立材料identity。plate资产为真实support顶面两三角。初始1mm压入时中央小支撑落在bottom两tet域内，侧tet无正面积交集；不将零有效梯度面强行接入。3world非连续顺序(area-soft/native/area-stiff)，native使用同明示Scene但无area声明。动作常量，最长4步；不调物理参数追成功。
+
+测试四组：与独立batch+scene+reader顺序逐字段对照（只运行revision/config tokens允许不同）；短horizon自动/手动选择reset；fresh Env paired restore重放及变资产/角色预拒；末world几何与物理后观察故障、无新transition、poison及恢复。保留actor设备数组中的area字段；本批不声称策略已经消费新字段、不做PPO或抓取成功率。

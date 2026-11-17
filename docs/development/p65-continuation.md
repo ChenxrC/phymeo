@@ -1,5 +1,8 @@
 # Phymeo 当前续作入口
 
+> 2026-11-17 I3c异构面积观察完成：实现f01b5505，13新interpret/CUDA（含CUDA Torch）＋16原生批次/reader兼容节点全部通过，6文件Ruff/format通过。ModelSpec面积声明贯穿分桶/编译/manifest/checkpoint；全area worlds先pack再所有bucket共同提交。统一workspace增加area字段、declared mask与frame身份catalog，真实accepted设备银行scatter，与端点/入步/native观察同帧；精确dA位、末桶失败/刷新失败、选择reset/restore换owner、声明隔离与错误pair-body负控已验。旧geom角色成功reader明确拒area，未称新训练通过。详[报告与接口](area-pressure-heterogeneous-observation-report-20261117.md)。下一先异构当前状态→自动接触面→整批提交，再GPU有限面裁剪/整步成本；当前supplied-surface、无全设备几何或FFT材料新结论。dev未改，exp本地提交，无push；root/原作者执行与审阅释放，无新期限/周期任务。下文为历史。
+
+
 > 2026-11-17 I3b持久设备面积记录完成：实现45dec87a，12新interpret/CUDA＋20受影响/原生兼容节点全部通过，10文件Ruff/format通过。实际device input/type7 rows写inactive area bank，与物理state一次提交；同模型多世界copy-owned CUDA D2D不经HOST数值重建，原始FP64 dA以两i32位保留。checkpoint/reset/乱序与子集clone字节一致、preflight alias/Mapping换目标、晚故障与容量拒绝通过；极端世界原点矩用显式valid mask，不改变物理准入。旧I3a area胶囊显式布局拒绝、不伪迁移；native兼容保留。详[报告与接口](area-pressure-device-observation-report-20261117.md)。下一统一观察消费与异构area汇总，再GPU有限面裁剪/整步成本；无全设备碰撞或FFT材料/新训练结论。dev不变，exp本地提交，root/原作者执行与审阅释放，无新期限/周期任务。下文为历史。
 
 > 2026-11-17 I3a面积观察/生命周期完成：实现89166982，14新interpret/CUDA＋39受影响/原生兼容节点通过，Ruff/format通过。HOST只读快照分离历史施加外载与当前控制、输入力相位与端点状态；双面积支撑第30步存档恢复后再走50步物理字节一致，独立/子集/乱序clone、选择reset、资产/行/相位篡改及晚故障原子拒绝通过。完整runtime胶囊保原nativeentry，scene外层绑定全部压力/刚面资产；不冒设备areaABI。详[报告与用法](area-pressure-lifecycle-report-20261117.md)。下一I3b持久设备面积观察/批量入口，再GPU裁剪；不重跑本批或旧长窗。dev不变、exp本地提交，原作者和root执行槽释放，无新期限/周期任务。下文为历史。

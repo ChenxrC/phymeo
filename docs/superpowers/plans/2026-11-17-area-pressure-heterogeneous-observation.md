@@ -17,3 +17,6 @@ Each project execution uses a fresh entrypoint-aware guard and original environm
 
 ## Exit and next
 Commit implementation/tests after focused checks; report exact passes and remaining limitations. Next: current-geometry generation across heterogeneous scenes, then GPU finite-surface clipping with total-step cost. Area observations alone do not establish heterogeneous task training, FFT coupling or end-to-end device collision.
+
+## Completed
+Implementation f01b5505. New interpret 6 passed (10.10 s), CUDA 7 passed (39.17 s), affected native/transaction/reader compatibility 16 passed (75.64 s). Six files pass final Ruff and format check. No product/numerical failures or tolerance changes. Initial import sorting finding retained. Added exact declared pair/body identity check following source review, plus a synthetic legal-index/wrong-body rejection and native-only opt-in zero fields test. CUDA Torch storage is copy-owned. The original geom-role success reader explicitly rejects area-declared batches until a body-pair adapter exists; unified numerical observation does not imply training Env support. See [report](../../development/area-pressure-heterogeneous-observation-report-20261117.md).

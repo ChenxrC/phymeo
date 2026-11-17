@@ -90,3 +90,11 @@ area逐步独立标量oracle：Meff=m+hD，vfree=(mv+h(fext-mg))/Meff；入步de
 固定门：全部有限且450步接受；area入/出步压入<2.5mm，正交集真实面积soft4e-4、offset3e-4m²。逐步力误差<=.001N+.001relative，v误差<=3e-5m/s。平台[.12,.15)、[.27,.30)均值力/深度<=3%，max|v|<=.002；soft目标2.943/4.443N，offset4.4145/5.9145。最后.04s area力0且gap>1mm，三area均空→有载→离层；native需真实出生/最终分离但不套面积刚度门。offset入步bodyorigin矩My=-.004Fz，误差<=2e-6Nm+2e-4relative，A/B反号。area累计正能量残差(含外载功和真实D耗散)<=初始正能量2%，仅工程门。没有第二h/调参或已绿旧窗口重复。
 
 中文四格画真实入步姿态与同相位力，颜色为求解牵引Fn/dA(Pa)，与入步弹性压力分开；显示gap/Fz/My/阶段及曲线。从同次保存轨迹取帧，不能插值造接触，明确CUDA动力学+HOST有限面生成/导轨案例。新可运行experiment、独立测试、离线plot/viewer，之后再按余量补实际使用连接。
+
+## I3m / I3n 后续安排（依据 I3k/I3l 实际接口）
+
+I3l 连续轨迹完成后，优先 I3m 同帧多 body wrench 查询。当前 reader 每查一个 body 就完整读回一次；四 world 双方测量会重复八次。新增有界 immutable request 与 measure_many：全批请求先验证，工作区只读回一次、面积 ABI/目录只核一次，所有结果按请求次序完整返回，末请求失败不部分发布。单 measure 通过相同实现保留原结果。没有跨 frame 缓存、数值重算、控制或求解语义变化。固定 HOST 手向量验证与单查询逐字节一致、一次读取、坏末请求零读取、末样本失败无部分结果；一个原短 CUDA 场景验证完整 A/B 同帧及 stale/reset 边界，不重跑 I3l 长窗。
+
+若 I3m 顺利且时间允许，I3n 补当前 body-local 压力资产的可携带声明：现 scene/checkpoint 只有资产身份 hash，调用者仍需 Python 重建资产。提供有版本/单位/模型及有序 pair 的有界数据封套，完整保存原节点、cells/faces、压力、材料身份，解码按现构造器重新验真实几何。只支持当前 full zero-boundary pressure 对 finite rigid mesh、无摩擦法向律；不把 XML/URDF 自动变压力资产，不声称 FFT 或新材料标定。先做数据往返/篡改/容量/owned 生命周期及小 CUDA 加载后与原资产同输出，再给独立运行说明。具体 schema 在实现前单独冻结。
+
+06:35 起关闭在途验证与可视化，补当前“声明→当前状态→候选/有限面→共同解→设备观察→应用”的架构及差距；07:10 汇总实际交付和后续优先级。未完成的节点明确保留，不用扩大测试矩阵填时间。

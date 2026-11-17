@@ -534,7 +534,8 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                 area_pressure_input="fresh-host-surface-per-world-and-pair",
                 area_pressure_publication="last_step.raw_contact_fields.area_pressure",
                 area_pressure_entry_abi=False,
-                area_pressure_checkpoint=False,
+                area_pressure_checkpoint=True,
+                area_pressure_observation="host-owned-accepted-receipt-v1",
                 area_pressure_friction=False,
                 smooth_acceleration_operator="M+h*joint_damping",
             )
@@ -1443,6 +1444,12 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
             self._check_open()
             return self._checkpoint_revision
 
+    def area_pressure_snapshot(self, keys=None):
+        """Owned HOST history, with input force phase separate from endpoint state."""
+        from .mujoco_area_pressure_state import observe
+
+        return observe(self, keys)
+
     def checkpoint(self):
         """Capture the whole accepted TYX batch, including exact clock bits.
 
@@ -1453,8 +1460,6 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
 
         with self._lock:
             self._check_open()
-            if self._area_pressure_pairs:
-                raise ValueError("area-pressure checkpoint ABI is not available yet")
             return capture(self)
 
     def restore(self, checkpoint, *, expected_revision):
@@ -1469,8 +1474,6 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
 
         with self._lock:
             self._check_open()
-            if self._area_pressure_pairs:
-                raise ValueError("area-pressure checkpoint ABI is not available yet")
             retired_controls = retirement_list(self)
             result = restore(self, checkpoint, expected_revision)
             self._control_retired = retired_controls
@@ -1505,7 +1508,10 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
         with self._lock:
             self._check_open()
             if self._area_pressure_pairs:
-                raise ValueError("area-pressure clone ABI is not available yet")
+                from .mujoco_area_pressure_state import validate_area_receipt
+
+                for key in self._world_keys:
+                    validate_area_receipt(self, key, self._receipts[key], self._data[key])
             selected = self._select(world_keys)
             from .mujoco_tyx._allocation_manifest import allocation_manifest
 

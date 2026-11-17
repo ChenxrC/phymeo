@@ -180,6 +180,7 @@ def publish(runtime, result, index, fields, native_rows):
         answer.append(
             MappingProxyType(
                 dict(
+                    source_quadrature=quad,
                     identity=quad.identity,
                     stamp=quad.stamp,
                     sample_ids=quad.sample_ids,

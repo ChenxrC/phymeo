@@ -32,6 +32,11 @@ def _require(condition, message):
 
 def _records():
     # Lazy, explicit whitelist. Serialized names never cause dynamic imports.
+    from ..geometry.area_pressure import (
+        AreaPressureIdentity,
+        AreaPressureQuadrature,
+        AreaPressureStamp,
+    )
     from ._mujoco_tyx_runtime import (
         MuJoCoTyxContact,
         MuJoCoTyxDynamics,
@@ -48,6 +53,9 @@ def _records():
     from .mujoco_tyx._constraint_publication import MuJoCoTyxConstraintRow
 
     classes = (
+        AreaPressureIdentity,
+        AreaPressureStamp,
+        AreaPressureQuadrature,
         MuJoCoTyxActuation,
         MuJoCoTyxActivationStepReceipt,
         MuJoCoTyxJointActivationStepReceipt,
@@ -262,6 +270,10 @@ def _model_binding(runtime):
         )
     from .mujoco_entry_checkpoint import _entry_binding
 
+    if runtime._area_pressure_pairs:
+        from .mujoco_area_pressure_state import area_binding
+
+        binding["area_pressure"] = area_binding(runtime)
     binding["accepted_entry"] = _entry_binding(runtime)
     return binding
 
@@ -331,6 +343,10 @@ def capture(runtime):
                 packed[3][index].astype(np.float64).tobytes() == data.act.tobytes(),
                 "accepted activation mirror differs",
             )
+        if runtime._area_pressure_pairs:
+            from .mujoco_area_pressure_state import validate_area_receipt
+
+            validate_area_receipt(runtime, key, runtime._receipts[key], data)
         cpu_state = data.cpu_state.copy()
         worlds.append(
             {
@@ -370,6 +386,9 @@ def restore(runtime, checkpoint, expected_revision):
     _require(type(checkpoint) is MuJoCoTyxCheckpoint, "expected MuJoCoTyxCheckpoint")
     binding = _model_binding(runtime)
     has_entry = "accepted_entry" in checkpoint.binding
+    _require(
+        not runtime._area_pressure_pairs or has_entry, "area checkpoint requires accepted entry"
+    )
     expected_binding = (
         binding
         if has_entry
@@ -526,6 +545,10 @@ def restore(runtime, checkpoint, expected_revision):
                 and np.array_equal(transmission.generalized_force, receipt.qfrc_actuator),
                 "joint transmission receipt/source/accepted force binding",
             )
+        if runtime._area_pressure_pairs:
+            from .mujoco_area_pressure_state import validate_area_receipt
+
+            validate_area_receipt(runtime, key, receipt, candidate)
         data[key], controls[key], ticks[key], receipts[key], initial[key] = (
             candidate,
             control,

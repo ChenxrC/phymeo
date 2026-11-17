@@ -183,6 +183,7 @@ def _check_area_export(receipt, surface, body_ids, points, area, jacobian, force
     assert isinstance(records, tuple) and len(records) == 1
     record = records[0]
     assert set(record) == {
+        "source_quadrature",
         "identity",
         "stamp",
         "sample_ids",
@@ -565,21 +566,20 @@ def test_late_second_world_publication_failure_retains_all_and_retry_is_real(mod
 
 
 @pytest.mark.parametrize("mode", MODES)
-def test_reset_requires_new_stamp_and_unqualified_checkpoint_apis_reject(mode):
+def test_reset_requires_new_stamp_and_checkpoint_keeps_history(mode):
     _, _, runtime = _runtime(_sliders_xml(), mode, keys=(11, 37))
     with runtime:
         initial = runtime.integration_snapshot()
         _step(runtime, _mapping(runtime))
         old = _mapping(runtime)
         before = _retention_input(runtime)
-        for operation in (
-            runtime.checkpoint,
-            runtime.clone,
-            lambda: runtime.restore(None, expected_revision=runtime.checkpoint_revision),
-        ):
-            with pytest.raises(ValueError, match="area-pressure"):
-                operation()
-            _retained(runtime, *before)
+        assert runtime.capabilities["area_pressure_checkpoint"]
+        checkpoint = runtime.checkpoint()
+        assert checkpoint.source_revision == runtime.checkpoint_revision
+        _retained(runtime, *before)
+        with pytest.raises(ValueError, match="expected MuJoCoTyxCheckpoint"):
+            runtime.restore(None, expected_revision=runtime.checkpoint_revision)
+        _retained(runtime, *before)
         runtime.reset((11,))
         reset = runtime.integration_snapshot()
         _same({11: initial[11]}, {11: reset[11]})

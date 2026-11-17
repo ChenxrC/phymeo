@@ -228,3 +228,50 @@ class MuJoCoTyxAreaPressureScene:
             self._last_geometry = publication
             self._geometry_revision = runtime._checkpoint_revision
             return accepted
+
+    def observe(self, keys=None):
+        """Historical accepted loads and endpoint state; no geometry recomputation."""
+        return self.runtime.area_pressure_snapshot(keys)
+
+    def checkpoint(self):
+        from .mujoco_area_pressure_state import MuJoCoTyxAreaSceneCheckpoint
+
+        with self.runtime._lock:
+            return MuJoCoTyxAreaSceneCheckpoint.make(self._assets, self.runtime.checkpoint())
+
+    def restore(self, checkpoint, *, expected_revision):
+        from .mujoco_area_pressure_state import MuJoCoTyxAreaSceneCheckpoint, asset_digest
+
+        with self.runtime._lock:
+            self.runtime._check_open()
+            if type(checkpoint) is not MuJoCoTyxAreaSceneCheckpoint:
+                raise ValueError("expected area scene checkpoint")
+            if checkpoint.asset_sha256 != asset_digest(self._assets):
+                raise ValueError("area scene asset binding differs")
+            self.runtime.restore(checkpoint.runtime_checkpoint, expected_revision=expected_revision)
+            self._last_geometry = self._empty
+            self._geometry_revision = None
+
+    def reset(self, keys=None):
+        with self.runtime._lock:
+            before = self.runtime._checkpoint_revision
+            self.runtime.reset(keys)
+            if self.runtime._checkpoint_revision != before:
+                self._last_geometry = self._empty
+                self._geometry_revision = None
+
+    def clone(self, world_keys=None):
+        with self.runtime._lock:
+            cloned = self.runtime.clone(world_keys)
+            try:
+                return type(self)(cloned, self._assets)
+            except BaseException as error:
+                try:
+                    cloned.close()
+                except BaseException as cleanup:
+                    self.runtime._checkpoint_retired.append(cloned)
+                    raise BaseExceptionGroup(
+                        "area scene clone failed and cleanup needs retry on source.close()",
+                        [error, cleanup],
+                    ) from None
+                raise

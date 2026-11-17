@@ -64,3 +64,16 @@ I3h 首20-world在构造时发现夹具漏传已有expanded-batch资源预算；
 ## 02:00 进度
 
 I3j 已完成9b928c2d：4新CUDA/48.22s、6native兼容/82.34s，当前状态自动接触面接通任务Env，成对恢复和晚故障通过。下一先只读定位实际策略编码入口，不把设备数组存在当成网络已经消费。
+
+## I3k 执行前合同：通用同入步接触力/矩读取
+
+代码确认异构语义encoder/actor/PPO仍未实现；旧同构PPO只取q/v，不作为本批现成接入口。先补真实接触应用缺口，不另建训练体系。
+
+公共 AreaPressureEntryReader(workspace, identities_by_model) 统一owned材料/有序pair与同入步面积数组、目录、native元数据/时钟/owner、padding和重复bodypair验证；返回immutable样本与原digest。AreaSuccessAdapter复用它，checkpoint digest次序保持，最多一次workspace.readback。
+
+新增 BodyContactWrenchReader(workspace, area_identities=None).measure(frame, world_key, body_name, reference_point_world, group_body_names=())，按公共metadata命名body、同一当前frame读取native+area。native保真实intrinsic couple，area A正/B反；force已为N，不二乘dA。area用已发布world-origin moment平移到显式参考点，不把它自动称COM。相关sample moment缺省时完整wrench明确拒绝；无关body/world缺省不影响该body结果。保留native/area来源和分项合力矩、全部载荷及body分组，不伪造area geomID。总量只含接触，不含重力/驱动/外载。
+
+旧native-only wrench/slip入口若选中行声明area，必须明确拒绝，不能忽略area返回少算载荷。无area旧路径保持。
+
+固定HOST手向量：native p=(1,2,3),F=(1,2,4),couple=(.5,-.25,.75)；area p=(-1,0,2),n=ey,Fn总3N,dA总.02m²，以3与12目录样本细分。总F=(1,5,4),M0=(-3.5,-1.25,-2.25)；参考r=(.2,-.3,.4)后的M=(-.3,-.85,-3.55)。不同bodypair避免双算；测试双方反力、组别、真实面积、坏身份/phase/mask/矩表示与缺省。实际CUDA只复用I3j固定cube/3world自动几何，最长4stepcalls，不改物理门；已受影响I3i/legacy readers需相应兼容核。完成后优先同一真实连续轨迹与可视化，不宣称共享训练完成。
+

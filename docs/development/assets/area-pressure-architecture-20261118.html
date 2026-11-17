@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Phymeo 面积接触 · 已实现架构与剩余连接</title>
+<style>
+*{box-sizing:border-box;margin:0;padding}body{font-family:"Segoe UI","Microsoft YaHei",sans-serif;background:#020617;color:#e2e8f0;padding:32px;line-height:1.6}.container{max-width:1360px;margin:auto}.header{margin-bottom:24px}.header-row{display:flex;align-items:center;gap:14px}.pulse-dot{width:12px;height:12px;background:#34d399;border-radius:50%}h1{font-size:28px;letter-spacing:-.02em}.subtitle{color:#94a3b8;font-size:15px;margin:8px 0 0 26px}.diagram-container{background:#081225;border:1px solid #1e293b;border-radius:16px;padding:18px;overflow-x:auto}svg{display:block;width:100%;min-width:1060px}.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:22px}.card{border:1px solid #334155;background:#0f172a;border-radius:12px;padding:21px}.card h2{font-size:17px;margin-bottom:9px}.card p{font-size:14px;color:#cbd5e1}.card a{color:#7dd3fc}.footer{margin:20px 0;color:#94a3b8;font-size:13px}svg text{font-family:"Segoe UI","Microsoft YaHei",sans-serif}.title{font-size:18px;fill:#f8fafc;font-weight:600}.sub{font-size:13px;fill:#cbd5e1}.small{font-size:12px;fill:#94a3b8}.lane{font-size:15px;font-weight:600}.tag{font-size:12px;font-weight:600}@media(max-width:850px){body{padding:16px}.cards{grid-template-columns:1fr}h1{font-size:23px}}
+</style></head>
+<body><main class="container">
+<header class="header"><div class="header-row"><span class="pulse-dot"></span><h1>从当前场景状态，到实际接触力和运动</h1></div>
+<p class="subtitle">Phymeo · codex/exp · 2026-11-18　实线：已接通　虚线：仍需集成　范围：面积压力接触分支，不是全引擎功能宣言</p></header>
+<div class="diagram-container">
+<svg viewBox="0 0 1320 1040" role="img" aria-labelledby="diagram-title diagram-desc">
+<title id="diagram-title">面积接触当前架构</title><desc id="diagram-desc">左侧是已运行的当前状态、有限接触面、法向共同求解和设备观察链路。右侧是独立摩擦参考及FFT、Kamino研究，尚未替代场景运行时。</desc>
+<defs><pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse"><path d="M24 0H0V24" fill="none" stroke="#17233b" stroke-width=".5"/></pattern>
+<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10Z" fill="#34d399"/></marker>
+<marker id="pending" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10Z" fill="#fbbf24"/></marker></defs>
+<rect width="1320" height="1040" fill="url(#grid)"/>
+<!-- Connections precede boxes. -->
+<g fill="none" stroke="#34d399" stroke-width="2" marker-end="url(#arrow)">
+<path d="M465 165V210"/><path d="M465 295V340"/><path d="M465 425V470"/><path d="M465 555V600"/><path d="M465 685V730"/><path d="M465 815V860"/>
+<path d="M245 123H300"/><path d="M245 383H300"/><path d="M245 643H300"/><path d="M300 903H245"/>
+</g>
+<path d="M1010 425V625H680V643H630" fill="none" stroke="#fbbf24" stroke-width="2" stroke-dasharray="7 6" marker-end="url(#pending)"/>
+<!-- Honest implementation boundaries. -->
+<rect x="12" y="15" width="700" height="977" rx="12" fill="none" stroke="#285345" stroke-width="1.5"/>
+<rect x="750" y="15" width="552" height="977" rx="12" fill="none" stroke="#514064" stroke-width="1.5"/>
+<text x="35" y="48" class="lane" fill="#6ee7b7">已实现：法向面积接触运行链路</text>
+<text x="775" y="48" class="lane" fill="#c4b5fd">独立研究 / 后续连接</text>
+<!-- Main runtime column -->
+<g fill="#07382f" stroke="#34d399" stroke-width="1.5">
+<rect x="300" y="80" width="330" height="85" rx="6"/><rect x="300" y="210" width="330" height="85" rx="6"/>
+<rect x="300" y="340" width="330" height="85" rx="6"/><rect x="300" y="470" width="330" height="85" rx="6"/>
+<rect x="300" y="600" width="330" height="85" rx="6"/><rect x="300" y="730" width="330" height="85" rx="6"/>
+<rect x="300" y="860" width="330" height="85" rx="6"/>
+</g>
+<g text-anchor="middle">
+<text x="465" y="108" class="title">模型 + body-local 压力资产</text><text x="465" y="132" class="sub">有序 pair / 材料身份 / m、Pa 单位</text><text x="465" y="152" class="small">文件保存与重载，重新核验完整几何</text>
+<text x="465" y="238" class="title">当前已接受 q / v → body FK</text><text x="465" y="262" class="sub">每个 world 绑定自己的模型与资产</text><text x="465" y="282" class="small">reset / restore 后重新解析实际 owner</text>
+<text x="465" y="368" class="title">自动生成有限接触面</text><text x="465" y="392" class="sub">压力四面体 × 有限刚性三角面</text><text x="465" y="412" class="small">默认 HOST；可选设备拓扑 + HOST 精确复核</text>
+<text x="465" y="498" class="title">真实面积积分 → 新压力行</text><text x="465" y="522" class="sub">dA / p / g → k=dA·g，φ=−p/g</text><text x="465" y="542" class="small">两侧完整 point Jacobian，原生 pair 去重</text>
+<text x="465" y="628" class="title">MuJoCo-TYX 共同动力学</text><text x="465" y="652" class="sub">共享质量与广义自由度 / 双方实际反作用</text><text x="465" y="672" class="small">当前面积律：无摩擦、冻结几何的 BE 法向响应</text>
+<text x="465" y="758" class="title">整批物理提交</text><text x="465" y="782" class="sub">候选状态 + 同次实际载荷 → accepted bank</text><text x="465" y="802" class="small">容量或晚故障不部分提交；源入步相位保留</text>
+<text x="465" y="888" class="title">统一设备观察 → 应用读取</text><text x="465" y="912" class="sub">任务 Env / 成功判定 / 多 body 力与力矩</text><text x="465" y="932" class="small">观察另有原子发布；measure_many 一次读回</text>
+</g>
+<!-- Side context -->
+<g fill="#102035" stroke="#64748b" stroke-width="1.5">
+<rect x="35" y="80" width="210" height="85" rx="6"/><rect x="35" y="340" width="210" height="85" rx="6"/>
+<rect x="35" y="600" width="210" height="85" rx="6"/><rect x="35" y="860" width="210" height="85" rx="6"/>
+</g>
+<g text-anchor="middle">
+<text x="140" y="109" class="title">显式选择面积 pair</text><text x="140" y="134" class="sub">不是从 URDF 猜材料</text><text x="140" y="154" class="small">完整模型源绑定</text>
+<text x="140" y="369" class="title">批量候选筛选</text><text x="140" y="394" class="sub">严格 AABB 证空</text><text x="140" y="414" class="small">每步完整网格准备一次</text>
+<text x="140" y="629" class="title">原生接触 / 约束</text><text x="140" y="654" class="sub">只在已准入组合参与</text><text x="140" y="674" class="small">阻尼 + 原生约束混合有限制</text>
+<text x="140" y="889" class="title">诊断与可视化</text><text x="140" y="914" class="sub">同次真实保存轨迹</text><text x="140" y="934" class="small">不以动画代替动力学</text>
+</g>
+<!-- Independent research -->
+<rect x="780" y="80" width="490" height="135" rx="6" fill="#281a42" stroke="#a78bfa" stroke-width="1.5"/>
+<text x="805" y="110" class="title">摩擦模型比较：24 个固定结果</text>
+<text x="805" y="138" class="sub">精确 1D Coulomb / 最终法向平滑 / Lagged</text>
+<text x="805" y="163" class="sub">卸载时 Lagged 可保留切向力；平滑律有微滑</text>
+<text x="805" y="190" class="small">用于选型；不是三个可随意切换的生产后端</text>
+<rect x="780" y="255" width="490" height="170" rx="6" fill="#281a42" stroke="#a78bfa" stroke-width="1.5"/>
+<text x="805" y="285" class="title">共享 DOF 的最终法向平滑摩擦</text>
+<text x="805" y="313" class="sub">HOST：六固定输入、10 项测试已通过</text>
+<text x="805" y="338" class="sub">法向与切向同解；保留非对称导数和实际回溯</text>
+<text x="805" y="363" class="sub" id="cuda-status">CUDA：32 world / 6 DOF / 8 点独立验证通过</text>
+<text x="805" y="391" class="small">尚未接入上方 Scene、资产版本与运行时约束组合</text>
+<rect x="780" y="470" width="490" height="105" rx="6" fill="#35260e" stroke="#fbbf24" stroke-width="1.5"/>
+<text x="805" y="501" class="title">下一接线：共同状态与共同载荷</text>
+<text x="805" y="528" class="sub">明确接触律版本 / 当前 J 和 M / 真实积分</text>
+<text x="805" y="553" class="sub">再验证持续滑动、转动、边缘与真实抓持</text>
+<rect x="780" y="685" width="490" height="125" rx="6" fill="#281a42" stroke="#a78bfa" stroke-width="1.5"/>
+<text x="805" y="715" class="title">Kamino / FFT：各自独立的参考</text>
+<text x="805" y="743" class="sub">Kamino：刚体接触动力学；FFT：非局部半空间</text>
+<text x="805" y="768" class="sub">双峰实验显示独立相加和 force-only 表有限制</text>
+<text x="805" y="793" class="small">没有把 FFT 格点冒充互不相关的局部弹簧</text>
+<rect x="780" y="850" width="490" height="95" rx="6" fill="#301824" stroke="#fb7185" stroke-width="1.5"/>
+<text x="805" y="879" class="title">尚未具备的通用能力</text>
+<text x="805" y="905" class="sub">通用自动选型 / 全 GPU 精确面 / 面积 CCD</text>
+<text x="805" y="930" class="sub">任意软软材料 / 异构语义策略和 PPO 全连接</text>
+<text x="35" y="1020" class="tag" fill="#6ee7b7">绿色：实际运行链路</text><text x="290" y="1020" class="tag" fill="#c4b5fd">紫色：独立参考</text><text x="530" y="1020" class="tag" fill="#fbbf24">黄色虚线：待集成</text><text x="800" y="1020" class="small">不把 HOST 几何 + CUDA 动力学称为全 GPU 碰撞</text>
+</svg></div>
+<section class="cards">
+<article class="card"><h2>真实连续闭环</h2><p>4 world、3 model、450 个 CUDA 批次步。三个面积世界完成入层、承重、加压、离层；另有三可动物体的双区释放。导轨限制明确保留。</p><p><a href="../area-pressure-heterogeneous-support-report-20261118.md">连续轨迹、视频与查看器</a></p></article>
+<article class="card"><h2>批量与生命周期</h2><p>5 / 20 / 32 world 同输出比较；批量筛选、一次网格准备、多 body 一次观察、资产文件与成对恢复。固定案例成本下降，不宣称普遍快于 Newton。</p><p><a href="../area-pressure-batch-scale-report-20261118.md">规模结果</a> · <a href="../area-pressure-assets-report-20261118.md">资产合同</a></p></article>
+<article class="card"><h2>下一阶段怎样判断进展</h2><p>优先把同一步摩擦载荷接回实际运动，再做滑动、边缘和双向旋转。用固定多案例和明确失败判断，不用增加相似测试数量代替新功能。</p><p><a href="../area-pressure-coupled-friction-report-20261118.md">已通过的共享 DOF 参考</a></p></article>
+</section>
+<footer class="footer">基于当前源码与本轮保存证据。实验分支尚未合入 dev。图示由 architecture-diagram-generator 模板调整，模板许可见同目录 architecture-template-LICENSE.txt。</footer>
+</main></body></html>

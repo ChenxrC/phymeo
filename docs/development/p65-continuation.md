@@ -4,9 +4,9 @@
 
 ## 当前任务与状态
 
-用户要求本批到北京时间07:10。当前I3f–I3w已按各自有限范围完成。root唯一项目执行owner；原agent仅隔离author/只读，所有import、测试、数值、静态、build/install串行。
+用户要求本批到北京时间07:10。当前I3f–I3x已按各自有限范围完成。root唯一项目执行owner；原agent仅隔离author/只读，所有import、测试、数值、静态、build/install串行。
 
-最后有界I3x正在author：固定已保存共同载荷，调用原native积分一次，检查actualv上的力律；不重跑接触解/旧轨迹、不改产品源码，也不把历史入口诊断叫live Scene。执行与收尾以[本轮计划](../superpowers/plans/2026-11-18-area-pressure-through-0710.md)实际新记录为准。
+最后有界[I3x原生积分检查](area-pressure-native-friction-bridge-report-20261118.md)首次1pass/1.73s：4个固定历史入口、两次原native核，actualv上原Fn/Ft与共同方程通过原工程门。没有重跑接触解或旧轨迹，也未改产品源码。下一批优先复用原积分器并保留逐步actualv核验，不能把该诊断叫live Scene。执行收据见[本轮计划](../superpowers/plans/2026-11-18-area-pressure-through-0710.md)及各报告。
 
 ## 最短阅读顺序
 

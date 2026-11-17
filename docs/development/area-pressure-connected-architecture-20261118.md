@@ -35,6 +35,7 @@
 | 共同摩擦backend | 最终Fn与Ft同解、完整非对称导数、6DOF/128完整点/32world边界 | [选型](area-pressure-friction-model-report-20261118.md)、[I3u](area-pressure-backend-friction-report-20261118.md) |
 | 实际入步与设备装配 | 历史真实M/J桥；resident布局→共同kernel，中间无HOST数值读回；13类错误与retry | [I3v](area-pressure-entry-friction-report-20261118.md)、[I3w](area-pressure-resident-friction-pack-report-20261118.md) |
 | 摩擦安装包验证 | 源码外128点13数组逐字节同；新resident完整组直接在安装包通过 | [wheel](area-pressure-friction-wheel-report-20261118.md)、[resident报告](area-pressure-resident-friction-pack-report-20261118.md) |
+| 原生积分接缝 | 四个实际历史入口，存储共同载荷经过原native核后actualv力律/方程与坐标通过 | [I3x](area-pressure-native-friction-bridge-report-20261118.md) |
 
 I3s初次轨迹保存后的oracle平面绑定失败已保留，修正只审原轨迹，没有重跑450world-step或把原失败pytest改称全绿。规模结果只针对固定有限模型，不等于任意32台复杂机器人，也不是Newton同机性能比较。
 
@@ -53,7 +54,7 @@ I3s初次轨迹保存后的oracle平面绑定失败已保留，修正只审原�
   → 新reader/asset binding/checkpoint/restore
 ```
 
-I3v是历史counterfactual，I3w上传原设备字节检验真实布局；两者没有对已推进的Scene再次施力。I3u/w没有改旧type7或v1。现v1假定F=n*Fn，不能放入切向力后继续让旧reader读取。
+I3v是历史counterfactual，I3w上传原设备字节检验真实布局；两者没有对已推进的Scene再次施力。I3x支持先复用既有native积分器，但生产仍须逐步核actualv；它不是新Scene轨迹。I3u/w/x没有改旧type7或v1。现v1假定F=n*Fn，不能放入切向力后继续让旧reader读取。
 
 首版新摩擦准入明确为6DOF、128点、32world的area-only桶，现三点三角积分最多126。保留全样本，允许空面；没有解决同世界一般native约束混合或29关节机器人接入。FP32工程门与HOST严格门分开报告，不用HOST修正替代设备结果。
 

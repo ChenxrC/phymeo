@@ -1,5 +1,23 @@
 # 面积压力接触：2026-11-18 至 07:10 执行计划
 
+## 本轮收口状态（2026-11-18 06:35更新）
+
+到07:10为本轮边界；下列是已经发生的结果，不把后续B1场景摩擦写成通过。
+
+| 主线 | 本轮实际完成 | 当前限制 |
+| --- | --- | --- |
+| 当前状态到自动面 | I3f/g批量候选和一次网格准备；I3i/j面积角色/Env入口 | 默认HOST，mixed仍HOST精确复核 |
+| 观察与资产 | I3k/m统一多body力矩/一次读回，I3n资产文件及身份 | 新摩擦law尚未进入旧v1 |
+| 真实连续运动 | I3l导轨窗口、I3o三体双区释放、I3s三种FREE初态各150步及同轨迹视频 | 法向无摩擦；I3s首oracle失败和原轨迹复审保留 |
+| 多规模与安装包 | I3h固定5/20/32同输出成本比较；I3t源码外混合场景 | 不称普遍快于Newton或全GPU几何 |
+| 摩擦共同解 | I3p选型、I3q/r参考、I3u可复用128点backend、I3v真实历史入步 | 6DOF/32world、area-only首版，非公开Scene摩擦 |
+| 实际设备布局 | I3w pack→共同kernel，首次新3节点直接安装包通过，13设备错误+retry | 保存的真实设备输入重放，未接live owner |
+| 原生积分决策 | I3x固定4入口、两原native核首次1pass/1.73s，actualv力律/方程/q通过 | 未修改产品，未发布新载荷或Scene；保留逐步复核 |
+
+新增源码和测试以各小提交为准，原dev不改、不push，旧未跟踪文件及agent WIP保持。独立工作已交接释放；原两agent没有新执行任务。全部项目执行仍由父单一串行队列完成。
+
+当前最短入口：[架构与证据](../../development/area-pressure-connected-architecture-20261118.md)、[图](../../development/assets/area-pressure-architecture-20261118.html)、[后续B1–B3行动](2026-11-18-area-friction-production-integration.md)、[I3x最后接缝结果](../../development/area-pressure-native-friction-bridge-report-20261118.md)。以下章节保留本轮原始计划和执行前合同；旧“进行中/下一步”只代表其时间点，不覆盖此收口和当前续作入口。
+
 起点：codex/exp d385760d；北京时间约 00:25 开始，07:10 结束。dev 不变、不 push；原 root 为唯一项目执行 owner，原两 agent 可并行只读审阅和隔离测试编写。全部数值、import、pytest、静态检查和构建串行，执行前 fresh guard。三个既有未跟踪文件保持。
 
 ## 当前依据

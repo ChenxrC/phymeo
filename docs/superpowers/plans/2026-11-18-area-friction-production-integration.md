@@ -29,7 +29,7 @@
 
 1. **明确声明与身份**：新增owned law envelope，mu无量纲、vs单位m/s，绑定有序pair、材料、源、精度和layout版本。同MJB不同law/参数不能同桶或互换checkpoint。旧asset v1的friction=none含义不改。
 2. **接真实设备入步**：在现mechanics/actuator后、旧constraint solve前调用已验pack和共同solver。复用owner runtime，scratch/status/双accepted bank全部进入allocation manifest和统一ledger，不新建每步workspace，不下载再上传M/J。
-3. **一次原生积分**：优先验证将同一Q加到原applied一次，再调用旧native solve。所有发布必须在actual vnext上核最终Fn/Ft、共同方程和有限性；不能仅检查v*。若该路线不相容，提取共享native q-only尾段直接消费v*，保留WXYZ/local omega/Kahan clock与全部原生地址，禁止另写HOST运动或先法向后摩擦kick。
+3. **一次原生积分**：[I3x](../../development/area-pressure-native-friction-bridge-report-20261118.md)已用四个固定历史入口验证这一接缝，下一批优先将同一Q加到原applied一次，再调用旧native solve。所有发布必须在actual vnext上核最终Fn/Ft、共同方程和有限性；不能仅检查v*。若该路线不相容，提取共享native q-only尾段直接消费v*，保留WXYZ/local omega/Kahan clock与全部原生地址，禁止另写HOST运动或先法向后摩擦kick。
 4. **新载荷记录与共同提交**：保存Fn/Ft/总力/相对速度/双方矩、全样本身份、law、入出步相位；不能塞进旧F=nFn/type7记录。所有候选检查通过才翻状态和载荷bank。尚未实现的旧consumer/恢复操作必须在动作前明确拒绝新law，不能少算切向力。
 
 B1固定短例复用I3v FREE偏心COM/六分量速度、mu=.5与mu=0、旧normal-only对照及空D40滑块，同批三步；再固定同资产的上离初速，验证入步有面但最终Fn=Ft=0，随后有效空面。原材料/几何/h不因结果调整。独立CPU只mj_forward/fullM/jac和mj_integratePos，不用CPUstep代替TYX运动。

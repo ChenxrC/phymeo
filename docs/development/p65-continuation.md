@@ -1,3 +1,4 @@
+> 2026-11-18 I3j完成：9b928c2d把自动当前几何→共同面积接触求解接入异构任务Env。4新CUDA+6native兼容通过，独立episode/reset、成对恢复、资产身份和晚故障均已验证，见[报告](area-pressure-manipulation-env-report-20261118.md)。area字段留在设备观察，但策略编码/PPO尚未消费；当前frictionless area law和HOST几何默认保持。下一批按07:10计划继续真实策略入口或通用应用缺口；dev不变，不重跑本批。
 # Phymeo 当前续作入口
 
 > 2026-11-18 I3i显式area载荷reader完成：7ca002ff，8新interpret/CUDA+4原native短兼容全部通过，3文件静态通过。A/B方向、dA不重复乘、完整材料/样本目录、精确历史stamp、同tick/controls/reset/pairedrestore及重复nativebodypair拒绝已验。仅HOST评估reader，无Env/策略成功声明。详[报告](area-pressure-success-reader-report-20261118.md)。按07:10计划继续I3j Env自动geometry与生命周期；root执行、原agent纯author/read，dev未改、无push。下文为历史。

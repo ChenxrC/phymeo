@@ -60,3 +60,7 @@ I3h 首20-world在构造时发现夹具漏传已有expanded-batch资源预算；
 新固定真实CUDA夹具：复用I3i的D=0/unlimited/真实3P+motors，object改为质量.08kg、半宽(.05,.05,.05)m的独立FREE box，center z=.049，h=.0005，g=-9.81；support为halfwidth(.01,.01,.005) box，中心z=-.005，顶面z=0。对象压力资产为与box相同边界的8corner+center/12tet完整立方体，corner压力0，center压力100000Pa；第二area model仅center125000Pa、独立材料identity。plate资产为真实support顶面两三角。初始1mm压入时中央小支撑落在bottom两tet域内，侧tet无正面积交集；不将零有效梯度面强行接入。3world非连续顺序(area-soft/native/area-stiff)，native使用同明示Scene但无area声明。动作常量，最长4步；不调物理参数追成功。
 
 测试四组：与独立batch+scene+reader顺序逐字段对照（只运行revision/config tokens允许不同）；短horizon自动/手动选择reset；fresh Env paired restore重放及变资产/角色预拒；末world几何与物理后观察故障、无新transition、poison及恢复。保留actor设备数组中的area字段；本批不声称策略已经消费新字段、不做PPO或抓取成功率。
+
+## 02:00 进度
+
+I3j 已完成9b928c2d：4新CUDA/48.22s、6native兼容/82.34s，当前状态自动接触面接通任务Env，成对恢复和晚故障通过。下一先只读定位实际策略编码入口，不把设备数组存在当成网络已经消费。

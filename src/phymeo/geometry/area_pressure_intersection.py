@@ -6,6 +6,7 @@ collision time query, deformation model, state certificate or dynamics step.
 """
 
 import json
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from hashlib import sha256
 from itertools import combinations
@@ -264,6 +265,70 @@ class AreaPressureIntersection:
             object.__setattr__(self, name, value)
 
 
+def _raw_mesh_fields(value, *, pressure):
+    """Snapshot only a fixed number of named fields, including at the build seam."""
+    fields = (
+        ("node_ids", "world_vertices", "cells", "nodal_pressure", "cell_ids", "pressure_domain")
+        if pressure
+        else ("node_ids", "world_vertices", "faces", "face_ids")
+    )
+    if not isinstance(value, Mapping) or len(value) != len(fields):
+        _fail("invalid_input", "incomplete raw mesh declaration")
+    try:
+        return {name: value[name] for name in fields}
+    except KeyError as error:
+        raise AreaPressureIntersectionError(
+            "invalid_input", "incomplete raw mesh declaration"
+        ) from error
+
+
+def _owned_mesh_input(value, *, pressure):
+    """Bound and copy a raw declaration, without running geometric predicates."""
+    value = _raw_mesh_fields(value, pressure=pressure)
+    nodes = _ids(value["node_ids"], MAX_NODES, "node_ids")
+    name, width, cap, ids_name = (
+        ("cells", 4, MAX_CELLS, "cell_ids")
+        if pressure
+        else ("faces", 3, MAX_RIGID_FACES, "face_ids")
+    )
+    result = {
+        "node_ids": nodes,
+        "world_vertices": _array(value["world_vertices"], (len(nodes), 3), "world_vertices"),
+        name: _connectivity(value[name], width, cap, len(nodes), name),
+        ids_name: _ids(value[ids_name], cap, ids_name),
+    }
+    if pressure:
+        result["nodal_pressure"] = _array(value["nodal_pressure"], (len(nodes),), "nodal_pressure")
+        result["pressure_domain"] = _domain(value["pressure_domain"])
+    return MappingProxyType(result)
+
+
+@dataclass(frozen=True, init=False)
+class _AreaPressureGeometryInput:
+    """Owned current input, not a certificate or a reusable geometry cache."""
+
+    pressure: object
+    rigid: object
+    identity: object
+    stamp: object
+
+    def __init__(self, pressure, rigid, identity, stamp):
+        object.__setattr__(self, "pressure", _owned_mesh_input(pressure, pressure=True))
+        object.__setattr__(self, "rigid", _owned_mesh_input(rigid, pressure=False))
+        object.__setattr__(self, "identity", _identity(identity))
+        object.__setattr__(self, "stamp", _stamp(stamp))
+
+
+def _build_geometry_input(request):
+    """Validate actual stored world geometry exactly once for this invocation."""
+    if type(request) is not _AreaPressureGeometryInput:
+        _fail("invalid_input", "expected owned raw geometry input")
+    identity, stamp = _identity(request.identity), _stamp(request.stamp)
+    pressure = TetraPressureMesh(**_raw_mesh_fields(request.pressure, pressure=True))
+    rigid = RigidPressureMesh(**_raw_mesh_fields(request.rigid, pressure=False))
+    return pressure, rigid, identity, stamp
+
+
 def _meshes(pressure_mesh, rigid_mesh):
     if not isinstance(pressure_mesh, TetraPressureMesh) or not isinstance(
         rigid_mesh, RigidPressureMesh
@@ -343,6 +408,11 @@ def intersect_area_pressure(pressure_mesh, rigid_mesh, *, identity, stamp):
     """Clip every finite face/cell pair atomically and preserve the asset domain."""
     identity, stamp = _identity(identity), _stamp(stamp)
     pressure, rigid = _meshes(pressure_mesh, rigid_mesh)
+    return _intersect_checked(pressure, rigid, identity=identity, stamp=stamp)
+
+
+def _intersect_checked(pressure, rigid, *, identity, stamp):
+    """Internal core: callers must have just constructed their owned meshes."""
     candidates = len(pressure.cells) * len(rigid.faces)
     if candidates > MAX_CANDIDATE_PAIRS:
         _fail("resource_limit", "candidate pair capacity exceeded")

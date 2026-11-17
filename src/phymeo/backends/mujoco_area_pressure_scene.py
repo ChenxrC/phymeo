@@ -13,7 +13,9 @@ from ..geometry.area_pressure import AreaPressureIdentity, AreaPressureStamp
 from ..geometry.area_pressure_intersection import (
     RigidPressureMesh,
     TetraPressureMesh,
-    intersect_area_pressure,
+    _AreaPressureGeometryInput,
+    _build_geometry_input,
+    _intersect_checked,
 )
 
 
@@ -148,8 +150,6 @@ def _check_intersector(intersector, mode):
 
 def _geometry_requests(runtime, assets_by_world):
     """Collect owned current meshes before any intersection or dynamics work."""
-    from .tyx_area_pressure_intersection import AreaPressureIntersectionRequest
-
     if set(assets_by_world) != set(runtime._world_keys):
         raise ValueError("assets must cover every world in the current bucket")
     poses = _checked_poses(_current_body_poses(runtime), runtime)
@@ -166,21 +166,21 @@ def _geometry_requests(runtime, assets_by_world):
         for asset, body_ids in zip(assets_by_world[key], runtime._plan.area_body_ids, strict=True):
             ba, bb = map(int, body_ids)
             a, b = asset.pressure_local, asset.rigid_local
-            pressure = TetraPressureMesh(
-                a.node_ids,
-                a.world_vertices @ rotation[ba].T + position[ba],
-                a.cells,
-                a.nodal_pressure,
-                a.cell_ids,
+            pressure = dict(
+                node_ids=a.node_ids,
+                world_vertices=a.world_vertices @ rotation[ba].T + position[ba],
+                cells=a.cells,
+                nodal_pressure=a.nodal_pressure,
+                cell_ids=a.cell_ids,
                 pressure_domain="full",
             )
-            rigid = RigidPressureMesh(
-                b.node_ids,
-                b.world_vertices @ rotation[bb].T + position[bb],
-                b.faces,
-                b.face_ids,
+            rigid = dict(
+                node_ids=b.node_ids,
+                world_vertices=b.world_vertices @ rotation[bb].T + position[bb],
+                faces=b.faces,
+                face_ids=b.face_ids,
             )
-            requests.append(AreaPressureIntersectionRequest(pressure, rigid, asset.identity, stamp))
+            requests.append(_AreaPressureGeometryInput(pressure, rigid, asset.identity, stamp))
         requests_by_world[key] = tuple(requests)
     return requests_by_world
 
@@ -188,17 +188,13 @@ def _geometry_requests(runtime, assets_by_world):
 def _intersect_requests(requests_by_world, intersector=None):
     requests = tuple(request for group in requests_by_world.values() for request in group)
     if intersector is None:
+        checked = tuple(_build_geometry_input(request) for request in requests)
         results = tuple(
-            intersect_area_pressure(
-                request.pressure_mesh,
-                request.rigid_mesh,
-                identity=request.identity,
-                stamp=request.stamp,
-            )
-            for request in requests
+            _intersect_checked(pressure, rigid, identity=identity, stamp=stamp)
+            for pressure, rigid, identity, stamp in checked
         )
     else:
-        results = intersector.intersect_many(requests)
+        results = intersector._intersect_geometry_inputs(requests)
     generated, surfaces, offset = {}, {}, 0
     for key, group in requests_by_world.items():
         intersections = results[offset : offset + len(group)]

@@ -27,6 +27,8 @@ from ..geometry.area_pressure_intersection import (
     AreaPressureIntersection,
     RigidPressureMesh,
     TetraPressureMesh,
+    _AreaPressureGeometryInput,
+    _build_geometry_input,
     _meshes,
     _owns_polygon,
     _publish_triangle,
@@ -62,6 +64,12 @@ def _strict_aabb_separation(cell, face):
         or max(p[axis] for p in face.points) < min(p[axis] for p in cell.points)
         for axis in range(3)
     )
+
+
+def _checked_mesh_request(request):
+    identity, stamp = _identity(request.identity), _stamp(request.stamp)
+    pressure, rigid = _meshes(request.pressure_mesh, request.rigid_mesh)
+    return pressure, rigid, identity, stamp
 
 
 class _Unresolved(ValueError):
@@ -288,6 +296,14 @@ class TyxAreaPressureIntersector:
         Counters describe attempted work, including failed work. Published query
         results change only after all chunks, exact checks and outputs succeed.
         """
+        return self._run_many(requests, AreaPressureIntersectionRequest, _checked_mesh_request)
+
+    def _intersect_geometry_inputs(self, requests):
+        # Raw declarations still undergo every current-geometry check. This is
+        # not a "trusted mesh" switch and cannot admit a caller's private cache.
+        return self._run_many(requests, _AreaPressureGeometryInput, _build_geometry_input)
+
+    def _run_many(self, requests, request_type, build):
         with self._lock:
             if self._resources.state != "OPEN":
                 raise RuntimeError("intersector is closed or cleanup is unresolved")
@@ -295,13 +311,13 @@ class TyxAreaPressureIntersector:
                 raise ValueError("requests must be a tuple")
             if len(requests) > MAX_CANDIDATE_PAIRS:
                 raise exact.AreaPressureIntersectionError("resource_limit", "too many queries")
-            if any(type(request) is not AreaPressureIntersectionRequest for request in requests):
-                raise ValueError("expected AreaPressureIntersectionRequest")
+            if any(type(request) is not request_type for request in requests):
+                raise ValueError(f"expected {request_type.__name__}")
             start = perf_counter()
             self._stats["batch_calls"] += 1
             self._stats["attempts"] += len(requests)
             try:
-                prepared, active_rows = self._prepare_many(requests)
+                prepared, active_rows = self._prepare_many(requests, build)
                 for offset in range(0, len(active_rows), self.capacity):
                     rows = active_rows[offset : offset + self.capacity]
                     start_pack = perf_counter()
@@ -333,14 +349,13 @@ class TyxAreaPressureIntersector:
             finally:
                 self._stats["total_seconds"] += perf_counter() - start
 
-    def _prepare_many(self, requests):
+    def _prepare_many(self, requests, build):
         start = perf_counter()
         try:
             checked, count = [], 0
             # Mesh validation is bounded and complete before the first device launch.
             for request in requests:
-                identity, stamp = _identity(request.identity), _stamp(request.stamp)
-                pressure, rigid = _meshes(request.pressure_mesh, request.rigid_mesh)
+                pressure, rigid, identity, stamp = build(request)
                 size = len(pressure.cells) * len(rigid.faces)
                 count += size
                 if size > self.capacity or count > MAX_CANDIDATE_PAIRS:

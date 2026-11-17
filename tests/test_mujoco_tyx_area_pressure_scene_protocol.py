@@ -198,7 +198,7 @@ def _fixture(monkeypatch):
     runtime = _Runtime()
     spy = _GeometrySpy(runtime)
     monkeypatch.setattr(scene_module, "_current_body_poses", spy.poses)
-    monkeypatch.setattr(scene_module, "intersect_area_pressure", spy.intersect)
+    monkeypatch.setattr(scene_module, "_intersect_checked", spy.intersect)
     assets = tuple(_asset(pair) for pair in PAIRS)
     scene = MuJoCoTyxAreaPressureScene(runtime, assets)
     return runtime, spy, assets, scene

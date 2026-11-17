@@ -414,7 +414,7 @@ def test_final_geometry_capacity_and_physics_failures_keep_all_publications(mode
                         _step(scene)
                     assert caught.value.accepted_worlds == dict.fromkeys(KEYS, False)
                 else:
-                    original = geometry_module.intersect_area_pressure
+                    original = geometry_module._intersect_checked
 
                     def late_geometry(*args, **kwargs):
                         result = original(*args, **kwargs)
@@ -439,7 +439,7 @@ def test_final_geometry_capacity_and_physics_failures_keep_all_publications(mode
                             shared_face_duplicates=0,
                         )
 
-                    patch.setattr(geometry_module, "intersect_area_pressure", late_geometry)
+                    patch.setattr(geometry_module, "_intersect_checked", late_geometry)
                     with pytest.raises(
                         RuntimeError if fault == "geometry" else ValueError,
                         match="final geometry" if fault == "geometry" else "capacity",

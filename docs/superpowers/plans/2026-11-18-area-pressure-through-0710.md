@@ -103,3 +103,14 @@ I3l 连续轨迹完成后，优先 I3m 同帧多 body wrench 查询。当前 rea
 `BodyContactWrenchRequest(world_key, body_name, reference_point_world, group_body_names=())` 为 frozen 请求，拥有三元FP64参考点tuple和原有序group tuple。`measure_many(frame, requests)`接受builtin tuple、1..1024个exact request；重复查询合法，输出次序保持。构造请求时验证类型/有限值；整个批次先按reader实际metadata验证world/body/group，末请求错误不得触发readback。随后一次workspace.readback，完整area validation一次，所有query共享这份owned输入。所有结果算完才返回tuple；缺历史的query保持None，相关矩缺省/溢出整体raise。无跨调用缓存、无部分结果状态。原measure构造单request并走同实现。1024为诊断请求上限，不修改32world、body或物理容量。
 
 冻结验证：已有I3k手向量的多body/不同reference/group、反序/重复、owned mutable input、invalid末请求零读取、末相关矩缺省和数值错误原子拒绝、空/invalid history、freshness委托及无跨帧缓存；短CUDA仅用I3j原场景两个原step再paired restore一步，按需selectedreset，many结果与同frame singles完全一致，公开readback次数1比N。该节点直接修改reader，因此其原HOST兼容组需要重验；不重跑I3l连续窗口。
+### I3n 具体接口冻结：可携带 body-local 资产
+
+只新增 backends/area_pressure_assets.py，不改checkpoint/runtime/Scene。`AreaPressureAssetBundle.from_assets(model_specs, assets)`、`from_bytes(raw)`、`to_bytes()`、`assets_for(model_specs)`；assets_for返回Scene既有model→ordered tuple，全部area model必须完整匹配，允许额外native model。bundle只拥有bytes，不存调用者mesh别名或可信私有几何cache。每次导出为新owned资产，任一导出的非法修改不影响bundle与其他导出。
+
+固定schema phymeo-body-area-assets-v1；coordinates=mujoco-body-local（不是COM/URDF link），units length=m/pressure=Pa，pressure_domain=full-zero-boundary，law=frozen-surface-elastic-backward-euler-v1，friction=none。每model保存source primary/archive/model SHA256和mujoco_version、有序pair的四identity字段及压力/刚面原node IDs、body-local vertices、cells/faces、nodal_pressure、cell/face IDs；保存既有异构asset_sha256。source SHA由compilation.source实际三组bytes重新计算并与元数据核符；origin路径、world ID、tick/revision不入绑定。首版精确模型/版本绑定，不自动缩放/移动/重标定，也不从URDF猜压力。
+
+封套MAGIC+payload SHA256+JSON；SHA仅损坏检测非认证。16MiB总bytes、JSON深度16/节点262144、32model/每model16pair、既有mesh128node/32tet/64rigidface，先整包字段/数量/预期dtype/shape/base64长度预验再做exact几何。仅固定位置数组<f8/int64<i8，可复用既有数组codec但绝不对整包通用_decode，不接受$record或未知fields。JSON重复key/非有限值/额外字段拒绝，原始数组byte包含signed zero保留。
+
+全部原TetraPressureMesh、RigidPressureMesh、BodyAreaPressureAsset构造器重新验证后才发布。合法tet重排不禁；资产通过不保证所有姿态的g>0、共享面梯度或查询容量通过，后续query仍独立拒绝。
+
+新HOST验收精确roundtrip/hash/顺序/byte/owned，重算checksum后的schema单位law/source/pair/未知record/dtype/shape/bool/容量篡改，非零边界/重叠tet/退化面和caller导出修改；短CUDA复用原I3j三world原资产/加载资产各2步、状态与几何/压力/观察一致（只排除实际run的owner/revision派生token），相同资产SHA可与原scene checkpoint配对。不重跑450步。给基于同一真实案例的独立bundle保存/加载说明，不做新训练结论。

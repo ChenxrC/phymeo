@@ -33,3 +33,10 @@ root 负责共享源码和串行执行。multitask_scene_review 只读检查数�
 5. 到期只汇报实际完成；未完成节点保留明确起点，不标全部 Phymeo/P6.5 完成。
 
 相关依据：[I3e 报告](../../development/area-pressure-device-topology-report-20261118.md)、[当前续作](../../development/p65-continuation.md)。
+
+## 01:00 执行前调整与下一验收配置
+
+- I3f 已完成：f8d902ea；12 新＋56 受影响兼容节点全部通过。156/192 原候选得到严格分离证据，4 个 world 查询合并后每步一次设备提交；默认仍 HOST。
+- I3g 已进入验证：内部 raw 声明在本步统一构造一次完整 mesh，HOST/mixed 同时去重，公开 mesh 输入仍全量重验，不跨步缓存。
+- I3h 在运行前读到公共 MAX_WORLDS=32，因此固定为 **5、20、32** world（80 不受支持，不执行、不标 skip、不分批冒充）。不扩容量或改 model/h/material。按原五世界顺序循环复制，32 使用前32条，保存完整 world→model 清单；每档只比较自身 HOST/mixed 相同输入，不以不同模板占比推断线性扩展。
+- I3h 固定 CUDA、capacity=64、25 连续步（首步＋3段各8暖步），每步交替路径先后，比较完整状态/几何/统一观察字节。模型声明的共用准备耗时、各批次/scene/workspace setup、整步含读回时间分别记录；不设速度通过门。若仍无稳定收益保留 HOST 默认，下一功能节点为显式 area body-pair 载荷 reader，同帧消费和checkpoint身份；不把 reader 接通说成 Env 或训练已经接通。

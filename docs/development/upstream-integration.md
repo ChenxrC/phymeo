@@ -4,7 +4,33 @@ This isolated candidate combines upstream `76a240d8` and local integration
 `5ec30b9d`. It is not merged into either mainline and has not been pushed.
 The old source trees, environments and qualification records remain intact.
 
-## Current consolidation checkpoint — 2026-11-17
+## Current dependency-readiness checkpoint — 2026-11-17
+
+The sole active candidate remains `feature/wh/phymeo-candidate-20261117`, code
+checkpoint `943c532a`; fresh upstream default `origin/codex/dev` is still
+`76a240d8` and is already an ancestor. No additional upstream merge or duplicate
+candidate worktree is required. The old four WIP copies, environments, source
+paths and evidence remain untouched; the pre-existing missing worktree entry
+is not pruned. No push or merge in this batch.
+
+The [current gates](candidate-merge-gates.md) now distinguish merged TYX compiler
+repairs (`be9a65b7`) from the new, unmerged optional-array/event candidate
+(`3bb49cf`, draft PR23), committed frontend a8 (`1d92e13e`) and the rebuilt Host
+(`b53639168`, delivery branch `c5886ade8`). Earlier "two local fixes" and "seven
+frontend WIP files" sections below are retained historical evidence, not the
+current delivery state. Version admission does not certify an arbitrary wheel.
+
+No PHYMEO API or physical implementation change has been identified as necessary
+for these shared compute/Host event repairs. The exact new dependency combination
+passed 32 existing installed-package nodes (no skips, 218.89 s) in the separate
+`phymeo-readiness-20261117` environment. Another 19 CPU ownership contracts pass;
+600 PHYMEO, 157 TYX and 33 frontend Python files match source/wheel/installation.
+The unchanged 504 documentation failures remain (no additions). These scoped
+results do not replace robot, resident physical-advance, curved-query, P2PE or
+GUI acceptance. Official dependency pins and the
+manual-only workflow remain unchanged pending their own qualification decisions.
+
+## Historical consolidation checkpoint — 2026-11-17
 
 Follow-up dependency delivery, module reviews and concrete merge blockers are
 recorded in [candidate merge gates](candidate-merge-gates.md). That review found

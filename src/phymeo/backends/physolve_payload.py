@@ -15,6 +15,11 @@ CUBINS = (
 )
 _LOCK = Lock()
 _LOADED = None
+# Exact paired profiles; do not admit the Cartesian product of both versions.
+_FRONTEND_TYX_PAIRS = frozenset({
+    ("0.0.0a7", "0.1.0a0"),
+    ("0.0.0a8", "0.2.0a1"),
+})
 
 
 @dataclass(frozen=True)
@@ -35,10 +40,14 @@ class PhySolvePayload:
             raise RuntimeError("PhySolve requires Windows CPython 3.13.13")
         if struct.calcsize("P") != 8 or not sys._is_gil_enabled():
             raise RuntimeError("PhySolve requires standard x64 CPython")
-        for name, version in (("mujoco", "3.8.0"), ("physolve-tyx-frontend", "0.0.0a7"),
-                              ("tyx-compute", "0.1.0a0")):
-            if metadata.version(name) != version:
-                raise RuntimeError(f"PhySolve requires {name}=={version}")
+        if metadata.version("mujoco") != "3.8.0":
+            raise RuntimeError("PhySolve requires mujoco==3.8.0")
+        pair = (metadata.version("physolve-tyx-frontend"), metadata.version("tyx-compute"))
+        if pair not in _FRONTEND_TYX_PAIRS:
+            raise RuntimeError(
+                f"PhySolve requires an exact frontend/TYX pair; got {pair!r}, "
+                f"supported: {sorted(_FRONTEND_TYX_PAIRS)!r}"
+            )
         hashes = dict(self.cubin_sha256)
         if len(self.cubin_sha256) != 6 or set(hashes) != set(CUBINS):
             raise ValueError("exactly six frozen CUBIN hashes are required")

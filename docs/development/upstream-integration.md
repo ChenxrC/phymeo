@@ -86,3 +86,48 @@ Crash deep investigation remains paused. The previous interrupted/unknown runs
 remain in evidence. Later runs deduplicate only repeated TYX AST DeprecationWarning
 messages; they do not remove tests or alter numerical/ownership assertions. Whole-tree documentation checks retain missing
 historical artifact/link failures; this batch does not generate fake artifacts.
+
+## Paired frontend candidate — 2026-11-16 follow-up
+
+The isolated `feature/wh/tyx-frontend-pairing-20261116` worktrees add frontend
+`0.0.0a8` with exact `tyx-compute==0.2.0a1` (merged TYX `e2bea343`). The
+previous paragraph describes the prior batch's blocker; a7 remains pinned to
+0.1.0a0. The payload gate admits these two exact pairs, never their Cartesian
+product or an unknown patch version. Official extras and TYX pins stay unchanged.
+
+Frontend-owned symbolic `ArraySpec` replaces mutation of TYX's immutable array
+annotation. Batched fields borrow the original storage through public
+`Array.from_ptr` with the existing zero first-axis stride; they do not copy
+physical state or own another simulation. Host constraint initialization uses
+public scalar `numpy_dtype`. All 27 original algorithm sources still pass the
+manifest's reverse-transformation hash check; native Host and six CUBIN hashes
+match the frozen baseline. No TYX IR/AD, solver algorithm or tolerance changed.
+
+Source qualification: 25 native Host tests passed for N=1/8/64 direct, fixed
+Graph, force/contact, forward, reset, external streams and failure cleanup.
+Six metadata/storage tests and one exact-pair rejection test passed. The new
+metadata tests require explicit native-profile configuration, and CUDA cases
+carry the CUDA marker; a7 does not provide this new frontend metadata API.
+
+Robot qualification remains blocked: all six Panda/FANUC N=1/8/64 cases fail
+before physical advance while compiling convex `multicontact`, with TYX
+`LoweringError: undefined scalar variable ..._array_local`. This is a captured
+compiler rejection, not the earlier 0xC0000409 crash. It does not establish a
+numerical regression or its root cause. No collision, model, threshold or CUBIN
+was changed to evade it. The curved regression and crash investigation remain
+in their prior state. Simple-model passes do not qualify robot/GUI/C ABI use.
+
+The batch uses sibling `evidence/` for actual source/installed JUnit, module and
+artifact identities, unchanged payload hashes and independent review. This
+candidate remains local and unmerged; complete installed results are recorded
+in the batch report. No full PHYMEO or downstream product qualification is claimed.
+
+Installed qualification completed with 32 passes (169.18 s), including the same
+25 native cases and seven metadata/pair checks. All runtime Python modules came
+from the independent environment's site-packages; pip check and reverse source
+verification passed, and Newton/Warp/MuJoCo-Warp were absent and not imported.
+Installed Panda N=1 independently reproduces the same compilation rejection
+(1 failure, 28.10 s). This closes source-path ambiguity, not the robot blocker.
+The first source run accidentally used the default user TYX compilation cache;
+subsequent source and installed runs explicitly used isolated cache directories.
+No old environment dependencies were changed or cache contents deleted.

@@ -42,6 +42,46 @@ def test_runtime_requires_compilation_and_explicit_payload():
         PhySolveRuntime(None, payload=None)
 
 
+@pytest.mark.parametrize("device", ["cpu", pytest.param("cuda:0", marks=pytest.mark.cuda)])
+@pytest.mark.parametrize("dtype_name", ["f32", "i32", "vec3f"])
+def test_frontend_metadata_and_batch_view_ownership(payload, device, dtype_name):
+    from importlib.metadata import version
+
+    if version("physolve-tyx-frontend") == "0.0.0a7":
+        pytest.skip("immutable frontend specs are introduced by the a8/TYX 0.2 pair")
+    import dataclasses
+    import gc
+    import weakref
+    import tyx as tx
+    from physolve_tyx.specs import array_spec, batch_view, is_array_spec
+
+    dtype = getattr(tx, dtype_name)
+    spec = array_spec(("*", "nbody"), dtype)
+    assert spec.shape == ("*", "nbody") and spec.dtype == dtype
+    assert is_array_spec(spec) and is_array_spec(tx.array(dtype=dtype))
+    assert not is_array_spec(int)
+    with pytest.raises(dataclasses.FrozenInstanceError):
+        spec.shape = (9,)
+    owner = tx.zeros((2, 2), dtype=dtype, device=device)
+    values = owner.numpy()
+    values[0] = 3
+    values[1] = 7
+    owner.assign(values)
+    view = batch_view(owner)
+    ref = weakref.ref(owner.storage)
+    assert view.ptr == owner.ptr and view.dtype == owner.dtype
+    assert view.shape == owner.shape and view.strides == (0, owner.strides[1])
+    assert view._is_batched
+    np.testing.assert_array_equal(owner.numpy(), values)
+    del owner
+    gc.collect()
+    assert ref() is not None
+    np.testing.assert_array_equal(view.numpy(), np.repeat(values[:1], 2, axis=0))
+    del view
+    gc.collect()
+    assert ref() is None
+
+
 @pytest.mark.parametrize('nworld', [1, 8, 64])
 @pytest.mark.parametrize('graph', [False, True])
 def test_follower_servo_affine_commands_parameters_reset_graph(payload, tmp_path, nworld, graph, monkeypatch):
@@ -409,6 +449,14 @@ def test_payload_installed_dependency_contract(tmp_path, monkeypatch):
     value = PhySolvePayload(str(tmp_path / "host.pyd"), str(tmp_path), digest,
                            tuple((name, digest) for name in module.CUBINS))
     assert value.validate() == ((tmp_path / "host.pyd").resolve(), tmp_path.resolve())
+    versions.update({"physolve-tyx-frontend": "0.0.0a8", "tyx-compute": "0.2.0a1"})
+    assert value.validate() == ((tmp_path / "host.pyd").resolve(), tmp_path.resolve())
+    for frontend, tyx in (("0.0.0a7", "0.2.0a1"), ("0.0.0a8", "0.1.0a0"),
+                          ("0.0.0a8", "0.2.0a2"), ("0.0.0a9", "0.2.0a1")):
+        versions.update({"physolve-tyx-frontend": frontend, "tyx-compute": tyx})
+        with pytest.raises(RuntimeError, match="requires an exact"):
+            value.validate()
+    versions.update({"physolve-tyx-frontend": "0.0.0a7", "tyx-compute": "0.1.0a0"})
     for name, rejected in (("physolve-tyx-frontend", "0.0.0a6"),
                            ("physolve-tyx-frontend", "0.0.0a8"), ("mujoco", "3.7.0")):
         previous = versions[name]

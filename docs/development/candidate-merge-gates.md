@@ -10,8 +10,11 @@
 TYX PR23已合并为 `6c63815723b460420d0f3ca06b493b3b8ec00c23`；本轮从该真实
 提交构建新wheel，SHA256为
 `9e7977d2862c81f055f0be3714287bcb52965d387d103fc059ad84b10ce94429`。
-新增 `requirements/physolve-runtime-a8.txt` 固定该源码与frontend a8，不替换原
+新增 `requirements/physolve-runtime-a8.txt` 固定该源码、CUDA extra及本轮实际CUDA
+依赖版本与frontend a8，不替换原
 `requirements/tyx.txt` 或a7 profile，也不宣称旧组合已由本轮重新验收。
+解析检查使用已证明同源的main wheel替代VCS来源，离线dry-run确认9项声明无需改变
+已测环境；不是重新执行VCS网络安装或完整离线SDK验收。
 frontend仍采用 `1d92e13e` 对应的 `f5cdb1b30f98a4272679079f01566772283b2dc5b225264652ce12a23eb15855` wheel；
 Host仍为下方 `79c7df1d…`，六CUBIN保持原散列。
 
@@ -31,9 +34,40 @@ Ruff 0.17.2检查发现候选新增35项报告，已通过导入排序与显式f
 
 本轮证据位于隔离实验根 `phymeo-merge-review-20261117/evidence/`。
 独立实现复审分别覆盖模型/API、runtime所有权、发行依赖；不是所有历史提交的
-逐行批准。实际完成结果在合并前补记，未执行的检查不继承旧通过。
+逐行批准。后续场景清理测试修正又经独立复审，生产代码没有继续改变。
 GitHub工作流仍仅接受手动触发，本轮不恢复自动CI，不声称远端CI通过。
 历史机器人Graph、射线接缝/切线、曲面异常、32 MiB及性能准入限制均保留。
+
+### 本轮受影响路径与完整选择的结论
+
+受影响正式回归共 **417个不重复节点通过**，来源为三份原始JUnit中的52、358、7项。
+覆盖owner/依赖释放、resident body/field/control/reset、浮根/orientation、selected-world、
+scene I/O、碰撞/软体事务及代表布料重建闭环；其中最后7项包含实际CUDA释放、
+convex查询、trace晚分配失败和解析round检查（20.45s）。这些是正式既有入口的
+定向结果，不与32安装或独立审查计数相加为全库覆盖。
+
+首轮定向因测试临时目录父目录未创建，52通过、361初始化错误；补齐目录后只重跑
+未执行节点，358通过、3失败（556.11s），原日志/XML保留。其中新场景构造测试
+将释放前失败注入成普通RuntimeError却预期重试，已改为明确RetryableReleaseError，
+并补普通异常的unknown分支：重复close仍失败、回调只执行一次、保留parent/runtime。
+两参实际CUDA验证通过，没有修改生产释放规则。另两个专用CUDA节点受既有fixture
+的CLI模式选择影响，默认interpret时失败；显式 `--tyx-mode=cuda` 后通过，未删断言
+或修改fixture。source及TYX实际模块路径在session start断言并保存。
+
+扩大执行的10054项 `not tyx` 选择主动停止于约25%，**未完成，不计全套通过**。
+该选择含既有resident CUDA参数，不能称纯CPU/无GPUCI验收；实际消费新安装wheel。
+停止时进入未改动的cloth持续压力长窗参数积，独立审查确认对应算法/推进代码未改，
+有限源码合并改用上述受影响完整定向和代表布料事务/重建；正式测试定义和原时窗不改。
+终端完整进度行至少记录2578通过、12失败、2跳过，不替代完整JUnit结论。
+
+这12个节点随后在正确绝对源码路径及实际模块来源断言下，两侧都为7失败、5通过，
+失败名称/报错逐项一致。7项为mesh/round两项、compact contacts两项和三个N17预期；
+5项测量协议须在干净Git源码运行，不能把安装态前置失败解释为物理失败。早期反斜杠
+pythonpath辅助对照未保证模块来源，日志保留但不作为基线证明。
+
+本轮允许有限实验源码整合，不代表正式release或完整产品门禁通过。原完整目标及
+上述失败继续维护；目标分支既有文档/lint问题没有被豁免或标绿。合并后的真实状态
+以PR记录为准；原工作区、WIP、环境和证据继续保留。
 
 ## 历史检查点：依赖修复后的候选整理（2026-11-17）
 

@@ -223,13 +223,19 @@ def test_prepared_reset_recovers_partial_scene_only_as_full_batch(mode, tmp_path
             assert scene.step(H, require_all=True) == {0: True, 1: True}
 
 
-def test_scene_construction_cleanup_failure_keeps_complete_owner(tmp_path, monkeypatch):
-    from phymeo.backends._resident_cleanup import ResidentCleanupError
+@pytest.mark.cuda
+@pytest.mark.parametrize("retryable", [True, False], ids=["before-release", "unknown-release"])
+def test_scene_construction_cleanup_failure_keeps_complete_owner(tmp_path, monkeypatch, retryable):
+    from phymeo.backends._resident_cleanup import (
+        ResidentCleanupError,
+        RetryableReleaseError,
+        UnknownReleaseError,
+    )
     from phymeo.backends.tyx_world_batch import TyxWorldBatch
     from phymeo.builders.scene_compiler import CompiledScene
 
     allocate, free = TyxWorldBatch._buffer, TyxWorldBatch._free_buffer
-    children, enabled = [], [True]
+    children, enabled, releases = [], [True], []
 
     def fail_allocate(owner, *args, **kwargs):
         if children:
@@ -239,8 +245,11 @@ def test_scene_construction_cleanup_failure_keeps_complete_owner(tmp_path, monke
         return value
 
     def fail_free(owner, *args):
+        releases.append(owner)
         if enabled[0]:
-            raise RuntimeError("injected cleanup")
+            if retryable:
+                raise RetryableReleaseError("injected before native release")
+            raise RuntimeError("injected cleanup outcome unknown")
         return free(owner, *args)
 
     try:
@@ -253,8 +262,18 @@ def test_scene_construction_cleanup_failure_keeps_complete_owner(tmp_path, monke
         assert isinstance(scene, CompiledScene)
         assert not children[0]._runtime.closed
         enabled[0] = False
-        scene.close()
-        assert children[0]._runtime.closed
-        scene.close()
+        if retryable:
+            before_retry = len(releases)
+            scene.close()
+            assert children[0]._runtime.closed
+            assert len(releases) == before_retry + 1
+            scene.close()
+            assert len(releases) == before_retry + 1
+        else:
+            for _ in range(2):
+                with pytest.raises(UnknownReleaseError, match="UNKNOWN_RELEASE"):
+                    scene.close()
+                assert len(releases) == 1
+                assert not children[0]._runtime.closed
     finally:
         enabled[0] = False

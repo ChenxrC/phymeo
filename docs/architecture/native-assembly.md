@@ -511,3 +511,29 @@ N=1/8/64 direct/Graph 字段与状态/action/reset 验收。完整证据在实�
 原生 Host、六 CUBIN 和已有数值门槛保持。本批改动均在编译/绑定阶段。
 
 Follower 控制准备新增持久映射 sources（每 servo 4 字节）、affine（每 servo 8 字节），以及校验 scratch（N × native nu × 4 字节）。系数与 actuator 索引随实际 servo 数量增长；独立目标 bank 宽度不变。所有数组由 runtime 持有，准备失败且关闭失败时保留到显式重试成功。
+
+## 已合并 TYX 配套候选：FANUC 有限状态审计（2026-11-17）
+
+本次组合为 PHYMEO `e2e5681d` 加 frontend 配对适配、frontend `0.0.0a8`、
+TYX `948e63f`（`0.2.0a1` 候选）。版本字符串不能替代源码提交及 wheel 哈希。
+结果来自源码目录外的独立安装；未安装或导入 Newton、Warp、MuJoCo-Warp。
+
+- 原始无排除规则 FANUC 的零速度是 B1b 已记录的失败，不能仅据再次复现
+  判定为此次升级引入。N=1 原生单 bank 推进三步后，时间和外力已更新，
+  `qacc_smooth` 非零，但 `qpos/qvel/qacc` 仍为零。原生指针直接 CUDA D2H
+  与 TYX 的 qvel 读取完全一致；PHYMEO 双 bank 公开的五项字段
+  `qpos/qvel/qacc/time/qfrc_applied` 与单 bank 逐步完全一致。
+  这排除了该次零速度仅由 PHYMEO 发布层掩盖非零速度的解释，不证明所有
+  bank 路径正确，也不定位底层求解原因。诊断比较通过不等于运动验收通过。
+- 历史 B1c 的显式形状对排除配置独立复测：五项规则合同通过；
+  N=1/8/64 三项运行测试均在初始化 `fwd_actuation` 编译失败，
+  TYX 报 `undefined scalar variable 'act'`，尚未进入 step、forward 和
+  reset 的测试断言。这是当前组合需要收敛的编译接入阻断，不能沿用历史资格，
+  也不能与无规则模型的零速度混为一项。
+
+本批不修改状态发布、模型、控制或判据，不新增碰撞默认策略。六 CUBIN
+散列与冻结基线一致；不扩大求解器差异或崩溃排查。下一步优先对 actuator
+编译建立最小复现，再决定公共 TYX 或 frontend 的最小修复边界。
+Graph、C ABI、GUI 和长轨迹本批未执行。独立审查与原始结果位于隔离实验根
+`physolve-fanuc-state-20261117/evidence/`，包括 `native-state-probe.json`、
+`existing-profile-installed.xml`、`artifact-manifest.json` 与 `independent-review.md`。

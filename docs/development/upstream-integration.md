@@ -4,6 +4,84 @@ This isolated candidate combines upstream `76a240d8` and local integration
 `5ec30b9d`. It is not merged into either mainline and has not been pushed.
 The old source trees, environments and qualification records remain intact.
 
+## Current consolidation checkpoint — 2026-11-17
+
+The active review branch is `feature/wh/phymeo-candidate-20261117`, based on
+`fb4286b1`. A fresh fetch still resolves official `origin/codex/dev` to
+`76a240d8499a1b6d117e47650015e85a73239b26`. It is an ancestor of this candidate;
+no further upstream merge is needed at this checkpoint. No push or mainline
+merge is authorized. Earlier batch sections below retain their dated results,
+not an aggregate current qualification statement.
+
+### Retained changes and workspace disposition
+
+The inherited history contains 75 local commits relative to upstream. A
+path-based inventory groups 58 as touching implementation, nine as tests/evidence,
+and eight as documentation. This is a navigation aid, not 75 completed semantic
+reviews. The upstream-to-candidate delta before this checkpoint spans 126 files. Keep
+upstream capability additions and the integrated release-outcome resolution;
+do not replay the pre-integration four conflicting versions over them.
+
+Retain local model/identity/compiler, PhySolve runtime/storage/execution,
+resident prepared I/O, contact/measurement, visual and native-scene interfaces.
+Transport interfaces remain reusable library changes; retaining them does not
+claim completion of the Transport consumer task. Keep regression tests and dated
+failures. External diagnostic logs, caches and wheels remain outside source.
+
+The same three-file uncommitted frontend-pair patch existed in four historical
+worktrees (pairing, FANUC state, robot Graph and FANUC cadence). It was copied
+byte-for-byte into this candidate and committed as `46f867ab` here only. Those
+historical working trees are preserved unchanged. All eight pre-existing
+worktree HEADs are ancestors of the candidate; ancestry alone does not prove
+they can be deleted. The upstream checkout and two original integration
+environments are retained. Historical diagnostic trees are archive candidates
+only after checking their source-path consumers and local/ignored files.
+No branch, worktree, environment, cache or evidence is removed by this batch.
+
+### Dependency and acceptance boundary
+
+The payload loader accepts exactly a7/TYX 0.1.0a0 and a8/TYX 0.2.0a1. This is
+distribution-version admission, **not** source-commit or wheel-hash certification.
+Merged TYX `e2bea343` and local fixes `948e63f` / `68f86a9` share version 0.2.0a1.
+Robot results require the actual `68f86a9` wheel (SHA256
+`38051b9f5bfd8a532fb4733e1aee433f0e2f01207e90d30d2be063689e1983b1`), not merely
+an environment reporting that version. The two local compiler fixes are not
+included in PHYMEO and are not represented as merged upstream changes.
+
+| Area | Evidence/state | Remaining review or acceptance |
+| --- | --- | --- |
+| Public contracts and release ownership | Earlier scoped and installed passes retained; this batch source 13 and installed 13 passes, overlapping | Final overall candidate review; not a full suite result |
+| Frontend pairing | Exact-pair rejection and CPU owner tests pass; prior simple-model native direct/Graph/reset results retained | Reproducible frontend source/artifact delivery and exact TYX provenance |
+| Robot compilation | Multicontact and actuator compiler rejection resolved by local TYX fixes | Deliver/review those fixes separately before claiming official-TYX robot support |
+| Robot direct | Existing explicit FANUC N=1/8/64 tests passed unchanged | Short-window result only; extended FANUC trajectory is unstable |
+| Robot Graph | Previous full run 23 passed / 5 failed; separate reset run 1 passed / 5 failed | Keep failures open; no numerical investigation added by consolidation |
+| Curved/trace regression | Earlier bounded cases passed; broader run terminated with 0xC0000409 | Incomplete qualification; crash investigation remains paused |
+| Documentation | 504 historical missing targets, unchanged from the previous recorded local baseline | Do not label the documentation gate green; decide scoped repair/disposition separately |
+| Product/consumer | Prior consumer evidence belongs to its original artifact combination | This candidate does not inherit current P2PE/GUI/full product qualification |
+
+The FANUC cadence audit is recorded in [the runtime topic](physolve-runtime.md).
+It refutes a Graph-only explanation, not a shared-integration defect. Native
+CUDA 32 MiB retention, GPU performance admission and historical crash/coverage
+limits remain open. No checks, physical parameters, control, CUBINs or official
+dependency pins are relaxed.
+
+### Next review sequence
+
+1. Use this single candidate for subsequent changes; preserve old trees as evidence.
+2. Finish the exact TYX/frontend delivery manifest and upstream disposition of the
+   two compiler fixes before updating the official dependency pin.
+3. Review the large upstream-to-candidate delta by model/compiler, runtime/owner,
+   resident and observation interfaces. Inventory is not a substitute for review.
+4. Run only missing acceptance required by the declared experimental scope, and
+   preserve failures explicitly. Do not restart solver microdifference work.
+5. Prepare a PR description with implementation scope, tested artifact identities
+   and unqualified combinations. Push/merge require a later authorization.
+
+Evidence for this consolidation is outside source in the sibling `evidence/`
+directory: worktree/WIP hashes, commit inventory, source/installed JUnit, the
+600-file source-to-installed comparison and independent review. No new wheel
+was built: production bytes equal the already isolated installed artifact.
+
 ## Public and resource contracts
 
 The public exports retain upstream heterogeneous, resident scene and deformable

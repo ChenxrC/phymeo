@@ -6,7 +6,7 @@
 
 用户要求本批持续到北京时间 07:10。执行入口：[本轮计划](../superpowers/plans/2026-11-18-area-pressure-through-0710.md)。
 
-I3f–I3s 已按各自范围完成。I3s 的三种 FREE 初态共450 world-step通过原生M/J/运动独立保存审计，原2HOST通过；初次oracle平面绑定失败及修复均保留，没有重跑物理。I3t 正在核新wheel源码外混合场景边界；原training agent只author消费者，root是唯一项目执行owner。全部import、测试、数值、静态和构建串行。
+I3f–I3s 已按各自范围完成。I3s 的三种 FREE 初态共450 world-step通过原生M/J/运动独立保存审计，原2HOST通过；初次oracle平面绑定失败及修复均保留，没有重跑物理。I3t新wheel源码外混合场景已完成；I3u正在author可复用128点设备摩擦模块，尚未执行。原scene/training agent只分别author新source/test，root是唯一项目执行owner。全部import、测试、数值、静态和构建串行。
 
 ## 先读这些
 
@@ -32,6 +32,7 @@ I3f–I3s 已按各自范围完成。I3s 的三种 FREE 初态共450 world-step�
 | 固定多规模比较 | [I3h](area-pressure-batch-scale-report-20261118.md) |
 | 显式area角色 / 任务Env | [I3i](area-pressure-success-reader-report-20261118.md)、[I3j](area-pressure-manipulation-env-report-20261118.md) |
 | 多body wrench / 一次读回 | [I3k](area-pressure-body-wrench-report-20261118.md)、[I3m](area-pressure-wrench-batch-report-20261118.md) |
+| 源码外wheel | [I3t](area-pressure-wheel-report-20261118.md) |
 | 完整资产文件 | [I3n](area-pressure-assets-report-20261118.md) |
 | 摩擦选型 / HOST共同解 / CUDA参考 | [I3p](area-pressure-friction-model-report-20261118.md)、[I3q](area-pressure-coupled-friction-report-20261118.md)、[I3r](area-pressure-tyx-coupled-friction-report-20261118.md) |
 
@@ -45,4 +46,4 @@ I3f–I3s 已按各自范围完成。I3s 的三种 FREE 初态共450 world-step�
 
 ## 下一步判断
 
-I3s窗口及同轨迹图已完成；继续I3t源码外wheel边界，06:35收尾、07:10报告。之后按F1–F5接入真实场景摩擦，再扩混合约束与规模。每一步须增加可观察能力，失败定位到对应层；不用追加相似测试、调案例参数或重复几何证明消耗时间。局部接触进展不代表整个P6.5或Newton功能对齐完成。
+I3s窗口及同轨迹图已完成；I3t源码外wheel边界也已完成；继续I3u可复用128点设备模块，06:35收尾、07:10报告。之后按F1–F5接入真实场景摩擦，再扩混合约束与规模。每一步须增加可观察能力，失败定位到对应层；不用追加相似测试、调案例参数或重复几何证明消耗时间。局部接触进展不代表整个P6.5或Newton功能对齐完成。

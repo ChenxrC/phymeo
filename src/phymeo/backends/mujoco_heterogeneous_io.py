@@ -23,6 +23,7 @@ class MuJoCoTyxHeterogeneousFrame:
     epoch: int
     ticks: tuple
     world_boundaries: tuple = ()
+    area_catalogs: object = None
 
 
 @dataclass(frozen=True)
@@ -88,12 +89,23 @@ class MuJoCoTyxHeterogeneousWorkspace:
     FREE q is world translation + WXYZ, FREE v world linear + local angular.
     """
 
-    def __init__(self, batch, *, cache_root=None, include_bodies=False, include_contacts=False):
+    def __init__(
+        self,
+        batch,
+        *,
+        cache_root=None,
+        include_bodies=False,
+        include_contacts=False,
+        include_area_pressure=False,
+    ):
         from .mujoco_tyx._heterogeneous_kernels import scatter
         from .mujoco_tyx._resources import DeviceResources
 
         _require(type(include_bodies) is bool, "include_bodies must be bool")
         _require(type(include_contacts) is bool, "include_contacts must be bool")
+        _require(type(include_area_pressure) is bool, "include_area_pressure must be bool")
+        include_contacts = include_contacts or include_area_pressure
+        self._area_observer = None
         self._entry_observer = None
         self._body_observer = None
         self._batch, self._lock, self._closed = batch, RLock(), False
@@ -135,6 +147,34 @@ class MuJoCoTyxHeterogeneousWorkspace:
                     clock="FP32 high-minus-compensation",
                     padding="zero-with-int32-valid-mask",
                     contact_tokens=include_contacts,
+                    area_pressure=include_area_pressure,
+                    area_pair_names=MappingProxyType(
+                        {spec.key: spec.area_pressure_pairs for spec in batch._models}
+                    )
+                    if include_area_pressure
+                    else None,
+                    area_capacity=max(
+                        [
+                            1,
+                            *(
+                                o._constraint_capacity
+                                for o in batch._buckets
+                                if o._area_pressure_pairs
+                            ),
+                        ]
+                    )
+                    if include_area_pressure
+                    else 0,
+                    area_schema="mujoco-tyx-area-device-entry-v1"
+                    if include_area_pressure
+                    else None,
+                    area_force="on-compliant-A; B opposite" if include_area_pressure else None,
+                    area_moment="common-world-origin; area_ids[...,5] validity"
+                    if include_area_pressure
+                    else None,
+                    area_measure="little-endian binary64 low32,high32 in i32 words"
+                    if include_area_pressure
+                    else None,
                     entry_phase="accepted-step-input" if include_contacts else None,
                     entry_body_kinematics=include_contacts,
                     contact_frame="rows-of-contact-axes-in-world",
@@ -228,6 +268,10 @@ class MuJoCoTyxHeterogeneousWorkspace:
                     from .mujoco_tyx._entry_observation import EntryObserver
 
                     self._entry_observer = EntryObserver(self)
+                if include_area_pressure:
+                    from .mujoco_tyx._area_observation import AreaObserver
+
+                    self._area_observer = AreaObserver(self)
             except BaseException as primary:
                 try:
                     self.close()
@@ -319,6 +363,8 @@ class MuJoCoTyxHeterogeneousWorkspace:
                         self._body_observer.refresh_bucket(i, owner, destination, options)
                     if self._entry_observer is not None:
                         self._entry_observer.refresh_bucket(i, owner, destination, options)
+                    if self._area_observer is not None:
+                        self._area_observer.refresh_bucket(i, owner, destination, options)
                 frame = MuJoCoTyxHeterogeneousFrame(
                     self.binding,
                     batch._revision,
@@ -327,6 +373,7 @@ class MuJoCoTyxHeterogeneousWorkspace:
                         batch._buckets[batch.layout[k].bucket]._ticks[k] for k in batch.world_keys
                     ),
                     tuple(batch._world_boundaries[k] for k in batch.world_keys),
+                    self._area_observer.catalogs() if self._area_observer is not None else None,
                 )
             except BaseException:
                 self._counts["failed_refreshes"] += 1

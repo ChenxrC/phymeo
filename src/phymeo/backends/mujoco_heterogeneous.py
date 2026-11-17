@@ -51,6 +51,7 @@ class MuJoCoTyxModelSpec:
     compilation: MuJoCoCompilation
     contact_capacity: int = 64
     constraint_capacity: int = 256
+    area_pressure_pairs: tuple = ()
 
     def __post_init__(self):
         _key(self.key)
@@ -58,6 +59,13 @@ class MuJoCoTyxModelSpec:
             raise TypeError("model spec requires a source-bound MuJoCoCompilation")
         _capacity(self.contact_capacity, "contact_capacity")
         _capacity(self.constraint_capacity, "constraint_capacity")
+        if not isinstance(self.area_pressure_pairs, tuple) or any(
+            not isinstance(pair, tuple)
+            or len(pair) != 2
+            or any(type(name) is not str or not name for name in pair)
+            for pair in self.area_pressure_pairs
+        ):
+            raise ValueError("area_pressure_pairs requires immutable ordered body pairs")
 
 
 @dataclass(frozen=True)
@@ -131,6 +139,7 @@ def _signature(spec, mode):
         mode,
         spec.contact_capacity,
         spec.constraint_capacity,
+        spec.area_pressure_pairs,
     )
 
 
@@ -138,7 +147,12 @@ def _model_preflight(spec, mj):
     from .mujoco_tyx._model import compile_model
 
     model = spec.compilation.fresh_native_model()
-    plan = compile_model(mj, model)
+    if spec.area_pressure_pairs:
+        from .mujoco_area_pressure import compile_area_plan
+
+        plan = compile_area_plan(mj, model, spec.area_pressure_pairs)
+    else:
+        plan = compile_model(mj, model)
     if getattr(plan, "constraint_contact", False) and (
         spec.contact_capacity > 128 or spec.constraint_capacity > 512
     ):
@@ -244,6 +258,7 @@ class MuJoCoTyxHeterogeneousBatch:
                         constraint_capacity=spec.constraint_capacity,
                         cache_root=cache_root,
                         resource_budget=resource_budget,
+                        area_pressure_pairs=spec.area_pressure_pairs,
                     )
                     built.append(owner)
                     self._observe_owner(owner)
@@ -283,6 +298,7 @@ class MuJoCoTyxHeterogeneousBatch:
                     device_native_controls=True,
                     device_endpoint_bodies=True,
                     device_contact_tokens=True,
+                    device_area_pressure=any(s.area_pressure_pairs for s in models),
                     cross_world_contacts=False,
                     scale_qualified=False,
                     explicit_resource_budget=resource_budget is not None,
@@ -318,6 +334,11 @@ class MuJoCoTyxHeterogeneousBatch:
                                 ),
                                 dimensions=metadata[representatives[i].key][1],
                                 domain=owner.capabilities["domain"],
+                                **(
+                                    {"area_pressure_pairs": representatives[i].area_pressure_pairs}
+                                    if representatives[i].area_pressure_pairs
+                                    else {}
+                                ),
                             )
                         )
                         for i, owner in enumerate(self._buckets)
@@ -474,7 +495,12 @@ class MuJoCoTyxHeterogeneousBatch:
             )
 
     def prepare_device_workspace(
-        self, *, cache_root=None, include_bodies=False, include_contacts=False
+        self,
+        *,
+        cache_root=None,
+        include_bodies=False,
+        include_contacts=False,
+        include_area_pressure=False,
     ):
         """Own a padded native-state workspace; no physics or CPU forward."""
         from .mujoco_heterogeneous_io import MuJoCoTyxHeterogeneousWorkspace
@@ -484,6 +510,7 @@ class MuJoCoTyxHeterogeneousBatch:
             cache_root=cache_root,
             include_bodies=include_bodies,
             include_contacts=include_contacts,
+            include_area_pressure=include_area_pressure,
         )
 
     def set_controls_from_device(
@@ -583,70 +610,112 @@ class MuJoCoTyxHeterogeneousBatch:
             )
         return result
 
+    def area_pressure_configuration_id(self, key):
+        """Return a stamp for the current physical owner, including after restore."""
+        with self._transaction():
+            if key not in self._layout:
+                raise KeyError(key)
+            owner = self._buckets[self._layout[key].bucket]
+            return owner.area_pressure_configuration_id(key)
+
+    def step_area_pressure(self, h, mapping, *, expected_revision):
+        """Preflight all supplied surfaces, then publish every bucket together."""
+        from .mujoco_area_pressure import pack
+
+        with self._transaction():
+            if type(expected_revision) is not int or expected_revision != self._revision:
+                raise ValueError("stale heterogeneous area revision")
+            owners = tuple(o for o in self._buckets if o._area_pressure_pairs)
+            keys = {key for owner in owners for key in owner.world_keys}
+            if not owners or not isinstance(mapping, Mapping):
+                raise ValueError("area surfaces require declared area worlds")
+            mapping = dict(mapping)
+            _world_keys(mapping)
+            if set(mapping) != keys:
+                raise ValueError("area surfaces must cover exactly the area worlds")
+            # No packet installation or physics until every world is admitted.
+            packets = tuple(
+                pack(
+                    owner,
+                    {key: mapping[key] for key in owner.world_keys},
+                    owner._checkpoint_revision,
+                )
+                for owner in owners
+            )
+            try:
+                for owner, packet in zip(owners, packets, strict=True):
+                    owner._area_packet = packet
+                return self._step_locked(h)
+            finally:
+                for owner in owners:
+                    owner._area_packet = None
+
     def step(self, h):
         with self._transaction():
-            if not np.isfinite(h) or float(h) != self._h:
-                raise ValueError("step h must equal every compiled timestep")
-            drafts = []
-            try:
-                for owner in self._buckets:
-                    self._stats["bucket_physics_prepares"] += 1
-                    drafts.append(owner._prepare_step_locked(h))
-                    self._observe_owner(owner)
-                receipts, states = {}, {}
-                for owner, draft in zip(self._buckets, drafts, strict=True):
-                    receipts.update(draft.receipts)
-                    states.update(self._draft_states(owner, draft))
-                accepted = MappingProxyType(dict.fromkeys(self._world_keys, True))
-                publication = MuJoCoTyxHeterogeneousStepReceipt(
-                    "mujoco-tyx-heterogeneous-step-v1",
-                    self._revision,
-                    self._revision + 1,
-                    self._world_keys,
-                    tuple((draft.revision, draft.revision + 1) for draft in drafts),
-                    MappingProxyType({key: receipts[key] for key in self._world_keys}),
-                    MappingProxyType({key: states[key] for key in self._world_keys}),
-                    accepted,
-                )
-                self._before_commit("step", publication)
-                for owner, draft in zip(self._buckets, drafts, strict=True):
-                    owner._validate_step_draft_locked(draft)
-                counters = {
-                    **self._stats,
-                    "completed_steps": self._stats["completed_steps"] + 1,
-                    "accepted_world_steps": self._stats["accepted_world_steps"]
-                    + len(self._world_keys),
-                }
-            except BaseException as error:
-                failures = []
-                for owner in self._buckets:
-                    try:
-                        owner._discard_step_draft_locked()
-                    except BaseException as cleanup:
-                        failures.append(cleanup)
-                    try:
-                        self._observe_owner(owner)
-                    except BaseException as observation:
-                        self._counter_errors += (repr(observation),)
-                self._stats["failed_batches"] += 1
-                if failures:
-                    error = BaseExceptionGroup(
-                        "heterogeneous preparation and discard failed", [error, *failures]
-                    )
-                if not isinstance(error, Exception):
-                    raise error
-                raise PhysicsStepFailure(
-                    "heterogeneous candidate failed before any bucket publication",
-                    accepted_worlds=dict.fromkeys(self._world_keys, False),
-                ) from error
+            return self._step_locked(h)
+
+    def _step_locked(self, h):
+        if not np.isfinite(h) or float(h) != self._h:
+            raise ValueError("step h must equal every compiled timestep")
+        drafts = []
+        try:
+            for owner in self._buckets:
+                self._stats["bucket_physics_prepares"] += 1
+                drafts.append(owner._prepare_step_locked(h))
+                self._observe_owner(owner)
+            receipts, states = {}, {}
             for owner, draft in zip(self._buckets, drafts, strict=True):
-                owner._commit_step_draft_locked(draft)
-            self._last_step, self._revision, self._stats = (
-                publication,
-                publication.revision_after,
-                counters,
+                receipts.update(draft.receipts)
+                states.update(self._draft_states(owner, draft))
+            accepted = MappingProxyType(dict.fromkeys(self._world_keys, True))
+            publication = MuJoCoTyxHeterogeneousStepReceipt(
+                "mujoco-tyx-heterogeneous-step-v1",
+                self._revision,
+                self._revision + 1,
+                self._world_keys,
+                tuple((draft.revision, draft.revision + 1) for draft in drafts),
+                MappingProxyType({key: receipts[key] for key in self._world_keys}),
+                MappingProxyType({key: states[key] for key in self._world_keys}),
+                accepted,
             )
-            return accepted
+            self._before_commit("step", publication)
+            for owner, draft in zip(self._buckets, drafts, strict=True):
+                owner._validate_step_draft_locked(draft)
+            counters = {
+                **self._stats,
+                "completed_steps": self._stats["completed_steps"] + 1,
+                "accepted_world_steps": self._stats["accepted_world_steps"] + len(self._world_keys),
+            }
+        except BaseException as error:
+            failures = []
+            for owner in self._buckets:
+                try:
+                    owner._discard_step_draft_locked()
+                except BaseException as cleanup:
+                    failures.append(cleanup)
+                try:
+                    self._observe_owner(owner)
+                except BaseException as observation:
+                    self._counter_errors += (repr(observation),)
+            self._stats["failed_batches"] += 1
+            if failures:
+                error = BaseExceptionGroup(
+                    "heterogeneous preparation and discard failed", [error, *failures]
+                )
+            if not isinstance(error, Exception):
+                raise error
+            raise PhysicsStepFailure(
+                "heterogeneous candidate failed before any bucket publication",
+                accepted_worlds=dict.fromkeys(self._world_keys, False),
+            ) from error
+        for owner, draft in zip(self._buckets, drafts, strict=True):
+            owner._commit_step_draft_locked(draft)
+        self._last_step, self._revision, self._stats = (
+            publication,
+            publication.revision_after,
+            counters,
+        )
+        return accepted
 
     def _snapshot(self, keys, full):
         with self._lock:

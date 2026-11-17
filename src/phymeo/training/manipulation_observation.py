@@ -53,6 +53,10 @@ class ManipulationSuccessReader:
             and binding.get("entry_phase") == "accepted-step-input",
             "public accepted-entry contact observation is required",
         )
+        _require(
+            not any(row.get("area_pressure_pairs") for row in binding["source"]["buckets"]),
+            "area contact needs an explicit body-pair success adapter",
+        )
         self._keys = tuple(binding["world_keys"])
         _require(
             isinstance(scenes, Mapping)

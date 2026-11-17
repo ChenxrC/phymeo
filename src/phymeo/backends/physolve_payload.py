@@ -1,13 +1,12 @@
 """Explicit frozen PhySolve native payload; no Newton or Warp loader."""
 
+import struct
+import sys
 from dataclasses import dataclass
 from hashlib import file_digest
 from importlib import metadata, util
 from pathlib import Path
-import struct
-import sys
 from threading import Lock
-
 
 CUBINS = (
     "mw_phycoreCudaBackEnd.cubin", "hostAssitRuntimeCudaBackEnd.cubin",

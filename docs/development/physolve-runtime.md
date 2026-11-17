@@ -1,5 +1,25 @@
 # PhySolve 原生运行时实验
 
+## 2026-11-17：合并后 TYX 的独立 a8 配套
+
+新增 `requirements/physolve-runtime-a8.txt`，固定真实已合并TYX提交 `6c638157`
+与frontend `0.0.0a8`；原a7清单及resident TYX pin不变。安装时显式提供frontend
+wheelhouse，例如在独立环境内执行：
+
+```text
+python -m pip install --find-links <wheelhouse> -r requirements/physolve-runtime-a8.txt
+```
+
+TYX从固定提交构建，需现有Git/构建工具；
+离线安装须提前从同一提交构建并保存完整来源/散列清单，不能只替换同版本wheel。
+本轮已测frontend wheel来自codedev `1d92e13e`，SHA256为
+`f5cdb1b30f98a4272679079f01566772283b2dc5b225264652ce12a23eb15855`。
+实际Host和六CUBIN仍须由调用方通过 `PhySolvePayload` 指定路径和冻结散列，
+这份清单不会下载或代替它们，也不安装Newton、Warp或MuJoCo-Warp。
+
+本次复审与新制品结果以[合并门槛记录](candidate-merge-gates.md)为准；
+以下不同日期/制品的失败与通过均保留，不自动推广为新组合的完整资格。
+
 ## 2026-11-17：FANUC 巨大数值的有限节奏核查
 
 本批针对前节的显式规则 `scalar_pd` FANUC 模板，不涉及无规则裸 URDF 的历史零速度。

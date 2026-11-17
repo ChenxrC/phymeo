@@ -1,8 +1,20 @@
 # PHYMEO upstream integration — 2026-11-16
 
-This isolated candidate combines upstream `76a240d8` and local integration
-`5ec30b9d`. It is not merged into either mainline and has not been pushed.
-The old source trees, environments and qualification records remain intact.
+This candidate combines upstream `76a240d8` and local integration `5ec30b9d`.
+The original source trees, environments and qualification records remain intact.
+
+## Merge review checkpoint — 2026-11-17
+
+The candidate is now published as [PR #2](https://github.com/ChenxrC/phymeo/pull/2)
+against `codex/dev`. The user has authorized implementation review and merge;
+the earlier no-push/no-merge statements below describe historical batches.
+TYX PR23 is merged at `6c638157`, and the separate
+`requirements/physolve-runtime-a8.txt` pins that exact source with frontend a8.
+The historical resident and a7 profiles stay unchanged. See the
+[current review and gates](candidate-merge-gates.md) for actual artifact identities,
+regression results and known failures. A limited experimental source merge does
+not qualify the complete robots, P2PE ABI, consumer GUI or replacement program.
+Automatic CI remains paused; no CI-green claim is made.
 
 ## Current dependency-readiness checkpoint — 2026-11-17
 

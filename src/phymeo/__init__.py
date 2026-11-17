@@ -53,6 +53,8 @@ from .backends.mujoco_heterogeneous_io import (
     MuJoCoTyxHeterogeneousFrame,
     MuJoCoTyxHeterogeneousWorkspace,
 )
+from .backends.physolve_payload import PhySolvePayload
+from .backends.physolve_runtime import PhySolveInputError, PhySolveRuntime
 from .backends.resident_scene import (
     MAX_PARTICIPANTS_PER_WORLD,
     ResidentParticipant,
@@ -68,8 +70,6 @@ from .backends.resident_scene import (
     ResidentSceneCheckpoint,
     ResidentSceneReceipt,
 )
-from .backends.physolve_payload import PhySolvePayload
-from .backends.physolve_runtime import PhySolveInputError, PhySolveRuntime
 from .backends.tyx import TyxSemiImplicitSolver
 from .backends.tyx_articulated import (
     TyxArticulatedCouplingProgram,

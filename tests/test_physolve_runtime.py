@@ -8,9 +8,7 @@ import numpy as np
 import pytest
 
 from phymeo import PhySolvePayload, PhySolveRuntime
-from phymeo.builders.mujoco_compiler import compile_mujoco_xml
-from phymeo.builders.mujoco_compiler import compile_mujoco
-
+from phymeo.builders.mujoco_compiler import compile_mujoco, compile_mujoco_xml
 
 FREE = '''<mujoco><option timestep=".002" integrator="Euler"/>
 <worldbody><body pos="0 0 1"><freejoint/>
@@ -52,6 +50,7 @@ def test_frontend_metadata_and_batch_view_ownership(payload, device, dtype_name)
     import dataclasses
     import gc
     import weakref
+
     import tyx as tx
     from physolve_tyx.specs import array_spec, batch_view, is_array_spec
 
@@ -86,6 +85,7 @@ def test_frontend_metadata_and_batch_view_ownership(payload, device, dtype_name)
 @pytest.mark.parametrize('graph', [False, True])
 def test_follower_servo_affine_commands_parameters_reset_graph(payload, tmp_path, nworld, graph, monkeypatch):
     from dataclasses import replace
+
     from test_native_mimic import asset, compile_asset
     template = compile_asset(replace(asset(tmp_path), prepare_follower_drives=True))
     with template.bind(nworld).create_runtime(payload=payload) as runtime:
@@ -139,7 +139,11 @@ def test_follower_servo_affine_commands_parameters_reset_graph(payload, tmp_path
 
 
 def _drive_binding(tmp_path, nworld, target=.1):
-    from phymeo.builders.native_assembly import NativeAssetInstance, NativeJointInput, compile_native_template
+    from phymeo.builders.native_assembly import (
+        NativeAssetInstance,
+        NativeJointInput,
+        compile_native_template,
+    )
     source = tmp_path / 'drive.urdf'
     source.write_text('''<robot name="slider"><link name="base"/><link name="link">
       <inertial><mass value="2"/><inertia ixx=".1" iyy=".1" izz=".1" ixy="0" ixz="0" iyz="0"/></inertial>
@@ -375,8 +379,9 @@ def test_staged_updates_preparation_failure_keeps_launched_mask_owner(payload, m
 
 @pytest.mark.parametrize('nworld', [1, 8, 64])
 def test_capacity_metadata_is_owned_and_requires_no_device_work(payload, nworld, monkeypatch):
-    import tyx as tx
     from dataclasses import fields
+
+    import tyx as tx
     from tyx.cuda_stream import CudaStream
 
     record = compile_mujoco_xml(SLIDER, require_asset=False)
@@ -438,6 +443,7 @@ def test_configuration_readback_is_owned_idle_only_and_capture_safe(payload):
 
 def test_payload_installed_dependency_contract(tmp_path, monkeypatch):
     import hashlib
+
     from phymeo.backends import physolve_payload as module
 
     versions = {"mujoco": "3.8.0", "physolve-tyx-frontend": "0.0.0a7",
@@ -654,9 +660,9 @@ def test_close_failure_retains_owner_for_retry(payload, monkeypatch, integrator)
 @pytest.mark.parametrize('device', ['cpu', 'cuda:0'])
 def test_panda_finger_box_contacts_match_cpu_geometry(payload, device):
     import mujoco
-    from tyx.compat import warp as wp
     from physolve_tyx._src.collision_primitive_core import box_box
     from test_physolve_models import robot_path
+    from tyx.compat import warp as wp
 
     @wp.kernel
     def contacts(p: wp.array[wp.vec3], r: wp.array[wp.mat33], s: wp.array[wp.vec3],
@@ -743,9 +749,11 @@ def test_follower_without_independent_control_rejected_before_native_work():
 
 
 def test_control_upload_failure_retains_owner_until_close_retry(payload, monkeypatch, tmp_path):
-    from phymeo.backends._physolve_controls import PreparedControls
-    from test_native_mimic import asset, compile_asset
     from dataclasses import replace
+
+    from test_native_mimic import asset, compile_asset
+
+    from phymeo.backends._physolve_controls import PreparedControls
     template = compile_asset(replace(asset(tmp_path), prepare_follower_drives=True))
     initialize = PreparedControls.initialize
     native = payload.load()

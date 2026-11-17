@@ -1,7 +1,8 @@
 """External stream ordering and lifecycle against the actual frozen native Host."""
 import numpy as np
 import pytest
-from test_physolve_runtime import SLIDER, payload
+from test_physolve_runtime import SLIDER
+from test_physolve_runtime import payload as payload
 
 from phymeo import PhySolveRuntime
 from phymeo.builders.mujoco_compiler import compile_mujoco_xml

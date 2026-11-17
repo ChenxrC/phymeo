@@ -1,6 +1,41 @@
 # PHYMEO 候选配套交付与合并门槛
 
-## 当前检查点：依赖修复后的候选整理（2026-11-17）
+## 合并复审检查点（2026-11-17）
+
+候选已发布为 [PR #2](https://github.com/ChenxrC/phymeo/pull/2)，目标为
+`codex/dev=76a240d8`。本轮经用户授权进行实现复审、补齐必要回归并准备合并；
+下方“不推送、不创建PR”和“TYX PR23未合并”均属于旧检查点，保留用于追溯。
+本次仅申请有限实验源码整合，不改变最初完整实验交付的剩余验收要求。
+
+TYX PR23已合并为 `6c63815723b460420d0f3ca06b493b3b8ec00c23`；本轮从该真实
+提交构建新wheel，SHA256为
+`9e7977d2862c81f055f0be3714287bcb52965d387d103fc059ad84b10ce94429`。
+新增 `requirements/physolve-runtime-a8.txt` 固定该源码与frontend a8，不替换原
+`requirements/tyx.txt` 或a7 profile，也不宣称旧组合已由本轮重新验收。
+frontend仍采用 `1d92e13e` 对应的 `f5cdb1b30f98a4272679079f01566772283b2dc5b225264652ce12a23eb15855` wheel；
+Host仍为下方 `79c7df1d…`，六CUBIN保持原散列。
+
+新PHYMEO wheel SHA256为
+`929115fc4880e9bdd2d64795e6757dd3935b1413ce6bcf99cee95c7411a447f3`。
+真实新组合的源码外安装回归 **32通过、0跳过，237.25s**；覆盖N=1/8/64简单模型
+direct/固定Graph、动作/接触、forward/reset、外部stream和失败清理。
+600个PHYMEO、157个TYX、33个frontend Python文件安装字节一致，实际模块来自
+site-packages；无Newton/Warp/MuJoCo-Warp安装或导入，pip check通过。
+PHYMEO/TYX源码与wheel一致，Host及六CUBIN散列重新核对不变。
+这不是完整机器人、resident物理或消费者资格的通过证据。
+
+完整目标分支和候选的文档检查均有504条失败，逐项比较新增0、删除0。
+Ruff 0.17.2检查发现候选新增35项报告，已通过导入排序与显式fixture重导出收敛；
+未删除测试、断言或改变物理计算。基线已有的 `tests/scale/k0_wheel_consumer.py`
+导入排序报告保留，不能把全仓lint或文档门禁写成通过。
+
+本轮证据位于隔离实验根 `phymeo-merge-review-20261117/evidence/`。
+独立实现复审分别覆盖模型/API、runtime所有权、发行依赖；不是所有历史提交的
+逐行批准。实际完成结果在合并前补记，未执行的检查不继承旧通过。
+GitHub工作流仍仅接受手动触发，本轮不恢复自动CI，不声称远端CI通过。
+历史机器人Graph、射线接缝/切线、曲面异常、32 MiB及性能准入限制均保留。
+
+## 历史检查点：依赖修复后的候选整理（2026-11-17）
 
 代码基线 `943c532a`；唯一候选为 `feature/wh/phymeo-candidate-20261117`。重新fetch后
 官方默认分支仍为 `origin/codex/dev=76a240d8`，是候选祖先；代码基线包含79个额外

@@ -9,10 +9,10 @@ import xml.etree.ElementTree as ET
 
 import numpy as np
 import pytest
-
-from phymeo.builders.mujoco_compiler import MuJoCoCompilation, compile_mujoco
 from test_physolve_models import robot_path
 from test_physolve_runtime import payload as payload
+
+from phymeo.builders.mujoco_compiler import MuJoCoCompilation, compile_mujoco
 
 
 def stl_triangles(path):
@@ -182,8 +182,9 @@ def test_base_link1_penetration_cannot_be_resolved_by_joint_motion():
 @pytest.mark.cuda
 @pytest.mark.parametrize("nworld", [1, 8, 64])
 def test_pair_filtered_diagnostic_keeps_existing_motion_forward_reset_checks(payload, monkeypatch, nworld):
-    from phymeo import PhySolveRuntime
     from test_physolve_runtime import test_robot_forward_and_masked_reset_native_state
+
+    from phymeo import PhySolveRuntime
     original = MuJoCoCompilation.fresh_native_model
     snapshots = []
     snapshot = PhySolveRuntime.snapshot

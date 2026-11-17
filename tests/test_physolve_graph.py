@@ -1,7 +1,8 @@
 """Fixed real CUDA Graph qualification over the frozen PhySolve Host/CUBIN."""
 import numpy as np
 import pytest
-from test_physolve_runtime import CONTACT, SLIDER, payload
+from test_physolve_runtime import CONTACT, SLIDER
+from test_physolve_runtime import payload as payload
 
 from phymeo import PhySolveRuntime
 from phymeo.builders.mujoco_compiler import compile_mujoco_xml
@@ -12,6 +13,7 @@ from phymeo.builders.mujoco_compiler import compile_mujoco_xml
 @pytest.mark.parametrize('model', [SLIDER, CONTACT], ids=['force', 'contact'])
 def test_fixed_banks_direct_graph_reset_stream_and_gc(payload, nworld, model, monkeypatch):
     import gc
+
     import tyx as tx
     record = compile_mujoco_xml(model.replace('.002', '.01'), require_asset=False)
     with PhySolveRuntime(record, payload=payload, nworld=nworld, body_observations=True,
@@ -209,6 +211,7 @@ def test_graph_error_blocks_accept_and_discard_recovers(payload):
 @pytest.mark.cuda
 def test_graph_rebinding_memory_samples(payload):
     import gc
+
     import tyx as tx
     from cuda.bindings import driver
     record = compile_mujoco_xml(CONTACT.replace('.002', '.01'), require_asset=False)
@@ -238,13 +241,14 @@ def test_graph_rebinding_memory_samples(payload):
 
 def _robot_runtime(payload, name, nworld):
     if name == 'fanuc-explicit':
-        from test_native_exclusions import fanuc_template, connection_plan
+        from test_native_exclusions import connection_plan, fanuc_template
         template = fanuc_template()
         template = template.with_collision_exclusions(connection_plan(template))
         return template.bind(nworld).create_runtime(
             payload=payload, nconmax=128, njmax=256,
             body_observations=True, contact_observations=True)
     from test_physolve_models import robot_path
+
     from phymeo.builders.mujoco_compiler import compile_mujoco
     return PhySolveRuntime(compile_mujoco(robot_path(name), require_asset=False),
                           payload=payload, nworld=nworld, nconmax=128, njmax=256,
@@ -337,6 +341,7 @@ def test_robot_fixed_graph_banks_observations_and_masked_reset(payload, name, nw
 def test_robot_graph_external_stream_rebuild_and_close(payload, name):
     import gc
     import weakref
+
     import tyx as tx
     from cuda.bindings import driver
     external = tx.CudaStream()

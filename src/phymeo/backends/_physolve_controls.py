@@ -3,7 +3,7 @@
 import numpy as np
 import tyx as tx
 
-from ._physolve_reset import _restore_float, _preserve_float
+from ._physolve_reset import _preserve_float, _restore_float
 
 
 @tx.kernel(gradient="unsupported")

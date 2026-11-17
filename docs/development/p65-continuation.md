@@ -1,3 +1,4 @@
+> 2026-11-18 I3o完成：4359aa41，三个可运动slider的双区共同响应，40连续CUDA步+反序首步，3新节点通过。两区→单区→卸载、完整共享质量oracle/动量/能量/力矩全过，见[报告](area-pressure-three-body-release-report-20261118.md)。当前无执行，I3q共享DOF最终Fn平滑摩擦参考纯author；root串行，dev未改、无push。
 > 2026-11-18 I3p完成：596ad132，固定24行三摩擦律独立参考、10HOST通过。卸载最终Fn0而Lagged仍约.19974N摩擦，平滑启动有微滑；下一优先最终Fn平滑律的共享DOF参考I3q，非type7替换，见[报告](area-pressure-friction-model-report-20261118.md)。I3o三体CUDA唯一root队列运行中；dev不变、无push。
 > 2026-11-18 I3n完成：5834752d，body-local资产有界保存/重载，完整模型source与有序材料绑定，每次独立owned几何重验。7HOST+1CUDA=8pass，原/加载三world各2步同输出及paired restore通过，见[报告](area-pressure-assets-report-20261118.md)。下一I3o三可动物体双区共同响应与I3p独立摩擦模型对照；type7/friction=none不改，root唯一执行，dev未改、无push。
 > 2026-11-18 I3m完成：01afd760，measure_many一次读回完整有序多body wrench，单measure保持。8新+8旧HOST=16pass，真实CUDA7query 1对7读回/验证，结果逐字段同；末失败/无缓存/reset/paired restore已验。见[报告](area-pressure-wrench-batch-report-20261118.md)。I3n可携带资产正由root串行验证，原两agent只读下一真实缺口，07:10收尾；dev未改，无push。

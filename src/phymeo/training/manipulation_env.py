@@ -15,7 +15,11 @@ from types import MappingProxyType
 
 import numpy as np
 
-from .manipulation_observation import ManipulationSuccessReader, SuccessReaderCheckpoint
+from .manipulation_observation import (
+    AreaPressureRoleBinding,
+    ManipulationSuccessReader,
+    SuccessReaderCheckpoint,
+)
 from .manipulation_tasks import Goal, Scene, SuccessHistory, SuccessResult, evaluate_goal
 from .mujoco_tyx_env import MuJoCoTyxActionSpec, MuJoCoTyxEnvError
 
@@ -115,7 +119,18 @@ class ManipulationTransition:
 class HeterogeneousManipulationEnv:
     """One policy action per physical step, with independent world episodes."""
 
-    def __init__(self, batch, scenes, *, goals, action_specs, horizons, auto_reset=True):
+    def __init__(
+        self,
+        batch,
+        scenes,
+        *,
+        goals,
+        action_specs,
+        horizons,
+        auto_reset=True,
+        area_scene=None,
+        area_roles=None,
+    ):
         import torch
 
         _require(
@@ -127,6 +142,43 @@ class HeterogeneousManipulationEnv:
             torch.version.cuda is not None and torch.cuda.is_available(), "CUDA Torch required"
         )
         _require(type(auto_reset) is bool, "auto_reset must be bool")
+        self._area_scene, self._area_roles, self._area_asset_sha256 = None, None, None
+        has_area = bool(batch.capabilities.get("device_area_pressure"))
+        if has_area:
+            from ..backends.mujoco_heterogeneous_area_scene import (
+                MuJoCoTyxHeterogeneousAreaPressureScene,
+            )
+
+            _require(
+                type(area_scene) is MuJoCoTyxHeterogeneousAreaPressureScene
+                and area_scene.batch is batch,
+                "area scene must borrow this exact batch",
+            )
+            _require(
+                isinstance(area_roles, Mapping) and set(area_roles) == set(area_scene.assets),
+                "area roles must exactly cover scene models",
+            )
+            owned_roles = {}
+            for key, assets in area_scene.assets.items():
+                rows = area_roles[key]
+                _require(type(rows) is tuple and len(rows) == len(assets), "ordered area roles")
+                checked = []
+                for asset, role in zip(assets, rows, strict=True):
+                    _require(type(role) is AreaPressureRoleBinding, "typed area role required")
+                    role = AreaPressureRoleBinding(role.identity, role.object_side, role.role)
+                    _require(
+                        role.identity == asset.identity, "area asset/role material identity differs"
+                    )
+                    checked.append(role)
+                owned_roles[key] = tuple(checked)
+            self._area_scene = area_scene
+            self._area_roles = MappingProxyType(owned_roles)
+            self._area_asset_sha256 = area_scene.asset_sha256
+        else:
+            _require(
+                area_scene is None and area_roles is None,
+                "native batch cannot receive area configuration",
+            )
         self.batch = batch
         self.world_keys = tuple(batch.world_keys)
         self.num_envs = len(self.world_keys)
@@ -168,7 +220,9 @@ class HeterogeneousManipulationEnv:
         self._returns = dict.fromkeys(self.world_keys, 0.0)
         self._history = dict.fromkeys(self.world_keys, None)
         self._pending_reset = dict.fromkeys(self.world_keys, False)
-        self.workspace = batch.prepare_device_workspace(include_contacts=True, include_bodies=True)
+        self.workspace = batch.prepare_device_workspace(
+            include_contacts=True, include_bodies=True, include_area_pressure=has_area
+        )
         try:
             self.device = torch.device("cuda", self.workspace.binding["device"])
             self._dimensions = self.workspace.binding["dimensions"]
@@ -185,7 +239,7 @@ class HeterogeneousManipulationEnv:
                 torch.tensor(self._specs[k].bias.copy(), device=self.device)
                 for k in self.world_keys
             )
-            self._reader = ManipulationSuccessReader(self.workspace, scenes)
+            self._reader = self._new_reader()
             self._frame, self._observation = self._export()
             initial = self.workspace.readback(self._frame)["entry_meta"]
             _require(
@@ -213,6 +267,14 @@ class HeterogeneousManipulationEnv:
                     "h": self.h,
                 }
             )
+            if self._area_scene is not None:
+                self._binding["area_contact"] = _plain(
+                    {
+                        "schema": "manipulation-area-scene-route-v1",
+                        "asset_sha256": self._area_asset_sha256,
+                        "reader_binding": self._reader.binding,
+                    }
+                )
             torch.cuda.current_stream(self.device).synchronize()
         except BaseException as primary:
             self._closed = True
@@ -223,6 +285,46 @@ class HeterogeneousManipulationEnv:
                     "Env construction and workspace cleanup", [primary, cleanup]
                 ) from None
             raise
+
+    def _check_area_binding(self):
+        if self._area_scene is not None:
+            _require(
+                self._area_scene.batch is self.batch
+                and self._area_scene.asset_sha256 == self._area_asset_sha256,
+                "area scene owner/assets changed",
+            )
+
+    def _new_reader(self):
+        return ManipulationSuccessReader(self.workspace, self._scenes, area_roles=self._area_roles)
+
+    def _advance_physics(self, revision):
+        if self._area_scene is None:
+            return self.batch.step(self.h)
+        return self._area_scene.step(self.h, expected_revision=revision)
+
+    def _reset_physics(self, selected):
+        if self._area_scene is None:
+            return self.batch.reset(selected)
+        return self._area_scene.reset(selected)
+
+    def _capture_physics(self):
+        if self._area_scene is None:
+            return self.batch.checkpoint()
+        capsule = self._area_scene.checkpoint()
+        _require(capsule.asset_sha256 == self._area_asset_sha256, "area assets changed")
+        return capsule.batch_checkpoint
+
+    def _restore_physics(self, physics, revision):
+        self._check_area_binding()
+        if self._area_scene is None:
+            return self.batch.restore(physics, expected_revision=revision)
+        from ..backends.mujoco_heterogeneous_area_scene import (
+            MuJoCoTyxHeterogeneousAreaSceneCheckpoint,
+        )
+
+        capsule = MuJoCoTyxHeterogeneousAreaSceneCheckpoint.make(self._area_scene.assets, physics)
+        _require(capsule.asset_sha256 == self._area_asset_sha256, "area assets changed")
+        return self._area_scene.restore(capsule, expected_revision=revision)
 
     def _validate_goal(self, key, goal):
         _require(
@@ -268,6 +370,7 @@ class HeterogeneousManipulationEnv:
             raise MuJoCoTyxEnvError(
                 "restore is required before further Env work", phase="recovery", needs_recovery=True
             )
+        self._check_area_binding()
         if self.batch.checkpoint_revision != self._frame.revision:
             raise self._failure(
                 "external batch mutation requires paired restore",
@@ -491,7 +594,7 @@ class HeterogeneousManipulationEnv:
                     action_accepted = True
                 phase = "physics"
                 physics_revision = self.batch.checkpoint_revision
-                accepted = dict(self.batch.step(self.h))
+                accepted = dict(self._advance_physics(physics_revision))
                 state_accepted = any(accepted.values())
                 _require(
                     accepted == dict.fromkeys(self.world_keys, True),
@@ -556,7 +659,7 @@ class HeterogeneousManipulationEnv:
                         )
                     phase = "subset-reset"
                     reset_revision = self.batch.checkpoint_revision
-                    self.batch.reset(selected)
+                    self._reset_physics(selected)
                     reset_accepted = True
                     phase = "reset-task-export"
                     output_frame, values = self._export()
@@ -671,7 +774,7 @@ class HeterogeneousManipulationEnv:
             revision = self.batch.checkpoint_revision
             self._busy = True
             try:
-                self.batch.reset(selected)
+                self._reset_physics(selected)
                 frame, values = self._export()
                 _require(
                     not self._reader.read(frame, episodes=episodes),
@@ -862,7 +965,7 @@ class HeterogeneousManipulationEnv:
             self._ready()
             state = self._state()
             self._validate_state(state)
-            physics = self.batch.checkpoint()
+            physics = self._capture_physics()
             self._ready()
             return capture_manipulation_checkpoint(self._binding, physics, state)
 
@@ -892,11 +995,11 @@ class HeterogeneousManipulationEnv:
             sequence, goals, episodes, lengths, returns, histories, pending, cursor = (
                 self._validate_state(state)
             )
-            reader = ManipulationSuccessReader(self.workspace, self._scenes)
+            reader = self._new_reader()
             revision = self.batch.checkpoint_revision
             self._busy = True
             try:
-                receipt = self.batch.restore(physics, expected_revision=expected_revision)
+                receipt = self._restore_physics(physics, expected_revision)
                 frame, values = self._export()
                 reader.restore(cursor, frame=frame)
                 current = self._copies(values)

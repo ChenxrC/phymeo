@@ -122,6 +122,13 @@ class MuJoCoTyxHeterogeneousAreaPressureScene:
         return self._assets
 
     @property
+    def asset_sha256(self):
+        """Stable identity of owned model-local assets, independent of live state."""
+        if _asset_digest(self._assets) != self._asset_sha256:
+            raise ValueError("owned area assets changed after scene construction")
+        return self._asset_sha256
+
+    @property
     def last_geometry(self):
         """Last accepted input geometry, invalidated by any external revision."""
         with self.batch._lock:

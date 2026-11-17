@@ -40,3 +40,13 @@ root 负责共享源码和串行执行。multitask_scene_review 只读检查数�
 - I3g 已进入验证：内部 raw 声明在本步统一构造一次完整 mesh，HOST/mixed 同时去重，公开 mesh 输入仍全量重验，不跨步缓存。
 - I3h 在运行前读到公共 MAX_WORLDS=32，因此固定为 **5、20、32** world（80 不受支持，不执行、不标 skip、不分批冒充）。不扩容量或改 model/h/material。按原五世界顺序循环复制，32 使用前32条，保存完整 world→model 清单；每档只比较自身 HOST/mixed 相同输入，不以不同模板占比推断线性扩展。
 - I3h 固定 CUDA、capacity=64、25 连续步（首步＋3段各8暖步），每步交替路径先后，比较完整状态/几何/统一观察字节。模型声明的共用准备耗时、各批次/scene/workspace setup、整步含读回时间分别记录；不设速度通过门。若仍无稳定收益保留 HOST 默认，下一功能节点为显式 area body-pair 载荷 reader，同帧消费和checkpoint身份；不把 reader 接通说成 Env 或训练已经接通。
+
+## I3i 执行前合同：显式面积载荷观察适配
+
+新增 `AreaPressureRoleBinding(identity, object_side, role)`，通过 `ManipulationSuccessReader(..., area_roles=...)` 按模型显式绑定全部声明 pair。role 只允许 finger0/finger1/support/other，object_side 为 A/B；pair 不含任务对象时仅 None/other。沿用真实独立 FREE object、XML/timestep、命名 geom/body 准入，不靠数字 body ID 猜任务角色。一个 pair 只负责一个角色，不隐式分面。
+
+读取共同 accepted-input 帧的法向力 N 和 A 方世界力；对象为 B 时反号。dA 只验证真实面积，不重复乘已求解力。全部 identity/material、pair/sample/source 顺序、历史 stamp、面积声明 mask 和数值数组参与同 tick/恢复绑定。native 又出现声明 area 的同一 body pair 时拒绝重复载荷。整次读取或恢复成功后才提交 cursor；native-only 原 binding/fingerprint 字节路径保持。
+
+验收固定新明示协议夹具：D=0、unlimited、真实3P+3motor，独立FREE球(.08kg,R=.05m,z=.049m)，h=.0005，gravity=-9.81，最多3步。A/B/split/native 四world；每pair真实面积1e-4m²、g=2e6Pa/m、delta=.001m，split仅四分同面积与压力。独立receipt全样本oracle、A/B方向、细分载荷、缺声明/身份与目录故障、同tick变化、controls-only/reset/成对restore。此节点只接HOST评估reader，不改Env、actor特征或声称任务训练成功。
+
+I3h 首20-world在构造时发现夹具漏传已有expanded-batch资源预算；未进入20-world仿真。修正为每条比较路径独立64MiB registered CUDA payload预算（不含context/JIT/allocator/host等），不改公共32上限，不调整几何/物理参数。保留5-world已绿结果，只续20/32，报告预算实用峰值与排除项。

@@ -1,5 +1,7 @@
 # Phymeo 当前续作入口
 
+> 2026-11-18 I3h固定CUDA规模完成：5/20/32world各25连续步，共3案例通过；完整HOST/mixed状态/几何/观察同bytes。后24步分别3.25649/2.94129、9.14864/8.17278、14.28162/12.66143秒，本组约9.7–11.3%减少，不作通用性能结论，默认HOST。20首构造漏显式预算的夹具失败保留，补既有64MiB声明后只续20/32；公共上限32未改，80未运行。详[报告](area-pressure-batch-scale-report-20261118.md)。按07:10计划继续I3i显式area任务载荷reader（source/test author中，尚未验证）；root唯一执行owner，dev未改、无push。下文为历史。
+
 > 2026-11-18 I3g当前网格一次完整验证完成：df628981，9新＋63受影响兼容=72pass，6文件静态通过。raw当前声明有独立不可写副本，统一入口完整验证一次；公开mesh仍重验，无跨步geometry cache。反序world/reset新owner/末world FP64塌缩拒绝和物理发布保持已验。短5world CUDA暖窗HOST1.36743s/mixed1.20329s，仍不据此改默认。详[报告](area-pressure-single-preparation-report-20261118.md)。按07:10计划继续I3h固定5/20/32world规模比较，再显式area body-pair reader；MAX_WORLDS=32，80未运行。root唯一执行owner，原两agent仅author/read；dev未改、无push。下文为历史。
 
 > 2026-11-18 I3f批量候选完成：f8d902ea，12新＋56受影响兼容=68pass，6文件静态通过。全批准入、exact严格分离证空、跨world/pair分块；192pairs中156证空、36设备复核、0HOST裁剪回退，launch48→12，物理/几何/观察同HOST逐字节。短CUDA暖窗1.83064s→1.74645s不足稳定加速结论，默认HOST。详[报告](area-pressure-batched-candidates-report-20261118.md)。按[07:10计划](../superpowers/plans/2026-11-18-area-pressure-through-0710.md)继续I3g每步完整验证一次，之后多规模成本。root唯一串行执行owner，本批运行已结束；原两agent仅author/read，dev未改、无push。下文为历史。

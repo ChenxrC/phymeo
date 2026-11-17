@@ -205,3 +205,15 @@ I3q/r已分别通过10HOST与6个独立CUDA/故障节点。生产摩擦还需新
 保存每步完整入/出q/v、receipt动力学、全部surface/quad/目录、真实raw设备观察、一次measure_many双方多参考点wrench、原生oracle和差异汇总、实际K/重力势及每步冻结J/phi代理BE余额。旋转/换区下不把ΣdA*p²/(2g)称全轨迹真实势能或用其守恒作门。失败保接受前缀，若几何进入未支持g/sharedface域则明确记录，不能过滤绕过。
 
 预定最多两HOST（fixture/独立参考）＋一完整CUDA窗口。通过后只从同次轨迹生成三格姿态/接触力/角度图，不重跑仿真。若发生实质问题按一次明确诊断修复对应实现；不扩大证明或调参数。06:35进入关闭/报告，07:10交总览。
+
+## 04:45 I3t：源码外 wheel 的新面积能力边界
+
+I3s 的150步真实FREE窗口已完成；第一次pytest为2HOST通过/1个保存审计断言失败，原因是固定plate原点的FP32表示与原FP64局部顶面相加不严格等于零。保留原失败，只修独立oracle的同入步平面绑定，原450world-step保存审计通过，没有重跑物理窗口。媒体只读该轨迹。
+
+I3t不重跑长窗，验证本轮新增生产模块确实进入可安装wheel并能从源码外使用。root唯一执行owner；原training agent仅author NEW scripts/verify_area_pressure_wheel.py。冻结当前tracked src、pyproject/README/LICENSE等构建输入到独立stage，保留working bytes。用已有Python3.11 build/setuptools无隔离无网络构建；记录完整源清单及wheel所有Python/资产集合与字节同一性。CUDA313环境以--no-deps/--no-index/--no-compile安装本地wheel到全新target，不升级或复制依赖。消费者在checkout外运行，-I、清PYTHONPATH；拒预载phymeo与目标外phymeo候选，显式加入target，finally逐个核loaded phymeo module origin。现有依赖来自原venv及其明确.pth路径，记录而不冒全新依赖环境。
+
+固定2model/3world，顺序(41,7,305)，h=.001。area模型/资产沿I3s，41 qz=.00926425、v0，305 qz=.0095、vz=-.02，其他自由坐标零/identity。7复用I3l native-only垂直sphere：m=.3、r=.01、geom center .012、q=-.003、v0、D70、gravity=-9.81、condim1/friction0。所有XML/资产内联消费者，禁止import experiments/tests。area bundle从原数组构造→bytes→from_bytes→assets_for实际用于scene。mixed intersector(mode=cuda,capacity=64,fallback=exact_host)，两area各24 raw pairs合48不越容量；承认HOST精确复核，不能声称全设备geometry。
+
+仅四次真实整批step：step1→checkpoint→step2→restorecheckpoint→重复step2→selected reset(305)→step3。step2/replay比较actual q/v/time/tick及完整raw numeric arrays逐字节；owner/revision等token逐项独立绑定，不任意normalize。reset后只选定世界清历史，其他世界保留；fresh后继标签独立核。每次一次公开measure_many，area双方多参考点合力/矩与raw积分独立核，native世界面积计数零且存在原生接触载荷。全部world状态实际改变、Fn非零，raw dA正/身份与对应frame绑定；sum(dA)仍真实面，不再归一。checkpoint仅相同配置恢复；固定失败路径/可恢复错误沿现公共API，不另改生产实现。
+
+保完整资产bytes、每步原输入/输出、raw观察、wrench、checkpoint、reset观察、intersector统计、依赖/模块origin和文件hash。CLI接收--site、--output绝对路径且output新建；原本脚本在repo存放，实际执行复制到外部consumer目录。若新wheel暴露导出/包数据或导入问题，只修该问题，不跑旧全套或调物理参数。06:35优先报告/收口，07:10停止；不push/devmerge/发包。

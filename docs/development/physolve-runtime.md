@@ -1,5 +1,48 @@
 # PhySolve 原生运行时实验
 
+## 2026-11-17：TYX 候选机器人 Graph 与生命周期验收
+
+本批安装组合为 TYX `68f86a9` 的 wheel（SHA256
+`38051b9f5bfd8a532fb4733e1aee433f0e2f01207e90d30d2be063689e1983b1`）、
+frontend `0.0.0a8` 与既有 PHYMEO 配对 wheel。包、原生 Host、六 CUBIN 与模型
+按来源及散列核验；无 Newton、Warp、MuJoCo-Warp 安装或导入。本批只增加正式
+`test_physolve_graph.py` 验收和本文记录，不修改生产运行时、控制或容差。
+
+机器人保持原始 Panda、已有显式连接处规则 FANUC、原始 2 ms 步长和 .03 广义力；
+固定 Graph 每次四步。既有简单模型 Graph 主案例仍为 4×10 ms，未改变它的判据。
+两个机器人使用 N=1/8/64。结果分开记录：
+
+| 检查 | 实际结果 |
+| --- | --- |
+| Graph、stream、关闭主测试（28项） | 23通过、5失败，559.14 s |
+| 其中简单模型 Graph、错误发布、捕获/关闭失败重试、stream及原生关闭 | 全部通过（20项） |
+| 机器人 N=1 换流重建/关闭 | Panda、FANUC均通过，各4轮；Graph对象回收、句柄/banks清理、旧storage拒绝、外部stream仍有效 |
+| 机器人 direct/Graph 对照（6项） | 仅显式规则 FANUC N=1通过原断言；Panda N=1/8/64、FANUC N=8/64失败 |
+| 独立 Graph-only reset（6项） | 1通过、5失败，351.69 s；五项均在reset前的双runtime参考比较失败，后续reset未执行 |
+
+完整主测试的 qpos 最大绝对差：Panda N=1/8/64 分别为 `2.3203e-4`、
+`6.88336e-3`、`1.044869e-2`；FANUC N=8/64 为 `1.7776746e12`，实际位置量
+也已达约 `1e11`。原 `atol=1e-6, rtol=0` 不变。FANUC 结果不能描述为浮点微差；
+N=1对照断言通过也不构成独立物理正确性证明。两个Graph的reset前差异说明失败
+不能仅归于direct/Graph切换，更不能据此确定solver、TYX或迁移层根因。
+
+首轮 Panda N=1 fail-fast（174.66 s，最大差 `1.64798e-3`）独立保留，不与完整
+运行重复计数，不择优。失败用例的后续双bank循环、观测或reset断言不能算通过。
+Graph-only通过不替代direct对照；N=1没有未选世界，不能证明多world隔离。
+机器人派生观测覆盖body字段和每world contact计数/采样时间，不宣称完整接触
+几何、力/力矩字段的机器人一致性。本批无GUI、C ABI、完整套件或长轨迹资格。
+
+简单接触8次换流和两机器人各4次换流的设备free-memory采样均为首尾差0字节，
+仅为共享GPU上的有限观测；Graph弱引用消失也不代表驱动分配器全部归还显存。
+已知32 MiB原生CUDA保留、四项性能准入、无规则FANUC及曲面历史失败不关闭。
+独立审查完成；源码/wheel/安装文件核对、pip check、diff检查通过，全仓文档检查
+仍有504条既有缺失目标。证据位于隔离实验根 `phymeo-robot-graph-20261117/evidence/`：
+`result-summary.json`、`graph-lifecycle-installed.xml`、`graph-reset-installed.xml`、
+`memory-samples.json`、`integrity.json` 与 `independent-review.md`。
+
+**结论：本轮验收入口与证据已补齐，机器人 Graph 整体资格未通过。**
+资源生命周期通过与数值资格失败分别保留；未放宽判据，未扩大数值/崩溃排查。
+
 ## Capacity metadata v1
 
 `PhySolveRuntime.capacity_info_contract_version=1` 与 `capacity_info()` 返回双 bank

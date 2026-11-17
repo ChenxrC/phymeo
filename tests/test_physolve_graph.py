@@ -234,3 +234,195 @@ def test_graph_rebinding_memory_samples(payload):
         external.destroy()
     # Observational device-wide memory samples; other applications share this GPU.
     print('B5A_GRAPH_MEMORY', samples, flush=True)
+
+
+def _robot_runtime(payload, name, nworld):
+    if name == 'fanuc-explicit':
+        from test_native_exclusions import fanuc_template, connection_plan
+        template = fanuc_template()
+        template = template.with_collision_exclusions(connection_plan(template))
+        return template.bind(nworld).create_runtime(
+            payload=payload, nconmax=128, njmax=256,
+            body_observations=True, contact_observations=True)
+    from test_physolve_models import robot_path
+    from phymeo.builders.mujoco_compiler import compile_mujoco
+    return PhySolveRuntime(compile_mujoco(robot_path(name), require_asset=False),
+                          payload=payload, nworld=nworld, nconmax=128, njmax=256,
+                          body_observations=True, contact_observations=True)
+
+
+def _robot_observations(runtime):
+    storage = runtime.storage_binding()
+    return {name: storage.borrow(name, runtime.active_bank).numpy(stream=storage.stream)
+            for name in storage.fields
+            if name.startswith('body_') or name in ('contact_count_by_world', 'contact_sample_time')}
+
+
+def _robot_advance(runtime, mode):
+    ticket = runtime.begin_execution()
+    storage = runtime.storage_binding()
+    force = storage.borrow('qfrc_applied', runtime.writable_bank, write=True)
+    force.assign(np.full(force.shape, .03, np.float32), stream=storage.stream)
+    runtime.enqueue_step(ticket, steps=4, execution_mode=mode)
+    runtime.complete_execution(ticket)
+    runtime.accept_execution(ticket)
+
+
+@pytest.mark.cuda
+@pytest.mark.parametrize('name', ['panda', 'fanuc-explicit'])
+@pytest.mark.parametrize('nworld', [1, 8, 64])
+def test_robot_fixed_graph_banks_observations_and_masked_reset(payload, name, nworld, monkeypatch):
+    import gc
+    with _robot_runtime(payload, name, nworld) as direct, _robot_runtime(payload, name, nworld) as captured:
+        initial = captured.snapshot()
+        initial_obs = _robot_observations(captured)
+        assert captured.prepare_step_graph(steps=4)
+        assert not captured.prepare_step_graph(steps=4)
+        for field, value in captured.snapshot().items():
+            np.testing.assert_array_equal(value, initial[field], err_msg=field)
+        captures = captured.execution_costs()['step_graph_captures']
+        assert captures == 2
+        banks = []
+        def replay():
+            gc.collect()
+            with monkeypatch.context() as patch:
+                def no_fallback(*args):
+                    raise AssertionError('robot Graph fell back to native direct step')
+                patch.setattr(captured._native, '_step_runtime', no_fallback)
+                _robot_advance(captured, 'cuda_graph')
+            banks.append(captured.active_bank)
+        for iteration in range(3):
+            _robot_advance(direct, 'direct')
+            replay()
+            actual, expected = captured.snapshot(), direct.snapshot()
+            assert np.all(np.any(actual['qvel'] != initial['qvel'], axis=1))
+            np.testing.assert_allclose(actual['time'], (iteration + 1) * 4 * .002, atol=1e-7, rtol=0)
+            for field in ('qpos', 'qvel', 'time'):
+                np.testing.assert_allclose(actual[field], expected[field], atol=1e-6, rtol=0, err_msg=field)
+            for field, value in _robot_observations(captured).items():
+                np.testing.assert_allclose(value, _robot_observations(direct)[field], atol=1e-6, rtol=0, err_msg=field)
+        assert banks[0] != banks[1] and banks[0] == banks[2]
+        assert captured.execution_costs()['step_graph_replays'] == 3
+        before, before_obs = captured.snapshot(), _robot_observations(captured)
+        mask = np.arange(nworld) % 2 == 0
+        captured.reset(mask)
+        for field, value in captured.snapshot().items():
+            np.testing.assert_array_equal(value[~mask], before[field][~mask], err_msg=field)
+            np.testing.assert_array_equal(value[mask], initial[field][mask], err_msg=field)
+        for field, value in _robot_observations(captured).items():
+            np.testing.assert_array_equal(value[~mask], before_obs[field][~mask], err_msg=field)
+            np.testing.assert_array_equal(value[mask], initial_obs[field][mask], err_msg=field)
+        _robot_advance(direct, 'direct')  # independent uninterrupted reference
+        replay()
+        for field in ('qpos', 'qvel', 'time'):
+            np.testing.assert_allclose(captured.snapshot()[field][~mask], direct.snapshot()[field][~mask], atol=1e-6, rtol=0)
+        for field, value in _robot_observations(captured).items():
+            np.testing.assert_allclose(value[~mask], _robot_observations(direct)[field][~mask], atol=1e-6, rtol=0, err_msg=field)
+        before_forward = captured.snapshot()
+        captured.forward()
+        for field in ('qpos', 'qvel', 'time'):
+            np.testing.assert_array_equal(captured.snapshot()[field], before_forward[field])
+        captured.reset()
+        direct.reset()
+        replay()
+        _robot_advance(direct, 'direct')
+        for field in ('qpos', 'qvel', 'time'):
+            np.testing.assert_allclose(captured.snapshot()[field], direct.snapshot()[field], atol=1e-6, rtol=0)
+        assert captured.execution_costs()['step_graph_captures'] == captures
+        assert captured.execution_costs()['step_graph_replays'] == 5
+
+
+@pytest.mark.cuda
+@pytest.mark.parametrize('name', ['panda', 'fanuc-explicit'])
+def test_robot_graph_external_stream_rebuild_and_close(payload, name):
+    import gc
+    import weakref
+    import tyx as tx
+    from cuda.bindings import driver
+    external = tx.CudaStream()
+    runtime = None
+    refs, samples = [], []
+    try:
+        runtime = _robot_runtime(payload, name, 1)
+        storage = runtime.storage_binding()
+        for iteration in range(4):
+            runtime.bind_stream(int(external.handle) if iteration % 2 else 0, owner=external)
+            runtime.prepare_step_graph(steps=4)
+            refs.extend(weakref.ref(graph) for graph in runtime._step_graphs.graphs)
+            gc.collect()
+            _robot_advance(runtime, 'cuda_graph')
+            np.testing.assert_allclose(runtime.snapshot()['time'], (iteration + 1) * .008, atol=1e-7, rtol=0)
+            status, free, total = driver.cuMemGetInfo()
+            assert int(status) == 0
+            samples.append({'iteration': iteration, 'free_bytes': free, 'total_bytes': total})
+        assert runtime.execution_costs()['step_graph_captures'] == 8
+        assert runtime.execution_costs()['step_graph_replays'] == 4
+        runtime.close()
+        runtime.close()
+        gc.collect()
+        assert all(ref() is None for ref in refs)
+        assert not runtime._banks and all(handle is None for handle in runtime._handles)
+        with pytest.raises(RuntimeError, match='closed|stale|released'):
+            storage.borrow('qpos', 0)
+        external.validate_context()  # borrowed stream is not destroyed by runtime
+        print('ROBOT_GRAPH_REBUILD_MEMORY', name, samples, flush=True)
+    finally:
+        if runtime is not None:
+            runtime.close()  # A close failure must not destroy its borrowed stream.
+        external.destroy()
+
+
+@pytest.mark.cuda
+@pytest.mark.parametrize('name', ['panda', 'fanuc-explicit'])
+@pytest.mark.parametrize('nworld', [1, 8, 64])
+def test_robot_graph_reset_without_direct_parity_prerequisite(payload, name, nworld, monkeypatch):
+    """Graph consistency is separate from, and cannot waive, direct parity."""
+    with _robot_runtime(payload, name, nworld) as runtime, _robot_runtime(payload, name, nworld) as reference:
+        initial, initial_obs = runtime.snapshot(), _robot_observations(runtime)
+        runtime.prepare_step_graph(steps=4)
+        reference.prepare_step_graph(steps=4)
+        def advance(owner):
+            with monkeypatch.context() as patch:
+                def no_direct(*args):
+                    raise AssertionError('reset Graph silently used native direct step')
+                patch.setattr(owner._native, '_step_runtime', no_direct)
+                _robot_advance(owner, 'cuda_graph')
+        banks = []
+        for _ in range(3):
+            advance(runtime)
+            advance(reference)
+            banks.append(runtime.active_bank)
+        assert banks[0] != banks[1] and banks[0] == banks[2]
+        before, before_obs = runtime.snapshot(), _robot_observations(runtime)
+        assert np.all(np.any(before['qvel'] != initial['qvel'], axis=1))
+        reference_before, reference_obs = reference.snapshot(), _robot_observations(reference)
+        for field in ('qpos', 'qvel', 'time'):
+            np.testing.assert_allclose(before[field], reference_before[field], atol=1e-6, rtol=0,
+                                       err_msg='before reset: ' + field)
+        for field, value in before_obs.items():
+            np.testing.assert_allclose(value, reference_obs[field], atol=1e-6, rtol=0,
+                                       err_msg='before reset: ' + field)
+        mask = np.arange(nworld) % 2 == 0
+        runtime.reset(mask)
+        for field, value in runtime.snapshot().items():
+            np.testing.assert_array_equal(value[~mask], before[field][~mask], err_msg=field)
+            np.testing.assert_array_equal(value[mask], initial[field][mask], err_msg=field)
+        for field, value in _robot_observations(runtime).items():
+            np.testing.assert_array_equal(value[~mask], before_obs[field][~mask], err_msg=field)
+            np.testing.assert_array_equal(value[mask], initial_obs[field][mask], err_msg=field)
+        advance(runtime)
+        advance(reference)
+        uninterrupted, uninterrupted_obs = reference.snapshot(), _robot_observations(reference)
+        for field in ('qpos', 'qvel', 'time'):
+            np.testing.assert_allclose(runtime.snapshot()[field][~mask], uninterrupted[field][~mask], atol=1e-6, rtol=0)
+        for field, value in _robot_observations(runtime).items():
+            np.testing.assert_allclose(value[~mask], uninterrupted_obs[field][~mask], atol=1e-6, rtol=0, err_msg=field)
+        runtime.reset()
+        for _ in range(3):
+            advance(runtime)
+        for field in ('qpos', 'qvel', 'time'):
+            np.testing.assert_allclose(runtime.snapshot()[field], before[field], atol=1e-6, rtol=0)
+        for field, value in _robot_observations(runtime).items():
+            np.testing.assert_allclose(value, before_obs[field], atol=1e-6, rtol=0, err_msg=field)
+        assert runtime.execution_costs()['step_graph_captures'] == 2
+        assert runtime.execution_costs()['step_graph_replays'] == 7

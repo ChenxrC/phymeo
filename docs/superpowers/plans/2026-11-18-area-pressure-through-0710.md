@@ -269,3 +269,12 @@ I3v首次3节点通过，新wheel源码外128点消费通过。剩余时间增�
 I3w准入补足（首次执行前）：源物理M逐位对称（现mechanics明确复制对称项），SPD仍由原共同kernel的Cholesky拒绝；D>=0、normal原FP32平方范数距1不超过2e-6、两body不同。B<=128、pairs<=16、source C<=512但完整count<=128。wrapper只验证实际可读metadata和设备区间别名，不虚构跨runtime provenance。
 
 真正F3的精确源码入口、积分一致性门、观察版本与五组后续测试见[交接说明](../../development/area-friction-live-integration-handoff-20261118.md)。该说明为纯源码设计，不能用来替代执行结果。
+## 06:20 I3x执行前合同：已有共同载荷与原生积分相容性
+
+这是新增且有界的接缝决策测试，不重跑I3w pack/接触求解，也不重复旧物理窗口。只用I3w已验收完整pipeline保存数据（SHA256 883dc7603c69d5789ea1e697ec8d64be33cb85c998bd244e4e05aba1a6b235a0）中实际FREE前三lane：mu=.5、mu=0、空面反事实，以及原D40 slider；排除人工非零JB的第四lane。
+
+HOST诊断由原存储F和完整JA/JB聚合Q，RN32(applied+Q)，同原M/bias/passive/D/q/v输入，分别调用既有floating/tree native solve各一次batch。不是live device force装配，不写Scene/public receipt，不宣称生产集成。静态native joint地址由相同XML/model绑定。原h、材料、质量、速度和所有数值门保持。
+
+一个CUDA pytest节点，完整保存：原输入与source hashes、实际native q/v/qacc/integration_acc/两字clock、存储力在actual vnext上的重新代回。力门沿I3w 0.002+0.002*abs(reference)，共同方程残差≤2e-5*原scale；严格HOST门另列。独立CPU仅mj_integratePos核实际vnext的q，不CPUstep；物理qacc按M，integration_acc按M+hD，检查不重复扣D、不二次积分和原输入字节不变。
+
+首次失败即保留证据并定位；若实际力律或共同方程不相容，不放宽门/增加迭代修饰结论，转向共享native q-only积分入口的结构性方案。通过仅证明这组真实历史入步可以复用旧solve，生产仍必须逐步对actualv检查，不外推全域/生命周期。父唯一串行执行；原training agent仅author新增test/固定fixture。06:40前交接，06:50后不启动预计不能按时结束的组；到07:10记录实际完成。

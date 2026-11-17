@@ -1,5 +1,7 @@
 # Phymeo 当前续作入口
 
+> 2026-11-17 I3b持久设备面积记录完成：实现45dec87a，12新interpret/CUDA＋20受影响/原生兼容节点全部通过，10文件Ruff/format通过。实际device input/type7 rows写inactive area bank，与物理state一次提交；同模型多世界copy-owned CUDA D2D不经HOST数值重建，原始FP64 dA以两i32位保留。checkpoint/reset/乱序与子集clone字节一致、preflight alias/Mapping换目标、晚故障与容量拒绝通过；极端世界原点矩用显式valid mask，不改变物理准入。旧I3a area胶囊显式布局拒绝、不伪迁移；native兼容保留。详[报告与接口](area-pressure-device-observation-report-20261117.md)。下一统一观察消费与异构area汇总，再GPU有限面裁剪/整步成本；无全设备碰撞或FFT材料/新训练结论。dev不变，exp本地提交，root/原作者执行与审阅释放，无新期限/周期任务。下文为历史。
+
 > 2026-11-17 I3a面积观察/生命周期完成：实现89166982，14新interpret/CUDA＋39受影响/原生兼容节点通过，Ruff/format通过。HOST只读快照分离历史施加外载与当前控制、输入力相位与端点状态；双面积支撑第30步存档恢复后再走50步物理字节一致，独立/子集/乱序clone、选择reset、资产/行/相位篡改及晚故障原子拒绝通过。完整runtime胶囊保原nativeentry，scene外层绑定全部压力/刚面资产；不冒设备areaABI。详[报告与用法](area-pressure-lifecycle-report-20261117.md)。下一I3b持久设备面积观察/批量入口，再GPU裁剪；不重跑本批或旧长窗。dev不变、exp本地提交，原作者和root执行槽释放，无新期限/周期任务。下文为历史。
 
 > 2026-11-17 I2c持续载荷/双面积支撑完成：实现a98e883f，interpret4/CUDA4新节点首轮通过；六条连续轨迹4400步。0.5kg有导轨物体以真实外载从重力支撑→加3N→向上拉9N，双接触区稳态承担2.635/5.270N、合计7.905N，约.359s后分离；顺序互换、错误独立求和反例、容量整体拒绝及外力/阻尼能量账本通过。仅补可复用实验/验证与M+hD字段文档，未改求解方程；HOST裁剪＋TYX动力学，非自由体平衡/FFT非局部材料。详[图、报告与下一步](area-pressure-loaded-support-report-20261117.md)。下一优先I3面积观察身份/相位/设备导出，再checkpoint/reset/restore/clone；不重跑既有支撑/冲击组。dev不变，本地exp提交，原作者及root执行槽释放，无新期限/周期任务。下文为历史。

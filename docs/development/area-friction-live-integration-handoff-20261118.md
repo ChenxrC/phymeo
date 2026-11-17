@@ -90,3 +90,13 @@ reset、restore、clone 必须复制/清理新 law banks，并重绑 owner/catal
 5. 最后世界数值失败/最后桶提交前故障：旧 q/v/clock、accepted forces、workspace frame、receipt、scene geometry 均保留；随后 retry；新 law checkpoint roundtrip/选择 reset 或明确生命周期拒绝不可混淆。
 
 停止条件：上游状态不能可靠传递、actual-v 力律不成立、没有 law-aware 观察/恢复边界、资源未进统一 ledger 任一存在时，不宣称生产 F3 完成。
+
+## 8. 有限边缘的模型准入：2026-11-18 只读裁定
+
+普通滑出路径并不保证逐片 g>0。沿现用完整12-tet立方体，半宽 a=.02m、半高 c=.01m、中心压力 P=100000Pa，右侧 cell (center,corner1,corner2,corner6) 的压力为 p=P(1-x/a)，梯度为(-P/a,0,0)。水平刚面 z=-.009m、n=+ez，与该 cell 内 x∈(.018,.019)、y∈(-.005,.005) 的矩形有正面积1e-5m²及5000..10000Pa压力，然而 g=grad(p)·n=0。20mm宽有限平板平移即可覆盖这片，既非退化，也非零面积噪声。本结论为手推与源码核查，没有运行新数值案例。
+
+当前完整求交在 geometry/area_pressure_intersection.py 的 _owns_polygon 中抛 unsupported_gradient；混合设备拓扑仍走同一准入检查。空/线/点先排除；triangle与quadrature随后也要求严格正g，adapter再用k=dA*g、phi=-p/g。全批几何在物理step及last_geometry发布前完成，错误不能悄悄跳过该polygon。现用模型的这一限制已在2026-11-16设计中声明，本次把它定位到了普通cube边缘。
+
+[2022速度级压力接触论文](https://arxiv.org/html/2110.04157v2)的IV-A在推导局部有效梯度后，对不满足其正梯度条件的polygon采用忽略策略。这是该论文算法，不自动等于当前Drake全部实现；也不直接授权本项目把完整面积合同改成删面。首个生产摩擦窗口保留逐片g>0的已知域，偏心转动与任意滑出必须分开标识。
+
+后续独立 edge-admission 小批只比较两个明确模型选择：维持g>0拒绝；或预先声明可处理零/负投影梯度的新接触律。候选可研究直接压力形式而不除g，但尚未推导其有效性、求解条件或能量，不能先接产品。固定正梯度、零梯度侧片、负梯度姿态三类输入，先核完整面积/合力/力矩和单步功，再决定采用范围。禁止给g加epsilon、归一化压力、缩板或删片追绿；一次诊断修正仍不适用就记录边界，不能拖住g>0场景的F3接通。

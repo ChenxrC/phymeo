@@ -4,6 +4,15 @@
 
 **当前截点：2026-11-13，最新安装产品23757ae6。** D5-A/M-B1公共多独立刚体刚柔装配、R3-N/P/A原生接触与执行器组合、G2a原容量内异构规模、G2-R0恢复清理和D6-A轴向材料耗散已有各自有限资格；旧版本资格按原记录复用。D4无阻尼双后端3秒稳态失败仍保留，D6-B新c4096应用的run143已完成N1解释3秒，仍未过两稳态门；该系数的CUDA/其余案例停止扩跑。当前证据分层见[功能矩阵](../development/p65-feature-acceptance-matrix-20261113.md)，完整连接图见[当前架构](../development/p65-feature-architecture-draft-20261113.md)。本页不将源码、指定安装消费者、完整应用或严格精度结果合并为一个PASS。
 
+## PhySolve integration profile
+
+Current candidate integration: [public/resource contract and qualification](../development/upstream-integration.md).
+
+The experimental compiler profile in `requirements/physolve-compiler.txt` uses
+NumPy 2.2.6 / CPU MuJoCo 3.8.0, separately from the official MuJoCo extras.
+Historical qualification is recorded in [PhySolve runtime](../development/physolve-runtime.md);
+it does not qualify the new upstream/TYX combination.
+
 ~~~mermaid
 flowchart TD
   A[URDF / MJCF / 程序资产] --> B[Phymeo公共资产与来源校验]
@@ -91,6 +100,13 @@ with compile_scene(declaration, backend="cuda") as runtime:
 ```
 
 浮根资产使用 `FloatingRobotState` 和 `FloatingRobotCommand(RobotCommand(...))`。静态环境通过 `FiniteStaticShape` 及显式材料加入声明。编译记录的 `unlowered_world_geom_ids` 必须单独处理；`.asset` 本身不是完整环境。
+
+原生编译记录另提供 `collision_source`，保留固定根融合前的 body/geom 身份与编译后
+native geom ID。`instance` / `world` 编译参数只限定该来源命名空间，不复制模型或
+更改 resident layout。`collision_source.plan_exclusions(...)` 仅校验并生成显式排除
+计划；PhySolve 的 native_assembly/native_exclusions 适配显式消费该计划并生成原生输入。
+其他求解路径不自动继承此资格；不能把计划生成成功当作接触已被排除。
+调用、身份范围和已验证版本见[碰撞规则 C0 合同](../development/robot-collision-rules.md#9-c0-已实现合同2026-11-11)。
 
 选择原生 MuJoCo 物理时保留原生坐标、控制和接触律：
 

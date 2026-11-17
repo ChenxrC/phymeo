@@ -1,8 +1,8 @@
 """Explicit selected-world readback resources, owned by one resident world batch."""
 
-from contextlib import ExitStack
-
 import numpy as np
+
+from ._resident_cleanup import ReleaseStack, cleanup_failed_init, close_dependencies
 
 
 class WorldReadbackPlan:
@@ -20,6 +20,8 @@ class WorldReadbackPlan:
         "_width",
         "_resources",
         "_closed",
+        "_closing",
+        "_cleanup_dependencies",
         "_indices",
         "_rows",
         "_ticks",
@@ -51,11 +53,13 @@ class WorldReadbackPlan:
             self._slots = tuple(batch._slots[key] for key in selected)
             self._kind = kind
             self._width = 6 if kind == "kinematics" else 12
-            self._resources = ExitStack()
+            self._resources = ReleaseStack()
             self._closed = False
+            self._closing = False
             self._indices = self._rows = self._ticks = self._kernels = None
             self._cuda_bytes = self._host_bytes = self._allocations = self._index_bytes = 0
             self._reads = self._failed_reads = self._downloaded_bytes = self._host_read_bytes = 0
+            batch._readback_plans.add(self)
             try:
                 if selected:
                     from ._tyx_world_readback_kernels import make_gather_kernels
@@ -66,9 +70,8 @@ class WorldReadbackPlan:
                         self._indices = self._allocate(slots.shape, slots.dtype, slots)
                         self._rows = self._allocate((len(selected), self._width), np.float32)
                         self._ticks = self._allocate((len(selected),), np.int32)
-                batch._readback_plans.add(self)
-            except BaseException:
-                self.close()
+            except BaseException as error:
+                cleanup_failed_init(self, error)
                 raise
 
     @property
@@ -137,8 +140,8 @@ class WorldReadbackPlan:
     def read(self):
         batch = self._batch
         with batch._lock:
-            if self._closed:
-                raise RuntimeError("readback plan is closed")
+            if self._closed or self._closing:
+                raise RuntimeError("readback plan is closed or closing")
             batch._check_open()
             try:
                 if not self._keys:
@@ -177,6 +180,7 @@ class WorldReadbackPlan:
                 keys=self._keys,
                 kind=self._kind,
                 closed=self._closed,
+                closing=self._closing,
                 mode=self._batch._mode,
                 selected_worlds=len(self._keys),
                 device_allocations=self._allocations,
@@ -193,18 +197,20 @@ class WorldReadbackPlan:
         with self._batch._lock:
             if self._closed:
                 return
+            self._closing = True
+            self._batch._ensure_cleanup_ready()
+            close_dependencies(self)
+            self._resources.close()
+            self._batch._readback_plans.discard(self)
+            self._indices = self._rows = self._ticks = self._kernels = None
+            self._host_bytes = 0
             self._closed = True
-            try:
-                self._resources.close()
-            finally:
-                self._batch._readback_plans.discard(self)
-                self._indices = self._rows = self._ticks = self._kernels = None
-                self._host_bytes = 0
+            self._closing = False
 
     def __enter__(self):
         with self._batch._lock:
-            if self._closed:
-                raise RuntimeError("readback plan is closed")
+            if self._closed or self._closing:
+                raise RuntimeError("readback plan is closed or closing")
             self._batch._check_open()
         return self
 

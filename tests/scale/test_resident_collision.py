@@ -538,7 +538,7 @@ def test_c17_invalid_capacity_is_host_validation(capacity):
 
 
 @pytest.mark.tyx
-def test_c18_close_callback_failure_still_closes_every_plan(tyx_mode, tmp_path, monkeypatch):
+def test_c18_close_callback_failure_retains_parent_until_retry(tyx_mode, tmp_path, monkeypatch):
     model, ball, wall, static = _one_model()
     batch = TyxWorldBatch([(7, FreeSphere(2, 0.125))], tyx_mode, cache_root=tmp_path / "runtime")
     plans = [batch.prepare_collision(model, _bindings(ball, wall, static)) for _ in range(2)]
@@ -551,7 +551,14 @@ def test_c18_close_callback_failure_still_closes_every_plan(tyx_mode, tmp_path, 
     monkeypatch.setattr(plans[0], "close", failed_callback)
     with pytest.raises(RuntimeError, match="close callback"):
         batch.close()
+    assert plans[0].stats()["closed"]
+    assert batch.stats()["closing"] and not batch.stats()["closed"]
+    assert not batch._runtime.closed
+    # The callback raised after releasing itself. Its successful removal is
+    # retained, so retry closes remaining siblings and then the batch runtime.
+    batch.close()
     assert all(p.stats()["closed"] for p in plans)
+    assert batch.stats()["closed"] and batch._runtime.closed
     assert batch.stats()["device_owned_bytes"] == 0
 
 

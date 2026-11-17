@@ -53,6 +53,8 @@ from .backends.mujoco_heterogeneous_io import (
     MuJoCoTyxHeterogeneousFrame,
     MuJoCoTyxHeterogeneousWorkspace,
 )
+from .backends.physolve_payload import PhySolvePayload
+from .backends.physolve_runtime import PhySolveInputError, PhySolveRuntime
 from .backends.resident_scene import (
     MAX_PARTICIPANTS_PER_WORLD,
     ResidentParticipant,
@@ -499,6 +501,9 @@ __all__ = [
     "ResidentSceneBatch",
     "ResidentSceneCheckpoint",
     "ResidentSceneReceipt",
+    "PhySolvePayload",
+    "PhySolveRuntime",
+    "PhySolveInputError",
     "RobotPlaneCollider",
     "DynamicRobotNormalContactProgram",
     "DynamicRobotFrictionContactProgram",

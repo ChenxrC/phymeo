@@ -5,7 +5,6 @@ physics independently. All registrations are validated before device allocation.
 """
 
 from collections.abc import Mapping
-from contextlib import ExitStack
 from dataclasses import dataclass, field
 from numbers import Integral
 from types import MappingProxyType
@@ -15,6 +14,7 @@ import numpy as np
 from ..constraints.collision_shapes import CollisionModel
 from ._device_convex_query import ConvexQueryPlan
 from ._resident_affine_binding import ResidentAffineTreeBinding
+from ._resident_cleanup import cleanup_failed_init, close_dependencies
 from ._resident_collision_plan import ResidentCollisionPlan, ResidentStaticBinding, _capacity
 from ._resident_contact_plan import _ResidentContactMechanics, _site_limit
 from ._resident_device_patch_bridge import DevicePatchConsumption, patches_from_device
@@ -218,6 +218,7 @@ class ResidentContactBundle(_ResidentContactMechanics):
 
         self._batch = batch
         self._closed = False
+        self._closing = False
         self._registration = object()
         self._tree_dynamic_pairs = tree_dynamic_pairs
         self._pages = []
@@ -228,6 +229,7 @@ class ResidentContactBundle(_ResidentContactMechanics):
         self._initialize_contact_mechanics()
         with batch._lock:
             batch._check_open()
+            batch._contact_bundles.add(self)
             try:
                 # All topology, owner, shape, binding and material checks precede
                 # ANY device allocation, including those in later pages.
@@ -274,9 +276,8 @@ class ResidentContactBundle(_ResidentContactMechanics):
                         else None
                         for page, spec in zip(self._pages, self._page_specs, strict=True)
                     )
-                batch._contact_bundles.add(self)
-            except BaseException:
-                self.close()
+            except BaseException as error:
+                cleanup_failed_init(self, error)
                 raise
 
     @property
@@ -310,8 +311,8 @@ class ResidentContactBundle(_ResidentContactMechanics):
             return self._last_device_queries
 
     def _check_open(self):
-        if self._closed:
-            raise RuntimeError("resident contact bundle is closed")
+        if self._closed or self._closing:
+            raise RuntimeError("resident contact bundle is closed or closing")
         self._batch._check_open()
         for page in self._pages:
             page._check_open()
@@ -515,14 +516,15 @@ class ResidentContactBundle(_ResidentContactMechanics):
         with self._batch._lock:
             if self._closed:
                 return
+            self._closing = True
+            self._batch._ensure_cleanup_ready()
+            close_dependencies(self)
+            self._close_contact_mechanics()
+            for page in reversed(self._pages):
+                page.close()
+            self._batch._contact_bundles.discard(self)
             self._closed = True
-            try:
-                with ExitStack() as closing:
-                    for page in self._pages:
-                        closing.callback(page.close)
-                    closing.callback(self._close_contact_mechanics)
-            finally:
-                self._batch._contact_bundles.discard(self)
+            self._closing = False
 
     def __enter__(self):
         with self._batch._lock:

@@ -1,0 +1,12 @@
+# Experimental Windows x64 / CPython 3.13.13 / validated CUDA payload profile.
+# Supply the frontend a8 wheel through an explicit --find-links wheelhouse.
+# Host and six CUBIN files are separate, mandatory hash-validated inputs.
+# This does not replace the historical a7 or resident requirements profiles.
+-r physolve-compiler.txt
+tyx-compute[cuda] @ git+https://github.com/ChenxrC/tyx.git@6c63815723b460420d0f3ca06b493b3b8ec00c23
+physolve-tyx-frontend==0.0.0a8
+cuda-python==12.9.10
+cuda-bindings==12.9.10
+cuda-pathfinder==1.9.0
+nvidia-cuda-runtime-cu12==12.9.79
+nvidia-cuda-nvrtc-cu12==12.9.86

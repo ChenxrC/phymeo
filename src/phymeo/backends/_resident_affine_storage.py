@@ -577,6 +577,14 @@ class AffineTreeDeviceStorage:
         self._check()
         return self.physical.borrow_geometry(active)
 
+    def _host_controls(self):
+        return (
+            *self.physical._host_controls(),
+            self._held_drive,
+            self._held_loads,
+            self._held_commands,
+        )
+
     def close(self):
         # Device buffers belong to the batch resource stack, including both banks.
         # Close never destroys the borrowed runtime or changes active state.

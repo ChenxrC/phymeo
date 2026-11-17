@@ -6,6 +6,9 @@
 
 ## 从一个可运行的场景开始
 
+P2PE 实验分支的公共承接职责与多求解器边界见
+[外部接口层集成约束](docs/architecture/engine-integration.md)。该文档不赋予新运行资格。
+
 在已安装本地 Phymeo 的环境中，从仓库根目录执行下列示例。第一个运行 Panda 抓起边长 50 mm、质量 100 g 的自由立方体，在持载时接受新的放置距离，然后松指。第二个用刚体和可动布面构建同一场景，记录四个物理步的接触力和深度观测。输出路径请选择新文件。
 
 ```powershell
@@ -192,3 +195,5 @@ uv 与 pip/venv 的隔离环境、可选 tyx 安装和后续 GPU 计划见[环�
 ## 来源与实现原则
 
 借鉴 Newton 的公开架构与算法论文，独立定义物理数据、接口与实现，不复制其求解器源码。对照来源和 tyx 固定提交见[架构说明](docs/architecture/overview.md)。图表样式基于 Cocoon AI 的 MIT 模板改编，保留[许可声明](docs/architecture/template-LICENSE.txt)；该声明仅覆盖模板，不为整个项目指定许可证。
+
+Transport 原交付与当前接入分支的复用范围、实际原生验证及尚未承接边界见 [Transport 复用记录](docs/transport-reuse.md)。

@@ -24,6 +24,8 @@ from ._resident_tree_world import _owned
 
 @dataclass(frozen=True, eq=False)
 class FloatingControlStage:
+    """Private, uniquely owned writable arrays, prepared before any family publishes."""
+
     owner: object
     drive: np.ndarray
     effort: np.ndarray
@@ -195,11 +197,9 @@ class FloatingTreeDeviceStorage:
                 spec.initial_effort,
                 spec.initial_loads,
             )
-        self._held_drive, self._held_effort, self._held_loads = (
-            _owned(drive),
-            _owned(effort),
-            _owned(loads),
-        )
+        # Sole writable held-input owners, like fixed trees. Validated packets
+        # remain immutable; prepared plans borrow these owners by attribute.
+        self._held_drive, self._held_effort, self._held_loads = drive, effort, loads
         self._meta_host = _owned(meta, np.int32)
         with batch._device():
 
@@ -312,7 +312,9 @@ class FloatingTreeDeviceStorage:
             row, spec = self.rows[world], self.specs[world]
             a, b, c = floating_packet(packet, spec.n)
             drive[row, : spec.n], effort[row, : spec.n], loads[row, : spec.b] = a, b, c
-        return FloatingControlStage(self._owner, _owned(drive), _owned(effort), _owned(loads))
+        # These are fresh arrays, never aliases of caller packets or current owners.
+        # Keep allocation in preparation: batch publication spans multiple families.
+        return FloatingControlStage(self._owner, drive, effort, loads)
 
     def commit_controls(self, stage):
         if not isinstance(stage, FloatingControlStage) or stage.owner is not self._owner:
@@ -325,11 +327,12 @@ class FloatingTreeDeviceStorage:
                 strict=True,
             )
         )
-        self._held_drive, self._held_effort, self._held_loads = (
-            stage.drive,
-            stage.effort,
-            stage.loads,
-        )
+        if changed:
+            self._held_drive, self._held_effort, self._held_loads = (
+                stage.drive,
+                stage.effort,
+                stage.loads,
+            )
         self._dirty = self._dirty or changed
 
     def upload_controls(self):
@@ -677,6 +680,9 @@ class FloatingTreeDeviceStorage:
             self.states[active],
             self.fk[active],
         )
+
+    def _host_controls(self):
+        return (self._held_drive, self._held_effort, self._held_loads)
 
     def close(self):
         # Actual buffers belong to the parent's existing resource stack.

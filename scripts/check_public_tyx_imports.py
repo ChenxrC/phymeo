@@ -7,7 +7,9 @@ from pathlib import Path
 # training modules or TYX internal submodules.
 TORCH_ADAPTER_IMPORTS = {
     "backends/mujoco_task_workspace.py": frozenset({"to_torch"}),
+    "backends/mujoco_heterogeneous_io.py": frozenset({"to_torch"}),
     "training/mujoco_tyx_env.py": frozenset({"from_torch", "stream_from_torch"}),
+    "training/manipulation_env.py": frozenset({"from_torch", "stream_from_torch"}),
 }
 ROOT_ADAPTER_IMPORTS = {
     "training/policy_response_diagnostics.py": frozenset(

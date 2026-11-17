@@ -1,6 +1,8 @@
 """Small static architecture guard regressions."""
 
 import importlib.util
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -11,6 +13,26 @@ spec = importlib.util.spec_from_file_location(
 )
 guard = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(guard)
+
+
+def test_root_exports_do_not_eagerly_load_optional_engines():
+    source = '''
+import importlib.abc
+import sys
+class BlockOptional(importlib.abc.MetaPathFinder):
+    def find_spec(self, fullname, path=None, target=None):
+        if fullname.split('.')[0] in {
+            'tyx', 'mujoco', 'physolve_tyx', 'warp', 'newton', 'mujoco_warp'
+        }:
+            raise AssertionError('eager optional import: ' + fullname)
+sys.meta_path.insert(0, BlockOptional())
+import phymeo
+assert len(phymeo.__all__) == len(set(phymeo.__all__))
+assert all(hasattr(phymeo, name) for name in phymeo.__all__)
+assert {'PhySolveRuntime', 'PhySolvePayload', 'PhySolveInputError',
+        'ResidentSceneBatch', 'MuJoCoTyxHeterogeneousBatch'} <= set(phymeo.__all__)
+'''
+    subprocess.run([sys.executable, "-c", source], check=True)
 
 
 @pytest.mark.parametrize(
@@ -36,6 +58,8 @@ def test_public_root_api_is_allowed_in_adapter():
     "path,source",
     [
         ("backends/mujoco_task_workspace.py", "from tyx.torch import to_torch"),
+        ("backends/mujoco_heterogeneous_io.py", "from tyx.torch import to_torch"),
+        ("training/manipulation_env.py", "from tyx.torch import from_torch, stream_from_torch"),
         ("training/mujoco_tyx_env.py", "from tyx.torch import from_torch, stream_from_torch"),
         ("training/mujoco_tyx_env.py", "from tyx.torch import from_torch as borrow"),
         (
@@ -56,6 +80,8 @@ def test_declared_public_interop_consumers_are_allowed(path, source):
     "path,source",
     [
         ("training/arbitrary.py", "from tyx.torch import from_torch"),
+        ("backends/mujoco_heterogeneous_io.py", "from tyx.torch import from_torch"),
+        ("training/manipulation_env.py", "from tyx.torch import to_torch"),
         ("backends/arbitrary.py", "from tyx.torch import from_torch"),
         ("training/mujoco_tyx_env.py", "from tyx.torch import to_torch"),
         ("backends/mujoco_task_workspace.py", "from tyx.torch import from_torch"),

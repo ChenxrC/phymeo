@@ -114,3 +114,31 @@ I3l 连续轨迹完成后，优先 I3m 同帧多 body wrench 查询。当前 rea
 全部原TetraPressureMesh、RigidPressureMesh、BodyAreaPressureAsset构造器重新验证后才发布。合法tet重排不禁；资产通过不保证所有姿态的g>0、共享面梯度或查询容量通过，后续query仍独立拒绝。
 
 新HOST验收精确roundtrip/hash/顺序/byte/owned，重算checksum后的schema单位law/source/pair/未知record/dtype/shape/bool/容量篡改，非零边界/重叠tet/退化面和caller导出修改；短CUDA复用原I3j三world原资产/加载资产各2步、状态与几何/压力/观察一致（只排除实际run的owner/revision派生token），相同资产SHA可与原scene checkpoint配对。不重跑450步。给基于同一真实案例的独立bundle保存/加载说明，不做新训练结论。
+## 03:20 后续批次：I3o 三体耦合与 I3p 摩擦模型选择
+
+I3l/I3m/I3n均已完成。I2b已覆盖真实hinge＋可动slider的法向转矩与面积启闭，I2c已有双区共用单个运动DOF，因此不把重复这两项当新进展。当前未验的是接触另一侧也分别具有独立质量与速度；面积路径切向力仍为空缺。先完成下列两个有界交付，root串行执行、原两agent隔离纯编码。
+
+### I3o：三个可动物体、两个接触区
+
+复用I2c完整压力资产和左右有限三角面，面积(.000225,.00045)m²、刚度(4500,9000)N/m。压力体与左右支撑各有独立无限竖直slider，质量(.5,1.25,.75)kg，gravity/damping/外载均零；初始两区压入1mm、全部速度零，h=.001s、40连续步、capacity64、真实CUDA、默认HOST当前几何。只由预载弹性能驱动运动，不指定轨迹；导轨承担横向/转矩，不称FREE三体平衡。
+
+独立参考J=[[1,-1,0],[1,0,-1]]，B=diag(1/K)+h² J M^-1 J^T，r=delta-hJv。枚举四active sets，求f>=0、Bf-r>=0、f·(Bf-r)=0，再核v+=v+hM^-1J^Tf。已在入步分离的pair遵守现运行时无接触行语义；禁止用参考器偷偷增加预测接触。完整跨pair B12=h²/m0保留，不按pair独立求力后相加。另从固定原初态推进FP64参考，仅报告全轨迹差异。
+
+执行前固定门：每步力误差<=.001N+.001relative、速度<=3e-5m/s、q积分<=2e-7m；总竖直动量误差<=2e-5kg m/s；累计正能量残差<=初始预载弹性能2%。完整sample/source/dA/Jacobian、双方共同原点反力矩和无重复native载荷；真实事件须两区有载→单区→全部离层。若事件或准入失败保留证据，不调质量/步长/面积求绿。首步另辨别错误独立pair响应；反序pair只运行一个新首步，不重跑40步。最多两个HOST与一个CUDA完整节点；保存完整输入/输出/原始receipt/几何/公共arrays和一次measure_many三体wrench，失败保已接受前缀。
+
+### I3p：摩擦候选的固定独立对照
+
+不改type7、现friction=none资产law或法向ABI。独立解耦2DOF参考，不称TYX或一般多接触求解。固定m=.5kg、K=4000N/m、mu=.5、vs=.001m/s；四输入各h=.001/.0005，两档共8格、三方法共24行，无连续轨迹或参数扫描：
+
+| 输入 | phi0 m | vn0 m/s | vt0 m/s | Fext,n N | Fext,t N |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 支撑滑动 | -.001 | 0 | .02 | -4 | 0 |
+| 支撑低载启动 | -.001 | 0 | 0 | -4 | 1 |
+| 层内冲击 | -.0001 | -.5 | .02 | 0 | 0 |
+| 卸载分离 | -.0001 | .3 | .02 | 0 | 0 |
+
+同一法向闭式Fn=max(0,-K(phi0+h vnfree)/(1+h²K/m))。切向分别为最终Fn的精确1D Coulomb闭式、最终Fn的平滑律、入步F0=max(0,-Kphi0)的Lagged平滑律。平滑方程v+h mu N/m·v/sqrt(v²+vs²)=vtfree，固定[0,vtfree]有向区间，最多80次二分；残差<=1e-13m/s、全部finite、摩擦功率<=1e-14W，未达门不拿最后iterate冒成功。
+
+预定判别：支撑Fn=4N；低载启动exact vt+=0、smooth非零；冲击Fn=50/21或700/501N；卸载Fn_final=0，exact Ft=0，Lagged |Ft|>.19N。最后一条作为模型差异必须公开，不能用能量耗散通过掩盖最终Fn的Coulomb上界不满足。保存输入/free/new速度、F0/Fn/Ft/impulse/残差/迭代、动能/弹性能/BE外功/法切功率。只评估既定三律，不为Lagged改名宣称即时Coulomb。
+
+依据：[Lagged原论文 §V-B、VII-C](https://arxiv.org/html/2312.03908v3)、[Drake近似类型](https://drake.mit.edu/pydrake/pydrake.multibody.plant.html#pydrake.multibody.plant.DiscreteContactApproximation)、[MuJoCo摩擦锥](https://mujoco.readthedocs.io/en/stable/computation/index.html#friction-cones)。后续是否实现新显式摩擦law，取决于同一步载荷/运动、最终法向capacity要求和一般多接触求解方案；不由本解耦参考直接推出产品已支持摩擦。

@@ -81,7 +81,7 @@
 <text x="35" y="1020" class="tag" fill="#6ee7b7">绿色：实际运行链路</text><text x="290" y="1020" class="tag" fill="#c4b5fd">紫色：独立参考</text><text x="530" y="1020" class="tag" fill="#fbbf24">黄色虚线：待集成</text><text x="800" y="1020" class="small">不把 HOST 几何 + CUDA 动力学称为全 GPU 碰撞</text>
 </svg></div>
 <section class="cards">
-<article class="card"><h2>真实连续闭环</h2><p>4 world、3 model、450 个 CUDA 批次步。三个面积世界完成入层、承重、加压、离层；另有三可动物体的双区释放。导轨限制明确保留。</p><p><a href="../area-pressure-heterogeneous-support-report-20261118.md">连续轨迹、视频与查看器</a></p></article>
+<article class="card"><h2>真实连续闭环</h2><p>450步导轨窗口、三动体双区释放；另有三种FREE初态各150步，独立核M/J/坐标积分，真实发生倾斜和偏心转动。无摩擦支撑尚非抓持。</p><p><a href="../area-pressure-free-body-support-report-20261118.md">连续轨迹、视频与查看器</a></p></article>
 <article class="card"><h2>批量与生命周期</h2><p>5 / 20 / 32 world 同输出比较；批量筛选、一次网格准备、多 body 一次观察、资产文件与成对恢复。固定案例成本下降，不宣称普遍快于 Newton。</p><p><a href="../area-pressure-batch-scale-report-20261118.md">规模结果</a> · <a href="../area-pressure-assets-report-20261118.md">资产合同</a></p></article>
 <article class="card"><h2>下一阶段怎样判断进展</h2><p>优先把同一步摩擦载荷接回实际运动，再做滑动、边缘和双向旋转。用固定多案例和明确失败判断，不用增加相似测试数量代替新功能。</p><p><a href="../area-pressure-coupled-friction-report-20261118.md">已通过的共享 DOF 参考</a></p></article>
 </section>

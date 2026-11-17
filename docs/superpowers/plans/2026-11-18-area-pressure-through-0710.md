@@ -164,3 +164,17 @@ A=M+h diag(D)，vfree=A^-1(Mv0+hf)。G=JA-JB，vn=n·Gv，vt=(I-nnT/(n·n))Gv，
 另验pair反序、空间正交旋转/共同平移后的force/moment与虚功、近单位法向纯法向无伪摩擦、owned输入和shape/容量/非正定/非法参数、预算失败原子性。保存同次六结果完整输入/exit速度、样本法切force/双侧wrench/广义力、全部尝试/残差，以及真实M动能、线性代理gap弹性能、BE外功/D耗散/摩擦功；最后能量只针对冻结J/phi线性代理，不冒实际非线性轨迹。
 
 该节点查清最终Fn律在共享质量中的可执行接缝；通过后再决定小型TYX设备参考或生产集成计划。已有450步正常支撑/三体窗口不作为摩擦通过证据，也不为新接口重复跑旧几何。
+
+### I3r：I3q通过后的有界TYX设备参考（并行纯编码，执行串行）
+
+这是独立实验workspace，不接生产type7/scene/bundle，不更新q，也不声称完整机器人摩擦已实现。I3q HOST验收通过是执行前置；可先在隔离树纯编码。首版CUDA、1..32world、每world1..6DOF/0..8samples，solve_many(tuple(problem))按异构尺寸一次设备批次，固定容量persistent buffers。公共问题定义复用I3q，完整M/D/v0/f/h与所有JA/JB/n/p/k/phi/mu/vs进入同一解。
+
+所有原输入先完整owned准入再FP32转换；正参数下溢/非有限/转换后非SPD拒绝。保存原FP64与真正上传FP32输入。设备计算A和free velocity、最终Fn平滑摩擦、全非对称Newton Jacobian；24更新×12回溯，不变。仅SPD A用Cholesky；Newton采用部分选主元行交换消元，记录实际swap计数。每次完整覆盖有效区/清padding，无跨调用warmstart。真实CUDA失败禁止继续用该实例；无数值HOST polish、对称化或Lagged fallback。
+
+全部world通过设备status、实际输出finite及独立HOST对原始输出的残差/载荷核验后，才整批发布immutable HOST-owned结果；坏末请求零launch，末world失败/晚下载/结果封装失败不发布前缀，原last_results整体保留。数值预算拒绝可用全新输入重试，不能让调用者把上批last_results误认为失败本批成功。按既有DeviceResources保释放次序/未知释放，不新增native生命周期策略。
+
+**FP32资格与HOST参考分开**：设备目标质量残差<=1e-5*(1+||vfree||A)，独立FP64代回实际上传输入/实际输出，质量残差<=2e-5*(1+||vfree||A)。原I3q 1e-10是否满足另报告，不冒相同精度。与原FP64参考解比较的工程门：速度每分量5e-5*(1+abs(reference))，力每分量.002N+.002*abs(reference)，world-origin矩1e-5Nm+.002relative；最终Fn摩擦上界容许FP32核验余量1e-5N。物理量、原始设备残差及独立核验值分别保存，无覆盖。
+
+固定验证：I3q六输入各一次W1；同六输入反序一次batch，按身份与W1比；32world/nv6/ns8容量例只将原两点µ0案例扩成6DOF并各四分同位置k、额外3DOF零contact映射/正质量，保原前三DOF物理响应，不冒新场景规模性能。另一个明确触发行交换的非对角M案例：M=[[.01,.1],[.1,2]]，D0/v0=0/f0，h=.001，JA映(x,z)，JB0、n=ez、point0、k4000、phi=-.001、mu0、vs=.001；独立Fn=4/1.004，v=(-.01Fn,.001Fn)，Newton首列.1>.01需交换。实际swap必须>0。
+
+故障覆盖末输入非法零launch、预算0的晚world求解失败、晚下载失败、可重试数值拒绝、close/UNKNOWN_RELEASE；原生资源故障只mock既有ledger回调，不制造真实CUDA设备崩溃。记录setup/上传/kernel+sync/下载/核验/整批时间，无速度通过门，不把少量case GPU运行叫优于Newton。最多一个首次完整focused组，必要诊断修复按具体失败，不重跑I3l长窗/旧静态几何。06:35后优先收尾，06:50后不新启无法结束的组。

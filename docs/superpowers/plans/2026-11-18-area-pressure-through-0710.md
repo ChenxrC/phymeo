@@ -178,3 +178,30 @@ A=M+h diag(D)，vfree=A^-1(Mv0+hf)。G=JA-JB，vn=n·Gv，vt=(I-nnT/(n·n))Gv，
 固定验证：I3q六输入各一次W1；同六输入反序一次batch，按身份与W1比；32world/nv6/ns8容量例只将原两点µ0案例扩成6DOF并各四分同位置k、额外3DOF零contact映射/正质量，保原前三DOF物理响应，不冒新场景规模性能。另一个明确触发行交换的非对角M案例：M=[[.01,.1],[.1,2]]，D0/v0=0/f0，h=.001，JA映(x,z)，JB0、n=ez、point0、k4000、phi=-.001、mu0、vs=.001；独立Fn=4/1.004，v=(-.01Fn,.001Fn)，Newton首列.1>.01需交换。实际swap必须>0。
 
 故障覆盖末输入非法零launch、预算0的晚world求解失败、晚下载失败、可重试数值拒绝、close/UNKNOWN_RELEASE；原生资源故障只mock既有ledger回调，不制造真实CUDA设备崩溃。记录setup/上传/kernel+sync/下载/核验/整批时间，无速度通过门，不把少量case GPU运行叫优于Newton。最多一个首次完整focused组，必要诊断修复按具体失败，不重跑I3l长窗/旧静态几何。06:35后优先收尾，06:50后不新启无法结束的组。
+
+## 04:20 后续调整：I3s 真实 FREE 六自由度有限面窗口
+
+I3q/r已分别通过10HOST与6个独立CUDA/故障节点。生产摩擦还需新law/ABI、完整积分点容量和真实动力学接缝；见[接缝图](../../development/area-pressure-friction-integration-map-20261118.md)。不在剩余时间仓促改变旧friction=none合同。下一批补生产法向路径尚缺的无导轨连续自由刚体证据；不是重复slider/hinge窗口。
+
+新增实验 free_body_support.py 与独立 test_area_pressure_free_body_support.py；root唯一串行执行，原scene agent纯author实验，training agent纯author测试。无需改生产src、旧例或门槛。固定一个model、world顺序(41,7,305)，h=.001s、150整批step/450world-step，CUDA dynamics＋默认HOST当前面；m=.30kg，40×40×20mm cube，COM=bodyorigin，均匀惯量diag(m/6000,m/6000,m/3750)，gravity=(0,0,-9.81)，D=0、无控制/外载/摩擦，native geom collision关闭。一个FREE joint，不锁平移/旋转，不每步重设q/v。
+
+压力资产沿I3l完整8corner+center/12tet，boundary p=0、center100000Pa；有限plate20×20×5mm、worldorigin(0,0,-.0025)、top z=0，真实顶面两三角。contact cap16、constraint cap64，模型solver128iterations/tol1e-10沿既有声明。三个世界仅初态不同：
+- 41 center-drop：xyz=(0,0,.011)，R=I，v=0；
+- 7 tilted-support：xyz=(0,0,(.01-.00073575)/cos(.02))，R=Rz(.35)Ry(.02)，v=0；
+- 305 offset-support：xyz=(.001,0,.00926425)，R=I，v=0。
+初始quaternion WXYZ；运行free角速度为body-local，平移速度为world。偏心是压力体真实x偏移，不移动样本伪造转矩。所有资产原数组和初态全保存。
+
+独立oracle每个实际入步只用另一个MjData的mj_forward/mj_fullM/mj_jac得到M、bias/passive/applied、COM/bodypose和完整双侧point J；不mj_step、不用CPU写产品状态。native无接触/约束。每个实际sample反变换到cube-local，独立帐篷场p=100000*max(0,min(1-|x|/.02,1-|y|/.02,1-|z|/.01))，本有限域底面项须独立最小且留余量；gradient=1e7*R[:,2]，g=n·gradient，k=dA*g，phi=-p/g。独立Jn=n·(JA-JB)，Fn_hat=max(0,-k(phi+h*Jn*vout))。全点保留，不删面/重归一/回退另一律。
+
+逐步固定门：
+- M平移块atol2e-6、转动块atol2e-9，其余atol2e-8，rtol3e-4；完整J rtol2e-5/atol2e-6，bias/passive/applied rtol3e-4/atol2e-5；
+- Fn与实际行：atol.001N+rtol.001；用独立Fn_hat、J、M重建vout，线速度atol3e-5m/s、角速度atol3e-4rad/s，均另rtol5e-4；六DOF广义力与矩不能只核合力；
+- 独立mj_integratePos(qin副本,实际vout,stored h)：位置atol2e-7m、四元数sign-invariant atol3e-7，实际quatnorm²误差<=2e-6；
+- 公开双方F/M对同参考点互反；world0/bodyorigin/COM矩核atol1e-5Nm+rtol.002、合力atol.002N+rtol.002；公开omega_world=R*vrot，不能把局部角速度当world；
+- 首步center为空；tilt与offset若独立闭式所有Fn严格正，使用[M+h²JᵀKJ]完整6×6解再核首步，未正不能按全部active冒通过。偏心首My>0、omega_y>0，倾斜首矩沿Rz(.35)ey为负，姿态须发生真实变化。
+
+窗口工程门：150步完整接受；center空→有载，中心姿态漂移<=2e-4rad；所有world无横向力，x/y漂移<=5e-6m。body z始终(.003,.03)m，线速度norm<.5m/s、角速度norm<20rad/s，相对初态旋转<.15rad；全部cube底角最大压入<3mm。tilt姿态最大变化>1e-4rad、offset>1e-3rad。不要求终态完全静止/水平，不改初态追绿。
+
+保存每步完整入/出q/v、receipt动力学、全部surface/quad/目录、真实raw设备观察、一次measure_many双方多参考点wrench、原生oracle和差异汇总、实际K/重力势及每步冻结J/phi代理BE余额。旋转/换区下不把ΣdA*p²/(2g)称全轨迹真实势能或用其守恒作门。失败保接受前缀，若几何进入未支持g/sharedface域则明确记录，不能过滤绕过。
+
+预定最多两HOST（fixture/独立参考）＋一完整CUDA窗口。通过后只从同次轨迹生成三格姿态/接触力/角度图，不重跑仿真。若发生实质问题按一次明确诊断修复对应实现；不扩大证明或调参数。06:35进入关闭/报告，07:10交总览。

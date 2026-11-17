@@ -36,6 +36,24 @@ B1固定短例复用I3v FREE偏心COM/六分量速度、mu=.5与mu=0、旧normal
 
 成功门：公开scene入口由当前q自动生成面，实际q/v和新载荷同次发布；原始M/J/输入/输出完整保存；正确与重复阻尼、一次与二次积分、最终与滞后Fn均可区分。内核通过但无public实际步，B1仍未完成。
 
+### B1接线清单（截止前源码核查，待开发）
+
+避免再造一套同名材料类型：将现有 AreaFrictionPairLaw 移入不依赖 runtime/ModelSpec 的 backends/area_friction_law.py，原 mujoco_area_friction.py 重导出同一个类对象。保留原导入路径和构造签名；用新旧导入次序、类对象一致性、不可变参数和原历史adapter的针对性兼容检查验证。这是未来变更，当前代码尚未移动。
+
+| 现有接入位置（均相对src/phymeo/backends） | B1必须连接的内容 |
+| --- | --- |
+| mujoco_heterogeneous.py：ModelSpec、_signature、_model_preflight | 末尾可选law tuple；完整有序pair；四名body/material身份、law、mu/vs、版本和精度进入分桶签名与预检 |
+| 同文件：Batch.__init__ | leaf创建传递声明；新law条件性进入bucket绑定，旧normal-only绑定不增加空字段 |
+| _mujoco_tyx_runtime.py：__init__ → mujoco_area_pressure.py：compile_area_plan | 捕获owned声明，统一能力、资源和准入；复用MuJoCoRuntime已有options工厂 |
+| _mujoco_tyx_runtime.py：_clone_selected | reset/restore重建不得漏传law而退回旧法向路径；未支持操作在重建前拒绝 |
+| mujoco_checkpoint.py：_model_binding；mujoco_area_pressure_state.py：area_binding；mujoco_entry_checkpoint.py：_entry_binding | 分别绑定物理配置与新accepted-record版本；旧schema不补造切向历史 |
+| mujoco_heterogeneous_area_scene.py：Scene.__init__ | 从当前只核双方body名，补到完整body/material身份；几何摘要和law摘要分别绑定 |
+| area_pressure_assets.py：_models/_match、Bundle.from_assets/assets_for | v1的friction=none封套不能直接匹配新law模型；明确拒绝而不静默改律 |
+
+BodyAreaPressureAsset本身只含几何与材料身份，可用于显式新建摩擦模型；旧v1 bundle仍按原无摩擦含义解码。允许用户显式提取几何并重新声明新law，但这不是旧物理checkpoint的restore。将来保存新摩擦配置使用新版本封套，分别绑定几何与law；新磁盘格式不作为B1内存Scene接通的额外前置。
+
+上述接线与同批实际三步、最终分离、真实载荷发布联合验收；仅提交law数据类不算B1完成。尤其保留不同mu/vs同MJB分桶、相同body但material不同拒绝、clone/reset不丢law三个负控。
+
 ## B2：真实双方、观察、恢复与晚失败（高难度）
 
 复用原异构五world场景，保h=.0005和完整资产；hinge与moving plate检查真JB/双方反作用与虚功，native-only world对原leaf保持原路结果。导轨案例不冒自由双体总角动量定理。

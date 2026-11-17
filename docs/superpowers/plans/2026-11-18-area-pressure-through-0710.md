@@ -233,3 +233,19 @@ I3r的8点参考不足以容纳完整有限面。I3u只将已验证算术提升�
 验证新schema owned/非法dtype与非SPD/正参数FP32下溢；单world128与单world12；32world交替128/12/0，原v0/f固定、最后world128，按身份与W1工程比较；128点原序/逆序；坏最后problem零launch、数值预算0末world失败保last_results、随后可重试、关闭释放。沿原速度5e-5*(1+abs(ref))、力.002+.002rel、矩1e-5+.002rel，另外直接代回实际上传问题/实际设备v核全部方程及最终Fn容量；不只比较制造目标。全部buffer/trace/字节和真实时间留存，不把新容量叫真实32机器人场景。一个首次focused组，失败保前缀并只诊断对应问题，不放宽门。
 
 完成后新wheel须包含这三文件并验证安装来源，原I3t混合场景结果仍绑定其原wheel，不倒灌新版本。若06:35仍未通过则保明确未完成状态并收尾，不赶时间接新scene或改旧合同。07:10交本轮总览。
+
+## 05:30 I3v：真实入步数据的摩擦装配接口
+
+I3u首次4节点通过。下一小批只做NEW src/phymeo/backends/mujoco_area_friction.py与tests/test_mujoco_area_friction.py，原scene agent author source、training agent完成outside consumer后author tests，root独占执行。禁止改旧Scene/type7/v1，不把新摩擦解再次施加到已正常推进的状态。
+
+API：AreaFrictionPairLaw(identity,mu,slip_speed_m_s)；MuJoCoAreaFrictionAdapter(model_spec,pair_laws)；prepare_from_receipt(receipt,layout=...,quadratures=...)返回owned PreparedAreaFrictionEntry(problem,quadratures,pair_laws,sample_catalog,binding,scope)。scope固定historical-same-entry-counterfactual-no-integration。模型静态信息从source-bound MJB重建仅读取，无FK/step。核三source SHA、layout尺寸/modelkey、完整声明pairs和材料身份、历史world/tick/time/configuration、receipt/dynamics q/v/time/phase，完整quad含空；不把历史configuration与restore后当前owner比较。任何剩余native可能pair/limit/dry friction/activation/BALL先拒。1..6DOF、完整样本<=128；三点每三角的quad最多126点，129明确拒，不能截尾。
+
+精度明确：M/J/COM/bias/passive/applied/v0为receipt实际设备数据的FP64解码；几何为source_quadrature原FP64 point/normal/dA/p/g；完整JA/JB在该原point重建。h=RN32(receipt.h)，D=RN32(source dof_damping)。f=applied+passive-bias+D*v0，禁止加入旧constraint力。新backend最后统一RN32 pack。与旧type7 packed-point算术只作工程比较，不保证逐字节同一。adapter没有伪造live能力；未来生产F2必须在积分前消费同阶段device数据，不能下载post-step receipt后再施力。
+
+固定新验证：一批两个模型各一实际step，不重跑I3s150步。模型A沿I3s完整cube/finiteplate资产，mass=.3/inertia同原，FREE初态沿tilted7，新增COM=(.001,-.002,.001)m与v0=(.02,-.01,-.005,.1,.2,-.1)，D0；原source pose与材料保持，目的是非对角M与完整角向pointJ。模型B水平slide，mass=.5、D40、h=.001、gravity0、v0=.02，无外载/控制，压力体初态高于同有限plate，完整空面。正确自由速度为m*v0/(m+hD)，漏+Dv0会重复阻尼，需明确区分。两模型native geom collision关闭，无limit/activation，剩余原生约束拒。
+
+独立CPU只mj_forward/mj_fullM/mj_jac，在actual entry q/v/controls计算M、所有双侧pointJ和bias/passive/applied，不mj_step。门沿I3s：M rtol3e-4并按平移/转动块2e-6/2e-9、其他2e-8；J rtol2e-5/a2e-6，力项rtol3e-4/a2e-5；f=D反消为0的浮点误差单独保存。生产实际normal step只用于获得真实入步字段，不把它称摩擦轨迹。
+
+由A同入步分别构造mu=.5与mu=0、vs=.001，B构造mu=.5空面；一个新CUDA solve_many共同求三条counterfactual问题。保存完整来源和结果；新律用I3u固定FP32残差/力矩门，µ0用独立全active线性解（先核所有Fn>0）或有限active-set oracle，不能调用旧solver当唯一oracle；D空解独立解析。全部新输出不回写场景；调用前后snapshot与revision保持。负控含错source/layout/phase/qv/time/identity/遗漏pair/非area rows/129样本/immutable alias，不能通过删字段或放宽误差门。
+
+I3v完成后构建包含新增backend/adapter的fresh wheel，旧I3t混合场景证据仍绑定旧wheel；新源码外consumer仅一真实128点CUDA解及完整原始输出比对。06:35起收尾，07:10停止。

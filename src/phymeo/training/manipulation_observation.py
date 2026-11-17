@@ -12,6 +12,8 @@ from types import MappingProxyType
 
 import numpy as np
 
+from .area_pressure_success import AreaPressureRoleBinding as AreaPressureRoleBinding
+from .area_pressure_success import AreaSuccessAdapter
 from .manipulation_tasks import Scene, SuccessFrame
 
 
@@ -44,7 +46,7 @@ class ManipulationSuccessReader:
     Restore pairs a cursor with a public frame from the restored physical capsule.
     """
 
-    def __init__(self, workspace, scenes):
+    def __init__(self, workspace, scenes, *, area_roles=None):
         self._lock = RLock()
         self._workspace = workspace
         binding = workspace.binding
@@ -53,10 +55,12 @@ class ManipulationSuccessReader:
             and binding.get("entry_phase") == "accepted-step-input",
             "public accepted-entry contact observation is required",
         )
+        has_area = any(row.get("area_pressure_pairs") for row in binding["source"]["buckets"])
         _require(
-            not any(row.get("area_pressure_pairs") for row in binding["source"]["buckets"]),
+            not has_area or area_roles is not None,
             "area contact needs an explicit body-pair success adapter",
         )
+        _require(has_area or area_roles is None, "area roles require an area-declared model")
         self._keys = tuple(binding["world_keys"])
         _require(
             isinstance(scenes, Mapping)
@@ -105,7 +109,12 @@ class ManipulationSuccessReader:
                 )
             )
         self._addresses = addresses
-        self._binding = tuple(identities)
+        self._area = AreaSuccessAdapter(workspace, area_roles, addresses) if has_area else None
+        self._binding = (
+            tuple(identities)
+            if self._area is None
+            else ("manipulation-area-success-v1", tuple(identities), self._area.binding)
+        )
         self._last = {}
 
     @property
@@ -121,6 +130,7 @@ class ManipulationSuccessReader:
                 "one nonnegative episode number per world is required",
             )
             arrays = self._workspace.readback(frame)
+            area_rows = self._area.validate(arrays, frame) if self._area is not None else None
             pending, output = dict(self._last), {}
             for row, key in enumerate(self._keys):
                 valid, tick, after, count, active, overflow = map(int, arrays["entry_meta"][row])
@@ -156,7 +166,7 @@ class ManipulationSuccessReader:
                 stamp = arrays["entry_clock"][row]
                 time_s = float(stamp[0]) - float(stamp[1])
                 episode = episodes[key]
-                fingerprint = _fingerprint(arrays, row)
+                fingerprint = self._fingerprint(arrays, row, area_rows)
                 if previous is None:
                     _require(tick == 0, "first consumption must start at input tick zero")
                 elif boundary == previous[4]:
@@ -183,6 +193,9 @@ class ManipulationSuccessReader:
                 body, qa, objects, fingers, support = self._addresses[key]
                 _require(arrays["entry_body_mask"][row, body] == 1, "object body is invalid")
                 finger_loads, support_z = [0.0, 0.0], 0.0
+                if area_rows is not None:
+                    loads, support_z, _ = area_rows[key]
+                    finger_loads = list(loads)
                 ids, data = arrays["entry_contact_ids"][row], arrays["entry_contact_data"][row]
                 world_wrench = arrays["entry_contact_wrench_world"][row]
                 for c in range(count):
@@ -220,6 +233,12 @@ class ManipulationSuccessReader:
             self._last = pending
             return MappingProxyType(output)
 
+    def _fingerprint(self, arrays, row, area_rows):
+        original = _fingerprint(arrays, row)
+        if area_rows is None:
+            return original
+        return sha256((original + area_rows[self._keys[row]][2]).encode("ascii")).hexdigest()
+
     def checkpoint(self):
         """Cursor only; the caller must pair it with physics and goal/history."""
         with self._lock:
@@ -237,6 +256,7 @@ class ManipulationSuccessReader:
             )
             _require(type(checkpoint.records) is tuple, "cursor records must be immutable")
             arrays = self._workspace.readback(frame)
+            area_rows = self._area.validate(arrays, frame) if self._area is not None else None
             pending = {}
             for record in checkpoint.records:
                 _require(type(record) is tuple and len(record) == 6, "cursor record layout")
@@ -288,7 +308,7 @@ class ManipulationSuccessReader:
                         and observed_tick == tick
                         and after == tick + 1
                         and time_s == float(stamp[0]) - float(stamp[1])
-                        and digest == _fingerprint(arrays, row),
+                        and digest == self._fingerprint(arrays, row, area_rows),
                         "cursor differs from paired physical frame",
                     )
                 pending[key] = (episode, tick, time_s, digest, frame.world_boundaries[row])

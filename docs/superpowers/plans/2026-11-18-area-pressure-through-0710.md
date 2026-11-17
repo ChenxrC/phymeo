@@ -98,3 +98,8 @@ I3l 连续轨迹完成后，优先 I3m 同帧多 body wrench 查询。当前 rea
 若 I3m 顺利且时间允许，I3n 补当前 body-local 压力资产的可携带声明：现 scene/checkpoint 只有资产身份 hash，调用者仍需 Python 重建资产。提供有版本/单位/模型及有序 pair 的有界数据封套，完整保存原节点、cells/faces、压力、材料身份，解码按现构造器重新验真实几何。只支持当前 full zero-boundary pressure 对 finite rigid mesh、无摩擦法向律；不把 XML/URDF 自动变压力资产，不声称 FFT 或新材料标定。先做数据往返/篡改/容量/owned 生命周期及小 CUDA 加载后与原资产同输出，再给独立运行说明。具体 schema 在实现前单独冻结。
 
 06:35 起关闭在途验证与可视化，补当前“声明→当前状态→候选/有限面→共同解→设备观察→应用”的架构及差距；07:10 汇总实际交付和后续优先级。未完成的节点明确保留，不用扩大测试矩阵填时间。
+### I3m 具体接口冻结
+
+`BodyContactWrenchRequest(world_key, body_name, reference_point_world, group_body_names=())` 为 frozen 请求，拥有三元FP64参考点tuple和原有序group tuple。`measure_many(frame, requests)`接受builtin tuple、1..1024个exact request；重复查询合法，输出次序保持。构造请求时验证类型/有限值；整个批次先按reader实际metadata验证world/body/group，末请求错误不得触发readback。随后一次workspace.readback，完整area validation一次，所有query共享这份owned输入。所有结果算完才返回tuple；缺历史的query保持None，相关矩缺省/溢出整体raise。无跨调用缓存、无部分结果状态。原measure构造单request并走同实现。1024为诊断请求上限，不修改32world、body或物理容量。
+
+冻结验证：已有I3k手向量的多body/不同reference/group、反序/重复、owned mutable input、invalid末请求零读取、末相关矩缺省和数值错误原子拒绝、空/invalid history、freshness委托及无跨帧缓存；短CUDA仅用I3j原场景两个原step再paired restore一步，按需selectedreset，many结果与同frame singles完全一致，公开readback次数1比N。该节点直接修改reader，因此其原HOST兼容组需要重验；不重跑I3l连续窗口。

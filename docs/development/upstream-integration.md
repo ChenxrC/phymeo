@@ -6,6 +6,11 @@ The old source trees, environments and qualification records remain intact.
 
 ## Current consolidation checkpoint — 2026-11-17
 
+Follow-up dependency delivery, module reviews and concrete merge blockers are
+recorded in [candidate merge gates](candidate-merge-gates.md). That review found
+an open native joint scalar ownership defect; this consolidation is not approval
+to merge the complete candidate.
+
 The active review branch is `feature/wh/phymeo-candidate-20261117`, based on
 `fb4286b1`. A fresh fetch still resolves official `origin/codex/dev` to
 `76a240d8499a1b6d117e47650015e85a73239b26`. It is an ancestor of this candidate;

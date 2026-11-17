@@ -1,5 +1,43 @@
 # PhySolve 原生运行时实验
 
+## 2026-11-17：FANUC 巨大数值的有限节奏核查
+
+本批针对前节的显式规则 `scalar_pd` FANUC 模板，不涉及无规则裸 URDF 的历史零速度。
+旧 direct 测试与机器人 Graph 测试均使用同一个 `fanuc_template()`、相同排除计划、
+`nconmax=128/njmax=256`、Euler 2 ms、外加广义力 .03。旧测试每一步完成/发布，
+首次检查第4步，最长连续到第5步后即reset；新测试每四步完成/发布，连续到第12步，
+并启用body/contact观测。不能把两个不同时间窗口的结果当作同条件数值比较。
+
+五路有限对照在N=1/8各执行一次，最多12步：旧step1无观测、step1带观测、
+enqueue direct1带观测、enqueue direct4带观测、Graph4带观测。使用同一编译模板，
+各自独立runtime，在第4/8/12步比较，不在Graph内部增加采样节点。
+同N内可枚举原生模型字段、初态snapshot和force摘要分别唯一；ctrl保持0，target
+初末均为0，外力逐个完成边界核验为原float32 .03。N=1五路在三个共同时间点的
+qpos/qvel/ctrl/qfrc_applied/qfrc_actuator完全一致；N=8在第4/8步也完全一致。
+第12步N=8在巨大数值下出现路线间差异，未将其解释为已修复或合理容差。
+
+| 旧step1无观测自身的时间点 | N=1最大绝对qpos | N=8最大绝对qpos |
+| --- | --- | --- |
+| 4步 / 8 ms | 0.0267989 | 0.0267989 |
+| 5步 / 10 ms | 0.211327 | 0.211327 |
+| 6步 / 12 ms | 1.69703 | 1.69703 |
+| 8步 / 16 ms | 140.153 | 140.153 |
+| 12步 / 24 ms | 1.78366e11 | 1.88617e12 |
+
+该测试模板经PHYMEO `scalar_pd` 装配已有kp=500、kd=50、armature=.01、被动
+damping=0和不限额actuator输出；这些是两套测试共享的配置，不是Graph新增控制，
+也不能把它们称作URDF资产自带参数。`.03`只表示外加广义力，不代表总驱动力。
+N=1旧direct的实际actuator广义力最大值在第4步约99.94，第8步约4.45e5。
+具体哪项参数、积分或求解因素导致失稳未做因果验证，不据此直接修改增益或步长。
+
+原正式direct N=1/8/64用例在新隔离安装再次 **3通过（77.95 s）**，原判据不变。
+它验证短窗口运动、world一致与reset重现，不包含绝对物理幅值上限或12步稳定性。
+十路诊断完成不计作物理验收通过。当前证据表明巨大数值不是Graph独有现象，
+未发现本次路线之间模型/初态/控制被替换；不能进一步声称所有接入正确或判定solver
+根因。上一批Graph资格失败保留，本批不扩大数值排查，不更改模型、控制或六CUBIN。
+证据在 `fanuc-cadence-audit-20261117/evidence/` 的 `cadence-results.json`、
+`cadence-comparison.json`、`original-direct-installed.xml` 和 `independent-review.md`。
+
 ## 2026-11-17：TYX 候选机器人 Graph 与生命周期验收
 
 本批安装组合为 TYX `68f86a9` 的 wheel（SHA256

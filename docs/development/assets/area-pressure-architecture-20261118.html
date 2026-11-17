@@ -4,10 +4,20 @@
 <title>Phymeo 面积接触 · 已实现架构与剩余连接</title>
 <style>
 *{box-sizing:border-box;margin:0;padding}body{font-family:"Segoe UI","Microsoft YaHei",sans-serif;background:#020617;color:#e2e8f0;padding:32px;line-height:1.6}.container{max-width:1360px;margin:auto}.header{margin-bottom:24px}.header-row{display:flex;align-items:center;gap:14px}.pulse-dot{width:12px;height:12px;background:#34d399;border-radius:50%}h1{font-size:28px;letter-spacing:-.02em}.subtitle{color:#94a3b8;font-size:15px;margin:8px 0 0 26px}.diagram-container{background:#081225;border:1px solid #1e293b;border-radius:16px;padding:18px;overflow-x:auto}svg{display:block;width:100%;min-width:1060px}.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:22px}.card{border:1px solid #334155;background:#0f172a;border-radius:12px;padding:21px}.card h2{font-size:17px;margin-bottom:9px}.card p{font-size:14px;color:#cbd5e1}.card a{color:#7dd3fc}.footer{margin:20px 0;color:#94a3b8;font-size:13px}svg text{font-family:"Segoe UI","Microsoft YaHei",sans-serif}.title{font-size:18px;fill:#f8fafc;font-weight:600}.sub{font-size:13px;fill:#cbd5e1}.small{font-size:12px;fill:#94a3b8}.lane{font-size:15px;font-weight:600}.tag{font-size:12px;font-weight:600}@media(max-width:850px){body{padding:16px}.cards{grid-template-columns:1fr}h1{font-size:23px}}
-</style></head>
+.guide{margin:18px 0 24px;border:1px solid #334155;background:#0f172a;border-radius:12px;padding:16px 20px}.guide-tabs{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}.guide button{border:1px solid #475569;border-radius:7px;padding:8px 14px;background:#172033;color:#cbd5e1;font:inherit;cursor:pointer}.guide button[aria-selected="true"]{border-color:#34d399;background:#07382f;color:#ecfdf5}.guide button:focus-visible{outline:3px solid #7dd3fc;outline-offset:3px}.guide p{font-size:14px;color:#cbd5e1}.guide a{color:#7dd3fc}.guide [hidden]{display:none}</style></head>
 <body><main class="container">
 <header class="header"><div class="header-row"><span class="pulse-dot"></span><h1>从当前场景状态，到实际接触力和运动</h1></div>
 <p class="subtitle">Phymeo · codex/exp · 2026-11-18　实线：已接通　虚线：仍需集成　范围：面积压力接触分支，不是全引擎功能宣言</p></header>
+<section class="guide" aria-label="阅读指引">
+<div class="guide-tabs" role="tablist" aria-label="选择阅读角度">
+<button id="tab-run" role="tab" aria-controls="panel-run" aria-selected="true" tabindex="0">现在能运行</button>
+<button id="tab-friction" role="tab" aria-controls="panel-friction" aria-selected="false" tabindex="-1">摩擦还差什么</button>
+<button id="tab-next" role="tab" aria-controls="panel-next" aria-selected="false" tabindex="-1">下一批怎样验收</button>
+</div>
+<div id="panel-run" role="tabpanel" aria-labelledby="tab-run" tabindex="0"><p>沿左侧绿色箭头阅读：物体位置和姿态变了，接触面会重新生成，再计算承载力并推进运动。已能运行落下承载、倾斜支撑和偏心转动；目前这条面积主链仍是无摩擦。<a href="../area-pressure-free-body-support-report-20261118.md">看同一条真实轨迹的视频与说明</a>。</p></div>
+<div id="panel-friction" role="tabpanel" aria-labelledby="tab-friction" tabindex="0" hidden><p>右侧紫色组件已经能共同计算向上的承载力和切向阻力，并验过设备输入及原生积分接缝。黄色虚线仍未接通：还需在实际场景中，把新材料声明、同一步运动、完整摩擦载荷与恢复机制连起来。当前不能据此宣称已经支持摩擦抓持。</p></div>
+<div id="panel-next" role="tabpanel" aria-labelledby="tab-next" tabindex="0" hidden><p><strong>B1</strong>：公开Scene入口能完成含摩擦的真实步，运动与力一致。<strong>B2</strong>：双方都能受力，晚故障、观察和恢复相位正确。<strong>B3</strong>：连续滑动、卸载及偏心转动完成，再比较完整步成本。普通滑出遇到g=0时另作模型选择，不删面追绿。<a href="../../superpowers/plans/2026-11-18-area-friction-production-integration.md">打开具体开发与验收计划</a>。</p></div>
+</section>
 <div class="diagram-container">
 <svg viewBox="0 0 1320 1040" role="img" aria-labelledby="diagram-title diagram-desc">
 <title id="diagram-title">面积接触当前架构</title><desc id="diagram-desc">左侧是已运行的当前状态、有限接触面、法向共同求解和设备观察链路。右侧是已验证的128点共同摩擦backend和设备装配，以及FFT、Kamino独立参考。摩擦组件尚未连接实际场景积分与新载荷发布。</desc>
@@ -86,4 +96,8 @@
 <article class="card"><h2>下一阶段怎样判断进展</h2><p>下一批直接接公开场景摩擦步，再补观察/恢复和连续任务。普通滑出可能触发 g=0 的模型边界，另设小实验；不通过删面追绿。</p><p><a href="../../superpowers/plans/2026-11-18-area-friction-production-integration.md">后续 B1–B3 开发与验收</a></p></article>
 </section>
 <footer class="footer">基于当前源码与本轮保存证据。实验分支尚未合入 dev。图示由 architecture-diagram-generator 模板调整，模板许可见同目录 architecture-template-LICENSE.txt。</footer>
-</main></body></html>
+</main><script>
+(()=>{const tabs=[...document.querySelectorAll('.guide [role="tab"]')];
+function select(tab){for(const item of tabs){const active=item===tab;item.setAttribute('aria-selected',String(active));item.tabIndex=active?0:-1;document.getElementById(item.getAttribute('aria-controls')).hidden=!active;}}
+for(const tab of tabs){tab.addEventListener('click',()=>select(tab));tab.addEventListener('keydown',event=>{let index=tabs.indexOf(tab);if(event.key==='ArrowRight')index=(index+1)%tabs.length;else if(event.key==='ArrowLeft')index=(index+tabs.length-1)%tabs.length;else if(event.key==='Home')index=0;else if(event.key==='End')index=tabs.length-1;else return;event.preventDefault();select(tabs[index]);tabs[index].focus();});}})();
+</script></body></html>

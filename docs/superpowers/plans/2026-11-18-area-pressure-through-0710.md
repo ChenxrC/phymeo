@@ -142,3 +142,25 @@ I3l/I3m/I3n均已完成。I2b已覆盖真实hinge＋可动slider的法向转矩�
 预定判别：支撑Fn=4N；低载启动exact vt+=0、smooth非零；冲击Fn=50/21或700/501N；卸载Fn_final=0，exact Ft=0，Lagged |Ft|>.19N。最后一条作为模型差异必须公开，不能用能量耗散通过掩盖最终Fn的Coulomb上界不满足。保存输入/free/new速度、F0/Fn/Ft/impulse/残差/迭代、动能/弹性能/BE外功/法切功率。只评估既定三律，不为Lagged改名宣称即时Coulomb。
 
 依据：[Lagged原论文 §V-B、VII-C](https://arxiv.org/html/2312.03908v3)、[Drake近似类型](https://drake.mit.edu/pydrake/pydrake.multibody.plant.html#pydrake.multibody.plant.DiscreteContactApproximation)、[MuJoCo摩擦锥](https://mujoco.readthedocs.io/en/stable/computation/index.html#friction-cones)。后续是否实现新显式摩擦law，取决于同一步载荷/运动、最终法向capacity要求和一般多接触求解方案；不由本解耦参考直接推出产品已支持摩擦。
+
+### 03:30 I3p实际结果与I3q执行前合同
+
+I3p源码596ad132，10新HOST/0.19s通过，固定24行结果完整保存。卸载两h的最终Fn=0，Lagged仍分别有约.199740/.199745N切向力；支撑低载平滑律存在.427537/.346014mm/s微滑，精确1D Coulomb为零。由于当前目标要求与最终法向承载一致，后续先研究 **final-normal smooth**，不把Lagged当现法向路径的无差别替换，也不把平滑律称精确静摩擦。
+
+I3q限定独立HOST共享自由度参考，新增experiments/area_pressure/coupled_friction_reference.py及独立tests，不修改生产type7/观察ABI/资产版本。通用输入完整M、非负对角关节阻尼D、v0、外广义力f、h，以及每点p/n/JA/JB/k/phi/mu/vs；1..6 DOF、0..8 samples。M须有限对称正定，全部输入owned不可写，phi<=0、k>0、mu>=0、vs>0。法向先核近单位(1e-12)再显式单位化，保存实际使用n；投影用双叉积/(n·n)，不将纯法向误作滑移。
+
+A=M+h diag(D)，vfree=A^-1(Mv0+hf)。G=JA-JB，vn=n·Gv，vt=(I-nnT/(n·n))Gv，Fn=max(0,-k(phi+h vn))，Ft=-mu Fn vt/sqrt(vt·vt+vs²)。求同一v的R=A(v-vfree)-hΣGT(Fn n+Ft)=0。保留Fn对v的交叉项，Jacobian一般非对称，禁止对称化/Cholesky解Newton矩阵或先独立求法向再补摩擦。物理M的Cholesky只用于准入及残差度量。
+
+固定上限24 Newton updates、每次最多12实际回溯(power0..11)，初值vfree；用完整实际残差的质量度量回溯，不对候选状态施修复。最终重验 ||A^-1/2 R||2 <=1e-10*(1+||vfree||A)。奇异/非有限/预算失败明确拒绝，保存诊断，不回退Lagged或返回最后iterate冒通过；不保证任意输入收敛/唯一。允许更小预算作故障验证。
+
+固定六输入，各h=.001：
+
+- support/release：两个平移DOF(x,z)，M=.5I、D=0，JA把两个DOF映到ex/ez，JB=0、point=0、n=ez、mu=.5、vs=.001、k4000。support v0=(.02,0)、f=(0,-4)、phi=-.001；release v0=(.02,.3)、f=0、phi=-.0001。独立解析normal和标量单调方程参考。
+- shared-one-dof：M=.5、D=0、v0=.02、f=0，JA=(1,0,1)^T、JB=0、n=ez、point0、k4000、phi=-.001、mu=.5、vs=.001。法切响应共用一个DOF，独立标量根区间[.02,.028]。
+- two-point-manufactured：3DOF(vx,vz,omega_y)，M=diag(.5,.5,.0004)、D=(1,2,.001)、v0=(.02,-.01,.2)，points=(±.02,0,-.01)，JA rows=(1,0,-.01),(0,0,0),(0,1,-x)，JB0，n=ez，K=(2000,3000)、phi=(-.001,-.0008)、mu=(.4,.6)、vs=.001。预定v*=(.015,-.002,.3)，独立手算vt=.012、vn=(.004,-.008)、Fn=(1.992,2.424)，由这些力倒算固定f使其成为根。只作有已知解的耦合数值验证，不能冒真实外载场景。
+- two-point-frictionless：同两point/M/J/K/phi，D=0、v0=(0,-.1,.2)、f0、mu0。独立四active-set法向参考，保留非对角质量响应。
+- empty：support的M/D/v0/f，但0samples，精确回到自由速度。
+
+另验pair反序、空间正交旋转/共同平移后的force/moment与虚功、近单位法向纯法向无伪摩擦、owned输入和shape/容量/非正定/非法参数、预算失败原子性。保存同次六结果完整输入/exit速度、样本法切force/双侧wrench/广义力、全部尝试/残差，以及真实M动能、线性代理gap弹性能、BE外功/D耗散/摩擦功；最后能量只针对冻结J/phi线性代理，不冒实际非线性轨迹。
+
+该节点查清最终Fn律在共享质量中的可执行接缝；通过后再决定小型TYX设备参考或生产集成计划。已有450步正常支撑/三体窗口不作为摩擦通过证据，也不为新接口重复跑旧几何。

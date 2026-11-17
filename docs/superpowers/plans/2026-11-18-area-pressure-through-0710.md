@@ -249,3 +249,18 @@ API：AreaFrictionPairLaw(identity,mu,slip_speed_m_s)；MuJoCoAreaFrictionAdapte
 由A同入步分别构造mu=.5与mu=0、vs=.001，B构造mu=.5空面；一个新CUDA solve_many共同求三条counterfactual问题。保存完整来源和结果；新律用I3u固定FP32残差/力矩门，µ0用独立全active线性解（先核所有Fn>0）或有限active-set oracle，不能调用旧solver当唯一oracle；D空解独立解析。全部新输出不回写场景；调用前后snapshot与revision保持。负控含错source/layout/phase/qv/time/identity/遗漏pair/非area rows/129样本/immutable alias，不能通过删字段或放宽误差门。
 
 I3v完成后构建包含新增backend/adapter的fresh wheel，旧I3t混合场景证据仍绑定旧wheel；新源码外consumer仅一真实128点CUDA解及完整原始输出比对。06:35起收尾，07:10停止。
+## 05:55 I3w：设备驻留布局直接装配的下一原子批
+
+I3v首次3节点通过，新wheel源码外128点消费通过。剩余时间增加一个独立设备接缝，不改旧advance/积分/Scene/type7/v1，不把历史输入重放称为live零读回生产。新增且仅新增 backends/_tyx_area_friction_entry.py、tests/test_tyx_area_friction_entry_pack.py、固定fixtures/area_friction_entry/entry.json.gz与README；原scene agent author模块，原training agent author测试，root唯一执行。父只复制I3v完整原证据72010B/SHA50583f6e9f6875a77e09c3c3fa645588aa30c33b7b7d4b6113b1d1731bccd1b6作为可移植fixture，不重新运行scene。
+
+固定源layout：M[W,P,P]、Jcom[W,B,6,P]（前三world linear、后三world angular）、motion[W,B,7,3]（slot5=COM）、v/bias/passive/applied[W,P]、vectors[9,max(8,nq)]（row1=D）、FP32 h；P=max(8,nv)。area_input[W,C,8]=(point3,n3,k,phi)、pair_index[W,C]、sizes[W]、body_ids[pair,2]、新pair_law[pair,2]=(mu,vs)。几何是原实际打包FP32点，不能与I3v原FP64点假称逐字节等价。
+
+一个metadata-only wrapper核实际数组shape/dtype/backend、整数extent和源/输出别名；不读取设备值。一个pack kernel清所有输出与padding，验证上游status、完整count<=128、全部pair/body索引及有限参数/物理域后，写I3u七输入：sizes、M、(D,v0,f)、h、完整10字段sample、JA、JB。f=applied+passive-bias+Dv0；Jpoint=Jcom_linear+Jcom_angular_column×(point-COM)。不能改D、重归一normal或截尾。只支持1..6DOF、1..32world，原128完整点边界。
+
+失败独立pack_status保留，上游status原buffer不改；失败lane的sizes nv=0/ns=0使已有solve_batch先置meta1并跳过数值分支。不要让solver清meta掩盖pack错误，不额外增加重复gate kernel。caller需在最终下载后同时核pack_status和solve meta，全批成功才发布。本批没有生产场景publish，不能宣称生产事务已接通。
+
+验证同一个runtime pack→现solve_batch，之间不得download或HOST重新pack，随后保存全部source、七实际pack输出、solverraw/trace和错误码。两个固定pipeline：nv6/W4前三为actualA mu=.5、actualA mu0、actualA空面；第四明确synthetic-layout-only，复制A但plate COM=(.01,-.02,.005)、plate J=FP32(.25*pressure J)，防JB硬编码0，不称额外真实物理。另nv1/W1为实际空面D40滑块。独立HOST在实际packed point上核完整J/f与全部方程、原FP32误差门；不调用新pack制造oracle。实际输入fixture保持原字节。
+
+错误覆盖：最后world上游失败、非法count/pair/body索引、NaN/zero normal/非法mu/vs/k/phi/h、算术溢出；不能越界/静默降级/回旧solver成功。metadata非法extent/dtype/alias先拒零launch；设备失败完整保原始字，不以成功前缀冒整批发布。允许原pipeline失败后明确新输入重试，所有状态从本次完整清理得到。
+
+目标06:20纯author交接、06:35前首次focused验证；若出现实现问题只修明确根因、不改fixture/门槛。没有时间则保UNEXECUTED/失败原证据并报告，不把独立pack包装成F3。07:10停止。

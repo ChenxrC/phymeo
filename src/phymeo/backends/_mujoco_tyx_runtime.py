@@ -148,7 +148,10 @@ class MuJoCoTyxDynamics:
     """Same input-step device fields; linear/angular Jacobian rows in world axes.
 
     applied includes actuator effort, qfrc_applied and the COM world wrench
-    projection. passive is separate; M @ smooth_acceleration = applied + passive - bias.
+    projection. passive is separate. For native constraints, M @ smooth_acceleration
+    = applied + passive - bias. The opt-in area-pressure route uses M+hD on the
+    left instead, where D is the actual joint damping matrix; this is the free
+    acceleration response used by its backward-Euler velocity solve.
     """
 
     body_position: np.ndarray

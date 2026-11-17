@@ -1,49 +1,40 @@
 # Phymeo 当前续作入口
 
-更新：2026-11-18。当前分支 codex/exp；本轮改动尚未 push，dev 保持 76a240d8。先核实时 Git/WIP 与 agents，再以本页和最新报告继续，不从旧历史中的“正在运行”恢复任务。
+更新：2026-11-18。当前codex/exp；本轮未push，dev仍76a240d8。先核实时Git/WIP与agents，再读本页和最新报告，不恢复旧历史中的运行任务。
 
-## 当前任务
+## 当前任务与状态
 
-用户要求本批持续到北京时间 07:10。执行入口：[本轮计划](../superpowers/plans/2026-11-18-area-pressure-through-0710.md)。
+用户要求本批到北京时间07:10。当前I3f–I3w已按各自有限范围完成。root唯一项目执行owner；原agent仅隔离author/只读，所有import、测试、数值、静态、build/install串行。
 
-I3f–I3s 已按各自范围完成。I3s 的三种 FREE 初态共450 world-step通过原生M/J/运动独立保存审计，原2HOST通过；初次oracle平面绑定失败及修复均保留，没有重跑物理。I3t新wheel源码外混合场景已完成；I3u正在author可复用128点设备摩擦模块，尚未执行。原scene/training agent只分别author新source/test，root是唯一项目执行owner。全部import、测试、数值、静态和构建串行。
+最后有界I3x正在author：固定已保存共同载荷，调用原native积分一次，检查actualv上的力律；不重跑接触解/旧轨迹、不改产品源码，也不把历史入口诊断叫live Scene。执行与收尾以[本轮计划](../superpowers/plans/2026-11-18-area-pressure-through-0710.md)实际新记录为准。
 
-## 先读这些
+## 最短阅读顺序
 
-1. [当前连接架构与差距](area-pressure-connected-architecture-20261118.md)及[离线架构图](assets/area-pressure-architecture-20261118.html)。
-2. [450 步真实支撑窗口与视频](area-pressure-heterogeneous-support-report-20261118.md)、[三可动物体双区释放](area-pressure-three-body-release-report-20261118.md)。
-3. [独立 CUDA 摩擦参考](area-pressure-tyx-coupled-friction-report-20261118.md)、[生产接缝图](area-pressure-friction-integration-map-20261118.md)。
-4. [后续生产摩擦 F1–F6 计划](../superpowers/plans/2026-11-18-area-friction-production-integration.md)。
+1. [当前连接架构](area-pressure-connected-architecture-20261118.md)及[离线架构图](assets/area-pressure-architecture-20261118.html)。
+2. [I3s FREE真实连续窗口与视频](area-pressure-free-body-support-report-20261118.md)，了解已经能运行的法向链。
+3. [I3u 128点摩擦backend](area-pressure-backend-friction-report-20261118.md)、[I3v实际历史入步](area-pressure-entry-friction-report-20261118.md)、[I3w设备装配](area-pressure-resident-friction-pack-report-20261118.md)。
+4. [下一批B1–B3计划](../superpowers/plans/2026-11-18-area-friction-production-integration.md)与[源码live交接](area-friction-live-integration-handoff-20261118.md)。后者包含实际文件、native坐标备选与普通边缘g=0反例。
 
-## 当前能力及边界
+## 能力边界
 
-- 当前模型 q/v → FK → 按模型选择 body-local 资产 → 自动有限面 → 真实 dA/p/g → MuJoCo-TYX 共同法向解 → 整批状态/载荷提交 → 持久设备观察已接通。
-- 默认几何 HOST；可选设备拓扑＋HOST 精确复核。批量筛选/一次网格准备在固定5/20/32世界、相同输出下取得约9.7–11.3%整步减少，不泛化为全GPU或快于Newton。
-- 任务 Env 已能驱动此链；native+area多body力/力矩一次读回、资产保存/加载、选择reset/成对恢复均有各自证据。新面积特征尚未完成共享策略/PPO接线。
-- 生产面积律仍为无摩擦、冻结入步几何的弹性BE法向响应。摩擦HOST/CUDA只是独立共享DOF参考，未改type7、v1观察或friction=none资产。
-- 连续承载/卸载、三体释放保留其明确导轨；新增[FREE三初态150步及视频](area-pressure-free-body-support-report-20261118.md)验证真实旋转与法向载荷。没有宣称真实自由抓持、一般软软/薄布折叠、面积CCD、任意机器人或通用算法自动选择完成。
-- FFT非局部半空间与Kamino动力学各有独立参考用途。双峰实验已显示独立峰相加和force-only表的局限，不能以格点独立弹簧替代材料耦合。
+当前模型q/v→自动有限面→真实dA/p/g→MuJoCo-TYX共同法向解→统一状态/载荷→持久观察与任务Env已接通。生产面积律仍无摩擦；几何为HOST或设备拓扑+HOST精确复核，不称全GPU精确碰撞。
 
-## 复用证据，不重复执行
+连续导轨承载/卸载、三可动物体双区释放已验；另有三种FREE初态各150步，实际旋转、独立M/J/原生坐标审计和同轨迹视频。I3s原oracle平面绑定首错保留，修正只审原450world-step，无物理重跑，不把该pytest初次失败改写为全绿。
 
-| 连接 | 报告 |
-| --- | --- |
-| 批量候选 / 当前网格一次准备 | [I3f](area-pressure-batched-candidates-report-20261118.md)、[I3g](area-pressure-single-preparation-report-20261118.md) |
-| 固定多规模比较 | [I3h](area-pressure-batch-scale-report-20261118.md) |
-| 显式area角色 / 任务Env | [I3i](area-pressure-success-reader-report-20261118.md)、[I3j](area-pressure-manipulation-env-report-20261118.md) |
-| 多body wrench / 一次读回 | [I3k](area-pressure-body-wrench-report-20261118.md)、[I3m](area-pressure-wrench-batch-report-20261118.md) |
-| 源码外wheel | [I3t](area-pressure-wheel-report-20261118.md) |
-| 完整资产文件 | [I3n](area-pressure-assets-report-20261118.md) |
-| 摩擦选型 / HOST共同解 / CUDA参考 | [I3p](area-pressure-friction-model-report-20261118.md)、[I3q](area-pressure-coupled-friction-report-20261118.md)、[I3r](area-pressure-tyx-coupled-friction-report-20261118.md) |
+摩擦backend已6DOF/128完整点/32world资格；I3v历史适配和I3w设备pack均已验。源码外新wheel也通过对应组。尚未将新Fn/Ft接入真实Scene积分、law-aware载荷发布与恢复；不能把旧type7、v1的F=nFn或friction=none悄改含义。普通滑出有g=0准入边界，不能删面追绿。
 
-各报告指向原完整raw日志、实际输入/输出、失败和保存清单。原生旧路径只在确实受影响时回归；不重跑同hash绿组、重建已结束session或重审同档案。原44,556字节入口已原样移至[历史入口](p65-continuation-history-through-20261118-i3o.md)；其中“当前/运行中”均为历史，不是新指令。
+固定5/20/32world同输出后暖步成本减少约9.7–11.3%，仅属于该法向案例。没有普遍快于Newton、任意复杂机器人或摩擦生产提速结论。面积策略特征/PPO、一般软软/薄布折叠、面积CCD、通用自动选型仍未接通；FFT与Kamino保持独立参考用途。
+
+## 下一步与复用规则
+
+下一批B1直接完成一条可选公开Scene摩擦路径：声明/身份+真实resident同入步+一次原生积分+新载荷记录同时交付。B2补真双侧、多桶、reader/codec/restore/故障；B3连续多案例与完整步成本，再扩DOF/一般约束、GPU规模和训练。
+
+物理提交前失败重试step；提交后观察失败只重试观察或依协议restore，不能重复推进。各报告原raw、完整输入/输出、失败与source绑定直接复用；不重跑同hash已绿组、不重新开已关闭session，不以更多相似证明替代新功能。
+
+原44,556字节入口保存在[历史入口](p65-continuation-history-through-20261118-i3o.md)，只作历史索引。旧全景和当前模块报告共同判断范围，不给P6.5总体完成百分比。
 
 ## 操作约束
 
-父树是旧共享接缝唯一owner。所有命令显式workdir；需要时require_escalated，sandbox不可见不等于仓库坏。保留三个既有未跟踪文件及原agent WIP，不reset覆盖，不新建周期任务。执行前fresh entrypoint-aware guard，外来项目执行等待自然结束，不kill。
+父树拥有所有旧共享接缝。保留三个原未跟踪文件及原agents WIP；命令显式workdir，必要require_escalated。每次项目执行fresh entrypoint-aware guard；外来执行自然结束，不kill。仅沿用原agent，不重复派已完成任务。
 
-本轮不改dev/main、不push、不发包、不改依赖pin。旧证据Temp入口可能是Junction；只用canonical archive，不跟随删除或补回副本，不把压缩JSON叫缺失。测试/工具的开源整理仍为后续优化。
-
-## 下一步判断
-
-I3s窗口及同轨迹图已完成；I3t源码外wheel边界也已完成；继续I3u可复用128点设备模块，06:35收尾、07:10报告。之后按F1–F5接入真实场景摩擦，再扩混合约束与规模。每一步须增加可观察能力，失败定位到对应层；不用追加相似测试、调案例参数或重复几何证明消耗时间。局部接触进展不代表整个P6.5或Newton功能对齐完成。
+本轮不改dev/main、不push、不发包、不改pin、不建周期任务。旧Temp证据入口可能是Junction；使用canonical archive，不跟随删除、不补副本或全解压。工具开源整理仍是后续优化。

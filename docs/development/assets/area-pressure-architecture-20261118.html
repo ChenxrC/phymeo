@@ -10,7 +10,7 @@
 <p class="subtitle">Phymeo · codex/exp · 2026-11-18　实线：已接通　虚线：仍需集成　范围：面积压力接触分支，不是全引擎功能宣言</p></header>
 <div class="diagram-container">
 <svg viewBox="0 0 1320 1040" role="img" aria-labelledby="diagram-title diagram-desc">
-<title id="diagram-title">面积接触当前架构</title><desc id="diagram-desc">左侧是已运行的当前状态、有限接触面、法向共同求解和设备观察链路。右侧是独立摩擦参考及FFT、Kamino研究，尚未替代场景运行时。</desc>
+<title id="diagram-title">面积接触当前架构</title><desc id="diagram-desc">左侧是已运行的当前状态、有限接触面、法向共同求解和设备观察链路。右侧是已验证的128点共同摩擦backend和设备装配，以及FFT、Kamino独立参考。摩擦组件尚未连接实际场景积分与新载荷发布。</desc>
 <defs><pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse"><path d="M24 0H0V24" fill="none" stroke="#17233b" stroke-width=".5"/></pattern>
 <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10Z" fill="#34d399"/></marker>
 <marker id="pending" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10Z" fill="#fbbf24"/></marker></defs>
@@ -25,7 +25,7 @@
 <rect x="12" y="15" width="700" height="977" rx="12" fill="none" stroke="#285345" stroke-width="1.5"/>
 <rect x="750" y="15" width="552" height="977" rx="12" fill="none" stroke="#514064" stroke-width="1.5"/>
 <text x="35" y="48" class="lane" fill="#6ee7b7">已实现：法向面积接触运行链路</text>
-<text x="775" y="48" class="lane" fill="#c4b5fd">独立研究 / 后续连接</text>
+<text x="775" y="48" class="lane" fill="#c4b5fd">已验证摩擦组件 / 待接生产</text>
 <!-- Main runtime column -->
 <g fill="#07382f" stroke="#34d399" stroke-width="1.5">
 <rect x="300" y="80" width="330" height="85" rx="6"/><rect x="300" y="210" width="330" height="85" rx="6"/>
@@ -60,15 +60,15 @@
 <text x="805" y="163" class="sub">卸载时 Lagged 可保留切向力；平滑律有微滑</text>
 <text x="805" y="190" class="small">用于选型；不是三个可随意切换的生产后端</text>
 <rect x="780" y="255" width="490" height="170" rx="6" fill="#281a42" stroke="#a78bfa" stroke-width="1.5"/>
-<text x="805" y="285" class="title">共享 DOF 的最终法向平滑摩擦</text>
-<text x="805" y="313" class="sub">HOST：六固定输入、10 项测试已通过</text>
-<text x="805" y="338" class="sub">法向与切向同解；保留非对称导数和实际回溯</text>
-<text x="805" y="363" class="sub" id="cuda-status">CUDA：32 world / 6 DOF / 8 点独立验证通过</text>
-<text x="805" y="391" class="small">尚未接入上方 Scene、资产版本与运行时约束组合</text>
+<text x="805" y="285" class="title">6 DOF / 128 点共同摩擦 backend</text>
+<text x="805" y="313" class="sub">法向与切向同解；完整非对称导数与实际回溯</text>
+<text x="805" y="338" class="sub">真实入步 M/J → resident 设备 pack → 同一 solver</text>
+<text x="805" y="363" class="sub" id="cuda-status">32 world 边界通过；新 pack 在源码外安装包验证</text>
+<text x="805" y="391" class="small">尚未连入实际 Scene 积分与新载荷记录，不是 live 摩擦</text>
 <rect x="780" y="470" width="490" height="105" rx="6" fill="#35260e" stroke="#fbbf24" stroke-width="1.5"/>
 <text x="805" y="501" class="title">下一接线：共同状态与共同载荷</text>
-<text x="805" y="528" class="sub">明确接触律版本 / 当前 J 和 M / 真实积分</text>
-<text x="805" y="553" class="sub">再验证持续滑动、转动、边缘与真实抓持</text>
+<text x="805" y="528" class="sub">显式 law / 真实 owner / actual vnext 力律复核</text>
+<text x="805" y="553" class="sub">一次原生积分 + 新 Fn/Ft 记录 + 整批共同提交</text>
 <rect x="780" y="685" width="490" height="125" rx="6" fill="#281a42" stroke="#a78bfa" stroke-width="1.5"/>
 <text x="805" y="715" class="title">Kamino / FFT：各自独立的参考</text>
 <text x="805" y="743" class="sub">Kamino：刚体接触动力学；FFT：非局部半空间</text>
@@ -76,14 +76,14 @@
 <text x="805" y="793" class="small">没有把 FFT 格点冒充互不相关的局部弹簧</text>
 <rect x="780" y="850" width="490" height="95" rx="6" fill="#301824" stroke="#fb7185" stroke-width="1.5"/>
 <text x="805" y="879" class="title">尚未具备的通用能力</text>
-<text x="805" y="905" class="sub">通用自动选型 / 全 GPU 精确面 / 面积 CCD</text>
-<text x="805" y="930" class="sub">任意软软材料 / 异构语义策略和 PPO 全连接</text>
-<text x="35" y="1020" class="tag" fill="#6ee7b7">绿色：实际运行链路</text><text x="290" y="1020" class="tag" fill="#c4b5fd">紫色：独立参考</text><text x="530" y="1020" class="tag" fill="#fbbf24">黄色虚线：待集成</text><text x="800" y="1020" class="small">不把 HOST 几何 + CUDA 动力学称为全 GPU 碰撞</text>
+<text x="805" y="905" class="sub">任意边缘 g≤0 / 全 GPU 精确面 / 面积 CCD</text>
+<text x="805" y="930" class="sub">通用自动选型 / 软软材料 / 面积特征接策略</text>
+<text x="35" y="1020" class="tag" fill="#6ee7b7">绿色：实际运行链路</text><text x="290" y="1020" class="tag" fill="#c4b5fd">紫色：独立已验组件</text><text x="530" y="1020" class="tag" fill="#fbbf24">黄色虚线：待集成</text><text x="800" y="1020" class="small">不把 HOST 几何 + CUDA 动力学称为全 GPU 碰撞</text>
 </svg></div>
 <section class="cards">
 <article class="card"><h2>真实连续闭环</h2><p>450步导轨窗口、三动体双区释放；另有三种FREE初态各150步，独立核M/J/坐标积分，真实发生倾斜和偏心转动。无摩擦支撑尚非抓持。</p><p><a href="../area-pressure-free-body-support-report-20261118.md">连续轨迹、视频与查看器</a></p></article>
 <article class="card"><h2>批量与生命周期</h2><p>5 / 20 / 32 world 同输出比较；批量筛选、一次网格准备、多 body 一次观察、资产文件与成对恢复。固定案例成本下降，不宣称普遍快于 Newton。</p><p><a href="../area-pressure-batch-scale-report-20261118.md">规模结果</a> · <a href="../area-pressure-assets-report-20261118.md">资产合同</a></p></article>
-<article class="card"><h2>下一阶段怎样判断进展</h2><p>优先把同一步摩擦载荷接回实际运动，再做滑动、边缘和双向旋转。用固定多案例和明确失败判断，不用增加相似测试数量代替新功能。</p><p><a href="../area-pressure-coupled-friction-report-20261118.md">已通过的共享 DOF 参考</a></p></article>
+<article class="card"><h2>下一阶段怎样判断进展</h2><p>下一批直接接公开场景摩擦步，再补观察/恢复和连续任务。普通滑出可能触发 g=0 的模型边界，另设小实验；不通过删面追绿。</p><p><a href="../../superpowers/plans/2026-11-18-area-friction-production-integration.md">后续 B1–B3 开发与验收</a></p></article>
 </section>
 <footer class="footer">基于当前源码与本轮保存证据。实验分支尚未合入 dev。图示由 architecture-diagram-generator 模板调整，模板许可见同目录 architecture-template-LICENSE.txt。</footer>
 </main></body></html>

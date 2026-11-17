@@ -84,3 +84,7 @@ native pyramidal 摩擦、soft limits、dry friction 与新面积摩擦共用自
 一般 native/area 共解、activation/BALL 扩域、更多 DOF/样本、全设备几何、精确静摩擦及滚动/扭转律应分别立项。
 新观察版本需同步覆盖 checkpoint raw/typed/dynamics 一致性、目录摘要、Torch/任务 reader 和 body wrench；旧 `friction=none` 胶囊不自动升级。
 本图谱仅给出源码事实与候选接入边界；I3r 已获独立设备参考资格，仍不替代上述真实场景与生命周期验收。
+
+## 2026-11-18后续状态入口
+
+以上表格保留原c56b92c0/57840124基准，不倒灌后续结果。现已新增[I3u 128点backend](area-pressure-backend-friction-report-20261118.md)、[I3v真实历史入步适配](area-pressure-entry-friction-report-20261118.md)、[I3w resident设备装配](area-pressure-resident-friction-pack-report-20261118.md)及源码外安装包验证。生产Scene摩擦仍待接通；下一工作以[live交接](area-friction-live-integration-handoff-20261118.md)和[B1–B3计划](../superpowers/plans/2026-11-18-area-friction-production-integration.md)为准，不按本表旧“8点”容量重复开发。

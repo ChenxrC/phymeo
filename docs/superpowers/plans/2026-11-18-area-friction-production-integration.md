@@ -1,52 +1,74 @@
-# 面积摩擦生产接入：下一阶段可执行计划
+# 面积摩擦生产接入：后续行动计划
 
-依据：截至2026-11-18的[已连接架构](../../development/area-pressure-connected-architecture-20261118.md)、[源码接缝图](../../development/area-pressure-friction-integration-map-20261118.md)、[I3q HOST](../../development/area-pressure-coupled-friction-report-20261118.md)与[I3r CUDA](../../development/area-pressure-tyx-coupled-friction-report-20261118.md)。这是当前法向链路之后的开发计划，不是已交付功能或完整Newton对齐声明。
+更新：2026-11-18。当前 codex/exp 的[已连接架构](../../development/area-pressure-connected-architecture-20261118.md)以实际证据为准。用户优先完成可复用功能；本计划不把独立算术、测试数量或局部几何当成生产接通。
 
-## 目标与边界
+## 已完成与真正缺口
 
-让同一实际场景中的法向与切向载荷共同决定下一步运动，并在现有状态、观察、恢复机制中一致发布。保留最终法向平滑律：Fn=max(0,-k(phi+h vn))；Ft=-mu Fn vt/sqrt(vt²+vs²)。它有微滑，不称精确静摩擦。不能先解法向再额外施一次摩擦，也不重新运行I3q/r去追求更小误差。
+法向主链已接通：当前模型状态→自动有限面→真实面积积分→MuJoCo-TYX共同法向解→统一状态/载荷→设备观察与任务Env。几何仍为HOST或设备拓扑＋HOST精确复核。
 
-第一产品范围为现有完整压力体对有限刚面、现有无activation/BALL的构型，只含新面积约束的世界。任何剩余可能native contact、limit或dry-friction row在同一世界显式拒绝；原native-only与friction=none世界继续原路径，可以在异构批次中并存。一般混合约束之后单独做联合方程，不能串联两个solver冒共同求解。
+摩擦已选 final_normal_smooth_v1：Fn=max(0,-k(phi+h*vn))，Ft=-mu*Fn*vt/sqrt(vt²+vs²)。其微滑是模型性质，不称精确静摩擦。
 
-首版容量应从实际完整面目录确定。I3r当前6DOF/8点不是生产容量；需要在实现前选择有预算证明和测试的公开边界。至少覆盖已有完整有限面产生的积分点，不允许丢点/缩面/重归一来迁就设备。若首版保留6DOF限制，必须公开，不能称29关节机器人已接通新律。
-
-## 开发节点
-
-| 节点 | 难度 | 开发内容 | 独立验收与进入下阶段条件 |
-| --- | --- | --- | --- |
-| F1 显式law与容量 | 中 | 定义owned mu/vs、单位、law版本、每pair身份；选择并记录样本/DOF/世界容量及完整buffer预算；旧配置逐字节保持 | 非有限/负值/FP32正数下溢/容量/错pair预拒；旧bundle仍friction=none；无执行后择basis/自动降级 |
-| F2 设备共同求解 | 高 | 从同阶段M、D、bias/passive/applied与完整两侧point J直接装配；将已验证Newton算术迁入backend，复用现runtime/ledger，完整清padding | 无HOST数值polish/二次workspace；保留nonsymmetric Jacobian和pivot；真实全部样本、非对角M、双方可动、mu0、坏末world/数值失败；资源计入manifest |
-| F3 积分和原子发布 | 高 | 由共同Qcontact沿原native坐标积分，核最终实际v与求解v一致；新版本记录Fn/Ft/Ftotal，状态与载荷同次提交 | 不重复施力；物理qacc与integration_acc区别保留；末积分/下载/receipt失败不部分提交；所有世界都通过才换bank |
-| F4 观察与恢复 | 中高 | 显式新面积记录版本、统一frame、力矩reader、asset digest、checkpoint/clone/selected reset | 旧v1不悄改语义；重载/恢复后下一步同输出；late观察失败不返回旧帧；源law/参数/目录/状态完整绑定 |
-| F5 真实多案例 | 高 | 自动当前面→共同解→原生积分→公共观察，覆盖下表 | 每个案例都有独立物理区分和完整保存轨迹；不以supplied-point实验代替；完成才称生产摩擦接通 |
-| F6 规模与一般约束 | 高 | 扩DOF/样本、mixed native/area方程、完整步成本，再连接训练特征 | 先固定同模型同输出和误差；未支持组合明确失败；无完整收益不扩大移植 |
-
-F1–F4可分小提交，但对外不能将尚未完成的内部接口开放为已通过生产路径。只在F5完成后更新用户能力表。父任务拥有既有共享接缝；独立数值kernel、测试oracle和文档可由原隔离agent并行author，项目执行始终单一队列。
-
-## 必须保持的三条动力学连接
-
-1. 令b=applied+passive-bias，现passive已含-Dv0。A=M+hD，vfree=v0+h A^-1 b。如果沿I3r输入形式，f0=b+Dv0；不得直接再以b作为非阻尼外力而重复阻尼。
-2. G=JA-JB来自同一入步两侧完整点Jacobian。切向不能由Jn反推。保留dFn/dv对Ft的交叉导数，不把Newton矩阵对称化后套T4的SPD因子。
-3. 如果保留现末段积分器，将同一Qcontact加到total_applied恰一次，并检查实际发布v与共同解一致。FREE局部角速度/世界线速度与四元数积分继续用现native实现，不另写HOST状态更新。
-
-## F5固定案例类型与判别
-
-具体质量/材料/步长/窗口在实现前从I3l/o/s已验证资产选择一次并冻结；下面是必须覆盖的物理区分，不能执行后删除难例。
-
-| 案例 | 允许的真实运动 | 不能被掩盖的错误 |
+| 已有交付 | 能复用什么 | 不能据此宣称什么 |
 | --- | --- | --- |
-| 平面滑动与低载启动 | 自由切向与法向DOF，同步承载 | 事后补摩擦、遗漏微滑、错误方向或正摩擦功 |
-| 压缩后卸载分离 | 原速度/外载推进接触启闭 | 最终Fn=0而保留入步Ft、旧帧摩擦 |
-| 偏心转动与有限边缘 | 真实hinge或FREE角速度，当前接触面随q变 | 只用线性J、错误力臂/世界局部变换、面消失后残留载荷 |
-| 两侧可动／多区 | 全部真实质量与速度共享响应 | JB=0、逐pair独立解后相加、反力矩不闭合 |
-| 旧路径与事务混合批 | 新律world、旧none world、native-only world同批 | 错world/错law/错目录、晚world失败部分提交、旧胶囊伪升级 |
+| [I3u](../../development/area-pressure-backend-friction-report-20261118.md) | backend共同求解，6DOF、128完整点、32world、完整非对称导数 | 未积分q，未接Scene |
+| [I3v](../../development/area-pressure-entry-friction-report-20261118.md) | 真实历史入步M/J/载荷与源身份适配，区分重复阻尼 | 是历史counterfactual，不再施回已推进状态 |
+| [I3w](../../development/area-pressure-resident-friction-pack-report-20261118.md) | 实际resident布局→七输入→共同kernel，中间无HOST数值读回 | 用原设备字节重放，不是live runtime或生产加速 |
+| [安装包](../../development/area-pressure-friction-wheel-report-20261118.md) | 源码外完整128点输出、字节/包来源核验 | 没有替代整套未来场景验收 |
 
-比较两层误差：同一步方程是否被正确求解；模型是否满足预期功能。工程精度门沿I3r已公开FP32资格再对真实积分给独立界；不要求解决Newton/XPBD也不保证的问题。温和数值穿透可明确量化，不能把漏接触、重复力或错身份称精度损失。
+下一批的交付目标是**一条可选的真实场景摩擦路径**，同时连接材料声明、当前设备数据、原生积分与新的载荷记录。不要再增加相似的独立reference作为前置。精确切口见[live集成交接](../../development/area-friction-live-integration-handoff-20261118.md)。
 
-## 成功与停止
+## 首个产品范围
 
-成功：五类场景由自动几何产生，载荷和运动来自同一解；完整保存M/J/实际输入与输出、原始设备记录、残差、力矩、reset/restore/故障结果。生产旧路径兼容，容量有界可解释。
+每桶1..32world、1..6DOF、完整样本≤128（现三点三角积分最多126）、机体≤128、pair≤16。全量拒绝超限，不删点或分次独立解后相加。新law世界只含面积约束；明确拒绝BALL/activation、equality/tendon、limit/dry及任何仍可能生效的native pair。旧native-only与friction=none可在别的桶继续原路径。首版不意味着29关节机器人或同世界任意混合约束已接通。
 
-遇到一次具体失败，先保原证据并定位到几何、law、线性求解、积分或生命周期；修复该层后仅验证受影响范围。若模型本身不适用，公开缩小范围或更换明确law，不能调案例/门槛追绿。没有新功能或整步成本收益，不追加相似案例或重复旧几何证明。
+压力体对有限刚面，逐片g=grad(p)·n>0；保持真实面积、全样本与双方J。普通cube滑出可能出现p>0而g=0，必须在物理推进前整包拒绝；不得加epsilon、删片、缩板或称精度损失。偏心转动的已知g>0路径与任意滑出分别验收。
 
-后续优先级：F1–F5完整单路径 > 一般约束/更大机器人 > 全设备几何及端到端规模 > 面积观察的策略编码与训练 > 变形体压力散射。FFT非局部材料、Kamino独立参考和通用自动选择保持分离，不作为本次接线的额外前置。
+## 下一批 B1：最小生产闭环（高难度，最高优先）
+
+这一批跨越F1/F2/F3及F4的最小发布部分；拆成小提交，联合验收后才开放场景选项。
+
+1. **明确声明与身份**：新增owned law envelope，mu无量纲、vs单位m/s，绑定有序pair、材料、源、精度和layout版本。同MJB不同law/参数不能同桶或互换checkpoint。旧asset v1的friction=none含义不改。
+2. **接真实设备入步**：在现mechanics/actuator后、旧constraint solve前调用已验pack和共同solver。复用owner runtime，scratch/status/双accepted bank全部进入allocation manifest和统一ledger，不新建每步workspace，不下载再上传M/J。
+3. **一次原生积分**：优先验证将同一Q加到原applied一次，再调用旧native solve。所有发布必须在actual vnext上核最终Fn/Ft、共同方程和有限性；不能仅检查v*。若该路线不相容，提取共享native q-only尾段直接消费v*，保留WXYZ/local omega/Kahan clock与全部原生地址，禁止另写HOST运动或先法向后摩擦kick。
+4. **新载荷记录与共同提交**：保存Fn/Ft/总力/相对速度/双方矩、全样本身份、law、入出步相位；不能塞进旧F=nFn/type7记录。所有候选检查通过才翻状态和载荷bank。尚未实现的旧consumer/恢复操作必须在动作前明确拒绝新law，不能少算切向力。
+
+B1固定短例复用I3v FREE偏心COM/六分量速度、mu=.5与mu=0、旧normal-only对照及空D40滑块，同批三步；再固定同资产的上离初速，验证入步有面但最终Fn=Ft=0，随后有效空面。原材料/几何/h不因结果调整。独立CPU只mj_forward/fullM/jac和mj_integratePos，不用CPUstep代替TYX运动。
+
+成功门：公开scene入口由当前q自动生成面，实际q/v和新载荷同次发布；原始M/J/输入/输出完整保存；正确与重复阻尼、一次与二次积分、最终与滞后Fn均可区分。内核通过但无public实际步，B1仍未完成。
+
+## B2：真实双方、观察、恢复与晚失败（高难度）
+
+复用原异构五world场景，保h=.0005和完整资产；hinge与moving plate检查真JB/双方反作用与虚功，native-only world对原leaf保持原路结果。导轨案例不冒自由双体总角动量定理。
+
+新law-aware reader/codec绑定实际最终速度、Fn/Ft/总力、完整f64面积、材料与源。完成step→checkpoint→多步→selected reset→restore→同mode重演；同bucket只reset所选world，控制相位保真。改变mu/vs/law/源/资产需拒绝。
+
+故障按相位分别测：pack/共同solve、最后桶下载或提交前失败，保全部accepted q/v/clock/tick/revision/force/receipt/geometry，清故障后可重试step；scratch诊断允许变化。物理已经提交后的观察失败，只保旧观察帧和游标，不回退已接受物理，也不能重复step，只重试观察；Env若已poison则按成对restore协议处理。restore末replacement失败保持原owner和已接受状态，清故障后重试restore。旧v1消费者不能默默读新数据。
+
+成功门：真实双侧反力、正常路径混桶、完整恢复和晚失败均有实际结果；不以I3w的局部status测试替代Scene原子性。
+
+## B3：连续任务与完整成本（中高难度）
+
+在B1/B2通过后冻结三类连续轨迹：有法向支撑的切向滑动与低载微滑；冲击/压缩/卸载/再接触；g>0域内偏心转动和两处接触耦合。自动当前面、同次运动与载荷、真实可视化全部保留。先完成可观察功能，不要求超越Newton/XPBD精度。
+
+比较1/小批/32world的相同模型与输出，分列初始化与稳态，覆盖FK、候选、完整面、装配、求解、积分、验证和必要传输。旧5/20/32的9.7–11.3%收益只属于其固定法向案例；不能倒灌到新摩擦路径。只有定位到真实成本才扩设备几何。
+
+## 独立边缘准入节点 E0（中高难度，不阻塞B1）
+
+先比较固定正梯度、零梯度侧片、负梯度姿态三类输入。现g>0拒绝是基线；若选择新压力律，先声明其力—间隙、功与求解域，再比较完整面积/合力/力矩/单步运动。论文的忽略polygon策略不自动成为本项目默认合同。具体手推反例与原始资料见交接第8节。
+
+一次诊断与一次明确修正仍不适用，就公开限制或换模型；不循环调几何和阈值。尚未选定直接压力、滤面或其他新律，不能在B1实现中暗中处理g=0。
+
+## 后续大节点与并行分工
+
+| 优先级 | 节点 | 难度 | 进入条件 |
+| --- | --- | --- | --- |
+| 1 | B1真实单路径摩擦闭环 | 高 | 已有I3u/v/w直接复用 |
+| 2 | B2 reader/codec/restore/真双侧与事务 | 高 | B1原始证据完整；可并行author独立codec和测试 |
+| 3 | B3连续多案例与端到端成本 | 中高 | B1/B2 public路径通过 |
+| 4 | 扩DOF与同世界mixed native/area方程 | 高 | 统一联合残差与资源上限先声明，不能串联两个solver |
+| 5 | 全设备几何/大规模与训练特征 | 高 | 同模型同输出、完整成本有依据；策略确实消费面积观察 |
+| 6 | 变形体面积压力散射 | 高 | 当前变形面/材料坐标/fullJ/双向响应单独验收 |
+
+父拥有旧model/preflight、allocation、advance、runtime事务、checkpoint/reader等共享接缝。原scene agent可隔离author新增law声明/独立验证模块；原training agent可隔离author上述固定测试与oracle。先约定互不交叉文件范围，再并行编码；项目import/测试/数值/静态/build/install始终只有一个执行owner。当前不自动重派已经结束的任务。
+
+FFT非局部半空间、Kamino独立参考与通用自动算法选择保持独立，不作为B1额外前置。成功看新增的可运行能力与保存证据；模型不适用、积分不相容、身份错误、漏接触和重复力必须分层处理，不能统称精度问题。没有新功能或整步收益，不继续扩大相似案例。

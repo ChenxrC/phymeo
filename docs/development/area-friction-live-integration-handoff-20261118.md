@@ -100,3 +100,13 @@ reset、restore、clone 必须复制/清理新 law banks，并重绑 owner/catal
 [2022速度级压力接触论文](https://arxiv.org/html/2110.04157v2)的IV-A在推导局部有效梯度后，对不满足其正梯度条件的polygon采用忽略策略。这是该论文算法，不自动等于当前Drake全部实现；也不直接授权本项目把完整面积合同改成删面。首个生产摩擦窗口保留逐片g>0的已知域，偏心转动与任意滑出必须分开标识。
 
 后续独立 edge-admission 小批只比较两个明确模型选择：维持g>0拒绝；或预先声明可处理零/负投影梯度的新接触律。候选可研究直接压力形式而不除g，但尚未推导其有效性、求解条件或能量，不能先接产品。固定正梯度、零梯度侧片、负梯度姿态三类输入，先核完整面积/合力/力矩和单步功，再决定采用范围。禁止给g加epsilon、归一化压力、缩板或删片追绿；一次诊断修正仍不适用就记录边界，不能拖住g>0场景的F3接通。
+
+## 9. 原生坐标积分的结构性备选（只读设计）
+
+若“applied+Q后复用完整solve”在actualv力律检查中失败，最小可靠替代是共享position-only device kernel，而非再增加浮点迭代。当前floating尾段位于 _floating_kernels.py:623–688，tree尾段位于 _tree_kernels.py:580–640。可提取为 integrate_native_q(count,nq,njnt,h,joints,vectors,q_in,v_out,clock_in,q_out,clock_out,status)，只消费已经确定的v_out，不求力、不改变速度、不清上游失败、不翻bank。
+
+旧两solve保留原M与M+hD求解及vnext算术；TreeDevice、FloatingDevice、NormalDevice、ConstraintDevice四调用方随后调用共享坐标核一次。新摩擦分支直接保留v*存储字节，不能先算(v*-v0)/h再重建vnext。物理qacc仍按M^-1(applied+passive-bias+Q)单独计算；integration_acc为实际速度增量/h，仅是诊断，不能冒物理qacc。
+
+native joints为int32(kind,qposadr,dofadr,bodyid)，P/R/BALL/FREE映射0/1/2/3。FREE平移为世界线速度，WXYZ四元数以native local angular velocity右乘增量；保原归一化、零角速分支、有限/限位检查、两字Kahan clock运算顺序。现HOST rotation.py是XYZW，独立刚体kernel用世界角速度；都不能直接替代。
+
+该提取会增加一次launch但无需新状态buffer，且影响旧四路径，所以必须先固定有代表性的scalar/BALL、nq!=nv、非首地址/多FREE/XML重排、较大nv及非零D/驱动兼容组；不能为了首版6DOF摩擦把共享原生核缩成6DOF。独立mj_integratePos对照、速度字节不变、最后桶失败及恢复属于验收。这里只记录备选结构；没有执行重构，也不因局部测试通过宣称所有浮点入口相容。

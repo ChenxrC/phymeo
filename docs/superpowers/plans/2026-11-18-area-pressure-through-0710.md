@@ -76,3 +76,17 @@ I3j 已完成9b928c2d：4新CUDA/48.22s、6native兼容/82.34s，当前状态自
 旧native-only wrench/slip入口若选中行声明area，必须明确拒绝，不能忽略area返回少算载荷。无area旧路径保持。
 
 固定HOST手向量：native p=(1,2,3),F=(1,2,4),couple=(.5,-.25,.75)；area p=(-1,0,2),n=ey,Fn总3N,dA总.02m²，以3与12目录样本细分。总F=(1,5,4),M0=(-3.5,-1.25,-2.25)；参考r=(.2,-.3,.4)后的M=(-.3,-.85,-3.55)。不同bodypair避免双算；测试双方反力、组别、真实面积、坏身份/phase/mask/矩表示与缺省。实际CUDA只复用I3j固定cube/3world自动几何，最长4stepcalls，不改物理门；已受影响I3i/legacy readers需相应兼容核。完成后优先同一真实连续轨迹与可视化，不宣称共享训练完成。
+
+## I3l 执行前合同：4 world连续自动接触与可视化
+
+固定CUDA默认HOST几何，h=.001s、T=.45s、450整批step/1800 world-step，3个model。world顺序41(area-soft)、7(area-offset)、305(共享soft model独立初态)、11(native)。全部竖直无限位slider、无dry friction；导轨承担横向/转矩，不称FREE平衡或任务Env/PPO。
+
+soft cube尺寸40×40×20mm，m=.30kg、D=70Ns/m、center压力100000Pa、plate20×20×5mm居中，g=1e7Pa/m、K=4000N/m。offset cube同尺寸，m=.45kg、D=90、center压力150000Pa、plate20×15×5mm且中心x=4mm，g=1.5e7、K=4500。全8corner+center/12tet、边界压力零；刚面取真实plate顶面。world41初始gap2mm/v0；world7 gap3mm/v0；world305 gap1mm/v=-.03m/s。native world11 m=.30,D70,R10mm球/居中20×20×5mm plate、gap2mm/v0，condim1/零摩擦；其几何与律均不同，只作混合路径正常工作对照，不称算法精度公平比较。
+
+全部world公开qfrc外载为[0,.15):0N，[.15,.30):-1.5N，[.30,.45):+7N，gravity=-9.81。仅提交力，不重置/指定运动。area原生geom碰撞关闭，native模型无area声明。读取每步真实状态→自动面→共同solve→统一BodyWrench，保存完整入步/出步/实际载荷、面与样本/身份、公共数组、wrench分项、耗时；失败保已接受前缀。
+
+area逐步独立标量oracle：Meff=m+hD，vfree=(mv+h(fext-mg))/Meff；入步delta>=0时F=max(0,K(delta-hvfree)/(1+h²K/Meff))，否则F=0，vnext=vfree+hF/Meff。delta从同入步body-origin和已声明底面/plate-local高度独立计算，不调用裁剪/装配器。另从固定初态推进全FP64参考轨迹，不用产品状态回填，完整偏差保存而不新增精度优化目标。
+
+固定门：全部有限且450步接受；area入/出步压入<2.5mm，正交集真实面积soft4e-4、offset3e-4m²。逐步力误差<=.001N+.001relative，v误差<=3e-5m/s。平台[.12,.15)、[.27,.30)均值力/深度<=3%，max|v|<=.002；soft目标2.943/4.443N，offset4.4145/5.9145。最后.04s area力0且gap>1mm，三area均空→有载→离层；native需真实出生/最终分离但不套面积刚度门。offset入步bodyorigin矩My=-.004Fz，误差<=2e-6Nm+2e-4relative，A/B反号。area累计正能量残差(含外载功和真实D耗散)<=初始正能量2%，仅工程门。没有第二h/调参或已绿旧窗口重复。
+
+中文四格画真实入步姿态与同相位力，颜色为求解牵引Fn/dA(Pa)，与入步弹性压力分开；显示gap/Fz/My/阶段及曲线。从同次保存轨迹取帧，不能插值造接触，明确CUDA动力学+HOST有限面生成/导轨案例。新可运行experiment、独立测试、离线plot/viewer，之后再按余量补实际使用连接。

@@ -162,6 +162,11 @@ def publish(runtime, result, index):
                 normal_force=float(wrench[0]),
             )
         )
+    native_rows = len(expected_ids)
+    area_count = 0
+    if hasattr(plan, "area_pair_names"):
+        area_count = int(runtime._area_packet[2][index])
+        expected_ids.extend((7, sample, -1, -1, -1) for sample in range(area_count))
     if len(expected_ids) != nefc or not np.array_equal(
         ids[:nefc], np.asarray(expected_ids, dtype=np.int32).reshape(-1, 5)
     ):
@@ -174,7 +179,8 @@ def publish(runtime, result, index):
             or row[12] not in (0, 1)
             or row[4] <= 0
             or row[5] <= 0
-            or not 0 < row[6] < 1
+            or (ids[i, 0] != 7 and not 0 < row[6] < 1)
+            or (ids[i, 0] == 7 and (row[6] != 0 or row[13] != 0))
             or row[13] < 0
             or row[9] < row[7]
             or (row[12] and (row[8] < row[7] or row[9] > row[8]))
@@ -183,7 +189,7 @@ def publish(runtime, result, index):
             raise RuntimeError("invalid mixed force bounds or regularization")
         constraints.append(
             MuJoCoTyxConstraintRow(
-                "mujoco-tyx-constraint-row-v1",
+                "area-pressure-be-row-v1" if ids[i, 0] == 7 else "mujoco-tyx-constraint-row-v1",
                 *map(int, ids[i]),
                 _frozen(jac[i, : plan.nv]),
                 float(row[0]),
@@ -211,4 +217,12 @@ def publish(runtime, result, index):
     raw["solver_diagnostics"] = MappingProxyType(
         dict(zip(DIAGNOSTICS, map(float, diag), strict=True))
     )
+    if hasattr(plan, "area_pair_names"):
+        from ..mujoco_area_pressure import publish as publish_area
+
+        raw["area_pressure"] = publish_area(runtime, result, index, fields, native_rows)
+        raw["response_operator"] = "M+h*joint_damping"
+        raw["area_response_acceleration"] = _frozen(
+            result["area_response_acceleration"][index, : plan.nv]
+        )
     return tuple(contacts), tuple(constraints), MappingProxyType(raw)

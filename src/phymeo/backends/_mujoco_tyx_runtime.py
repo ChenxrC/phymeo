@@ -231,7 +231,12 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
         constraint_capacity=256,
         cache_root=None,
         resource_budget=None,
+        area_pressure_pairs=(),
     ):
+        if not isinstance(area_pressure_pairs, tuple):
+            raise ValueError("area_pressure_pairs must be a tuple")
+        self._area_pressure_pairs = area_pressure_pairs
+        self._area_packet = None
         from .mujoco_resource_budget import MuJoCoTyxResourceBudget
 
         if resource_budget is not None and type(resource_budget) is not MuJoCoTyxResourceBudget:
@@ -254,7 +259,12 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
         # This prevents public admit() -> owner vs owner -> admit() lock inversion.
         if resource_budget is not None:
             self._lock = resource_budget._lock
-        self._plan = compile_model(self._mj, self._model)
+        if area_pressure_pairs:
+            from .mujoco_area_pressure import compile_area_plan
+
+            self._plan = compile_area_plan(self._mj, self._model, area_pressure_pairs)
+        else:
+            self._plan = compile_model(self._mj, self._model)
         if getattr(self._plan, "constraint_contact", False):
             if self._contact_capacity > 128 or self._constraint_capacity > 512:
                 raise ValueError("T4 contact/constraint capacities cannot exceed 128/512")
@@ -512,6 +522,19 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
             if len(tree_roots) > 1:
                 info["domain"] = info["domain"].replace("free-root-", "forest-")
                 info["g1_supported"] = False
+            self._capabilities = MappingProxyType(info)
+
+        if self._area_pressure_pairs:
+            info.update(
+                area_pressure_pairs=self._plan.area_pair_names,
+                area_pressure_law="frozen-surface-elastic-backward-euler-v1",
+                area_pressure_input="fresh-host-surface-per-world-and-pair",
+                area_pressure_publication="last_step.raw_contact_fields.area_pressure",
+                area_pressure_entry_abi=False,
+                area_pressure_checkpoint=False,
+                area_pressure_friction=False,
+                smooth_acceleration_operator="M+h*joint_damping",
+            )
             self._capabilities = MappingProxyType(info)
 
     @property
@@ -900,6 +923,25 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
             }
         )
 
+    def area_pressure_configuration_id(self, key):
+        """Bind supplied surface geometry to this exact accepted entry."""
+        from .mujoco_area_pressure import configuration_id
+
+        with self._lock:
+            return configuration_id(self, key)
+
+    def step_area_pressure(self, h, mapping, *, expected_revision):
+        """Consume one fresh surface batch and use the existing atomic step."""
+        from .mujoco_area_pressure import pack
+
+        with self._lock:
+            self._check_open()
+            self._area_packet = pack(self, mapping, expected_revision)
+            try:
+                return self.step(h)
+            finally:
+                self._area_packet = None
+
     def step(self, h):
         with self._lock:
             draft = self._prepare_step_locked(h)
@@ -916,10 +958,14 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
             self._check_open()
             if not np.isfinite(h) or float(h) != self._timestep:
                 raise ValueError("step h must equal the original compiled MuJoCo timestep")
+            if self._area_pressure_pairs and self._area_packet is None:
+                raise ValueError("area route requires fresh step_area_pressure surfaces")
             accepted = dict.fromkeys(self._world_keys, False)
             self._preparing_batch = True
             try:
                 ctrl, applied, body_force, stored = self._pack_controls()
+                if self._area_pressure_pairs:
+                    self._device.area_packet = self._area_packet
                 self._device.advance(ctrl, applied, body_force)
                 from .mujoco_tyx._entry_storage import prepare_entry
 
@@ -1404,6 +1450,8 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
 
         with self._lock:
             self._check_open()
+            if self._area_pressure_pairs:
+                raise ValueError("area-pressure checkpoint ABI is not available yet")
             return capture(self)
 
     def restore(self, checkpoint, *, expected_revision):
@@ -1418,6 +1466,8 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
 
         with self._lock:
             self._check_open()
+            if self._area_pressure_pairs:
+                raise ValueError("area-pressure checkpoint ABI is not available yet")
             retired_controls = retirement_list(self)
             result = restore(self, checkpoint, expected_revision)
             self._control_retired = retired_controls
@@ -1451,6 +1501,8 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
     def clone(self, world_keys=None):
         with self._lock:
             self._check_open()
+            if self._area_pressure_pairs:
+                raise ValueError("area-pressure clone ABI is not available yet")
             selected = self._select(world_keys)
             from .mujoco_tyx._allocation_manifest import allocation_manifest
 
@@ -1484,6 +1536,7 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                 constraint_capacity=self._constraint_capacity,
                 cache_root=self._cache_root,
                 resource_budget=self._resource_budget,
+                area_pressure_pairs=self._area_pressure_pairs,
             )
             try:
                 proposed = {}

@@ -211,13 +211,45 @@ class TyxConstraintDevice(TyxDevice):
                 mode=self.mode,
             )
             self.counts["completed_kernels"] += 1
+            response_mass = self.mass
+            if hasattr(self.plan, "area_pair_names"):
+                from ._area_pressure_kernels import append_rows
+
+                packet = self.area_packet
+                self._put(self.area_input, packet[0])
+                self._put(self.area_pair_index, packet[1])
+                self._put(self.area_sizes, packet[2])
+                append_rows(
+                    self.nworld,
+                    self.plan.nv,
+                    self.capacities[1],
+                    self.h,
+                    self.area_body_ids,
+                    self.area_input,
+                    self.area_pair_index,
+                    self.area_sizes,
+                    self.motion,
+                    self.jacobian,
+                    self.v[old],
+                    self.mass,
+                    self.vectors,
+                    self.area_response_mass,
+                    self.efc_ids,
+                    self.efc_data,
+                    self.efc_jacobian,
+                    self.constraint_counts,
+                    self.status,
+                    mode=self.mode,
+                )
+                self.counts["completed_kernels"] += 1
+                response_mass = self.area_response_mass
             self.constraint_solve(
                 self.nworld,
                 self.plan.nv,
                 self.capacities[1],
                 self.plan.solver_iterations,
                 self.plan.solver_tolerance,
-                self.mass,
+                response_mass,
                 self.bias,
                 self.passive,
                 self.applied,
@@ -324,5 +356,13 @@ class TyxConstraintDevice(TyxDevice):
                 ("contact_J", self.contact_jacobian),
                 ("contact_wrench", self.contact_wrench),
             ):
-                result[name] = self._get(buffer)
+                if hasattr(self.plan, "area_pair_names") and name == "qacc":
+                    # The base integrator's qacc uses physical M; the constraint
+                    # solve uses the actual velocity response M+hD.
+                    result["area_response_acceleration"] = self._get(buffer)
+                elif hasattr(self.plan, "area_pair_names") and name == "smooth_acceleration":
+                    result["area_smooth_response_acceleration"] = self._get(buffer)
+                    result["smooth_acceleration"] = result["area_smooth_response_acceleration"]
+                else:
+                    result[name] = self._get(buffer)
         return result

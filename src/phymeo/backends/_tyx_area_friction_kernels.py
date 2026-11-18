@@ -4,7 +4,7 @@ import tyx as tx
 
 
 @tx.kernel
-def solve_batch(
+def _solve_batch(
     capacity: tx.i32,
     count: tx.i32,
     sizes: tx.ndarray(tx.i32, 2),
@@ -21,6 +21,7 @@ def solve_batch(
     scalars: tx.ndarray(tx.f32, 2),
     trace_meta: tx.ndarray(tx.i32, 3),
     trace: tx.ndarray(tx.f32, 3),
+    require_velocity_agreement: tx.i32,
 ):
     # Each lane owns an independent complete problem. All fixed padding is reset.
     # Matrices: A, Cholesky(A), actual residual Jacobian, pivot elimination copy.
@@ -260,9 +261,26 @@ def solve_batch(
                     meta[w, 2] = evaluation + 1
                     if trial == 1:
                         meta[w, 3] = meta[w, 3] + 1
+                    # The mass norm alone can hide velocity error in a small
+                    # rotational inertia. Live integration reuses the stored Q,
+                    # so also bound the correction A^-1 residual before stopping.
+                    # Bank 5 is scratch here and is overwritten by the Newton RHS.
+                    velocity_ok = 1
+                    if require_velocity_agreement != 0:
+                        for reverse in range(nv):
+                            i = nv - 1 - reverse
+                            value = vectors[w, 6, i]
+                            for j in range(i + 1, nv):
+                                value = value - matrices[w, 1, j, i] * vectors[w, 5, j]
+                            value = value / matrices[w, 1, i, i]
+                            vectors[w, 5, i] = value
+                            if not tx.isfinite(value):
+                                meta[w, 0] = 2
+                            if tx.abs(value) > 1e-5 * (1.0 + tx.abs(vectors[w, 2, i])):
+                                velocity_ok = 0
                     accepted = 0
                     if meta[w, 0] == 0:
-                        if norm <= scalars[w, 1]:
+                        if norm <= scalars[w, 1] and velocity_ok == 1:
                             accepted = 1
                             done = 1
                             trace_meta[w, evaluation, 3] = 2
@@ -353,3 +371,10 @@ def solve_batch(
                                 vectors[w, 2, i] = vectors[w, 1, i] + alpha * vectors[w, 4, i]
             if meta[w, 0] == 0 and done == 0:
                 meta[w, 0] = 3
+
+
+def solve_batch(*args, require_velocity_agreement=False, **launch):
+    """Keep the standalone ABI; live owners additionally bound A^-1 residual."""
+    if type(require_velocity_agreement) is not bool:
+        raise ValueError("require_velocity_agreement must be bool")
+    return _solve_batch(*args, int(require_velocity_agreement), **launch)

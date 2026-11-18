@@ -84,6 +84,27 @@ class AreaPressureEntryRow:
 class AreaPressureEntryReader:
     """Bind material and body identity independently of application task roles."""
 
+    ABI = ABI
+    DATA_WIDTH = 15
+    SAMPLE_TYPE = AreaPressureSample
+
+    def _entry_kind(self, world, valid):
+        return valid == 1
+
+    def _validate_values(self, world, ordinal, values):
+        _require(
+            np.allclose(
+                values[:, 9:12],
+                values[:, 3:6].astype(np.float64) * values[:, 8:9],
+                rtol=3e-5,
+                atol=2e-6,
+            ),
+            "area force direction",
+        )
+
+    def _sample_extra(self, world, ordinal, value):
+        return {}
+
     def __init__(self, workspace, identities_by_model):
         binding = workspace.binding
         _require(binding.get("area_pressure") is True, "area observation workspace is required")
@@ -91,7 +112,7 @@ class AreaPressureEntryReader:
             tuple(
                 binding.get(k) for k in ("area_schema", "area_force", "area_moment", "area_measure")
             )
-            == ABI,
+            == self.ABI,
             "area observation ABI differs",
         )
         pairs = binding["area_pair_names"]
@@ -143,7 +164,7 @@ class AreaPressureEntryReader:
         layouts = {
             "area_meta": ((n, 4), np.int32),
             "area_ids": ((n, cap, 6), np.int32),
-            "area_data": ((n, cap, 15), np.float32),
+            "area_data": ((n, cap, self.DATA_WIDTH), np.float32),
             "area_measure_words": ((n, cap, 2), np.int32),
             "area_declared_mask": ((n, 1), np.int32),
         }
@@ -222,7 +243,10 @@ class AreaPressureEntryReader:
                 )
             else:
                 _require(
-                    entry_valid == valid == 1 and overflow == 0 and after == tick + 1,
+                    entry_valid == 1
+                    and self._entry_kind(world, valid)
+                    and overflow == 0
+                    and after == tick + 1,
                     "area/native accepted phases differ",
                 )
                 _require(0 <= active <= count <= cap, "area counts/capacity")
@@ -294,22 +318,14 @@ class AreaPressureEntryReader:
                         ),
                         "area unit normal",
                     )
-                    _require(
-                        np.allclose(
-                            values[:, 9:12],
-                            values[:, 3:6].astype(np.float64) * values[:, 8:9],
-                            rtol=3e-5,
-                            atol=2e-6,
-                        ),
-                        "area force direction",
-                    )
+                    self._validate_values(world, ordinal, values)
                     _validate_moments(block[:, 5], values)
                     for local, (sample_id, source_id) in enumerate(
                         zip(sample_ids, source_ids, strict=True)
                     ):
                         value = values[local]
                         samples.append(
-                            AreaPressureSample(
+                            self.SAMPLE_TYPE(
                                 identity,
                                 stamp,
                                 ordinal,
@@ -326,6 +342,7 @@ class AreaPressureEntryReader:
                                 float(value[8]),
                                 tuple(map(float, value[9:12])),
                                 tuple(map(float, value[12:15])) if block[local, 5] else None,
+                                **self._sample_extra(world, ordinal, value),
                             )
                         )
                     canonical.append(

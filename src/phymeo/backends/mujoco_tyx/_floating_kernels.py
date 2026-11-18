@@ -537,7 +537,7 @@ mechanics_other = tx.kernel(mechanics)
 mechanics = tx.kernel(mechanics)
 
 
-def solve(
+def _solve_native(
     count: tx.i32,
     nv: tx.i32,
     h: tx.f32,
@@ -563,12 +563,14 @@ def solve(
     nq: tx.i32,
     njnt: tx.i32,
     joints: tx.ndarray(tx.i32, 2),
+    use_common_velocity: tx.i32,
 ):
     for w in tx.range(count):
         for i in range(nq):
             qnext[w, i] = q[w, i]
         for i in range(nv):
-            vnext[w, i] = v[w, i]
+            if use_common_velocity == 0:
+                vnext[w, i] = v[w, i]
             acceleration[w, i] = 0.0
             integration_acc[w, i] = 0.0
             constraint[w, i] = 0.0
@@ -613,7 +615,10 @@ def solve(
                 else:
                     integration_acc[w, i] = value / factor[w, i, i]
         for i in range(nv):
-            vnext[w, i] = v[w, i] + h * integration_acc[w, i]
+            if use_common_velocity == 0:
+                vnext[w, i] = v[w, i] + h * integration_acc[w, i]
+            else:
+                integration_acc[w, i] = (vnext[w, i] - v[w, i]) / h
             if (
                 not tx.isfinite(vnext[w, i])
                 or not tx.isfinite(acceleration[w, i])
@@ -688,5 +693,22 @@ def solve(
             status[w] = 2
 
 
-solve_other = tx.kernel(solve)
-solve = tx.kernel(solve)
+# Both modes share the native coordinate tail; q and clock advance once.
+_native_other = tx.kernel(_solve_native)
+_native = tx.kernel(_solve_native)
+
+
+def solve(*args, **launch):
+    return _native(*args, 0, **launch)
+
+
+def solve_other(*args, **launch):
+    return _native_other(*args, 0, **launch)
+
+
+def solve_live(*args, **launch):
+    return _native(*args, 1, **launch)
+
+
+def solve_live_other(*args, **launch):
+    return _native_other(*args, 1, **launch)

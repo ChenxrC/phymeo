@@ -269,6 +269,12 @@ def allocation_manifest(plan, nworld, nbody, capacities):
         add("area_sizes", (w,), "int32", "step-input")
         add("area_measure_input", (w, max(1, capacities[1]), 2), "int32", "step-input")
         add("area_response_mass", (w, width, width))
+    if getattr(plan, "area_friction_laws", ()):
+        from ._area_friction_layout import scratch_layout
+
+        static("area_friction_parameters")
+        for name, (shape, dtype) in scratch_layout(w).items():
+            add("friction_" + name, shape, dtype)
     from ._entry_storage import entry_layout, entry_static_layout
 
     for name, (shape, dtype) in entry_layout(plan, w, capacities).items():

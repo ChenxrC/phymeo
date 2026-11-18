@@ -19,12 +19,17 @@ class _AreaPlan:
     base: object
     area_pair_names: tuple
     area_body_ids: np.ndarray
+    area_friction_laws: tuple = ()
+    area_friction_parameters: np.ndarray | None = None
 
     def __getattr__(self, name):
         return getattr(self.base, name)
 
 
-def compile_area_plan(mj, model, pairs):
+def compile_area_plan(mj, model, pairs, friction_laws=()):
+    from .area_friction_law import capture_pair_laws
+
+    friction_laws = capture_pair_laws(pairs, friction_laws)
     from .mujoco_tyx._constraint_model import compile_constraint_model, constraint_pairs
 
     if not isinstance(pairs, tuple) or not 1 <= len(pairs) <= 16:
@@ -59,11 +64,34 @@ def compile_area_plan(mj, model, pairs):
         remaining or np.any(model.jnt_limited) or np.any(model.dof_frictionloss)
     ):
         raise ValueError("damped area route cannot mix native constraints in this version")
+    if friction_laws:
+        if not (1 <= model.nv <= 6 and model.nbody <= 128 and model.ngeom <= 128):
+            raise ValueError("live area-friction capacity: 1..6 DOF, 128 bodies/geoms")
+        if (
+            model.neq
+            or model.ntendon
+            or remaining
+            or np.any(model.jnt_limited)
+            or np.any(model.dof_frictionloss)
+        ):
+            raise ValueError("live area friction requires area-only constraints")
+        if not np.isfinite(model.dof_damping).all() or np.any(model.dof_damping < 0):
+            raise ValueError("live area friction requires nonnegative finite damping")
     base = compile_constraint_model(mj, model, remaining)
     body_ids = np.frombuffer(np.asarray(ids, dtype=np.int32).tobytes(), dtype=np.int32).reshape(
         -1, 2
     )
-    return _AreaPlan(base, tuple(names), body_ids)
+    parameters = None
+    if friction_laws:
+        values = np.asarray(
+            [(law.mu, law.slip_speed_m_s) for law in friction_laws], dtype=np.float64
+        )
+        with np.errstate(over="raise", invalid="raise"):
+            parameters = values.astype(np.float32)
+        if not np.isfinite(parameters).all() or np.any((values > 0) & (parameters <= 0)):
+            raise ValueError("area-friction parameters are not positive finite FP32")
+        parameters = np.frombuffer(parameters.tobytes(), dtype=np.float32).reshape(-1, 2)
+    return _AreaPlan(base, tuple(names), body_ids, friction_laws, parameters)
 
 
 def configuration_id(runtime, key):
@@ -120,7 +148,12 @@ def pack(runtime, mapping, expected_revision):
                 raise ValueError("stale area-pressure state binding")
             quad = quadrature_area_pressure(surface)
             n = len(quad.dA)
-            if cursor + n > cap:
+            if (
+                runtime._area_friction_laws
+                and surface.identity != runtime._area_friction_laws[pi].identity
+            ):
+                raise ValueError("area-friction body/material identity differs")
+            if cursor + n > min(cap, 128 if runtime._area_friction_laws else cap):
                 raise ValueError("area-pressure samples exceed constraint capacity")
             with np.errstate(over="raise", invalid="raise", divide="raise"):
                 k = quad.dA * quad.gradient

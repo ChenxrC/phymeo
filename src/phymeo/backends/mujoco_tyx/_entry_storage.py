@@ -146,6 +146,11 @@ def prepare_entry(device):
             mode=device.mode,
         )
         device.counts["completed_kernels"] += 1
+        if getattr(plan, "area_friction_laws", ()):
+            from ._area_friction_device import stage_entry
+
+            stage_entry(device, new)
+            return new
         route = _route(plan)
         outputs = (
             device.entry_meta[new],

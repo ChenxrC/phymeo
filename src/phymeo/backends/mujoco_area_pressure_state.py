@@ -24,6 +24,17 @@ def _require(ok, message):
 
 
 def area_binding(runtime):
+    if runtime._area_friction_laws:
+        from .area_friction_law import law_binding
+
+        return dict(
+            schema="mujoco-tyx-area-friction-receipt-v1",
+            pairs=runtime._plan.area_pair_names,
+            body_ids=tuple(tuple(map(int, pair)) for pair in runtime._plan.area_body_ids),
+            parameters=law_binding(runtime._area_friction_laws),
+            response_operator="M+h*joint_damping",
+            storage="host-owned-accepted-receipt; area-entry-v2",
+        )
     return dict(
         schema=AREA_SCHEMA,
         pairs=runtime._plan.area_pair_names,
@@ -47,6 +58,10 @@ def _array(value, shape, name):
 
 def validate_area_receipt(runtime, key, receipt, state):
     """Check redundant historical publication before any replacement allocation."""
+    if runtime._area_friction_laws:
+        from .mujoco_area_friction_state import validate_friction_receipt
+
+        return validate_friction_receipt(runtime, key, receipt, state)
     if not runtime._area_pressure_pairs:
         return
     if receipt is None:
@@ -270,7 +285,9 @@ def observe(runtime, keys=None):
         for key in runtime._select(keys):
             state, receipt = runtime._data[key], runtime._receipts[key]
             frame = dict(
-                schema="mujoco-tyx-area-observation-v1",
+                schema="mujoco-tyx-area-friction-observation-v1"
+                if runtime._area_friction_laws
+                else "mujoco-tyx-area-observation-v1",
                 storage="host-owned-accepted-receipt",
                 world=key,
                 source_revision=runtime._checkpoint_revision,
@@ -284,7 +301,9 @@ def observe(runtime, keys=None):
             if receipt is not None:
                 origins, com = validate_area_receipt(runtime, key, receipt, state)
                 pairs = []
-                for raw in receipt.raw_contact_fields["area_pressure"]:
+                for raw in receipt.raw_contact_fields[
+                    "area_friction" if runtime._area_friction_laws else "area_pressure"
+                ]:
                     ba, bb = raw["body_ids"]
                     owned = dict(raw)
                     for side, body in (("a", ba), ("b", bb)):

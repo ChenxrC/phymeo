@@ -235,9 +235,15 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
         cache_root=None,
         resource_budget=None,
         area_pressure_pairs=(),
+        area_friction_laws=(),
     ):
         if not isinstance(area_pressure_pairs, tuple):
             raise ValueError("area_pressure_pairs must be a tuple")
+        from .area_friction_law import capture_pair_laws
+
+        self._area_friction_laws = capture_pair_laws(area_pressure_pairs, area_friction_laws)
+        if self._area_friction_laws and mode != "cuda":
+            raise ValueError("live area friction currently requires CUDA")
         self._area_pressure_pairs = area_pressure_pairs
         self._area_packet = None
         from .mujoco_resource_budget import MuJoCoTyxResourceBudget
@@ -265,7 +271,9 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
         if area_pressure_pairs:
             from .mujoco_area_pressure import compile_area_plan
 
-            self._plan = compile_area_plan(self._mj, self._model, area_pressure_pairs)
+            self._plan = compile_area_plan(
+                self._mj, self._model, area_pressure_pairs, self._area_friction_laws
+            )
         else:
             self._plan = compile_model(self._mj, self._model)
         if getattr(self._plan, "constraint_contact", False):
@@ -538,9 +546,24 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                 area_pressure_entry_abi="mujoco-tyx-area-device-entry-v1",
                 area_pressure_checkpoint=True,
                 area_pressure_observation="host-owned-accepted-receipt-v1",
-                area_pressure_friction=False,
+                area_pressure_friction=bool(self._area_friction_laws),
                 smooth_acceleration_operator="M+h*joint_damping",
             )
+            if self._area_friction_laws:
+                from .area_friction_law import LAW as FRICTION_LAW
+
+                info.update(
+                    contact_law=FRICTION_LAW,
+                    domain="area-friction-cuda-six-dof-v1",
+                    numerical_solver="area-friction-newton-v1",
+                    area_pressure_law=FRICTION_LAW,
+                    area_pressure_publication="last_step.raw_contact_fields.area_friction",
+                    area_pressure_entry_abi="mujoco-tyx-area-device-entry-v2",
+                    area_pressure_integration="common-velocity-native-coordinate-tail-v1",
+                    area_pressure_observation="host-owned-friction-receipt-v1",
+                    mixed_articulated_constraints_supported=False,
+                    g1_supported=False,
+                )
             self._capabilities = MappingProxyType(info)
 
     @property
@@ -1001,6 +1024,7 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                         5: "normal_solver_not_converged",
                         6: "nonpositive_normal_matrix",
                         7: "constraint_solver_budget",
+                        8: "area_friction_solver_or_publication",
                     }
                     codes = tuple(
                         reasons.get(int(code), "invalid_status")
@@ -1072,7 +1096,11 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                             time=float(old_clock[0]) - float(old_clock[1]),
                         )
                     constraints = ()
-                    if getattr(self._plan, "constraint_contact", False):
+                    if self._area_friction_laws:
+                        from .mujoco_area_friction_live import publish
+
+                        contacts, constraints, raw_fields = publish(self, result, index)
+                    elif getattr(self._plan, "constraint_contact", False):
                         from .mujoco_tyx._constraint_publication import publish
 
                         contacts, constraints, raw_fields = publish(self, result, index)
@@ -1126,7 +1154,9 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                         raw_contact_fields=raw_fields,
                         source_solver=self._plan.source_solver,
                         numerical_solver=(
-                            "pyramidal-box-active-set-v1"
+                            "area-friction-newton-v1"
+                            if self._area_friction_laws
+                            else "pyramidal-box-active-set-v1"
                             if getattr(self._plan, "constraint_contact", False)
                             else "normal-dual-active-set-v1"
                             if getattr(self._plan, "normal_contact", False)
@@ -1145,6 +1175,10 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                         from .mujoco_area_pressure_device import validate_row
 
                         validate_row(result, index, receipts[key])
+                        if self._area_friction_laws:
+                            from .mujoco_area_friction_state import validate_friction_receipt
+
+                            validate_friction_receipt(self, key, receipts[key], candidate)
                     expected_entry = (
                         1,
                         self._ticks[key],
@@ -1574,6 +1608,7 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                 cache_root=self._cache_root,
                 resource_budget=self._resource_budget,
                 area_pressure_pairs=self._area_pressure_pairs,
+                area_friction_laws=self._area_friction_laws,
             )
             try:
                 proposed = {}

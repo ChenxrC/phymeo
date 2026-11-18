@@ -229,6 +229,10 @@ class MuJoCoTyxAreaPressureScene:
             names = tuple((a.identity.compliant_body, a.identity.rigid_body) for a in owned)
             if names != getattr(runtime._plan, "area_pair_names", None):
                 raise ValueError("assets must match all declared area pairs in order")
+            if runtime._area_friction_laws and tuple(a.identity for a in owned) != tuple(
+                law.identity for law in runtime._area_friction_laws
+            ):
+                raise ValueError("area friction requires complete body/material identities")
             self.runtime = runtime
             self._assets = tuple(owned)
             self._empty = MappingProxyType({})

@@ -12,6 +12,7 @@ from uuid import uuid4
 
 import numpy as np
 
+from .area_friction_law import law_binding
 from .mujoco_device_controls import _arrays, _overlap, _require
 from .mujoco_runtime import _frozen, _world_keys
 
@@ -165,9 +166,23 @@ class MuJoCoTyxHeterogeneousWorkspace:
                     )
                     if include_area_pressure
                     else 0,
-                    area_schema="mujoco-tyx-area-device-entry-v1"
+                    area_schema=(
+                        "mujoco-tyx-area-device-entry-v2"
+                        if any(s.area_friction_laws for s in batch._models)
+                        else "mujoco-tyx-area-device-entry-v1"
+                    )
                     if include_area_pressure
                     else None,
+                    **(
+                        {
+                            "area_laws": MappingProxyType(
+                                {s.key: law_binding(s.area_friction_laws) for s in batch._models}
+                            )
+                        }
+                        if include_area_pressure
+                        and any(s.area_friction_laws for s in batch._models)
+                        else {}
+                    ),
                     area_force="on-compliant-A; B opposite" if include_area_pressure else None,
                     area_moment="common-world-origin; area_ids[...,5] validity"
                     if include_area_pressure

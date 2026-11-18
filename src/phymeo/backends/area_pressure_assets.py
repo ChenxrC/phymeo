@@ -305,6 +305,10 @@ def _models(model_specs):
     seen, area = set(), {}
     for spec in specs:
         _require(type(spec) is MuJoCoTyxModelSpec, "expected MuJoCoTyxModelSpec")
+        _require(
+            not spec.area_friction_laws,
+            "v1 asset bundle declares friction none; use explicit live law/asset declarations",
+        )
         key = _name(spec.key, "model key")
         _require(key not in seen, "duplicate model key")
         seen.add(key)

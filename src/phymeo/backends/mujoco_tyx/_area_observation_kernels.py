@@ -10,6 +10,9 @@ def scatter(
     out_capacity: tx.i32,
     npair: tx.i32,
     nbody: tx.i32,
+    version: tx.i32,
+    source_width: tx.i32,
+    output_width: tx.i32,
     rows: tx.ndarray(tx.i32, 1),
     body_ids: tx.ndarray(tx.i32, 2),
     entry_meta: tx.ndarray(tx.i32, 2),
@@ -29,9 +32,11 @@ def scatter(
         valid = source_meta[w, 0]
         size = source_meta[w, 1]
         positive = source_meta[w, 2]
-        if valid != 0 and valid != 1:
+        if valid != 0 and valid != version:
             status[w] = 2
-        if valid != entry_meta[w, 0] or source_meta[w, 3] != 0:
+        if entry_meta[w, 0] != 0 and entry_meta[w, 0] != 1:
+            status[w] = 2
+        if (valid != 0) != (entry_meta[w, 0] == 1) or source_meta[w, 3] != 0:
             status[w] = 2
         if size < 0 or size > capacity or positive < 0 or positive > size:
             status[w] = 2
@@ -43,18 +48,18 @@ def scatter(
         for c in range(out_capacity):
             for j in range(6):
                 ids[row, c, j] = 0
-            for j in range(15):
+            for j in range(output_width):
                 data[row, c, j] = 0.0
             for j in range(2):
                 words[row, c, j] = 0
             if c < capacity:
-                used = valid == 1 and c < size
+                used = valid == version and c < size
                 for j in range(6):
                     value = source_ids[w, c, j]
                     ids[row, c, j] = value
                     if not used and value != 0:
                         status[w] = 2
-                for j in range(15):
+                for j in range(source_width):
                     value = source_data[w, c, j]
                     data[row, c, j] = value
                     if not tx.isfinite(value) or (not used and value != 0.0):

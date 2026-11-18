@@ -52,6 +52,7 @@ class MuJoCoTyxModelSpec:
     contact_capacity: int = 64
     constraint_capacity: int = 256
     area_pressure_pairs: tuple = ()
+    area_friction_laws: tuple = ()
 
     def __post_init__(self):
         _key(self.key)
@@ -66,6 +67,13 @@ class MuJoCoTyxModelSpec:
             for pair in self.area_pressure_pairs
         ):
             raise ValueError("area_pressure_pairs requires immutable ordered body pairs")
+        from .area_friction_law import capture_pair_laws
+
+        object.__setattr__(
+            self,
+            "area_friction_laws",
+            capture_pair_laws(self.area_pressure_pairs, self.area_friction_laws),
+        )
 
 
 @dataclass(frozen=True)
@@ -130,6 +138,8 @@ class MuJoCoTyxHeterogeneousBoundaryReceipt:
 
 
 def _signature(spec, mode):
+    from .area_friction_law import law_binding
+
     source = spec.compilation.source
     return (
         source.primary_xml,
@@ -140,7 +150,15 @@ def _signature(spec, mode):
         spec.contact_capacity,
         spec.constraint_capacity,
         spec.area_pressure_pairs,
+        law_binding(spec.area_friction_laws),
     )
+
+
+def _friction_binding(spec):
+    from .area_friction_law import law_binding
+
+    binding = law_binding(spec.area_friction_laws)
+    return {} if binding is None else {"area_friction": binding}
 
 
 def _model_preflight(spec, mj):
@@ -150,7 +168,7 @@ def _model_preflight(spec, mj):
     if spec.area_pressure_pairs:
         from .mujoco_area_pressure import compile_area_plan
 
-        plan = compile_area_plan(mj, model, spec.area_pressure_pairs)
+        plan = compile_area_plan(mj, model, spec.area_pressure_pairs, spec.area_friction_laws)
     else:
         plan = compile_model(mj, model)
     if getattr(plan, "constraint_contact", False) and (
@@ -175,6 +193,8 @@ class MuJoCoTyxHeterogeneousBatch:
         if mode not in ("interpret", "cuda"):
             raise ValueError("heterogeneous mode must be interpret or cuda")
         models, worlds = tuple(models), tuple(worlds)
+        if mode != "cuda" and any(getattr(spec, "area_friction_laws", ()) for spec in models):
+            raise ValueError("live area friction currently requires CUDA")
         if not 1 <= len(models) <= MAX_MODELS or not 1 <= len(worlds) <= MAX_WORLDS:
             raise ValueError("heterogeneous batch requires 1..32 models and 1..32 worlds")
         if (len(models) > 8 or len(worlds) > 16) and resource_budget is None:
@@ -259,6 +279,7 @@ class MuJoCoTyxHeterogeneousBatch:
                         cache_root=cache_root,
                         resource_budget=resource_budget,
                         area_pressure_pairs=spec.area_pressure_pairs,
+                        area_friction_laws=spec.area_friction_laws,
                     )
                     built.append(owner)
                     self._observe_owner(owner)
@@ -339,6 +360,7 @@ class MuJoCoTyxHeterogeneousBatch:
                                     if representatives[i].area_pressure_pairs
                                     else {}
                                 ),
+                                **_friction_binding(representatives[i]),
                             )
                         )
                         for i, owner in enumerate(self._buckets)

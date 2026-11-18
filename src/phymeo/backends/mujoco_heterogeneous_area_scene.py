@@ -109,6 +109,10 @@ class MuJoCoTyxHeterogeneousAreaPressureScene:
                 pairs = tuple((a.identity.compliant_body, a.identity.rigid_body) for a in copies)
                 if pairs != spec.area_pressure_pairs:
                     raise ValueError("assets must match all declared area pairs in order")
+                if spec.area_friction_laws and tuple(a.identity for a in copies) != tuple(
+                    law.identity for law in spec.area_friction_laws
+                ):
+                    raise ValueError("area friction requires complete body/material identities")
                 owned[key] = copies
             self.batch = batch
             self._assets = MappingProxyType(owned)

@@ -17,11 +17,12 @@ class AreaObserver:
         self.capacity = max(
             [1, *(o._constraint_capacity for o in owners if o._area_pressure_pairs)]
         )
+        self.width = 23 if any(o._area_friction_laws for o in owners) else 15
         n = len(workspace._batch.world_keys)
         layout = {
             "area_meta": ((n, 4), np.int32),
             "area_ids": ((n, self.capacity, 6), np.int32),
-            "area_data": ((n, self.capacity, 15), np.float32),
+            "area_data": ((n, self.capacity, self.width), np.float32),
             "area_measure_words": ((n, self.capacity, 2), np.int32),
         }
         for bank in workspace._banks:
@@ -49,6 +50,9 @@ class AreaObserver:
                 self.capacity,
                 len(owner._plan.area_pair_names),
                 owner._model.nbody,
+                2 if owner._area_friction_laws else 1,
+                23 if owner._area_friction_laws else 15,
+                self.width,
                 ws._rows[index],
                 owner._device.area_body_ids,
                 source["entry_meta"],
@@ -77,7 +81,9 @@ class AreaObserver:
                             for name in ("identity", "stamp", "sample_ids", "source_ids")
                         }
                     )
-                    for pair in receipt.raw_contact_fields["area_pressure"]
+                    for pair in receipt.raw_contact_fields[
+                        "area_friction" if owner._area_friction_laws else "area_pressure"
+                    ]
                 )
             )
         return MappingProxyType(result)

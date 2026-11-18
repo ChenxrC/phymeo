@@ -133,176 +133,188 @@ class TyxConstraintDevice(TyxDevice):
             )
             self.counts["completed_kernels"] += 1
             _actuator_device.advance(self, old, new)
-            if self.extended_contacts is not None:
-                self.extended_contacts(
+            if getattr(self.plan, "area_friction_laws", ()):
+                from ._area_friction_device import solve_contact
+
+                solve_contact(self, old)
+            else:
+                if self.extended_contacts is not None:
+                    self.extended_contacts(
+                        self.nworld,
+                        self.ngeom,
+                        self.npair,
+                        self.nslot,
+                        self.geom_ids,
+                        self.geom_data,
+                        self.pair_ids,
+                        self.pair_law,
+                        self.motion,
+                        self.rotation,
+                        self.geom_world,
+                        self.raw_contacts,
+                        self.extended_work,
+                        self.status,
+                        mode=self.mode,
+                    )
+                    self.counts["completed_kernels"] += 1
+                self.contacts[old](
                     self.nworld,
+                    self.plan.nv,
                     self.ngeom,
                     self.npair,
                     self.nslot,
+                    *self.capacities,
+                    self.h,
                     self.geom_ids,
                     self.geom_data,
                     self.pair_ids,
                     self.pair_law,
                     self.motion,
                     self.rotation,
+                    self.jacobian,
+                    self.v[old],
                     self.geom_world,
+                    self.normal_rows,
+                    self.normal_jacobian,
+                    self.contact_work,
                     self.raw_contacts,
-                    self.extended_work,
+                    self.geometry_diagnostics,
                     self.status,
                     mode=self.mode,
                 )
                 self.counts["completed_kernels"] += 1
-            self.contacts[old](
-                self.nworld,
-                self.plan.nv,
-                self.ngeom,
-                self.npair,
-                self.nslot,
-                *self.capacities,
-                self.h,
-                self.geom_ids,
-                self.geom_data,
-                self.pair_ids,
-                self.pair_law,
-                self.motion,
-                self.rotation,
-                self.jacobian,
-                self.v[old],
-                self.geom_world,
-                self.normal_rows,
-                self.normal_jacobian,
-                self.contact_work,
-                self.raw_contacts,
-                self.geometry_diagnostics,
-                self.status,
-                mode=self.mode,
-            )
-            self.counts["completed_kernels"] += 1
-            self.assemble[old](
-                self.nworld,
-                self.plan.nv,
-                self.nslot,
-                self.plan.nfriction,
-                self.plan.nlimit,
-                *self.capacities,
-                self.h,
-                self.plan.impratio,
-                self.slot_ids,
-                self.geom_ids,
-                self.pair_condim,
-                self.pair_friction,
-                self.pair_law,
-                self.friction_ids,
-                self.friction_law,
-                self.limit_ids,
-                self.limit_law,
-                self.q[old],
-                self.v[old],
-                self.motion,
-                self.jacobian,
-                self.normal_rows,
-                self.efc_ids,
-                self.efc_data,
-                self.efc_jacobian,
-                self.contact_map,
-                self.contact_jacobian,
-                self.constraint_counts,
-                self.status,
-                mode=self.mode,
-            )
-            self.counts["completed_kernels"] += 1
-            response_mass = self.mass
-            if hasattr(self.plan, "area_pair_names"):
-                from ._area_pressure_kernels import append_rows
-
-                packet = self.area_packet
-                self._put(self.area_input, packet[0])
-                self._put(self.area_measure_input, packet[4])
-                self._put(self.area_pair_index, packet[1])
-                self._put(self.area_sizes, packet[2])
-                append_rows(
+                self.assemble[old](
                     self.nworld,
                     self.plan.nv,
-                    self.capacities[1],
+                    self.nslot,
+                    self.plan.nfriction,
+                    self.plan.nlimit,
+                    *self.capacities,
                     self.h,
-                    self.area_body_ids,
-                    self.area_input,
-                    self.area_pair_index,
-                    self.area_sizes,
+                    self.plan.impratio,
+                    self.slot_ids,
+                    self.geom_ids,
+                    self.pair_condim,
+                    self.pair_friction,
+                    self.pair_law,
+                    self.friction_ids,
+                    self.friction_law,
+                    self.limit_ids,
+                    self.limit_law,
+                    self.q[old],
+                    self.v[old],
                     self.motion,
                     self.jacobian,
-                    self.v[old],
-                    self.mass,
-                    self.vectors,
-                    self.area_response_mass,
+                    self.normal_rows,
                     self.efc_ids,
                     self.efc_data,
                     self.efc_jacobian,
+                    self.contact_map,
+                    self.contact_jacobian,
                     self.constraint_counts,
                     self.status,
                     mode=self.mode,
                 )
                 self.counts["completed_kernels"] += 1
-                response_mass = self.area_response_mass
-            self.constraint_solve(
-                self.nworld,
-                self.plan.nv,
-                self.capacities[1],
-                self.plan.solver_iterations,
-                self.plan.solver_tolerance,
-                response_mass,
-                self.bias,
-                self.passive,
-                self.applied,
-                self.efc_data,
-                self.efc_jacobian,
-                self.constraint_counts,
-                self.physical_factor,
-                self.mass_work,
-                self.smooth_acc,
-                self.face_matrix,
-                self.face_factor,
-                self.face_rhs,
-                self.face_forward,
-                self.trial_acc,
-                self.trial_force,
-                self.working,
-                self.previous_working,
-                self.previous_force,
-                self.free_ids,
-                self.mixed_constraint,
-                self.total_applied,
-                self.physical_acc,
-                self.solver_diagnostics,
-                self.status,
-                mode=self.mode,
-            )
-            self.counts["completed_kernels"] += 1
-            self.decode(
-                self.nworld,
-                self.plan.nv,
-                *self.capacities,
-                self.slot_ids,
-                self.pair_condim,
-                self.pair_friction,
-                self.contact_map,
-                self.constraint_counts,
-                self.efc_data,
-                self.contact_wrench,
-                self.status,
-                mode=self.mode,
-            )
-            self.counts["completed_kernels"] += 1
-            # Existing solve computes M^-1(total RHS), then (M+hD)^-1(total RHS),
-            # and integrates the original native coordinates. Its cleared
-            # constraint/rows buffers are deliberately disposable here.
+                response_mass = self.mass
+                if hasattr(self.plan, "area_pair_names"):
+                    from ._area_pressure_kernels import append_rows
+
+                    packet = self.area_packet
+                    self._put(self.area_input, packet[0])
+                    self._put(self.area_measure_input, packet[4])
+                    self._put(self.area_pair_index, packet[1])
+                    self._put(self.area_sizes, packet[2])
+                    append_rows(
+                        self.nworld,
+                        self.plan.nv,
+                        self.capacities[1],
+                        self.h,
+                        self.area_body_ids,
+                        self.area_input,
+                        self.area_pair_index,
+                        self.area_sizes,
+                        self.motion,
+                        self.jacobian,
+                        self.v[old],
+                        self.mass,
+                        self.vectors,
+                        self.area_response_mass,
+                        self.efc_ids,
+                        self.efc_data,
+                        self.efc_jacobian,
+                        self.constraint_counts,
+                        self.status,
+                        mode=self.mode,
+                    )
+                    self.counts["completed_kernels"] += 1
+                    response_mass = self.area_response_mass
+                self.constraint_solve(
+                    self.nworld,
+                    self.plan.nv,
+                    self.capacities[1],
+                    self.plan.solver_iterations,
+                    self.plan.solver_tolerance,
+                    response_mass,
+                    self.bias,
+                    self.passive,
+                    self.applied,
+                    self.efc_data,
+                    self.efc_jacobian,
+                    self.constraint_counts,
+                    self.physical_factor,
+                    self.mass_work,
+                    self.smooth_acc,
+                    self.face_matrix,
+                    self.face_factor,
+                    self.face_rhs,
+                    self.face_forward,
+                    self.trial_acc,
+                    self.trial_force,
+                    self.working,
+                    self.previous_working,
+                    self.previous_force,
+                    self.free_ids,
+                    self.mixed_constraint,
+                    self.total_applied,
+                    self.physical_acc,
+                    self.solver_diagnostics,
+                    self.status,
+                    mode=self.mode,
+                )
+                self.counts["completed_kernels"] += 1
+                self.decode(
+                    self.nworld,
+                    self.plan.nv,
+                    *self.capacities,
+                    self.slot_ids,
+                    self.pair_condim,
+                    self.pair_friction,
+                    self.contact_map,
+                    self.constraint_counts,
+                    self.efc_data,
+                    self.contact_wrench,
+                    self.status,
+                    mode=self.mode,
+                )
+                self.counts["completed_kernels"] += 1
+            # Shared native tail retains physical M acceleration. The live mode
+            # consumes the common velocity; the old mode solves M+hD as before.
+            # Both integrate native q/clock once; constraint/rows are disposable.
             solve_args = [self.nworld, self.plan.nv]
             if self.plan.base.kind == 2:
                 solve_args.extend((self.plan.nq, len(self.plan.joint_ids)))
             solve_args.append(self.h)
             if self.plan.base.kind == 2:
                 solve_args.append(self.joints)
-            self.solve[old](
+            integrator = self.solve[old]
+            if getattr(self.plan, "area_friction_laws", ()):
+                if self.plan.base.kind == 3:
+                    from ._floating_kernels import solve_live, solve_live_other
+                else:
+                    from ._tree_kernels import solve_live, solve_live_other
+                integrator = (solve_live, solve_live_other)[old]
+            integrator(
                 *solve_args,
                 self.vectors,
                 self.mass,
@@ -340,6 +352,10 @@ class TyxConstraintDevice(TyxDevice):
 
     def download(self):
         result = self._base_type.download(self)
+        if getattr(self.plan, "area_friction_laws", ()):
+            from ._area_friction_device import download
+
+            return download(self, result)
         with self.tx.use_runtime(self.runtime):
             for name, buffer in (
                 ("normal_rows", self.normal_rows),

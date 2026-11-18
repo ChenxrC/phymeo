@@ -36,7 +36,9 @@ def _entry_binding(runtime):
     if runtime._area_pressure_pairs:
         from .mujoco_area_pressure_device import AREA_SCHEMA
 
-        binding["area_schema"] = AREA_SCHEMA
+        binding["area_schema"] = (
+            "mujoco-tyx-area-device-entry-v2" if runtime._area_friction_laws else AREA_SCHEMA
+        )
         binding["area_measure"] = "IEEE754-binary64-little-endian-low32-high32"
     return binding
 

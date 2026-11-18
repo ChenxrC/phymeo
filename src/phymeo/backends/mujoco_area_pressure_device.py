@@ -19,13 +19,20 @@ def area_layout(plan, nworld, capacities):
     return {
         "area_meta": ((nworld, 4), np.dtype("int32")),
         "area_ids": ((nworld, cap, 6), np.dtype("int32")),
-        "area_data": ((nworld, cap, 15), np.dtype("float32")),
+        "area_data": (
+            (nworld, cap, 23 if getattr(plan, "area_friction_laws", ()) else 15),
+            np.dtype("float32"),
+        ),
         "area_measure_words": ((nworld, cap, 2), np.dtype("int32")),
     }
 
 
 def validate_row(record, index, receipt):
     """Readback validation only; never produce the accepted device record."""
+    if record["area_data"].shape[-1] == 23:
+        from .mujoco_area_friction_live import validate_device_row
+
+        return validate_device_row(record, index, receipt)
     meta, ids, data, words = (record[k][index] for k in AREA_FIELDS)
     if receipt is None:
         _require(
@@ -192,12 +199,16 @@ def copy_accepted(runtime, outputs, expected_revision):
                             for name in ("identity", "stamp", "sample_ids", "source_ids")
                         }
                     )
-                    for pair in receipt.raw_contact_fields["area_pressure"]
+                    for pair in receipt.raw_contact_fields[
+                        "area_friction" if runtime._area_friction_laws else "area_pressure"
+                    ]
                 )
             )
         frame = MappingProxyType(
             dict(
-                schema="mujoco-tyx-area-device-copy-v1",
+                schema="mujoco-tyx-area-device-copy-v2"
+                if runtime._area_friction_laws
+                else "mujoco-tyx-area-device-copy-v1",
                 revision=expected_revision,
                 world_keys=runtime.world_keys,
                 pair_names=runtime._plan.area_pair_names,

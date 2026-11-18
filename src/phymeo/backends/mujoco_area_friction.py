@@ -18,12 +18,11 @@ import numpy as np
 
 from ..builders.mujoco_compiler import MuJoCoCompilation, MuJoCoSource, _mujoco
 from ..geometry.area_pressure import (
-    AreaPressureIdentity,
     AreaPressureQuadrature,
-    _identity,
     _quadrature,
 )
 from ..solvers.area_friction import LAW, AreaFrictionProblem, AreaFrictionSample, _number
+from .area_friction_law import AreaFrictionPairLaw as AreaFrictionPairLaw
 from .mujoco_heterogeneous import MuJoCoTyxModelSpec, MuJoCoTyxWorldLayout
 
 SCOPE = "historical-same-entry-counterfactual-no-integration"
@@ -71,26 +70,6 @@ def _rn32(value, name):
         raise ValueError(name + " is not finite FP32") from error
     _require(np.isfinite(packed).all(), name + " is not finite FP32")
     return packed.astype(np.float64)
-
-
-@dataclass(frozen=True)
-class AreaFrictionPairLaw:
-    identity: AreaPressureIdentity
-    mu: float
-    slip_speed_m_s: float
-
-    def __post_init__(self):
-        identity = _identity(self.identity)
-        mu = _number(self.mu, "mu")
-        slip = _number(self.slip_speed_m_s, "slip_speed_m_s")
-        _require(mu >= 0 and slip > 0, "require mu>=0 and slip_speed_m_s>0")
-        object.__setattr__(self, "identity", identity)
-        object.__setattr__(self, "mu", mu)
-        object.__setattr__(self, "slip_speed_m_s", slip)
-
-    @property
-    def law(self):
-        return LAW
 
 
 @dataclass(frozen=True, eq=False)

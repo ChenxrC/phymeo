@@ -1,22 +1,26 @@
 """Measure ordinary and phase-timed CUDA steps in counterbalanced order."""
 
 import json
-from contextlib import ExitStack
+from contextlib import ExitStack, nullcontext
 from dataclasses import replace
 from time import perf_counter_ns
 
 import numpy as np
 import pytest
+from test_area_pressure_scene_preparation import _validation_calls
+from test_area_pressure_step_mesh_reuse import uncached_inputs
 from test_mujoco_area_friction_lifecycle import _same
 from test_mujoco_area_friction_live import H, _cases
 from test_mujoco_area_friction_scale import DEVICE_PAYLOAD_LIMIT
+from test_mujoco_area_friction_wide import _wide
 
+import phymeo.backends.mujoco_area_pressure_scene as scene_geometry
 from experiments.area_pressure import moving_jaw_grasp as jaws
 from experiments.area_pressure.scene_step_timing import measure_scene_step
 from phymeo.backends.mujoco_heterogeneous import MuJoCoTyxHeterogeneousBatch
 from phymeo.backends.mujoco_heterogeneous_area_scene import MuJoCoTyxHeterogeneousAreaPressureScene
 from phymeo.backends.mujoco_resource_budget import MuJoCoTyxResourceBudget
-from phymeo.backends.mujoco_runtime import MuJoCoControl
+from phymeo.backends.mujoco_runtime import MuJoCoControl, MuJoCoInitialState
 
 
 def _workload(case):
@@ -27,6 +31,22 @@ def _workload(case):
             for name, count, drive, force in jaws.PHASES
         ]
         return specs, worlds, assets, jaws.H, phases
+    if case == "independent":
+        spec, template, assets, _ = _wide(8)
+        worlds = []
+        for i in range(4):
+            q, v = template.initial_state.q.copy(), template.initial_state.v.copy()
+            # Translate both bodies together, then give each a different velocity.
+            # Each pair remains in its own contact footprint. Neither side shares
+            # the same stored coordinates across worlds even on the first step.
+            q[0] += i * 0.001
+            q[7] += i * 0.001
+            v[0] += i * 0.002
+            v[6] -= i * 0.001
+            worlds.append(
+                replace(template, world=7 + 1000 * i, initial_state=MuJoCoInitialState(q, v))
+            )
+        return (spec,), tuple(worlds), assets, H, [("independent", 3, None)]
     specs, template, assets = _cases()
     spec = specs[0]
     worlds = tuple(replace(template[0], world=7 + 1000 * i) for i in range(case))
@@ -34,7 +54,7 @@ def _workload(case):
 
 
 @pytest.mark.cuda
-@pytest.mark.parametrize("case", [1, 4, 32, "jaws"])
+@pytest.mark.parametrize("case", [1, 4, 32, "jaws", "independent"])
 def test_profile_complete_scene_steps(case, tmp_path, monkeypatch):
     import mujoco
 
@@ -44,9 +64,13 @@ def test_profile_complete_scene_steps(case, tmp_path, monkeypatch):
     monkeypatch.setattr(mujoco, "mj_step", reject_cpu_step)
     specs, worlds, assets, h, phases = _workload(case)
     reference = []
-    runs = []
+    runs, uncached_runs = [], []
     output = tmp_path / "scene-step-profile.json"
-    for run_index, detailed in enumerate((False, True, True, False)):
+    # The ordinary old/new comparison is counterbalanced around the two diagnostic runs.
+    for run_index, variant in enumerate(
+        ("uncached", "ordinary", "detailed", "detailed", "ordinary", "uncached")
+    ):
+        detailed = variant == "detailed"
         rows = []
         started = perf_counter_ns()
         with ExitStack() as stack:
@@ -65,14 +89,20 @@ def test_profile_complete_scene_steps(case, tmp_path, monkeypatch):
             bucket_count = len({row.bucket for row in batch.layout.values()})
             nworld = len(worlds)
             assert bucket_count == (2 if case == "jaws" else 1)
-            runs.append(dict(detailed=detailed, setup_ns=perf_counter_ns() - started, rows=rows))
+            target = uncached_runs if variant == "uncached" else runs
+            target.append(dict(detailed=detailed, setup_ns=perf_counter_ns() - started, rows=rows))
+            if variant == "uncached":
+                patch = stack.enter_context(monkeypatch.context())
+                patch.setattr(scene_geometry, "_build_geometry_inputs", uncached_inputs)
             for phase, count, ctrl in phases:
                 if ctrl is not None:
                     batch.set_controls(dict.fromkeys(batch.world_keys, ctrl))
                 for _ in range(count):
                     tick = len(rows) + 1
                     owners = {k: batch.area_pressure_configuration_id(k) for k in batch.world_keys}
-                    accepted, row = measure_scene_step(scene, h, detailed=detailed)
+                    counter = _validation_calls(monkeypatch) if detailed else nullcontext()
+                    with counter as built:
+                        accepted, row = measure_scene_step(scene, h, detailed=detailed)
                     start = perf_counter_ns()
                     frame = ws.refresh(expected_revision=batch.checkpoint_revision)
                     refreshed = perf_counter_ns()
@@ -102,6 +132,13 @@ def test_profile_complete_scene_steps(case, tmp_path, monkeypatch):
                             assert calls[key] == bucket_count
                         pairs = sum(len(assets[w.model_key]) for w in worlds)
                         assert calls["mesh_validation"] == calls["intersection"] == pairs
+                        row["mesh_builds"] = dict(built)
+                        if case == "independent":
+                            assert built == {"pressure": 4, "rigid": 4}
+                        elif case == "jaws":
+                            assert 1 <= built["pressure"] <= 2 and 2 <= built["rigid"] <= 4
+                        else:
+                            assert built == {"pressure": 1, "rigid": 1}
                         assert calls["force_publication"] == nworld
                         assert calls["receipt_checks"] >= 2 * nworld
                         assert sum(row["exclusive_ns"].values()) == row["scene_ns"]
@@ -119,6 +156,9 @@ def test_profile_complete_scene_steps(case, tmp_path, monkeypatch):
                             assert stamp.step_index == tick - 1
                             samples += len(contact["sample_ids"])
                             total_load += float(np.sum(contact["normal_force"]))
+                    if case == "independent":
+                        assert len({states[w.world].v[0] for w in worlds}) == len(worlds)
+                        assert len({states[w.world].q[7] for w in worlds}) == len(worlds)
                     row.update(samples=samples, total_normal_n=total_load)
                     if case != "jaws" or phase == "load":
                         assert samples and total_load > 0
@@ -137,7 +177,14 @@ def test_profile_complete_scene_steps(case, tmp_path, monkeypatch):
             assert len(rows) == sum(n for _, n, _ in phases)
         output.write_text(
             json.dumps(
-                dict(case=case, worlds=nworld, buckets=bucket_count, timestep_s=h, runs=runs),
+                dict(
+                    case=case,
+                    worlds=nworld,
+                    buckets=bucket_count,
+                    timestep_s=h,
+                    runs=runs,
+                    uncached_runs=uncached_runs,
+                ),
                 allow_nan=False,
             ),
             encoding="utf-8",

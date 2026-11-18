@@ -28,7 +28,7 @@ from ..geometry.area_pressure_intersection import (
     RigidPressureMesh,
     TetraPressureMesh,
     _AreaPressureGeometryInput,
-    _build_geometry_input,
+    _build_geometry_inputs,
     _meshes,
     _owns_polygon,
     _publish_triangle,
@@ -66,10 +66,11 @@ def _strict_aabb_separation(cell, face):
     )
 
 
-def _checked_mesh_request(request):
-    identity, stamp = _identity(request.identity), _stamp(request.stamp)
-    pressure, rigid = _meshes(request.pressure_mesh, request.rigid_mesh)
-    return pressure, rigid, identity, stamp
+def _checked_mesh_requests(requests):
+    for request in requests:
+        identity, stamp = _identity(request.identity), _stamp(request.stamp)
+        pressure, rigid = _meshes(request.pressure_mesh, request.rigid_mesh)
+        yield pressure, rigid, identity, stamp
 
 
 class _Unresolved(ValueError):
@@ -296,12 +297,12 @@ class TyxAreaPressureIntersector:
         Counters describe attempted work, including failed work. Published query
         results change only after all chunks, exact checks and outputs succeed.
         """
-        return self._run_many(requests, AreaPressureIntersectionRequest, _checked_mesh_request)
+        return self._run_many(requests, AreaPressureIntersectionRequest, _checked_mesh_requests)
 
     def _intersect_geometry_inputs(self, requests):
         # Raw declarations still undergo every current-geometry check. This is
         # not a "trusted mesh" switch and cannot admit a caller's private cache.
-        return self._run_many(requests, _AreaPressureGeometryInput, _build_geometry_input)
+        return self._run_many(requests, _AreaPressureGeometryInput, _build_geometry_inputs)
 
     def _run_many(self, requests, request_type, build):
         with self._lock:
@@ -354,8 +355,7 @@ class TyxAreaPressureIntersector:
         try:
             checked, count = [], 0
             # Mesh validation is bounded and complete before the first device launch.
-            for request in requests:
-                pressure, rigid, identity, stamp = build(request)
+            for pressure, rigid, identity, stamp in build(requests):
                 size = len(pressure.cells) * len(rigid.faces)
                 count += size
                 if size > self.capacity or count > MAX_CANDIDATE_PAIRS:

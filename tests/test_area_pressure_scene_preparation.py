@@ -1,4 +1,4 @@
-"""One complete validation of each current world mesh before shared execution.
+"""One complete validation of each distinct current mesh side before shared execution.
 
 Spies call the original validators and never manufacture geometry or forces.
 The large-translation fault tests FP64 world-coordinate collapse, not a changed
@@ -12,6 +12,7 @@ from types import MappingProxyType
 import numpy as np
 import pytest
 from test_area_pressure_intersection import _case, _identity, _stamp
+from test_area_pressure_step_mesh_reuse import uncached_inputs
 from test_mujoco_tyx_area_pressure_heterogeneous import _exact_arrays
 from test_mujoco_tyx_area_pressure_heterogeneous_scene import (
     AREA_KEYS,
@@ -73,10 +74,13 @@ def _signature(intersection):
 
 
 def _step_once_and_check_validation(monkeypatch, scene):
+    before = scene.batch.integration_snapshot((41, 305))
+    # Only the two soft worlds can share a plate. Both use the same shape,
+    # material and orientation, and their second slide translates the plate in Z.
+    shared_plate = before[41].q[1] == before[305].q[1]
     with _validation_calls(monkeypatch) as counts:
         _step(scene)
-    # All four requests count, including the currently separated soft world.
-    assert counts == {"pressure": 4, "rigid": 4}
+    assert counts == {"pressure": 4, "rigid": 3 if shared_plate else 4}
 
 
 def _compare_current_outputs(
@@ -145,7 +149,7 @@ def test_owned_raw_declaration_copies_inputs_and_defers_complete_geometry_checks
                     assert (value.shape, value.dtype.str, value.tobytes()) == captured[name][field]
                 else:
                     assert value == captured[name][field]
-        pressure, rigid, identity, stamp = mesh_geometry._build_geometry_input(raw)
+        ((pressure, rigid, identity, stamp),) = mesh_geometry._build_geometry_inputs((raw,))
         assert counts == {"pressure": 1, "rigid": 1}
         assert identity == _identity() and stamp == _stamp()
         for field in ("world_vertices", "cells", "nodal_pressure"):
@@ -157,7 +161,7 @@ def test_owned_raw_declaration_copies_inputs_and_defers_complete_geometry_checks
     object.__setattr__(raw, "pressure", dict(raw.pressure, unexpected_field=0))
     with _validation_calls(monkeypatch) as counts:
         with pytest.raises(AreaPressureIntersectionError) as error:
-            mesh_geometry._build_geometry_input(raw)
+            tuple(mesh_geometry._build_geometry_inputs((raw,)))
         assert error.value.category == "invalid_input"
         assert counts == {"pressure": 0, "rigid": 0}
 
@@ -177,13 +181,13 @@ def test_owned_raw_declaration_copies_inputs_and_defers_complete_geometry_checks
             )
             assert counts == {"pressure": 0, "rigid": 0}
             with pytest.raises(AreaPressureIntersectionError) as error:
-                mesh_geometry._build_geometry_input(invalid)
+                tuple(mesh_geometry._build_geometry_inputs((invalid,)))
             assert error.value.category == "invalid_mesh"
 
 
 @pytest.mark.parametrize("mode", MODES)
 @pytest.mark.parametrize("route", ("host", "mixed"))
-def test_current_geometry_validates_once_per_world_and_matches_host_after_reset(
+def test_current_geometry_validates_distinct_sides_and_matches_host_after_reset(
     mode, route, monkeypatch
 ):
     with ExitStack() as stack:
@@ -204,7 +208,9 @@ def test_current_geometry_validates_once_per_world_and_matches_host_after_reset(
             before = batch.integration_snapshot()
             configuration = {key: batch.area_pressure_configuration_id(key) for key in AREA_KEYS}
             # Only the tested scene's complete physical step is in the spy scope.
-            _step(reference_scene)
+            with monkeypatch.context() as patch:
+                patch.setattr(scene_geometry, "_build_geometry_inputs", uncached_inputs)
+                _step(reference_scene)
             _step_once_and_check_validation(monkeypatch, scene)
             frame, _ = _compare_current_outputs(
                 batch, scene, workspace, reference_batch, reference_scene, reference_ws
@@ -244,7 +250,9 @@ def test_current_geometry_validates_once_per_world_and_matches_host_after_reset(
                 _same(after_reset[key], before_reset[key])
 
         configuration = {key: batch.area_pressure_configuration_id(key) for key in AREA_KEYS}
-        _step(reference_scene)
+        with monkeypatch.context() as patch:
+            patch.setattr(scene_geometry, "_build_geometry_inputs", uncached_inputs)
+            _step(reference_scene)
         _step_once_and_check_validation(monkeypatch, scene)
         _compare_current_outputs(
             batch, scene, workspace, reference_batch, reference_scene, reference_ws

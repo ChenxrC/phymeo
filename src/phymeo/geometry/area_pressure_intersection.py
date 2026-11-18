@@ -319,14 +319,58 @@ class _AreaPressureGeometryInput:
         object.__setattr__(self, "stamp", _stamp(stamp))
 
 
-def _build_geometry_input(request):
-    """Validate actual stored world geometry exactly once for this invocation."""
-    if type(request) is not _AreaPressureGeometryInput:
-        _fail("invalid_input", "expected owned raw geometry input")
-    identity, stamp = _identity(request.identity), _stamp(request.stamp)
-    pressure = TetraPressureMesh(**_raw_mesh_fields(request.pressure, pressure=True))
-    rigid = RigidPressureMesh(**_raw_mesh_fields(request.rigid, pressure=False))
-    return pressure, rigid, identity, stamp
+class _StepMeshBuilder:
+    """Share checked mesh sides only within one ordered raw request batch."""
+
+    def __init__(self, count):
+        self.pressures = {} if count > 1 else None
+        self.rigids = {} if count > 1 else None
+
+    @staticmethod
+    def _mesh(raw, body, material, cache, *, pressure):
+        constructor = TetraPressureMesh if pressure else RigidPressureMesh
+        if cache is None:
+            return constructor(**_raw_mesh_fields(raw, pressure=pressure))
+
+        # Bound and own inputs before taking bytes, even for a cache hit.
+        fields = _owned_mesh_input(raw, pressure=pressure)
+        key = (
+            body,
+            material,
+            tuple(
+                (value.dtype.str, value.shape, value.tobytes())
+                if isinstance(value, np.ndarray)
+                else value
+                for value in fields.values()
+            ),
+        )
+        mesh = cache.get(key)
+        if mesh is None:
+            mesh = constructor(**fields)
+            cache[key] = mesh
+        return mesh
+
+    def build(self, request):
+        if type(request) is not _AreaPressureGeometryInput:
+            _fail("invalid_input", "expected owned raw geometry input")
+        identity, stamp = _identity(request.identity), _stamp(request.stamp)
+        pressure = self._mesh(
+            request.pressure,
+            identity.compliant_body,
+            identity.compliant_material,
+            self.pressures,
+            pressure=True,
+        )
+        rigid = self._mesh(
+            request.rigid, identity.rigid_body, identity.rigid_material, self.rigids, pressure=False
+        )
+        return pressure, rigid, identity, stamp
+
+
+def _build_geometry_inputs(requests):
+    # Lazy consumption keeps the mixed intersector's per-query capacity check
+    # ahead of the next query's predicates. The iterator owns both maps.
+    return map(_StepMeshBuilder(len(requests)).build, requests)
 
 
 def _meshes(pressure_mesh, rigid_mesh):

@@ -14,7 +14,7 @@ from ..geometry.area_pressure_intersection import (
     RigidPressureMesh,
     TetraPressureMesh,
     _AreaPressureGeometryInput,
-    _build_geometry_input,
+    _build_geometry_inputs,
     _intersect_checked,
 )
 
@@ -188,7 +188,7 @@ def _geometry_requests(runtime, assets_by_world):
 def _intersect_requests(requests_by_world, intersector=None):
     requests = tuple(request for group in requests_by_world.values() for request in group)
     if intersector is None:
-        checked = tuple(_build_geometry_input(request) for request in requests)
+        checked = tuple(_build_geometry_inputs(requests))
         results = tuple(
             _intersect_checked(pressure, rigid, identity=identity, stamp=stamp)
             for pressure, rigid, identity, stamp in checked

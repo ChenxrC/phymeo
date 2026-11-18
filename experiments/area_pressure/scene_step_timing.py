@@ -21,6 +21,7 @@ from phymeo.backends import (
     mujoco_heterogeneous_area_scene,
 )
 from phymeo.backends.mujoco_tyx import _entry_storage
+from phymeo.geometry.area_pressure_intersection import _StepMeshBuilder
 
 
 def measure_scene_step(scene, h, *, detailed):
@@ -79,7 +80,7 @@ def measure_scene_step(scene, h, *, detailed):
             hooks.enter_context(patch.object(owner, method, timed))
 
         bind(mujoco_heterogeneous_area_scene, "_geometry_requests", "poses_and_requests")
-        bind(mujoco_area_pressure_scene, "_build_geometry_input", "mesh_validation")
+        bind(_StepMeshBuilder, "build", "mesh_validation")
         bind(mujoco_area_pressure_scene, "_intersect_checked", "intersection")
         bind(mujoco_area_pressure, "pack", "surface_packet")
         bind(_tyx_area_friction_entry, "pack_entry", "cuda_row_assembly", kernel=True)

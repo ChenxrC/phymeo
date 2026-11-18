@@ -30,10 +30,13 @@ def summarize(case):
     def avg_ms(rows, key):
         return mean(row[key] for row in rows) / 1e6
 
-    ordinary_observed = sum(
-        avg_ms(ordinary, key) for key in ("scene_ns", "refresh_ns", "readback_ns", "snapshot_ns")
-    )
-    return dict(
+    def observed_ms(rows):
+        return sum(
+            avg_ms(rows, key) for key in ("scene_ns", "refresh_ns", "readback_ns", "snapshot_ns")
+        )
+
+    ordinary_observed = observed_ms(ordinary)
+    result = dict(
         case=case["case"],
         worlds=case["worlds"],
         buckets=case["buckets"],
@@ -49,6 +52,25 @@ def summarize(case):
             for k, ns in costs.most_common()
         },
     )
+    if "uncached_runs" in case:
+        uncached = case["uncached_runs"]
+        if len(uncached) != 2 or any(r["detailed"] or len(r["rows"]) != steps for r in uncached):
+            raise ValueError("expected two complete ordinary reference runs")
+        old_rows = [row for r in uncached for row in r["rows"][1:]]
+        old_ms = observed_ms(old_rows)
+        requests = sum(r["calls"]["mesh_validation"] for r in detailed)
+        result["reuse"] = dict(
+            uncached_observed_ms=old_ms,
+            observed_speedup=old_ms / ordinary_observed,
+            uncached_run_ms=[observed_ms(r["rows"][1:]) for r in uncached],
+            ordinary_run_ms=[observed_ms(r["rows"][1:]) for r in runs if not r["detailed"]],
+            requests_per_side=requests,
+            hits={
+                side: requests - sum(r["mesh_builds"][side] for r in detailed)
+                for side in ("pressure", "rigid")
+            },
+        )
+    return result
 
 
 def main():

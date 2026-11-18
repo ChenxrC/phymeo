@@ -10,6 +10,7 @@ from types import MappingProxyType
 
 import numpy as np
 
+from ..backends.area_friction_readback import AreaFrictionEntryReader
 from ..backends.area_pressure_readback import AreaPressureEntryReader
 from .manipulation_wrench import measure_object_contact_wrench
 
@@ -128,7 +129,17 @@ class BodyContactWrenchReader:
         )
         self._area = None
         if binding.get("area_pressure"):
-            self._area = AreaPressureEntryReader(
+            schema = binding.get("area_schema")
+            if schema == AreaFrictionEntryReader.ABI[0]:
+                reader = AreaFrictionEntryReader
+            else:
+                _require(
+                    schema == AreaPressureEntryReader.ABI[0]
+                    and not any(row.get("area_friction") for row in binding["source"]["buckets"]),
+                    "area observation ABI differs from declared model laws",
+                )
+                reader = AreaPressureEntryReader
+            self._area = reader(
                 workspace, {} if not has_area and area_identities is None else area_identities
             )
         else:

@@ -13,6 +13,7 @@ from phymeo.backends.area_friction_readback import (
     AreaFrictionSample,
 )
 from phymeo.backends.area_pressure_readback import AreaPressureEntryReader
+from phymeo.control.body_contact_wrench import BodyContactWrenchReader, BodyContactWrenchRequest
 
 LAW = "final_normal_smooth_v1"
 LAW_BINDING = (
@@ -148,6 +149,27 @@ def test_v1_and_v2_abis_cannot_be_silently_reinterpreted():
     arrays["area_data"] = arrays["area_data"][:, :, :15].copy()
     with pytest.raises(ValueError):
         _reader(new).validate(arrays, new.frame)
+
+
+def test_body_wrench_selects_bound_law_for_mixed_observations():
+    ws = _fixture()
+    ws.readback = lambda frame: ws.arrays
+    reader = BodyContactWrenchReader(ws, area_identities=IDENTITIES)
+    queries = tuple(
+        BodyContactWrenchRequest(key, "object", (0.0, 0.0, 0.0), ("support",)) for key in (13, 41)
+    )
+    friction, normal = reader.measure_many(ws.frame, queries)
+    np.testing.assert_allclose(friction.group_force_world, (-1.2, 3.0, 0.0), atol=2e-6)
+    np.testing.assert_allclose(normal.group_force_world, (0.0, 3.0, 0.0), atol=2e-6)
+    np.testing.assert_allclose(friction.group_moment_world, (-6.0, -2.4, -3.0), atol=2e-6)
+    for schema in (AreaPressureEntryReader.ABI[0], "unknown"):
+        with pytest.raises(ValueError, match="ABI"):
+            BodyContactWrenchReader(_rebind(ws, area_schema=schema), area_identities=IDENTITIES)
+    damaged = _arrays(ws)
+    damaged["area_data"][0, 0, 21] = 0.25
+    ws.readback = lambda frame: damaged
+    with pytest.raises(ValueError, match="parameters differ"):
+        reader.measure_many(ws.frame, queries)
 
 
 def test_complete_law_material_source_and_actual_parameter_bindings():

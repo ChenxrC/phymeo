@@ -12,7 +12,14 @@ from ..solvers.area_friction import LAW, _number
 
 SCHEMA = "mujoco-tyx-area-friction-law-v1"
 GUIDE_SCHEMA = "mujoco-tyx-area-friction-guide-v1"
+LIMIT_SCHEMA = "mujoco-tyx-area-friction-limit-v1"
 PRECISION = "actual-packed-point-fp32"
+
+
+def solver_schema(plan):
+    if plan.nlimit:
+        return LIMIT_SCHEMA
+    return GUIDE_SCHEMA if plan.nfriction else "mujoco-tyx-area-friction-live-v1"
 
 
 def _require(condition, message):

@@ -57,8 +57,9 @@ def solve_contact(device, old):
         device.nworld,
         *(out(name) for name in FRICTION_FIELDS),
         require_velocity_agreement=True,
-        guide=device.efc_data if device.plan.nfriction else None,
-        guide_dof=int(device.plan.friction_ids[0]) if device.plan.nfriction else -1,
+        native_rows=(device.efc_data, device.efc_jacobian, device.constraint_counts)
+        if device.plan.nfriction or device.plan.nlimit
+        else None,
         mode=device.mode,
     )
     device.counts["completed_kernels"] += 1
@@ -114,7 +115,7 @@ def download(device, result):
     with device.tx.use_runtime(device.runtime):
         for name in FRICTION_FIELDS + ("pack_status",):
             result["friction_" + name] = device._get(getattr(device, "friction_" + name))
-        if device.plan.nfriction:
+        if device.plan.nfriction or device.plan.nlimit:
             for name in ("efc_ids", "efc_data", "efc_jacobian", "constraint_counts"):
                 result[name] = device._get(getattr(device, name))
         result["constraint"] = device._get(device.mixed_constraint)

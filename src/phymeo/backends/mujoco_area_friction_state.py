@@ -16,8 +16,10 @@ from ..geometry.area_pressure import (
     AreaPressureStamp,
     _quadrature,
 )
-from .area_friction_law import GUIDE_SCHEMA, LAW, PRECISION, capture_pair_laws
+from .area_friction_law import LAW, PRECISION, capture_pair_laws, solver_schema
+from .mujoco_area_guide import expected_slide_rows, validate_guide_row
 from .mujoco_tyx._area_friction_layout import MAX_LIVE_DOF, friction_width
+from .mujoco_tyx._constraint_publication import MuJoCoTyxConstraintRow
 from .mujoco_tyx._model import fp32
 
 SCHEMA = "mujoco-tyx-area-friction-live-v1"
@@ -215,9 +217,8 @@ def _validate(runtime, key, receipt, state):
         h > 0
         and type(receipt.contacts) is tuple
         and not receipt.contacts
-        and type(receipt.constraints) is tuple
-        and len(receipt.constraints) == runtime._plan.nfriction,
-        "native contact/guide row count",
+        and type(receipt.constraints) is tuple,
+        "native contacts and constraint rows",
     )
     fields = receipt.raw_contact_fields
     _require(
@@ -236,7 +237,7 @@ def _validate(runtime, key, receipt, state):
         "solver record fields",
     )
     _require(
-        _tag(solver["schema"], GUIDE_SCHEMA if receipt.constraints else SCHEMA)
+        _tag(solver["schema"], solver_schema(runtime._plan))
         and _tag(solver["law"], LAW)
         and _tag(solver["precision"], PRECISION)
         and type(solver["solver_status"]) is int
@@ -335,11 +336,21 @@ def _validate(runtime, key, receipt, state):
     _diagnostics(solver["raw_diagnostics"], velocity, nv)
     count, common_stamp = 0, None
     summed, law_total = np.zeros(nv), np.zeros(nv)
-    if receipt.constraints:
-        from .mujoco_area_guide import validate_guide_row
+    owners = expected_slide_rows(runtime._plan, data["input_q"])
+    _require(len(receipt.constraints) == len(owners), "complete native slide row count")
+    for owner, row in zip(owners, receipt.constraints, strict=True):
+        _require(type(row) is MuJoCoTyxConstraintRow, "native slide row type")
+        _require(
+            (row.constraint_type, row.source_id, row.side_or_edge, row.geometry_slot, row.dof)
+            == owner,
+            "native slide row identity or ordering",
+        )
+        if owner[0] == 1:
+            predicted = validate_guide_row(runtime._plan, row, v0, output, h, qacc)
+        else:
+            from .mujoco_area_limit import validate_limit_row
 
-        row = receipt.constraints[0]
-        predicted = validate_guide_row(runtime._plan, row, v0, output, h, qacc)
+            predicted = validate_limit_row(runtime._plan, row, data["input_q"], v0, output, h, qacc)
         summed += row.jacobian * row.force
         law_total += row.jacobian * predicted
     for raw, law, body_ids in zip(pairs, laws, ids, strict=True):

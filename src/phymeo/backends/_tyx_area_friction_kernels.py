@@ -25,8 +25,10 @@ def _solve_batch(
     trace: tx.ndarray(tx.f32, 3),
     require_velocity_agreement: tx.i32,
     packed_width: tx.i32,
-    guide_dof: tx.i32,
-    guide: tx.ndarray(tx.f32, 3),
+    row_capacity: tx.i32,
+    rows: tx.ndarray(tx.f32, 3),
+    row_j: tx.ndarray(tx.f32, 3),
+    counts: tx.ndarray(tx.i32, 2),
 ):
     # Each lane owns an independent complete problem. All fixed padding is reset.
     # Matrices: A, Cholesky(A), actual residual Jacobian, pivot elimination copy.
@@ -58,6 +60,12 @@ def _solve_batch(
             budget = sizes[w, 2]
             searches = sizes[w, 3]
             h = steps[w]
+            nr = 0
+            if row_capacity > 0:
+                nr = counts[w, 2]
+                if nr < 0 or nr > row_capacity or nr > 2 or nv > 2:
+                    meta[w, 0] = 1
+                    nr = 0
             if (
                 nv < 1
                 or nv > packed_width
@@ -232,49 +240,64 @@ def _solve_batch(
                                 matrices[w, 2, i, j] = matrices[w, 2, i, j] - h * (
                                     gx * dfx + gy * dfy + gz * dfz
                                 )
-                    # The native dry row has J = e_dof on the compiled slide tree.
-                    # The same trial velocity drives both the pressure and the box law.
-                    guide_ok = 1
-                    if guide_dof >= 0:
-                        reg = guide[w, 0, 4]
-                        if guide_dof >= nv or not tx.isfinite(reg) or reg <= 0.0:
+                    # All native rows see the same trial velocity as the area forces.
+                    native_ok = 1
+                    for r in range(nr):
+                        reg = rows[w, r, 4]
+                        if not tx.isfinite(reg) or reg <= 0.0:
                             meta[w, 0] = 2
                         else:
-                            acc = (vectors[w, 2, guide_dof] - inputs[w, 1, guide_dof]) / h
-                            raw = (guide[w, 0, 3] - acc) / reg
-                            lower = guide[w, 0, 7]
-                            upper = guide[w, 0, 8]
-                            reaction = tx.min(upper, tx.max(lower, raw))
+                            projected = 0.0
+                            for i in range(nv):
+                                projected = projected + (
+                                    row_j[w, r, i] * (vectors[w, 2, i] - inputs[w, 1, i]) / h
+                                )
+                            raw = (rows[w, r, 3] - projected) / reg
+                            lower = rows[w, r, 7]
+                            upper = rows[w, r, 8]
+                            has_upper = rows[w, r, 12] == 1.0
+                            reaction = tx.max(lower, raw)
+                            if has_upper:
+                                reaction = tx.min(upper, reaction)
                             if not tx.isfinite(raw):
                                 meta[w, 0] = 2
-                            guide[w, 0, 9] = reaction
-                            vectors[w, 7, guide_dof] = vectors[w, 7, guide_dof] + reaction
-                            if lower < raw and raw < upper:
-                                matrices[w, 2, guide_dof, guide_dof] = (
-                                    matrices[w, 2, guide_dof, guide_dof] + 1.0 / reg
-                                )
-                            # D=0 in the mixed domain. Reuse the mass Cholesky
-                            # to project M^-1(smooth + area + guide) onto J.
+                            rows[w, r, 9] = reaction
                             for i in range(nv):
-                                value = inputs[w, 2, i] + vectors[w, 7, i]
-                                for j in range(i):
-                                    value = value - matrices[w, 1, i, j] * vectors[w, 5, j]
-                                vectors[w, 5, i] = value / matrices[w, 1, i, i]
-                            for reverse in range(nv):
-                                i = nv - 1 - reverse
-                                value = vectors[w, 5, i]
-                                for j in range(i + 1, nv):
-                                    value = value - matrices[w, 1, j, i] * vectors[w, 5, j]
-                                vectors[w, 5, i] = value / matrices[w, 1, i, i]
-                            physical = vectors[w, 5, guide_dof]
-                            gradient = physical + reg * reaction - guide[w, 0, 3]
+                                ji = row_j[w, r, i]
+                                vectors[w, 7, i] = vectors[w, 7, i] + ji * reaction
+                                if raw > lower and (not has_upper or raw < upper):
+                                    for j in range(nv):
+                                        matrices[w, 2, i, j] = (
+                                            matrices[w, 2, i, j] + ji * row_j[w, r, j] / reg
+                                        )
+                    if nr > 0:
+                        # D=0 here. A single physical acceleration includes every load.
+                        for i in range(nv):
+                            value = inputs[w, 2, i] + vectors[w, 7, i]
+                            for j in range(i):
+                                value = value - matrices[w, 1, i, j] * vectors[w, 5, j]
+                            vectors[w, 5, i] = value / matrices[w, 1, i, i]
+                        for reverse in range(nv):
+                            i = nv - 1 - reverse
+                            value = vectors[w, 5, i]
+                            for j in range(i + 1, nv):
+                                value = value - matrices[w, 1, j, i] * vectors[w, 5, j]
+                            vectors[w, 5, i] = value / matrices[w, 1, i, i]
+                        for r in range(nr):
+                            reaction = rows[w, r, 9]
+                            compliance_term = rows[w, r, 4] * reaction
+                            gradient = compliance_term - rows[w, r, 3]
+                            for i in range(nv):
+                                gradient = gradient + row_j[w, r, i] * vectors[w, 5, i]
                             violation = tx.abs(gradient)
-                            if reaction == lower:
+                            if reaction == rows[w, r, 7]:
                                 violation = tx.max(0.0, -gradient)
-                            elif reaction == upper:
+                            elif rows[w, r, 12] == 1.0 and reaction == rows[w, r, 8]:
                                 violation = tx.max(0.0, gradient)
-                            if violation > 1e-5 * tx.max(1.0, tx.abs(reg * reaction)):
-                                guide_ok = 0
+                            if not tx.isfinite(gradient) or violation > 1e-5 * tx.max(
+                                1.0, tx.abs(compliance_term)
+                            ):
+                                native_ok = 0
                     norm2 = 0.0
                     for i in range(nv):
                         value = -h * vectors[w, 7, i]
@@ -328,7 +351,7 @@ def _solve_batch(
                                 velocity_ok = 0
                     accepted = 0
                     if meta[w, 0] == 0:
-                        if norm <= scalars[w, 1] and velocity_ok == 1 and guide_ok == 1:
+                        if norm <= scalars[w, 1] and velocity_ok == 1 and native_ok == 1:
                             accepted = 1
                             done = 1
                             trace_meta[w, evaluation, 3] = 2
@@ -428,8 +451,7 @@ def solve_batch(
     mass,
     *buffers,
     require_velocity_agreement=False,
-    guide=None,
-    guide_dof=0,
+    native_rows=None,
     **launch,
 ):
     """Keep the standalone ABI; live owners additionally bound A^-1 residual."""
@@ -442,18 +464,22 @@ def solve_batch(
     for name, array in zip(FRICTION_FIELDS, (sizes, mass, *buffers), strict=True):
         if array.shape != layout[name][0]:
             raise ValueError(f"invalid packed area-friction {name} layout")
-    if guide is None:
-        guide_dof = -1
-    elif type(guide_dof) is not int or not 0 <= guide_dof < width:
-        raise ValueError("invalid native guide DOF")
-    if guide is not None and (
-        len(guide.shape) != 3
-        or guide.shape[0] != capacity
-        or guide.shape[1] < 1
-        or guide.shape[2] != 14
-    ):
-        raise ValueError("invalid native guide row storage")
-    # TYX requires a rank-three binding even for the disabled optional row.
+    # Standalone launches do not read the placeholder bindings.
+    rows, jacobian, counts = mass, mass, sizes
+    row_capacity = 0
+    if native_rows is not None:
+        rows, jacobian, counts = native_rows
+        if len(rows.shape) != 3 or rows.shape[0] != capacity or rows.shape[2] != 14:
+            raise ValueError("invalid native constraint row storage")
+        row_capacity = rows.shape[1]
+        if (
+            row_capacity < 1
+            or len(jacobian.shape) != 3
+            or jacobian.shape[:2] != rows.shape[:2]
+            or jacobian.shape[2] < width
+            or counts.shape != (capacity, 3)
+        ):
+            raise ValueError("invalid native constraint Jacobian or count storage")
     return _solve_batch(
         capacity,
         count,
@@ -462,7 +488,9 @@ def solve_batch(
         *buffers,
         int(require_velocity_agreement),
         width,
-        guide_dof,
-        mass if guide is None else guide,
+        row_capacity,
+        rows,
+        jacobian,
+        counts,
         **launch,
     )

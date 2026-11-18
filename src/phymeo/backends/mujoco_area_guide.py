@@ -69,11 +69,23 @@ def _kkt(gradient, force, loss, tolerance, scale, regularization, name):
         )
 
 
+def expected_slide_rows(plan, input_q):
+    """Native assembly order and complete owner/side identity at entry q."""
+    rows = [(1, int(dof), -1, -1, int(dof)) for dof in plan.friction_ids[: plan.nfriction]]
+    if plan.nlimit:
+        from .mujoco_area_limit import expected_limit_sides
+
+        rows.extend(
+            (3, joint, side, -1, dof) for joint, dof, side in expected_limit_sides(plan, input_q)
+        )
+    return tuple(rows)
+
+
 def validate_guide_row(plan, row, input_velocity, output_velocity, h, physical_acceleration):
     """Validate one bounded native row and return independent predicted lambda.
 
     The admitted plan has one or two undamped scalar SLIDEs, one dry-friction
-    row on either DOF, no native geometry pairs and no limits. All components
+    row on either DOF, no native geometry pairs and at most one limited slide. All components
     of velocity/acceleration/Jacobian inputs are checked as finite FP64 receipt
     arrays of shape ``(plan.nv,)``; ``h`` is a finite builtin float whose
     actual integration value is RN32(h). Source/phase authentication, the area
@@ -97,12 +109,12 @@ def _validate(plan, row, input_velocity, output_velocity, h, physical_accelerati
         ("kind", 2),
         ("nq", nv),
         ("nfriction", 1),
-        ("nlimit", 0),
         ("npair", 0),
         ("nslot", 0),
     ):
         value = getattr(plan, name)
         _require(type(value) is int and value == expected, "unsupported plan " + name)
+    _require(type(plan.nlimit) is int and plan.nlimit in (0, 1), "unsupported limit count")
     joints, ids, law, vectors = plan.joint_ids, plan.friction_ids, plan.friction_law, plan.vectors
     _require(
         isinstance(joints, np.ndarray)

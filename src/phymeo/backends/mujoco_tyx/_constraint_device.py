@@ -171,7 +171,7 @@ class TyxConstraintDevice(TyxDevice):
             if getattr(self.plan, "area_friction_laws", ()):
                 from ._area_friction_device import solve_contact
 
-                if self.plan.nfriction:
+                if self.plan.nfriction or self.plan.nlimit:
                     self._assemble_rows(old)
                 solve_contact(self, old)
             else:
@@ -352,14 +352,19 @@ class TyxConstraintDevice(TyxDevice):
                 mode=self.mode,
             )
             self.counts["completed_kernels"] += 1
-            if getattr(self.plan, "area_friction_laws", ()) and self.plan.nfriction:
-                from ._area_friction_live_kernels import store_guide_gradient
+            if getattr(self.plan, "area_friction_laws", ()) and (
+                self.plan.nfriction or self.plan.nlimit
+            ):
+                from ._area_friction_live_kernels import store_native_gradients
 
-                store_guide_gradient(
+                store_native_gradients(
                     self.nworld,
-                    int(self.plan.friction_ids[0]),
+                    self.plan.nv,
+                    self.capacities[1],
+                    self.constraint_counts,
                     self.acceleration,
                     self.efc_data,
+                    self.efc_jacobian,
                     mode=self.mode,
                 )
                 self.counts["completed_kernels"] += 1

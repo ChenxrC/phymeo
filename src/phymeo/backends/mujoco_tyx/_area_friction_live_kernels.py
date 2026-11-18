@@ -41,11 +41,21 @@ def apply_load(
 
 
 @tx.kernel
-def store_guide_gradient(
-    count: tx.i32, dof: tx.i32, acceleration: tx.ndarray(tx.f32, 2), rows: tx.ndarray(tx.f32, 3)
+def store_native_gradients(
+    count: tx.i32,
+    nv: tx.i32,
+    capacity: tx.i32,
+    counts: tx.ndarray(tx.i32, 2),
+    acceleration: tx.ndarray(tx.f32, 2),
+    rows: tx.ndarray(tx.f32, 3),
+    jacobian: tx.ndarray(tx.f32, 3),
 ):
     for w in tx.range(count):
-        rows[w, 0, 10] = acceleration[w, dof] + rows[w, 0, 4] * rows[w, 0, 9] - rows[w, 0, 3]
+        for r in range(tx.min(capacity, counts[w, 2])):
+            projected = 0.0
+            for d in range(nv):
+                projected = projected + jacobian[w, r, d] * acceleration[w, d]
+            rows[w, r, 10] = projected + rows[w, r, 4] * rows[w, r, 9] - rows[w, r, 3]
 
 
 @tx.kernel

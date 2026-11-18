@@ -5,7 +5,8 @@ from types import MappingProxyType
 import numpy as np
 
 from ..solvers.area_friction import LAW
-from .area_friction_law import GUIDE_SCHEMA, PRECISION
+from .area_friction_law import PRECISION, solver_schema
+from .mujoco_area_guide import expected_slide_rows
 from .mujoco_runtime import _frozen
 from .mujoco_tyx._constraint_publication import decode_row
 from .tyx_area_friction import PackedFrictionProblem, PackedFrictionSample, _certificate
@@ -76,18 +77,34 @@ def publish(runtime, result, index):
     law_norm, scale, expected, law_residual, _, _ = _certificate(problem, output)
     constraints = ()
     aggregate = np.zeros(n)
-    if runtime._plan.nfriction:
-        _require(np.array_equal(result["constraint_counts"][index], (0, 0, 1)), "guide row count")
-        ids = result["efc_ids"][index, 0]
-        data = result["efc_data"][index, 0]
-        jacobian = result["efc_jacobian"][index, 0]
-        dof = int(runtime._plan.friction_ids[0])
-        _require(np.array_equal(ids, (1, dof, -1, -1, dof)), "guide row identity")
-        _require(np.isfinite(data).all() and np.all(data[11:13] == 1), "native bound flags")
-        _require(jacobian[dof] == 1 and np.count_nonzero(jacobian) == 1, "guide jacobian")
-        row = decode_row(ids, data, jacobian[:n])
-        constraints = (row,)
-        aggregate += row.jacobian * row.force
+    if runtime._plan.nfriction or runtime._plan.nlimit:
+        owners = expected_slide_rows(runtime._plan, result["input_q"][index, :n].astype(float))
+        _require(
+            np.array_equal(result["constraint_counts"][index], (0, 0, len(owners))),
+            "native row count",
+        )
+        decoded = []
+        for r, owner in enumerate(owners):
+            ids = result["efc_ids"][index, r]
+            data = result["efc_data"][index, r]
+            jacobian = result["efc_jacobian"][index, r]
+            _require(np.array_equal(ids, owner), "native slide row identity")
+            is_dry = owner[0] == 1
+            _require(
+                np.isfinite(data).all()
+                and np.array_equal(data[11:13], (1, int(is_dry)))
+                and (is_dry or data[8] == 0),
+                "native bound flags",
+            )
+            sign = 1 if is_dry else -owner[2]
+            _require(
+                jacobian[owner[4]] == sign and np.count_nonzero(jacobian) == 1,
+                "signed slide jacobian",
+            )
+            row = decode_row(ids, data, jacobian[:n])
+            aggregate += row.jacobian * row.force
+            decoded.append(row)
+        constraints = tuple(decoded)
         # D=0 for this branch. The complete receipt audit below publication
         # also substitutes the independent source-derived guide law.
         law_norm = float(
@@ -160,7 +177,7 @@ def publish(runtime, result, index):
         )
     solver = MappingProxyType(
         dict(
-            schema=GUIDE_SCHEMA if constraints else SCHEMA,
+            schema=solver_schema(runtime._plan),
             law=LAW,
             precision=PRECISION,
             mass_matrix=_frozen(mass),

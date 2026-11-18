@@ -75,10 +75,10 @@ def test_v1_friction_none_bundle_cannot_acquire_live_law(declarations):
     assert loaded.to_bytes() == raw
 
 
-@pytest.mark.parametrize("invalid", ("nv9", "remaining-native", "limit"))
+@pytest.mark.parametrize("invalid", ("nv9", "remaining-native", "overlapping-limit"))
 def test_live_domain_refused_before_device_allocation(declarations, monkeypatch, invalid):
     specs, _, _ = declarations
-    xml = _xml(invalid != "limit")
+    xml = _xml(invalid != "overlapping-limit")
     if invalid == "nv9":
         extra = """<body name="extra" pos=".2 0 0">
           <joint name="extra-x" type="slide" axis="1 0 0"/>
@@ -97,13 +97,13 @@ def test_live_domain_refused_before_device_allocation(declarations, monkeypatch,
         xml = xml.replace("</worldbody>", wall + "</worldbody>")
         expected = "area-only constraints"
     else:
-        xml = xml.replace('damping="40"', 'damping="0" limited="true" range="-1 1"')
-        expected = "area-only constraints"
+        xml = xml.replace('damping="40"', 'damping="0" limited="true" range="-1 1" margin="1.1"')
+        expected = "nonoverlapping margins"
     compilation = compile_mujoco_xml(xml, require_asset=False)
     model = compilation.fresh_native_model()
     if invalid == "nv9":
         assert model.nv == 9
-    elif invalid == "limit":
+    elif invalid == "overlapping-limit":
         assert model.nv == 1 and np.any(model.jnt_limited) and not np.any(model.dof_damping)
     else:
         assert model.nv == 6 and model.ngeom == 3

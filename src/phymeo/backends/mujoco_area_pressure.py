@@ -70,19 +70,30 @@ def compile_area_plan(mj, model, pairs, friction_laws=()):
         friction_width(model.nv)
         if model.nbody > 128 or model.ngeom > 128:
             raise ValueError("live area-friction capacity: 128 bodies/geoms")
-        if model.neq or model.ntendon or remaining or np.any(model.jnt_limited):
-            raise ValueError("live area friction requires area-only constraints or one dry slide")
-        if np.any(model.dof_frictionloss) and not (
+        if model.neq or model.ntendon or remaining:
+            raise ValueError(
+                "live area friction requires area-only constraints or supported slide rows"
+            )
+        dry_count = np.count_nonzero(model.dof_frictionloss)
+        limit_count = np.count_nonzero(model.jnt_limited)
+        if (dry_count or limit_count) and not (
             1 <= model.nv == model.njnt <= 2
             and np.all(model.jnt_type == mj.mjtJoint.mjJNT_SLIDE)
-            and np.count_nonzero(model.dof_frictionloss) == 1
+            and dry_count <= 1
+            and limit_count <= 1
         ):
             raise ValueError(
-                "mixed area friction requires one dry row on one or two undamped slides"
+                "mixed area friction permits at most one dry row and one limited joint on one or two undamped slides"
             )
         if not np.isfinite(model.dof_damping).all() or np.any(model.dof_damping < 0):
             raise ValueError("live area friction requires nonnegative finite damping")
     base = compile_constraint_model(mj, model, remaining)
+    if friction_laws and base.nlimit:
+        lo, hi, margin = map(float, base.limit_law[0, :3])
+        if lo >= hi or hi - lo < 2.0 * margin:
+            raise ValueError(
+                "mixed area friction requires distinct limits with nonoverlapping margins"
+            )
     body_ids = np.frombuffer(np.asarray(ids, dtype=np.int32).tobytes(), dtype=np.int32).reshape(
         -1, 2
     )
@@ -126,7 +137,6 @@ def pack(runtime, mapping, expected_revision):
     plan, cap = runtime._plan, runtime._constraint_capacity
     if not hasattr(plan, "area_pair_names"):
         raise ValueError("runtime has no area-pressure declaration")
-    native_rows = plan.nfriction if plan.area_friction_laws else 0
     storage = max(1, cap)
     data = np.zeros((len(runtime._world_keys), storage, 8), dtype=np.float32)
     measures = np.zeros((len(runtime._world_keys), storage, 2), dtype=np.int32)
@@ -134,6 +144,11 @@ def pack(runtime, mapping, expected_revision):
     counts = np.zeros(len(runtime._world_keys), dtype=np.int32)
     metadata = []
     for wi, key in enumerate(runtime._world_keys):
+        native_rows = plan.nfriction if plan.area_friction_laws else 0
+        if plan.area_friction_laws and plan.nlimit:
+            from .mujoco_area_limit import expected_limit_sides
+
+            native_rows += len(expected_limit_sides(plan, runtime._data[key].qpos))
         surfaces = mapping[key]
         if not isinstance(surfaces, tuple) or len(surfaces) != len(plan.area_pair_names):
             raise ValueError("every declared area pair requires a surface, including empty")

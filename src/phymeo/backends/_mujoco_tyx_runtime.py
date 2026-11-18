@@ -555,7 +555,9 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                 info.update(
                     contact_law=FRICTION_LAW,
                     domain=(
-                        "area-friction-cuda-dry-slide-v1"
+                        "area-friction-cuda-coupled-slides-v1"
+                        if self._plan.nfriction and self._plan.nv == 2
+                        else "area-friction-cuda-dry-slide-v1"
                         if self._plan.nfriction
                         else "area-friction-cuda-six-dof-v1"
                         if self._plan.nv <= 6
@@ -567,6 +569,9 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                     area_pressure_entry_abi="mujoco-tyx-area-device-entry-v2",
                     area_pressure_integration="common-velocity-native-coordinate-tail-v1",
                     native_guide_friction=bool(self._plan.nfriction),
+                    native_dry_dof_ids=tuple(
+                        map(int, self._plan.friction_ids[: self._plan.nfriction])
+                    ),
                     area_pressure_observation="host-owned-friction-receipt-v1",
                     mixed_articulated_constraints_supported=False,
                     g1_supported=False,

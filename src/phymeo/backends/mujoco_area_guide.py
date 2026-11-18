@@ -27,15 +27,15 @@ def _scalar(value, name):
     return value
 
 
-def _vector(value, name):
+def _vector(value, name, size):
     _require(
         isinstance(value, np.ndarray)
-        and value.shape == (1,)
+        and value.shape == (size,)
         and value.dtype == np.float64
         and np.isfinite(value).all(),
-        name + " finite FP64 vector of length one",
+        name + " finite FP64 vector of length plan.nv",
     )
-    return float(value[0])
+    return value
 
 
 def _rounded(actual, expected, name, scale=None):
@@ -72,9 +72,10 @@ def _kkt(gradient, force, loss, tolerance, scale, regularization, name):
 def validate_guide_row(plan, row, input_velocity, output_velocity, h, physical_acceleration):
     """Validate one bounded native row and return independent predicted lambda.
 
-    The admitted plan has one undamped scalar SLIDE, one dry-friction row, no
-    native geometry pairs and no limits. Velocity/acceleration inputs are finite
-    FP64 receipt arrays of shape ``(1,)``; ``h`` is a finite builtin float whose
+    The admitted plan has one or two undamped scalar SLIDEs, one dry-friction
+    row on either DOF, no native geometry pairs and no limits. All components
+    of velocity/acceleration/Jacobian inputs are checked as finite FP64 receipt
+    arrays of shape ``(plan.nv,)``; ``h`` is a finite builtin float whose
     actual integration value is RN32(h). Source/phase authentication, the area
     law, total generalized force and physical-M equation remain the enclosing
     receipt auditor's responsibility. This function only reads its arguments.
@@ -90,10 +91,11 @@ def validate_guide_row(plan, row, input_velocity, output_velocity, h, physical_a
 
 def _validate(plan, row, input_velocity, output_velocity, h, physical_acceleration):
     _require(type(row) is MuJoCoTyxConstraintRow, "native typed constraint row")
+    nv = plan.nv
+    _require(type(nv) is int and nv in (1, 2), "one or two native SLIDE DOFs")
     for name, expected in (
         ("kind", 2),
-        ("nv", 1),
-        ("nq", 1),
+        ("nq", nv),
         ("nfriction", 1),
         ("nlimit", 0),
         ("npair", 0),
@@ -105,15 +107,20 @@ def _validate(plan, row, input_velocity, output_velocity, h, physical_accelerati
     _require(
         isinstance(joints, np.ndarray)
         and joints.dtype == np.int32
-        and joints.shape == (1, 4)
-        and tuple(joints[0, :3]) == (0, 0, 0)
-        and joints[0, 3] > 0,
-        "one native-addressed SLIDE joint",
+        and joints.shape == (nv, 4)
+        and all(tuple(joints[j, :3]) == (0, j, j) and joints[j, 3] > 0 for j in range(nv)),
+        "complete native-addressed SLIDE joints",
     )
     _require(
-        isinstance(ids, np.ndarray) and ids.dtype == np.int32 and ids.shape == (1,) and ids[0] == 0,
-        "one dry row at DOF zero",
+        isinstance(ids, np.ndarray)
+        and ids.dtype == np.int32
+        and ids.shape == (1,)
+        and 0 <= ids[0] < nv,
+        "one dry row at an admitted DOF",
     )
+    # Native assembly writes friction_ids[f] to both source_id and dof. It is
+    # the native velocity address, not the ordinal f in the friction table.
+    dof = int(ids[0])
     _require(
         isinstance(law, np.ndarray)
         and law.dtype == np.float32
@@ -127,22 +134,22 @@ def _validate(plan, row, input_velocity, output_velocity, h, physical_accelerati
         and vectors.ndim == 2
         and vectors.shape[0] == 9
         and 8 <= vectors.shape[1] <= 45
-        and vectors[1, 0] == 0.0,
+        and np.all(vectors[1, :nv] == 0.0),
         "undamped native SLIDE vectors",
     )
-    vin = _vector(input_velocity, "input velocity")
-    vout = _vector(output_velocity, "output velocity")
-    physical = _vector(physical_acceleration, "physical acceleration")
+    vin = _vector(input_velocity, "input velocity", nv)
+    vout = _vector(output_velocity, "output velocity", nv)
+    physical = _vector(physical_acceleration, "physical acceleration", nv)
     step = float(np.float32(_scalar(h, "h")))
     _require(np.isfinite(step) and step >= _TINY, "positive normal FP32 h")
     tolerance = _scalar(plan.solver_tolerance, "source solver tolerance")
     _require(tolerance >= 2e-5 * (1.0 - _EPS), "native solver tolerance floor")
     for name, expected in (
         ("constraint_type", 1),
-        ("source_id", 0),
+        ("source_id", dof),
         ("side_or_edge", -1),
         ("geometry_slot", -1),
-        ("dof", 0),
+        ("dof", dof),
     ):
         value = getattr(row, name)
         _require(type(value) is int and value == expected, "native row " + name)
@@ -150,7 +157,11 @@ def _validate(plan, row, input_velocity, output_velocity, h, physical_accelerati
         type(row.schema) is str and row.schema == "mujoco-tyx-constraint-row-v1",
         "native row schema",
     )
-    _require(_vector(row.jacobian, "row Jacobian") == 1.0, "SLIDE Jacobian equals one")
+    jacobian = _vector(row.jacobian, "row Jacobian", nv)
+    _require(
+        all(jacobian[d] == (1.0 if d == dof else 0.0) for d in range(nv)),
+        "dry SLIDE Jacobian is the exact native DOF basis row",
+    )
     for name in (
         "position",
         "margin",
@@ -167,7 +178,7 @@ def _validate(plan, row, input_velocity, output_velocity, h, physical_accelerati
     ):
         _scalar(getattr(row, name), "row " + name)
     _require(row.position == 0.0 and row.margin == 0.0, "zero dry position and margin")
-    _require(row.velocity == vin, "entry velocity binding")
+    _require(row.velocity == float(vin[dof]), "entry velocity binding")
 
     loss, invweight, ref0, ref1, raw_min, raw_max, width, _, _ = map(float, law[0])
     _require(loss > 0.0 and invweight > 0.0, "positive source loss and inverse weight")
@@ -183,7 +194,7 @@ def _validate(plan, row, input_velocity, output_velocity, h, physical_accelerati
     damping = (
         2.0 / max(minimum, dmax * reference_time) if ref1 > 0.0 else -ref1 / max(minimum, dmax)
     )
-    aref = -damping * vin
+    aref = -damping * float(vin[dof])
     regularization = max(minimum, (1.0 - impedance) * invweight / impedance)
     _rounded(row.impedance, impedance, "impedance")
     _rounded(row.reference_acceleration, aref, "reference acceleration")
@@ -195,14 +206,17 @@ def _validate(plan, row, input_velocity, output_velocity, h, physical_accelerati
     _require(-loss <= force <= loss, "force inside exact box bounds")
 
     common = (vout - vin) / step
-    _require(np.isfinite(common), "finite common-velocity acceleration")
+    _require(np.isfinite(common).all(), "finite common-velocity acceleration on every DOF")
     _require(
-        abs(vout - (vin + step * physical)) <= 5e-5 * (1.0 + abs(vout)),
-        "physical acceleration and common velocity disagree",
+        np.all(np.abs(vout - (vin + step * physical)) <= 5e-5 * (1.0 + np.abs(vout))),
+        "physical acceleration and common velocity disagree on a DOF",
     )
-    physical_gradient = physical + row.regularization * force - row.reference_acceleration
+    # The joint row acts on one DOF, but coupled area response may accelerate
+    # both. Only after checking the complete vectors may KKT use this projection.
+    physical_axis, common_axis = float(physical[dof]), float(common[dof])
+    physical_gradient = physical_axis + row.regularization * force - row.reference_acceleration
     physical_scale = (
-        abs(physical) + abs(row.regularization * force) + abs(row.reference_acceleration)
+        abs(physical_axis) + abs(row.regularization * force) + abs(row.reference_acceleration)
     )
     _rounded(row.gradient, physical_gradient, "physical-qacc gradient", physical_scale)
     _kkt(
@@ -214,10 +228,10 @@ def _validate(plan, row, input_velocity, output_velocity, h, physical_accelerati
         row.regularization,
         "physical-qacc",
     )
-    common_gradient = common + regularization * force - aref
-    common_scale = abs(common) + abs(regularization * force) + abs(aref)
+    common_gradient = common_axis + regularization * force - aref
+    common_scale = abs(common_axis) + abs(regularization * force) + abs(aref)
     _kkt(common_gradient, force, loss, tolerance, common_scale, regularization, "common-velocity")
-    predicted = min(loss, max(-loss, (aref - common) / regularization))
+    predicted = min(loss, max(-loss, (aref - common_axis) / regularization))
     _require(np.isfinite(predicted), "finite predicted force")
     _require(abs(force - predicted) <= 0.002 + 0.002 * abs(predicted), "predicted native force")
     return float(predicted)

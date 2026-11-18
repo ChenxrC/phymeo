@@ -73,9 +73,13 @@ def compile_area_plan(mj, model, pairs, friction_laws=()):
         if model.neq or model.ntendon or remaining or np.any(model.jnt_limited):
             raise ValueError("live area friction requires area-only constraints or one dry slide")
         if np.any(model.dof_frictionloss) and not (
-            model.nv == model.njnt == 1 and model.jnt_type[0] == mj.mjtJoint.mjJNT_SLIDE
+            1 <= model.nv == model.njnt <= 2
+            and np.all(model.jnt_type == mj.mjtJoint.mjJNT_SLIDE)
+            and np.count_nonzero(model.dof_frictionloss) == 1
         ):
-            raise ValueError("mixed area friction requires one undamped dry slide")
+            raise ValueError(
+                "mixed area friction requires one dry row on one or two undamped slides"
+            )
         if not np.isfinite(model.dof_damping).all() or np.any(model.dof_damping < 0):
             raise ValueError("live area friction requires nonnegative finite damping")
     base = compile_constraint_model(mj, model, remaining)

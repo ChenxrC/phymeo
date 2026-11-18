@@ -42,10 +42,10 @@ def apply_load(
 
 @tx.kernel
 def store_guide_gradient(
-    count: tx.i32, acceleration: tx.ndarray(tx.f32, 2), rows: tx.ndarray(tx.f32, 3)
+    count: tx.i32, dof: tx.i32, acceleration: tx.ndarray(tx.f32, 2), rows: tx.ndarray(tx.f32, 3)
 ):
     for w in tx.range(count):
-        rows[w, 0, 10] = acceleration[w, 0] + rows[w, 0, 4] * rows[w, 0, 9] - rows[w, 0, 3]
+        rows[w, 0, 10] = acceleration[w, dof] + rows[w, 0, 4] * rows[w, 0, 9] - rows[w, 0, 3]
 
 
 @tx.kernel

@@ -1,18 +1,20 @@
 """B1/B2 remaining admission and last-replacement rollback contracts.
 
 Plan: docs/superpowers/plans/2026-11-18-area-friction-production-integration.md.
-Five HOST negative nodes and one CUDA boundary node. The CUDA node reuses the
+The CUDA boundary node reuses the
 existing empty D40 slider; it does not introduce a new contact-law trajectory.
 Private fault seam: batch._clone_bucket returns a real candidate whose restore
 is allowed to finish before the LAST replacement raises. No precommit shortcut.
 """
 
+import xml.etree.ElementTree as ET
 from contextlib import ExitStack
 from dataclasses import replace
 
 import numpy as np
 import pytest
 from test_mujoco_area_friction import _xml
+from test_mujoco_area_friction_guide import _declarations as guide_declarations
 from test_mujoco_area_friction_lifecycle import (
     _capture_all,
     _evidence,
@@ -110,6 +112,33 @@ def test_live_domain_refused_before_device_allocation(declarations, monkeypatch,
     _no_leaf_allocation(monkeypatch)
     with pytest.raises(ValueError, match=expected):
         MuJoCoTyxHeterogeneousBatch((spec,), (MuJoCoTyxWorldSpec(9, spec.key),), mode="cuda")
+
+
+@pytest.mark.parametrize("invalid", ("two-dry-rows", "three-slides", "hinge", "damped"))
+def test_mixed_guide_refuses_out_of_domain_before_allocation(monkeypatch, invalid):
+    base, _, _ = guide_declarations(0.25, 41)
+    tree = ET.fromstring(base.compilation.source.primary_xml)
+    parent = tree.find("./worldbody/body[@name='pressure']")
+    for index in range(2 if invalid == "three-slides" else 1):
+        child = ET.SubElement(parent, "body", name=f"link{index}")
+        ET.SubElement(child, "inertial", pos="0 0 0", mass="1", diaginertia="1 1 1")
+        ET.SubElement(
+            child,
+            "joint",
+            type="hinge" if invalid == "hinge" else "slide",
+            axis="0 0 1",
+            damping="1" if invalid == "damped" else "0",
+            frictionloss="1" if invalid == "two-dry-rows" else "0",
+        )
+        parent = child
+    spec = replace(
+        base,
+        compilation=compile_mujoco_xml(ET.tostring(tree, encoding="unicode"), require_asset=False),
+    )
+    _no_leaf_allocation(monkeypatch)
+    reason = "damped area route" if invalid == "damped" else "one dry row"
+    with pytest.raises(ValueError, match=reason):
+        MuJoCoTyxHeterogeneousBatch((spec,), (MuJoCoTyxWorldSpec(41, spec.key),), mode="cuda")
 
 
 @pytest.mark.cuda

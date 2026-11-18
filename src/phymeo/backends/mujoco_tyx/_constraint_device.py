@@ -355,7 +355,13 @@ class TyxConstraintDevice(TyxDevice):
             if getattr(self.plan, "area_friction_laws", ()) and self.plan.nfriction:
                 from ._area_friction_live_kernels import store_guide_gradient
 
-                store_guide_gradient(self.nworld, self.acceleration, self.efc_data, mode=self.mode)
+                store_guide_gradient(
+                    self.nworld,
+                    int(self.plan.friction_ids[0]),
+                    self.acceleration,
+                    self.efc_data,
+                    mode=self.mode,
+                )
                 self.counts["completed_kernels"] += 1
             self.runtime.sync()
             self.counts["synchronizations"] += 1

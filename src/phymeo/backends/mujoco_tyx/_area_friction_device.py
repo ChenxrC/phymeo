@@ -58,6 +58,7 @@ def solve_contact(device, old):
         *(out(name) for name in FRICTION_FIELDS),
         require_velocity_agreement=True,
         guide=device.efc_data if device.plan.nfriction else None,
+        guide_dof=int(device.plan.friction_ids[0]) if device.plan.nfriction else -1,
         mode=device.mode,
     )
     device.counts["completed_kernels"] += 1

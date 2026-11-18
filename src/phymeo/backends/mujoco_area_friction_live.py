@@ -81,9 +81,10 @@ def publish(runtime, result, index):
         ids = result["efc_ids"][index, 0]
         data = result["efc_data"][index, 0]
         jacobian = result["efc_jacobian"][index, 0]
-        _require(np.array_equal(ids, (1, 0, -1, -1, 0)), "guide row identity")
+        dof = int(runtime._plan.friction_ids[0])
+        _require(np.array_equal(ids, (1, dof, -1, -1, dof)), "guide row identity")
         _require(np.isfinite(data).all() and np.all(data[11:13] == 1), "native bound flags")
-        _require(jacobian[0] == 1 and not np.any(jacobian[1:]), "guide jacobian")
+        _require(jacobian[dof] == 1 and np.count_nonzero(jacobian) == 1, "guide jacobian")
         row = decode_row(ids, data, jacobian[:n])
         constraints = (row,)
         aggregate += row.jacobian * row.force

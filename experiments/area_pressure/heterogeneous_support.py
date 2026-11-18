@@ -89,7 +89,7 @@ def _xml(name, p):
     </worldbody></mujoco>'''
 
 
-def _asset(name, p):
+def box_pressure_volume(center_pressure_pa):
     vertices = np.array(
         (
             (-0.02, -0.02, -0.01),
@@ -103,14 +103,18 @@ def _asset(name, p):
             (0, 0, 0),
         )
     )
-    pressure = TetraPressureMesh(
+    return TetraPressureMesh(
         tuple(f"corner-{i}" for i in range(8)) + ("center",),
         vertices,
         tuple((8, *face) for face in _FACES),
-        (0,) * 8 + (p["center_pressure_pa"],),
+        (0,) * 8 + (center_pressure_pa,),
         ("bottom-0", "bottom-1") + tuple(f"other-{i}" for i in range(10)),
         pressure_domain="full",
     )
+
+
+def _asset(name, p):
+    pressure = box_pressure_volume(p["center_pressure_pa"])
     x, y, z = p["plate_half_size_m"]
     rigid = RigidPressureMesh(
         ("r0", "r1", "r2", "r3"),

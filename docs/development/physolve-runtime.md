@@ -1,5 +1,17 @@
 # PhySolve 原生运行时实验
 
+## 接触参考权重
+
+导入 CPU 模型常数后，PhySolve 适配在创建原生 Host 前，按 TYX frontend
+`set_const_0` 的退化分量规则准备设备端 `body_invweight0`。当可动 body
+的平移和转动分量中一项小于 MuJoCo 的 `mjMINVAL`、另一项大于该值时，
+沿用另一项作为接触约束的正则化权重。静态 body 和两项均为零的情况沿用
+原值。该权重属于求解器派生量，不改变质量、惯量或接触几何。
+
+仅检查一次同构模板，需调整时上传一次参考权重。两个原生状态 bank 共用
+模型，无每环境派生副本，step、forward、reset 和 Graph 内无重算。配置
+输入、CPU 模型、执行器阻尼及其他派生常数沿用原契约。
+
 ## 2026-11-17：合并后 TYX 的独立 a8 配套
 
 新增 `requirements/physolve-runtime-a8.txt`，固定真实已合并TYX提交 `6c638157`

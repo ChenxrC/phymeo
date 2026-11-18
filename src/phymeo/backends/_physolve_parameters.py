@@ -1,8 +1,28 @@
-"""Read-only homogeneous model fields; no per-world physical parameter mirror."""
+"""Preparation and readback of homogeneous PhySolve model parameters."""
 
 import numpy as np
 
 from ..dynamics.rotation import quaternion_matrix
+
+
+def prepare_contact_inverse_weights(cpu, model, stream):
+    """Apply the GPU reference-weight regularization to imported CPU constants."""
+    import mujoco
+    import tyx as tx
+
+    weights = np.asarray(cpu.body_invweight0, dtype=np.float32)
+    moving = cpu.body_weldid != 0
+    translation, rotation = weights.T
+    min_value = mujoco.mjMINVAL
+    use_rotation = moving & (translation < min_value) & (rotation > min_value)
+    use_translation = moving & (rotation < min_value) & (translation > min_value)
+    if use_rotation.any() or use_translation.any():
+        # Match the frontend set_const_0 fallback for a vanishing component
+        # without overwriting unrelated constants (e.g. actuator damping).
+        weights[use_rotation, 0] = rotation[use_rotation]
+        weights[use_translation, 1] = translation[use_translation]
+        target = model.body_invweight0.view(tx.f32)
+        target.assign(weights.reshape(target.shape), stream=stream)
 
 
 class PreparedBodyParameters:

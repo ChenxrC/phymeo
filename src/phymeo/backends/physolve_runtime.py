@@ -15,6 +15,7 @@ import numpy as np
 
 from ..builders.mujoco_compiler import MuJoCoCompilation
 from ..builders.mujoco_scene import CompiledMuJoCoWorld
+from ._physolve_parameters import prepare_contact_inverse_weights
 from .physolve_initial import INTEGRATION_FIELDS, NativeInitialState
 from .physolve_payload import PhySolvePayload
 
@@ -201,6 +202,7 @@ class PhySolveRuntime:
                     if initial.ncon > self.nconmax or initial.nefc > self.njmax:
                         raise ValueError("initial model exceeds contact/constraint capacity")
                     self._model = frontend.put_model(cpu)
+                    prepare_contact_inverse_weights(cpu, self._model, self._stream)
                     self._model.opt.graph_conditional = True
                     for _ in range(2):
                         data = frontend.put_data(

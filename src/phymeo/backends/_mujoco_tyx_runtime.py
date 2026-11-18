@@ -555,7 +555,10 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                 info.update(
                     contact_law=FRICTION_LAW,
                     domain=(
-                        "area-friction-cuda-slide-limit-v1"
+                        "area-friction-cuda-scalar-hinge-v1"
+                        if (self._plan.nfriction or self._plan.nlimit)
+                        and np.any(self._plan.joint_ids[:, 0] == 1)
+                        else "area-friction-cuda-slide-limit-v1"
                         if self._plan.nlimit
                         else "area-friction-cuda-coupled-slides-v1"
                         if self._plan.nfriction and self._plan.nv == 2

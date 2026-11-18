@@ -72,18 +72,18 @@ def compile_area_plan(mj, model, pairs, friction_laws=()):
             raise ValueError("live area-friction capacity: 128 bodies/geoms")
         if model.neq or model.ntendon or remaining:
             raise ValueError(
-                "live area friction requires area-only constraints or supported slide rows"
+                "live area friction requires area-only constraints or supported scalar joint rows"
             )
         dry_count = np.count_nonzero(model.dof_frictionloss)
         limit_count = np.count_nonzero(model.jnt_limited)
         if (dry_count or limit_count) and not (
             1 <= model.nv == model.njnt <= 2
-            and np.all(model.jnt_type == mj.mjtJoint.mjJNT_SLIDE)
+            and np.isin(model.jnt_type, (mj.mjtJoint.mjJNT_SLIDE, mj.mjtJoint.mjJNT_HINGE)).all()
             and dry_count <= 1
             and limit_count <= 1
         ):
             raise ValueError(
-                "mixed area friction permits at most one dry row and one limited joint on one or two undamped slides"
+                "mixed area friction permits at most one dry row and one limited joint on one or two undamped scalar joints"
             )
         if not np.isfinite(model.dof_damping).all() or np.any(model.dof_damping < 0):
             raise ValueError("live area friction requires nonnegative finite damping")

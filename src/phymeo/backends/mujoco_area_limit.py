@@ -1,8 +1,8 @@
-"""Independent native SLIDE-limit receipt audit beside area contact.
+"""Independent native scalar joint-limit receipt audit beside area contact.
 
 The source-compiled plan and same-entry receipt are trusted inputs whose source
 and phase the enclosing auditor binds. This module neither solves contact nor
-changes state. It supports one or two undamped SLIDEs, one declared limited
+changes state. It supports one or two undamped scalar joints, one declared limited
 joint and zero or one dry-friction row. The optional dry row is audited separately.
 The active-row list is derived from actual FP32 q/range/margin; typed position
 is distance, while the impedance and spring position is distance minus margin.
@@ -10,7 +10,7 @@ is distance, while the impedance and spring position is distance minus margin.
 
 import numpy as np
 
-from .mujoco_area_guide import _EPS, _TINY, _rounded, _scalar, _vector
+from .mujoco_area_guide import _EPS, _TINY, _rounded, _scalar, _vector, has_scalar_joint_layout
 from .mujoco_tyx._constraint_publication import MuJoCoTyxConstraintRow
 
 
@@ -35,18 +35,15 @@ def _intermediate32(value):
 
 def _layout(plan, input_q):
     nv = plan.nv
-    _require(type(nv) is int and nv in (1, 2), "one or two SLIDE DOFs")
+    _require(type(nv) is int and nv in (1, 2), "one or two scalar DOFs")
     for name, expected in (("kind", 2), ("nq", nv), ("nlimit", 1), ("npair", 0), ("nslot", 0)):
         value = getattr(plan, name)
         _require(type(value) is int and value == expected, "unsupported plan " + name)
     _require(type(plan.nfriction) is int and plan.nfriction in (0, 1), "at most one dry row")
     joints, vectors = plan.joint_ids, plan.vectors
     _require(
-        isinstance(joints, np.ndarray)
-        and joints.dtype == np.int32
-        and joints.shape == (nv, 4)
-        and all(tuple(joints[j, :3]) == (0, j, j) and joints[j, 3] > 0 for j in range(nv)),
-        "complete native-addressed SLIDE joints",
+        has_scalar_joint_layout(joints, nv),
+        "complete native-addressed scalar joints",
     )
     _require(
         isinstance(vectors, np.ndarray)

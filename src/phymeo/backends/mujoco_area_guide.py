@@ -1,11 +1,11 @@
-"""Independent audit of one native dry-friction SLIDE row beside area contact.
+"""Independent audit of one scalar native dry-friction row beside area contact.
 
 The caller supplies the source-compiled plan and same-entry/accepted-velocity
 receipt data. This helper does not authenticate their source, solve contact,
 modify state or infer a body contact wrench for a joint load. The original
 native gradient uses physical qacc; common-velocity KKT is checked separately.
-All quantities use SI (SLIDE loss/force in N, velocity in m/s, acceleration in
-m/s**2). Coefficients come from the plan's actual FP32 native friction table,
+Linear coordinates use metres and newtons. Angular coordinates use radians
+and newton-metres. Coefficients come from the plan's actual FP32 native friction table,
 not from the row being checked.
 """
 
@@ -69,7 +69,20 @@ def _kkt(gradient, force, loss, tolerance, scale, regularization, name):
         )
 
 
-def expected_slide_rows(plan, input_q):
+def has_scalar_joint_layout(joints, nv):
+    """One native qpos and DOF address per fixed-tree slide (0) or hinge (1)."""
+    return (
+        isinstance(joints, np.ndarray)
+        and joints.dtype == np.int32
+        and joints.shape == (nv, 4)
+        and all(
+            kind in (0, 1) and q == d == j and body > 0
+            for j, (kind, q, d, body) in enumerate(joints)
+        )
+    )
+
+
+def expected_scalar_rows(plan, input_q):
     """Native assembly order and complete owner/side identity at entry q."""
     rows = [(1, int(dof), -1, -1, int(dof)) for dof in plan.friction_ids[: plan.nfriction]]
     if plan.nlimit:
@@ -81,11 +94,15 @@ def expected_slide_rows(plan, input_q):
     return tuple(rows)
 
 
+# Keep the original public helper available to slide-only callers.
+expected_slide_rows = expected_scalar_rows
+
+
 def validate_guide_row(plan, row, input_velocity, output_velocity, h, physical_acceleration):
     """Validate one bounded native row and return independent predicted lambda.
 
-    The admitted plan has one or two undamped scalar SLIDEs, one dry-friction
-    row on either DOF, no native geometry pairs and at most one limited slide. All components
+    The admitted plan has one or two undamped scalar joints, one dry-friction
+    row on either DOF, no native geometry pairs and at most one limited joint. All components
     of velocity/acceleration/Jacobian inputs are checked as finite FP64 receipt
     arrays of shape ``(plan.nv,)``; ``h`` is a finite builtin float whose
     actual integration value is RN32(h). Source/phase authentication, the area
@@ -104,7 +121,7 @@ def validate_guide_row(plan, row, input_velocity, output_velocity, h, physical_a
 def _validate(plan, row, input_velocity, output_velocity, h, physical_acceleration):
     _require(type(row) is MuJoCoTyxConstraintRow, "native typed constraint row")
     nv = plan.nv
-    _require(type(nv) is int and nv in (1, 2), "one or two native SLIDE DOFs")
+    _require(type(nv) is int and nv in (1, 2), "one or two scalar DOFs")
     for name, expected in (
         ("kind", 2),
         ("nq", nv),
@@ -117,11 +134,8 @@ def _validate(plan, row, input_velocity, output_velocity, h, physical_accelerati
     _require(type(plan.nlimit) is int and plan.nlimit in (0, 1), "unsupported limit count")
     joints, ids, law, vectors = plan.joint_ids, plan.friction_ids, plan.friction_law, plan.vectors
     _require(
-        isinstance(joints, np.ndarray)
-        and joints.dtype == np.int32
-        and joints.shape == (nv, 4)
-        and all(tuple(joints[j, :3]) == (0, j, j) and joints[j, 3] > 0 for j in range(nv)),
-        "complete native-addressed SLIDE joints",
+        has_scalar_joint_layout(joints, nv),
+        "complete native-addressed scalar joints",
     )
     _require(
         isinstance(ids, np.ndarray)
@@ -147,7 +161,7 @@ def _validate(plan, row, input_velocity, output_velocity, h, physical_accelerati
         and vectors.shape[0] == 9
         and 8 <= vectors.shape[1] <= 45
         and np.all(vectors[1, :nv] == 0.0),
-        "undamped native SLIDE vectors",
+        "undamped native scalar joints",
     )
     vin = _vector(input_velocity, "input velocity", nv)
     vout = _vector(output_velocity, "output velocity", nv)
@@ -172,7 +186,7 @@ def _validate(plan, row, input_velocity, output_velocity, h, physical_accelerati
     jacobian = _vector(row.jacobian, "row Jacobian", nv)
     _require(
         all(jacobian[d] == (1.0 if d == dof else 0.0) for d in range(nv)),
-        "dry SLIDE Jacobian is the exact native DOF basis row",
+        "dry scalar Jacobian is the exact native DOF basis row",
     )
     for name in (
         "position",

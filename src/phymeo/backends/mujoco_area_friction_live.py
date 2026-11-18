@@ -6,7 +6,7 @@ import numpy as np
 
 from ..solvers.area_friction import LAW
 from .area_friction_law import PRECISION, solver_schema
-from .mujoco_area_guide import expected_slide_rows
+from .mujoco_area_guide import expected_scalar_rows
 from .mujoco_runtime import _frozen
 from .mujoco_tyx._constraint_publication import decode_row
 from .tyx_area_friction import PackedFrictionProblem, PackedFrictionSample, _certificate
@@ -78,7 +78,7 @@ def publish(runtime, result, index):
     constraints = ()
     aggregate = np.zeros(n)
     if runtime._plan.nfriction or runtime._plan.nlimit:
-        owners = expected_slide_rows(runtime._plan, result["input_q"][index, :n].astype(float))
+        owners = expected_scalar_rows(runtime._plan, result["input_q"][index, :n].astype(float))
         _require(
             np.array_equal(result["constraint_counts"][index], (0, 0, len(owners))),
             "native row count",
@@ -88,7 +88,7 @@ def publish(runtime, result, index):
             ids = result["efc_ids"][index, r]
             data = result["efc_data"][index, r]
             jacobian = result["efc_jacobian"][index, r]
-            _require(np.array_equal(ids, owner), "native slide row identity")
+            _require(np.array_equal(ids, owner), "native scalar row identity")
             is_dry = owner[0] == 1
             _require(
                 np.isfinite(data).all()
@@ -99,7 +99,7 @@ def publish(runtime, result, index):
             sign = 1 if is_dry else -owner[2]
             _require(
                 jacobian[owner[4]] == sign and np.count_nonzero(jacobian) == 1,
-                "signed slide jacobian",
+                "signed scalar jacobian",
             )
             row = decode_row(ids, data, jacobian[:n])
             aggregate += row.jacobian * row.force

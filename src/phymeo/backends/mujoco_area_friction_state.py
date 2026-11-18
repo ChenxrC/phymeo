@@ -17,7 +17,7 @@ from ..geometry.area_pressure import (
     _quadrature,
 )
 from .area_friction_law import LAW, PRECISION, capture_pair_laws, solver_schema
-from .mujoco_area_guide import expected_slide_rows, validate_guide_row
+from .mujoco_area_guide import expected_scalar_rows, validate_guide_row
 from .mujoco_tyx._area_friction_layout import MAX_LIVE_DOF, friction_width
 from .mujoco_tyx._constraint_publication import MuJoCoTyxConstraintRow
 from .mujoco_tyx._model import fp32
@@ -336,14 +336,14 @@ def _validate(runtime, key, receipt, state):
     _diagnostics(solver["raw_diagnostics"], velocity, nv)
     count, common_stamp = 0, None
     summed, law_total = np.zeros(nv), np.zeros(nv)
-    owners = expected_slide_rows(runtime._plan, data["input_q"])
-    _require(len(receipt.constraints) == len(owners), "complete native slide row count")
+    owners = expected_scalar_rows(runtime._plan, data["input_q"])
+    _require(len(receipt.constraints) == len(owners), "complete native scalar row count")
     for owner, row in zip(owners, receipt.constraints, strict=True):
-        _require(type(row) is MuJoCoTyxConstraintRow, "native slide row type")
+        _require(type(row) is MuJoCoTyxConstraintRow, "native scalar row type")
         _require(
             (row.constraint_type, row.source_id, row.side_or_edge, row.geometry_slot, row.dof)
             == owner,
-            "native slide row identity or ordering",
+            "native scalar row identity or ordering",
         )
         if owner[0] == 1:
             predicted = validate_guide_row(runtime._plan, row, v0, output, h, qacc)

@@ -114,18 +114,18 @@ def test_live_domain_refused_before_device_allocation(declarations, monkeypatch,
         MuJoCoTyxHeterogeneousBatch((spec,), (MuJoCoTyxWorldSpec(9, spec.key),), mode="cuda")
 
 
-@pytest.mark.parametrize("invalid", ("two-dry-rows", "three-slides", "hinge", "damped"))
+@pytest.mark.parametrize("invalid", ("two-dry-rows", "three-slides", "three-with-hinge", "damped"))
 def test_mixed_guide_refuses_out_of_domain_before_allocation(monkeypatch, invalid):
     base, _, _ = guide_declarations(0.25, 41)
     tree = ET.fromstring(base.compilation.source.primary_xml)
     parent = tree.find("./worldbody/body[@name='pressure']")
-    for index in range(2 if invalid == "three-slides" else 1):
+    for index in range(2 if invalid in ("three-slides", "three-with-hinge") else 1):
         child = ET.SubElement(parent, "body", name=f"link{index}")
         ET.SubElement(child, "inertial", pos="0 0 0", mass="1", diaginertia="1 1 1")
         ET.SubElement(
             child,
             "joint",
-            type="hinge" if invalid == "hinge" else "slide",
+            type="hinge" if invalid == "three-with-hinge" else "slide",
             axis="0 0 1",
             damping="1" if invalid == "damped" else "0",
             frictionloss="1" if invalid == "two-dry-rows" else "0",

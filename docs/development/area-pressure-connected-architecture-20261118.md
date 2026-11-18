@@ -4,6 +4,12 @@
 
 [离线架构图](assets/area-pressure-architecture-20261118.html) · [后续B1–B3计划](../superpowers/plans/2026-11-18-area-friction-production-integration.md) · [具体live接缝与准入](area-friction-live-integration-handoff-20261118.md)
 
+## 最新 B1/B2/B3 连接
+
+[本轮 live 报告](area-friction-live-report-20261118.md)已接通当前 Scene 的可选面积摩擦：当前状态→完整面→resident M/J→Fn/Ft共同解→共享原生坐标尾段→状态与载荷共同提交→v2观察/恢复。run23 29pass；双区40步、冲击和偏心支撑各150步、滑动/释放各20步与1/4/32world完整输出一致均通过；受影响旧接口20pass。32world有限整步吞吐约9.76 world-step/s，尚不代表大规模训练效率。[真实轨迹查看器](assets/area-friction-live-20261118.html)可查看冲击、支撑、滑动与卸载。普通有限边缘、更多DOF、同世界混合约束及训练特征仍待扩展。
+
+下文和离线架构图保留07:10收尾时的 I3f–I3x 历史快照；其中“摩擦待接”已经由上述新报告取代。最终连续窗口/规模结果以新报告为准，不倒灌旧法向性能数字。
+
 ## 已接通的法向主链
 
 ```text

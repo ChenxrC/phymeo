@@ -2,6 +2,17 @@
 
 更新：2026-11-18。当前 codex/exp 的[已连接架构](../../development/area-pressure-connected-architecture-20261118.md)以实际证据为准。用户优先完成可复用功能；本计划不把独立算术、测试数量或局部几何当成生产接通。
 
+## 当前执行状态（用户授权继续三批）
+
+B1/B2 已在 codex/exp 接通，最终 run23 29pass。B3 双区40步、center-drop与offset-support各150步、滑动/释放各20步及1/4/32world完整输出一致均通过；受影响旧接口20pass。离线查看器已生成，并通过桌面/窄屏及播放检查。实测、成本和边界见[本轮报告](../../development/area-friction-live-report-20261118.md)。
+
+- [x] B1：当前 Scene 的可选共同法向/摩擦→一次原生运动→原子发布。
+- [x] B2：真实双方、混桶观察、检查点/selected reset/restore、前后提交故障。
+- [x] B3 物理与成本：连续多案例及同模型同输出1/4/32world；仅有限功能/成本范围。
+- [x] B3 交付：离线真实证据查看器生成、桌面/窄屏与交互检查，结果与续作入口已更新。
+
+下文保留开发前的固定参数与原验收条件，其中未来时描述属于原计划；实际实现采用已预列的“共享原生尾段直接消费v*”路线。下一开发优先级已推进到扩DOF/同世界mixed方程、真实Scene成本分解、训练观察接入，不再重做B1–B3已通过组。
+
 ## 已完成与真正缺口
 
 法向主链已接通：当前模型状态→自动有限面→真实面积积分→MuJoCo-TYX共同法向解→统一状态/载荷→设备观察与任务Env。几何仍为HOST或设备拓扑＋HOST精确复核。
@@ -36,9 +47,9 @@ B1固定短例复用I3v FREE偏心COM/六分量速度、mu=.5与mu=0、旧normal
 
 成功门：公开scene入口由当前q自动生成面，实际q/v和新载荷同次发布；原始M/J/输入/输出完整保存；正确与重复阻尼、一次与二次积分、最终与滞后Fn均可区分。内核通过但无public实际步，B1仍未完成。
 
-### B1接线清单（截止前源码核查，待开发）
+### B1接线清单（开发前冻结记录；现已完成）
 
-避免再造一套同名材料类型：将现有 AreaFrictionPairLaw 移入不依赖 runtime/ModelSpec 的 backends/area_friction_law.py，原 mujoco_area_friction.py 重导出同一个类对象。保留原导入路径和构造签名；用新旧导入次序、类对象一致性、不可变参数和原历史adapter的针对性兼容检查验证。这是未来变更，当前代码尚未移动。
+避免再造一套同名材料类型：将现有 AreaFrictionPairLaw 移入不依赖 runtime/ModelSpec 的 backends/area_friction_law.py，原 mujoco_area_friction.py 重导出同一个类对象。保留原导入路径和构造签名；用新旧导入次序、类对象一致性、不可变参数和原历史adapter的针对性兼容检查验证。这是开发前的接线约定；现已移动并保留同一类对象重导出，相关兼容检查已通过。
 
 | 现有接入位置（均相对src/phymeo/backends） | B1必须连接的内容 |
 | --- | --- |

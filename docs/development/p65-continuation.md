@@ -1,40 +1,48 @@
 # Phymeo 当前续作入口
 
-更新：2026-11-18。当前codex/exp；本轮未push，dev仍76a240d8。先核实时Git/WIP与agents，再读本页和最新报告，不恢复旧历史中的运行任务。
+更新：2026-11-18。当前 codex/exp；B1/B2核心提交2d2ac75a，B3测试提交28fef171，查看器与最终报告接续其后。dev仍76a240d8，本轮不push。先查实时Git/WIP和agents，再按本页前进；不恢复旧heartbeat、07:10已结束任务或旧运行会话。
 
-## 当前任务与状态
+## 当前任务已完成
 
-用户要求本批截止北京时间07:10。本轮I3f–I3x已按各自有限范围完成，06:50结束执行与预览收尾；fresh guard无项目执行进程，原两个agent均已交接释放。当前无执行owner、无运行会话、无已派下一批任务。后续继续时重新取得唯一串行槽；原执行全过程保持import、测试、数值、静态、build/install串行。
+用户要求的三批B1 live摩擦、B2双侧/观察/恢复/故障、B3连续案例与整步成本已完成。父为唯一项目执行owner；两个原agent已完成独立author/read并交接，没有新的agent任务。
 
-最后有界[I3x原生积分检查](area-pressure-native-friction-bridge-report-20261118.md)首次1pass/1.73s：4个固定历史入口、两次原native核，actualv上原Fn/Ft与共同方程通过原工程门。没有重跑接触解或旧轨迹，也未改产品源码。下一批优先复用原积分器并保留逐步actualv核验，不能把该诊断叫live Scene。执行收据见[本轮计划](../superpowers/plans/2026-11-18-area-pressure-through-0710.md)及各报告。
+主报告：[面积摩擦B1/B2/B3](area-friction-live-report-20261118.md)。计划：[三批计划](../superpowers/plans/2026-11-18-area-friction-production-integration.md)。[真实轨迹查看器](assets/area-friction-live-20261118.html)默认当前最终冲击轨迹；蓝法向/橙摩擦/绿色实际裁剪面，历史失败单列。旧[07:10架构图](assets/area-pressure-architecture-20261118.html)是历史快照，当前增量见[架构说明](area-pressure-connected-architecture-20261118.md)。
 
-## 最短阅读顺序
+## 最终验证
 
-1. [当前连接架构](area-pressure-connected-architecture-20261118.md)及[离线架构图](assets/area-pressure-architecture-20261118.html)。
-2. [I3s FREE真实连续窗口与视频](area-pressure-free-body-support-report-20261118.md)，了解已经能运行的法向链。
-3. [I3u 128点摩擦backend](area-pressure-backend-friction-report-20261118.md)、[I3v实际历史入步](area-pressure-entry-friction-report-20261118.md)、[I3w设备装配](area-pressure-resident-friction-pack-report-20261118.md)。
-4. [下一批B1–B3计划](../superpowers/plans/2026-11-18-area-friction-production-integration.md)与[源码live交接](area-friction-live-integration-handoff-20261118.md)。后者包含实际文件、native坐标备选与普通边缘g=0反例。
+- run23：29 passed /25.80s。当前Scene自动几何→resident M/J→共同Fn/Ft→原生q/clock尾段→状态/力原子发布；v2真实混合观察、双方响应、分桶/材料身份、检查点/selected reset/重演及晚失败。
+- run16：双接触区40步，1 passed /6.20s。之后只排版，AST等价，不重跑。
+- run25：4 passed /62.22s。冲击与偏心支撑各150步、同桶滑动/释放各20步、1/4/32world各3步完整数值输出一致。事件按实际记录，未观察到的明确保留NOT_OBSERVED。
+- run26：原接口兼容五文件20 passed /16.34s。这54项只代表相关新增和兼容范围，不是全仓库通过。
+- run30/31：36个Python文件Ruff/format通过。run21证明34个raw AST同、2个仅导入排序；run38补scale/viewer最后排版，scale仅导入排序、viewer raw AST同。后续viewer schema修复以run40和浏览器验证为准。
+- run40：读取10个完整payload，生成14个world/尝试视图、979286B HTML，无物理重跑。1280×1000/390×844无横向溢出，播放/暂停/拖动/放大、失败前缀与成功切换已验；临时检查服务已关闭。
 
-## 能力边界
+原始evidence：artifacts/area-friction-b1-live-20261118-01。所有raw失败、源证明、完整gzip、成本和查看器截图保留。run11/12速度不一致及run14矩不一致导致采用共享原生尾段直接消费v*；原残差/实际速度/力/矩误差门未放宽。run39为查看器schema读取错误，run40修正；guard拦截没有RAW_EXIT，不能算测试失败或通过。
 
-当前模型q/v→自动有限面→真实dA/p/g→MuJoCo-TYX共同法向解→统一状态/载荷→持久观察与任务Env已接通。生产面积律仍无摩擦；几何为HOST或设备拓扑+HOST精确复核，不称全GPU精确碰撞。
+## 成本与边界
 
-连续导轨承载/卸载、三可动物体双区释放已验；另有三种FREE初态各150步，实际旋转、独立M/J/原生坐标审计和同轨迹视频。I3s原oracle平面绑定首错保留，修正只审原450world-step，无物理重跑，不把该pytest初次失败改写为全绿。
+1/4/32world后两步的完整观察吞吐约6.85/9.03/9.76 world-step/s；第一步和初始化另列。仅两后续步、保留已有JIT缓存，不能叫稳定benchmark/训练效率或快于Newton。主要时间位于Scene.step，尚未分解到几何、求解或生产核验，下一轮先定位。所有成本比较保同模型同输出。
 
-摩擦backend已6DOF/128完整点/32world资格；I3v历史适配和I3w设备pack均已验。源码外新wheel也通过对应组。尚未将新Fn/Ft接入真实Scene积分、law-aware载荷发布与恢复；不能把旧type7、v1的F=nFn或friction=none悄改含义。普通滑出有g=0准入边界，不能删面追绿。
+可选final_normal_smooth_v1，CUDA area-only，每桶1..32world、1..6DOF、完整点≤128（三点三角积分≤126）、pair≤16、body/geom≤128。保完整dA/双方J/物理M与A=M+hD；Fn/Ft共同解，原生坐标和时钟只推进一次。
 
-固定5/20/32world同输出后暖步成本减少约9.7–11.3%，仅属于该法向案例。没有普遍快于Newton、任意复杂机器人或摩擦生产提速结论。面积策略特征/PPO、一般软软/薄布折叠、面积CCD、通用自动选型仍未接通；FFT与Kamino保持独立参考用途。
+旧normal-only/native-only可在别桶同场景存在；同一新law世界尚不支持任意native约束混合、BALL/activation、limit/dry、equality/tendon。旧资产v1的friction=none保持原义，旧reader拒绝新v2。g>0仍是模型域，p>0/g=0不加epsilon、不删面。
 
-## 下一步与复用规则
+几何仍为HOST或设备拓扑加HOST精确复核。不是全设备碰撞/面积CCD/29关节摩擦机器人/任意有限边缘/精确静摩擦。FFT/Kamino和通用自动算法选择保持独立；新面积摩擦策略特征/PPO、一般变形体散射尚未接通。
 
-下一批B1直接完成一条可选公开Scene摩擦路径：声明/身份+真实resident同入步+一次原生积分+新载荷记录同时交付。B2补真双侧、多桶、reader/codec/restore/故障；B3连续多案例与完整步成本，再扩DOF/一般约束、GPU规模和训练。
+## 后续优先级
 
-物理提交前失败重试step；提交后观察失败只重试观察或依协议restore，不能重复推进。各报告原raw、完整输入/输出、失败与source绑定直接复用；不重跑同hash已绿组、不重新开已关闭session，不以更多相似证明替代新功能。
+单项验证补记：查看器schema修复以run40与实际浏览器通过为准；修复后单文件Ruff/format因外来长时执行占用串行槽未启动（run41 guard及有界等待已结束）。下次槽空闲只补experiments/area_pressure/live_friction_viewer.py的静态检查；无后台等待，不重跑已绿物理组。
 
-原44,556字节入口保存在[历史入口](p65-continuation-history-through-20261118-i3o.md)，只作历史索引。旧全景和当前模块报告共同判断范围，不给P6.5总体完成百分比。
+1. 扩DOF及同世界mixed native/area共同方程：先固定异构机器人、自由物体和多接触案例，完整联合残差与资源域；不串接独立solver冒共解。
+2. 对Scene.step做分段成本定位，再选择几何/装配/求解/核验优化；同模型同输出才评价收益。
+3. 新v2面积摩擦观察进入真实训练输入；新磁盘law封套、一般有限边缘和变形体扩展各自独立验收。
+
+本次没有自动开始上述新批次。新wheel和dev合并另行安排，不冒源码外已验。
 
 ## 操作约束
 
-父树拥有所有旧共享接缝。保留三个原未跟踪文件及原agents WIP；命令显式workdir，必要require_escalated。每次项目执行fresh entrypoint-aware guard；外来执行自然结束，不kill。仅沿用原agent，不重复派已完成任务。
+保留三个原未跟踪凸patch文件及原agents WIP。所有项目import/pytest/数值/static/build严格串行；明确唯一owner和fresh entrypoint-aware guard，外来实际执行自然结束，不kill。每条命令显式workdir，父写/Git/执行require_escalated。不以sandbox不可见推断仓库坏。
 
-本轮不改dev/main、不push、不发包、不改pin、不建周期任务。旧Temp证据入口可能是Junction；使用canonical archive，不跟随删除、不补副本或全解压。工具开源整理仍是后续优化。
+不重跑同源已绿组/同hash审计，不重开旧会话；失败候选不发布，物理提交后观察失败只重试观察。原Temp证据可能为Junction，只用canonical archive，不遍历删除或全解压。本轮不改dev/main、push、发包、pin、周期任务或清理环境。
+
+长期历史按需读[历史入口](p65-continuation-history-through-20261118-i3o.md)。不以模块数/测试数给P6.5完成比例。

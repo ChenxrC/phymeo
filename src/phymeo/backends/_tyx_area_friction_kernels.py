@@ -25,6 +25,8 @@ def _solve_batch(
     trace: tx.ndarray(tx.f32, 3),
     require_velocity_agreement: tx.i32,
     packed_width: tx.i32,
+    has_guide: tx.i32,
+    guide: tx.ndarray(tx.f32, 3),
 ):
     # Each lane owns an independent complete problem. All fixed padding is reset.
     # Matrices: A, Cholesky(A), actual residual Jacobian, pivot elimination copy.
@@ -230,6 +232,34 @@ def _solve_batch(
                                 matrices[w, 2, i, j] = matrices[w, 2, i, j] - h * (
                                     gx * dfx + gy * dfy + gz * dfz
                                 )
+                    # Type-1 native dry row on an undamped scalar slide: J = [1].
+                    # The same trial velocity drives both the pressure and the box law.
+                    guide_ok = 1
+                    if has_guide != 0:
+                        reg = guide[w, 0, 4]
+                        if nv != 1 or not tx.isfinite(reg) or reg <= 0.0:
+                            meta[w, 0] = 2
+                        else:
+                            acc = (vectors[w, 2, 0] - inputs[w, 1, 0]) / h
+                            raw = (guide[w, 0, 3] - acc) / reg
+                            lower = guide[w, 0, 7]
+                            upper = guide[w, 0, 8]
+                            reaction = tx.min(upper, tx.max(lower, raw))
+                            if not tx.isfinite(raw):
+                                meta[w, 0] = 2
+                            guide[w, 0, 9] = reaction
+                            vectors[w, 7, 0] = vectors[w, 7, 0] + reaction
+                            if lower < raw and raw < upper:
+                                matrices[w, 2, 0, 0] = matrices[w, 2, 0, 0] + 1.0 / reg
+                            physical = (inputs[w, 2, 0] + vectors[w, 7, 0]) / mass[w, 0, 0]
+                            gradient = physical + reg * reaction - guide[w, 0, 3]
+                            violation = tx.abs(gradient)
+                            if reaction == lower:
+                                violation = tx.max(0.0, -gradient)
+                            elif reaction == upper:
+                                violation = tx.max(0.0, gradient)
+                            if violation > 1e-5 * tx.max(1.0, tx.abs(reg * reaction)):
+                                guide_ok = 0
                     norm2 = 0.0
                     for i in range(nv):
                         value = -h * vectors[w, 7, i]
@@ -283,7 +313,7 @@ def _solve_batch(
                                 velocity_ok = 0
                     accepted = 0
                     if meta[w, 0] == 0:
-                        if norm <= scalars[w, 1] and velocity_ok == 1:
+                        if norm <= scalars[w, 1] and velocity_ok == 1 and guide_ok == 1:
                             accepted = 1
                             done = 1
                             trace_meta[w, evaluation, 3] = 2
@@ -376,7 +406,9 @@ def _solve_batch(
                 meta[w, 0] = 3
 
 
-def solve_batch(capacity, count, sizes, mass, *buffers, require_velocity_agreement=False, **launch):
+def solve_batch(
+    capacity, count, sizes, mass, *buffers, require_velocity_agreement=False, guide=None, **launch
+):
     """Keep the standalone ABI; live owners additionally bound A^-1 residual."""
     if type(require_velocity_agreement) is not bool:
         raise ValueError("require_velocity_agreement must be bool")
@@ -387,6 +419,23 @@ def solve_batch(capacity, count, sizes, mass, *buffers, require_velocity_agreeme
     for name, array in zip(FRICTION_FIELDS, (sizes, mass, *buffers), strict=True):
         if array.shape != layout[name][0]:
             raise ValueError(f"invalid packed area-friction {name} layout")
+    if guide is not None and (
+        len(guide.shape) != 3
+        or guide.shape[0] != capacity
+        or guide.shape[1] < 1
+        or guide.shape[2] != 14
+    ):
+        raise ValueError("invalid native guide row storage")
+    # TYX requires a rank-three binding even for the disabled optional row.
     return _solve_batch(
-        capacity, count, sizes, mass, *buffers, int(require_velocity_agreement), width, **launch
+        capacity,
+        count,
+        sizes,
+        mass,
+        *buffers,
+        int(require_velocity_agreement),
+        width,
+        int(guide is not None),
+        mass if guide is None else guide,
+        **launch,
     )

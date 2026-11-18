@@ -49,6 +49,20 @@ DIAGNOSTICS = (
 )
 
 
+def decode_row(ids, row, jacobian):
+    return MuJoCoTyxConstraintRow(
+        "area-pressure-be-row-v1" if ids[0] == 7 else "mujoco-tyx-constraint-row-v1",
+        *map(int, ids),
+        _frozen(jacobian),
+        *map(float, row[:7]),
+        float(row[13]),
+        float(row[7]),
+        float(row[8]) if row[12] else None,
+        float(row[9]),
+        float(row[10]),
+    )
+
+
 def publish(runtime, result, index):
     from .._mujoco_tyx_runtime import MuJoCoTyxNormalContact
 
@@ -187,25 +201,7 @@ def publish(runtime, result, index):
             or (not row[12] and row[8] != 0)
         ):
             raise RuntimeError("invalid mixed force bounds or regularization")
-        constraints.append(
-            MuJoCoTyxConstraintRow(
-                "area-pressure-be-row-v1" if ids[i, 0] == 7 else "mujoco-tyx-constraint-row-v1",
-                *map(int, ids[i]),
-                _frozen(jac[i, : plan.nv]),
-                float(row[0]),
-                float(row[1]),
-                float(row[2]),
-                float(row[3]),
-                float(row[4]),
-                float(row[5]),
-                float(row[6]),
-                float(row[13]),
-                float(row[7]),
-                float(row[8]) if row[12] else None,
-                float(row[9]),
-                float(row[10]),
-            )
-        )
+        constraints.append(decode_row(ids[i], row, jac[i, : plan.nv]))
     raw = {
         name: _frozen(value, dtype=value.dtype)
         for name, value in fields.items()

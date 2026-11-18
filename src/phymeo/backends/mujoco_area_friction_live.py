@@ -5,8 +5,9 @@ from types import MappingProxyType
 import numpy as np
 
 from ..solvers.area_friction import LAW
-from .area_friction_law import PRECISION
+from .area_friction_law import GUIDE_SCHEMA, PRECISION
 from .mujoco_runtime import _frozen
+from .mujoco_tyx._constraint_publication import decode_row
 from .tyx_area_friction import PackedFrictionProblem, PackedFrictionSample, _certificate
 
 SCHEMA = "mujoco-tyx-area-friction-live-v1"
@@ -72,9 +73,30 @@ def publish(runtime, result, index):
             for s in range(ns)
         ),
     )
-    law_norm, scale, expected, _, _, _ = _certificate(problem, output)
-    _require(law_norm <= TOLERANCE * scale, "actual velocity constitutive equation")
+    law_norm, scale, expected, law_residual, _, _ = _certificate(problem, output)
+    constraints = ()
     aggregate = np.zeros(n)
+    if runtime._plan.nfriction:
+        _require(np.array_equal(result["constraint_counts"][index], (0, 0, 1)), "guide row count")
+        ids = result["efc_ids"][index, 0]
+        data = result["efc_data"][index, 0]
+        jacobian = result["efc_jacobian"][index, 0]
+        _require(np.array_equal(ids, (1, 0, -1, -1, 0)), "guide row identity")
+        _require(np.isfinite(data).all() and np.all(data[11:13] == 1), "native bound flags")
+        _require(jacobian[0] == 1 and not np.any(jacobian[1:]), "guide jacobian")
+        row = decode_row(ids, data, jacobian[:n])
+        constraints = (row,)
+        aggregate += row.jacobian * row.force
+        # D=0 for this branch. The complete receipt audit below publication
+        # also substitutes the independent source-derived guide law.
+        law_norm = float(
+            np.linalg.norm(
+                np.linalg.solve(
+                    np.linalg.cholesky(mass.astype(float)), law_residual - float(h) * aggregate
+                )
+            )
+        )
+    _require(law_norm <= TOLERANCE * scale, "actual velocity constitutive equation")
     for s, predicted in enumerate(expected):
         fn, _, ft, force, moment = predicted
         _require(contact[s, 0] >= 0, "negative normal load")
@@ -137,7 +159,7 @@ def publish(runtime, result, index):
         )
     solver = MappingProxyType(
         dict(
-            schema=SCHEMA,
+            schema=GUIDE_SCHEMA if constraints else SCHEMA,
             law=LAW,
             precision=PRECISION,
             mass_matrix=_frozen(mass),
@@ -162,7 +184,7 @@ def publish(runtime, result, index):
     )
     return (
         (),
-        (),
+        constraints,
         MappingProxyType(
             dict(
                 area_friction=tuple(pairs),

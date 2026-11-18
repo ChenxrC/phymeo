@@ -70,14 +70,12 @@ def compile_area_plan(mj, model, pairs, friction_laws=()):
         friction_width(model.nv)
         if model.nbody > 128 or model.ngeom > 128:
             raise ValueError("live area-friction capacity: 128 bodies/geoms")
-        if (
-            model.neq
-            or model.ntendon
-            or remaining
-            or np.any(model.jnt_limited)
-            or np.any(model.dof_frictionloss)
+        if model.neq or model.ntendon or remaining or np.any(model.jnt_limited):
+            raise ValueError("live area friction requires area-only constraints or one dry slide")
+        if np.any(model.dof_frictionloss) and not (
+            model.nv == model.njnt == 1 and model.jnt_type[0] == mj.mjtJoint.mjJNT_SLIDE
         ):
-            raise ValueError("live area friction requires area-only constraints")
+            raise ValueError("mixed area friction requires one undamped dry slide")
         if not np.isfinite(model.dof_damping).all() or np.any(model.dof_damping < 0):
             raise ValueError("live area friction requires nonnegative finite damping")
     base = compile_constraint_model(mj, model, remaining)
@@ -124,6 +122,7 @@ def pack(runtime, mapping, expected_revision):
     plan, cap = runtime._plan, runtime._constraint_capacity
     if not hasattr(plan, "area_pair_names"):
         raise ValueError("runtime has no area-pressure declaration")
+    native_rows = plan.nfriction if plan.area_friction_laws else 0
     storage = max(1, cap)
     data = np.zeros((len(runtime._world_keys), storage, 8), dtype=np.float32)
     measures = np.zeros((len(runtime._world_keys), storage, 2), dtype=np.int32)
@@ -156,7 +155,7 @@ def pack(runtime, mapping, expected_revision):
                 and surface.identity != runtime._area_friction_laws[pi].identity
             ):
                 raise ValueError("area-friction body/material identity differs")
-            if cursor + n > min(cap, 128 if runtime._area_friction_laws else cap):
+            if cursor + n > min(cap - native_rows, 128 if runtime._area_friction_laws else cap):
                 raise ValueError("area-pressure samples exceed constraint capacity")
             with np.errstate(over="raise", invalid="raise", divide="raise"):
                 k = quad.dA * quad.gradient

@@ -16,7 +16,7 @@ from ..geometry.area_pressure import (
     AreaPressureStamp,
     _quadrature,
 )
-from .area_friction_law import LAW, PRECISION, capture_pair_laws
+from .area_friction_law import GUIDE_SCHEMA, LAW, PRECISION, capture_pair_laws
 from .mujoco_tyx._area_friction_layout import MAX_LIVE_DOF, friction_width
 from .mujoco_tyx._model import fp32
 
@@ -216,8 +216,8 @@ def _validate(runtime, key, receipt, state):
         and type(receipt.contacts) is tuple
         and not receipt.contacts
         and type(receipt.constraints) is tuple
-        and not receipt.constraints,
-        "native contacts/constraints are outside this law",
+        and len(receipt.constraints) == runtime._plan.nfriction,
+        "native contact/guide row count",
     )
     fields = receipt.raw_contact_fields
     _require(
@@ -236,7 +236,7 @@ def _validate(runtime, key, receipt, state):
         "solver record fields",
     )
     _require(
-        _tag(solver["schema"], SCHEMA)
+        _tag(solver["schema"], GUIDE_SCHEMA if receipt.constraints else SCHEMA)
         and _tag(solver["law"], LAW)
         and _tag(solver["precision"], PRECISION)
         and type(solver["solver_status"]) is int
@@ -335,6 +335,13 @@ def _validate(runtime, key, receipt, state):
     _diagnostics(solver["raw_diagnostics"], velocity, nv)
     count, common_stamp = 0, None
     summed, law_total = np.zeros(nv), np.zeros(nv)
+    if receipt.constraints:
+        from .mujoco_area_guide import validate_guide_row
+
+        row = receipt.constraints[0]
+        predicted = validate_guide_row(runtime._plan, row, v0, output, h, qacc)
+        summed += row.jacobian * row.force
+        law_total += row.jacobian * predicted
     for raw, law, body_ids in zip(pairs, laws, ids, strict=True):
         _require(
             isinstance(raw, Mapping) and len(raw) == len(PAIR_FIELDS) and set(raw) == PAIR_FIELDS,
@@ -351,7 +358,10 @@ def _validate(runtime, key, receipt, state):
             "source identity extent",
         )
         count += n
-        _require(count <= min(128, runtime._constraint_capacity), "sample capacity")
+        _require(
+            count <= min(128, runtime._constraint_capacity - len(receipt.constraints)),
+            "sample capacity",
+        )
         for name, shape in (
             ("points", (n, 3)),
             ("normals", (n, 3)),

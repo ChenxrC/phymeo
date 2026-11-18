@@ -11,6 +11,7 @@ from ..geometry.area_pressure import AreaPressureIdentity, _identity
 from ..solvers.area_friction import LAW, _number
 
 SCHEMA = "mujoco-tyx-area-friction-law-v1"
+GUIDE_SCHEMA = "mujoco-tyx-area-friction-guide-v1"
 PRECISION = "actual-packed-point-fp32"
 
 

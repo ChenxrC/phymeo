@@ -65,6 +65,41 @@ class TyxConstraintDevice(TyxDevice):
             self._close_after_construction_failure(primary)
             raise
 
+    def _assemble_rows(self, old):
+        self.assemble[old](
+            self.nworld,
+            self.plan.nv,
+            self.nslot,
+            self.plan.nfriction,
+            self.plan.nlimit,
+            *self.capacities,
+            self.h,
+            self.plan.impratio,
+            self.slot_ids,
+            self.geom_ids,
+            self.pair_condim,
+            self.pair_friction,
+            self.pair_law,
+            self.friction_ids,
+            self.friction_law,
+            self.limit_ids,
+            self.limit_law,
+            self.q[old],
+            self.v[old],
+            self.motion,
+            self.jacobian,
+            self.normal_rows,
+            self.efc_ids,
+            self.efc_data,
+            self.efc_jacobian,
+            self.contact_map,
+            self.contact_jacobian,
+            self.constraint_counts,
+            self.status,
+            mode=self.mode,
+        )
+        self.counts["completed_kernels"] += 1
+
     def advance(self, controls, applied, body_force):
         old, new = self.active, 1 - self.active
         with self.tx.use_runtime(self.runtime):
@@ -136,6 +171,8 @@ class TyxConstraintDevice(TyxDevice):
             if getattr(self.plan, "area_friction_laws", ()):
                 from ._area_friction_device import solve_contact
 
+                if self.plan.nfriction:
+                    self._assemble_rows(old)
                 solve_contact(self, old)
             else:
                 if self.extended_contacts is not None:
@@ -183,39 +220,7 @@ class TyxConstraintDevice(TyxDevice):
                     mode=self.mode,
                 )
                 self.counts["completed_kernels"] += 1
-                self.assemble[old](
-                    self.nworld,
-                    self.plan.nv,
-                    self.nslot,
-                    self.plan.nfriction,
-                    self.plan.nlimit,
-                    *self.capacities,
-                    self.h,
-                    self.plan.impratio,
-                    self.slot_ids,
-                    self.geom_ids,
-                    self.pair_condim,
-                    self.pair_friction,
-                    self.pair_law,
-                    self.friction_ids,
-                    self.friction_law,
-                    self.limit_ids,
-                    self.limit_law,
-                    self.q[old],
-                    self.v[old],
-                    self.motion,
-                    self.jacobian,
-                    self.normal_rows,
-                    self.efc_ids,
-                    self.efc_data,
-                    self.efc_jacobian,
-                    self.contact_map,
-                    self.contact_jacobian,
-                    self.constraint_counts,
-                    self.status,
-                    mode=self.mode,
-                )
-                self.counts["completed_kernels"] += 1
+                self._assemble_rows(old)
                 response_mass = self.mass
                 if hasattr(self.plan, "area_pair_names"):
                     from ._area_pressure_kernels import append_rows
@@ -347,6 +352,11 @@ class TyxConstraintDevice(TyxDevice):
                 mode=self.mode,
             )
             self.counts["completed_kernels"] += 1
+            if getattr(self.plan, "area_friction_laws", ()) and self.plan.nfriction:
+                from ._area_friction_live_kernels import store_guide_gradient
+
+                store_guide_gradient(self.nworld, self.acceleration, self.efc_data, mode=self.mode)
+                self.counts["completed_kernels"] += 1
             self.runtime.sync()
             self.counts["synchronizations"] += 1
 

@@ -2,7 +2,11 @@
 
 更新：2026-11-18。当前 codex/exp；B1/B2核心提交2d2ac75a，B3测试提交28fef171，查看器与最终报告接续其后。dev仍76a240d8，本轮不push。先查实时Git/WIP和agents，再按本页前进；不恢复旧heartbeat、07:10已结束任务或旧运行会话。
 
-## 当前任务已完成
+## 本轮进展
+
+CUDA 面积摩擦支持每个模型 1 至 8 个速度自由度，新增可动平板与 6/7/8 自由度混合批次已通过验证。原中心跌落案例的全部 150 个步末已按有限板覆盖范围测量，最大压入量为 1.96249 mm（32 ms）。[新增测试、深度数据与下一项混合约束的解析基准](area-friction-wide-report-20261118.md)。
+
+## 此前完成的三批
 
 用户要求的三批B1 live摩擦、B2双侧/观察/恢复/故障、B3连续案例与整步成本已完成。父为唯一项目执行owner；两个原agent已完成独立author/read并交接，没有新的agent任务。
 
@@ -23,7 +27,7 @@
 
 1/4/32world后两步的完整观察吞吐约6.85/9.03/9.76 world-step/s；第一步和初始化另列。仅两后续步、保留已有JIT缓存，不能叫稳定benchmark/训练效率或快于Newton。主要时间位于Scene.step，尚未分解到几何、求解或生产核验，下一轮先定位。所有成本比较保同模型同输出。
 
-可选final_normal_smooth_v1，CUDA area-only，每桶1..32world、1..6DOF、完整点≤128（三点三角积分≤126）、pair≤16、body/geom≤128。保完整dA/双方J/物理M与A=M+hD；Fn/Ft共同解，原生坐标和时钟只推进一次。
+可选final_normal_smooth_v1，CUDA area-only，每桶1..32world、每模型1..8DOF、完整点≤128（三点三角积分≤126）、pair≤16、body/geom≤128。保完整dA/双方J/物理M与A=M+hD；Fn/Ft共同解，原生坐标和时钟只推进一次。
 
 旧normal-only/native-only可在别桶同场景存在；同一新law世界尚不支持任意native约束混合、BALL/activation、limit/dry、equality/tendon。旧资产v1的friction=none保持原义，旧reader拒绝新v2。g>0仍是模型域，p>0/g=0不加epsilon、不删面。
 
@@ -31,13 +35,13 @@
 
 ## 后续优先级
 
-单项验证补记：查看器schema修复以run40与实际浏览器通过为准；修复后单文件Ruff/format因外来长时执行占用串行槽未启动（run41 guard及有界等待已结束）。下次槽空闲只补experiments/area_pressure/live_friction_viewer.py的静态检查；无后台等待，不重跑已绿物理组。
+查看器在本批 run04 和 run05 通过 Ruff 与格式复检，历史生成与浏览器记录仍见上一批 run40。
 
-1. 扩DOF及同世界mixed native/area共同方程：先固定异构机器人、自由物体和多接触案例，完整联合残差与资源域；不串接独立solver冒共解。
+1. 在同一世界共同求解原生关节约束和面积压力。先用报告中的单导轨解析基准检查速度、面积力与关节反力，再扩到机器人和多接触案例。
 2. 对Scene.step做分段成本定位，再选择几何/装配/求解/核验优化；同模型同输出才评价收益。
 3. 新v2面积摩擦观察进入真实训练输入；新磁盘law封套、一般有限边缘和变形体扩展各自独立验收。
 
-本次没有自动开始上述新批次。新wheel和dev合并另行安排，不冒源码外已验。
+新 wheel 和 dev 合并仍待单独验证。
 
 ## 操作约束
 

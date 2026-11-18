@@ -14,6 +14,8 @@ pack_status or solver status is nonzero. Padding lanes are zero and not failures
 import numpy as np
 import tyx as tx
 
+from .mujoco_tyx._area_friction_layout import MAX_LIVE_DOF, friction_width
+
 PACK_OK = 0
 PACK_UPSTREAM_FAILED = 1
 PACK_INDEX_ERROR = 2
@@ -27,6 +29,7 @@ def _pack_entry_kernel(
     count: tx.i32,
     nv: tx.i32,
     width: tx.i32,
+    packed_width: tx.i32,
     nbody: tx.i32,
     npair: tx.i32,
     area_capacity: tx.i32,
@@ -59,8 +62,8 @@ def _pack_entry_kernel(
         steps[w] = 0.0
         for i in range(4):
             sizes[w, i] = 0
-        for i in range(6):
-            for j in range(6):
+        for i in range(packed_width):
+            for j in range(packed_width):
                 mass[w, i, j] = 0.0
             for j in range(3):
                 inputs[w, j, i] = 0.0
@@ -68,7 +71,7 @@ def _pack_entry_kernel(
             for i in range(10):
                 samples[w, s, i] = 0.0
             for i in range(3):
-                for d in range(6):
+                for d in range(packed_width):
                     ja[w, s, i, d] = 0.0
                     jb[w, s, i, d] = 0.0
         code = 0
@@ -210,8 +213,8 @@ def _pack_entry_kernel(
                 steps[w] = 0.0
                 for i in range(4):
                     sizes[w, i] = 0
-                for i in range(6):
-                    for j in range(6):
+                for i in range(packed_width):
+                    for j in range(packed_width):
                         mass[w, i, j] = 0.0
                     for j in range(3):
                         inputs[w, j, i] = 0.0
@@ -219,7 +222,7 @@ def _pack_entry_kernel(
                     for i in range(10):
                         samples[w, s, i] = 0.0
                     for i in range(3):
-                        for d in range(6):
+                        for d in range(packed_width):
                             ja[w, s, i, d] = 0.0
                             jb[w, s, i, d] = 0.0
                 pack_status[w] = code
@@ -281,7 +284,7 @@ def pack_entry(
     bounds = (
         (capacity, 1, 32),
         (count, 1, capacity),
-        (nv, 1, 6),
+        (nv, 1, MAX_LIVE_DOF),
         (nbody, 1, 128),
         (npair, 1, 16),
         (area_capacity, 1, 512),
@@ -322,6 +325,7 @@ def pack_entry(
     if len(vector_shape) != 2 or vector_shape[0] != 9 or not 8 <= vector_shape[1] <= 45:
         raise ValueError("entry pack static vector extent")
     f32, i32 = np.dtype("float32"), np.dtype("int32")
+    packed_width = friction_width(nv)
     specifications = (
         ((count,), i32),
         ((count, width, width), f32),
@@ -338,12 +342,12 @@ def pack_entry(
         ((npair, 2), i32),
         ((npair, 2), f32),
         ((capacity, 4), i32),
-        ((capacity, 6, 6), f32),
-        ((capacity, 3, 6), f32),
+        ((capacity, packed_width, packed_width), f32),
+        ((capacity, 3, packed_width), f32),
         ((capacity,), f32),
         ((capacity, 128, 10), f32),
-        ((capacity, 128, 3, 6), f32),
-        ((capacity, 128, 3, 6), f32),
+        ((capacity, 128, 3, packed_width), f32),
+        ((capacity, 128, 3, packed_width), f32),
         ((capacity,), i32),
     )
     ordinal = source_status.device_ordinal if mode == "cuda" else None
@@ -376,6 +380,7 @@ def pack_entry(
         count,
         nv,
         width,
+        packed_width,
         nbody,
         npair,
         area_capacity,

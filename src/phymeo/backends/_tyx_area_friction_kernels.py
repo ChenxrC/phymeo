@@ -2,6 +2,8 @@
 
 import tyx as tx
 
+from .mujoco_tyx._area_friction_layout import FRICTION_FIELDS, scratch_layout
+
 
 @tx.kernel
 def _solve_batch(
@@ -22,6 +24,7 @@ def _solve_batch(
     trace_meta: tx.ndarray(tx.i32, 3),
     trace: tx.ndarray(tx.f32, 3),
     require_velocity_agreement: tx.i32,
+    packed_width: tx.i32,
 ):
     # Each lane owns an independent complete problem. All fixed padding is reset.
     # Matrices: A, Cholesky(A), actual residual Jacobian, pivot elimination copy.
@@ -33,11 +36,11 @@ def _solve_batch(
         for i in range(3):
             scalars[w, i] = 0.0
         for bank in range(4):
-            for i in range(6):
-                for j in range(6):
+            for i in range(packed_width):
+                for j in range(packed_width):
                     matrices[w, bank, i, j] = 0.0
         for bank in range(8):
-            for i in range(6):
+            for i in range(packed_width):
                 vectors[w, bank, i] = 0.0
         for sample in range(128):
             for i in range(17):
@@ -45,7 +48,7 @@ def _solve_batch(
         for row in range(290):
             for i in range(4):
                 trace_meta[w, row, i] = 0
-            for i in range(15):
+            for i in range(3 + 2 * packed_width):
                 trace[w, row, i] = 0.0
         if w < count:
             nv = sizes[w, 0]
@@ -55,7 +58,7 @@ def _solve_batch(
             h = steps[w]
             if (
                 nv < 1
-                or nv > 6
+                or nv > packed_width
                 or ns < 0
                 or ns > 128
                 or budget < 0
@@ -257,7 +260,7 @@ def _solve_batch(
                     trace[w, evaluation, 2] = scalars[w, 1]
                     for i in range(nv):
                         trace[w, evaluation, 3 + i] = vectors[w, 2, i]
-                        trace[w, evaluation, 9 + i] = vectors[w, 3, i]
+                        trace[w, evaluation, 3 + packed_width + i] = vectors[w, 3, i]
                     meta[w, 2] = evaluation + 1
                     if trial == 1:
                         meta[w, 3] = meta[w, 3] + 1
@@ -295,7 +298,7 @@ def _solve_batch(
                         if trial == 1:
                             meta[w, 1] = meta[w, 1] + 1
                         if done == 1:
-                            for j in range(15):
+                            for j in range(3 + 2 * packed_width):
                                 trace[w, evaluation + 1, j] = trace[w, evaluation, j]
                             for j in range(4):
                                 trace_meta[w, evaluation + 1, j] = trace_meta[w, evaluation, j]
@@ -373,8 +376,17 @@ def _solve_batch(
                 meta[w, 0] = 3
 
 
-def solve_batch(*args, require_velocity_agreement=False, **launch):
+def solve_batch(capacity, count, sizes, mass, *buffers, require_velocity_agreement=False, **launch):
     """Keep the standalone ABI; live owners additionally bound A^-1 residual."""
     if type(require_velocity_agreement) is not bool:
         raise ValueError("require_velocity_agreement must be bool")
-    return _solve_batch(*args, int(require_velocity_agreement), **launch)
+    if len(mass.shape) != 3 or mass.shape[1] not in (6, 8):
+        raise ValueError("invalid packed area-friction mass layout")
+    width = mass.shape[1]
+    layout = scratch_layout(capacity, width)
+    for name, array in zip(FRICTION_FIELDS, (sizes, mass, *buffers), strict=True):
+        if array.shape != layout[name][0]:
+            raise ValueError(f"invalid packed area-friction {name} layout")
+    return _solve_batch(
+        capacity, count, sizes, mass, *buffers, int(require_velocity_agreement), width, **launch
+    )

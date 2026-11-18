@@ -273,7 +273,7 @@ def allocation_manifest(plan, nworld, nbody, capacities):
         from ._area_friction_layout import scratch_layout
 
         static("area_friction_parameters")
-        for name, (shape, dtype) in scratch_layout(w).items():
+        for name, (shape, dtype) in scratch_layout(w, plan.nv).items():
             add("friction_" + name, shape, dtype)
     from ._entry_storage import entry_layout, entry_static_layout
 

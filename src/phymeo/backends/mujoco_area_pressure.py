@@ -65,8 +65,11 @@ def compile_area_plan(mj, model, pairs, friction_laws=()):
     ):
         raise ValueError("damped area route cannot mix native constraints in this version")
     if friction_laws:
-        if not (1 <= model.nv <= 6 and model.nbody <= 128 and model.ngeom <= 128):
-            raise ValueError("live area-friction capacity: 1..6 DOF, 128 bodies/geoms")
+        from .mujoco_tyx._area_friction_layout import friction_width
+
+        friction_width(model.nv)
+        if model.nbody > 128 or model.ngeom > 128:
+            raise ValueError("live area-friction capacity: 128 bodies/geoms")
         if (
             model.neq
             or model.ntendon

@@ -17,6 +17,7 @@ from ..geometry.area_pressure import (
     _quadrature,
 )
 from .area_friction_law import LAW, PRECISION, capture_pair_laws
+from .mujoco_tyx._area_friction_layout import MAX_LIVE_DOF, friction_width
 from .mujoco_tyx._model import fp32
 
 SCHEMA = "mujoco-tyx-area-friction-live-v1"
@@ -132,7 +133,9 @@ def _diagnostics(raw, solver_velocity, nv):
         isinstance(tm, np.ndarray) and tm.ndim == 2 and 2 <= tm.shape[0] <= 290, "trace extent"
     )
     tm = _array(tm, (tm.shape[0], 4), "trace meta", np.int32)
-    trace = _array(trace, (tm.shape[0], 15), "trace", np.float32)
+    width = friction_width(nv)
+    residual_start = 3 + width
+    trace = _array(trace, (tm.shape[0], residual_start + width), "trace", np.float32)
     _require(sum(x.size for x in (meta, scalars, tm, trace)) <= 8192, "diagnostic capacity")
     count = int(meta[2])
     _require(
@@ -140,7 +143,7 @@ def _diagnostics(raw, solver_velocity, nv):
         and 0 <= meta[1] <= 24
         and 2 <= count <= len(tm)
         and 0 <= meta[3] <= 288
-        and 0 <= meta[4] <= 144,
+        and 0 <= meta[4] <= 24 * width,
         "solver metadata",
     )
     _require(
@@ -150,8 +153,8 @@ def _diagnostics(raw, solver_velocity, nv):
     _require(
         np.all(tm[count:] == 0)
         and np.all(trace[count:] == 0)
-        and np.all(trace[:count, 3 + nv : 9] == 0)
-        and np.all(trace[:count, 9 + nv :] == 0),
+        and np.all(trace[:count, 3 + nv : residual_start] == 0)
+        and np.all(trace[:count, residual_start + nv :] == 0),
         "trace padding",
     )
     _require(
@@ -241,7 +244,7 @@ def _validate(runtime, key, receipt, state):
         "solver schema/status",
     )
     nv, nq, nbody = runtime._plan.nv, runtime._plan.nq, runtime._model.nbody
-    _require(1 <= nv <= 6 and 1 <= nq <= 45 and 1 <= nbody <= 128, "model capacity")
+    _require(1 <= nv <= MAX_LIVE_DOF and 1 <= nq <= 45 and 1 <= nbody <= 128, "model capacity")
     ids = _array(runtime._plan.area_body_ids, (len(laws), 2), "declared body IDs", np.int32)
     _require(
         np.all(ids >= 0) and np.all(ids < nbody) and np.all(ids[:, 0] != ids[:, 1]),

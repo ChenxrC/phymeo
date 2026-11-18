@@ -73,18 +73,20 @@ def test_v1_friction_none_bundle_cannot_acquire_live_law(declarations):
     assert loaded.to_bytes() == raw
 
 
-@pytest.mark.parametrize("invalid", ("nv7", "remaining-native", "limit"))
+@pytest.mark.parametrize("invalid", ("nv9", "remaining-native", "limit"))
 def test_live_domain_refused_before_device_allocation(declarations, monkeypatch, invalid):
     specs, _, _ = declarations
     xml = _xml(invalid != "limit")
-    if invalid == "nv7":
+    if invalid == "nv9":
         extra = """<body name="extra" pos=".2 0 0">
-          <joint name="extra-slide" type="slide" axis="1 0 0"/>
+          <joint name="extra-x" type="slide" axis="1 0 0"/>
+          <joint name="extra-y" type="slide" axis="0 1 0"/>
+          <joint name="extra-z" type="slide" axis="0 0 1"/>
           <inertial pos="0 0 0" mass=".1" diaginertia=".001 .001 .001"/>
           <geom type="box" size=".01 .01 .01"/>
         </body>"""
         xml = xml.replace("</worldbody>", extra + "</worldbody>")
-        expected = "1..6 DOF"
+        expected = "1..8 DOF"
     elif invalid == "remaining-native":
         xml = xml.replace('contype="0" conaffinity="0"', 'contype="1" conaffinity="1"')
         wall = """<body name="wall" pos=".1 0 0">
@@ -97,8 +99,8 @@ def test_live_domain_refused_before_device_allocation(declarations, monkeypatch,
         expected = "area-only constraints"
     compilation = compile_mujoco_xml(xml, require_asset=False)
     model = compilation.fresh_native_model()
-    if invalid == "nv7":
-        assert model.nv == 7
+    if invalid == "nv9":
+        assert model.nv == 9
     elif invalid == "limit":
         assert model.nv == 1 and np.any(model.jnt_limited) and not np.any(model.dof_damping)
     else:

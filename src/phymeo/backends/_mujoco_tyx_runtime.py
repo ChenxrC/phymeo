@@ -554,7 +554,11 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
 
                 info.update(
                     contact_law=FRICTION_LAW,
-                    domain="area-friction-cuda-six-dof-v1",
+                    domain=(
+                        "area-friction-cuda-six-dof-v1"
+                        if self._plan.nv <= 6
+                        else "area-friction-cuda-eight-dof-v1"
+                    ),
                     numerical_solver="area-friction-newton-v1",
                     area_pressure_law=FRICTION_LAW,
                     area_pressure_publication="last_step.raw_contact_fields.area_friction",

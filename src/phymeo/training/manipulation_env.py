@@ -134,6 +134,7 @@ class HeterogeneousManipulationEnv:
         area_roles=None,
         instruction_encoder=None,
         instruction_language="zh",
+        native_contact_features=False,
     ):
         import torch
 
@@ -148,6 +149,8 @@ class HeterogeneousManipulationEnv:
         _require(type(auto_reset) is bool, "auto_reset must be bool")
         self._area_scene, self._area_roles, self._area_asset_sha256 = None, None, None
         has_area = bool(batch.capabilities.get("device_area_pressure"))
+        _require(type(native_contact_features) is bool, "native_contact_features must be bool")
+        _require(not (has_area and native_contact_features), "select one policy contact law")
         if has_area:
             from ..backends.mujoco_heterogeneous_area_scene import (
                 MuJoCoTyxHeterogeneousAreaPressureScene,
@@ -244,6 +247,11 @@ class HeterogeneousManipulationEnv:
                 for k in self.world_keys
             )
             self._reader = self._new_reader()
+            self._native_policy = None
+            if native_contact_features:
+                from .native_contact_policy import NativeContactPolicyInput
+
+                self._native_policy = NativeContactPolicyInput(self.workspace, scenes, self.device)
             self._area_policy = None
             if self.workspace.binding.get("area_schema") == AreaFrictionEntryReader.ABI[0]:
                 self._area_policy = AreaFrictionPolicyInput(
@@ -293,6 +301,8 @@ class HeterogeneousManipulationEnv:
                 )
             if self._area_policy is not None:
                 self._binding["area_policy_input"] = _plain(self._area_policy.binding)
+            if self._native_policy is not None:
+                self._binding["native_policy_input"] = _plain(self._native_policy.binding)
             if self._language is not None:
                 self._binding["goal_language"] = _plain(self._language.binding)
             torch.cuda.current_stream(self.device).synchronize()
@@ -409,6 +419,8 @@ class HeterogeneousManipulationEnv:
         values = dict(self.workspace.to_torch(frame))
         if self._area_policy is not None:
             values["area_object_contact"] = self._area_policy.encode(values)
+        if self._native_policy is not None:
+            values["native_object_contact"] = self._native_policy.encode(values)
         if self._language is not None:
             values.update(
                 self._language.observe(

@@ -75,8 +75,12 @@ class ManipulationPpo(RslPpoBoundaryState):
             raise ValueError("requires an auto-reset heterogeneous manipulation Env")
         if version("rsl-rl-lib") != SUPPORTED_RSL_RL:
             raise RuntimeError("requires rsl-rl-lib==" + SUPPORTED_RSL_RL)
-        if "area_policy_input" not in env.binding:
-            raise ValueError("requires v2 area-object contact features")
+        if "area_policy_input" in env.binding:
+            self._contact_group, self._contact_value = "area_contact", "area_object_contact"
+        elif "native_policy_input" in env.binding:
+            self._contact_group, self._contact_value = "native_contact", "native_object_contact"
+        else:
+            raise ValueError("requires declared area or native object contact features")
         self.env = env
         self._mask = env.controllable_action_mask
         if not self._mask.any(dim=1).all().item():
@@ -112,7 +116,7 @@ class ManipulationPpo(RslPpoBoundaryState):
             parts.extend((torch.where(mask, values[name], 0.0), mask.to(torch.float32)))
         features = {
             "state": torch.cat(parts, dim=1),
-            "area_contact": values["area_object_contact"].flatten(1),
+            self._contact_group: values[self._contact_value].flatten(1),
             "action_mask": self._mask.clone(),
         }
         if "instruction" in values:

@@ -75,19 +75,32 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("model_directory", help="Local pinned ONNX model and tokenizer directory")
     parser.add_argument("--language", choices=("zh", "en"), default="zh")
+    parser.add_argument("--resume-from", help="Restore an update-boundary checkpoint first")
+    parser.add_argument("--save-to", help="Write the final update boundary to a new file")
+    parser.add_argument("--updates", type=int, default=1, help="Number of additional PPO updates")
     args = parser.parse_args()
+    if args.updates < 1:
+        parser.error("--updates must be positive")
     torch.manual_seed(720)
     with ExitStack() as stack:
         env = make_env(stack, FrozenMiniLM(args.model_directory), args.language)
         session = ManipulationPpo(env, steps=12)
-        for _ in range(12):
-            session.collect_step()
-        losses = session.update()
+        if args.resume_from:
+            session.restore_checkpoint(
+                args.resume_from, expected_revision=env.batch.checkpoint_revision
+            )
+        for _ in range(args.updates):
+            for _ in range(12):
+                session.collect_step()
+            losses = session.update()
+        if args.save_to:
+            session.save_checkpoint(args.save_to)
         print(
             json.dumps(
                 dict(
                     worlds=env.world_keys,
                     steps=12,
+                    completed_updates=session.completed_updates,
                     language=env.binding["goal_language"],
                     losses=losses,
                     optimizer=optimization_evidence(session.algorithm),

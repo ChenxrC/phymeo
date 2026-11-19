@@ -184,61 +184,34 @@ class MuJoCoTyxTrainingRestoreError(RuntimeError):
         self.physics_restored = bool(physics_restored)
 
 
-class MuJoCoTyxPpoSession:
-    """Single synchronous owner of the fixed upstream learner and registered RNGs.
+def checkpoint_platform(device):
+    properties = torch.cuda.get_device_properties(device)
+    return {
+        "dependencies": {
+            key: version(key)
+            for key in ("rsl-rl-lib", "torch", "tensordict", "numpy", "mujoco", "tyx-compute")
+        },
+        "python": list(sys.version_info[:3]),
+        "device": {
+            "index": device.index,
+            "name": properties.name,
+            "capability": [properties.major, properties.minor],
+            "torch_cuda": torch.version.cuda,
+        },
+        "determinism": {
+            "algorithms": torch.are_deterministic_algorithms_enabled(),
+            "warn_only": torch.is_deterministic_algorithms_warn_only_enabled(),
+            "matmul_tf32": torch.backends.cuda.matmul.allow_tf32,
+            "cudnn_tf32": torch.backends.cudnn.allow_tf32,
+            "cudnn_benchmark": torch.backends.cudnn.benchmark,
+            "cudnn_deterministic": torch.backends.cudnn.deterministic,
+            "cublas_workspace": os.environ.get("CUBLAS_WORKSPACE_CONFIG"),
+        },
+    }
 
-    Borrowed adapter/runtime remain caller-owned. Do not concurrently mutate any
-    registered generator, global RNG, learner, adapter or runtime outside this
-    owner. In-progress rollout serialization and automatic recovery are excluded.
-    """
 
-    def __init__(self, adapter, *, steps=16, recurrent=False, generators=None):
-        _require(isinstance(adapter, RslMuJoCoTyxVecEnv), "device RSL adapter required")
-        _require(type(steps) is int and 1 <= steps <= 64, "steps must be 1..64")
-        self.adapter, self.env = adapter, adapter.env
-        self.steps, self.recurrent = steps, recurrent
-        self.config = ppo_config(steps=steps, recurrent=recurrent)
-        self._generators = dict(generators or {})
-        _require(
-            all(type(key) is str and key and len(key) <= 128 for key in self._generators),
-            "registered generator names",
-        )
-        _require(
-            len(self._generators) <= 32
-            and len({id(item) for item in self._generators.values()}) == len(self._generators),
-            "registered generator count/alias",
-        )
-        self._generator_binding = {
-            key: self._rng_kind(item) for key, item in self._generators.items()
-        }
-        self._lock, self._phase, self._poisoned = RLock(), None, False
-        self.next_iteration = 0
-        with self.env.training_boundary():
-            self.algorithm = self._construct_algorithm(self.env.get_observations())
-            self.algorithm.train_mode()
-            self._binding = self._current_binding()
-
-    @property
-    def needs_recovery(self):
-        return self._poisoned or self.adapter.needs_recovery
-
-    def _ready(self):
-        if self.needs_recovery:
-            raise RuntimeError("failed training composition requires recovery")
-        if self._phase is not None:
-            raise RuntimeError("training update/restore is in progress; boundary unavailable")
-
-    def _construct_algorithm(self, observation):
-        from rsl_rl.algorithms import PPO
-
-        observations = TensorDict(
-            {"policy": observation.to(self.env.device)},
-            batch_size=[self.env.num_envs],
-            device=self.env.device,
-        )
-        return PPO.construct_algorithm(
-            observations, self.adapter, copy.deepcopy(self.config), str(self.env.device)
-        )
+class RslPpoBoundaryState:
+    """Shared empty-storage, RNG and Adam state checks for the pinned RSL protocol."""
 
     def _rng_kind(self, generator):
         if isinstance(generator, torch.Generator):
@@ -320,36 +293,6 @@ class MuJoCoTyxPpoSession:
         """Post-CAS switch, separated for explicit late-failure evidence."""
         self._apply_rng(state)
 
-    def _current_binding(self):
-        properties = torch.cuda.get_device_properties(self.env.device)
-        return {
-            "schema": SCHEMA,
-            "physics": _encode(self.env.runtime.checkpoint().binding),
-            "environment": self.env.training_binding(),
-            "config": copy.deepcopy(self.config),
-            "generators": copy.deepcopy(self._generator_binding),
-            "dependencies": {
-                key: version(key)
-                for key in ("rsl-rl-lib", "torch", "tensordict", "numpy", "mujoco", "tyx-compute")
-            },
-            "python": list(sys.version_info[:3]),
-            "device": {
-                "index": self.env.device.index,
-                "name": properties.name,
-                "capability": [properties.major, properties.minor],
-                "torch_cuda": torch.version.cuda,
-            },
-            "determinism": {
-                "algorithms": torch.are_deterministic_algorithms_enabled(),
-                "warn_only": torch.is_deterministic_algorithms_warn_only_enabled(),
-                "matmul_tf32": torch.backends.cuda.matmul.allow_tf32,
-                "cudnn_tf32": torch.backends.cudnn.allow_tf32,
-                "cudnn_benchmark": torch.backends.cudnn.benchmark,
-                "cudnn_deterministic": torch.backends.cudnn.deterministic,
-                "cublas_workspace": os.environ.get("CUBLAS_WORKSPACE_CONFIG"),
-            },
-        }
-
     def _empty(self):
         if self.algorithm.storage.step != 0:
             raise RuntimeError("nonempty rollout storage is not an update boundary")
@@ -369,73 +312,6 @@ class MuJoCoTyxPpoSession:
             name: _clone(network.get_hidden_state())
             for name, network in (("actor", algorithm.actor), ("critic", algorithm.critic))
         }
-
-    def training_state(self):
-        """Owned diagnostic copy; excludes monotonic resource/revision identities."""
-        with self._lock, self.env.training_boundary():
-            self._ready()
-            return {
-                "env": self.env.capture_training_state(),
-                "learner": _clone(self.algorithm.save()),
-                "hidden": self._hidden(self.algorithm),
-                "rng": self._capture_rng(),
-                "modes": {
-                    owner: {name: module.training for name, module in network.named_modules()}
-                    for owner, network in (
-                        ("actor", self.algorithm.actor),
-                        ("critic", self.algorithm.critic),
-                    )
-                },
-                "next_iteration": self.next_iteration,
-            }
-
-    def update(self):
-        with self._lock, self.env.training_boundary():
-            self._ready()
-            self._empty()
-            self._phase = "rollout"
-            transitions, recurrent_masks = [], []
-            try:
-                observation = self.adapter.get_observations()
-                with torch.inference_mode():
-                    for _ in range(self.steps):
-                        action = self.algorithm.act(observation)
-                        before_hidden = self._hidden(self.algorithm) if self.recurrent else None
-                        observation, reward, done, extras = self.adapter.step(action)
-                        self.algorithm.process_env_step(observation, reward, done, extras)
-                        transitions.append(self.adapter.last_transition)
-                        if self.recurrent:
-                            recurrent_masks.append(
-                                {
-                                    "before": before_hidden,
-                                    "after": self._hidden(self.algorithm),
-                                    "done": done.detach().cpu().clone(),
-                                }
-                            )
-                    self.algorithm.compute_returns(observation)
-                self._phase = "upstream-update"
-                loss = self.algorithm.update()
-                _require(
-                    all(math.isfinite(float(value)) for value in loss.values()), "nonfinite loss"
-                )
-                evidence = optimization_evidence(self.algorithm)
-                self._empty()
-                torch.cuda.synchronize(self.env.device)
-                iteration = self.next_iteration
-                self.next_iteration += 1
-                return {
-                    "iteration": iteration,
-                    "next_iteration": self.next_iteration,
-                    "transitions": tuple(transitions),
-                    "recurrent_masks": tuple(recurrent_masks),
-                    "loss": _clone(loss),
-                    "optimization": evidence,
-                }
-            except BaseException:
-                self._poisoned = True
-                raise
-            finally:
-                self._phase = None
 
     def _validate_learner(self, candidate, state, hidden, modes, iteration):
         _require(
@@ -530,6 +406,140 @@ class MuJoCoTyxPpoSession:
             )
             for member, module in members.items():
                 module.training = modes[name][member]
+
+
+class MuJoCoTyxPpoSession(RslPpoBoundaryState):
+    """Single synchronous owner of the fixed upstream learner and registered RNGs.
+
+    Borrowed adapter/runtime remain caller-owned. Do not concurrently mutate any
+    registered generator, global RNG, learner, adapter or runtime outside this
+    owner. In-progress rollout serialization and automatic recovery are excluded.
+    """
+
+    def __init__(self, adapter, *, steps=16, recurrent=False, generators=None):
+        _require(isinstance(adapter, RslMuJoCoTyxVecEnv), "device RSL adapter required")
+        _require(type(steps) is int and 1 <= steps <= 64, "steps must be 1..64")
+        self.adapter, self.env = adapter, adapter.env
+        self.steps, self.recurrent = steps, recurrent
+        self.config = ppo_config(steps=steps, recurrent=recurrent)
+        self._generators = dict(generators or {})
+        _require(
+            all(type(key) is str and key and len(key) <= 128 for key in self._generators),
+            "registered generator names",
+        )
+        _require(
+            len(self._generators) <= 32
+            and len({id(item) for item in self._generators.values()}) == len(self._generators),
+            "registered generator count/alias",
+        )
+        self._generator_binding = {
+            key: self._rng_kind(item) for key, item in self._generators.items()
+        }
+        self._lock, self._phase, self._poisoned = RLock(), None, False
+        self.next_iteration = 0
+        with self.env.training_boundary():
+            self.algorithm = self._construct_algorithm(self.env.get_observations())
+            self.algorithm.train_mode()
+            self._binding = self._current_binding()
+
+    @property
+    def needs_recovery(self):
+        return self._poisoned or self.adapter.needs_recovery
+
+    def _ready(self):
+        if self.needs_recovery:
+            raise RuntimeError("failed training composition requires recovery")
+        if self._phase is not None:
+            raise RuntimeError("training update/restore is in progress; boundary unavailable")
+
+    def _construct_algorithm(self, observation):
+        from rsl_rl.algorithms import PPO
+
+        observations = TensorDict(
+            {"policy": observation.to(self.env.device)},
+            batch_size=[self.env.num_envs],
+            device=self.env.device,
+        )
+        return PPO.construct_algorithm(
+            observations, self.adapter, copy.deepcopy(self.config), str(self.env.device)
+        )
+
+    def _current_binding(self):
+        return {
+            "schema": SCHEMA,
+            "physics": _encode(self.env.runtime.checkpoint().binding),
+            "environment": self.env.training_binding(),
+            "config": copy.deepcopy(self.config),
+            "generators": copy.deepcopy(self._generator_binding),
+            **checkpoint_platform(self.env.device),
+        }
+
+    def training_state(self):
+        """Owned diagnostic copy; excludes monotonic resource/revision identities."""
+        with self._lock, self.env.training_boundary():
+            self._ready()
+            return {
+                "env": self.env.capture_training_state(),
+                "learner": _clone(self.algorithm.save()),
+                "hidden": self._hidden(self.algorithm),
+                "rng": self._capture_rng(),
+                "modes": {
+                    owner: {name: module.training for name, module in network.named_modules()}
+                    for owner, network in (
+                        ("actor", self.algorithm.actor),
+                        ("critic", self.algorithm.critic),
+                    )
+                },
+                "next_iteration": self.next_iteration,
+            }
+
+    def update(self):
+        with self._lock, self.env.training_boundary():
+            self._ready()
+            self._empty()
+            self._phase = "rollout"
+            transitions, recurrent_masks = [], []
+            try:
+                observation = self.adapter.get_observations()
+                with torch.inference_mode():
+                    for _ in range(self.steps):
+                        action = self.algorithm.act(observation)
+                        before_hidden = self._hidden(self.algorithm) if self.recurrent else None
+                        observation, reward, done, extras = self.adapter.step(action)
+                        self.algorithm.process_env_step(observation, reward, done, extras)
+                        transitions.append(self.adapter.last_transition)
+                        if self.recurrent:
+                            recurrent_masks.append(
+                                {
+                                    "before": before_hidden,
+                                    "after": self._hidden(self.algorithm),
+                                    "done": done.detach().cpu().clone(),
+                                }
+                            )
+                    self.algorithm.compute_returns(observation)
+                self._phase = "upstream-update"
+                loss = self.algorithm.update()
+                _require(
+                    all(math.isfinite(float(value)) for value in loss.values()), "nonfinite loss"
+                )
+                evidence = optimization_evidence(self.algorithm)
+                self._empty()
+                torch.cuda.synchronize(self.env.device)
+                iteration = self.next_iteration
+                self.next_iteration += 1
+                return {
+                    "iteration": iteration,
+                    "next_iteration": self.next_iteration,
+                    "transitions": tuple(transitions),
+                    "recurrent_masks": tuple(recurrent_masks),
+                    "loss": _clone(loss),
+                    "optimization": evidence,
+                }
+            except BaseException:
+                self._poisoned = True
+                raise
+            finally:
+                self._phase = None
 
     def save_checkpoint(self, path):
         with self._lock, self.env.training_boundary():

@@ -5,8 +5,12 @@ the physical scale/bias once. Each training row carries its own effective
 action mask, including after minibatch shuffling.
 """
 
+from copy import deepcopy
+from hashlib import sha256
 from importlib.metadata import version
 from math import isfinite
+from re import fullmatch
+from threading import RLock
 
 import torch
 from rsl_rl.algorithms import PPO
@@ -15,6 +19,12 @@ from tensordict import TensorDict
 from torch.distributions import Normal
 
 from .manipulation_env import HeterogeneousManipulationEnv
+from .manipulation_ppo_checkpoint import read_checkpoint, write_checkpoint
+from .mujoco_tyx_checkpoint import (
+    MuJoCoTyxTrainingRestoreError,
+    RslPpoBoundaryState,
+    checkpoint_platform,
+)
 from .rsl_mujoco_tyx import SUPPORTED_RSL_RL, ppo_config
 
 
@@ -53,7 +63,7 @@ class MaskedGaussianActor(MLPModel):
         raise NotImplementedError("export requires a mask-aware actor signature")
 
 
-class ManipulationPpo:
+class ManipulationPpo(RslPpoBoundaryState):
     """One shared actor/critic, one upstream storage and optimizer for a borrowed Env.
 
     An exception during collection or update invalidates this training session.
@@ -74,11 +84,25 @@ class ManipulationPpo:
         self._frame = env.current_frame
         self._observation = self.pack(env.observation)
         cfg = ppo_config(steps=steps)
-        cfg["actor"]["class_name"] = MaskedGaussianActor
+        cfg["actor"]["class_name"] = f"{__name__}.MaskedGaussianActor"
         cfg["obs_groups"] = dict.fromkeys(("actor", "critic"), list(self._observation.keys()))
-        self.algorithm = PPO.construct_algorithm(self._observation, env, cfg, str(env.device))
+        self._config = cfg
+        self._lock = RLock()
+        self._generators = {}
+        self.recurrent = False
+        self._completed = 0
+        self.algorithm = self._new_algorithm()
         self._steps = steps
         self._valid = True
+
+    def _new_algorithm(self):
+        return PPO.construct_algorithm(
+            self._observation, self.env, deepcopy(self._config), str(self.env.device)
+        )
+
+    @property
+    def completed_updates(self):
+        return self._completed
 
     def pack(self, values):
         """Pack endpoint state and previous accepted contact forces in frozen world order."""
@@ -111,6 +135,10 @@ class ManipulationPpo:
     @torch.no_grad()
     def collect_step(self):
         """Store action-entry observations and credit a timeout at its pre-reset endpoint."""
+        with self._lock:
+            return self._collect_step()
+
+    def _collect_step(self):
         self._check()
         ppo = self.algorithm
         if ppo.storage.step >= self._steps:
@@ -130,6 +158,10 @@ class ManipulationPpo:
 
     def update(self):
         """Compute GAE and perform the configured upstream PPO minibatch update."""
+        with self._lock:
+            return self._update()
+
+    def _update(self):
         self._check()
         if self.algorithm.storage.step != self._steps:
             raise RuntimeError("a complete rollout is required before update")
@@ -154,5 +186,122 @@ class ManipulationPpo:
             or not torch.stack([torch.isfinite(t.detach()).all() for t in tensors]).all().item()
         ):
             raise FloatingPointError("nonfinite PPO update; discard the learner")
+        self._completed += 1
         self._valid = True
         return losses
+
+    def _checkpoint_binding(self):
+        return {
+            "config": self._config,
+            "timeout_value": "pre-reset-terminal-v1",
+            "platform": checkpoint_platform(self.env.device),
+        }
+
+    @staticmethod
+    def _observation_hashes(observation):
+        return {
+            name: sha256(value.detach().cpu().contiguous().numpy().tobytes()).hexdigest()
+            for name, value in observation.items()
+        }
+
+    def save_checkpoint(self, path):
+        """Save a new file after a complete update. The caller owns the global RNGs."""
+        with self._lock:
+            self._check()
+            self._empty()
+            if not 1 <= self._completed <= 2**24:
+                raise RuntimeError("checkpoint requires a completed PPO update")
+            environment = self.env.checkpoint()
+            self._check()
+            algo = self.algorithm
+            state = {
+                "binding": self._checkpoint_binding(),
+                "environment": environment.sha256,
+                "updates": self._completed,
+                "learner": algo.save(),
+                "modes": {
+                    key: {name: mod.training for name, mod in network.named_modules()}
+                    for key, network in (("actor", algo.actor), ("critic", algo.critic))
+                },
+                "hidden": self._hidden(algo),
+                "rng": self._capture_rng(),
+                "observation": self._observation_hashes(self._observation),
+            }
+            write_checkpoint(path, environment, state)
+
+    def restore_checkpoint(self, path, *, expected_revision):
+        """Resume a saved update boundary in an exclusively borrowed, compatible environment."""
+        with self._lock:
+            self._check()
+            self._empty()
+            env = self.env
+            revision = env.batch.checkpoint_revision
+            if type(expected_revision) is not int or expected_revision != revision:
+                raise ValueError("stale PPO restore revision")
+            environment, state = read_checkpoint(path)
+            fields = {
+                "binding",
+                "environment",
+                "updates",
+                "learner",
+                "modes",
+                "hidden",
+                "rng",
+                "observation",
+            }
+            if (
+                type(state) is not dict
+                or set(state) != fields
+                or state["binding"] != self._checkpoint_binding()
+            ):
+                raise ValueError("PPO training configuration or checkpoint fields differ")
+            if environment.sha256 != state["environment"]:
+                raise ValueError("PPO environment binding differs")
+            hashes = state["observation"]
+            if (
+                type(hashes) is not dict
+                or set(hashes) != set(self._observation.keys())
+                or not all(
+                    type(value) is str and fullmatch("[0-9a-f]{64}", value)
+                    for value in hashes.values()
+                )
+            ):
+                raise ValueError("invalid PPO observation digest layout")
+            updates = state["updates"]
+            if type(updates) is not int or not 1 <= updates <= 2**24:
+                raise ValueError("invalid completed update count")
+            self._validate_rng(state["rng"])
+            before_rng = self._capture_rng()
+            try:
+                candidate = self._new_algorithm()
+                self._validate_learner(
+                    candidate, state["learner"], state["hidden"], state["modes"], updates
+                )
+            finally:
+                self._apply_rng(before_rng)
+
+            try:
+                receipt = env.restore(environment, expected_revision=revision)
+                observation = self.pack(env.observation)
+                if self._observation_hashes(observation) != state["observation"]:
+                    raise ValueError("restored PPO observation differs from the saved boundary")
+                frame = env.current_frame
+                self._install_rng(state["rng"])
+            except BaseException as primary:
+                if env.batch.checkpoint_revision != revision:
+                    self._valid = False
+                    try:
+                        self._apply_rng(before_rng)
+                    except BaseException as rng_error:
+                        primary.add_note(
+                            f"Restoring the previous RNG state also failed: {rng_error!r}"
+                        )
+                    raise MuJoCoTyxTrainingRestoreError(
+                        "physics restored; discard the interrupted manipulation learner",
+                        physics_restored=True,
+                    ) from primary
+                raise
+            self.algorithm = candidate
+            self._frame, self._observation = frame, observation
+            self._completed = updates
+            return receipt

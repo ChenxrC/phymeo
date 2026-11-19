@@ -9,7 +9,8 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from ..backends.area_pressure_readback import ABI, AreaPressureEntryReader, _identity_key
+from ..backends.area_friction_readback import AreaFrictionEntryReader
+from ..backends.area_pressure_readback import AreaPressureEntryReader, _identity_key
 from ..geometry.area_pressure import AreaPressureIdentity, _identity
 
 
@@ -46,13 +47,14 @@ class AreaSuccessAdapter:
     def __init__(self, workspace, roles, addresses):
         binding = workspace.binding
         _require(binding.get("area_pressure") is True, "area observation workspace is required")
-        _require(
-            tuple(
-                binding.get(k) for k in ("area_schema", "area_force", "area_moment", "area_measure")
+        if binding.get("area_schema") == AreaFrictionEntryReader.ABI[0]:
+            reader = AreaFrictionEntryReader
+        else:
+            _require(
+                not any(row.get("area_friction") for row in binding["source"]["buckets"]),
+                "area observation ABI differs from declared friction laws",
             )
-            == ABI,
-            "area observation ABI differs",
-        )
+            reader = AreaPressureEntryReader
         pairs = binding["area_pair_names"]
         expected = {key for key, value in pairs.items() if value}
         _require(
@@ -126,12 +128,13 @@ class AreaSuccessAdapter:
                     ),
                 )
             )
-        self.binding = ("manipulation-area-success-v1", ABI, tuple(signature))
-
-        self._entries = AreaPressureEntryReader(
+        self._entries = reader(
             workspace,
             {key: tuple(role.identity for role in values) for key, values in roles.items()},
         )
+        self.binding = ("manipulation-area-success-v1", reader.ABI, tuple(signature))
+        if reader is AreaFrictionEntryReader:
+            self.binding += (tuple(sorted(binding["area_laws"].items())),)
 
     def validate(self, arrays, frame):
         """Decode once, then aggregate task roles without changing the digest."""

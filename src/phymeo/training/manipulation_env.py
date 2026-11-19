@@ -15,6 +15,8 @@ from types import MappingProxyType
 
 import numpy as np
 
+from ..backends.area_friction_readback import AreaFrictionEntryReader
+from .area_friction_policy import AreaFrictionPolicyInput
 from .manipulation_observation import (
     AreaPressureRoleBinding,
     ManipulationSuccessReader,
@@ -240,6 +242,11 @@ class HeterogeneousManipulationEnv:
                 for k in self.world_keys
             )
             self._reader = self._new_reader()
+            self._area_policy = None
+            if self.workspace.binding.get("area_schema") == AreaFrictionEntryReader.ABI[0]:
+                self._area_policy = AreaFrictionPolicyInput(
+                    self.workspace.binding, self._area_roles, self.device
+                )
             self._frame, self._observation = self._export()
             initial = self.workspace.readback(self._frame)["entry_meta"]
             _require(
@@ -275,6 +282,8 @@ class HeterogeneousManipulationEnv:
                         "reader_binding": self._reader.binding,
                     }
                 )
+            if self._area_policy is not None:
+                self._binding["area_policy_input"] = _plain(self._area_policy.binding)
             torch.cuda.current_stream(self.device).synchronize()
         except BaseException as primary:
             self._closed = True
@@ -387,6 +396,8 @@ class HeterogeneousManipulationEnv:
     def _export(self):
         frame = self.workspace.refresh(expected_revision=self.batch.checkpoint_revision)
         values = dict(self.workspace.to_torch(frame))
+        if self._area_policy is not None:
+            values["area_object_contact"] = self._area_policy.encode(values)
         values["action_mask"] = self._action_mask.clone()
         return frame, values
 

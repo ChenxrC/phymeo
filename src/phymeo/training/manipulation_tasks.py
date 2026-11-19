@@ -134,7 +134,6 @@ class Scene:
     def __post_init__(self):
         for field in (
             "key",
-            "robot_kinds",
             "mjcf",
             "object_key",
             "support_geom_name",
@@ -144,7 +143,7 @@ class Scene:
             value = getattr(self, field)
             if type(value) is not str or not value.strip():
                 raise ValueError("scene identifiers, labels and XML must be nonempty strings")
-        if any(kind not in "RP" for kind in self.robot_kinds):
+        if type(self.robot_kinds) is not str or any(kind not in "RP" for kind in self.robot_kinds):
             raise ValueError("robot_kinds must describe scalar R/P joints")
         for field, expected in (("object_shapes", Primitive), ("targets", Target), ("goals", Goal)):
             values = tuple(getattr(self, field))
@@ -160,6 +159,8 @@ class Scene:
             object.__setattr__(self, field, values)
         if len(self.finger_geom_names) not in (0, 2):
             raise ValueError("scene declares no fingers or exactly two contact fingers")
+        if not self.robot_kinds and not self.finger_geom_names:
+            raise ValueError("a scene needs an arm or a standalone two-finger gripper")
         count = len(self.robot_joint_names)
         if count != len(self.robot_kinds) + len(self.finger_geom_names):
             raise ValueError("robot joint names must cover the arm and declared fingers")

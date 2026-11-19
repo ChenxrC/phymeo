@@ -413,6 +413,12 @@ class HeterogeneousManipulationEnv:
     def current_frame(self):
         return self._frame
 
+    def is_current_frame(self, frame):
+        """Check a learner boundary against the live physics revision without copying observations."""
+        with self._lock:
+            self._ready()
+            return frame is self._frame
+
     @property
     def auto_reset(self):
         return self._auto_reset
@@ -432,6 +438,16 @@ class HeterogeneousManipulationEnv:
         with self._lock:
             self._open()
             return self._action_mask.clone()
+
+    @property
+    def controllable_action_mask(self):
+        """Policy coordinates that can change a native input (excludes constant biases)."""
+        with self._lock:
+            self._open()
+            mask = self._action_mask.clone()
+            for row, scale in enumerate(self._scale):
+                mask[row, : scale.numel()] = scale != 0
+            return mask
 
     @property
     def episode_ids(self):

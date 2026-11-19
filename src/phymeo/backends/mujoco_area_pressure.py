@@ -21,6 +21,7 @@ class _AreaPlan:
     area_body_ids: np.ndarray
     area_friction_laws: tuple = ()
     area_friction_parameters: np.ndarray | None = None
+    scalar_damped_contacts: bool = False
 
     def __getattr__(self, name):
         return getattr(self.base, name)
@@ -79,8 +80,24 @@ def compile_area_plan(mj, model, pairs, friction_laws=()):
     ids, remaining = ownership.body_ids, ownership.native_geometry_pairs
     if model.na or np.any(model.jnt_type == mj.mjtJoint.mjJNT_BALL):
         raise ValueError("first area route supports stateless hinge/slide or free-root trees")
-    if np.any(model.dof_damping) and (
-        remaining or np.any(model.jnt_limited) or np.any(model.dof_frictionloss)
+    scalar_damped_contacts = bool(
+        remaining
+        and not friction_laws
+        and model.nv == model.njnt == 1
+        and model.jnt_type[0] in (mj.mjtJoint.mjJNT_HINGE, mj.mjtJoint.mjJNT_SLIDE)
+        and np.isfinite(model.dof_damping[0])
+        and model.dof_damping[0] > 0
+        and not (
+            model.neq
+            or model.ntendon
+            or np.any(model.jnt_limited)
+            or np.any(model.dof_frictionloss)
+        )
+    )
+    if (
+        not scalar_damped_contacts
+        and np.any(model.dof_damping)
+        and (remaining or np.any(model.jnt_limited) or np.any(model.dof_frictionloss))
     ):
         raise ValueError("damped area route cannot mix native constraints in this version")
     if friction_laws:
@@ -126,7 +143,9 @@ def compile_area_plan(mj, model, pairs, friction_laws=()):
         if not np.isfinite(parameters).all() or np.any((values > 0) & (parameters <= 0)):
             raise ValueError("area-friction parameters are not positive finite FP32")
         parameters = np.frombuffer(parameters.tobytes(), dtype=np.float32).reshape(-1, 2)
-    return _AreaPlan(base, tuple(pairs), body_ids, friction_laws, parameters)
+    return _AreaPlan(
+        base, tuple(pairs), body_ids, friction_laws, parameters, scalar_damped_contacts
+    )
 
 
 def configuration_id(runtime, key):

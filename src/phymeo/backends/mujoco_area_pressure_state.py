@@ -40,7 +40,8 @@ def area_binding(runtime):
         pairs=runtime._plan.area_pair_names,
         body_ids=tuple(tuple(map(int, pair)) for pair in runtime._plan.area_body_ids),
         law=runtime.capabilities["area_pressure_law"],
-        response_operator=runtime.capabilities["smooth_acceleration_operator"],
+        response_operator="M+h*joint_damping",
+        **({"native_contact_operator": "M"} if runtime._plan.scalar_damped_contacts else {}),
         storage="host-owned-accepted-receipt; native-entry-layout-unchanged",
     )
 
@@ -107,6 +108,23 @@ def validate_area_receipt(runtime, key, receipt, state):
         "motion publication",
     )
     _require(fields.get("response_operator") == "M+h*joint_damping", "response operator")
+    if runtime._plan.scalar_damped_contacts:
+        _require(
+            fields.get("native_contact_operator") == "M"
+            and fields.get("solver_diagnostics_basis") == "physical-acceleration-scaled-area-rows",
+            "scalar mixed contact operators",
+        )
+        mass = float(dynamics.mass_matrix[0, 0])
+        effective = mass + h * float(runtime._model.dof_damping[0])
+        _require(
+            np.allclose(
+                mass * receipt.qacc,
+                effective * receipt.integration_acceleration,
+                rtol=2e-5,
+                atol=2e-6,
+            ),
+            "scalar mixed acceleration",
+        )
     response = _array(fields.get("area_response_acceleration"), (nv,), "response acceleration")
     _require(
         np.allclose(response, receipt.integration_acceleration, rtol=2e-5, atol=2e-6),

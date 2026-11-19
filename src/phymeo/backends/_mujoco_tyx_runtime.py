@@ -547,7 +547,9 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                 area_pressure_checkpoint=True,
                 area_pressure_observation="host-owned-accepted-receipt-v1",
                 area_pressure_friction=bool(self._area_friction_laws),
-                smooth_acceleration_operator="M+h*joint_damping",
+                smooth_acceleration_operator="M"
+                if self._plan.scalar_damped_contacts
+                else "M+h*joint_damping",
             )
             if self._area_friction_laws:
                 from .area_friction_law import LAW as FRICTION_LAW

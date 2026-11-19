@@ -201,6 +201,21 @@ def publish(runtime, result, index):
             or (not row[12] and row[8] != 0)
         ):
             raise RuntimeError("invalid mixed force bounds or regularization")
+        if getattr(plan, "scalar_damped_contacts", False):
+            # Check both row laws against the acceleration actually published by
+            # the integration tail, in their original (unscaled) units.
+            acceleration = result["integration_acc" if ids[i, 0] == 7 else "qacc"][index, 0]
+            ja = float(jac[i, 0]) * float(acceleration)
+            rf = float(row[4]) * float(row[9])
+            gradient = (ja - float(row[3])) + rf
+            error = abs(gradient) if row[9] > 0 else max(0.0, -gradient)
+            if not np.isclose(
+                row[10],
+                gradient,
+                rtol=0,
+                atol=plan.solver_tolerance * max(1.0, abs(ja), abs(row[3]), abs(rf)),
+            ) or error > plan.solver_tolerance * max(1.0, abs(rf)):
+                raise RuntimeError("scalar mixed contact failed original row equation")
         constraints.append(decode_row(ids[i], row, jac[i, : plan.nv]))
     raw = {
         name: _frozen(value, dtype=value.dtype)
@@ -218,6 +233,9 @@ def publish(runtime, result, index):
 
         raw["area_pressure"] = publish_area(runtime, result, index, fields, native_rows)
         raw["response_operator"] = "M+h*joint_damping"
+        if plan.scalar_damped_contacts:
+            raw["native_contact_operator"] = "M"
+            raw["solver_diagnostics_basis"] = "physical-acceleration-scaled-area-rows"
         raw["area_response_acceleration"] = _frozen(
             result["area_response_acceleration"][index, : plan.nv]
         )

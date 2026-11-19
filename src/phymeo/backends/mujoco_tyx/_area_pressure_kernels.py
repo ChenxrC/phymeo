@@ -9,6 +9,7 @@ def append_rows(
     nv: tx.i32,
     capacity: tx.i32,
     h: tx.f32,
+    scalar_damped_contacts: tx.i32,
     body_ids: tx.ndarray(tx.i32, 2),
     samples: tx.ndarray(tx.f32, 3),
     pair_index: tx.ndarray(tx.i32, 2),
@@ -81,6 +82,19 @@ def append_rows(
                 data[w, r, 4] = reg
                 data[w, r, 5] = h * h * k
                 data[w, r, 11] = 1.0
+                if scalar_damped_contacts != 0:
+                    # Native rows use physical acceleration. Multiply the area
+                    # equation by A/M so its force still acts through M unchanged.
+                    scalar_mass = mass[w, 0, 0]
+                    if scalar_mass > 0.0:
+                        scale = response_mass[w, 0, 0] / scalar_mass
+                        aref = scale * aref
+                        reg = scale * reg
+                        data[w, r, 3] = aref
+                        data[w, r, 4] = reg
+                        data[w, r, 5] = h * h * k / scale
+                    else:
+                        status[w] = 2
                 if (
                     not tx.isfinite(reg)
                     or reg <= 0.0
@@ -89,4 +103,32 @@ def append_rows(
                     or not tx.isfinite(k)
                     or k <= 0.0
                 ):
+                    status[w] = 2
+
+
+@tx.kernel
+def publish_scalar_area_rows(
+    count: tx.i32,
+    h: tx.f32,
+    samples: tx.ndarray(tx.f32, 3),
+    sizes: tx.ndarray(tx.i32, 1),
+    counts: tx.ndarray(tx.i32, 2),
+    jac: tx.ndarray(tx.f32, 3),
+    data: tx.ndarray(tx.f32, 3),
+    integration_acc: tx.ndarray(tx.f32, 2),
+    status: tx.ndarray(tx.i32, 1),
+):
+    for w in tx.range(count):
+        if status[w] == 0:
+            for sample in range(sizes[w]):
+                r = counts[w, 2] - sizes[w] + sample
+                compliance_inverse = h * h * samples[w, sample, 6]
+                reg = 1.0 / compliance_inverse
+                aref = -data[w, r, 0] / (h * h) - data[w, r, 2] / h
+                grad = (jac[w, r, 0] * integration_acc[w, 0] - aref) + reg * data[w, r, 9]
+                data[w, r, 3] = aref
+                data[w, r, 4] = reg
+                data[w, r, 5] = compliance_inverse
+                data[w, r, 10] = grad
+                if not tx.isfinite(grad):
                     status[w] = 2

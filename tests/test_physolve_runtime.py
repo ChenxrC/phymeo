@@ -40,6 +40,24 @@ def test_runtime_requires_compilation_and_explicit_payload():
         PhySolveRuntime(None, payload=None)
 
 
+def test_contact_reference_weights_regularize_only_moving_degenerate_components():
+    from types import SimpleNamespace
+
+    import tyx as tx
+
+    from phymeo.backends._physolve_parameters import prepare_contact_inverse_weights
+
+    raw = np.array([[0, 0], [0, 4], [2, 0], [3, 5], [0, 0]], dtype=np.float64)
+    cpu = SimpleNamespace(body_invweight0=raw, body_weldid=np.array([0, 1, 2, 3, 4]))
+    device = tx.Array(raw[None].astype(np.float32), dtype=tx.vec2f, device="cpu")
+    model = SimpleNamespace(body_invweight0=device)
+
+    prepare_contact_inverse_weights(cpu, model, None)
+
+    np.testing.assert_array_equal(device.numpy(), [[[0, 0], [4, 4], [2, 2], [3, 5], [0, 0]]])
+    np.testing.assert_array_equal(raw, [[0, 0], [0, 4], [2, 0], [3, 5], [0, 0]])
+
+
 @pytest.mark.parametrize("device", ["cpu", pytest.param("cuda:0", marks=pytest.mark.cuda)])
 @pytest.mark.parametrize("dtype_name", ["f32", "i32", "vec3f"])
 def test_frontend_metadata_and_batch_view_ownership(payload, device, dtype_name):

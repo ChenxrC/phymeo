@@ -26,15 +26,22 @@ class _AreaPlan:
         return getattr(self.base, name)
 
 
-def compile_area_plan(mj, model, pairs, friction_laws=()):
-    from .area_friction_law import capture_pair_laws
+@dataclass(frozen=True)
+class AreaCollisionOwnership:
+    """Geometry candidates from the compiled native model, before any contact detection."""
 
-    friction_laws = capture_pair_laws(pairs, friction_laws)
-    from .mujoco_tyx._constraint_model import compile_constraint_model, constraint_pairs
+    body_ids: tuple
+    replaced_geometry_pairs: tuple
+    native_geometry_pairs: tuple
+
+
+def area_collision_ownership(mj, model, pairs):
+    """Resolve candidates per declared body pair, preserving native order in both routes."""
+    from .mujoco_tyx._constraint_model import constraint_pairs
 
     if not isinstance(pairs, tuple) or not 1 <= len(pairs) <= 16:
         raise ValueError("area_pressure_pairs requires 1..16 ordered body pairs")
-    names, ids, seen = [], [], set()
+    ids, owners = [], {}
     for pair in pairs:
         if (
             not isinstance(pair, tuple)
@@ -46,18 +53,30 @@ def compile_area_plan(mj, model, pairs, friction_laws=()):
         if min(bodies) < 0 or bodies[0] == bodies[1]:
             raise ValueError("area pair bodies must exist and differ")
         key = tuple(sorted(bodies))
-        if key in seen or model.body_weldid[bodies[0]] == model.body_weldid[bodies[1]]:
+        if key in owners or model.body_weldid[bodies[0]] == model.body_weldid[bodies[1]]:
             raise ValueError("duplicate or welded area pair")
-        seen.add(key)
-        names.append(pair)
+        owners[key] = len(ids)
         ids.append(bodies)
     # Ownership is exact body identity, not a weld component: two distinct
     # static tables may share body_weldid=0 but need independent contact laws.
-    remaining = tuple(
-        pair
-        for pair in constraint_pairs(model)
-        if tuple(sorted(map(int, model.geom_bodyid[list(pair)]))) not in seen
-    )
+    replaced = [[] for _ in ids]
+    remaining = []
+    for pair in constraint_pairs(model):
+        owner = owners.get(tuple(sorted(map(int, model.geom_bodyid[list(pair)]))))
+        if owner is None:
+            remaining.append(pair)
+        else:
+            replaced[owner].append(pair)
+    return AreaCollisionOwnership(tuple(ids), tuple(map(tuple, replaced)), tuple(remaining))
+
+
+def compile_area_plan(mj, model, pairs, friction_laws=()):
+    from .area_friction_law import capture_pair_laws
+    from .mujoco_tyx._constraint_model import compile_constraint_model
+
+    friction_laws = capture_pair_laws(pairs, friction_laws)
+    ownership = area_collision_ownership(mj, model, pairs)
+    ids, remaining = ownership.body_ids, ownership.native_geometry_pairs
     if model.na or np.any(model.jnt_type == mj.mjtJoint.mjJNT_BALL):
         raise ValueError("first area route supports stateless hinge/slide or free-root trees")
     if np.any(model.dof_damping) and (
@@ -107,7 +126,7 @@ def compile_area_plan(mj, model, pairs, friction_laws=()):
         if not np.isfinite(parameters).all() or np.any((values > 0) & (parameters <= 0)):
             raise ValueError("area-friction parameters are not positive finite FP32")
         parameters = np.frombuffer(parameters.tobytes(), dtype=np.float32).reshape(-1, 2)
-    return _AreaPlan(base, tuple(names), body_ids, friction_laws, parameters)
+    return _AreaPlan(base, tuple(pairs), body_ids, friction_laws, parameters)
 
 
 def configuration_id(runtime, key):

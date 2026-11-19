@@ -395,4 +395,12 @@ def test_current_four_world_scene_publishes_friction_and_native_motion(tmp_path,
 
 @pytest.mark.cuda
 def test_current_surface_unloads_then_becomes_valid_empty(tmp_path, monkeypatch):
+    einsum = np.einsum
+
+    def checked_einsum(subscripts, *operands, **kwargs):
+        if subscripts == "sij,si->j" and operands[0].shape[0] == 0:
+            pytest.fail("empty contact contributes exactly zero generalized force")
+        return einsum(subscripts, *operands, **kwargs)
+
+    monkeypatch.setattr(np, "einsum", checked_einsum)
     _run(tmp_path, monkeypatch, unloading=True)

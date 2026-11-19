@@ -483,8 +483,10 @@ def _validate(runtime, key, receipt, state):
         _close(ma, np.cross(points, fa), "stored force/world moment", absolute=1e-5)
         _close(ma, np.cross(points, predicted_force), "final law/world moment", absolute=1e-5)
         _same(mb, -ma, "action/reaction moment")
-        summed += np.einsum("sij,si->j", ja - jb, fa)
-        law_total += np.einsum("sij,si->j", ja - jb, predicted_force)
+        # A declared pair with no quadrature samples contributes exactly zero.
+        if n:
+            summed += np.einsum("sij,si->j", ja - jb, fa)
+            law_total += np.einsum("sij,si->j", ja - jb, predicted_force)
     _close(total, summed, "complete two-sided generalized force")
     residual = response @ output - mass @ v0 - h * (external + total)
     saved_residual = _array(solver["residual"], (nv,), "actual residual")

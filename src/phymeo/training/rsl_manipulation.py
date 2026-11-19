@@ -75,9 +75,7 @@ class ManipulationPpo:
         self._observation = self.pack(env.observation)
         cfg = ppo_config(steps=steps)
         cfg["actor"]["class_name"] = MaskedGaussianActor
-        cfg["obs_groups"] = dict.fromkeys(
-            ("actor", "critic"), ["state", "area_contact", "action_mask"]
-        )
+        cfg["obs_groups"] = dict.fromkeys(("actor", "critic"), list(self._observation.keys()))
         self.algorithm = PPO.construct_algorithm(self._observation, env, cfg, str(env.device))
         self._steps = steps
         self._valid = True
@@ -88,15 +86,21 @@ class ManipulationPpo:
         for name in ("q", "v", "act"):
             mask = values[name + "_mask"].bool()
             parts.extend((torch.where(mask, values[name], 0.0), mask.to(torch.float32)))
-        return TensorDict(
-            {
-                "state": torch.cat(parts, dim=1),
-                "area_contact": values["area_object_contact"].flatten(1),
-                "action_mask": self._mask.clone(),
-            },
-            batch_size=[self.env.num_envs],
-            device=self.env.device,
-        )
+        features = {
+            "state": torch.cat(parts, dim=1),
+            "area_contact": values["area_object_contact"].flatten(1),
+            "action_mask": self._mask.clone(),
+        }
+        if "instruction" in values:
+            valid = values["visible_target_mask"].bool()
+            features.update(
+                instruction=values["instruction"],
+                visible_targets=torch.where(
+                    valid.unsqueeze(-1), values["visible_targets"], 0.0
+                ).flatten(1),
+                visible_target_mask=valid,
+            )
+        return TensorDict(features, batch_size=[self.env.num_envs], device=self.env.device)
 
     def _check(self):
         if not self._valid or not self.env.is_current_frame(self._frame):

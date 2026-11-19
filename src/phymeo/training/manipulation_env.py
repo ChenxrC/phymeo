@@ -2,7 +2,7 @@
 
 The batch is borrowed for exclusive mutation. Success evaluation is an explicit
 HOST consumer of accepted-entry data; actor observations remain device copies.
-This adapter does not implement language encoding, PPO or a control policy.
+An optional frozen text encoder supplies cached instruction and target features.
 """
 
 import json
@@ -132,6 +132,8 @@ class HeterogeneousManipulationEnv:
         auto_reset=True,
         area_scene=None,
         area_roles=None,
+        instruction_encoder=None,
+        instruction_language="zh",
     ):
         import torch
 
@@ -247,6 +249,13 @@ class HeterogeneousManipulationEnv:
                 self._area_policy = AreaFrictionPolicyInput(
                     self.workspace.binding, self._area_roles, self.device
                 )
+            self._language = None
+            if instruction_encoder is not None:
+                from .goal_language import GoalLanguageTable
+
+                self._language = GoalLanguageTable(
+                    instruction_encoder, scenes, self.world_keys, self.device, instruction_language
+                )
             self._frame, self._observation = self._export()
             initial = self.workspace.readback(self._frame)["entry_meta"]
             _require(
@@ -284,6 +293,8 @@ class HeterogeneousManipulationEnv:
                 )
             if self._area_policy is not None:
                 self._binding["area_policy_input"] = _plain(self._area_policy.binding)
+            if self._language is not None:
+                self._binding["goal_language"] = _plain(self._language.binding)
             torch.cuda.current_stream(self.device).synchronize()
         except BaseException as primary:
             self._closed = True
@@ -393,11 +404,18 @@ class HeterogeneousManipulationEnv:
         if stepping and any(self._pending_reset.values()):
             raise self._failure("finished worlds require explicit reset", phase="action-preflight")
 
-    def _export(self):
+    def _export(self, *, goals=None, episodes=None):
         frame = self.workspace.refresh(expected_revision=self.batch.checkpoint_revision)
         values = dict(self.workspace.to_torch(frame))
         if self._area_policy is not None:
             values["area_object_contact"] = self._area_policy.encode(values)
+        if self._language is not None:
+            values.update(
+                self._language.observe(
+                    self._goals if goals is None else goals,
+                    self._episodes if episodes is None else episodes,
+                )
+            )
         values["action_mask"] = self._action_mask.clone()
         return frame, values
 
@@ -689,7 +707,7 @@ class HeterogeneousManipulationEnv:
                     self._reset_physics(selected)
                     reset_accepted = True
                     phase = "reset-task-export"
-                    output_frame, values = self._export()
+                    output_frame, values = self._export(episodes=next_episodes)
                     _require(
                         not self._reader.read(output_frame, episodes=next_episodes),
                         "reset must not invent input samples",
@@ -802,7 +820,7 @@ class HeterogeneousManipulationEnv:
             self._busy = True
             try:
                 self._reset_physics(selected)
-                frame, values = self._export()
+                frame, values = self._export(goals=next_goals, episodes=episodes)
                 _require(
                     not self._reader.read(frame, episodes=episodes),
                     "reset must not invent input samples",
@@ -1027,7 +1045,7 @@ class HeterogeneousManipulationEnv:
             self._busy = True
             try:
                 receipt = self._restore_physics(physics, expected_revision)
-                frame, values = self._export()
+                frame, values = self._export(goals=goals, episodes=episodes)
                 reader.restore(cursor, frame=frame)
                 current = self._copies(values)
                 torch.cuda.current_stream(self.device).synchronize()

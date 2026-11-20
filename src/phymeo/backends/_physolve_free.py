@@ -171,33 +171,38 @@ def _scatter(
                 v[va + c] = scratch[lane * 13 + 7 + c]
 
 
+def mujoco_free_bindings(model):
+    """Resolve world-local free joints from the legacy compiler at preparation."""
+    import mujoco
+
+    rows = []
+    for body in range(1, model.nbody):
+        j = int(model.body_jntadr[body])
+        if (
+            model.body_parentid[body] == 0
+            and model.body_jntnum[body] == 1
+            and model.jnt_type[j] == mujoco.mjtJoint.mjJNT_FREE
+        ):
+            rows.append(
+                (
+                    model.body(body).name,
+                    body,
+                    int(model.jnt_qposadr[j]),
+                    int(model.jnt_dofadr[j]),
+                    tuple(map(float, model.body_ipos[body])),
+                )
+            )
+    return tuple(rows)
+
+
 class PreparedFreeBodies:
     """Derived scratch and immutable native bindings, never authoritative state."""
 
-    def __init__(self, model, banks, flags, nworld, device, storage):
-        import mujoco
-
-        rows = []
-        for body in range(1, model.nbody):
-            j = int(model.body_jntadr[body])
-            if (
-                model.body_parentid[body] == 0
-                and model.body_jntnum[body] == 1
-                and model.jnt_type[j] == mujoco.mjtJoint.mjJNT_FREE
-            ):
-                rows.append(
-                    (
-                        model.body(body).name,
-                        body,
-                        int(model.jnt_qposadr[j]),
-                        int(model.jnt_dofadr[j]),
-                        tuple(map(float, model.body_ipos[body])),
-                    )
-                )
-        self.bindings = tuple(rows)
-        self.nworld, self.count = nworld, len(rows)
+    def __init__(self, bindings, banks, flags, nworld, device, storage):
+        self.bindings = tuple(bindings)
+        self.nworld, self.count = nworld, len(self.bindings)
         self.device, self.flags = device, flags
-        self.nq, self.nv = model.nq, model.nv
+        self.nq, self.nv = banks[0].qpos.shape[1], banks[0].qvel.shape[1]
         self.banks = tuple(
             (bank.qpos.view(tx.f32).flatten(), bank.qvel.view(tx.f32).flatten()) for bank in banks
         )

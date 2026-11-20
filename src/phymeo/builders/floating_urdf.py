@@ -67,7 +67,8 @@ class FloatingRobotAsset:
 
 
 def load_floating_urdf(
-    path: str | Path, *, gravity=(0.0, 0.0, -9.81), collapse_fixed_joints=False
+    path: str | Path, *, gravity=(0.0, 0.0, -9.81), collapse_fixed_joints=False,
+    source=None, depth_first=False,
 ) -> FloatingRobotAsset:
     """Load local URDF 1.0 with positive massive root and bounded scalar children.
 
@@ -77,11 +78,13 @@ def load_floating_urdf(
     Fixed members then contribute complete group mass/inertia and material frames.
     The ordinary fixed-base loader is unchanged.
     Lengths/masses/inertia are SI. Visual elements do not become collision shapes.
+    An optional XML snapshot takes precedence over the locator. The default
+    breadth-first order is retained unless contiguous subtrees are requested.
     """
     if not isinstance(collapse_fixed_joints, (bool, np.bool_)):
         raise ValueError("collapse_fixed_joints must be True or False")
     try:
-        robot = ET.parse(path).getroot()
+        robot = ET.parse(path).getroot() if source is None else ET.fromstring(source)
     except ET.ParseError as exc:
         raise ValueError(f"Invalid URDF XML in {path}: {exc}") from exc
     if robot.tag != "robot":
@@ -99,7 +102,7 @@ def load_floating_urdf(
         if joint.find("mimic") is not None:
             raise ValueError(f"joint {label!r}: floating mimic is not implemented")
     if joints:
-        root, links, order, inbound = _tree(robot)
+        root, links, order, inbound = _tree(robot, depth_first=depth_first)
     else:
         entries = robot.findall("link")
         if len(entries) != 1:

@@ -1,5 +1,91 @@
 # PhySolve 原生运行时实验
 
+## 保留固定连杆、STL 和仿射驱动
+
+自主固定底座编译在主机保留原始连杆树和碰撞从属。不带独立 DOF 的节点继续出现在
+原生模型、几何映射和公开位姿字段。原 STL 的顶点和三角形进入装配，使用配套
+SciPy 生成原生凸包面和顶点相邻面。面表只在编译时生成，Native Host 在设备
+使用既有碰撞实现。比较模式下原始网格顶点使用原 geometry 坐标系。
+URDF 模型的 mimic 等式描述独立约束关系，follower drive 绑定同一个目标列，
+保留各实际 actuator 的限力与测量。缺失惯量的球/盒 link 使用默认密度 1000 kg/m³
+冷编译质量及惯量。网格 link 需要已给定惯量。
+编译时为 world-welded shape 冻结世界位姿和几何索引，两个 bank 的冷初始化据此
+设置原生几何位置与旋转。该规则覆盖固定连杆上的台面并与原生运动学的静态跳过一致。
+
+## 自主模型的隐式速度积分
+
+自主编译为模型保留显式 Euler 或 implicitfast 选项。后者要求 frontend a14
+提供的 implicitfast 输入合同，准备时写入原生 Option，复用既有 Host 的速度导数、
+惯量因子分解及双 bank 工作区。Euler 保持默认行为。
+
+## 自主机器人与自由对象同场
+
+a15 frontend 接收标量 URDF 关节树及追加的自由球／盒。原有标量的 q、DOF、控制索引
+保持不变。自由对象各有独立惯量分块，并与机器人使用同一模型、碰撞候选和状态 bank。
+固定底座混合场景可使用 implicitfast 的固定四子步 Graph。标量驱动通过现有事务更新。
+冷更新按当前流快照需修改的三个模型数组，事务失败按原流程回滚。已应用参数的读回
+只记录成功提交的标量值，Graph 和状态缓冲的 owner 保持原样。
+
+## 自主浮动底座分支编译
+
+编译沿用浮动 URDF 导入器的根质量、局部 COM、主惯量与独立惯量轴方向。
+frontend a13 要求 scalar input contract 4。原生根存储原点位置、WXYZ 四元数、
+世界系原点线速度和根本体角速度。公开观测和写入沿用世界系 COM 线速度与
+世界系角速度，在已准备的 FREE 根转换与 body 观测边界完成投影。
+
+编译时把 COM Jacobian 的根列转换到原生速度坐标后求参考惯量和约束权重。
+根与所有子关节共用同一原生惯量分块，60 DOF 上限包含根的 6 DOF。
+动作仍绑定各独立标量 actuator。状态、观测双 bank 与局部 reset 继续由原
+运行时持有，使用下文的分支接触样本恢复规则。编译不增加常规 step 或 reset
+的主机传输。
+
+已有固定四子步 Graph 也可为自主编译的浮动分支树捕获两套 bank。准入在
+`prepare_step_graph` 检查自主编译类型、自由根和原生叶分支数。捕获和重放
+沿用已有 Host 与 TYX 资源边界，reset 仍按原事务独立执行。
+
+### 浮动连杆的非对角惯量
+
+自主 PhySolve 编译遇到无法由紧凑模型表示的 link-frame 惯量积时，转入
+已有的保留连杆装配。主惯量和独立的惯量轴四元数进入原生 `body_inertia`
+与 `body_iquat`，在连杆坐标中重构完整惯量张量。连杆原点、质心、关节轴和
+碰撞坐标仍采用 URDF 的原值，URDF 的被动阻尼和摩擦仍按原关节名绑定。
+紧凑入口只报告这类表示缺口，质量、正定性和惯量三角条件继续由完整模型校验。
+此路径沿用 PhySolve 的已有 ABI 与载荷。
+
+## 自主固定底座分支编译与 reset
+
+自主 URDF 编译沿用 PHYMEO 的关节 frame 和 COM 动力学。该配置选用深度优先的
+原生编排，公开关节、形状和 body 身份通过既有名称映射。参考惯量包括 armature，
+共享祖先的非对角项由 COM Jacobian 和连杆惯量共同决定。各独立运动子树分别绑定
+PhySolve 原生惯量分块。frontend a12 提供 scalar input contract 3。
+
+分支配置在 commit 保存已验证的初始接触样本。由接触观测 owner 管理，每条初始
+接触占 116 字节设备空间，另有 4 字节计数。准备时读回一次计数。
+常规 step 仍发布该次求解的实测接触。单独 reset 继续执行原生 forward、容量、
+索引和有限值检查，选中 world 的公开接触读回使用初始样本，未选 world 保留原样本。
+样本行的全局顺序没有稳定性保证。与状态编辑合批时发布 forward 实测数据。
+recommit 随候选资源重建初始样本。求解器继续独占原生状态，reset 热路径无新增 host 传输。
+
+## 自主固定底座单关节 URDF
+
+固定底座入口复用 PHYMEO 的 URDF 标量树与连杆惯量导入。将原始或快照 URDF 降低为
+一个限位滑动／转动关节，保存底座、移动 link、碰撞体和源关节 identity。
+模型零位与 authored 初态分离。初始 q、qd、广义力和 PD ctrl 写入两 bank，
+每个 bank 在发布前执行原有 Host forward。PD 参数与接触/关节参考权重在编译时准备，
+动作、设备验证和 reset 复用现有执行及发布路径。共享驱动参数修改须通过 Stage 重提。
+当前覆盖静态几何与球/盒碰撞、Euler CUDA direct，配套 frontend a10 与 TYX 0.2.0a1。
+
+## PHYMEO 自主自由刚体编译
+
+`compile_primitive_template` 接收已验证的原生球／盒及静态几何描述，解析质量和主惯量，
+绑定编译后的 body、geom 与来源身份。显式质量优先，盒尺寸采用半尺寸。
+自由根使用原生 WXYZ，初始速度为零。Host 在建好两个独立的初态 bank 后运行原有 forward，
+验证通过才向消费者发布。接触观测与 reset 复用原有运行时和设备缓冲。
+
+此入口要求版本 1 的 primitive frontend 合同及已核对的 TYX 配套。它在无 MuJoCo 环境中
+使用现有 Host 与六个冻结 CUBIN。机器人支持范围见同页的 URDF 条目。Graph 及高级测量仍需单独验收。
+原有 MuJoCo 编译入口继续使用自己的 CPU 参考输入及准入。
+
 ## 接触参考权重
 
 导入 CPU 模型常数后，PhySolve 适配在创建原生 Host 前，按 TYX frontend
@@ -935,13 +1021,23 @@ T/I 参照、forward/局部 reset/discard 和测量时刻用例。六 CUBIN、Ho
 host 元数据及 `update_scalar_drive_parameters({name: {kp, kd, effort_limit}})`。
 仅限 managed independent scalar actuator；参数全 world 共享，单位遵循原关节
 SI/PD 合同，零限额为不限幅，不修改 qfrc_applied。目标、reset 初始命令及拓扑
-不变；armature、摩擦、per-world 参数和控制模式转换不属于该入口。
+不变。自主标量 URDF 通过 `supports_scalar_armature_updates` 声明同批
+`armature` 更新，MuJoCo 编译模型继续使用原 PD 合同。摩擦、per-world 参数和
+控制模式转换仍在该接口范围外。
 
 Runtime 在 idle、非 capture 状态全量预检，原位上传 bias/force range/系数，
 用 TYX 检查当前与 reset 目标组合不会生成非有限 ctrl，再执行一次候选 forward
 并接受；错误恢复设备参数、系数和 validation gate，恢复失败保留 owner 并进入
 close-only。host model 元数据仅成功后更新。固定 Graph 继续借用同一组指针。
 增益修改后 reset 从原始目标与当前系数重算 ctrl，精确保留未选世界的 ctrl。
+
+自主标量 armature 用编译时的零关节参考位姿生成同一惯量矩阵和雅可比，
+在一个本地模型事务中更新 `dof_armature`、`body_invweight0`、
+`dof_invweight0`、`actuator_acc0` 与 `stat.meaninertia`。对浮根整体保留六个
+自由根列及固定连杆的惯量贡献。独立刚体的逆惯量权重保留，平均值计入其惯量。
+预检拒绝非有限、负值和不可表示的参考求解器尺度。成功后生效元数据公布，
+reset 按原始状态和当前模型 forward。无需替换模型、数组地址或重新捕获 Graph。
+计算仅在 armature 实际变化时执行，冷 CPU 求解为 O(D³)，随模型而非 world 数增长。
 
 冷成本 O(actuator) 参数 journal 与上传，O(world×control) device 预检，新加
 一次4字节显式读回；成功更新/失败回滚的参数上传字节和次数可由 execution_costs
@@ -1002,3 +1098,51 @@ B8r 原生continuation/staged共13项通过（79.63s），one-substep外力、�
 foreign ticket/失败恢复6项通过（37.02s）。对照为同一实现不同完成边界，容差
 沿用1e-6；不是跨solver数值专项。独立只读复审无生产阻断。PHYMEO文档479项
 历史缺失链接及日志SHA保持，仍失败；消费方安装/GUI结果由配套记录单独发布。
+
+## 自主编译圆柱
+
+free-body、静态场景和标量 URDF 通过 frontend 的 `CYLINDER_INPUT_CONTRACT=1`
+提交局部 Z 轴的原生圆柱。尺寸依次为半径、半高。URDF 保留碰撞位姿及来源
+连杆，显式惯量继续按原模型读取。自由刚体以及固定树的缺省惯量按均匀实体推导。
+
+## 无 MuJoCo 的自主 URDF 资源与被动关节
+
+标量编译器在自身持有的 XML 树读取有限的 compiler 配置，保持原文件和来源散列。
+视觉 STL 沿用自主三角网格解码，保留比例、连杆局部姿态和材质颜色。
+`discardvisual=true` 跳过视觉网格加载。碰撞仅从 collision 定义生成。
+浮动标量关节的被动项按源关节名收集，再按编译 DOF 次序写入。缺省值与现有
+空声明保持一致。显式关节属性和候选模型的全局参数覆盖优先。
+
+自主胶囊和椭球使用 frontend a19 的形状输入合同。胶囊按圆柱和两半球组合
+计算惯量，椭球按三半轴计算惯量，沿用均匀密度和显式质量优先。
+
+## 浮动底座保留固定连杆
+
+自主编译为每个源连杆保留 body 与碰撞、视觉和惯量引用。
+带固定连杆的浮动树与现有固定底座编译共用全连杆表。
+自由根的线速度采用世界根原点速度，角速度采用根局部轴。参考质量矩阵使用
+各原始连杆的 COM 雅可比和原惯量计算。由模型拓扑生成的焊接关系供原生前端绑定。
+固定连杆不占用 q 或 DOF，仍发布各自的关节 frame。
+
+### 浮动底座十子步固定 Graph
+
+显式设置 `joint_velocity_limit_scale` 的 PHYMEO 自主标量树可复用 URDF
+速度上限，在设备端对初态和每个子步的速度执行同一上限检查。失败进入
+现有 candidate 完成检查并阻止本批发布。十子步 Graph 仅准入
+`implicitfast`、2 ms 的浮动分支树，绑定两份既有 bank，并要求启用上述检查。
+四子步及默认 direct 的配置规则保持。
+
+同类自主浮动分支 URDF 在 2 ms implicitfast 下也可捕获固定单步。
+控制器可在每次重放前使用上一步的关节状态重新计算力矩。单步沿用设备校验、
+候选发布及双 bank 资源生命周期；十步重放仍要求速度保护。
+
+固定单步模式还为两个候选 bank 各捕获一份命令写入时使用的 Graph，重放上次求解观测的
+复制和设备校验。每次写入仍在绑定流完成校验后发布，失败可丢弃候选。状态刷新或同一
+事务中已准备好观测时，继续走对应的原路径。`command_check_replays_current_capture`
+统计当前这组 Graph 的命令校验重放次数，物理步计数沿用 `step_graph_replays`。
+
+自主标量编译接受 URDF `continuous`。选用支持
+`CONTINUOUS_INPUT_CONTRACT=1` 的 frontend 时，编译为无位置限位的 hinge，
+保留可选的 effort、velocity 额定值及被动阻尼、摩擦。浮动底座使用带完整连杆表的
+STL 碰撞路径，原 collision 的位姿、尺度和归属保留。不同连杆有同名 collision 时
+以连杆名区分。原 STL 三角数据用于资产绑定，碰撞走现有 PhySolve 凸体路径。

@@ -2,8 +2,7 @@
 
 Two persistent device banks make publication transactional. Synchronous helpers
 use the same begin/enqueue/complete/accept contract. Completion reads a compact
-device validation result; this is not Graph or P2PE C ABI qualification. CPU MuJoCo prepares
-initial data. Native coordinates are preserved, including WXYZ free-root qpos.
+device validation result; this is not Graph or P2PE C ABI qualification. The compiler path supplies initial data. Native coordinates are preserved, including WXYZ free-root qpos.
 """
 
 from contextlib import contextmanager
@@ -15,6 +14,8 @@ import numpy as np
 
 from ..builders.mujoco_compiler import MuJoCoCompilation
 from ..builders.mujoco_scene import CompiledMuJoCoWorld
+from ..builders.primitive_physolve import PrimitiveCompilation
+from ..builders.scalar_physolve import ScalarCompilation
 from ._physolve_parameters import prepare_contact_inverse_weights
 from .physolve_initial import INTEGRATION_FIELDS, NativeInitialState
 from .physolve_payload import PhySolvePayload
@@ -90,6 +91,7 @@ class PhySolveRuntime:
         body_measurements=False,
         body_wrench_lifetime="persistent",
         complete_scene=False,
+        joint_velocity_limit_scale=None,
     ):
         if type(complete_scene) is not bool:
             raise TypeError("complete_scene requires bool")
@@ -110,33 +112,70 @@ class PhySolveRuntime:
             if initial_state is not None or world.binding_version != 1:
                 raise ValueError("compiled world owns its versioned initial state")
             compilation = world.compilation
-        if not isinstance(compilation, MuJoCoCompilation):
-            raise TypeError("a Phymeo MuJoCoCompilation is required")
+        scalar = isinstance(compilation, ScalarCompilation)
+        primitive = scalar or isinstance(compilation, PrimitiveCompilation)
+        if not primitive and not isinstance(compilation, MuJoCoCompilation):
+            raise TypeError("a PHYMEO PhySolve compilation is required")
         if not isinstance(payload, PhySolvePayload):
             raise TypeError("an explicit frozen PhySolvePayload is required")
         self.nworld = _positive(nworld, "nworld")
         self.nconmax = _positive(nconmax, "nconmax")
         self.njmax = _positive(njmax, "njmax")
-        import mujoco
         import physolve_tyx as frontend
         import tyx as tx
 
-        # Initialize/validate before loading the native library or allocating GPU owners.
-        if world is None:
-            cpu = compilation.fresh_native_model()
-            initial = mujoco.MjData(cpu)
-            initial.qpos[:] = compilation.native_initial_qpos
-            initial.qvel[:] = compilation.native_initial_qvel
+        if primitive:
+            from physolve_tyx import primitive as primitive_frontend
+
+            if primitive_frontend.PRIMITIVE_INPUT_CONTRACT != 1:
+                raise ValueError("PhySolve primitive input contract v1 is required")
+            if scalar and getattr(primitive_frontend, "SCALAR_INPUT_CONTRACT", None) != 4:
+                raise RuntimeError("PhySolve autonomous scalar frontend contract v4 is required")
+            if (compilation.integrator == "implicitfast"
+                    and getattr(primitive_frontend, "IMPLICITFAST_INPUT_CONTRACT", None) != 1):
+                raise RuntimeError("PhySolve autonomous implicitfast frontend contract v1 is required")
+            if (scalar and compilation.free_objects
+                    and getattr(primitive_frontend, "MIXED_INPUT_CONTRACT", None) != 1):
+                raise RuntimeError("PhySolve autonomous mixed model frontend contract v1 is required")
+            if scalar and compilation.extended and (
+                getattr(primitive_frontend, "FIXED_BODY_INPUT_CONTRACT", None) != 1
+                or getattr(primitive_frontend, "STL_INPUT_CONTRACT", None) != 1
+            ):
+                raise RuntimeError("PhySolve autonomous fixed body and STL frontend contracts are required")
+            if initial_state is not None or complete_scene or body_measurements:
+                raise NotImplementedError("autonomous PhySolve requires its compiled initial state and observations")
+            if scalar_controls and not scalar:
+                raise NotImplementedError("autonomous free bodies have no scalar actuator")
+            cpu = None
         else:
-            cpu, initial = world.fresh_native_data()
-        if initial_state is not None and not isinstance(initial_state, NativeInitialState):
-            raise TypeError("initial_state requires NativeInitialState")
-        initial_state = initial_state or NativeInitialState.from_data(compilation, initial)
-        initial_state.apply(compilation, initial)
+            import mujoco
+
+            # Initialize and validate legacy CPU model before allocating GPU owners.
+            if world is None:
+                cpu = compilation.fresh_native_model()
+                initial = mujoco.MjData(cpu)
+                initial.qpos[:] = compilation.native_initial_qpos
+                initial.qvel[:] = compilation.native_initial_qvel
+            else:
+                cpu, initial = world.fresh_native_data()
+            if initial_state is not None and not isinstance(initial_state, NativeInitialState):
+                raise TypeError("initial_state requires NativeInitialState")
+            initial_state = initial_state or NativeInitialState.from_data(compilation, initial)
+            initial_state.apply(compilation, initial)
 
         self._lock = RLock()
+        velocity_limits = None
+        if joint_velocity_limit_scale is not None:
+            if not scalar or type(joint_velocity_limit_scale) not in (float, int):
+                raise ValueError("joint_velocity_limit_scale requires an autonomous scalar model and a number")
+            limits = np.asarray([row[2] for row in compilation.limits], dtype=np.float32)
+            with np.errstate(over="ignore", invalid="ignore"):
+                velocity_limits = limits * np.float32(joint_velocity_limit_scale)
+            if (not np.isfinite(velocity_limits).all() or np.any(velocity_limits <= 0)
+                    or joint_velocity_limit_scale <= 0 or np.any(limits <= 0)):
+                raise ValueError("joint_velocity_limit_scale requires finite positive URDF velocity limits")
         self._tx, self._frontend = tx, frontend
-        self._native = payload.load()
+        self._native = payload.load(primitive=True) if primitive else payload.load()
         self._closed, self._closing, self._active = False, False, 0
         self._banks, self._handles = [], []
         self._stream = self._model = None
@@ -166,29 +205,33 @@ class PhySolveRuntime:
         self._execution_epoch = 0
         self._compilation = compilation
         self._cpu_model = cpu
-        cpu = self._cpu_model
-        supported_sensors = complete_scene and np.isin(
-            cpu.sensor_type, [mujoco.mjtSensor.mjSENS_FORCE, mujoco.mjtSensor.mjSENS_TORQUE]
-        ).all()
-        if cpu.nuserdata or cpu.nplugin or cpu.nflex or (cpu.nsensor and not supported_sensors):
-            raise NotImplementedError(
-                "PhySolve profile excludes userdata, plugins, flex and sensors"
-            )
-        if cpu.opt.integrator not in (
-            mujoco.mjtIntegrator.mjINT_EULER, mujoco.mjtIntegrator.mjINT_IMPLICITFAST
-        ):
-            raise NotImplementedError("this direct qualification profile requires Euler or implicitfast")
-        if cpu.opt.solver != mujoco.mjtSolver.mjSOL_NEWTON:
-            raise NotImplementedError("PhySolve requires the Newton constraint solve algorithm")
-        # This first profile deliberately fixes dense Jacobians; sparse capacity
-        # accounting must be qualified before allowing a sparse request.
-        if cpu.opt.jacobian == mujoco.mjtJacobian.mjJAC_SPARSE:
-            raise NotImplementedError("sparse Jacobians are not qualified in this profile")
-        if complete_scene:
-            if mujoco.mj_isSparse(cpu):
-                raise NotImplementedError("complete scene requires effective dense Jacobians")
+        self._autonomous_drive_parameters = None
+        if primitive:
+            self._timestep, self._gravity = compilation.timestep, compilation.gravity
         else:
-            cpu.opt.jacobian = mujoco.mjtJacobian.mjJAC_DENSE
+            self._timestep, self._gravity = float(cpu.opt.timestep), tuple(cpu.opt.gravity)
+            supported_sensors = complete_scene and np.isin(
+                cpu.sensor_type, [mujoco.mjtSensor.mjSENS_FORCE, mujoco.mjtSensor.mjSENS_TORQUE]
+            ).all()
+            if cpu.nuserdata or cpu.nplugin or cpu.nflex or (cpu.nsensor and not supported_sensors):
+                raise NotImplementedError(
+                    "PhySolve profile excludes userdata, plugins, flex and sensors"
+                )
+            if cpu.opt.integrator not in (
+                mujoco.mjtIntegrator.mjINT_EULER, mujoco.mjtIntegrator.mjINT_IMPLICITFAST
+            ):
+                raise NotImplementedError("this direct qualification profile requires Euler or implicitfast")
+            if cpu.opt.solver != mujoco.mjtSolver.mjSOL_NEWTON:
+                raise NotImplementedError("PhySolve requires the Newton constraint solve algorithm")
+            # This first profile deliberately fixes dense Jacobians; sparse capacity
+            # accounting must be qualified before allowing a sparse request.
+            if cpu.opt.jacobian == mujoco.mjtJacobian.mjJAC_SPARSE:
+                raise NotImplementedError("sparse Jacobians are not qualified in this profile")
+            if complete_scene:
+                if mujoco.mj_isSparse(cpu):
+                    raise NotImplementedError("complete scene requires effective dense Jacobians")
+            else:
+                cpu.opt.jacobian = mujoco.mjtJacobian.mjJAC_DENSE
         selected = tx.get_device(device)
         if not selected.is_cuda or selected.arch != 120:
             raise RuntimeError("frozen payload is qualified only on CUDA sm_120")
@@ -198,16 +241,21 @@ class PhySolveRuntime:
                 self._stream = tx.CudaStream(device=selected.ordinal)
                 self._owned_stream = self._stream
                 with tx.use_stream(self._stream):
-                    mujoco.mj_forward(cpu, initial)
-                    if initial.ncon > self.nconmax or initial.nefc > self.njmax:
-                        raise ValueError("initial model exceeds contact/constraint capacity")
-                    self._model = frontend.put_model(cpu)
-                    prepare_contact_inverse_weights(cpu, self._model, self._stream)
+                    if primitive:
+                        self._model = compilation.upload_model(primitive_frontend)
+                    else:
+                        mujoco.mj_forward(cpu, initial)
+                        if initial.ncon > self.nconmax or initial.nefc > self.njmax:
+                            raise ValueError("initial model exceeds contact/constraint capacity")
+                        self._model = frontend.put_model(cpu)
+                        prepare_contact_inverse_weights(cpu, self._model, self._stream)
                     self._model.opt.graph_conditional = True
+                    capacity = dict(nworld=self.nworld, nconmax=self.nconmax, njmax=self.njmax)
                     for _ in range(2):
-                        data = frontend.put_data(
-                            cpu, initial, nworld=self.nworld, nconmax=self.nconmax, njmax=self.njmax
-                        )
+                        if primitive:
+                            data = compilation.create_initial_bank(primitive_frontend, self._model, **capacity)
+                        else:
+                            data = frontend.put_data(cpu, initial, **capacity)
                         self._banks.append(data)
                         # Each bank owns its frontend scratch before Host prepare/capture.
                         frontend.prepare_workspace(self._model, data)
@@ -239,6 +287,11 @@ class PhySolveRuntime:
                         self._banks, selected,
                         extra_banks=None if self._body_observations is None else self._body_observations.banks,
                     )
+                    if velocity_limits is not None:
+                        self._validation.prepare_joint_velocity_limits(
+                            self._banks, compilation.scalar_offsets[2], velocity_limits,
+                            selected, self._stream,
+                        )
                     self._validation.prepare(self._stream)
                     if contact_observations:
                         from ._physolve_contacts import PreparedContacts
@@ -248,13 +301,20 @@ class PhySolveRuntime:
                         )
                         self._contact_observations.prepare(self._stream, self._reset.all_mask)
                         self._validation.read(self._stream)
+                        if scalar and self._model.nbranch > 1:
+                            self._contact_observations.remember_initial(self._stream)
                         self._validation.readbacks = 0
                     if scalar_controls:
                         from ._physolve_controls import PreparedControls
                         self._controls_binding = PreparedControls()
+                        if scalar:
+                            gains = [1.] * len(compilation.joints)
+                            biases = [[0., -row.kp, -row.kd] for row in compilation.joints]
+                        else:
+                            gains, biases = cpu.actuator_gainprm[:, 0], cpu.actuator_biasprm[:, :3]
                         self._controls_binding.initialize(
-                            scalar_controls, self._banks, cpu, self.nworld, device,
-                            self._validation.flags, followers=follower_drives,
+                            scalar_controls, self._banks, self._model.nu, gains, biases,
+                            self.nworld, device, self._validation.flags, followers=follower_drives,
                         )
                         self._controls_binding.prepare(self._stream)
                     if body_measurements:
@@ -266,7 +326,15 @@ class PhySolveRuntime:
                         self._validation.read(self._stream)
                         self._validation.readbacks = 0
                     from ._physolve_parameters import PreparedBodyParameters
-                    self._body_parameters = PreparedBodyParameters(self._model, cpu, selected)
+                    if primitive:
+                        inertia = np.asarray(((0., 0., 0.), *compilation.principal_inertia))
+                        inertia_rotation = (np.asarray(((1., 0., 0., 0.), *compilation.inertia_frames))
+                                            if scalar else np.tile((1., 0., 0., 0.), (len(inertia), 1)))
+                    else:
+                        inertia, inertia_rotation = cpu.body_inertia, cpu.body_iquat
+                    self._body_parameters = PreparedBodyParameters(
+                        self._model, inertia, inertia_rotation, selected
+                    )
                     self._body_parameters.prepare(self._stream)
                     self._storage = bind_storage(
                         self, self._banks, self._stream, selected, self._storage_generation,
@@ -296,6 +364,8 @@ class PhySolveRuntime:
 
     def prepare_site_measurements(self, binding):
         """Cold-create an owned site projection plan; callers only borrow it."""
+        if self._cpu_model is None:
+            raise NotImplementedError("site measurements are unqualified for primitive PhySolve")
         from ._physolve_sites import PreparedSiteMeasurements
 
         with self._scope():
@@ -406,8 +476,8 @@ class PhySolveRuntime:
                 'contract_version': 1,
                 'device': str(self._device),
                 'nworld': self.nworld,
-                'timestep': float(self._cpu_model.opt.timestep),
-                'gravity': self._cpu_model.opt.gravity.tolist(),
+                'timestep': self._timestep,
+                'gravity': list(self._gravity),
                 'device_timestep': option.timestep.numpy(stream=self._stream).reshape(-1).tolist(),
                 'device_gravity': option.gravity.numpy(stream=self._stream).reshape(-1, 3).tolist(),
                 'integrator': int(option.integrator),
@@ -427,16 +497,36 @@ class PhySolveRuntime:
             self._step_graphs = None
 
     def prepare_step_graph(self, *, steps=4):
-        """Capture both banks without executing physics; fixed four-step profile.
-
-        No warmup rollout, physical state clone, or implicit direct fallback.
-        Stream rebind retires these Graphs and requires explicit preparation.
-        """
-        if _positive(steps, 'steps') != 4:
-            raise ValueError('fixed step Graph v1 requires four substeps')
+        """Capture the admitted fixed cadence for both existing banks."""
+        steps = _positive(steps, 'steps')
+        if steps not in (1, 4, 10):
+            raise ValueError('fixed step Graph v1 requires one, four or ten substeps')
         with self._scope():
             self._require_idle()
-            if self.step_graph_ready:
+            compilation = self._compilation
+            if steps in (1, 10):
+                if not (
+                    isinstance(compilation, ScalarCompilation) and compilation.has_free_root
+                    and self._model.nbranch > 1 and compilation.integrator == "implicitfast"
+                    and compilation.timestep == 0.002
+                    and (steps == 1 or self._validation.joint_velocity_plans)
+                ):
+                    raise NotImplementedError(
+                        "one- and ten-step Graph require an autonomous floating branch URDF "
+                        "and implicitfast at 2 ms; ten-step Graph requires a joint velocity guard"
+                    )
+            elif self._cpu_model is None and not (
+                isinstance(compilation, ScalarCompilation) and (
+                    (not compilation.has_free_root and bool(compilation.free_objects))
+                    or (compilation.has_free_root and self._model.nbranch > 1
+                        and compilation.integrator == "euler")
+                )
+            ):
+                raise NotImplementedError(
+                    "autonomous PhySolve Graph requires a floating branch URDF with Euler "
+                    "or a fixed-base URDF with free objects"
+                )
+            if self.step_graph_ready and self._step_graphs.steps == steps:
                 return False
             if self._stream.is_capturing:
                 raise RuntimeError('cannot prepare step Graph during another capture')
@@ -483,8 +573,8 @@ class PhySolveRuntime:
     def _controls(self, controls):
         result = {}
         shapes = {
-            "ctrl": (self.nworld, self._cpu_model.nu),
-            "qfrc_applied": (self.nworld, self._cpu_model.nv),
+            "ctrl": (self.nworld, self._model.nu),
+            "qfrc_applied": (self.nworld, self._model.nv),
         }
         for name, value in controls.items():
             if value is None:
@@ -517,18 +607,43 @@ class PhySolveRuntime:
             with self._synchronous_execution() as ticket:
                 self.enqueue_forward(ticket)
 
+    @property
+    def supports_scalar_armature_updates(self):
+        """Whether this runtime owns an autonomous scalar reference model."""
+        return isinstance(self._compilation, ScalarCompilation)
+
     def scalar_drive_parameters(self):
-        """Owned host metadata for shared-model kp/kd/effort limits; no device read."""
+        """Owned metadata for shared scalar parameters; no device read."""
         from ._physolve_drive_parameters import parameters
         with self._scope():
             return parameters(self)
+
+    def scalar_joint_properties(self, name, joint, dof):
+        """Read the compiled scalar joint type and passive parameters."""
+        with self._scope():
+            if isinstance(self._compilation, ScalarCompilation):
+                names = self._compilation.joint_names
+                joint_offset, _, dof_offset = self._compilation.scalar_offsets
+                index = joint - joint_offset
+                if not 0 <= index < len(names) or name != names[index] or dof != index + dof_offset:
+                    raise ValueError("unknown autonomous scalar joint binding")
+                row = self._compilation.joints[index]
+                current = self._autonomous_drive_parameters
+                armature = row.armature if current is None else current[name]["armature"]
+                return (self._compilation.model.joint_types[index], row.frictionloss,
+                        armature, row.damping)
+            import mujoco
+
+            model = self._cpu_model
+            kind = "revolute" if model.jnt_type[joint] == mujoco.mjtJoint.mjJNT_HINGE else "prismatic"
+            return kind, float(model.dof_frictionloss[dof]), float(model.dof_armature[dof]), float(model.dof_damping[dof])
 
     def update_scalar_drive_parameters(self, updates):
         """Synchronous all-world parameter transaction, with one native forward.
 
         Prepared independent and affine follower scalar actuators; zero effort limit means unlimited.
         Changes survive reset, whose target/force initial commands are unchanged.
-        No topology, target, armature or per-world parameter edits are implied.
+        Autonomous models also accept armature and refresh the qpos0 reference weights.
         """
         from ._physolve_drive_parameters import update
         with self._scope():
@@ -633,6 +748,8 @@ class PhySolveRuntime:
                     "step_graph_ready": self.step_graph_ready,
                     "step_graph_substeps": self._step_graphs.steps if self.step_graph_ready else 0,
                     "step_graph_replays": self._graph_replays,
+                    "command_check_replays_current_capture": (
+                        self._step_graphs.command_check_replays if self.step_graph_ready else 0),
                     "drive_parameter_updates": self._drive_parameter_updates,
                     "drive_parameter_rollbacks": self._drive_parameter_rollbacks,
                     "drive_parameter_upload_bytes": self._drive_parameter_upload_bytes,
@@ -676,6 +793,8 @@ class PhySolveRuntime:
 
     def prepare_current_observations(self, fields):
         """Prepare device-only current forward, without publishing a physical state."""
+        if self._cpu_model is None:
+            raise NotImplementedError("current dynamics observations are unqualified for primitive PhySolve")
         from ._physolve_current import CurrentForwardFrame
 
         with self._scope():
@@ -748,8 +867,10 @@ class PhySolveRuntime:
                 raise ValueError('step requires prepared/enqueued execution')
             if execution_mode not in ('direct', 'cuda_graph'):
                 raise ValueError('unknown step execution mode')
-            if execution_mode == 'cuda_graph' and (not self.step_graph_ready or steps != 4):
-                raise RuntimeError('fixed four-step Graph must be prepared before replay')
+            if execution_mode == 'cuda_graph' and (
+                not self.step_graph_ready or steps != self._step_graphs.steps
+            ):
+                raise RuntimeError('fixed step Graph must match the captured substep count')
             self._pending["phase"] = "enqueued"
             try:
                 self._updates.compose_for_execution(self, index)
@@ -768,6 +889,7 @@ class PhySolveRuntime:
         return self._body_wrench_lifetime
 
     def _enqueue_step_work(self, index, steps, *, record=True):
+        self._validation.enqueue_joint_velocity(index, self._stream)
         for substep in range(steps):
             if substep == 1 and self._body_wrench_lifetime == "one_substep":
                 self._banks[index].xfrc_applied.zero_(stream=self._stream)
@@ -777,6 +899,7 @@ class PhySolveRuntime:
                 self._contact_observations.capture_time(index, self._stream)
             self._native._step_runtime(self._handles[index])
             self._validation.enqueue(index, self._stream, include_extra=False)
+            self._validation.enqueue_joint_velocity(index, self._stream)
         if self._body_observations is not None:
             self._body_observations.update(index, self._stream, integrated=True, record=record)
             self._validation.enqueue_extra(index, self._stream)
@@ -814,8 +937,19 @@ class PhySolveRuntime:
             self._require_ticket(ticket)
             self._updates.flush(self, ticket)
 
+    def _preserve_and_validate(self, index):
+        """Retain the last solve's fields and counts before checking the edited bank."""
+        previous = 1 - index
+        for name in (*OBSERVATION_FIELDS, "nacon", "ncollision", "nefc"):
+            if name not in INTEGRATION_FIELDS:
+                getattr(self._banks[index], name).assign(
+                    getattr(self._banks[previous], name), stream=self._stream)
+        if self._body_observations is not None:
+            self._body_observations.copy(previous, index, self._stream)
+        self._validation.enqueue(index, self._stream)
+
     def enqueue_update(self, ticket, *, refresh_state=False, compose_controls=False,
-                       selected_worlds=None, defer_refresh=False):
+                       selected_worlds=None, defer_refresh=False, restore_contacts=False):
         """Accept prepared field edits without advancing time.
 
         Command-only updates retain existing solve-time observations using D2D
@@ -847,7 +981,8 @@ class PhySolveRuntime:
                 try:
                     self._updates.add(self, refresh_state=refresh_state,
                                       compose_controls=compose_controls,
-                                      selected_worlds=selected_worlds)
+                                      selected_worlds=selected_worlds,
+                                      restore_contacts=restore_contacts)
                 except Exception:
                     self._pending['phase'] = 'failed'
                     raise
@@ -862,20 +997,20 @@ class PhySolveRuntime:
                     self._native._forward_runtime(self._handles[index])
                     if self._body_observations is not None:
                         self._body_observations.update(index, self._stream, integrated=False)
+                    self._validation.enqueue(index, self._stream)
                 elif not self._pending.get('observations_ready', False):
-                    # Capacity counts belong to the preserved solve-time result,
-                    # not a previous discarded candidate in this bank.
-                    for name in (*OBSERVATION_FIELDS, "nacon", "ncollision", "nefc"):
-                        if name not in INTEGRATION_FIELDS:
-                            getattr(self._banks[index], name).assign(
-                                getattr(self._banks[self._active], name), stream=self._stream
-                            )
-                    if self._body_observations is not None:
-                        self._body_observations.copy(self._active, index, self._stream)
-                self._validation.enqueue(index, self._stream)
+                    graphs = self._step_graphs
+                    if self.step_graph_ready and graphs.command_checks:
+                        graphs.command_checks[index].replay()
+                        graphs.command_check_replays += 1
+                    else:
+                        self._preserve_and_validate(index)
+                else:
+                    self._validation.enqueue(index, self._stream)
                 if self._contact_observations is not None:
                     if refresh_state:
-                        self._contact_observations.update(index, self._stream, mask=selected_worlds)
+                        self._contact_observations.update(index, self._stream, mask=selected_worlds,
+                                                          restore_initial=restore_contacts)
                     elif not self._pending.get('observations_ready', False):
                         self._contact_observations.copy(self._active, index, self._stream)
                 if refresh_state and selected_worlds is not None:
@@ -901,9 +1036,11 @@ class PhySolveRuntime:
         with self._scope():
             self._require_idle()
             if self._free_body_updates is None:
-                from ._physolve_free import PreparedFreeBodies
+                from ._physolve_free import PreparedFreeBodies, mujoco_free_bindings
+                bindings = (self._compilation.free_bindings if self._cpu_model is None
+                            else mujoco_free_bindings(self._cpu_model))
                 self._free_body_updates = PreparedFreeBodies(
-                    self._cpu_model, self._banks, self._validation.flags,
+                    bindings, self._banks, self._validation.flags,
                     self.nworld, self._device, self._storage,
                 )
                 self._free_body_updates.prepare(self._stream)
@@ -993,7 +1130,7 @@ class PhySolveRuntime:
                     self._updates.add(self, refresh_state=True,
                                       compose_controls=(self._controls_binding is not None
                                           and self._controls_binding.recompose_reset),
-                                      selected_worlds=selector)
+                                      selected_worlds=selector, restore_contacts=True)
                     return
                 self._native._forward_runtime(self._handles[index])
                 if self._body_observations is not None:
@@ -1004,6 +1141,7 @@ class PhySolveRuntime:
                     self._contact_observations.update(
                         index, self._stream,
                         mask=selector if partial else None,
+                        restore_initial=True,
                     )
                 if partial:
                     self._reset.preserve_observations(index, self._stream, selector)

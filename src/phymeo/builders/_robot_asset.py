@@ -80,6 +80,10 @@ class RobotAsset:
         return paths
 
 
+class _NonDiagonalLinkInertia(ValueError):
+    """The compact robot model cannot represent this link-frame tensor."""
+
+
 def principal_inertia(mass, com, orientation, tensor, where, *, root=False):
     """Express an authored COM inertia in the link frame without losing products."""
     if root and mass == 0 and not np.any(tensor):
@@ -94,7 +98,7 @@ def principal_inertia(mass, com, orientation, tensor, where, *, root=False):
     off_diagonal = normalized - np.diag(diagonal)
     budget = 32 * np.finfo(float).eps if np.any(orientation[:3]) else 0.0
     if np.max(np.abs(off_diagonal)) > budget:
-        raise ValueError(f"{where} has non-diagonal inertia in the link frame")
+        raise _NonDiagonalLinkInertia(f"{where} has non-diagonal inertia in the link frame")
     if np.any(diagonal <= 0) or 2 * np.max(diagonal) > np.sum(diagonal) + 8 * np.finfo(float).eps:
         raise ValueError(f"{where} violates positive principal inertia or triangle inequalities")
     with np.errstate(over="ignore"):

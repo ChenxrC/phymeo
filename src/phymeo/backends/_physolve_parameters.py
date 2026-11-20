@@ -26,7 +26,7 @@ def prepare_contact_inverse_weights(cpu, model, stream):
 
 
 class PreparedBodyParameters:
-    def __init__(self, model, cpu, device):
+    def __init__(self, model, principal_inertia, inertia_rotation_wxyz, device):
         import tyx as tx
 
         self.arrays = {
@@ -35,11 +35,11 @@ class PreparedBodyParameters:
         }
         # The solver stores principal moments and an inertia frame. Consumers
         # need the full COM tensor in body axes, compiled once for this model.
-        rotation = quaternion_matrix(cpu.body_iquat[:, [1, 2, 3, 0]])
+        rotation = quaternion_matrix(inertia_rotation_wxyz[:, [1, 2, 3, 0]])
         self._initial = np.asarray(
-            (rotation * cpu.body_inertia[:, None, :]) @ rotation.transpose(0, 2, 1),
+            (rotation * principal_inertia[:, None, :]) @ rotation.transpose(0, 2, 1),
             np.float32,
-        ).reshape(1, cpu.nbody, 9)
+        ).reshape(1, len(principal_inertia), 9)
         self.arrays['model_body_inertia'] = tx.empty(self._initial.shape, tx.f32, device=device)
 
     def prepare(self, stream):

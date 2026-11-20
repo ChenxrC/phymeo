@@ -37,7 +37,7 @@ def _compose(
 class PreparedControls:
     """Two command banks and reset baseline, owned only by the physical runtime."""
 
-    def initialize(self, rows, banks, model, nworld, device, error, followers=()):
+    def initialize(self, rows, banks, native_width, gains, biases, nworld, device, error, followers=()):
         self.error = error
         self.names = tuple(row[0] for row in rows)
         drives = [(r[0], r[1], i, 1.0, 0.0, r[2], r[3]) for i, r in enumerate(rows)]
@@ -54,7 +54,7 @@ class PreparedControls:
             if (
                 not isinstance(name, str)
                 or type(actuator) is not int
-                or not 0 <= actuator < model.nu
+                or not 0 <= actuator < native_width
                 or kp < 0
                 or kd < 0
                 or type(source) is not int or not 0 <= source < len(rows)
@@ -63,8 +63,8 @@ class PreparedControls:
             ):
                 raise ValueError("invalid scalar control binding")
             if not (
-                model.actuator_gainprm[actuator, 0] == 1
-                and np.array_equal(model.actuator_biasprm[actuator, :3], [0, -kp, -kd])
+                gains[actuator] == 1
+                and np.array_equal(biases[actuator], [0, -kp, -kd])
             ):
                 raise ValueError("scalar control binding differs from compiled actuator")
         self.width = len(rows)
@@ -91,7 +91,7 @@ class PreparedControls:
         self.flat = [{name: array.flatten() for name, array in bank.items()} for bank in self.banks]
         self.initial_flat = {name: array.flatten() for name, array in self.initial.items()}
         self.native = tuple(bank.ctrl.view(tx.f32).flatten() for bank in banks)
-        self.native_width = model.nu
+        self.native_width = native_width
         self.validation_scratch = tx.empty_like(self.native[0])
 
     def prepare(self, stream):

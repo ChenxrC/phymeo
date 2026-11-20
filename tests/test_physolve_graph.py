@@ -9,6 +9,103 @@ from phymeo.builders.mujoco_compiler import compile_mujoco_xml
 
 
 @pytest.mark.cuda
+def test_single_step_command_graph_preserves_state_and_rejects_nonfinite_force(payload, tmp_path):
+    from phymeo.builders.native_assembly import NativeAssetInstance
+    from phymeo.builders.scalar_physolve import compile_scalar_template
+
+    inertia = '<inertial><mass value="1"/><inertia ixx=".2" iyy=".2" izz=".2" ixy="0" ixz="0" iyz="0"/></inertial>'
+    links = ''.join(f'<link name="{name}">{inertia}<collision><geometry>'
+                    f'<sphere radius=".05"/></geometry></collision></link>' for name in ('root', 'left', 'right'))
+    joints = ''.join(f'<joint name="{name}_joint" type="revolute"><parent link="root"/><child link="{name}"/>'
+                     f'<origin xyz="{x} 0 0"/><axis xyz="0 1 0"/><limit lower="-2" upper="2" effort="20" velocity="4"/></joint>'
+                     for name, x in [('left', -.5), ('right', .5)])
+    asset = NativeAssetInstance('robot', str(tmp_path / 'robot.urdf'), floating=True, drive_mode='scalar_pd',
+                                urdf_xml=f'<robot name="robot">{links}{joints}</robot>')
+    model = compile_scalar_template(asset, timestep=.002, gravity=(0,-9.81,0), statics=(),
+                                    integrator='implicitfast', capture_visuals=False, capture_frames=True)
+    with PhySolveRuntime(model.compilation, payload=payload, contact_observations=True,
+                         body_observations=True) as runtime:
+        runtime.prepare_step_graph(steps=1)
+        storage = runtime.storage_binding()
+        start = runtime.snapshot()
+        for value in (1., float('nan'), 2.):
+            previous = runtime.active_bank
+            ticket = runtime.begin_execution()
+            dst = storage.borrow('qfrc_applied', runtime.writable_bank, write=True)
+            force = np.zeros(dst.shape, np.float32)
+            force[..., -1] = value
+            dst.assign(force, stream=storage.stream)
+            runtime.enqueue_update(ticket)
+            if np.isnan(value):
+                with pytest.raises(RuntimeError, match='non-finite.*qfrc_applied'):
+                    runtime.complete_execution(ticket)
+                runtime.discard_execution(ticket)
+                assert runtime.active_bank == previous
+                accepted = storage.borrow('qfrc_applied', previous).numpy(stream=storage.stream)
+                assert accepted[0, -1] == 1.
+            else:
+                runtime.complete_execution(ticket)
+                runtime.accept_execution(ticket)
+                assert runtime.active_bank != previous
+                np.testing.assert_array_equal(storage.borrow('qfrc_applied', runtime.active_bank).numpy(stream=storage.stream), force)
+            current = runtime.snapshot()
+            for name in ('time', 'qpos', 'qvel'):
+                np.testing.assert_array_equal(current[name], start[name])
+        costs = runtime.execution_costs()
+        assert costs['command_check_replays_current_capture'] == 3
+        assert costs['step_graph_replays'] == 0
+
+
+def test_command_graph_destroy_retry_keeps_unreleased_handles():
+    from unittest.mock import Mock
+    from phymeo.backends._physolve_graph import PreparedStepGraphs
+
+    runtime = object()
+    owner = PreparedStepGraphs(runtime, steps=1)
+    first, second = Mock(), Mock()
+    step = Mock()
+    first.destroy.side_effect = [RuntimeError('busy'), None]
+    owner.command_checks.extend([first, second])
+    owner.graphs.append(step)
+    with pytest.raises(RuntimeError, match='busy'):
+        owner.close()
+    second.destroy.assert_called_once_with()
+    step.destroy.assert_not_called()
+    assert owner.command_checks == [first] and owner.runtime is runtime
+    owner.close()
+    step.destroy.assert_called_once_with()
+    second.destroy.assert_called_once_with()
+    assert owner.runtime is None
+
+
+@pytest.mark.parametrize("steps, floating, branches, integrator, dt, guard, admitted", [
+    (1, True, 2, "implicitfast", .002, False, True),
+    (1, False, 2, "implicitfast", .002, False, False),
+    (1, True, 1, "implicitfast", .002, False, False),
+    (1, True, 2, "euler", .002, False, False),
+    (1, True, 2, "implicitfast", .01, False, False),
+    (10, True, 2, "implicitfast", .002, False, False),
+    (10, True, 2, "implicitfast", .002, True, True),
+])
+def test_autonomous_graph_cadence_admission(steps, floating, branches, integrator, dt, guard, admitted):
+    from contextlib import nullcontext
+    from types import SimpleNamespace
+    from unittest.mock import Mock
+    from phymeo.builders.scalar_physolve import ScalarCompilation
+
+    compiled = Mock(spec=ScalarCompilation, has_free_root=floating, integrator=integrator, timestep=dt)
+    runtime = SimpleNamespace(_scope=nullcontext, _require_idle=lambda: None, _compilation=compiled,
+                              _model=SimpleNamespace(nbranch=branches), step_graph_ready=True,
+                              _step_graphs=SimpleNamespace(steps=steps),
+                              _validation=SimpleNamespace(joint_velocity_plans=guard))
+    if admitted:
+        assert PhySolveRuntime.prepare_step_graph(runtime, steps=steps) is False
+    else:
+        with pytest.raises(NotImplementedError, match="floating branch URDF"):
+            PhySolveRuntime.prepare_step_graph(runtime, steps=steps)
+
+
+@pytest.mark.cuda
 @pytest.mark.parametrize('nworld', [1, 8, 64])
 @pytest.mark.parametrize('model', [SLIDER, CONTACT], ids=['force', 'contact'])
 def test_fixed_banks_direct_graph_reset_stream_and_gc(payload, nworld, model, monkeypatch):

@@ -6,6 +6,8 @@ class PreparedStepGraphs:
         self.runtime = runtime
         self.steps = steps
         self.graphs = []
+        self.command_checks = []
+        self.command_check_replays = 0
         self.ready = False
 
     def prepare(self):
@@ -15,6 +17,12 @@ class PreparedStepGraphs:
             self.graphs.append(graph)  # Retain even when capture or cleanup fails.
             with graph:
                 runtime._enqueue_step_work(index, self.steps, record=False)
+        if self.steps == 1:
+            for index in (0, 1):
+                check = runtime._tx.Graph(stream=runtime._stream, mode='cuda_stream')
+                self.command_checks.append(check)
+                with check:
+                    runtime._preserve_and_validate(index)
         self.ready = True
 
     def replay(self, index):
@@ -34,6 +42,9 @@ class PreparedStepGraphs:
 
     def close(self):
         self.ready = False
+        while self.command_checks:
+            self.command_checks[-1].destroy()
+            self.command_checks.pop()
         while self.graphs:
             self.graphs[-1].destroy()
             self.graphs.pop()

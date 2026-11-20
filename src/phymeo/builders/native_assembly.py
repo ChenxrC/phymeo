@@ -175,7 +175,7 @@ class NativeStaticShape:
     contact_dim: int = 6
 
     def __post_init__(self):
-        widths = {"sphere": 1, "box": 3, "capsule": 2, "cylinder": 2, "plane": 3}
+        widths = {"sphere": 1, "box": 3, "capsule": 2, "cylinder": 2, "plane": 3, "ellipsoid": 3}
         if self.kind not in widths or not self.name or "::" in self.name:
             raise ValueError("native static requires a named primitive or plane")
         object.__setattr__(self, "size", _vector(self.size, widths[self.kind], "size"))

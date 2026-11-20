@@ -58,8 +58,9 @@ def solve_contact(device, old):
         *(out(name) for name in FRICTION_FIELDS),
         require_velocity_agreement=True,
         native_rows=(device.efc_data, device.efc_jacobian, device.constraint_counts)
-        if device.plan.nfriction or device.plan.nlimit
+        if device.plan.nfriction or device.plan.nlimit or device.plan.scalar_damped_contacts
         else None,
+        native_physical_acceleration=device.plan.scalar_damped_contacts,
         mode=device.mode,
     )
     device.counts["completed_kernels"] += 1
@@ -115,9 +116,13 @@ def download(device, result):
     with device.tx.use_runtime(device.runtime):
         for name in FRICTION_FIELDS + ("pack_status",):
             result["friction_" + name] = device._get(getattr(device, "friction_" + name))
-        if device.plan.nfriction or device.plan.nlimit:
+        if device.plan.nfriction or device.plan.nlimit or device.plan.scalar_damped_contacts:
             for name in ("efc_ids", "efc_data", "efc_jacobian", "constraint_counts"):
                 result[name] = device._get(getattr(device, name))
+        if device.plan.scalar_damped_contacts:
+            for name in ("normal_rows", "normal_jacobian", "contact_map", "contact_wrench"):
+                result[name] = device._get(getattr(device, name))
+            result["contact_J"] = device._get(device.contact_jacobian)
         result["constraint"] = device._get(device.mixed_constraint)
         result["smooth_acceleration"] = device._get(device.smooth_acc)
     return result

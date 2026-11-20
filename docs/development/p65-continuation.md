@@ -1,8 +1,10 @@
 # Phymeo 当前续作入口
 
-更新：2026-11-19。当前 codex/exp；B1/B2核心提交2d2ac75a，B3测试提交28fef171，查看器与最终报告接续其后。dev仍76a240d8，本轮不push。先查实时Git/WIP和agents，再按本页前进；不恢复旧heartbeat、07:10已结束任务或旧运行会话。
+更新于 2026-11-20，当前实验分支为 codex/exp。先查实时Git/WIP和agents，再按本页前进；不恢复旧heartbeat、07:10已结束任务或旧运行会话。
 
 ## 本轮进展
+
+有阻尼铰链与斜向滑动关节已在同一 TYX CUDA 步内求解地面原生支撑、侧面面积压力和切向摩擦。无驱动铰链在 4 ms 时转向，侧面摩擦随之换向；另一条轨迹在 18 ms 时完全离开侧面，地面仍承载 61.38 N。新增 16 项 CUDA 用例，另有 17 项回归。极端强驱动的拒绝边界见[本批报告与复现](damped-scalar-mixed-area-friction-report-20261120.md)。
 
 有阻尼铰链上的地面原生摩擦和另一处面积法向压力已在同一 TYX 步求解。CUDA 中面积压力 9.784 N，地面支撑相对空面积对照从 58.12 N 变为 73.76 N。独立标量解核对了速度和两处力矩；从当前姿态自动生成接触面后连续三步推进，恢复点后的两步逐值重现。[铰链对照与适用范围](damped-hinge-native-area-report-20261119.md)
 
@@ -69,7 +71,7 @@ CUDA 面积摩擦支持每个模型 1 至 8 个速度自由度，新增可动平
 
 查看器在本批 run04 和 run05 通过 Ruff 与格式复检，历史生成与浏览器记录仍见上一批 run40。
 
-1. 在已验证的有阻尼铰链上增加面积侧切向摩擦，检验滑动、卸载、实际承载上限和耗散功。随后处理多自由度的矩阵响应，再接原 RR 双限位与复合 T 形物体。[当前共同求解基线](damped-hinge-native-area-report-20261119.md) · [五个同姿态基准与编译门](rr-pusht-area-reference-report-20261119.md) · [八世界训练入口](native-manipulation-catalog-ppo-report-20261119.md)
+1. 从两个有耦合的自由度着手，用非对角质量矩阵检验地面和面积摩擦对两关节的响应、恢复重演及关闭侧面摩擦的对照，再接原 RR 双限位与复合 T 形物体。[当前共同求解基线](damped-scalar-mixed-area-friction-report-20261120.md) · [五个同姿态基准与编译门](rr-pusht-area-reference-report-20261119.md) · [八世界训练入口](native-manipulation-catalog-ppo-report-20261119.md)
 2. 多世界运动分开以后继续按实测成本选择几何优化。新磁盘 law 封套、一般有限边缘和变形体扩展各自独立验收。
 
 新 wheel 和 dev 合并仍待单独验证。

@@ -17,6 +17,8 @@ PRECISION = "actual-packed-point-fp32"
 
 
 def solver_schema(plan):
+    if getattr(plan, "scalar_damped_contacts", False) and plan.area_friction_laws:
+        return "mujoco-tyx-area-friction-scalar-contact-v1"
     if plan.nlimit:
         return LIMIT_SCHEMA
     return GUIDE_SCHEMA if plan.nfriction else "mujoco-tyx-area-friction-live-v1"

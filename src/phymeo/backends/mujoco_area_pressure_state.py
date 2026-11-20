@@ -33,6 +33,14 @@ def area_binding(runtime):
             body_ids=tuple(tuple(map(int, pair)) for pair in runtime._plan.area_body_ids),
             parameters=law_binding(runtime._area_friction_laws),
             response_operator="M+h*joint_damping",
+            **(
+                {
+                    "native_contact_operator": "M",
+                    "native_contact_scope": "scalar-damped-geometry-v1",
+                }
+                if runtime._plan.scalar_damped_contacts
+                else {}
+            ),
             storage="host-owned-accepted-receipt; area-entry-v2",
         )
     return dict(

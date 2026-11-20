@@ -82,7 +82,6 @@ def compile_area_plan(mj, model, pairs, friction_laws=()):
         raise ValueError("first area route supports stateless hinge/slide or free-root trees")
     scalar_damped_contacts = bool(
         remaining
-        and not friction_laws
         and model.nv == model.njnt == 1
         and model.jnt_type[0] in (mj.mjtJoint.mjJNT_HINGE, mj.mjtJoint.mjJNT_SLIDE)
         and np.isfinite(model.dof_damping[0])
@@ -106,7 +105,7 @@ def compile_area_plan(mj, model, pairs, friction_laws=()):
         friction_width(model.nv)
         if model.nbody > 128 or model.ngeom > 128:
             raise ValueError("live area-friction capacity: 128 bodies/geoms")
-        if model.neq or model.ntendon or remaining:
+        if model.neq or model.ntendon or (remaining and not scalar_damped_contacts):
             raise ValueError(
                 "live area friction requires area-only constraints or supported scalar joint rows"
             )
@@ -124,6 +123,17 @@ def compile_area_plan(mj, model, pairs, friction_laws=()):
         if not np.isfinite(model.dof_damping).all() or np.any(model.dof_damping < 0):
             raise ValueError("live area friction requires nonnegative finite damping")
     base = compile_constraint_model(mj, model, remaining)
+    if (
+        friction_laws
+        and scalar_damped_contacts
+        and not (
+            len(remaining) == 1
+            and tuple(model.geom_type[list(remaining[0])])
+            == (mj.mjtGeom.mjGEOM_PLANE, mj.mjtGeom.mjGEOM_SPHERE)
+            and base.pair_condim[0] == 3
+        )
+    ):
+        raise ValueError("live damped contact requires one native condim-3 plane/sphere support")
     if friction_laws and base.nlimit:
         lo, hi, margin = map(float, base.limit_law[0, :3])
         if lo >= hi or hi - lo < 2.0 * margin:

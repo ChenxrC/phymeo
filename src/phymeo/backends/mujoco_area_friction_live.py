@@ -7,6 +7,7 @@ import numpy as np
 from ..solvers.area_friction import LAW
 from .area_friction_law import PRECISION, solver_schema
 from .mujoco_area_guide import expected_scalar_rows
+from .mujoco_area_native_contact import enabled as native_contact_enabled
 from .mujoco_runtime import _frozen
 from .mujoco_tyx._constraint_publication import decode_row
 from .tyx_area_friction import PackedFrictionProblem, PackedFrictionSample, _certificate
@@ -75,9 +76,21 @@ def publish(runtime, result, index):
         ),
     )
     law_norm, scale, expected, law_residual, _, _ = _certificate(problem, output)
-    constraints = ()
+    contacts, constraints, native_raw = (), (), None
     aggregate = np.zeros(n)
-    if runtime._plan.nfriction or runtime._plan.nlimit:
+    if native_contact_enabled(runtime._plan):
+        from .mujoco_area_native_contact import publish as publish_native
+
+        contacts, constraints, native_raw = publish_native(runtime, result, index)
+        _require(ns + len(constraints) <= runtime._constraint_capacity, "combined row capacity")
+        aggregate = sum((row.jacobian * row.force for row in constraints), np.zeros(n))
+        response = mass.astype(float) + float(h) * np.diag(inputs[0].astype(float))
+        law_norm = float(
+            np.linalg.norm(
+                np.linalg.solve(np.linalg.cholesky(response), law_residual - float(h) * aggregate)
+            )
+        )
+    elif runtime._plan.nfriction or runtime._plan.nlimit:
         owners = expected_scalar_rows(runtime._plan, result["input_q"][index, :n].astype(float))
         _require(
             np.array_equal(result["constraint_counts"][index], (0, 0, len(owners))),
@@ -201,13 +214,18 @@ def publish(runtime, result, index):
         )
     )
     return (
-        (),
+        contacts,
         constraints,
         MappingProxyType(
             dict(
                 area_friction=tuple(pairs),
                 area_friction_solver=solver,
                 response_operator="M+h*joint_damping",
+                **(
+                    {"native_contacts": native_raw, "native_contact_operator": "M"}
+                    if native_raw is not None
+                    else {}
+                ),
             )
         ),
     )

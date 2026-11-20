@@ -18,6 +18,7 @@ from ..geometry.area_pressure import (
 )
 from .area_friction_law import LAW, PRECISION, capture_pair_laws, solver_schema
 from .mujoco_area_guide import expected_scalar_rows, validate_guide_row
+from .mujoco_area_native_contact import enabled as native_contact_enabled
 from .mujoco_tyx._area_friction_layout import MAX_LIVE_DOF, friction_width
 from .mujoco_tyx._constraint_publication import MuJoCoTyxConstraintRow
 from .mujoco_tyx._model import fp32
@@ -213,21 +214,26 @@ def _validate(runtime, key, receipt, state):
     )
     _require(_scalar(receipt.h, "h") == runtime.timestep and receipt.h > 0, "timestep binding")
     h = float(fp32(receipt.h, "historical friction h").item())
+    native_geometry = native_contact_enabled(runtime._plan)
     _require(
         h > 0
         and type(receipt.contacts) is tuple
-        and not receipt.contacts
+        and (native_geometry or not receipt.contacts)
         and type(receipt.constraints) is tuple,
         "native contacts and constraint rows",
     )
     fields = receipt.raw_contact_fields
+    expected_fields = {"area_friction", "area_friction_solver", "response_operator"}
+    if native_geometry:
+        expected_fields |= {"native_contacts", "native_contact_operator"}
     _require(
         isinstance(fields, Mapping)
-        and len(fields) == 3
-        and set(fields) == {"area_friction", "area_friction_solver", "response_operator"}
+        and set(fields) == expected_fields
         and _tag(fields["response_operator"], "M+h*joint_damping"),
         "raw receipt fields",
     )
+    if native_geometry:
+        _require(_tag(fields["native_contact_operator"], "M"), "native physical-M operator")
     pairs, solver = fields["area_friction"], fields["area_friction_solver"]
     _require(type(pairs) is tuple and len(pairs) == len(laws), "complete pair records")
     _require(
@@ -336,9 +342,18 @@ def _validate(runtime, key, receipt, state):
     _diagnostics(solver["raw_diagnostics"], velocity, nv)
     count, common_stamp = 0, None
     summed, law_total = np.zeros(nv), np.zeros(nv)
-    owners = expected_scalar_rows(runtime._plan, data["input_q"])
-    _require(len(receipt.constraints) == len(owners), "complete native scalar row count")
-    for owner, row in zip(owners, receipt.constraints, strict=True):
+    if native_geometry:
+        from .mujoco_area_native_contact import validate as validate_native
+
+        summed, law_total = validate_native(
+            runtime, fields["native_contacts"], receipt.contacts, receipt.constraints, dyn, qacc, h
+        )
+        owners, joint_rows = (), ()
+    else:
+        owners = expected_scalar_rows(runtime._plan, data["input_q"])
+        joint_rows = receipt.constraints
+        _require(len(joint_rows) == len(owners), "complete native scalar row count")
+    for owner, row in zip(owners, joint_rows, strict=True):
         _require(type(row) is MuJoCoTyxConstraintRow, "native scalar row type")
         _require(
             (row.constraint_type, row.source_id, row.side_or_edge, row.geometry_slot, row.dof)

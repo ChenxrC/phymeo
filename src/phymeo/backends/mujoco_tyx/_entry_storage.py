@@ -149,6 +149,30 @@ def prepare_entry(device):
         if getattr(plan, "area_friction_laws", ()):
             from ._area_friction_device import stage_entry
 
+            if getattr(plan, "scalar_damped_contacts", False):
+                # Preserve native geometry in its existing seven-field ABI.
+                # Area staging follows in the same inactive bank and does not
+                # synthesize or clear these native contact records.
+                kernels.constraint(
+                    device.nworld,
+                    int(plan.nslot),
+                    int(plan.ngeom),
+                    int(plan.npair),
+                    cap,
+                    device.slot_ids,
+                    device.geom_ids,
+                    device.pair_condim,
+                    device.normal_rows,
+                    device.constraint_counts,
+                    device.contact_map,
+                    device.contact_wrench,
+                    device.entry_meta[new],
+                    device.entry_contact_ids[new],
+                    device.entry_contact_data[new],
+                    device.status,
+                    mode=device.mode,
+                )
+                device.counts["completed_kernels"] += 1
             stage_entry(device, new)
             return new
         route = _route(plan)

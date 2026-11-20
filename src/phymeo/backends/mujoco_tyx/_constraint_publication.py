@@ -63,7 +63,7 @@ def decode_row(ids, row, jacobian):
     )
 
 
-def publish(runtime, result, index):
+def publish(runtime, result, index, *, native_only=False):
     from .._mujoco_tyx_runtime import MuJoCoTyxNormalContact
 
     plan = runtime._plan
@@ -82,6 +82,12 @@ def publish(runtime, result, index):
         "normal_rows": (max(1, plan.nslot), 32),
         "normal_jacobian": (max(1, plan.nslot), width),
     }
+    if native_only:
+        if not (getattr(plan, "scalar_damped_contacts", False) and plan.area_friction_laws):
+            raise RuntimeError("native-only publication requires scalar mixed area friction")
+        # The common friction solve owns convergence; the legacy QP receipt is
+        # neither produced nor fabricated for this route.
+        del expected["working_set"], expected["solver_diagnostics"]
     fields = {name: result[name][index] for name in expected}
     for name, shape in expected.items():
         if fields[name].shape != shape or not np.all(np.isfinite(fields[name])):
@@ -89,8 +95,8 @@ def publish(runtime, result, index):
     ncontact, nactive, nefc = map(int, fields["counts"])
     if not 0 <= nactive <= ncontact <= capc or not 0 <= nefc <= cape:
         raise RuntimeError("invalid mixed capacity counts")
-    diag = fields["solver_diagnostics"]
-    if (
+    diag = fields.get("solver_diagnostics")
+    if not native_only and (
         diag[6] != 1
         or diag[4] != nefc
         or diag[7] != plan.solver_iterations
@@ -112,7 +118,7 @@ def publish(runtime, result, index):
     detected = np.flatnonzero(normal[: plan.nslot, 0])
     if len(detected) != ncontact or int(np.sum(normal[: plan.nslot, 1])) != nactive:
         raise RuntimeError("mixed geometry count mismatch")
-    if np.any(~np.isin(fields["working_set"][:nefc], (0, 1, 2))):
+    if not native_only and np.any(~np.isin(fields["working_set"][:nefc], (0, 1, 2))):
         raise RuntimeError("invalid mixed working set")
     expected_ids = []
     for dof in plan.friction_ids[: plan.nfriction]:
@@ -178,7 +184,7 @@ def publish(runtime, result, index):
         )
     native_rows = len(expected_ids)
     area_count = 0
-    if hasattr(plan, "area_pair_names"):
+    if hasattr(plan, "area_pair_names") and not native_only:
         area_count = int(runtime._area_packet[2][index])
         expected_ids.extend((7, sample, -1, -1, -1) for sample in range(area_count))
     if len(expected_ids) != nefc or not np.array_equal(
@@ -225,10 +231,11 @@ def publish(runtime, result, index):
     raw["candidate_rows"] = _frozen(normal)
     raw["candidate_jacobian"] = _frozen(fields["normal_jacobian"])
     raw["slot_ids"] = _frozen(plan.slot_ids[: plan.nslot], dtype=np.int32)
-    raw["solver_diagnostics"] = MappingProxyType(
-        dict(zip(DIAGNOSTICS, map(float, diag), strict=True))
-    )
-    if hasattr(plan, "area_pair_names"):
+    if not native_only:
+        raw["solver_diagnostics"] = MappingProxyType(
+            dict(zip(DIAGNOSTICS, map(float, diag), strict=True))
+        )
+    if hasattr(plan, "area_pair_names") and not native_only:
         from ..mujoco_area_pressure import publish as publish_area
 
         raw["area_pressure"] = publish_area(runtime, result, index, fields, native_rows)

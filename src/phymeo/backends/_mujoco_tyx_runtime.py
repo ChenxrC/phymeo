@@ -575,6 +575,7 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                     area_pressure_publication="last_step.raw_contact_fields.area_friction",
                     area_pressure_entry_abi="mujoco-tyx-area-device-entry-v2",
                     area_pressure_integration="common-velocity-native-coordinate-tail-v1",
+                    smooth_acceleration_operator="M+h*joint_damping",
                     native_guide_friction=bool(self._plan.nfriction),
                     scalar_joint_limits_supported=bool(self._plan.nlimit),
                     joint_limits_supported=bool(self._plan.nlimit),
@@ -589,6 +590,12 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                     mixed_articulated_constraints_supported=False,
                     g1_supported=False,
                 )
+                if self._plan.scalar_damped_contacts:
+                    info.update(
+                        domain="area-friction-cuda-damped-scalar-support-v1",
+                        native_contact_operator="M",
+                        native_contact_scope="single-condim3-plane-sphere",
+                    )
             self._capabilities = MappingProxyType(info)
 
     @property

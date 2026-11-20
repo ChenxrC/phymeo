@@ -168,13 +168,9 @@ class TyxConstraintDevice(TyxDevice):
             )
             self.counts["completed_kernels"] += 1
             _actuator_device.advance(self, old, new)
-            if getattr(self.plan, "area_friction_laws", ()):
-                from ._area_friction_device import solve_contact
-
-                if self.plan.nfriction or self.plan.nlimit:
-                    self._assemble_rows(old)
-                solve_contact(self, old)
-            else:
+            live_friction = bool(getattr(self.plan, "area_friction_laws", ()))
+            mixed_support = live_friction and self.plan.scalar_damped_contacts
+            if not live_friction or mixed_support:
                 if self.extended_contacts is not None:
                     self.extended_contacts(
                         self.nworld,
@@ -221,6 +217,14 @@ class TyxConstraintDevice(TyxDevice):
                 )
                 self.counts["completed_kernels"] += 1
                 self._assemble_rows(old)
+            elif self.plan.nfriction or self.plan.nlimit:
+                self._assemble_rows(old)
+
+            if live_friction:
+                from ._area_friction_device import solve_contact
+
+                solve_contact(self, old)
+            else:
                 response_mass = self.mass
                 if hasattr(self.plan, "area_pair_names"):
                     from ._area_pressure_kernels import append_rows
@@ -290,6 +294,7 @@ class TyxConstraintDevice(TyxDevice):
                     mode=self.mode,
                 )
                 self.counts["completed_kernels"] += 1
+            if not live_friction or mixed_support:
                 self.decode(
                     self.nworld,
                     self.plan.nv,
@@ -354,9 +359,7 @@ class TyxConstraintDevice(TyxDevice):
                 mode=self.mode,
             )
             self.counts["completed_kernels"] += 1
-            if getattr(self.plan, "area_friction_laws", ()) and (
-                self.plan.nfriction or self.plan.nlimit
-            ):
+            if live_friction and (mixed_support or self.plan.nfriction or self.plan.nlimit):
                 from ._area_friction_live_kernels import store_native_gradients
 
                 store_native_gradients(
@@ -370,7 +373,7 @@ class TyxConstraintDevice(TyxDevice):
                     mode=self.mode,
                 )
                 self.counts["completed_kernels"] += 1
-            if getattr(self.plan, "scalar_damped_contacts", False):
+            if not live_friction and getattr(self.plan, "scalar_damped_contacts", False):
                 from ._area_pressure_kernels import publish_scalar_area_rows
 
                 publish_scalar_area_rows(

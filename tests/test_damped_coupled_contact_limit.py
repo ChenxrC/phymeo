@@ -527,7 +527,8 @@ def test_positive_margin_limit_carries_area_load_with_separated_ground_and_resto
 
 
 @pytest.mark.cuda
-def test_margin_hinge_limit_delivers_signed_torque_with_both_contacts_loaded(tmp_path):
+@pytest.mark.parametrize("slide_limit", [False, True], ids=["hinge-only", "slide-and-hinge"])
+def test_margin_hinge_limit_delivers_signed_torque_with_both_contacts_loaded(tmp_path, slide_limit):
     """The second generalized load is torque about the hinge axis."""
     import mujoco as mj
     import test_damped_coupled_articulated_contact as articulated
@@ -543,6 +544,14 @@ def test_margin_hinge_limit_delivers_signed_torque_with_both_contacts_loaded(tmp
         solreflimit=".02 1",
         solimplimit=".5 .5 .001 .5 2",
     )
+    if slide_limit:
+        tree.find(".//joint[@name='translation']").attrib.update(
+            limited="true",
+            range="-.001 .2",
+            margin=".004",
+            solreflimit=".02 1",
+            solimplimit=".5 .5 .001 .5 2",
+        )
     spec = replace(
         base,
         key="damped-slide-hinge-lower-margin",
@@ -558,10 +567,14 @@ def test_margin_hinge_limit_delivers_signed_torque_with_both_contacts_loaded(tmp
             source.qpos[:], source.qvel[:], source.time = before.q, before.v, before.time
             mj.mj_forward(model, source)
             assert model.jnt_type[1] == mj.mjtJoint.mjJNT_HINGE
-            assert np.count_nonzero(model.jnt_limited) == 1 and model.jnt_limited[1]
-            assert source.ncon == 1 and source.nefc == 5 and source.contact[0].dim == 3
-            (limit_index,) = np.flatnonzero(source.efc_type == 3)
-            source_j = source.efc_J.reshape(5, 2)
+            assert tuple(model.jnt_limited) == (slide_limit, True)
+            assert (
+                source.ncon == 1
+                and source.nefc == 5 + int(slide_limit)
+                and source.contact[0].dim == 3
+            )
+            (limit_index,) = np.flatnonzero((source.efc_type == 3) & (source.efc_id == 1))
+            source_j = source.efc_J.reshape(source.nefc, 2)
             assert source.efc_id[limit_index] == 1
             assert 0 < source.efc_pos[limit_index] < source.efc_margin[limit_index]
             np.testing.assert_array_equal(source_j[limit_index], [0, 1])
@@ -574,7 +587,10 @@ def test_margin_hinge_limit_delivers_signed_torque_with_both_contacts_loaded(tmp
             receipt = after.last_step
             (pair,) = receipt.raw_contact_fields["area_friction"]
             solver = receipt.raw_contact_fields["area_friction_solver"]
-            assert solver["schema"] == SCHEMA and solver["solver_status"] == 0
+            expected_schema = (
+                "mujoco-tyx-area-friction-coupled-contact-two-limits-v1" if slide_limit else SCHEMA
+            )
+            assert solver["schema"] == expected_schema and solver["solver_status"] == 0
             rows = receipt.constraints
             np.testing.assert_array_equal([row.constraint_type for row in rows], source.efc_type)
             np.testing.assert_array_equal([row.source_id for row in rows], source.efc_id)
@@ -660,9 +676,16 @@ def test_margin_hinge_limit_delivers_signed_torque_with_both_contacts_loaded(tmp
             ground_moment = np.cross(contact.pos - pivot, ground_force)
             limit_moment = limit.force * source.xaxis[1]
             assert articulated.AXIS @ limit_moment > 0.01
+            slide_limit_force = 0.0
+            if slide_limit:
+                (slide,) = [row for row in rows if row.constraint_type == 3 and row.source_id == 0]
+                assert (slide.dof, slide.side_or_edge) == (0, -1)
+                np.testing.assert_array_equal(slide.jacobian, [1, 0])
+                assert slide.force > 0.01
+                slide_limit_force = slide.force
             total = np.array(
                 [
-                    articulated.SLIDE @ (force.sum(axis=0) + ground_force),
+                    articulated.SLIDE @ (force.sum(axis=0) + ground_force) + slide_limit_force,
                     articulated.AXIS @ (area_moment + ground_moment + limit_moment),
                 ]
             )
@@ -675,6 +698,7 @@ def test_margin_hinge_limit_delivers_signed_torque_with_both_contacts_loaded(tmp
                 before=before,
                 after=after,
                 oracle=expected,
+                slide_limit_force_n=slide_limit_force,
                 limit_torque_world_nm=limit_moment,
                 area_torque_world_nm=area_moment,
                 ground_torque_world_nm=ground_moment,

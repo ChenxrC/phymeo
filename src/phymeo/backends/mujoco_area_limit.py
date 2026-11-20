@@ -4,8 +4,9 @@ The source-compiled plan and same-entry receipt are trusted inputs whose source
 and phase the enclosing auditor binds. This module neither solves contact nor
 changes state. It supports one or two undamped scalar joints, one declared limited
 joint and zero or one dry-friction row. The optional dry row is audited separately.
-The explicit damped two-DOF ground/area route uses the physical-M acceleration
-for its native limit law; its enclosing auditor binds M+hD integration separately.
+The explicit damped two-DOF ground/area route admits one or two distinct limited
+joints and uses physical-M acceleration for each native limit law; its enclosing
+auditor binds M+hD integration separately.
 The active-row list is derived from actual FP32 q/range/margin; typed position
 is distance, while the impedance and spring position is distance minus margin.
 """
@@ -39,7 +40,7 @@ def _damped_native_limit(plan):
     return bool(
         getattr(plan, "damped_contact_dofs", 0) == 2
         and plan.nv == plan.nq == 2
-        and plan.nlimit == 1
+        and plan.nlimit in (1, 2)
         and plan.npair == plan.nslot == 1
         and plan.nfriction == 0
         and getattr(plan, "area_friction_laws", ())
@@ -51,10 +52,14 @@ def _layout(plan, input_q):
     _require(type(nv) is int and nv in (1, 2), "one or two scalar DOFs")
     damped_native = _damped_native_limit(plan)
     pairs = int(damped_native)
+    nlimit = plan.nlimit
+    _require(
+        type(nlimit) is int and (nlimit in (1, 2) if damped_native else nlimit == 1),
+        "declared limit count in the admitted layout",
+    )
     for name, expected in (
         ("kind", 2),
         ("nq", nv),
-        ("nlimit", 1),
         ("npair", pairs),
         ("nslot", pairs),
     ):
@@ -77,33 +82,38 @@ def _layout(plan, input_q):
         and (damped_native or np.all(vectors[1, :nv] == 0.0)),
         "source viscous damping in the admitted layout",
     )
-    ids, law = plan.limit_ids, plan.limit_law
+    ids, laws = plan.limit_ids, plan.limit_law
     _require(
-        isinstance(ids, np.ndarray) and ids.dtype == np.int32 and ids.shape == (1, 3),
-        "one declared limit identity",
-    )
-    joint, qa, dof = map(int, ids[0])
-    _require(
-        0 <= joint < nv
-        and 0 <= qa < nv
-        and 0 <= dof < nv
-        and qa == int(joints[joint, 1])
-        and dof == int(joints[joint, 2]),
-        "limit joint/qpos/DOF mapping",
+        isinstance(ids, np.ndarray) and ids.dtype == np.int32 and ids.shape == (nlimit, 3),
+        "complete declared limit identities",
     )
     _require(
-        isinstance(law, np.ndarray)
-        and law.dtype == np.float32
-        and law.shape == (1, 11)
-        and np.isfinite(law).all(),
-        "complete finite source limit law",
+        isinstance(laws, np.ndarray)
+        and laws.dtype == np.float32
+        and laws.shape == (nlimit, 11)
+        and np.isfinite(laws).all(),
+        "complete finite source limit laws",
     )
-    _require(law[0, 3] > 0.0, "positive source inverse weight")
-    _require((law[0, 4] > 0.0) == (law[0, 5] > 0.0), "native positive/direct solref agreement")
+    entries = []
+    previous_joint = -1
+    for identity, law in zip(ids, laws, strict=True):
+        joint, qa, dof = map(int, identity)
+        _require(
+            previous_joint < joint < nv
+            and 0 <= qa < nv
+            and 0 <= dof < nv
+            and qa == int(joints[joint, 1])
+            and dof == int(joints[joint, 2]),
+            "ordered unique limit joint/qpos/DOF mapping",
+        )
+        previous_joint = joint
+        _require(law[3] > 0.0, "positive source inverse weight")
+        _require((law[4] > 0.0) == (law[5] > 0.0), "native positive/direct solref agreement")
+        entries.append((joint, qa, dof, tuple(map(float, law))))
     q = _vector(input_q, "limit input q", nv)
     q32 = q.astype(np.float32)
     _require(np.isfinite(q32).all(), "all input q representable as finite FP32")
-    return nv, joint, qa, dof, tuple(map(float, law[0])), q32
+    return nv, tuple(entries), q32
 
 
 def _distances(q32, qa, law):
@@ -119,18 +129,28 @@ def _distances(q32, qa, law):
 def expected_limit_sides(plan, input_q):
     """Return all active ``(native_joint_id, dof, side)`` in native row order.
 
-    Lower side is -1, upper side +1. Both may be active if the declared margin
-    overlaps both sides. This function does not infer missing rows from a
-    pressure receipt; callers compare the complete returned order to their rows.
+    Lower side is -1, upper side +1. The legacy undamped contract retains both
+    sides when their margins overlap. The damped native route admits at most one
+    side per joint. This function derives every row from its own source q/range;
+    callers compare the complete returned order to their receipts.
     """
     try:
         with np.errstate(over="raise", invalid="raise", divide="raise"):
-            _, joint, qa, dof, law, q32 = _layout(plan, input_q)
-            return tuple(
-                (joint, dof, side)
-                for side, distance in _distances(q32, qa, law)
-                if distance < law[2]
-            )
+            _, entries, q32 = _layout(plan, input_q)
+            damped_native = _damped_native_limit(plan)
+            expected = []
+            for joint, qa, dof, law in entries:
+                active = tuple(
+                    (joint, dof, side)
+                    for side, distance in _distances(q32, qa, law)
+                    if distance < law[2]
+                )
+                _require(
+                    not damped_native or len(active) <= 1,
+                    "at most one active side per damped limited joint",
+                )
+                expected.extend(active)
+            return tuple(expected)
     except (AttributeError, TypeError, IndexError, FloatingPointError, OverflowError) as error:
         raise ValueError("MuJoCo area limit row: invalid layout or nonfinite activation") from error
 
@@ -243,8 +263,12 @@ def validate_limit_row(plan, row, input_q, input_v, output_v, h, physical_qacc):
 
 
 def _validate(plan, row, input_q, input_v, output_v, h, physical_qacc):
-    nv, joint, qa, dof, law, q32 = _layout(plan, input_q)
+    nv, entries, q32 = _layout(plan, input_q)
     _require(type(row) is MuJoCoTyxConstraintRow, "native typed constraint row")
+    _require(type(row.source_id) is int, "native limit source identity")
+    matches = tuple(entry for entry in entries if entry[0] == row.source_id)
+    _require(len(matches) == 1, "row belongs to exactly one declared limited joint")
+    joint, qa, dof, law = matches[0]
     _require(type(row.side_or_edge) is int and row.side_or_edge in (-1, 1), "native limit side")
     side = row.side_or_edge
     distance = dict(_distances(q32, qa, law))[side]

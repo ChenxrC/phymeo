@@ -79,7 +79,14 @@ def _declaration(mu=0.5, key=41, *, capacity=64, ground=True):
 
 @pytest.mark.parametrize(
     "restriction",
-    ["normal-only", "two-limits", "limit-with-dry-friction", "condim-1", "two-ground-pairs"],
+    [
+        "normal-only",
+        "overlapping-second-limit",
+        "two-limits-undamped",
+        "limit-with-dry-friction",
+        "condim-1",
+        "two-ground-pairs",
+    ],
 )
 def test_damped_coupled_contact_admission_limits(restriction):
     import mujoco as mj
@@ -92,12 +99,27 @@ def test_damped_coupled_contact_admission_limits(restriction):
     expected = "damped area route cannot mix native constraints"
     if restriction == "normal-only":
         laws = ()
-    elif restriction in ("two-limits", "limit-with-dry-friction"):
-        xml = xml.replace('name="child-slide"', 'name="child-slide" limited="true" range="-.2 .2"')
+    elif restriction in (
+        "overlapping-second-limit",
+        "two-limits-undamped",
+        "limit-with-dry-friction",
+    ):
+        child_margin = ".21" if restriction == "overlapping-second-limit" else "0"
+        xml = xml.replace(
+            'name="child-slide"',
+            f'name="child-slide" limited="true" range="-.2 .2" margin="{child_margin}"',
+        )
         attribute = (
-            'limited="true" range="-.2 .2"' if restriction == "two-limits" else 'frictionloss=".1"'
+            'frictionloss=".1"'
+            if restriction == "limit-with-dry-friction"
+            else 'limited="true" range="-.2 .2"'
         )
         xml = xml.replace('name="parent-slide"', f'name="parent-slide" {attribute}')
+        if restriction == "overlapping-second-limit":
+            expected = "nonoverlapping margins"
+        elif restriction == "two-limits-undamped":
+            xml = xml.replace('damping="3"', 'damping="0"').replace('damping="7"', 'damping="0"')
+            expected = "area-only constraints or supported scalar joint rows"
     elif restriction == "condim-1":
         xml = xml.replace('condim="3"', 'condim="1"')
         expected = "one native condim-3 plane/sphere"
@@ -111,6 +133,22 @@ def test_damped_coupled_contact_admission_limits(restriction):
     model = mj.MjModel.from_xml_string(xml)
     with pytest.raises(ValueError, match=expected):
         compile_area_plan(mj, model, spec.area_pressure_pairs, laws)
+
+
+def test_damped_ground_and_area_compile_each_joint_limit():
+    import mujoco as mj
+
+    from phymeo.backends.mujoco_area_pressure import compile_area_plan
+
+    spec, _ = _declaration()
+    xml = spec.compilation.source.primary_xml.decode()
+    for name, interval in (("parent-slide", "-.25 .5"), ("child-slide", "-.75 1")):
+        xml = xml.replace(f'name="{name}"', f'name="{name}" limited="true" range="{interval}"')
+    model = mj.MjModel.from_xml_string(xml)
+    plan = compile_area_plan(mj, model, spec.area_pressure_pairs, spec.area_friction_laws)
+    assert plan.coupled_damped_contacts and plan.nlimit == 2
+    np.testing.assert_array_equal(plan.limit_ids, ((0, 0, 0), (1, 1, 1)))
+    np.testing.assert_array_equal(plan.limit_law[:, :2], ((-0.25, 0.5), (-0.75, 1.0)))
 
 
 def _native(spec, before):

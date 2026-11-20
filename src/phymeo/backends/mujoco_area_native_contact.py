@@ -216,7 +216,7 @@ def validate(runtime, raw, contacts, constraints, dynamics, qacc, h, *, output_v
 
     Scope is one plane/sphere condim=3 pair on one damped scalar joint
     or the explicitly admitted two-scalar coupled route, optionally with one
-    declared finite joint limit. No native pair is
+    or two distinct finite joint limits. No native pair is
     inferred from an area pair or from receipt fields.
     The physical-M row law intentionally uses qacc, not integration acceleration.
     """
@@ -227,7 +227,7 @@ def validate(runtime, raw, contacts, constraints, dynamics, qacc, h, *, output_v
         and plan.nv == plan.nq == plan.damped_contact_dofs
         and plan.npair == plan.nslot == 1
         and plan.nfriction == 0
-        and (plan.nlimit == 0 or (plan.damped_contact_dofs == 2 and plan.nlimit == 1))
+        and (plan.nlimit == 0 or (plan.damped_contact_dofs == 2 and plan.nlimit in (1, 2)))
         and int(plan.pair_condim[0]) == 3,
         "unsupported native geometry scope",
     )
@@ -272,7 +272,8 @@ def validate(runtime, raw, contacts, constraints, dynamics, qacc, h, *, output_v
 
         expected = expected_limit_sides(plan, dynamics.input_q)
         _require(
-            len(expected) <= 1
+            len(expected) <= plan.nlimit
+            and len({joint for joint, _, _ in expected}) == len(expected)
             and tuple((row.source_id, row.dof, row.side_or_edge) for row in limit_rows) == expected,
             "complete nonoverlapping source limit rows",
         )

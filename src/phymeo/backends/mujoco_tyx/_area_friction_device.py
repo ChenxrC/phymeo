@@ -52,7 +52,7 @@ def solve_contact(device, old):
         mode=device.mode,
     )
     device.counts["completed_kernels"] += 1
-    coupled_limit = device.plan.coupled_damped_contacts and device.plan.nlimit == 1
+    coupled_limit = device.plan.coupled_damped_contacts and device.plan.nlimit > 0
     solve_batch(
         device.nworld,
         device.nworld,
@@ -65,6 +65,7 @@ def solve_contact(device, old):
         if coupled_limit
         else None,
         native_physical_acceleration=3 if coupled_limit else device.plan.damped_contact_dofs,
+        native_limit_count=device.plan.nlimit if coupled_limit else 1,
         mode=device.mode,
     )
     device.counts["completed_kernels"] += 1

@@ -27,6 +27,7 @@ def _solve_batch(
     packed_width: tx.i32,
     row_capacity: tx.i32,
     native_physical_acceleration: tx.i32,
+    native_limit_count: tx.i32,
     rows: tx.ndarray(tx.f32, 3),
     row_j: tx.ndarray(tx.f32, 3),
     counts: tx.ndarray(tx.i32, 2),
@@ -92,10 +93,17 @@ def _solve_batch(
                         meta[w, 0] = 1
                         nr = 0
                 elif native_physical_acceleration == 3:
-                    # Four contact edges plus at most one active joint-limit
-                    # side. Row provenance and single-side admission are owned
-                    # by native assembly; this kernel consumes compact rows.
-                    if nv != 2 or nr > 5 or nr + ns > row_capacity:
+                    # Four contact edges plus one side per admitted joint limit.
+                    # The owner supplies the declared count and guarantees each
+                    # limit's margins cannot overlap. Default count 1 keeps the
+                    # five-row gate; count 2 explicitly admits at most six.
+                    if (
+                        nv != 2
+                        or native_limit_count < 1
+                        or native_limit_count > 2
+                        or nr > 4 + native_limit_count
+                        or nr + ns > row_capacity
+                    ):
                         meta[w, 0] = 1
                         nr = 0
                 elif nr > 2 or nv > 2:
@@ -425,7 +433,8 @@ def _solve_batch(
                         chosen_l10 = ml10
                         chosen_s11 = ms11
                         # Preserve mode 2's loop. Mode 3 enumerates only actual
-                        # compact rows: 2^nr masks, including all-inactive, <=32.
+                        # compact rows: 2^nr masks, including all-inactive; <=32
+                        # for one declared limit and <=64 for two.
                         face_count = 16
                         if native_physical_acceleration == 3:
                             face_count = 1
@@ -1039,15 +1048,18 @@ def solve_batch(
     native_rows=None,
     native_physical_acceleration=0,
     native_source_forces=None,
+    native_limit_count=1,
     **launch,
 ):
     """Keep the standalone ABI; live owners additionally bound A^-1 residual.
 
     ``native_physical_acceleration`` is 0 for the legacy joint route, 1 for
     one damped scalar, 2 for two coupled damped DOFs, or 3 for the same two
-    DOFs with one joint limit. Modes 1/2 admit up to four native rows; mode 3
-    admits up to five (four contact edges and zero/one limit side), with at
-    most 32 actual active-set masks. Each candidate's area load eliminates the
+    DOFs with one or two joint limits. Modes 1/2 admit up to four native rows.
+    Mode 3's explicit ``native_limit_count`` is 1 (default) or 2, with at most
+    one active side per declared limit: four contact edges plus that count,
+    at most five/six rows and 32/64 actual active-set masks respectively.
+    Each candidate's area load eliminates the
     native unilateral rows in physical acceleration space, without modifying
     native R, aref, or force units. The owner
     supplies all compact rows and enforces its combined area/native capacity.
@@ -1070,6 +1082,10 @@ def solve_batch(
         raise ValueError("mode 3 requires live native applied/passive/bias buffers")
     if native_physical_acceleration != 3 and native_source_forces is not None:
         raise ValueError("native_source_forces is supported only in mode 3")
+    if type(native_limit_count) is not int or native_limit_count not in (1, 2):
+        raise ValueError("native_limit_count must be integer 1 or 2")
+    if native_physical_acceleration != 3 and native_limit_count != 1:
+        raise ValueError("nondefault native_limit_count is supported only in mode 3")
     if len(mass.shape) != 3 or mass.shape[1] not in (6, 8):
         raise ValueError("invalid packed area-friction mass layout")
     width = mass.shape[1]
@@ -1110,6 +1126,7 @@ def solve_batch(
         width,
         row_capacity,
         int(native_physical_acceleration),
+        native_limit_count,
         rows,
         jacobian,
         counts,

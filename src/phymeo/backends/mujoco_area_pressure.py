@@ -31,6 +31,11 @@ class _AreaPlan:
     def coupled_damped_contacts(self):
         return self.damped_contact_dofs == 2
 
+    @property
+    def coupled_contact_variant(self):
+        """Version suffix shared by the coupled solver, checkpoint and capability names."""
+        return ("v1", "limit-v1", "two-limits-v1")[self.nlimit]
+
     def __getattr__(self, name):
         return getattr(self.base, name)
 
@@ -99,7 +104,7 @@ def compile_area_plan(mj, model, pairs, friction_laws=()):
         and np.all(model.dof_damping >= 0)
         and np.any(model.dof_damping > 0)
         and not (model.neq or model.ntendon or np.any(model.dof_frictionloss))
-        and (limit_count == 0 or (model.nv == 2 and limit_count == 1))
+        and (limit_count == 0 or model.nv == 2)
     ):
         damped_contact_dofs = model.nv
     if (
@@ -123,10 +128,10 @@ def compile_area_plan(mj, model, pairs, friction_laws=()):
             1 <= model.nv == model.njnt <= 2
             and np.isin(model.jnt_type, (mj.mjtJoint.mjJNT_SLIDE, mj.mjtJoint.mjJNT_HINGE)).all()
             and dry_count <= 1
-            and limit_count <= 1
+            and limit_count <= (2 if damped_contact_dofs == 2 else 1)
         ):
             raise ValueError(
-                "mixed area friction permits at most one dry row and one limited joint on one or two undamped scalar joints"
+                "mixed area friction requires a supported scalar joint limit and dry-friction layout"
             )
         if not np.isfinite(model.dof_damping).all() or np.any(model.dof_damping < 0):
             raise ValueError("live area friction requires nonnegative finite damping")
@@ -143,8 +148,8 @@ def compile_area_plan(mj, model, pairs, friction_laws=()):
     ):
         raise ValueError("live damped contact requires one native condim-3 plane/sphere support")
     if friction_laws and base.nlimit:
-        lo, hi, margin = map(float, base.limit_law[0, :3])
-        if lo >= hi or hi - lo < 2.0 * margin:
+        lo, hi, margin = base.limit_law[: base.nlimit, :3].astype(np.float64).T
+        if np.any(lo >= hi) or np.any(hi - lo < 2.0 * margin):
             raise ValueError(
                 "mixed area friction requires distinct limits with nonoverlapping margins"
             )

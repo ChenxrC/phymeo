@@ -17,13 +17,18 @@ from ..dynamics.rotation import quaternion_matrix
 from ..geometry.visual import VisualInstance, VisualScene
 from ..solvers.floating_tree import _inertial_geometry
 from ._physolve_fixed import FixedArticulation, read_fixed_articulation
-from .collision_sources import CollisionSourceMapping, SourceGeometry, _digest
-from .floating_urdf import load_floating_urdf
 from ._robot_asset import _NonDiagonalLinkInertia
 from ._robot_xml import _attributes, _child, _children, _number
+from .collision_sources import CollisionSourceMapping, SourceGeometry, _digest
+from .floating_urdf import load_floating_urdf
 from .native_assembly import NativeAssetIdentity, NativeJointInput, NativeTemplate
 from .native_frames import NativeFrameMetadata, NativeJointFrame
-from .primitive_physolve import _mass_and_inertia, _wxyz, require_rounded_primitives
+from .primitive_physolve import (
+    _free_body_input,
+    _mass_and_inertia,
+    _wxyz,
+    require_rounded_primitives,
+)
 from .urdf import load_urdf
 from .urdf_import_options import authored_visuals, take_compiler_options
 
@@ -161,9 +166,7 @@ class ScalarCompilation:
             root_body = self.model.bodies[0]
             free_root = root_body.mass, root_body.com, root_body.inertia, self.inertia_frames[0]
         free_objects = tuple(
-            frontend.FreeBody(frontend.Geometry(shape.kind, shape.size, shape.position,
-                                                _wxyz(shape.orientation_xyzw), shape.friction,
-                                                shape.contact_dim), mass, inertia)
+            _free_body_input(frontend, shape, mass, inertia)
             for shape, mass, inertia in self.free_objects
         )
         return frontend.put_articulated_model(
@@ -470,7 +473,8 @@ def compile_scalar_template(asset, *, timestep, gravity, statics, integrator,
                   for shape in statics) + robot_geoms
     scene_bodies = bodies + tuple(shape.name for shape in free_objects)
     free_geoms = tuple((shape.name, len(bodies) + 1 + i, shape.kind, shape.size, (0., 0., 0.),
-                        (0., 0., 0., 1.), shape.friction, shape.contact_dim, *((None,) if extended else ()))
+                        shape.geom_orientation_xyzw, shape.friction, shape.contact_dim,
+                        *((None,) if extended else ()))
                        for i, shape in enumerate(free_objects))
     scene_geoms = geoms + free_geoms
     if (len(set(scene_bodies)) != len(scene_bodies)

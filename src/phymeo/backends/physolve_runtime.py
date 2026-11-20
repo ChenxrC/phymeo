@@ -499,8 +499,8 @@ class PhySolveRuntime:
     def prepare_step_graph(self, *, steps=4):
         """Capture the admitted fixed cadence for both existing banks."""
         steps = _positive(steps, 'steps')
-        if steps not in (1, 4, 10):
-            raise ValueError('fixed step Graph v1 requires one, four or ten substeps')
+        if steps not in (1, 4, 8, 10):
+            raise ValueError('fixed step Graph v1 requires 1, 4, 8 or 10 substeps')
         with self._scope():
             self._require_idle()
             compilation = self._compilation
@@ -515,6 +515,9 @@ class PhySolveRuntime:
                         "one- and ten-step Graph require an autonomous floating branch URDF "
                         "and implicitfast at 2 ms; ten-step Graph requires a joint velocity guard"
                     )
+            elif steps == 8:
+                if not isinstance(compilation, PrimitiveCompilation) or compilation.integrator != "implicitfast":
+                    raise NotImplementedError("eight-step Graph requires autonomous implicitfast free primitives")
             elif self._cpu_model is None and not (
                 isinstance(compilation, ScalarCompilation) and (
                     (not compilation.has_free_root and bool(compilation.free_objects))

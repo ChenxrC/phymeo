@@ -629,6 +629,64 @@ def test_empty_native_template_and_invalid_rigid_values():
                                 static_shapes=(NativeRigidShape('body','sphere',(.1,)),))
 
 
+@pytest.mark.parametrize("kind", ["capsule", "cylinder"])
+def test_autonomous_free_shape_axis_preserves_body_pose_and_binds_local_geometry(kind):
+    from dataclasses import make_dataclass
+    from types import SimpleNamespace
+
+    from phymeo.builders.primitive_physolve import compile_primitive_template
+
+    shape = NativeRigidShape("body", kind, (.1, .2), position=(1., 2., 3.), mass=1.)
+
+    def compile_shape(body):
+        return compile_primitive_template(timestep=.002, gravity=(0, -9.81, 0),
+                                          static_shapes=(), rigid_shapes=(body,),
+                                          integrator="implicitfast", capture_visuals=True)
+
+    legacy = compile_shape(shape)
+    rotated = compile_shape(replace(shape, axial_direction="y"))
+    visual = rotated.visual_scene.instances[0]
+    half_sqrt = np.sqrt(.5)
+    np.testing.assert_allclose(visual.rotation_xyzw, (-half_sqrt, 0., 0., half_sqrt))
+    assert visual.body == shape.name and visual.position == (0., 0., 0.)
+    moments = legacy.compilation.principal_inertia[0]
+    assert moments[0] != moments[2]
+    assert rotated.compilation.principal_inertia[0] == (moments[0], moments[2], moments[1])
+
+    frontend = SimpleNamespace(
+        CYLINDER_INPUT_CONTRACT=1, ROUNDED_PRIMITIVE_INPUT_CONTRACT=1,
+        Geometry=make_dataclass("Geometry", "kind size position rotation friction contact_dim".split()),
+        FreeBody=lambda *args, **kwargs: (args, kwargs),
+        put_primitive_model=lambda bodies, *_args, **_kwargs: bodies[0],
+    )
+    assert legacy.compilation.upload_model(frontend)[1] == {}
+    with pytest.raises(ValueError, match="free geometry rotation input contract v1"):
+        rotated.compilation.upload_model(frontend)
+    (geometry, _, inertia), options = rotated.compilation.upload_model(
+        SimpleNamespace(**vars(frontend), FREE_GEOM_ROTATION_INPUT_CONTRACT=1)
+    )
+    assert geometry.position == shape.position
+    assert geometry.rotation == (1., 0., 0., 0.)
+    assert inertia == rotated.compilation.principal_inertia[0]
+    np.testing.assert_allclose(options["geom_rotation"], (half_sqrt, -half_sqrt, 0., 0.))
+
+
+@pytest.mark.parametrize("kind", ["capsule", "cylinder"])
+def test_mujoco_free_shape_axis_preserves_body_frame(kind):
+    import mujoco as mj
+
+    shape = NativeRigidShape("body", kind, (.1, .2), position=(1., 2., 3.),
+                            mass=1., axial_direction="y")
+    result = compile_native_template((), timestep=.002, gravity=(0., -9.81, 0.),
+                                     rigid_shapes=(shape,))
+    model = result.compilation.fresh_native_model()
+    data = mj.MjData(model)
+    mj.mj_forward(model, data)
+    np.testing.assert_allclose(data.xpos[1], shape.position, atol=1e-12)
+    np.testing.assert_allclose(data.xquat[1], (1., 0., 0., 0.), atol=1e-12)
+    np.testing.assert_allclose(data.geom_xmat[0].reshape(3, 3)[:, 2], (0., 1., 0.), atol=1e-12)
+
+
 def test_two_floating_assets_and_rigid_keep_rotated_identity(urdf):
     import mujoco
 

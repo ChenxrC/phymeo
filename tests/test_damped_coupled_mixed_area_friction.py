@@ -85,7 +85,9 @@ def _declaration(mu=0.5, key=41, *, capacity=64, ground=True):
         "two-limits-undamped",
         "limit-with-dry-friction",
         "condim-1",
-        "two-ground-pairs",
+        "three-supports",
+        "second-support-condim-1",
+        "two-supports-with-limit",
     ],
 )
 def test_damped_coupled_contact_admission_limits(restriction):
@@ -122,17 +124,41 @@ def test_damped_coupled_contact_admission_limits(restriction):
             expected = "area-only constraints or supported scalar joint rows"
     elif restriction == "condim-1":
         xml = xml.replace('condim="3"', 'condim="1"')
-        expected = "one native condim-3 plane/sphere"
+        expected = "native condim-3 plane/sphere"
     else:
         foot = '<geom name="foot"'
-        assert xml.count(foot) == 1
-        xml = xml.replace(
-            foot, '<geom name="second-foot" type="sphere" size=".03" condim="3"/>' + foot
-        )
-        expected = "one native condim-3 plane/sphere"
+        if restriction == "second-support-condim-1":
+            other = '<geom name="second-foot" type="sphere" size=".03" priority="2" condim="1"/>'
+        else:
+            other = '<geom name="second-foot" type="sphere" size=".03" condim="3"/>'
+        if restriction == "three-supports":
+            other += '<geom name="third-foot" type="sphere" size=".03" condim="3"/>'
+        if restriction == "two-supports-with-limit":
+            xml = xml.replace(
+                'name="child-slide"', 'name="child-slide" limited="true" range="-.1 .1"'
+            )
+        xml = xml.replace(foot, other + foot)
+        expected = "native condim-3 plane/sphere"
     model = mj.MjModel.from_xml_string(xml)
     with pytest.raises(ValueError, match=expected):
         compile_area_plan(mj, model, spec.area_pressure_pairs, laws)
+
+
+def test_damped_ground_and_area_compile_two_supports():
+    import mujoco as mj
+
+    from phymeo.backends.mujoco_area_pressure import compile_area_plan
+
+    spec, _ = _declaration()
+    xml = spec.compilation.source.primary_xml.decode().replace(
+        '<geom name="foot"', '<geom name="heel" type="sphere" size=".03"/><geom name="foot"'
+    )
+    model = mj.MjModel.from_xml_string(xml)
+    plan = compile_area_plan(mj, model, spec.area_pressure_pairs, spec.area_friction_laws)
+    assert plan.coupled_contact_variant == "two-supports-v1"
+    assert plan.npair == plan.nslot == 2
+    floor, heel, foot = (model.geom(name).id for name in ("floor", "heel", "foot"))
+    np.testing.assert_array_equal(plan.slot_ids[:, 2:], [(floor, heel), (floor, foot)])
 
 
 def test_damped_ground_and_area_compile_each_joint_limit():

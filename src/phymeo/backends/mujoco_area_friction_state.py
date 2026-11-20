@@ -236,10 +236,11 @@ def _validate(runtime, key, receipt, state):
         _require(_tag(fields["native_contact_operator"], "M"), "native physical-M operator")
     pairs, solver = fields["area_friction"], fields["area_friction_solver"]
     _require(type(pairs) is tuple and len(pairs) == len(laws), "complete pair records")
+    solver_fields = SOLVER_FIELDS
+    if runtime._plan.two_native_supports:
+        solver_fields = solver_fields | {"applied_with_contact"}
     _require(
-        isinstance(solver, Mapping)
-        and len(solver) == len(SOLVER_FIELDS)
-        and set(solver) == SOLVER_FIELDS,
+        isinstance(solver, Mapping) and set(solver) == solver_fields,
         "solver record fields",
     )
     _require(
@@ -524,6 +525,22 @@ def _validate(runtime, key, receipt, state):
             summed += np.einsum("sij,si->j", ja - jb, fa)
             law_total += np.einsum("sij,si->j", ja - jb, predicted_force)
     _close(total, summed, "complete two-sided generalized force")
+    if runtime._plan.two_native_supports:
+        net = _packed(solver["applied_with_contact"], (nv,), "integrator applied/contact load")
+        _close(
+            net,
+            data["applied"] + summed,
+            "physical load before cancellation",
+            absolute=2e-5,
+            relative=2e-5,
+        )
+        _close(
+            mass @ qacc,
+            net + data["passive"] - data["bias"],
+            "actual integrated net load",
+            absolute=2e-5,
+            relative=2e-5,
+        )
     residual = response @ output - mass @ v0 - h * (external + total)
     saved_residual = _array(solver["residual"], (nv,), "actual residual")
     _close(saved_residual, residual, "stored-Q residual binding", absolute=1e-12, relative=1e-10)

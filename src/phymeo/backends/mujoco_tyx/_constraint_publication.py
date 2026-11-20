@@ -152,6 +152,10 @@ def publish(runtime, result, index, *, native_only=False):
         )
         body1, body2 = map(int, plan.geom_ids[[geom1, geom2], 0])
         com1, com2 = result["body_com"][index, [body1, body2]]
+        # Compute both eccentric levers about the same packed contact point.
+        # The two-support receipt publishes FP64 observations of FP32 geometry.
+        if native_only and getattr(plan, "two_native_supports", False):
+            point = point.astype(np.float64)
         contacts.append(
             MuJoCoTyxNormalContact(
                 schema="mujoco-tyx-pyramidal-contact-v1",

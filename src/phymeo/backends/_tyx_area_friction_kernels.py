@@ -5,6 +5,28 @@ import tyx as tx
 from .mujoco_tyx._area_friction_layout import FRICTION_FIELDS, scratch_layout
 
 
+@tx.func
+def _sum_error(a: tx.f32, b: tx.f32, rounded: tx.f32) -> tx.f32:
+    return tx.add_rn(
+        tx.sub_rn(a, tx.sub_rn(rounded, tx.sub_rn(rounded, a))),
+        tx.sub_rn(b, tx.sub_rn(rounded, a)),
+    )
+
+
+@tx.func
+def _add_product(total: tx.vec2f, a: tx.f32, b: tx.f32) -> tx.vec2f:
+    return tx.vec2f(
+        tx.add_rn(total[0], tx.mul_rn(a, b)),
+        tx.add_rn(
+            total[1],
+            tx.add_rn(
+                _sum_error(total[0], tx.mul_rn(a, b), tx.add_rn(total[0], tx.mul_rn(a, b))),
+                tx.fma(a, b, -tx.mul_rn(a, b)),
+            ),
+        ),
+    )
+
+
 @tx.kernel
 def _solve_batch(
     capacity: tx.i32,
@@ -38,6 +60,7 @@ def _solve_batch(
     # Each lane owns an independent complete problem. All fixed padding is reset.
     # Matrices: A, Cholesky(A), actual residual Jacobian, pivot elimination copy.
     # Vectors: free, accepted, candidate, residual, direction, rhs, forward, JTF.
+    # On mode-4 success ONLY, direction becomes compensated applied+JTF (bank 4).
     # meta: status, accepted updates, trace count, line-search trials, pivot swaps.
     for w in tx.range(capacity):
         for i in range(5):
@@ -66,8 +89,11 @@ def _solve_batch(
             searches = sizes[w, 3]
             h = steps[w]
             nr = 0
-            coupled_mode = native_physical_acceleration == 2 or native_physical_acceleration == 3
-            # Independent physical-M LDL factors for modes 2/3. Never reuse A's
+            live_source_mode = (
+                native_physical_acceleration == 3 or native_physical_acceleration == 4
+            )
+            coupled_mode = native_physical_acceleration == 2 or live_source_mode
+            # Independent physical-M LDL factors for modes 2/3/4. Never reuse A's
             # Cholesky factor for native acceleration or Schur diagonals.
             m00 = 1.0
             m01 = 0.0
@@ -104,6 +130,13 @@ def _solve_batch(
                         or nr > 4 + native_limit_count
                         or nr + ns > row_capacity
                     ):
+                        meta[w, 0] = 1
+                        nr = 0
+                elif native_physical_acceleration == 4:
+                    # Two declared condim-3 supports, no joint limits: all eight
+                    # compact native edges share the same candidate area load.
+                    # This separate budget never expands the older mode gates.
+                    if nv != 2 or nr > 8 or nr + ns > row_capacity:
                         meta[w, 0] = 1
                         nr = 0
                 elif nr > 2 or nv > 2:
@@ -168,7 +201,7 @@ def _solve_batch(
                     for i in range(2):
                         if not tx.isfinite(inputs[w, 0, i]) or inputs[w, 0, i] < 0.0:
                             meta[w, 0] = 2
-                    if native_physical_acceleration == 3 and meta[w, 0] == 0:
+                    if live_source_mode and meta[w, 0] == 0:
                         # Match the native tree's physical-M factor operation by
                         # operation. Its final qacc does not use our LDL factor.
                         published_l00 = tx.sqrt(m00)
@@ -335,6 +368,40 @@ def _solve_batch(
                     # through the quantized (v-v0)/h difference. On each active
                     # face: (M + sum J^2/R)*a = b + Q(v) + sum J*aref/R.
                     # Only the new unilateral contact route uses this reduction.
+                    area_sum0 = tx.vec2f(0.0, 0.0)
+                    area_sum1 = tx.vec2f(0.0, 0.0)
+                    base_sum0 = tx.vec2f(0.0, 0.0)
+                    base_sum1 = tx.vec2f(0.0, 0.0)
+                    face_a0 = 0.0
+                    face_a1 = 0.0
+                    net_applied0 = 0.0
+                    net_applied1 = 0.0
+                    if native_physical_acceleration == 4:
+                        # Reuse the SAME rounded point forces and point Jacobians.
+                        # Preserve product and addition residuals until the net
+                        # applied+constraint sum, not just until the large Q sum.
+                        for sample in range(ns):
+                            for axis in range(3):
+                                force = contact[w, sample, 9 + axis]
+                                j0 = ja[w, sample, axis, 0] - jb[w, sample, axis, 0]
+                                j1 = ja[w, sample, axis, 1] - jb[w, sample, axis, 1]
+                                area_sum0 = _add_product(area_sum0, j0, force)
+                                area_sum1 = _add_product(area_sum1, j1, force)
+                        vectors[w, 7, 0] = tx.add_rn(area_sum0[0], area_sum0[1])
+                        vectors[w, 7, 1] = tx.add_rn(area_sum1[0], area_sum1[1])
+                        base_sum0 = _add_product(area_sum0, 1.0, source_applied[w, 0])
+                        base_sum1 = _add_product(area_sum1, 1.0, source_applied[w, 1])
+                        base_sum0 = _add_product(base_sum0, 1.0, source_passive[w, 0])
+                        base_sum1 = _add_product(base_sum1, 1.0, source_passive[w, 1])
+                        base_sum0 = _add_product(base_sum0, -1.0, source_bias[w, 0])
+                        base_sum1 = _add_product(base_sum1, -1.0, source_bias[w, 1])
+                        # Also define the no-native-row face without a different
+                        # force or integration convention.
+                        numerator_sum = _add_product(base_sum1, -ml10, base_sum0[0])
+                        numerator_sum = _add_product(numerator_sum, -ml10, base_sum0[1])
+                        face_a1 = tx.div_rn(tx.add_rn(numerator_sum[0], numerator_sum[1]), ms11)
+                        numerator_sum = _add_product(base_sum0, -m01, face_a1)
+                        face_a0 = tx.div_rn(tx.add_rn(numerator_sum[0], numerator_sum[1]), m00)
                     scalar_area_load = vectors[w, 7, 0]
                     coupled_area_load = 0.0
                     if coupled_mode:
@@ -410,7 +477,7 @@ def _solve_batch(
                         # explicit 2x2 LDL factor; A=M+hD remains the integrator.
                         b0 = inputs[w, 2, 0] - inputs[w, 0, 0] * inputs[w, 1, 0]
                         b1 = inputs[w, 2, 1] - inputs[w, 0, 1] * inputs[w, 1, 1]
-                        if native_physical_acceleration == 3:
+                        if live_source_mode:
                             # Do not reverse the lossy packed +D*v0 compensation.
                             b0 = source_applied[w, 0] + source_passive[w, 0] - source_bias[w, 0]
                             b1 = source_applied[w, 1] + source_passive[w, 1] - source_bias[w, 1]
@@ -432,11 +499,14 @@ def _solve_batch(
                         chosen_h01 = m01
                         chosen_l10 = ml10
                         chosen_s11 = ms11
-                        # Preserve mode 2's loop. Mode 3 enumerates only actual
+                        # Preserve mode 2's loop. Modes 3/4 enumerate only actual
                         # compact rows: 2^nr masks, including all-inactive; <=32
-                        # for one declared limit and <=64 for two.
+                        # for one limit, <=64 for two, <=256 for two supports.
+                        # The selected guard skips later face solves. Worst-case
+                        # mode 4 costs 256 tiny SPD solves and 2*8*256 row visits
+                        # per candidate, followed by bounded force corrections.
                         face_count = 16
-                        if native_physical_acceleration == 3:
+                        if live_source_mode:
                             face_count = 1
                             for r in range(nr):
                                 face_count = face_count * 2
@@ -447,6 +517,11 @@ def _solve_batch(
                                 h11 = m11
                                 c0 = coupled_rhs0
                                 c1 = coupled_rhs1
+                                hsum00 = tx.vec2f(m00, 0.0)
+                                hsum01 = tx.vec2f(m01, 0.0)
+                                hsum11 = tx.vec2f(m11, 0.0)
+                                csum0 = base_sum0
+                                csum1 = base_sum1
                                 bits = face
                                 for r in range(nr):
                                     if bits % 2 == 1:
@@ -458,13 +533,52 @@ def _solve_batch(
                                         h11 = h11 + j1 * (j1 / reg)
                                         c0 = c0 + j0 * (rows[w, r, 3] / reg)
                                         c1 = c1 + j1 * (rows[w, r, 3] / reg)
+                                        if native_physical_acceleration == 4:
+                                            # Recover the rounded quotient's low
+                                            # part before accumulating j*aref/R.
+                                            q0 = tx.div_rn(j0, reg)
+                                            q1 = tx.div_rn(j1, reg)
+                                            qr = tx.div_rn(rows[w, r, 3], reg)
+                                            e0 = tx.div_rn(tx.fma(-q0, reg, j0), reg)
+                                            e1 = tx.div_rn(tx.fma(-q1, reg, j1), reg)
+                                            er = tx.div_rn(tx.fma(-qr, reg, rows[w, r, 3]), reg)
+                                            hsum00 = _add_product(hsum00, j0, q0)
+                                            hsum00 = _add_product(hsum00, j0, e0)
+                                            hsum01 = _add_product(hsum01, j0, q1)
+                                            hsum01 = _add_product(hsum01, j0, e1)
+                                            hsum11 = _add_product(hsum11, j1, q1)
+                                            hsum11 = _add_product(hsum11, j1, e1)
+                                            csum0 = _add_product(csum0, j0, qr)
+                                            csum0 = _add_product(csum0, j0, er)
+                                            csum1 = _add_product(csum1, j1, qr)
+                                            csum1 = _add_product(csum1, j1, er)
                                     bits = bits // 2
+                                if native_physical_acceleration == 4:
+                                    h00 = tx.add_rn(hsum00[0], hsum00[1])
+                                    h01 = tx.add_rn(hsum01[0], hsum01[1])
+                                    h11 = tx.add_rn(hsum11[0], hsum11[1])
+                                    c0 = tx.add_rn(csum0[0], csum0[1])
+                                    c1 = tx.add_rn(csum1[0], csum1[1])
                                 if tx.isfinite(h00) and h00 > 0.0:
                                     l10 = h01 / h00
                                     s11 = h11 - h01 * l10
+                                    if native_physical_acceleration == 4:
+                                        s11 = tx.fma(-h01, l10, h11)
                                     if tx.isfinite(s11) and s11 > 0.0:
                                         a1 = (c1 - l10 * c0) / s11
                                         a0 = (c0 - h01 * a1) / h00
+                                        if native_physical_acceleration == 4:
+                                            numerator_sum = _add_product(csum1, -l10, csum0[0])
+                                            numerator_sum = _add_product(
+                                                numerator_sum, -l10, csum0[1]
+                                            )
+                                            a1 = tx.div_rn(
+                                                tx.add_rn(numerator_sum[0], numerator_sum[1]), s11
+                                            )
+                                            numerator_sum = _add_product(csum0, -h01, a1)
+                                            a0 = tx.div_rn(
+                                                tx.add_rn(numerator_sum[0], numerator_sum[1]), h00
+                                            )
                                         face_ok = 1
                                         if not tx.isfinite(a0) or not tx.isfinite(a1):
                                             face_ok = 0
@@ -473,6 +587,15 @@ def _solve_batch(
                                             slack = rows[w, r, 3] - (
                                                 row_j[w, r, 0] * a0 + row_j[w, r, 1] * a1
                                             )
+                                            if native_physical_acceleration == 4:
+                                                slack_sum = tx.vec2f(rows[w, r, 3], 0.0)
+                                                slack_sum = _add_product(
+                                                    slack_sum, -row_j[w, r, 0], a0
+                                                )
+                                                slack_sum = _add_product(
+                                                    slack_sum, -row_j[w, r, 1], a1
+                                                )
+                                                slack = tx.add_rn(slack_sum[0], slack_sum[1])
                                             if not tx.isfinite(slack):
                                                 face_ok = 0
                                             if (bits % 2 == 1 and slack < 0.0) or (
@@ -487,6 +610,8 @@ def _solve_batch(
                                             chosen_h01 = h01
                                             chosen_l10 = l10
                                             chosen_s11 = s11
+                                            face_a0 = a0
+                                            face_a1 = a1
                         if selected == 0 and meta[w, 0] == 0:
                             meta[w, 0] = 4
                         if meta[w, 0] == 0:
@@ -496,7 +621,19 @@ def _solve_batch(
                             bits = active_face
                             for r in range(nr):
                                 rows[w, r, 9] = 0.0
-                                if bits % 2 == 1:
+                                if native_physical_acceleration == 4:
+                                    # All forces come from this single face a,
+                                    # never independent row-specific solves.
+                                    slack_sum = tx.vec2f(rows[w, r, 3], 0.0)
+                                    slack_sum = _add_product(slack_sum, -row_j[w, r, 0], face_a0)
+                                    slack_sum = _add_product(slack_sum, -row_j[w, r, 1], face_a1)
+                                    raw = tx.div_rn(
+                                        tx.add_rn(slack_sum[0], slack_sum[1]), rows[w, r, 4]
+                                    )
+                                    if not tx.isfinite(raw):
+                                        meta[w, 0] = 2
+                                    rows[w, r, 9] = tx.max(0.0, raw)
+                                elif bits % 2 == 1:
                                     k00 = m00
                                     k01 = m01
                                     k11 = m11
@@ -606,6 +743,162 @@ def _solve_batch(
                                         matrices[w, 2, i, j] = (
                                             matrices[w, 2, i, j] + ji * row_j[w, r, j] / reg
                                         )
+                    if native_physical_acceleration == 4:
+                        # Evaluate the actual stored point/row forces together.
+                        # Q and (applied+Q) are independently rounded from the
+                        # same compensated sum; never add applied to rounded Q.
+                        # Probe zero is the unchanged force vector. A correction
+                        # changes exactly one positive row by one FP32 neighbor.
+                        polish_active = 1
+                        polished_score = 0.0
+                        for sweep in range(4):
+                            if polish_active == 1:
+                                base_score = 0.0
+                                best_score = 0.0
+                                best_row = -1
+                                best_force = 0.0
+                                best_q0 = 0.0
+                                best_q1 = 0.0
+                                best_net0 = 0.0
+                                best_net1 = 0.0
+                                for probe in range(1 + 2 * nr):
+                                    if probe == 0 or base_score > 1.0:
+                                        probe_row = -1
+                                        probe_force = 0.0
+                                        probe_valid = 1
+                                        if probe > 0:
+                                            probe_row = (probe - 1) // 2
+                                            old_force = rows[w, probe_row, 9]
+                                            if old_force <= 0.0:
+                                                probe_valid = 0
+                                            else:
+                                                # f*2^-24 lies in [half,one) ULP.
+                                                # A half-ULP tie can return the same
+                                                # value. Double the offset in that
+                                                # direction to reach its neighbor.
+                                                spacing = tx.max(
+                                                    1.401298464324817e-45,
+                                                    tx.mul_rn(old_force, 5.960464477539063e-8),
+                                                )
+                                                if probe % 2 == 1:
+                                                    probe_force = tx.sub_rn(old_force, spacing)
+                                                    if probe_force == old_force:
+                                                        probe_force = tx.sub_rn(
+                                                            old_force, tx.add_rn(spacing, spacing)
+                                                        )
+                                                else:
+                                                    probe_force = tx.add_rn(old_force, spacing)
+                                                    if probe_force == old_force:
+                                                        probe_force = tx.add_rn(
+                                                            old_force, tx.add_rn(spacing, spacing)
+                                                        )
+                                                if (
+                                                    not tx.isfinite(probe_force)
+                                                    or probe_force < 0.0
+                                                    or probe_force == old_force
+                                                ):
+                                                    probe_valid = 0
+                                        if probe_valid == 1:
+                                            load_sum0 = area_sum0
+                                            load_sum1 = area_sum1
+                                            for r in range(nr):
+                                                force = rows[w, r, 9]
+                                                if r == probe_row:
+                                                    force = probe_force
+                                                load_sum0 = _add_product(
+                                                    load_sum0, row_j[w, r, 0], force
+                                                )
+                                                load_sum1 = _add_product(
+                                                    load_sum1, row_j[w, r, 1], force
+                                                )
+                                            q0 = tx.add_rn(load_sum0[0], load_sum0[1])
+                                            q1 = tx.add_rn(load_sum1[0], load_sum1[1])
+                                            net_sum0 = _add_product(
+                                                load_sum0, 1.0, source_applied[w, 0]
+                                            )
+                                            net_sum1 = _add_product(
+                                                load_sum1, 1.0, source_applied[w, 1]
+                                            )
+                                            net0 = tx.add_rn(net_sum0[0], net_sum0[1])
+                                            net1 = tx.add_rn(net_sum1[0], net_sum1[1])
+                                            # Exactly the native tail after the new
+                                            # rounded net-applied publication point.
+                                            f0 = net0 + source_passive[w, 0]
+                                            f0 = f0 - source_bias[w, 0]
+                                            f1 = net1 + source_passive[w, 1]
+                                            f1 = f1 - source_bias[w, 1]
+                                            forward0 = f0 / published_l00
+                                            forward1 = (
+                                                f1 - published_l10 * forward0
+                                            ) / published_l11
+                                            a1 = forward1 / published_l11
+                                            a0 = (forward0 - published_l10 * a1) / published_l00
+                                            score = 0.0
+                                            if (
+                                                not tx.isfinite(q0)
+                                                or not tx.isfinite(q1)
+                                                or not tx.isfinite(a0)
+                                                or not tx.isfinite(a1)
+                                            ):
+                                                probe_valid = 0
+                                            for r in range(nr):
+                                                force = rows[w, r, 9]
+                                                if r == probe_row:
+                                                    force = probe_force
+                                                defect_sum = tx.vec2f(-rows[w, r, 3], 0.0)
+                                                defect_sum = _add_product(
+                                                    defect_sum, row_j[w, r, 0], a0
+                                                )
+                                                defect_sum = _add_product(
+                                                    defect_sum, row_j[w, r, 1], a1
+                                                )
+                                                defect_sum = _add_product(
+                                                    defect_sum, rows[w, r, 4], force
+                                                )
+                                                gradient = tx.add_rn(defect_sum[0], defect_sum[1])
+                                                violation = tx.abs(gradient)
+                                                if force == 0.0:
+                                                    violation = tx.max(0.0, -gradient)
+                                                score = tx.max(
+                                                    score,
+                                                    violation
+                                                    / (
+                                                        1e-5
+                                                        * tx.max(1.0, tx.abs(rows[w, r, 4] * force))
+                                                    ),
+                                                )
+                                                score = tx.max(
+                                                    score,
+                                                    -gradient
+                                                    / (2e-5 * (1.0 + tx.abs(rows[w, r, 3]))),
+                                                )
+                                                if not tx.isfinite(gradient):
+                                                    probe_valid = 0
+                                            if probe == 0:
+                                                base_score = score
+                                                if probe_valid == 0:
+                                                    meta[w, 0] = 2
+                                            if probe_valid == 1 and (
+                                                probe == 0 or score < best_score
+                                            ):
+                                                best_score = score
+                                                best_row = probe_row
+                                                best_force = probe_force
+                                                best_q0 = q0
+                                                best_q1 = q1
+                                                best_net0 = net0
+                                                best_net1 = net1
+                                if best_row >= 0:
+                                    rows[w, best_row, 9] = best_force
+                                vectors[w, 7, 0] = best_q0
+                                vectors[w, 7, 1] = best_q1
+                                net_applied0 = best_net0
+                                net_applied1 = best_net1
+                                polished_score = best_score
+                                if best_score <= 1.0 or best_row < 0:
+                                    polish_active = 0
+                        if polished_score > 1.0:
+                            native_ok = 0
                     if nr > 0:
                         if native_physical_acceleration == 1:
                             # Correct rounding of the analytical face solution in
@@ -651,8 +944,12 @@ def _solve_batch(
                             # Use the physical Schur diagonal R+J M^-1 J; rebuild
                             # both generalized components in publication order.
                             force_sweeps = 2
-                            if native_physical_acceleration == 3:
+                            if live_source_mode:
                                 force_sweeps = 8
+                            if native_physical_acceleration == 4:
+                                # Only the bounded neighbor search above may alter
+                                # a mode-4 face force, using its true net load.
+                                force_sweeps = 0
                             for sweep in range(force_sweeps):
                                 for r in range(nr):
                                     f0 = (
@@ -667,7 +964,7 @@ def _solve_batch(
                                     )
                                     a1 = (f1 - ml10 * f0) / ms11
                                     a0 = (f0 - m01 * a1) / m00
-                                    if native_physical_acceleration == 3:
+                                    if live_source_mode:
                                         # apply_load stores (applied+Q), then the
                                         # native tail adds passive and subtracts
                                         # bias. Preserve those FP32 boundaries.
@@ -690,7 +987,7 @@ def _solve_batch(
                                         + j0 * a0
                                         + j1 * a1
                                     )
-                                    if native_physical_acceleration == 3:
+                                    if live_source_mode:
                                         projected = j0 * a0 + j1 * a1
                                         gradient = (
                                             projected + rows[w, r, 4] * old_force - rows[w, r, 3]
@@ -701,7 +998,7 @@ def _solve_batch(
                                     needs_correction = defect > 1e-5 * tx.max(
                                         1.0, tx.abs(rows[w, r, 4] * old_force)
                                     )
-                                    if native_physical_acceleration == 3 and gradient < (
+                                    if live_source_mode and gradient < (
                                         -2e-5 * (1.0 + tx.abs(rows[w, r, 3]))
                                     ):
                                         needs_correction = True
@@ -714,7 +1011,7 @@ def _solve_batch(
                                         else:
                                             force = tx.max(0.0, old_force - gradient / diagonal)
                                             if (
-                                                native_physical_acceleration == 3
+                                                live_source_mode
                                                 and force == old_force
                                                 and old_force > 0.0
                                             ):
@@ -751,13 +1048,17 @@ def _solve_batch(
                             )
                             vectors[w, 5, 1] = (f1 - ml10 * f0) / ms11
                             vectors[w, 5, 0] = (f0 - m01 * vectors[w, 5, 1]) / m00
-                            if native_physical_acceleration == 3:
+                            if live_source_mode:
                                 # Final eligibility uses the same RHS grouping
                                 # and Cholesky solves as the published qacc.
                                 f0 = source_applied[w, 0] + vectors[w, 7, 0]
+                                if native_physical_acceleration == 4:
+                                    f0 = net_applied0
                                 f0 = f0 + source_passive[w, 0]
                                 f0 = f0 - source_bias[w, 0]
                                 f1 = source_applied[w, 1] + vectors[w, 7, 1]
+                                if native_physical_acceleration == 4:
+                                    f1 = net_applied1
                                 f1 = f1 + source_passive[w, 1]
                                 f1 = f1 - source_bias[w, 1]
                                 forward0 = f0 / published_l00
@@ -789,7 +1090,7 @@ def _solve_batch(
                             gradient = compliance_term - rows[w, r, 3]
                             for i in range(nv):
                                 gradient = gradient + row_j[w, r, i] * vectors[w, 5, i]
-                            if native_physical_acceleration == 3:
+                            if live_source_mode:
                                 projected = 0.0
                                 for i in range(nv):
                                     projected = projected + row_j[w, r, i] * vectors[w, 5, i]
@@ -803,10 +1104,12 @@ def _solve_batch(
                                 1.0, tx.abs(compliance_term)
                             ):
                                 native_ok = 0
-                            if native_physical_acceleration == 3 and gradient < (
+                            if live_source_mode and gradient < (
                                 -2e-5 * (1.0 + tx.abs(rows[w, r, 3]))
                             ):
                                 native_ok = 0
+                    actual_residual0 = 0.0
+                    actual_residual1 = 0.0
                     norm2 = 0.0
                     for i in range(nv):
                         value = -h * vectors[w, 7, i]
@@ -818,7 +1121,7 @@ def _solve_batch(
                                 - inputs[w, 0, i] * inputs[w, 1, i]
                                 + vectors[w, 7, i]
                             )
-                            if native_physical_acceleration == 3:
+                            if live_source_mode:
                                 physical_load = source_applied[w, i] + vectors[w, 7, i]
                                 physical_load = physical_load + source_passive[w, i]
                                 physical_load = physical_load - source_bias[w, i]
@@ -834,6 +1137,33 @@ def _solve_batch(
                                 )
                             if not tx.isfinite(matrices[w, 2, i, j]):
                                 meta[w, 0] = 2
+                        if native_physical_acceleration == 4:
+                            # Newton follows the stable face equation M*a_face,
+                            # not a cancellation-prone reconstructed rounded Q.
+                            # The actual rounded publication gets its OWN gates.
+                            momentum = tx.vec2f(0.0, 0.0)
+                            face_load = tx.vec2f(0.0, 0.0)
+                            for j in range(nv):
+                                momentum = _add_product(
+                                    momentum,
+                                    matrices[w, 0, i, j],
+                                    vectors[w, 2, j] - inputs[w, 1, j],
+                                )
+                            face_load = _add_product(face_load, mass[w, i, 0], face_a0)
+                            face_load = _add_product(face_load, mass[w, i, 1], face_a1)
+                            residual = _add_product(momentum, -h, face_load[0])
+                            residual = _add_product(residual, -h, face_load[1])
+                            value = tx.add_rn(residual[0], residual[1])
+                            physical_load = net_applied0
+                            if i == 1:
+                                physical_load = net_applied1
+                            physical_load = physical_load + source_passive[w, i]
+                            physical_load = physical_load - source_bias[w, i]
+                            actual = _add_product(momentum, -h, physical_load)
+                            if i == 0:
+                                actual_residual0 = tx.add_rn(actual[0], actual[1])
+                            else:
+                                actual_residual1 = tx.add_rn(actual[0], actual[1])
                         vectors[w, 3, i] = value
                         for j in range(i):
                             value = value - matrices[w, 1, i, j] * vectors[w, 6, j]
@@ -876,6 +1206,25 @@ def _solve_batch(
                                 meta[w, 0] = 2
                             if tx.abs(value) > 1e-5 * (1.0 + tx.abs(vectors[w, 2, i])):
                                 velocity_ok = 0
+                    if native_physical_acceleration == 4:
+                        # Preserve the old actual-load norm and per-component
+                        # A^-1 residual bounds independently of the face norm.
+                        u0 = actual_residual0 / matrices[w, 1, 0, 0]
+                        u1 = (actual_residual1 - matrices[w, 1, 1, 0] * u0) / matrices[w, 1, 1, 1]
+                        actual_norm2 = u0 * u0 + u1 * u1
+                        correction1 = u1 / matrices[w, 1, 1, 1]
+                        correction0 = (u0 - matrices[w, 1, 1, 0] * correction1) / matrices[
+                            w, 1, 0, 0
+                        ]
+                        if (
+                            not tx.isfinite(actual_norm2)
+                            or actual_norm2 > scalars[w, 1] * scalars[w, 1]
+                            or not tx.isfinite(correction0)
+                            or not tx.isfinite(correction1)
+                            or tx.abs(correction0) > 1e-5 * (1.0 + tx.abs(vectors[w, 2, 0]))
+                            or tx.abs(correction1) > 1e-5 * (1.0 + tx.abs(vectors[w, 2, 1]))
+                        ):
+                            velocity_ok = 0
                     if native_physical_acceleration == 1 and nr > 0:
                         # Condensation can mask a velocity error at stiff native
                         # edges. Recheck the original momentum equation using
@@ -908,12 +1257,23 @@ def _solve_batch(
                         a0 = (f0 - m01 * a1) / m00
                         uncondensed0 = vectors[w, 3, 0]
                         uncondensed1 = vectors[w, 3, 1]
+                        if native_physical_acceleration == 4:
+                            uncondensed0 = actual_residual0
+                            uncondensed1 = actual_residual1
                         for r in range(nr):
                             j0 = row_j[w, r, 0]
                             j1 = row_j[w, r, 1]
                             at_v = tx.max(
                                 0.0, (rows[w, r, 3] - (j0 * a0 + j1 * a1)) / rows[w, r, 4]
                             )
+                            if native_physical_acceleration == 4:
+                                slack_sum = tx.vec2f(rows[w, r, 3], 0.0)
+                                slack_sum = _add_product(slack_sum, -j0, a0)
+                                slack_sum = _add_product(slack_sum, -j1, a1)
+                                at_v = tx.max(
+                                    0.0,
+                                    tx.div_rn(tx.add_rn(slack_sum[0], slack_sum[1]), rows[w, r, 4]),
+                                )
                             force_delta = at_v - rows[w, r, 9]
                             # Same force-unit envelope as the native receipt's
                             # physical-M force law; row cancellation cannot hide it.
@@ -960,6 +1320,12 @@ def _solve_batch(
                         if trial == 1:
                             meta[w, 1] = meta[w, 1] + 1
                         if done == 1:
+                            if native_physical_acceleration == 4:
+                                # Bank 4 has no remaining Newton-direction role.
+                                # Publish the SAME net used by all actual gates;
+                                # passive and bias remain owned by the native tail.
+                                vectors[w, 4, 0] = net_applied0
+                                vectors[w, 4, 1] = net_applied1
                             for j in range(3 + 2 * packed_width):
                                 trace[w, evaluation + 1, j] = trace[w, evaluation, j]
                             for j in range(4):
@@ -1059,13 +1425,21 @@ def solve_batch(
     Mode 3's explicit ``native_limit_count`` is 1 (default) or 2, with at most
     one active side per declared limit: four contact edges plus that count,
     at most five/six rows and 32/64 actual active-set masks respectively.
+    Mode 4 independently admits two condim-3 supports without limits, up to
+    eight native rows and 256 actual masks. All rows participate in one physical
+    solve with the same candidate area load. Its worst-case face search is
+    O(nr * 2**nr) per candidate; finding a face skips all later face solves.
+    Mode 4 follows a compensated face residual while separately checking actual
+    rounded loads and motion. On success, vector bank 4 stores compensated
+    applied+constraint (excluding passive/bias); bank 7 still stores constraint
+    alone. Its owner must publish bank 4 directly, never add applied to bank 7.
     Each candidate's area load eliminates the
     native unilateral rows in physical acceleration space, without modifying
     native R, aref, or force units. The owner
     supplies all compact rows and enforces its combined area/native capacity.
     The default retains the existing undamped joint-row route.
 
-    Mode 3 requires ``native_source_forces=(applied, passive, bias)`` from
+    Modes 3/4 require ``native_source_forces=(applied, passive, bias)`` from
     the same live entry. They are read-only inputs for force correction and
     eligibility against the physical acceleration produced by the native tail.
     """
@@ -1074,14 +1448,16 @@ def solve_batch(
     if type(native_physical_acceleration) not in (
         int,
         bool,
-    ) or native_physical_acceleration not in (0, 1, 2, 3):
-        raise ValueError("native_physical_acceleration must be mode 0, 1, 2, or 3")
+    ) or native_physical_acceleration not in (0, 1, 2, 3, 4):
+        raise ValueError("native_physical_acceleration must be mode 0, 1, 2, 3, or 4")
     if native_physical_acceleration and native_rows is None:
         raise ValueError("physical native acceleration requires native row storage")
-    if native_physical_acceleration == 3 and native_source_forces is None:
-        raise ValueError("mode 3 requires live native applied/passive/bias buffers")
-    if native_physical_acceleration != 3 and native_source_forces is not None:
-        raise ValueError("native_source_forces is supported only in mode 3")
+    if native_physical_acceleration in (3, 4) and native_source_forces is None:
+        raise ValueError(
+            f"mode {native_physical_acceleration} requires live native applied/passive/bias buffers"
+        )
+    if native_physical_acceleration not in (3, 4) and native_source_forces is not None:
+        raise ValueError("native_source_forces is supported only in mode 3 or 4")
     if type(native_limit_count) is not int or native_limit_count not in (1, 2):
         raise ValueError("native_limit_count must be integer 1 or 2")
     if native_physical_acceleration != 3 and native_limit_count != 1:

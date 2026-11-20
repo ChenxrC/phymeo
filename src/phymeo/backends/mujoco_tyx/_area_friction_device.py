@@ -53,6 +53,12 @@ def solve_contact(device, old):
     )
     device.counts["completed_kernels"] += 1
     coupled_limit = device.plan.coupled_damped_contacts and device.plan.nlimit > 0
+    coupled_supports = device.plan.two_native_supports
+    native_mode = device.plan.damped_contact_dofs
+    if coupled_limit:
+        native_mode = 3
+    elif coupled_supports:
+        native_mode = 4
     solve_batch(
         device.nworld,
         device.nworld,
@@ -62,9 +68,9 @@ def solve_contact(device, old):
         if device.plan.nfriction or device.plan.nlimit or device.plan.damped_contact_dofs
         else None,
         native_source_forces=(device.applied, device.passive, device.bias)
-        if coupled_limit
+        if coupled_limit or coupled_supports
         else None,
-        native_physical_acceleration=3 if coupled_limit else device.plan.damped_contact_dofs,
+        native_physical_acceleration=native_mode,
         native_limit_count=device.plan.nlimit if coupled_limit else 1,
         mode=device.mode,
     )
@@ -83,6 +89,7 @@ def solve_contact(device, old):
         device.total_applied,
         device.smooth_acc,
         device.v[1 - old],
+        int(coupled_supports),
         device.status,
         mode=device.mode,
     )
@@ -128,6 +135,8 @@ def download(device, result):
             for name in ("normal_rows", "normal_jacobian", "contact_map", "contact_wrench"):
                 result[name] = device._get(getattr(device, name))
             result["contact_J"] = device._get(device.contact_jacobian)
+        if device.plan.two_native_supports:
+            result["applied_with_contact"] = device._get(device.total_applied)
         result["constraint"] = device._get(device.mixed_constraint)
         result["smooth_acceleration"] = device._get(device.smooth_acc)
     return result

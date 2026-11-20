@@ -73,17 +73,20 @@ def _same_records(actual, expected):
             _require(equal, "raw/decoded record binding: " + field.name)
 
 
-def _source_geometry(plan, row, dynamics):
-    """Bind the sole plane/sphere candidate to saved entry body poses.
+def _source_geometry(plan, row, dynamics, *, slot=0):
+    """Bind one source plane/sphere candidate to saved entry body poses.
 
     This is bounded primitive substitution, not native FK. The device composes
     packed local geoms with the already saved body poses; FP64 substitution is
     bounded for ordinary FP32 accumulation/FMA, including detection boundaries.
     Geometry IDs need not be numerically ordered: slot order is native type order.
     """
-    _, feature, plane, sphere = map(int, plan.slot_ids[0])
+    pair, feature, plane, sphere = map(int, plan.slot_ids[slot])
     _require(
-        feature == 0 and tuple(plan.geom_ids[[plane, sphere], 1]) == (0, 2),
+        0 <= pair < plan.npair
+        and feature == 0
+        and tuple(plan.pair_ids[pair]) == (plane, sphere, slot, 1)
+        and tuple(plan.geom_ids[[plane, sphere], 1]) == (0, 2),
         "source plane/sphere slot",
     )
     eps = np.finfo(np.float32).eps
@@ -111,8 +114,8 @@ def _source_geometry(plan, row, dynamics):
     distance_scale = radius + np.abs(normal) @ (ps + cs) + np.abs(delta) @ rs[:, 2]
     gap_error = 32 * eps * distance_scale + tiny
     _require(np.isfinite(distance) and np.isfinite(gap_error), "source geometric range")
-    margin, gap = map(float, plan.pair_law[0, :2])
-    include = float(np.float32(plan.pair_law[0, 0] - plan.pair_law[0, 1]))
+    margin, gap = map(float, plan.pair_law[pair, :2])
+    include = float(np.float32(plan.pair_law[pair, 0] - plan.pair_law[pair, 1]))
     detected = bool(row[0])
     # The true device comparison can lie on either side only within the forward
     # error envelope. Never require FP64 and FP32 branch choices to agree there.
@@ -121,6 +124,7 @@ def _source_geometry(plan, row, dynamics):
         "source native detection",
     )
     if not detected:
+        _require(np.all(row == 0), "absent native candidate is cleared")
         return
     _require(abs(float(row[2]) - distance) <= gap_error, "source native distance")
     _require(row[21] == include and row[22] == margin and row[23] == gap, "source native margins")
@@ -158,9 +162,9 @@ def _source_geometry(plan, row, dynamics):
     _require(matches, "source native tangent frame")
 
 
-def _source_law(plan, row, h):
-    """Reconstruct the native pyramidal coefficients from compiled pair law."""
-    law = plan.pair_law[0].astype(np.float64)
+def _source_law(plan, row, h, *, pair=0):
+    """Reconstruct the native pyramidal coefficients from its compiled pair law."""
+    law = plan.pair_law[pair].astype(np.float64)
     _, _, invweight, ref0, ref1, raw_min, raw_max, width, midpoint, power = law[:10]
     minimum, minimp, maximp = law[10:13]
     dmin, dmax = np.clip((raw_min, raw_max), minimp, maximp)
@@ -184,7 +188,7 @@ def _source_law(plan, row, h):
         else -ref0 / max(minimum, dmax * dmax)
     )
     damping = 2 / max(minimum, dmax * ref0) if ref1 > 0 else -ref1 / max(minimum, dmax)
-    mu = float(plan.pair_friction[0, 0])
+    mu = float(plan.pair_friction[pair, 0])
     regularization = max(minimum, (1 - impedance) * invweight * (1 + mu * mu) / impedance)
     tangent_r = regularization / max(minimum, plan.impratio)
     scaled_mu = mu * np.sqrt(tangent_r / regularization)
@@ -215,9 +219,9 @@ def validate(runtime, raw, contacts, constraints, dynamics, qacc, h, *, output_v
     """Return stored and independent-law native generalized loads.
 
     Scope is one plane/sphere condim=3 pair on one damped scalar joint
-    or the explicitly admitted two-scalar coupled route, optionally with one
-    or two distinct finite joint limits. No native pair is
-    inferred from an area pair or from receipt fields.
+    or the admitted two-scalar route with one or two native pairs. Joint limits
+    remain confined to the single-pair route. No native pair is inferred from
+    an area pair or from receipt fields.
     The physical-M row law intentionally uses qacc, not integration acceleration.
     """
     plan = runtime._plan
@@ -225,10 +229,14 @@ def validate(runtime, raw, contacts, constraints, dynamics, qacc, h, *, output_v
         enabled(plan)
         and plan.damped_contact_dofs in (1, 2)
         and plan.nv == plan.nq == plan.damped_contact_dofs
-        and plan.npair == plan.nslot == 1
+        and plan.npair == plan.nslot
+        and (
+            plan.nslot == 1
+            or (plan.nslot == 2 and plan.damped_contact_dofs == 2 and plan.nlimit == 0)
+        )
         and plan.nfriction == 0
         and (plan.nlimit == 0 or (plan.damped_contact_dofs == 2 and plan.nlimit in (1, 2)))
-        and int(plan.pair_condim[0]) == 3,
+        and np.all(plan.pair_condim[: plan.npair] == 3),
         "unsupported native geometry scope",
     )
     _require(isinstance(raw, Mapping) and set(raw) == RAW_FIELDS, "raw native fields")
@@ -250,7 +258,7 @@ def validate(runtime, raw, contacts, constraints, dynamics, qacc, h, *, output_v
                 np.array_equal(value, value.astype(np.float32).astype(np.float64)),
                 "decoded native FP32 field: " + name,
             )
-    _require(np.array_equal(raw["slot_ids"], plan.slot_ids[:1]), "source slot identity")
+    _require(np.array_equal(raw["slot_ids"], plan.slot_ids[: plan.nslot]), "source slot identity")
     names = {"candidate_rows": "normal_rows", "candidate_jacobian": "normal_jacobian"}
     replay = {
         names.get(name, name): (value.astype(np.float32) if name in names else value)[None]
@@ -278,7 +286,13 @@ def validate(runtime, raw, contacts, constraints, dynamics, qacc, h, *, output_v
             "complete nonoverlapping source limit rows",
         )
     decoded_contacts, decoded_rows, _ = publish_constraints(runtime, replay, 0, native_only=True)
-    _source_geometry(plan, raw["candidate_rows"][0], dynamics)
+    for slot in range(plan.nslot):
+        _source_geometry(plan, raw["candidate_rows"][slot], dynamics, slot=slot)
+        if not raw["candidate_rows"][slot, 0]:
+            _require(
+                np.all(raw["candidate_jacobian"][slot] == 0),
+                "absent native normal Jacobian is cleared",
+            )
     _same_records(contacts, decoded_contacts)
     _same_records(constraints, decoded_rows)
     _require(np.all(raw["efc_J"][:, plan.nv :] == 0), "native Jacobian padding")
@@ -304,7 +318,16 @@ def validate(runtime, raw, contacts, constraints, dynamics, qacc, h, *, output_v
             predicted_total += row.jacobian * predicted
     else:
         _require(not limit_rows, "no undeclared limit rows")
-    for ci, contact in enumerate(contacts):
+    detected_slots = np.flatnonzero(raw["candidate_rows"][: plan.nslot, 0])
+    for ci, (slot, contact) in enumerate(zip(detected_slots, contacts, strict=True)):
+        pair, feature, geom1, geom2 = map(int, plan.slot_ids[slot])
+        _require(
+            contact.geometry_ids == (geom1, geom2)
+            and contact.body_ids == tuple(map(int, plan.geom_ids[[geom1, geom2], 0]))
+            and contact.feature_index == feature
+            and int(raw["contact_map"][ci, 0]) == slot,
+            "source compact contact/slot identity",
+        )
         ba, bb = contact.body_ids
         point, frame = contact.position, contact.frame
         _close(frame @ frame.T, np.eye(3), "native contact frame")
@@ -324,7 +347,7 @@ def validate(runtime, raw, contacts, constraints, dynamics, qacc, h, *, output_v
         )
         _close(contact.jacobian, expected_j, "same-entry native point Jacobian")
         _close(
-            raw["candidate_jacobian"][0, : plan.nv],
+            raw["candidate_jacobian"][slot, : plan.nv],
             contact.jacobian[0],
             "candidate normal Jacobian",
         )
@@ -333,24 +356,27 @@ def validate(runtime, raw, contacts, constraints, dynamics, qacc, h, *, output_v
             float(contact.jacobian[0] @ dynamics.input_v),
             "native normal entry velocity",
         )
-        include = float(np.float32(plan.pair_law[0, 0] - plan.pair_law[0, 1]))
+        include = float(np.float32(plan.pair_law[pair, 0] - plan.pair_law[pair, 1]))
         _require(contact.include_margin == include, "source include margin")
         _require(contact.active == (contact.distance < include), "native activity")
-        _require(contact.distance <= float(plan.pair_law[0, 0]), "native detection margin")
+        _require(contact.distance <= float(plan.pair_law[pair, 0]), "native detection margin")
         # Native joint rows precede ground rows; they never contribute to the
         # contact wrench or consume a pyramid edge index.
         rows = tuple(row for row in ground_rows if row.source_id == ci)
         _require(len(rows) == (4 if contact.active else 0), "complete ground pyramid")
         loads = np.zeros(4)
+        contact_total, contact_scale = np.zeros(plan.nv), np.zeros(plan.nv)
         for edge, row in enumerate(rows):
             _require(
-                row.side_or_edge == edge and row.geometry_slot == 0 and row.dof == -1,
+                row.side_or_edge == edge and row.geometry_slot == slot and row.dof == -1,
                 "source ground edge identity",
             )
             component, sign = edge // 2 + 1, 1 if edge % 2 == 0 else -1
             jacobian = (
                 contact.jacobian[0]
-                + sign * float(plan.pair_friction[0, component - 1]) * contact.jacobian[component]
+                + sign
+                * float(plan.pair_friction[pair, component - 1])
+                * contact.jacobian[component]
             )
             _close(row.jacobian, jacobian, "pyramid edge Jacobian")
             _require(
@@ -358,16 +384,71 @@ def validate(runtime, raw, contacts, constraints, dynamics, qacc, h, *, output_v
             )
             _require(row.lower == 0 and row.upper is None, "native unilateral bound")
             _close(row.velocity, float(row.jacobian @ dynamics.input_v), "native entry velocity")
-            aref, regularization = _source_law(plan, row, h)
+            aref, regularization = _source_law(plan, row, h, pair=pair)
             predicted = max(0.0, (aref - float(row.jacobian @ qacc)) / regularization)
             _close(
                 row.force, predicted, "native physical-M force law", absolute=0.002, relative=0.002
             )
-            total += row.jacobian * row.force
+            contribution = row.jacobian * row.force
+            total += contribution
+            contact_total += contribution
+            contact_scale += np.abs(contribution)
             predicted_total += row.jacobian * predicted
             loads[edge] = row.force
         wrench = np.zeros(6)
         wrench[0] = loads.sum()
-        wrench[1:3] = plan.pair_friction[0, :2] * (loads[::2] - loads[1::2])
+        wrench[1:3] = plan.pair_friction[pair, :2] * (loads[::2] - loads[1::2])
         _close(contact.wrench_contact_frame, wrench, "pyramid decoded wrench")
+        # Independently shift each pair's reconstructed force to both body COMs.
+        # Bound cancellation by operand magnitudes, not just the resulting torque
+        # or generalized sum; opposite supports may cancel almost exactly.
+        force, couple = frame.T @ wrench[:3], frame.T @ wrench[3:]
+        force_scale = np.abs(frame.T) @ np.abs(wrench[:3])
+        eps = np.finfo(np.float32).eps
+        _close(
+            contact.force_on_geometry1_world,
+            -force,
+            "source force on geometry1",
+            absolute=2e-6 + 64 * eps * force_scale,
+        )
+        _close(
+            contact.force_on_geometry2_world,
+            force,
+            "source force on geometry2",
+            absolute=2e-6 + 64 * eps * force_scale,
+        )
+        body_wrenches, body_bounds = [], []
+        for body, sign, actual in (
+            (ba, -1, contact.wrench_on_body1_world),
+            (bb, 1, contact.wrench_on_body2_world),
+        ):
+            lever = point - dynamics.body_com[body]
+            world = sign * np.r_[force, couple + np.cross(lever, force)]
+            torque_scale = (
+                np.linalg.norm(point) + np.linalg.norm(dynamics.body_com[body])
+            ) * np.linalg.norm(force_scale) + np.linalg.norm(couple)
+            bound = 2e-6 + 64 * eps * np.r_[force_scale, np.full(3, torque_scale)]
+            _close(actual, world, "source eccentric body wrench", absolute=bound)
+            body_wrenches.append(world)
+            body_bounds.append(bound)
+        generalized = sum(
+            (
+                dynamics.jacobian_com[body].T @ world
+                for body, world in zip((ba, bb), body_wrenches, strict=True)
+            ),
+            np.zeros(plan.nv),
+        )
+        generalized_bound = sum(
+            (
+                np.abs(dynamics.jacobian_com[body]).T @ bound
+                for body, bound in zip((ba, bb), body_bounds, strict=True)
+            ),
+            np.zeros(plan.nv),
+        )
+        _close(
+            contact_total,
+            generalized,
+            "source contact generalized wrench",
+            absolute=2e-6 + 64 * eps * contact_scale + generalized_bound,
+        )
     return total, predicted_total

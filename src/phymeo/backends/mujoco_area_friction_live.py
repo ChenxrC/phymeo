@@ -190,8 +190,23 @@ def publish(runtime, result, index):
                 )
             )
         )
+    net_load = {}
+    if runtime._plan.two_native_supports:
+        applied_with_contact = result["applied_with_contact"][index, :n]
+        _require(
+            np.array_equal(applied_with_contact, vectors[4, :n])
+            and np.allclose(
+                applied_with_contact,
+                result["applied"][index, :n].astype(float) + aggregate,
+                atol=2e-5,
+                rtol=2e-5,
+            ),
+            "integrator applied load from external force and individual contacts",
+        )
+        net_load["applied_with_contact"] = _frozen(applied_with_contact)
     solver = MappingProxyType(
         dict(
+            **net_load,
             schema=solver_schema(runtime._plan),
             law=LAW,
             precision=PRECISION,

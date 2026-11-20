@@ -18,6 +18,7 @@ def apply_load(
     total_applied: tx.ndarray(tx.f32, 2),
     smooth_acc: tx.ndarray(tx.f32, 2),
     candidate_v: tx.ndarray(tx.f32, 2),
+    compensated_total: tx.i32,
     status: tx.ndarray(tx.i32, 1),
 ):
     for w in tx.range(count):
@@ -32,7 +33,12 @@ def apply_load(
                 candidate_v[w, d] = solver_vectors[w, 1, d]
                 value = solver_vectors[w, 7, d]
                 generalized[w, d] = value
-                total_applied[w, d] = applied[w, d] + value
+                if compensated_total != 0:
+                    # The coupled solver summed external and individual contact
+                    # terms before rounding, and kept the joint load separately.
+                    total_applied[w, d] = solver_vectors[w, 4, d]
+                else:
+                    total_applied[w, d] = applied[w, d] + value
                 smooth_acc[w, d] = (solver_vectors[w, 0, d] - input_v[w, d]) / h
                 if not tx.isfinite(value) or not tx.isfinite(total_applied[w, d]):
                     status[w] = 8

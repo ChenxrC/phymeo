@@ -598,7 +598,9 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                             else "area-friction-cuda-damped-scalar-support-v1"
                         ),
                         native_contact_operator="M",
-                        native_contact_scope="single-condim3-plane-sphere",
+                        native_contact_scope="two-condim3-plane-sphere"
+                        if self._plan.npair == 2
+                        else "single-condim3-plane-sphere",
                     )
             self._capabilities = MappingProxyType(info)
 

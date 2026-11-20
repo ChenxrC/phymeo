@@ -32,8 +32,14 @@ class _AreaPlan:
         return self.damped_contact_dofs == 2
 
     @property
+    def two_native_supports(self):
+        return self.coupled_damped_contacts and self.npair == 2
+
+    @property
     def coupled_contact_variant(self):
         """Version suffix shared by the coupled solver, checkpoint and capability names."""
+        if self.two_native_supports:
+            return "two-supports-v1"
         return ("v1", "limit-v1", "two-limits-v1")[self.nlimit]
 
     def __getattr__(self, name):
@@ -136,17 +142,18 @@ def compile_area_plan(mj, model, pairs, friction_laws=()):
         if not np.isfinite(model.dof_damping).all() or np.any(model.dof_damping < 0):
             raise ValueError("live area friction requires nonnegative finite damping")
     base = compile_constraint_model(mj, model, remaining)
-    if (
-        friction_laws
-        and damped_contact_dofs
-        and not (
-            len(remaining) == 1
-            and tuple(model.geom_type[list(remaining[0])])
-            == (mj.mjtGeom.mjGEOM_PLANE, mj.mjtGeom.mjGEOM_SPHERE)
-            and base.pair_condim[0] == 3
-        )
-    ):
-        raise ValueError("live damped contact requires one native condim-3 plane/sphere support")
+    if friction_laws and damped_contact_dofs:
+        max_pairs = 2 if damped_contact_dofs == 2 and not limit_count else 1
+        plane_sphere = (mj.mjtGeom.mjGEOM_PLANE, mj.mjtGeom.mjGEOM_SPHERE)
+        if (
+            len(remaining) > max_pairs
+            or base.nslot != len(remaining)
+            or any(tuple(model.geom_type[list(pair)]) != plane_sphere for pair in remaining)
+            or np.any(base.pair_condim[: base.npair] != 3)
+        ):
+            raise ValueError(
+                f"live damped contact requires at most {max_pairs} native condim-3 plane/sphere supports"
+            )
     if friction_laws and base.nlimit:
         lo, hi, margin = base.limit_law[: base.nlimit, :3].astype(np.float64).T
         if np.any(lo >= hi) or np.any(hi - lo < 2.0 * margin):

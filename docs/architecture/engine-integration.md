@@ -882,3 +882,14 @@ state or relaxed tolerance was introduced. P2PE additionally qualifies explicit
 non-seam public IDs after a permutation of surfaces; that test does not close
 the seam/tangent failures. Source evidence: `evidence/model-summary.json` in the
 paired experiment workspace. No new installed artifact qualification is implied.
+
+## 自主刚体的轴向和八子步推进
+
+`NativeRigidShape.axial_direction` 默认为 Z。胶囊和圆柱可以沿 body 局部 Y，
+以既有原生形状局部旋转表达，并在 body 坐标系下排列对角惯量。
+几何局部旋转和 body 初态分别绑定。混合场景中的自由体沿用同一输入。
+自主编译的 Y 轴向自由体要求 PhySolve frontend 自由体几何旋转合同 v1。
+可选的 MuJoCo 模型编译也使用同一局部轴向字段。
+
+采用 implicitfast 的自主自由刚体可按固定八子步捕获和重放。
+捕获、两个状态 bank 和结果发布沿用既有固定步数 Graph。

@@ -208,9 +208,22 @@ class NativeRigidShape(NativeStaticShape):
 
     mass: float | None = None
     density: float = 1000.0
+    axial_direction: str = "z"
+
+    @property
+    def geom_orientation_xyzw(self):
+        """Rotation from the native Z-axis geometry frame to this body frame."""
+        if self.axial_direction == "y":
+            half_sqrt = 2 ** -0.5
+            return (-half_sqrt, 0., 0., half_sqrt)
+        return (0., 0., 0., 1.)
 
     def __post_init__(self):
         super().__post_init__()
+        if self.axial_direction != "z" and (
+            self.axial_direction != "y" or self.kind not in ("capsule", "cylinder")
+        ):
+            raise ValueError("only capsule and cylinder support body-local Y as the axial direction")
         if self.kind == "plane":
             raise ValueError("plane requires static world ownership")
         for name, value in (("mass", self.mass), ("density", self.density)):
@@ -532,11 +545,13 @@ def compile_native_template(
         q = shape.orientation_xyzw
         body = spec.worldbody.add_body(name=shape.name, pos=shape.position, quat=(q[3], *q[:3]))
         body.add_freejoint(name=shape.name + "::__assembly_free")
+        gq = shape.geom_orientation_xyzw
         physical = dict(density=shape.density) if shape.mass is None else dict(mass=shape.mass)
         body.add_geom(
             name=shape.name,
             type=getattr(mj.mjtGeom, f"mjGEOM_{shape.kind.upper()}"),
             size=(*shape.size, *(0.0,) * (3 - len(shape.size))),
+            quat=(gq[3], *gq[:3]),
             friction=shape.friction,
             condim=shape.contact_dim,
             **physical,

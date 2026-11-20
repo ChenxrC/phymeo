@@ -58,6 +58,7 @@ def test_single_step_command_graph_preserves_state_and_rejects_nonfinite_force(p
 
 def test_command_graph_destroy_retry_keeps_unreleased_handles():
     from unittest.mock import Mock
+
     from phymeo.backends._physolve_graph import PreparedStepGraphs
 
     runtime = object()
@@ -91,6 +92,7 @@ def test_autonomous_graph_cadence_admission(steps, floating, branches, integrato
     from contextlib import nullcontext
     from types import SimpleNamespace
     from unittest.mock import Mock
+
     from phymeo.builders.scalar_physolve import ScalarCompilation
 
     compiled = Mock(spec=ScalarCompilation, has_free_root=floating, integrator=integrator, timestep=dt)
@@ -103,6 +105,30 @@ def test_autonomous_graph_cadence_admission(steps, floating, branches, integrato
     else:
         with pytest.raises(NotImplementedError, match="floating branch URDF"):
             PhySolveRuntime.prepare_step_graph(runtime, steps=steps)
+
+
+@pytest.mark.parametrize("primitive, integrator, admitted", [
+    (True, "implicitfast", True),
+    (True, "euler", False),
+    (False, "implicitfast", False),
+])
+def test_eight_step_graph_requires_autonomous_implicitfast_primitives(primitive, integrator, admitted):
+    from contextlib import nullcontext
+    from types import SimpleNamespace
+    from unittest.mock import Mock
+
+    from phymeo.builders.primitive_physolve import PrimitiveCompilation
+    from phymeo.builders.scalar_physolve import ScalarCompilation
+
+    compilation = Mock(spec=PrimitiveCompilation if primitive else ScalarCompilation,
+                       integrator=integrator)
+    runtime = SimpleNamespace(_scope=nullcontext, _require_idle=lambda: None, _compilation=compilation,
+                              step_graph_ready=True, _step_graphs=SimpleNamespace(steps=8))
+    if admitted:
+        assert PhySolveRuntime.prepare_step_graph(runtime, steps=8) is False
+    else:
+        with pytest.raises(NotImplementedError, match="autonomous implicitfast free primitives"):
+            PhySolveRuntime.prepare_step_graph(runtime, steps=8)
 
 
 @pytest.mark.cuda

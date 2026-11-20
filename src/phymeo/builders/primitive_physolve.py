@@ -11,8 +11,6 @@ from .collision_sources import CollisionSourceMapping, SourceGeometry, _digest
 from .native_assembly import NativeRigidShape, NativeStaticShape, NativeTemplate
 from .native_frames import NativeFrameMetadata
 
-_IDENTITY = (0., 0., 0., 1.)
-
 
 def _wxyz(q):
     return q[3], q[0], q[1], q[2]
@@ -52,6 +50,8 @@ def _mass_and_inertia(shape):
         per_mass = (barrel * barrel_moments + caps * np.array((transverse, transverse, polar))) / volume
     else:
         raise NotImplementedError(f"primitive PhySolve does not support dynamic {shape.kind}")
+    if shape.axial_direction == "y":
+        per_mass = per_mass[[0, 2, 1]]
     mass = shape.mass if shape.mass is not None else shape.density * volume
     inertia = per_mass * mass
     with np.errstate(over="ignore", divide="ignore", under="ignore"):
@@ -59,6 +59,20 @@ def _mass_and_inertia(shape):
     if not np.isfinite(exported).all() or not (exported > 0.).all():
         raise ValueError("primitive mass, inertia and inverse values require finite positive FP32")
     return float(mass), tuple(map(float, inertia))
+
+
+def _free_body_input(frontend, shape, mass, inertia):
+    geometry = frontend.Geometry(
+        shape.kind, shape.size, shape.position, _wxyz(shape.orientation_xyzw),
+        shape.friction, shape.contact_dim,
+    )
+    if shape.axial_direction == "z":
+        return frontend.FreeBody(geometry, mass, inertia)
+    if getattr(frontend, "FREE_GEOM_ROTATION_INPUT_CONTRACT", None) != 1:
+        raise ValueError("PhySolve free geometry rotation input contract v1 is required")
+    return frontend.FreeBody(
+        geometry, mass, inertia, geom_rotation=_wxyz(shape.geom_orientation_xyzw),
+    )
 
 
 @dataclass(frozen=True)
@@ -92,7 +106,7 @@ class PrimitiveCompilation:
                                      shape.friction, shape.contact_dim)
 
         return frontend.put_primitive_model(
-            tuple(frontend.FreeBody(geometry(shape), mass, inertia)
+            tuple(_free_body_input(frontend, shape, mass, inertia)
                   for shape, mass, inertia in zip(self.bodies, self.mass, self.principal_inertia)),
             tuple(map(geometry, self.statics)), timestep=self.timestep,
             gravity=self.gravity, integrator=self.integrator,
@@ -166,7 +180,7 @@ def compile_primitive_template(*, timestep, gravity, static_shapes, rigid_shapes
         ]
         entries.extend(
             VisualInstance(body.name, body.name, body.kind, body.size, (0., 0., 0.),
-                           _IDENTITY, (.5, .5, .5, 1.))
+                           body.geom_orientation_xyzw, (.5, .5, .5, 1.))
             for body in bodies
         )
         visual = VisualScene(tuple(entries))

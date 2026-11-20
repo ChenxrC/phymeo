@@ -29,7 +29,7 @@ RAW_FIELDS = frozenset(
 
 
 def enabled(plan):
-    return bool(getattr(plan, "scalar_damped_contacts", False) and plan.area_friction_laws)
+    return bool(getattr(plan, "damped_contact_dofs", 0) and plan.area_friction_laws)
 
 
 def _require(ok, message):
@@ -48,7 +48,7 @@ def _close(actual, expected, name, *, absolute=2e-6, relative=2e-5):
 
 def publish(runtime, result, index):
     """Adapt the live download names to the shared native contact decoder."""
-    _require(enabled(runtime._plan), "explicit scalar mixed scope required")
+    _require(enabled(runtime._plan), "explicit damped native contact scope required")
     adapted = dict(result)
     adapted["efc_J"] = result["efc_jacobian"]
     adapted["counts"] = result["constraint_counts"]
@@ -214,14 +214,16 @@ def _source_law(plan, row, h):
 def validate(runtime, raw, contacts, constraints, dynamics, qacc, h):
     """Return stored and independent-law native generalized loads.
 
-    Scope is one possible plane/sphere condim=3 pair on one damped scalar
-    joint. No native pair is inferred from an area pair or from receipt fields.
+    Scope is one plane/sphere condim=3 pair on one damped scalar joint
+    or the explicitly admitted two-scalar coupled route. No native pair is
+    inferred from an area pair or from receipt fields.
     The physical-M row law intentionally uses qacc, not integration acceleration.
     """
     plan = runtime._plan
     _require(
         enabled(plan)
-        and plan.nv == plan.nq == 1
+        and plan.damped_contact_dofs in (1, 2)
+        and plan.nv == plan.nq == plan.damped_contact_dofs
         and plan.npair == plan.nslot == 1
         and plan.nfriction == plan.nlimit == 0
         and int(plan.pair_condim[0]) == 3,
@@ -264,8 +266,10 @@ def validate(runtime, raw, contacts, constraints, dynamics, qacc, h):
     _source_geometry(plan, raw["candidate_rows"][0], dynamics)
     _same_records(contacts, decoded_contacts)
     _same_records(constraints, decoded_rows)
-    _require(np.all(raw["efc_J"][:, 1:] == 0), "native Jacobian padding")
-    total, predicted_total = np.zeros(1), np.zeros(1)
+    _require(np.all(raw["efc_J"][:, plan.nv :] == 0), "native Jacobian padding")
+    _require(np.all(raw["candidate_jacobian"][:, plan.nv :] == 0), "candidate Jacobian padding")
+    _require(np.all(raw["contact_J"][:, :, plan.nv :] == 0), "contact Jacobian padding")
+    total, predicted_total = np.zeros(plan.nv), np.zeros(plan.nv)
     for contact in contacts:
         ba, bb = contact.body_ids
         point, frame = contact.position, contact.frame
@@ -285,7 +289,11 @@ def validate(runtime, raw, contacts, constraints, dynamics, qacc, h):
             )
         )
         _close(contact.jacobian, expected_j, "same-entry native point Jacobian")
-        _close(raw["candidate_jacobian"][0, :1], contact.jacobian[0], "candidate normal Jacobian")
+        _close(
+            raw["candidate_jacobian"][0, : plan.nv],
+            contact.jacobian[0],
+            "candidate normal Jacobian",
+        )
         _close(
             contact.normal_velocity,
             float(contact.jacobian[0] @ dynamics.input_v),

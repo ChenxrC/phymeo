@@ -149,7 +149,7 @@ def prepare_entry(device):
         if getattr(plan, "area_friction_laws", ()):
             from ._area_friction_device import stage_entry
 
-            if getattr(plan, "scalar_damped_contacts", False):
+            if getattr(plan, "damped_contact_dofs", 0):
                 # Preserve native geometry in its existing seven-field ABI.
                 # Area staging follows in the same inactive bank and does not
                 # synthesize or clear these native contact records.

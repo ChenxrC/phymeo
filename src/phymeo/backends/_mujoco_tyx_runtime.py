@@ -548,7 +548,7 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                 area_pressure_observation="host-owned-accepted-receipt-v1",
                 area_pressure_friction=bool(self._area_friction_laws),
                 smooth_acceleration_operator="M"
-                if self._plan.scalar_damped_contacts
+                if self._plan.damped_contact_dofs
                 else "M+h*joint_damping",
             )
             if self._area_friction_laws:
@@ -590,9 +590,13 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                     mixed_articulated_constraints_supported=False,
                     g1_supported=False,
                 )
-                if self._plan.scalar_damped_contacts:
+                if self._plan.damped_contact_dofs:
                     info.update(
-                        domain="area-friction-cuda-damped-scalar-support-v1",
+                        domain=(
+                            "area-friction-cuda-damped-coupled-support-v1"
+                            if self._plan.coupled_damped_contacts
+                            else "area-friction-cuda-damped-scalar-support-v1"
+                        ),
                         native_contact_operator="M",
                         native_contact_scope="single-condim3-plane-sphere",
                     )

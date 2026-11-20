@@ -29,6 +29,8 @@ def _owned(value):
 
 def publish(runtime, result, index):
     n = runtime._plan.nv
+    if getattr(runtime._plan, "coupled_damped_contacts", False):
+        _require(n == runtime._plan.nq == 2, "coupled native scalar coordinate layout")
     packet = runtime._area_packet
     ns = int(packet[2][index])
     sizes = result["friction_sizes"][index]

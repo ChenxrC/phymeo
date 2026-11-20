@@ -62,15 +62,26 @@ def _solve_batch(
             searches = sizes[w, 3]
             h = steps[w]
             nr = 0
+            # Independent physical-M LDL factors for mode 2. Never reuse A's
+            # Cholesky factor for native acceleration or Schur diagonals.
+            m00 = 1.0
+            m01 = 0.0
+            m11 = 1.0
+            ml10 = 0.0
+            ms11 = 1.0
             if row_capacity > 0:
                 nr = counts[w, 2]
                 if nr < 0 or nr > row_capacity:
                     meta[w, 0] = 1
                     nr = 0
-                if native_physical_acceleration != 0:
+                if native_physical_acceleration == 1:
                     # The admitted damped contact route is a single scalar,
                     # with all actual compact native rows bounded together.
                     if nv != 1 or nr > 4 or nr + ns > row_capacity:
+                        meta[w, 0] = 1
+                        nr = 0
+                elif native_physical_acceleration == 2:
+                    if nv != 2 or nr > 4 or nr + ns > row_capacity:
                         meta[w, 0] = 1
                         nr = 0
                 elif nr > 2 or nv > 2:
@@ -105,7 +116,7 @@ def _solve_batch(
                     vectors[w, 5, i] = rhs
                     if not tx.isfinite(rhs):
                         meta[w, 0] = 2
-                if native_physical_acceleration != 0:
+                if native_physical_acceleration == 1:
                     physical_mass = mass[w, 0, 0]
                     damping = inputs[w, 0, 0]
                     if (
@@ -115,6 +126,26 @@ def _solve_batch(
                         or damping < 0.0
                     ):
                         meta[w, 0] = 2
+                elif native_physical_acceleration == 2:
+                    m00 = mass[w, 0, 0]
+                    m01 = mass[w, 0, 1]
+                    m11 = mass[w, 1, 1]
+                    if (
+                        not tx.isfinite(m00)
+                        or m00 <= 0.0
+                        or not tx.isfinite(m01)
+                        or m01 != mass[w, 1, 0]
+                        or not tx.isfinite(m11)
+                    ):
+                        meta[w, 0] = 2
+                    else:
+                        ml10 = m01 / m00
+                        ms11 = m11 - m01 * ml10
+                        if not tx.isfinite(ml10) or not tx.isfinite(ms11) or ms11 <= 0.0:
+                            meta[w, 0] = 2
+                    for i in range(2):
+                        if not tx.isfinite(inputs[w, 0, i]) or inputs[w, 0, i] < 0.0:
+                            meta[w, 0] = 2
                 for i in range(nv):
                     for j in range(i + 1):
                         value = matrices[w, 0, i, j]
@@ -266,10 +297,13 @@ def _solve_batch(
                     # face: (M + sum J^2/R)*a = b + Q(v) + sum J*aref/R.
                     # Only the new unilateral contact route uses this reduction.
                     scalar_area_load = vectors[w, 7, 0]
+                    coupled_area_load = 0.0
+                    if native_physical_acceleration == 2:
+                        coupled_area_load = vectors[w, 7, 1]
                     native_rhs = 0.0
                     native_effective_mass = 1.0
                     active_face = 0
-                    if native_physical_acceleration != 0 and nr > 0:
+                    if native_physical_acceleration == 1 and nr > 0:
                         native_rhs = (
                             inputs[w, 2, 0] - inputs[w, 0, 0] * inputs[w, 1, 0] + vectors[w, 7, 0]
                         )
@@ -331,6 +365,140 @@ def _solve_batch(
                         matrices[w, 2, 0, 0] = matrices[w, 0, 0, 0] + (
                             matrices[w, 2, 0, 0] - matrices[w, 0, 0, 0]
                         ) * (mass[w, 0, 0] / native_effective_mass)
+                    elif native_physical_acceleration == 2 and nr > 0:
+                        # On each of the 16 faces, H=M+sum J_r J_r^T/R_r
+                        # is SPD. Solve in physical acceleration space with an
+                        # explicit 2x2 LDL factor; A=M+hD remains the integrator.
+                        b0 = inputs[w, 2, 0] - inputs[w, 0, 0] * inputs[w, 1, 0]
+                        b1 = inputs[w, 2, 1] - inputs[w, 0, 1] * inputs[w, 1, 1]
+                        coupled_rhs0 = b0 + scalar_area_load
+                        coupled_rhs1 = b1 + coupled_area_load
+                        for r in range(nr):
+                            if (
+                                not tx.isfinite(rows[w, r, 4])
+                                or rows[w, r, 4] <= 0.0
+                                or not tx.isfinite(rows[w, r, 3])
+                                or not tx.isfinite(row_j[w, r, 0])
+                                or not tx.isfinite(row_j[w, r, 1])
+                                or rows[w, r, 7] != 0.0
+                                or rows[w, r, 12] != 0.0
+                            ):
+                                meta[w, 0] = 2
+                        selected = 0
+                        chosen_h00 = m00
+                        chosen_h01 = m01
+                        chosen_l10 = ml10
+                        chosen_s11 = ms11
+                        for face in range(16):
+                            if selected == 0 and meta[w, 0] == 0:
+                                h00 = m00
+                                h01 = m01
+                                h11 = m11
+                                c0 = coupled_rhs0
+                                c1 = coupled_rhs1
+                                bits = face
+                                for r in range(nr):
+                                    if bits % 2 == 1:
+                                        j0 = row_j[w, r, 0]
+                                        j1 = row_j[w, r, 1]
+                                        reg = rows[w, r, 4]
+                                        h00 = h00 + j0 * (j0 / reg)
+                                        h01 = h01 + j0 * (j1 / reg)
+                                        h11 = h11 + j1 * (j1 / reg)
+                                        c0 = c0 + j0 * (rows[w, r, 3] / reg)
+                                        c1 = c1 + j1 * (rows[w, r, 3] / reg)
+                                    bits = bits // 2
+                                if tx.isfinite(h00) and h00 > 0.0:
+                                    l10 = h01 / h00
+                                    s11 = h11 - h01 * l10
+                                    if tx.isfinite(s11) and s11 > 0.0:
+                                        a1 = (c1 - l10 * c0) / s11
+                                        a0 = (c0 - h01 * a1) / h00
+                                        face_ok = 1
+                                        if not tx.isfinite(a0) or not tx.isfinite(a1):
+                                            face_ok = 0
+                                        bits = face
+                                        for r in range(nr):
+                                            slack = rows[w, r, 3] - (
+                                                row_j[w, r, 0] * a0 + row_j[w, r, 1] * a1
+                                            )
+                                            if not tx.isfinite(slack):
+                                                face_ok = 0
+                                            if (bits % 2 == 1 and slack < 0.0) or (
+                                                bits % 2 == 0 and slack > 0.0
+                                            ):
+                                                face_ok = 0
+                                            bits = bits // 2
+                                        if face_ok == 1:
+                                            selected = 1
+                                            active_face = face
+                                            chosen_h00 = h00
+                                            chosen_h01 = h01
+                                            chosen_l10 = l10
+                                            chosen_s11 = s11
+                        if selected == 0 and meta[w, 0] == 0:
+                            meta[w, 0] = 4
+                        if meta[w, 0] == 0:
+                            # Reconstruct each active force after excluding its
+                            # OWN rank-one update. The denominator R+J K^-1 J
+                            # avoids subtracting two self-amplified row loads.
+                            bits = active_face
+                            for r in range(nr):
+                                rows[w, r, 9] = 0.0
+                                if bits % 2 == 1:
+                                    k00 = m00
+                                    k01 = m01
+                                    k11 = m11
+                                    c0 = coupled_rhs0
+                                    c1 = coupled_rhs1
+                                    other_bits = active_face
+                                    for k in range(nr):
+                                        if other_bits % 2 == 1 and k != r:
+                                            j0 = row_j[w, k, 0]
+                                            j1 = row_j[w, k, 1]
+                                            reg = rows[w, k, 4]
+                                            k00 = k00 + j0 * (j0 / reg)
+                                            k01 = k01 + j0 * (j1 / reg)
+                                            k11 = k11 + j1 * (j1 / reg)
+                                            c0 = c0 + j0 * (rows[w, k, 3] / reg)
+                                            c1 = c1 + j1 * (rows[w, k, 3] / reg)
+                                        other_bits = other_bits // 2
+                                    if not tx.isfinite(k00) or k00 <= 0.0:
+                                        meta[w, 0] = 4
+                                    else:
+                                        kl10 = k01 / k00
+                                        ks11 = k11 - k01 * kl10
+                                        if not tx.isfinite(ks11) or ks11 <= 0.0:
+                                            meta[w, 0] = 4
+                                        else:
+                                            a1 = (c1 - kl10 * c0) / ks11
+                                            a0 = (c0 - k01 * a1) / k00
+                                            j0 = row_j[w, r, 0]
+                                            j1 = row_j[w, r, 1]
+                                            z1 = (j1 - kl10 * j0) / ks11
+                                            z0 = (j0 - k01 * z1) / k00
+                                            diagonal = rows[w, r, 4] + j0 * z0 + j1 * z1
+                                            raw = 0.0
+                                            if not tx.isfinite(diagonal) or diagonal <= 0.0:
+                                                meta[w, 0] = 4
+                                            else:
+                                                raw = (
+                                                    rows[w, r, 3] - (j0 * a0 + j1 * a1)
+                                                ) / diagonal
+                                                if not tx.isfinite(raw):
+                                                    meta[w, 0] = 2
+                                            rows[w, r, 9] = tx.max(0.0, raw)
+                                bits = bits // 2
+                            # Columns of -h Qarea' are already in (Jacobian-A).
+                            # Apply H^-1 FIRST, then M: never reverse this order
+                            # or commute the generally nonsymmetric area term.
+                            for j in range(2):
+                                t0 = matrices[w, 2, 0, j] - matrices[w, 0, 0, j]
+                                t1 = matrices[w, 2, 1, j] - matrices[w, 0, 1, j]
+                                z1 = (t1 - chosen_l10 * t0) / chosen_s11
+                                z0 = (t0 - chosen_h01 * z1) / chosen_h00
+                                matrices[w, 2, 0, j] = matrices[w, 0, 0, j] + m00 * z0 + m01 * z1
+                                matrices[w, 2, 1, j] = matrices[w, 0, 1, j] + m01 * z0 + m11 * z1
                     # All native rows use the same candidate's complete area load.
                     native_ok = 1
                     for r in range(nr):
@@ -339,7 +507,7 @@ def _solve_batch(
                             meta[w, 0] = 2
                         else:
                             raw = 0.0
-                            if native_physical_acceleration != 0:
+                            if native_physical_acceleration == 1:
                                 # Expand H*(aref_i - J_i*a) before division:
                                 # the row's own large J_i^2*aref_i/R_i terms
                                 # cancel analytically, preserving its small force.
@@ -355,6 +523,10 @@ def _solve_batch(
                                         )
                                     bits = bits // 2
                                 raw = dual / (reg * native_effective_mass)
+                            elif native_physical_acceleration == 2:
+                                # Computed in force coordinates by the coupled
+                                # physical-M face elimination above.
+                                raw = rows[w, r, 9]
                             else:
                                 projected = 0.0
                                 for i in range(nv):
@@ -384,7 +556,7 @@ def _solve_batch(
                                             matrices[w, 2, i, j] + ji * row_j[w, r, j] / reg
                                         )
                     if nr > 0:
-                        if native_physical_acceleration != 0:
+                        if native_physical_acceleration == 1:
                             # Correct rounding of the analytical face solution in
                             # the published force coordinates. Each diagonal is
                             # the exact scalar Schur diagonal R_i + J_i^2/M.
@@ -423,6 +595,74 @@ def _solve_batch(
                             ) / mass[w, 0, 0]
                             if not tx.isfinite(vectors[w, 5, 0]):
                                 meta[w, 0] = 2
+                        elif native_physical_acceleration == 2:
+                            # Two bounded corrections in stored force coordinates.
+                            # Use the physical Schur diagonal R+J M^-1 J; rebuild
+                            # both generalized components in publication order.
+                            for sweep in range(2):
+                                for r in range(nr):
+                                    f0 = (
+                                        inputs[w, 2, 0]
+                                        - inputs[w, 0, 0] * inputs[w, 1, 0]
+                                        + vectors[w, 7, 0]
+                                    )
+                                    f1 = (
+                                        inputs[w, 2, 1]
+                                        - inputs[w, 0, 1] * inputs[w, 1, 1]
+                                        + vectors[w, 7, 1]
+                                    )
+                                    a1 = (f1 - ml10 * f0) / ms11
+                                    a0 = (f0 - m01 * a1) / m00
+                                    j0 = row_j[w, r, 0]
+                                    j1 = row_j[w, r, 1]
+                                    old_force = rows[w, r, 9]
+                                    gradient = (
+                                        rows[w, r, 4] * old_force
+                                        - rows[w, r, 3]
+                                        + j0 * a0
+                                        + j1 * a1
+                                    )
+                                    defect = tx.abs(gradient)
+                                    if old_force == 0.0:
+                                        defect = tx.max(0.0, -gradient)
+                                    if defect > 1e-5 * tx.max(
+                                        1.0, tx.abs(rows[w, r, 4] * old_force)
+                                    ):
+                                        z1 = (j1 - ml10 * j0) / ms11
+                                        z0 = (j0 - m01 * z1) / m00
+                                        diagonal = rows[w, r, 4] + j0 * z0 + j1 * z1
+                                        if not tx.isfinite(diagonal) or diagonal <= 0.0:
+                                            meta[w, 0] = 4
+                                        else:
+                                            force = tx.max(0.0, old_force - gradient / diagonal)
+                                            if not tx.isfinite(force):
+                                                meta[w, 0] = 2
+                                            rows[w, r, 9] = force
+                                            load0 = scalar_area_load
+                                            load1 = coupled_area_load
+                                            for k in range(nr):
+                                                load0 = load0 + row_j[w, k, 0] * rows[w, k, 9]
+                                                load1 = load1 + row_j[w, k, 1] * rows[w, k, 9]
+                                            vectors[w, 7, 0] = load0
+                                            vectors[w, 7, 1] = load1
+                            # KKT below sees M^-1 times the ACTUAL rounded forces,
+                            # not the acceleration returned by the face solve.
+                            f0 = (
+                                inputs[w, 2, 0]
+                                - inputs[w, 0, 0] * inputs[w, 1, 0]
+                                + vectors[w, 7, 0]
+                            )
+                            f1 = (
+                                inputs[w, 2, 1]
+                                - inputs[w, 0, 1] * inputs[w, 1, 1]
+                                + vectors[w, 7, 1]
+                            )
+                            vectors[w, 5, 1] = (f1 - ml10 * f0) / ms11
+                            vectors[w, 5, 0] = (f0 - m01 * vectors[w, 5, 1]) / m00
+                            if not tx.isfinite(vectors[w, 5, 0]) or not tx.isfinite(
+                                vectors[w, 5, 1]
+                            ):
+                                meta[w, 0] = 2
                         else:
                             # Legacy joint-only rows have D=0 and A=M.
                             for i in range(nv):
@@ -454,10 +694,23 @@ def _solve_batch(
                     norm2 = 0.0
                     for i in range(nv):
                         value = -h * vectors[w, 7, i]
-                        for j in range(nv):
-                            value = value + matrices[w, 0, i, j] * (
-                                vectors[w, 2, j] - vectors[w, 0, j]
+                        if native_physical_acceleration == 2:
+                            # The original momentum RHS, independent of the
+                            # rounded free-velocity solve used to initialize v.
+                            value = -h * (
+                                inputs[w, 2, i]
+                                - inputs[w, 0, i] * inputs[w, 1, i]
+                                + vectors[w, 7, i]
                             )
+                        for j in range(nv):
+                            if native_physical_acceleration == 2:
+                                value = value + matrices[w, 0, i, j] * (
+                                    vectors[w, 2, j] - inputs[w, 1, j]
+                                )
+                            else:
+                                value = value + matrices[w, 0, i, j] * (
+                                    vectors[w, 2, j] - vectors[w, 0, j]
+                                )
                             if not tx.isfinite(matrices[w, 2, i, j]):
                                 meta[w, 0] = 2
                         vectors[w, 3, i] = value
@@ -502,7 +755,7 @@ def _solve_batch(
                                 meta[w, 0] = 2
                             if tx.abs(value) > 1e-5 * (1.0 + tx.abs(vectors[w, 2, i])):
                                 velocity_ok = 0
-                    if native_physical_acceleration != 0 and nr > 0:
+                    if native_physical_acceleration == 1 and nr > 0:
                         # Condensation can mask a velocity error at stiff native
                         # edges. Recheck the original momentum equation using
                         # the forces implied directly by the output velocity.
@@ -521,6 +774,52 @@ def _solve_batch(
                         if (
                             not tx.isfinite(uncondensed)
                             or tx.abs(uncondensed) > matrices[w, 1, 0, 0] * scalars[w, 1]
+                        ):
+                            velocity_ok = 0
+                    elif native_physical_acceleration == 2 and nr > 0:
+                        # Physical acceleration implied by the two output DOFs:
+                        # a_motion=M^-1 A (v-v0)/h, in that matrix order.
+                        dv0 = (vectors[w, 2, 0] - inputs[w, 1, 0]) / h
+                        dv1 = (vectors[w, 2, 1] - inputs[w, 1, 1]) / h
+                        f0 = matrices[w, 0, 0, 0] * dv0 + matrices[w, 0, 0, 1] * dv1
+                        f1 = matrices[w, 0, 1, 0] * dv0 + matrices[w, 0, 1, 1] * dv1
+                        a1 = (f1 - ml10 * f0) / ms11
+                        a0 = (f0 - m01 * a1) / m00
+                        uncondensed0 = vectors[w, 3, 0]
+                        uncondensed1 = vectors[w, 3, 1]
+                        for r in range(nr):
+                            j0 = row_j[w, r, 0]
+                            j1 = row_j[w, r, 1]
+                            at_v = tx.max(
+                                0.0, (rows[w, r, 3] - (j0 * a0 + j1 * a1)) / rows[w, r, 4]
+                            )
+                            force_delta = at_v - rows[w, r, 9]
+                            # Same force-unit envelope as the native receipt's
+                            # physical-M force law; row cancellation cannot hide it.
+                            if not tx.isfinite(force_delta) or tx.abs(force_delta) > (
+                                0.002 + 0.002 * tx.abs(at_v)
+                            ):
+                                velocity_ok = 0
+                            uncondensed0 = uncondensed0 - h * j0 * force_delta
+                            uncondensed1 = uncondensed1 - h * j1 * force_delta
+                        # Check the original equation in the same A^-1 norm as
+                        # the condensed residual, plus its actual velocity error.
+                        u0 = uncondensed0 / matrices[w, 1, 0, 0]
+                        u1 = (uncondensed1 - matrices[w, 1, 1, 0] * u0) / matrices[w, 1, 1, 1]
+                        original_norm2 = u0 * u0 + u1 * u1
+                        correction1 = u1 / matrices[w, 1, 1, 1]
+                        correction0 = (u0 - matrices[w, 1, 1, 0] * correction1) / matrices[
+                            w, 1, 0, 0
+                        ]
+                        if (
+                            not tx.isfinite(a0)
+                            or not tx.isfinite(a1)
+                            or not tx.isfinite(original_norm2)
+                            or original_norm2 > scalars[w, 1] * scalars[w, 1]
+                            or not tx.isfinite(correction0)
+                            or not tx.isfinite(correction1)
+                            or tx.abs(correction0) > 1e-5 * (1.0 + tx.abs(vectors[w, 2, 0]))
+                            or tx.abs(correction1) > 1e-5 * (1.0 + tx.abs(vectors[w, 2, 1]))
                         ):
                             velocity_ok = 0
                     accepted = 0
@@ -626,13 +925,14 @@ def solve_batch(
     *buffers,
     require_velocity_agreement=False,
     native_rows=None,
-    native_physical_acceleration=False,
+    native_physical_acceleration=0,
     **launch,
 ):
     """Keep the standalone ABI; live owners additionally bound A^-1 residual.
 
-    ``native_physical_acceleration`` admits up to four actual native rows on
-    one damped scalar. Each candidate's area load is used to eliminate the
+    ``native_physical_acceleration`` is 0 for the legacy joint route, 1 for
+    one damped scalar, or 2 for two coupled damped DOFs. Modes 1/2 admit up
+    to four actual native rows. Each candidate's area load eliminates the
     native unilateral rows in physical acceleration space, without modifying
     native R, aref, or force units. The owner
     supplies all compact rows and enforces its combined area/native capacity.
@@ -640,8 +940,11 @@ def solve_batch(
     """
     if type(require_velocity_agreement) is not bool:
         raise ValueError("require_velocity_agreement must be bool")
-    if type(native_physical_acceleration) is not bool:
-        raise ValueError("native_physical_acceleration must be bool")
+    if type(native_physical_acceleration) not in (
+        int,
+        bool,
+    ) or native_physical_acceleration not in (0, 1, 2):
+        raise ValueError("native_physical_acceleration must be mode 0, 1, or 2")
     if native_physical_acceleration and native_rows is None:
         raise ValueError("physical native acceleration requires native row storage")
     if len(mass.shape) != 3 or mass.shape[1] not in (6, 8):

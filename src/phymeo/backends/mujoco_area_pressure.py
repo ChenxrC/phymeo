@@ -21,7 +21,15 @@ class _AreaPlan:
     area_body_ids: np.ndarray
     area_friction_laws: tuple = ()
     area_friction_parameters: np.ndarray | None = None
-    scalar_damped_contacts: bool = False
+    damped_contact_dofs: int = 0
+
+    @property
+    def scalar_damped_contacts(self):
+        return self.damped_contact_dofs == 1
+
+    @property
+    def coupled_damped_contacts(self):
+        return self.damped_contact_dofs == 2
 
     def __getattr__(self, name):
         return getattr(self.base, name)
@@ -80,21 +88,25 @@ def compile_area_plan(mj, model, pairs, friction_laws=()):
     ids, remaining = ownership.body_ids, ownership.native_geometry_pairs
     if model.na or np.any(model.jnt_type == mj.mjtJoint.mjJNT_BALL):
         raise ValueError("first area route supports stateless hinge/slide or free-root trees")
-    scalar_damped_contacts = bool(
+    damped_contact_dofs = 0
+    if (
         remaining
-        and model.nv == model.njnt == 1
-        and model.jnt_type[0] in (mj.mjtJoint.mjJNT_HINGE, mj.mjtJoint.mjJNT_SLIDE)
-        and np.isfinite(model.dof_damping[0])
-        and model.dof_damping[0] > 0
+        and model.nv == model.njnt
+        and (model.nv == 1 or (model.nv == 2 and friction_laws))
+        and np.isin(model.jnt_type, (mj.mjtJoint.mjJNT_HINGE, mj.mjtJoint.mjJNT_SLIDE)).all()
+        and np.isfinite(model.dof_damping).all()
+        and np.all(model.dof_damping >= 0)
+        and np.any(model.dof_damping > 0)
         and not (
             model.neq
             or model.ntendon
             or np.any(model.jnt_limited)
             or np.any(model.dof_frictionloss)
         )
-    )
+    ):
+        damped_contact_dofs = model.nv
     if (
-        not scalar_damped_contacts
+        not damped_contact_dofs
         and np.any(model.dof_damping)
         and (remaining or np.any(model.jnt_limited) or np.any(model.dof_frictionloss))
     ):
@@ -105,7 +117,7 @@ def compile_area_plan(mj, model, pairs, friction_laws=()):
         friction_width(model.nv)
         if model.nbody > 128 or model.ngeom > 128:
             raise ValueError("live area-friction capacity: 128 bodies/geoms")
-        if model.neq or model.ntendon or (remaining and not scalar_damped_contacts):
+        if model.neq or model.ntendon or (remaining and not damped_contact_dofs):
             raise ValueError(
                 "live area friction requires area-only constraints or supported scalar joint rows"
             )
@@ -125,7 +137,7 @@ def compile_area_plan(mj, model, pairs, friction_laws=()):
     base = compile_constraint_model(mj, model, remaining)
     if (
         friction_laws
-        and scalar_damped_contacts
+        and damped_contact_dofs
         and not (
             len(remaining) == 1
             and tuple(model.geom_type[list(remaining[0])])
@@ -153,9 +165,7 @@ def compile_area_plan(mj, model, pairs, friction_laws=()):
         if not np.isfinite(parameters).all() or np.any((values > 0) & (parameters <= 0)):
             raise ValueError("area-friction parameters are not positive finite FP32")
         parameters = np.frombuffer(parameters.tobytes(), dtype=np.float32).reshape(-1, 2)
-    return _AreaPlan(
-        base, tuple(pairs), body_ids, friction_laws, parameters, scalar_damped_contacts
-    )
+    return _AreaPlan(base, tuple(pairs), body_ids, friction_laws, parameters, damped_contact_dofs)
 
 
 def configuration_id(runtime, key):

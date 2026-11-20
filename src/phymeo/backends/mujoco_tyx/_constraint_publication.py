@@ -83,8 +83,8 @@ def publish(runtime, result, index, *, native_only=False):
         "normal_jacobian": (max(1, plan.nslot), width),
     }
     if native_only:
-        if not (getattr(plan, "scalar_damped_contacts", False) and plan.area_friction_laws):
-            raise RuntimeError("native-only publication requires scalar mixed area friction")
+        if not (getattr(plan, "damped_contact_dofs", 0) and plan.area_friction_laws):
+            raise RuntimeError("native-only publication requires damped mixed area friction")
         # The common friction solve owns convergence; the legacy QP receipt is
         # neither produced nor fabricated for this route.
         del expected["working_set"], expected["solver_diagnostics"]
@@ -207,11 +207,11 @@ def publish(runtime, result, index, *, native_only=False):
             or (not row[12] and row[8] != 0)
         ):
             raise RuntimeError("invalid mixed force bounds or regularization")
-        if getattr(plan, "scalar_damped_contacts", False):
+        if getattr(plan, "damped_contact_dofs", 0):
             # Check both row laws against the acceleration actually published by
             # the integration tail, in their original (unscaled) units.
-            acceleration = result["integration_acc" if ids[i, 0] == 7 else "qacc"][index, 0]
-            ja = float(jac[i, 0]) * float(acceleration)
+            acceleration = result["integration_acc" if ids[i, 0] == 7 else "qacc"][index, : plan.nv]
+            ja = float(jac[i, : plan.nv].astype(np.float64) @ acceleration.astype(np.float64))
             rf = float(row[4]) * float(row[9])
             gradient = (ja - float(row[3])) + rf
             error = abs(gradient) if row[9] > 0 else max(0.0, -gradient)
@@ -221,7 +221,7 @@ def publish(runtime, result, index, *, native_only=False):
                 rtol=0,
                 atol=plan.solver_tolerance * max(1.0, abs(ja), abs(row[3]), abs(rf)),
             ) or error > plan.solver_tolerance * max(1.0, abs(rf)):
-                raise RuntimeError("scalar mixed contact failed original row equation")
+                raise RuntimeError("damped mixed contact failed original row equation")
         constraints.append(decode_row(ids[i], row, jac[i, : plan.nv]))
     raw = {
         name: _frozen(value, dtype=value.dtype)

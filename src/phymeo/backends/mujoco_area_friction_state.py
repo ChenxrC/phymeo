@@ -334,6 +334,20 @@ def _validate(runtime, key, receipt, state):
     _same(qacc, _array(state.qacc, (nv,), "state acceleration"), "physical qacc")
     _close(mass @ qacc, base + total, "physical M acceleration")
     _close(response @ acceleration, base + total, "M+hD integration acceleration")
+    if getattr(runtime._plan, "coupled_damped_contacts", False):
+        # Every DOF participates in the complete M and A products above. In this
+        # scalar-joint-only route q advances once in native coordinate order.
+        _require(nq == nv == 2, "coupled native scalar coordinate layout")
+        expected_q = (
+            data["input_q"].astype(np.float32) + np.float32(h) * output.astype(np.float32)
+        ).astype(np.float64)
+        # Device FMA may differ by one rounding from separate HOST operations.
+        q_scale = np.abs(data["input_q"]) + h * np.abs(output)
+        q_bound = 4 * np.finfo(np.float32).eps * q_scale + np.finfo(np.float32).tiny
+        _require(
+            np.all(np.abs(state.qpos - expected_q) <= q_bound),
+            "coupled native endpoint coordinate integration",
+        )
     _same(
         _array(receipt.qfrc_actuator, (nv,), "receipt actuator force"),
         _array(state.qfrc_actuator, (nv,), "state actuator force"),

@@ -169,7 +169,7 @@ class TyxConstraintDevice(TyxDevice):
             self.counts["completed_kernels"] += 1
             _actuator_device.advance(self, old, new)
             live_friction = bool(getattr(self.plan, "area_friction_laws", ()))
-            mixed_support = live_friction and self.plan.scalar_damped_contacts
+            mixed_support = live_friction and self.plan.damped_contact_dofs > 0
             if not live_friction or mixed_support:
                 if self.extended_contacts is not None:
                     self.extended_contacts(

@@ -37,7 +37,9 @@ def area_binding(runtime):
                 {
                     "native_contact_operator": "M",
                     "native_contact_scope": (
-                        "coupled-damped-geometry-v1"
+                        "coupled-damped-geometry-limit-v1"
+                        if runtime._plan.damped_contact_dofs == 2 and runtime._plan.nlimit == 1
+                        else "coupled-damped-geometry-v1"
                         if getattr(runtime._plan, "coupled_damped_contacts", False)
                         else "scalar-damped-geometry-v1"
                     ),

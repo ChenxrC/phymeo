@@ -30,6 +30,9 @@ def _solve_batch(
     rows: tx.ndarray(tx.f32, 3),
     row_j: tx.ndarray(tx.f32, 3),
     counts: tx.ndarray(tx.i32, 2),
+    source_applied: tx.ndarray(tx.f32, 2),
+    source_passive: tx.ndarray(tx.f32, 2),
+    source_bias: tx.ndarray(tx.f32, 2),
 ):
     # Each lane owns an independent complete problem. All fixed padding is reset.
     # Matrices: A, Cholesky(A), actual residual Jacobian, pivot elimination copy.
@@ -62,13 +65,17 @@ def _solve_batch(
             searches = sizes[w, 3]
             h = steps[w]
             nr = 0
-            # Independent physical-M LDL factors for mode 2. Never reuse A's
+            coupled_mode = native_physical_acceleration == 2 or native_physical_acceleration == 3
+            # Independent physical-M LDL factors for modes 2/3. Never reuse A's
             # Cholesky factor for native acceleration or Schur diagonals.
             m00 = 1.0
             m01 = 0.0
             m11 = 1.0
             ml10 = 0.0
             ms11 = 1.0
+            published_l00 = 1.0
+            published_l10 = 0.0
+            published_l11 = 1.0
             if row_capacity > 0:
                 nr = counts[w, 2]
                 if nr < 0 or nr > row_capacity:
@@ -82,6 +89,13 @@ def _solve_batch(
                         nr = 0
                 elif native_physical_acceleration == 2:
                     if nv != 2 or nr > 4 or nr + ns > row_capacity:
+                        meta[w, 0] = 1
+                        nr = 0
+                elif native_physical_acceleration == 3:
+                    # Four contact edges plus at most one active joint-limit
+                    # side. Row provenance and single-side admission are owned
+                    # by native assembly; this kernel consumes compact rows.
+                    if nv != 2 or nr > 5 or nr + ns > row_capacity:
                         meta[w, 0] = 1
                         nr = 0
                 elif nr > 2 or nv > 2:
@@ -126,7 +140,7 @@ def _solve_batch(
                         or damping < 0.0
                     ):
                         meta[w, 0] = 2
-                elif native_physical_acceleration == 2:
+                elif coupled_mode:
                     m00 = mass[w, 0, 0]
                     m01 = mass[w, 0, 1]
                     m11 = mass[w, 1, 1]
@@ -146,6 +160,23 @@ def _solve_batch(
                     for i in range(2):
                         if not tx.isfinite(inputs[w, 0, i]) or inputs[w, 0, i] < 0.0:
                             meta[w, 0] = 2
+                    if native_physical_acceleration == 3 and meta[w, 0] == 0:
+                        # Match the native tree's physical-M factor operation by
+                        # operation. Its final qacc does not use our LDL factor.
+                        published_l00 = tx.sqrt(m00)
+                        published_l10 = mass[w, 1, 0] / published_l00
+                        value = m11 - published_l10 * published_l10
+                        if not tx.isfinite(value) or value <= 0.0:
+                            meta[w, 0] = 2
+                        else:
+                            published_l11 = tx.sqrt(value)
+                        for i in range(2):
+                            if (
+                                not tx.isfinite(source_applied[w, i])
+                                or not tx.isfinite(source_passive[w, i])
+                                or not tx.isfinite(source_bias[w, i])
+                            ):
+                                meta[w, 0] = 2
                 for i in range(nv):
                     for j in range(i + 1):
                         value = matrices[w, 0, i, j]
@@ -298,7 +329,7 @@ def _solve_batch(
                     # Only the new unilateral contact route uses this reduction.
                     scalar_area_load = vectors[w, 7, 0]
                     coupled_area_load = 0.0
-                    if native_physical_acceleration == 2:
+                    if coupled_mode:
                         coupled_area_load = vectors[w, 7, 1]
                     native_rhs = 0.0
                     native_effective_mass = 1.0
@@ -365,12 +396,16 @@ def _solve_batch(
                         matrices[w, 2, 0, 0] = matrices[w, 0, 0, 0] + (
                             matrices[w, 2, 0, 0] - matrices[w, 0, 0, 0]
                         ) * (mass[w, 0, 0] / native_effective_mass)
-                    elif native_physical_acceleration == 2 and nr > 0:
-                        # On each of the 16 faces, H=M+sum J_r J_r^T/R_r
+                    elif coupled_mode and nr > 0:
+                        # On each bounded face, H=M+sum J_r J_r^T/R_r
                         # is SPD. Solve in physical acceleration space with an
                         # explicit 2x2 LDL factor; A=M+hD remains the integrator.
                         b0 = inputs[w, 2, 0] - inputs[w, 0, 0] * inputs[w, 1, 0]
                         b1 = inputs[w, 2, 1] - inputs[w, 0, 1] * inputs[w, 1, 1]
+                        if native_physical_acceleration == 3:
+                            # Do not reverse the lossy packed +D*v0 compensation.
+                            b0 = source_applied[w, 0] + source_passive[w, 0] - source_bias[w, 0]
+                            b1 = source_applied[w, 1] + source_passive[w, 1] - source_bias[w, 1]
                         coupled_rhs0 = b0 + scalar_area_load
                         coupled_rhs1 = b1 + coupled_area_load
                         for r in range(nr):
@@ -389,7 +424,14 @@ def _solve_batch(
                         chosen_h01 = m01
                         chosen_l10 = ml10
                         chosen_s11 = ms11
-                        for face in range(16):
+                        # Preserve mode 2's loop. Mode 3 enumerates only actual
+                        # compact rows: 2^nr masks, including all-inactive, <=32.
+                        face_count = 16
+                        if native_physical_acceleration == 3:
+                            face_count = 1
+                            for r in range(nr):
+                                face_count = face_count * 2
+                        for face in range(face_count):
                             if selected == 0 and meta[w, 0] == 0:
                                 h00 = m00
                                 h01 = m01
@@ -523,7 +565,7 @@ def _solve_batch(
                                         )
                                     bits = bits // 2
                                 raw = dual / (reg * native_effective_mass)
-                            elif native_physical_acceleration == 2:
+                            elif coupled_mode:
                                 # Computed in force coordinates by the coupled
                                 # physical-M face elimination above.
                                 raw = rows[w, r, 9]
@@ -595,11 +637,14 @@ def _solve_batch(
                             ) / mass[w, 0, 0]
                             if not tx.isfinite(vectors[w, 5, 0]):
                                 meta[w, 0] = 2
-                        elif native_physical_acceleration == 2:
-                            # Two bounded corrections in stored force coordinates.
+                        elif coupled_mode:
+                            # Bounded corrections in stored force coordinates.
                             # Use the physical Schur diagonal R+J M^-1 J; rebuild
                             # both generalized components in publication order.
-                            for sweep in range(2):
+                            force_sweeps = 2
+                            if native_physical_acceleration == 3:
+                                force_sweeps = 8
+                            for sweep in range(force_sweeps):
                                 for r in range(nr):
                                     f0 = (
                                         inputs[w, 2, 0]
@@ -613,6 +658,20 @@ def _solve_batch(
                                     )
                                     a1 = (f1 - ml10 * f0) / ms11
                                     a0 = (f0 - m01 * a1) / m00
+                                    if native_physical_acceleration == 3:
+                                        # apply_load stores (applied+Q), then the
+                                        # native tail adds passive and subtracts
+                                        # bias. Preserve those FP32 boundaries.
+                                        f0 = source_applied[w, 0] + vectors[w, 7, 0]
+                                        f0 = f0 + source_passive[w, 0]
+                                        f0 = f0 - source_bias[w, 0]
+                                        f1 = source_applied[w, 1] + vectors[w, 7, 1]
+                                        f1 = f1 + source_passive[w, 1]
+                                        f1 = f1 - source_bias[w, 1]
+                                        forward0 = f0 / published_l00
+                                        forward1 = (f1 - published_l10 * forward0) / published_l11
+                                        a1 = forward1 / published_l11
+                                        a0 = (forward0 - published_l10 * a1) / published_l00
                                     j0 = row_j[w, r, 0]
                                     j1 = row_j[w, r, 1]
                                     old_force = rows[w, r, 9]
@@ -622,12 +681,22 @@ def _solve_batch(
                                         + j0 * a0
                                         + j1 * a1
                                     )
+                                    if native_physical_acceleration == 3:
+                                        projected = j0 * a0 + j1 * a1
+                                        gradient = (
+                                            projected + rows[w, r, 4] * old_force - rows[w, r, 3]
+                                        )
                                     defect = tx.abs(gradient)
                                     if old_force == 0.0:
                                         defect = tx.max(0.0, -gradient)
-                                    if defect > 1e-5 * tx.max(
+                                    needs_correction = defect > 1e-5 * tx.max(
                                         1.0, tx.abs(rows[w, r, 4] * old_force)
+                                    )
+                                    if native_physical_acceleration == 3 and gradient < (
+                                        -2e-5 * (1.0 + tx.abs(rows[w, r, 3]))
                                     ):
+                                        needs_correction = True
+                                    if needs_correction:
                                         z1 = (j1 - ml10 * j0) / ms11
                                         z0 = (j0 - m01 * z1) / m00
                                         diagonal = rows[w, r, 4] + j0 * z0 + j1 * z1
@@ -635,6 +704,20 @@ def _solve_batch(
                                             meta[w, 0] = 4
                                         else:
                                             force = tx.max(0.0, old_force - gradient / diagonal)
+                                            if (
+                                                native_physical_acceleration == 3
+                                                and force == old_force
+                                                and old_force > 0.0
+                                            ):
+                                                # If the Newton correction is
+                                                # below one force ULP, move in
+                                                # ITS direction; never add an
+                                                # unconditional positive bias.
+                                                step = 1.1920928955078125e-7 * old_force
+                                                if gradient < 0.0:
+                                                    force = old_force + step
+                                                elif gradient > 0.0:
+                                                    force = tx.max(0.0, old_force - step)
                                             if not tx.isfinite(force):
                                                 meta[w, 0] = 2
                                             rows[w, r, 9] = force
@@ -659,6 +742,21 @@ def _solve_batch(
                             )
                             vectors[w, 5, 1] = (f1 - ml10 * f0) / ms11
                             vectors[w, 5, 0] = (f0 - m01 * vectors[w, 5, 1]) / m00
+                            if native_physical_acceleration == 3:
+                                # Final eligibility uses the same RHS grouping
+                                # and Cholesky solves as the published qacc.
+                                f0 = source_applied[w, 0] + vectors[w, 7, 0]
+                                f0 = f0 + source_passive[w, 0]
+                                f0 = f0 - source_bias[w, 0]
+                                f1 = source_applied[w, 1] + vectors[w, 7, 1]
+                                f1 = f1 + source_passive[w, 1]
+                                f1 = f1 - source_bias[w, 1]
+                                forward0 = f0 / published_l00
+                                forward1 = (f1 - published_l10 * forward0) / published_l11
+                                vectors[w, 5, 1] = forward1 / published_l11
+                                vectors[w, 5, 0] = (
+                                    forward0 - published_l10 * vectors[w, 5, 1]
+                                ) / published_l00
                             if not tx.isfinite(vectors[w, 5, 0]) or not tx.isfinite(
                                 vectors[w, 5, 1]
                             ):
@@ -682,6 +780,11 @@ def _solve_batch(
                             gradient = compliance_term - rows[w, r, 3]
                             for i in range(nv):
                                 gradient = gradient + row_j[w, r, i] * vectors[w, 5, i]
+                            if native_physical_acceleration == 3:
+                                projected = 0.0
+                                for i in range(nv):
+                                    projected = projected + row_j[w, r, i] * vectors[w, 5, i]
+                                gradient = projected + compliance_term - rows[w, r, 3]
                             violation = tx.abs(gradient)
                             if reaction == rows[w, r, 7]:
                                 violation = tx.max(0.0, -gradient)
@@ -691,10 +794,14 @@ def _solve_batch(
                                 1.0, tx.abs(compliance_term)
                             ):
                                 native_ok = 0
+                            if native_physical_acceleration == 3 and gradient < (
+                                -2e-5 * (1.0 + tx.abs(rows[w, r, 3]))
+                            ):
+                                native_ok = 0
                     norm2 = 0.0
                     for i in range(nv):
                         value = -h * vectors[w, 7, i]
-                        if native_physical_acceleration == 2:
+                        if coupled_mode:
                             # The original momentum RHS, independent of the
                             # rounded free-velocity solve used to initialize v.
                             value = -h * (
@@ -702,8 +809,13 @@ def _solve_batch(
                                 - inputs[w, 0, i] * inputs[w, 1, i]
                                 + vectors[w, 7, i]
                             )
+                            if native_physical_acceleration == 3:
+                                physical_load = source_applied[w, i] + vectors[w, 7, i]
+                                physical_load = physical_load + source_passive[w, i]
+                                physical_load = physical_load - source_bias[w, i]
+                                value = -h * physical_load
                         for j in range(nv):
-                            if native_physical_acceleration == 2:
+                            if coupled_mode:
                                 value = value + matrices[w, 0, i, j] * (
                                     vectors[w, 2, j] - inputs[w, 1, j]
                                 )
@@ -776,7 +888,7 @@ def _solve_batch(
                             or tx.abs(uncondensed) > matrices[w, 1, 0, 0] * scalars[w, 1]
                         ):
                             velocity_ok = 0
-                    elif native_physical_acceleration == 2 and nr > 0:
+                    elif coupled_mode and nr > 0:
                         # Physical acceleration implied by the two output DOFs:
                         # a_motion=M^-1 A (v-v0)/h, in that matrix order.
                         dv0 = (vectors[w, 2, 0] - inputs[w, 1, 0]) / h
@@ -926,27 +1038,38 @@ def solve_batch(
     require_velocity_agreement=False,
     native_rows=None,
     native_physical_acceleration=0,
+    native_source_forces=None,
     **launch,
 ):
     """Keep the standalone ABI; live owners additionally bound A^-1 residual.
 
     ``native_physical_acceleration`` is 0 for the legacy joint route, 1 for
-    one damped scalar, or 2 for two coupled damped DOFs. Modes 1/2 admit up
-    to four actual native rows. Each candidate's area load eliminates the
+    one damped scalar, 2 for two coupled damped DOFs, or 3 for the same two
+    DOFs with one joint limit. Modes 1/2 admit up to four native rows; mode 3
+    admits up to five (four contact edges and zero/one limit side), with at
+    most 32 actual active-set masks. Each candidate's area load eliminates the
     native unilateral rows in physical acceleration space, without modifying
     native R, aref, or force units. The owner
     supplies all compact rows and enforces its combined area/native capacity.
     The default retains the existing undamped joint-row route.
+
+    Mode 3 requires ``native_source_forces=(applied, passive, bias)`` from
+    the same live entry. They are read-only inputs for force correction and
+    eligibility against the physical acceleration produced by the native tail.
     """
     if type(require_velocity_agreement) is not bool:
         raise ValueError("require_velocity_agreement must be bool")
     if type(native_physical_acceleration) not in (
         int,
         bool,
-    ) or native_physical_acceleration not in (0, 1, 2):
-        raise ValueError("native_physical_acceleration must be mode 0, 1, or 2")
+    ) or native_physical_acceleration not in (0, 1, 2, 3):
+        raise ValueError("native_physical_acceleration must be mode 0, 1, 2, or 3")
     if native_physical_acceleration and native_rows is None:
         raise ValueError("physical native acceleration requires native row storage")
+    if native_physical_acceleration == 3 and native_source_forces is None:
+        raise ValueError("mode 3 requires live native applied/passive/bias buffers")
+    if native_physical_acceleration != 3 and native_source_forces is not None:
+        raise ValueError("native_source_forces is supported only in mode 3")
     if len(mass.shape) != 3 or mass.shape[1] not in (6, 8):
         raise ValueError("invalid packed area-friction mass layout")
     width = mass.shape[1]
@@ -954,7 +1077,14 @@ def solve_batch(
     for name, array in zip(FRICTION_FIELDS, (sizes, mass, *buffers), strict=True):
         if array.shape != layout[name][0]:
             raise ValueError(f"invalid packed area-friction {name} layout")
-    # Standalone launches do not read the placeholder bindings.
+    # The rank-2 FP32 scalars buffer fills the three unused source slots in older modes.
+    scalars = buffers[FRICTION_FIELDS.index("scalars") - 2]
+    source_applied = source_passive = source_bias = scalars
+    if native_source_forces is not None:
+        source_applied, source_passive, source_bias = native_source_forces
+        for source in (source_applied, source_passive, source_bias):
+            if len(source.shape) != 2 or source.shape[0] != capacity or source.shape[1] < width:
+                raise ValueError("invalid native applied/passive/bias storage")
     rows, jacobian, counts = mass, mass, sizes
     row_capacity = 0
     if native_rows is not None:
@@ -983,5 +1113,8 @@ def solve_batch(
         rows,
         jacobian,
         counts,
+        source_applied,
+        source_passive,
+        source_bias,
         **launch,
     )

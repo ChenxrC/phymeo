@@ -4,6 +4,8 @@ The source-compiled plan and same-entry receipt are trusted inputs whose source
 and phase the enclosing auditor binds. This module neither solves contact nor
 changes state. It supports one or two undamped scalar joints, one declared limited
 joint and zero or one dry-friction row. The optional dry row is audited separately.
+The explicit damped two-DOF ground/area route uses the physical-M acceleration
+for its native limit law; its enclosing auditor binds M+hD integration separately.
 The active-row list is derived from actual FP32 q/range/margin; typed position
 is distance, while the impedance and spring position is distance minus margin.
 """
@@ -33,10 +35,29 @@ def _intermediate32(value):
         return float(np.float32(value))
 
 
+def _damped_native_limit(plan):
+    return bool(
+        getattr(plan, "damped_contact_dofs", 0) == 2
+        and plan.nv == plan.nq == 2
+        and plan.nlimit == 1
+        and plan.npair == plan.nslot == 1
+        and plan.nfriction == 0
+        and getattr(plan, "area_friction_laws", ())
+    )
+
+
 def _layout(plan, input_q):
     nv = plan.nv
     _require(type(nv) is int and nv in (1, 2), "one or two scalar DOFs")
-    for name, expected in (("kind", 2), ("nq", nv), ("nlimit", 1), ("npair", 0), ("nslot", 0)):
+    damped_native = _damped_native_limit(plan)
+    pairs = int(damped_native)
+    for name, expected in (
+        ("kind", 2),
+        ("nq", nv),
+        ("nlimit", 1),
+        ("npair", pairs),
+        ("nslot", pairs),
+    ):
         value = getattr(plan, name)
         _require(type(value) is int and value == expected, "unsupported plan " + name)
     _require(type(plan.nfriction) is int and plan.nfriction in (0, 1), "at most one dry row")
@@ -51,8 +72,10 @@ def _layout(plan, input_q):
         and vectors.ndim == 2
         and vectors.shape[0] == 9
         and 8 <= vectors.shape[1] <= 45
-        and np.all(vectors[1, :nv] == 0.0),
-        "no viscous damping on any DOF",
+        and np.isfinite(vectors[1, :nv]).all()
+        and np.all(vectors[1, :nv] >= 0.0)
+        and (damped_native or np.all(vectors[1, :nv] == 0.0)),
+        "source viscous damping in the admitted layout",
     )
     ids, law = plan.limit_ids, plan.limit_law
     _require(
@@ -203,7 +226,9 @@ def validate_limit_row(plan, row, input_q, input_v, output_v, h, physical_qacc):
 
     All q/v/qacc/J vectors have complete ``plan.nv`` FP64 shape. h is RN32 for
     actual integration. The full velocity/physical-acceleration agreement is
-    checked before projecting onto the validated signed unit row. Physical-M,
+    checked for the undamped route before projecting onto the signed unit row.
+    In the explicit damped native route, only physical qacc enters the limit law;
+    the enclosing auditor checks the distinct M+hD integration law. Physical-M,
     total generalized force, endpoint q integration, phase and complete row-list
     binding remain the caller's responsibility. Typed rows have no raw flags:
     the caller must also bind raw active=1, upper_mask=0 and unused upper=0.
@@ -280,10 +305,12 @@ def _validate(plan, row, input_q, input_v, output_v, h, physical_qacc):
 
     common = (vout - vin) / step
     _require(np.isfinite(common).all(), "finite common acceleration on every DOF")
-    _require(
-        np.all(np.abs(vout - (vin + step * physical)) <= 5e-5 * (1.0 + np.abs(vout))),
-        "physical acceleration and common velocity disagree on a DOF",
-    )
+    damped_native = _damped_native_limit(plan)
+    if not damped_native:
+        _require(
+            np.all(np.abs(vout - (vin + step * physical)) <= 5e-5 * (1.0 + np.abs(vout))),
+            "physical acceleration and common velocity disagree on a DOF",
+        )
     force = row.force
     physical_axis, common_axis = sign * float(physical[dof]), sign * float(common[dof])
     physical_gradient = physical_axis + row.regularization * force - row.reference_acceleration
@@ -292,10 +319,11 @@ def _validate(plan, row, input_q, input_v, output_v, h, physical_qacc):
     )
     _rounded(row.gradient, physical_gradient, "limit physical gradient", physical_scale)
     _lower_kkt(physical_gradient, force, tolerance, physical_scale, "physical-qacc")
-    common_gradient = common_axis + regularization * force - aref
-    common_scale = abs(common_axis) + abs(regularization * force) + abs(aref)
-    _lower_kkt(common_gradient, force, tolerance, common_scale, "common-velocity")
-    predicted = max(0.0, (aref - common_axis) / regularization)
+    law_axis = physical_axis if damped_native else common_axis
+    law_gradient = law_axis + regularization * force - aref
+    law_scale = abs(law_axis) + abs(regularization * force) + abs(aref)
+    _lower_kkt(law_gradient, force, tolerance, law_scale, "source-law")
+    predicted = max(0.0, (aref - law_axis) / regularization)
     _require(np.isfinite(predicted), "finite predicted force")
     _require(abs(force - predicted) <= 0.002 + 0.002 * abs(predicted), "predicted native force")
     return float(predicted)

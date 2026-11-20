@@ -88,6 +88,7 @@ def compile_area_plan(mj, model, pairs, friction_laws=()):
     ids, remaining = ownership.body_ids, ownership.native_geometry_pairs
     if model.na or np.any(model.jnt_type == mj.mjtJoint.mjJNT_BALL):
         raise ValueError("first area route supports stateless hinge/slide or free-root trees")
+    limit_count = np.count_nonzero(model.jnt_limited)
     damped_contact_dofs = 0
     if (
         remaining
@@ -97,12 +98,8 @@ def compile_area_plan(mj, model, pairs, friction_laws=()):
         and np.isfinite(model.dof_damping).all()
         and np.all(model.dof_damping >= 0)
         and np.any(model.dof_damping > 0)
-        and not (
-            model.neq
-            or model.ntendon
-            or np.any(model.jnt_limited)
-            or np.any(model.dof_frictionloss)
-        )
+        and not (model.neq or model.ntendon or np.any(model.dof_frictionloss))
+        and (limit_count == 0 or (model.nv == 2 and limit_count == 1))
     ):
         damped_contact_dofs = model.nv
     if (
@@ -122,7 +119,6 @@ def compile_area_plan(mj, model, pairs, friction_laws=()):
                 "live area friction requires area-only constraints or supported scalar joint rows"
             )
         dry_count = np.count_nonzero(model.dof_frictionloss)
-        limit_count = np.count_nonzero(model.jnt_limited)
         if (dry_count or limit_count) and not (
             1 <= model.nv == model.njnt <= 2
             and np.isin(model.jnt_type, (mj.mjtJoint.mjJNT_SLIDE, mj.mjtJoint.mjJNT_HINGE)).all()

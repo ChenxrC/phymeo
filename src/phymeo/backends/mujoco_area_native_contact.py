@@ -211,11 +211,12 @@ def _source_law(plan, row, h):
     return float(aref), float(regularization)
 
 
-def validate(runtime, raw, contacts, constraints, dynamics, qacc, h):
+def validate(runtime, raw, contacts, constraints, dynamics, qacc, h, *, output_v=None):
     """Return stored and independent-law native generalized loads.
 
     Scope is one plane/sphere condim=3 pair on one damped scalar joint
-    or the explicitly admitted two-scalar coupled route. No native pair is
+    or the explicitly admitted two-scalar coupled route, optionally with one
+    declared finite joint limit. No native pair is
     inferred from an area pair or from receipt fields.
     The physical-M row law intentionally uses qacc, not integration acceleration.
     """
@@ -225,7 +226,8 @@ def validate(runtime, raw, contacts, constraints, dynamics, qacc, h):
         and plan.damped_contact_dofs in (1, 2)
         and plan.nv == plan.nq == plan.damped_contact_dofs
         and plan.npair == plan.nslot == 1
-        and plan.nfriction == plan.nlimit == 0
+        and plan.nfriction == 0
+        and (plan.nlimit == 0 or (plan.damped_contact_dofs == 2 and plan.nlimit == 1))
         and int(plan.pair_condim[0]) == 3,
         "unsupported native geometry scope",
     )
@@ -262,6 +264,18 @@ def validate(runtime, raw, contacts, constraints, dynamics, qacc, h):
         body_com=dynamics.body_com.astype(np.float32)[None],
         qacc=qacc.astype(np.float32)[None],
     )
+    limit_rows = tuple(row for row in constraints if row.constraint_type == 3)
+    ground_rows = tuple(row for row in constraints if row.constraint_type == 6)
+    _require(len(limit_rows) + len(ground_rows) == len(constraints), "native row groups")
+    if plan.nlimit:
+        from .mujoco_area_limit import expected_limit_sides, validate_limit_row
+
+        expected = expected_limit_sides(plan, dynamics.input_q)
+        _require(
+            len(expected) <= 1
+            and tuple((row.source_id, row.dof, row.side_or_edge) for row in limit_rows) == expected,
+            "complete nonoverlapping source limit rows",
+        )
     decoded_contacts, decoded_rows, _ = publish_constraints(runtime, replay, 0, native_only=True)
     _source_geometry(plan, raw["candidate_rows"][0], dynamics)
     _same_records(contacts, decoded_contacts)
@@ -270,7 +284,26 @@ def validate(runtime, raw, contacts, constraints, dynamics, qacc, h):
     _require(np.all(raw["candidate_jacobian"][:, plan.nv :] == 0), "candidate Jacobian padding")
     _require(np.all(raw["contact_J"][:, :, plan.nv :] == 0), "contact Jacobian padding")
     total, predicted_total = np.zeros(plan.nv), np.zeros(plan.nv)
-    for contact in contacts:
+    if plan.nlimit:
+        for row in constraints:
+            gradient = (
+                float(row.jacobian @ qacc)
+                + row.regularization * row.force
+                - row.reference_acceleration
+            )
+            _require(
+                gradient >= -2e-5 * (1.0 + abs(row.reference_acceleration)),
+                "unilateral gradient at published physical acceleration",
+            )
+        for row in limit_rows:
+            predicted = validate_limit_row(
+                plan, row, dynamics.input_q, dynamics.input_v, output_v, h, qacc
+            )
+            total += row.jacobian * row.force
+            predicted_total += row.jacobian * predicted
+    else:
+        _require(not limit_rows, "no undeclared limit rows")
+    for ci, contact in enumerate(contacts):
         ba, bb = contact.body_ids
         point, frame = contact.position, contact.frame
         _close(frame @ frame.T, np.eye(3), "native contact frame")
@@ -303,8 +336,16 @@ def validate(runtime, raw, contacts, constraints, dynamics, qacc, h):
         _require(contact.include_margin == include, "source include margin")
         _require(contact.active == (contact.distance < include), "native activity")
         _require(contact.distance <= float(plan.pair_law[0, 0]), "native detection margin")
+        # Native joint rows precede ground rows; they never contribute to the
+        # contact wrench or consume a pyramid edge index.
+        rows = tuple(row for row in ground_rows if row.source_id == ci)
+        _require(len(rows) == (4 if contact.active else 0), "complete ground pyramid")
         loads = np.zeros(4)
-        for edge, row in enumerate(constraints):
+        for edge, row in enumerate(rows):
+            _require(
+                row.side_or_edge == edge and row.geometry_slot == 0 and row.dof == -1,
+                "source ground edge identity",
+            )
             component, sign = edge // 2 + 1, 1 if edge % 2 == 0 else -1
             jacobian = (
                 contact.jacobian[0]

@@ -360,7 +360,14 @@ def _validate(runtime, key, receipt, state):
         from .mujoco_area_native_contact import validate as validate_native
 
         summed, law_total = validate_native(
-            runtime, fields["native_contacts"], receipt.contacts, receipt.constraints, dyn, qacc, h
+            runtime,
+            fields["native_contacts"],
+            receipt.contacts,
+            receipt.constraints,
+            dyn,
+            qacc,
+            h,
+            output_v=output,
         )
         owners, joint_rows = (), ()
     else:

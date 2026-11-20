@@ -593,7 +593,9 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                 if self._plan.damped_contact_dofs:
                     info.update(
                         domain=(
-                            "area-friction-cuda-damped-coupled-support-v1"
+                            "area-friction-cuda-damped-coupled-support-limit-v1"
+                            if self._plan.coupled_damped_contacts and self._plan.nlimit
+                            else "area-friction-cuda-damped-coupled-support-v1"
                             if self._plan.coupled_damped_contacts
                             else "area-friction-cuda-damped-scalar-support-v1"
                         ),

@@ -52,6 +52,7 @@ def solve_contact(device, old):
         mode=device.mode,
     )
     device.counts["completed_kernels"] += 1
+    coupled_limit = device.plan.coupled_damped_contacts and device.plan.nlimit == 1
     solve_batch(
         device.nworld,
         device.nworld,
@@ -60,7 +61,10 @@ def solve_contact(device, old):
         native_rows=(device.efc_data, device.efc_jacobian, device.constraint_counts)
         if device.plan.nfriction or device.plan.nlimit or device.plan.damped_contact_dofs
         else None,
-        native_physical_acceleration=device.plan.damped_contact_dofs,
+        native_source_forces=(device.applied, device.passive, device.bias)
+        if coupled_limit
+        else None,
+        native_physical_acceleration=3 if coupled_limit else device.plan.damped_contact_dofs,
         mode=device.mode,
     )
     device.counts["completed_kernels"] += 1

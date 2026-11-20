@@ -77,7 +77,10 @@ def _declaration(mu=0.5, key=41, *, capacity=64, ground=True):
     return spec, world
 
 
-@pytest.mark.parametrize("restriction", ["normal-only", "limit", "condim-1", "two-ground-pairs"])
+@pytest.mark.parametrize(
+    "restriction",
+    ["normal-only", "two-limits", "limit-with-dry-friction", "condim-1", "two-ground-pairs"],
+)
 def test_damped_coupled_contact_admission_limits(restriction):
     import mujoco as mj
 
@@ -89,8 +92,12 @@ def test_damped_coupled_contact_admission_limits(restriction):
     expected = "damped area route cannot mix native constraints"
     if restriction == "normal-only":
         laws = ()
-    elif restriction == "limit":
+    elif restriction in ("two-limits", "limit-with-dry-friction"):
         xml = xml.replace('name="child-slide"', 'name="child-slide" limited="true" range="-.2 .2"')
+        attribute = (
+            'limited="true" range="-.2 .2"' if restriction == "two-limits" else 'frictionloss=".1"'
+        )
+        xml = xml.replace('name="parent-slide"', f'name="parent-slide" {attribute}')
     elif restriction == "condim-1":
         xml = xml.replace('condim="3"', 'condim="1"')
         expected = "one native condim-3 plane/sphere"

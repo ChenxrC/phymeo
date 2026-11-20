@@ -18,6 +18,19 @@ _LOADED = None
 _FRONTEND_TYX_PAIRS = frozenset({
     ("0.0.0a7", "0.1.0a0"),
     ("0.0.0a8", "0.2.0a1"),
+    ("0.0.0a9", "0.2.0a1"),
+    ("0.0.0a10", "0.2.0a1"),
+    ("0.0.0a11", "0.2.0a1"),
+    ("0.0.0a12", "0.2.0a1"),
+    ("0.0.0a13", "0.2.0a1"),
+    ("0.0.0a14", "0.2.0a1"),
+    ("0.0.0a15", "0.2.0a1"),
+    ("0.0.0a16", "0.2.0a1"),
+    ("0.0.0a17", "0.2.0a1"),
+    ("0.0.0a18", "0.2.0a1"),
+    ("0.0.0a19", "0.2.0a1"),
+    ("0.0.0a20", "0.2.0a1"),
+    ("0.0.0a21", "0.2.0a1"),
 })
 
 
@@ -34,12 +47,12 @@ class PhySolvePayload:
     native_sha256: str
     cubin_sha256: tuple[tuple[str, str], ...]
 
-    def validate(self):
+    def validate(self, *, primitive=False):
         if sys.platform != "win32" or sys.version_info[:3] != (3, 13, 13):
             raise RuntimeError("PhySolve requires Windows CPython 3.13.13")
         if struct.calcsize("P") != 8 or not sys._is_gil_enabled():
             raise RuntimeError("PhySolve requires standard x64 CPython")
-        if metadata.version("mujoco") != "3.8.0":
+        if not primitive and metadata.version("mujoco") != "3.8.0":
             raise RuntimeError("PhySolve requires mujoco==3.8.0")
         pair = (metadata.version("physolve-tyx-frontend"), metadata.version("tyx-compute"))
         if pair not in _FRONTEND_TYX_PAIRS:
@@ -60,9 +73,9 @@ class PhySolvePayload:
                 raise RuntimeError(f"PhySolve frozen payload mismatch: {path.name}")
         return native, directory
 
-    def load(self):
+    def load(self, *, primitive=False):
         global _LOADED
-        native, directory = self.validate()
+        native, directory = self.validate(primitive=True) if primitive else self.validate()
         identity = (str(native), str(directory), self.native_sha256.lower(),
                     tuple(sorted((n, h.lower()) for n, h in self.cubin_sha256)))
         with _LOCK:

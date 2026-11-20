@@ -18,10 +18,11 @@ class PreparedUpdates:
         self.worlds.zero_(stream=stream)
         _union(self.worlds, self.worlds, mode='cuda', stream=stream)
 
-    def add(self, runtime, *, refresh_state, compose_controls, selected_worlds):
+    def add(self, runtime, *, refresh_state, compose_controls, selected_worlds,
+            restore_contacts=False):
         pending = runtime._pending
         if 'updates' not in pending:
-            pending['updates'] = dict(refresh=False, compose=False)
+            pending['updates'] = dict(refresh=False, compose=False, restore_contacts=True)
             self.worlds.zero_(stream=runtime._stream)
             self.batches += 1
         options = pending['updates']
@@ -31,6 +32,7 @@ class PreparedUpdates:
                    mode='cuda', stream=runtime._stream)
         options['refresh'] |= bool(refresh_state)
         options['compose'] |= bool(compose_controls)
+        options['restore_contacts'] &= restore_contacts
         self.edits += 1
 
     def flush(self, runtime, ticket):
@@ -39,6 +41,7 @@ class PreparedUpdates:
             return
         runtime.enqueue_update(ticket, refresh_state=options['refresh'],
                                compose_controls=options['compose'],
+                               restore_contacts=options['restore_contacts'],
                                selected_worlds=self.worlds if options['refresh'] else None)
         self.materializations += 1
 

@@ -57,10 +57,10 @@ def _inertial(link, name, *, root=False):
     return principal_inertia(mass, com, orientation, tensor, where, root=root)
 
 
-def _joint_data(joint, name):
+def _joint_data(joint, name, *, allow_continuous=False):
     where = f"joint {name!r}"
     kind = _name(joint, "type", where)
-    if kind not in {"revolute", "prismatic"}:
+    if kind not in {"revolute", "prismatic"} and not (allow_continuous and kind == "continuous"):
         raise ValueError(f"{where}: unsupported joint type {kind!r}")
     _attributes(joint, {"name", "type"}, where)
     _children(joint, {"parent", "child", "origin", "axis", "limit"}, where)
@@ -73,6 +73,16 @@ def _joint_data(joint, name):
         _children(element, set(), where + " axis")
         axis = _numbers(element, "xyz", 3, where + " axis")
     axis = unit_axis(axis, where)
+    if kind == "continuous":
+        limit = _child(joint, "limit", where, required=False)
+        effort = velocity = None
+        if limit is not None:
+            _attributes(limit, {"effort", "velocity"}, where + " limit")
+            _children(limit, set(), where + " limit")
+            effort, velocity = (_number(limit, key, where + " limit") for key in ("effort", "velocity"))
+            if min(effort, velocity) < 0:
+                raise ValueError(f"{where} has invalid effort or velocity")
+        return kind, position, orientation, axis, (None, None, effort, velocity)
     limit = _child(joint, "limit", where)
     keys = ("lower", "upper", "effort", "velocity")
     _attributes(limit, set(keys), where + " limit")
@@ -83,7 +93,7 @@ def _joint_data(joint, name):
     return kind, position, orientation, axis, bounds
 
 
-def _tree(robot):
+def _tree(robot, *, depth_first=False):
     links = {}
     for link in robot.findall("link"):
         name = _name(link, "name", "link")
@@ -124,7 +134,10 @@ def _tree(robot):
     while queue:
         child = queue.popleft()
         order.append(child)
-        queue.extend(children[child])
+        if depth_first:
+            queue.extendleft(reversed(children[child]))
+        else:
+            queue.extend(children[child])
     if len(order) != len(links) - 1:
         raise ValueError("URDF contains a disconnected cycle")
     if not order:
@@ -187,9 +200,9 @@ def _link_collisions(link, link_name, link_index, xml_path):
     return result
 
 
-def _read_tree(path):
+def _read_tree(path, source=None, *, depth_first=False):
     try:
-        robot = ET.parse(path).getroot()
+        robot = ET.parse(path).getroot() if source is None else ET.fromstring(source)
     except ET.ParseError as exc:
         raise ValueError(f"Invalid URDF XML in {path}: {exc}") from exc
     if robot.tag != "robot":
@@ -199,12 +212,13 @@ def _read_tree(path):
         raise ValueError(f"Unsupported URDF version {robot.get('version')!r}, expected 1.0")
     name = _name(robot, "name", "robot")
     _children(robot, {"link", "joint", "material"}, f"robot {name!r}")
-    root, links, order, inbound = _tree(robot)
+    root, links, order, inbound = _tree(robot, depth_first=depth_first)
     return name, root, links, order, inbound
 
 
 def load_urdf(
-    path: str | Path, *, gravity=(0.0, 0.0, -9.81), collapse_fixed_joints=None
+    path: str | Path, *, gravity=(0.0, 0.0, -9.81), collapse_fixed_joints=None, source=None,
+    depth_first=False,
 ) -> RobotAsset:
     """Read a local, fixed-base URDF 1.0 tree with bounded revolute/prismatic scalar joints.
 
@@ -217,10 +231,13 @@ def load_urdf(
     assets use that strict path by default. Static-root inertia is checked and omitted
     from dynamics. An absent moving joint axis defaults to +X.
     Spheres, boxes, Z-axis cylinders and local closed OBJ meshes retain their link and transform.
+    An optional XML byte/string snapshot takes precedence over the locator.
+    Depth-first ordering makes each subtree contiguous for native DOF tiles.
+    The default preserves breadth-first ordering for existing callers.
     Visuals and global display materials are ignored. Other joint/shape types
     and semantic elements (e.g. mimic or joint dynamics) raise ValueError.
     """
-    name, root, links, order, inbound = _read_tree(path)
+    name, root, links, order, inbound = _read_tree(path, source, depth_first=depth_first)
     if collapse_fixed_joints is not None and not isinstance(
         collapse_fixed_joints, (bool, np.bool_)
     ):

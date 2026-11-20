@@ -18,6 +18,16 @@ def _capacity(values: tx.Array[tx.i32], flags: tx.Array[tx.i32], limit: tx.i32):
             tx.atomic_or(flags[0], 1)
 
 
+@tx.kernel(gradient="unsupported")
+def _joint_velocity_limit(velocity: tx.Array[tx.f32], limits: tx.Array[tx.f32],
+                          flags: tx.Array[tx.i32], dof_start: tx.i32, dof_count: tx.i32):
+    for i in tx.range(velocity.shape[0] // dof_count * limits.shape[0]):
+        joint = i % limits.shape[0]
+        world = i // limits.shape[0]
+        if tx.abs(velocity[world * dof_count + dof_start + joint]) > limits[joint]:
+            tx.atomic_or(flags[0], 8388608)
+
+
 class PreparedValidation:
     """Borrow fixed bank views; no per-world dispatch or full-state host readback."""
 
@@ -27,6 +37,7 @@ class PreparedValidation:
         self.flags = tx.zeros(1, tx.i32, device=device)
         self.host = np.zeros(1, dtype=np.int32)
         self.plans = []
+        self.joint_velocity_plans = ()
         self.readbacks = 0
         self.extra_plans = [(), ()]
         for bank in banks:
@@ -54,6 +65,19 @@ class PreparedValidation:
                 for bank in extra_banks
             ]
             self.finite_fields = (*self.finite_fields, *names)
+
+    def prepare_joint_velocity_limits(self, banks, offset, limits, device, stream):
+        thresholds = tx.Array(limits, device=device)
+        self.joint_velocity_plans = tuple(
+            _joint_velocity_limit.prepare_cuda(
+                bank.qvel.view(tx.f32).flatten(), thresholds, self.flags, offset, bank.qvel.shape[1]
+            )
+            for bank in banks
+        )
+
+    def enqueue_joint_velocity(self, index, stream):
+        if self.joint_velocity_plans:
+            self.joint_velocity_plans[index].launch(stream=stream)
 
     def prepare(self, stream):
         # The runtime owns this object before launches can fail in flight.
@@ -83,6 +107,8 @@ class PreparedValidation:
         self.flags.copy_to_host(self.host, stream=stream)
         self.readbacks += 1
         bits = int(self.host[0])
+        if bits & 8388608:
+            raise RuntimeError("joint velocity limit exceeded; PhySolve candidate not published")
         if bits & 4194304:
             raise RuntimeError("non-finite PhySolve current-forward observation; not published")
         if bits & 1:

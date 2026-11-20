@@ -1,5 +1,6 @@
 """Prepared solve-time measurements; never rerun collision or constraint solve."""
 
+import numpy as np
 import tyx as tx
 
 
@@ -102,9 +103,11 @@ def _merge(old_values: tx.Array[tx.f32], old_ids: tx.Array[tx.i32], old_count: t
         if old:
             n = old_count[0]
         if i < n and flags[0] == 0:
-            world = new_ids[4*i]
+            world = 0
             if old:
                 world = old_ids[4*i]
+            else:
+                world = new_ids[4*i]
             keep = mask[world]
             if old:
                 keep = not keep
@@ -115,14 +118,18 @@ def _merge(old_values: tx.Array[tx.f32], old_ids: tx.Array[tx.i32], old_count: t
                 else:
                     tx.atomic_add(by_world[world], 1)
                     for c in range(4):
-                        value = new_ids[4*i+c]
+                        value = 0
                         if old:
                             value = old_ids[4*i+c]
+                        else:
+                            value = new_ids[4*i+c]
                         identity[4*slot+c] = value
                     for c in range(25):
-                        value = new_values[25*i+c]
+                        value = 0.0
                         if old:
                             value = old_values[25*i+c]
+                        else:
+                            value = new_values[25*i+c]
                         values[25*slot+c] = value
 
 
@@ -164,6 +171,7 @@ class PreparedContacts:
                           tx.empty(1, tx.i32, device=device),
                           tx.empty(self.nworld, tx.i32, device=device)) for _ in range(3))
         self.flat = tuple(tuple(a.flatten() for a in bank) for bank in self.raw)
+        self.initial = None
         self.banks = []
         for bank_index, (values, identity, count, by_world) in enumerate(self.raw[:2]):
             fields = {name: values[:, start:end] for name, (start, end, _, _) in self.float_fields.items()}
@@ -191,12 +199,27 @@ class PreparedContacts:
         self.update(0, stream, mask=all_mask)
         self.extractions = self.merges = self.copies = 0
 
-    def update(self, index, stream, *, mask=None, integrated=False, record=True):
+    def remember_initial(self, stream):
+        """Freeze the validated commit sample for repeatable reset readback."""
+        values, identity, count, _ = self.raw[0]
+        host_count = np.empty(1, dtype=np.int32)
+        count.copy_to_host(host_count, stream=stream)
+        size = int(host_count[0])
+        if not 0 <= size <= self.capacity:
+            raise ValueError("initial contact count exceeds prepared capacity")
+        self.initial = (tx.clone(values[:size]).flatten(), tx.clone(identity[:size]).flatten(),
+                        tx.clone(count))
+
+    def update(self, index, stream, *, mask=None, integrated=False, record=True,
+               restore_initial=False):
         native = self.native[index]
+        selector = self.all_mask if mask is None else mask
+        baseline = self.initial if restore_initial else None
+        merge = mask is not None or baseline is not None
         _next_sample(self.serial, mode="cuda", stream=stream)
         _sample_identity(self.serial, self.sample_ids[1-index], self.sample_ids[index],
-                         self.all_mask if mask is None else mask, mode="cuda", stream=stream)
-        target = index if mask is None else 2
+                         selector, mode="cuda", stream=stream)
+        target = 2 if merge else index
         inputs = self.inputs[index]
         _ids(native.nacon, *inputs[:3], self.addresses[index], native.nefc, self.flags, self.ids,
              self.nworld, self.model.ngeom, native.njmax,
@@ -209,12 +232,13 @@ class PreparedContacts:
             self.extractions += 1
         _sample_reference(native.time, self.sample_times[1-index], self.sample_times[index],
                           self.native_com[index], self.flat_com[1-index], self.flat_com[index],
-                          self.all_mask if mask is None else mask, self.flags, self.model.nbody * 3,
+                          selector, self.flags, self.model.nbody * 3,
                           not integrated, mode="cuda", stream=stream)
-        if mask is not None:
+        if merge:
             self.raw[index][2].zero_(stream=stream)
             self.raw[index][3].zero_(stream=stream)
-            _merge(*self.flat[1-index][:3], *self.flat[2][:3], mask, *self.flat[index],
+            new = self.flat[2][:3] if baseline is None else baseline
+            _merge(*self.flat[1-index][:3], *new, selector, *self.flat[index],
                    self.flags, mode="cuda", stream=stream)
             if record:
                 self.merges += 1
@@ -234,8 +258,9 @@ class PreparedContacts:
 
     @property
     def allocated_bytes(self):
+        initial_bytes = 0 if self.initial is None else sum(a.size * 4 for a in self.initial)
         return (sum(a.size*4 for bank in self.raw for a in bank) + self.capacity*28
-                + self.nworld*24 + 8 + sum(a.size*4 for a in self.body_com))
+                + self.nworld*24 + 8 + sum(a.size*4 for a in self.body_com) + initial_bytes)
 
 
 @tx.kernel(gradient="unsupported")

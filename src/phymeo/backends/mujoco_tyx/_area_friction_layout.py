@@ -28,22 +28,24 @@ def friction_width(nv):
     return 6 if nv <= 6 else MAX_LIVE_DOF
 
 
-def scratch_layout(nworld, nv):
+def scratch_layout(nworld, nv, *, sample_capacity=128):
     width = friction_width(nv)
     if type(nworld) is not int or not 1 <= nworld <= 32:
         raise ValueError("live area friction requires 1..32 worlds per bucket")
+    if type(sample_capacity) is not int or not 1 <= sample_capacity <= 512:
+        raise ValueError("area-friction sample capacity must be in 1..512")
     w = nworld
     return {
         "sizes": ((w, 4), "int32"),
         "mass": ((w, width, width), "float32"),
         "inputs": ((w, 3, width), "float32"),
         "steps": ((w,), "float32"),
-        "samples": ((w, 128, 10), "float32"),
-        "ja": ((w, 128, 3, width), "float32"),
-        "jb": ((w, 128, 3, width), "float32"),
+        "samples": ((w, sample_capacity, 10), "float32"),
+        "ja": ((w, sample_capacity, 3, width), "float32"),
+        "jb": ((w, sample_capacity, 3, width), "float32"),
         "matrices": ((w, 4, width, width), "float32"),
         "vectors": ((w, 8, width), "float32"),
-        "contact": ((w, 128, 17), "float32"),
+        "contact": ((w, sample_capacity, 17), "float32"),
         "meta": ((w, 5), "int32"),
         "scalars": ((w, 3), "float32"),
         "trace_meta": ((w, 290, 4), "int32"),

@@ -40,6 +40,22 @@ SOURCE_NAMES = (
 C, P = 128, 8
 
 
+def test_declared_sample_capacity_changes_only_per_point_storage():
+    from phymeo.backends.mujoco_tyx._area_friction_layout import scratch_layout
+
+    default = scratch_layout(2, 8)
+    for capacity in (129, 238, 512):
+        wide = scratch_layout(2, 8, sample_capacity=capacity)
+        for name, (shape, dtype) in default.items():
+            expected = (
+                (2, capacity, *shape[2:]) if name in ("samples", "ja", "jb", "contact") else shape
+            )
+            assert wide[name] == (expected, dtype)
+    for invalid in (True, 0, 513):
+        with pytest.raises(ValueError, match="sample capacity"):
+            scratch_layout(2, 8, sample_capacity=invalid)
+
+
 def _decode(value):
     if isinstance(value, dict) and set(value) == {"dtype", "shape", "hex"}:
         dtype = np.dtype(value["dtype"])

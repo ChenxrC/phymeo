@@ -9,6 +9,7 @@ Only the production CUDA owner steps. Native forward supplies input M/J/R/aref;
 an independent checked two-variable Newton solve supplies expected velocities.
 """
 
+from dataclasses import replace
 from types import SimpleNamespace
 
 import numpy as np
@@ -615,6 +616,56 @@ def test_coupled_mixed_route_preserves_absent_ground_and_empty_area_limits(groun
         if empty and not ground:
             expected = np.linalg.solve(MASS + float(np.float32(H)) * np.diag(DAMPING), MASS @ V0)
             np.testing.assert_allclose(after[41].v, expected, rtol=2e-6, atol=2e-7)
+
+
+@pytest.mark.cuda
+@pytest.mark.parametrize("capacity", (247, 246))
+def test_dense_side_friction_shares_capacity_with_live_ground_rows(capacity, tmp_path):
+    spec, world = _declaration(capacity=capacity)
+    with MuJoCoTyxHeterogeneousBatch((spec,), (world,), mode="cuda") as batch:
+        _, before, _ = _prescribed_step(batch)
+        surface = _prescribed(batch, 41)
+        (parent,) = surface.triangles
+        a, b, c = parent.vertices
+        edge = np.linspace(b, c, 82)
+        tiles = tuple(
+            replace(parent, triangle_id=f"tile-{i}", vertices=np.array([a, left, right]))
+            for i, (left, right) in enumerate(zip(edge[:-1], edge[1:], strict=True))
+        )
+        refined = replace(surface, triangles=tiles)
+        revision = batch.checkpoint_revision
+        if capacity == 246:
+            checkpoint = batch.checkpoint().to_bytes()
+            with pytest.raises((ValueError, PhysicsStepFailure)):
+                batch.step_area_pressure(H, {41: (refined,)}, expected_revision=revision)
+            assert batch.checkpoint_revision == revision
+            assert batch.checkpoint().to_bytes() == checkpoint
+            _same(batch.integration_snapshot(), before)
+            _, retry, _ = _prescribed_step(batch)
+            assert retry[41].tick == before[41].tick + 1
+            return
+
+        assert batch.step_area_pressure(H, {41: (refined,)}, expected_revision=revision) == {
+            41: True
+        }
+        after = batch.integration_snapshot()[41]
+        audit = _audit(spec, before[41], after, SimpleNamespace(surface=refined))
+        pair = audit["pair"]
+        assert len(pair["sample_ids"]) == 243
+        assert len(audit["native_force"]) == 4
+        assert audit["ground_force"][2] > 0.1
+        assert np.all(pair["normal_force"] > 0)
+        assert np.all(np.linalg.norm(pair["tangential_force"], axis=1) > 0)
+        with _evidence(tmp_path / "dense-mixed-load.json.gz") as evidence:
+            evidence.update(
+                area_points=len(pair["sample_ids"]),
+                native_rows=len(audit["native_force"]),
+                side_normal_n=float(pair["normal_force"].sum()),
+                side_tangent_n=float(np.linalg.norm(pair["tangential_force"].sum(axis=0))),
+                ground_normal_n=float(audit["ground_force"][2]),
+                velocity=after.v,
+                reference_velocity=audit["expected_v"],
+            )
 
 
 @pytest.mark.cuda

@@ -407,7 +407,7 @@ def _validate(runtime, key, receipt, state):
         )
         count += n
         _require(
-            count <= min(128, runtime._constraint_capacity - len(receipt.constraints)),
+            count + len(receipt.constraints) <= runtime._constraint_capacity,
             "sample capacity",
         )
         for name, shape in (

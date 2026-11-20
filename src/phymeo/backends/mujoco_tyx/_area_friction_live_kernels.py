@@ -97,7 +97,7 @@ def stage(
             for j in range(2):
                 words[w, s, j] = 0
         ns = sizes[w]
-        if ns < 0 or ns > cap or ns > 128:
+        if ns < 0 or ns > cap:
             if status[w] == 0:
                 status[w] = 8
         if status[w] == 0:

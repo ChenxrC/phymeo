@@ -13,6 +13,7 @@ def solve_contact(device, old):
     from ._area_friction_live_kernels import apply_load
 
     packet = device.area_packet
+    sample_capacity = device.friction_samples.shape[1]
     for name, value in (
         ("area_input", packet[0]),
         ("area_pair_index", packet[1]),
@@ -49,6 +50,7 @@ def solve_contact(device, old):
         device.area_friction_parameters,
         *(out(name) for name in FRICTION_FIELDS[:7]),
         out("pack_status"),
+        sample_capacity=sample_capacity,
         mode=device.mode,
     )
     device.counts["completed_kernels"] += 1
@@ -64,6 +66,7 @@ def solve_contact(device, old):
         device.nworld,
         *(out(name) for name in FRICTION_FIELDS),
         require_velocity_agreement=True,
+        sample_capacity=sample_capacity,
         native_rows=(device.efc_data, device.efc_jacobian, device.constraint_counts)
         if device.plan.nfriction or device.plan.nlimit or device.plan.damped_contact_dofs
         else None,

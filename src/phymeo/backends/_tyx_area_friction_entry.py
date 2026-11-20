@@ -33,6 +33,7 @@ def _pack_entry_kernel(
     nbody: tx.i32,
     npair: tx.i32,
     area_capacity: tx.i32,
+    sample_capacity: tx.i32,
     h: tx.f32,
     source_status: tx.ndarray(tx.i32, 1),
     source_mass: tx.ndarray(tx.f32, 3),
@@ -67,7 +68,7 @@ def _pack_entry_kernel(
                 mass[w, i, j] = 0.0
             for j in range(3):
                 inputs[w, j, i] = 0.0
-        for s in range(128):
+        for s in range(sample_capacity):
             for i in range(10):
                 samples[w, s, i] = 0.0
             for i in range(3):
@@ -82,7 +83,7 @@ def _pack_entry_kernel(
                 code = 1
             if code == 0:
                 ns = area_sizes[w]
-                if ns < 0 or ns > 128 or ns > area_capacity:
+                if ns < 0 or ns > sample_capacity or ns > area_capacity:
                     code = 2
             if code == 0:
                 if not tx.isfinite(h) or h <= 0.0:
@@ -218,7 +219,7 @@ def _pack_entry_kernel(
                         mass[w, i, j] = 0.0
                     for j in range(3):
                         inputs[w, j, i] = 0.0
-                for s in range(128):
+                for s in range(sample_capacity):
                     for i in range(10):
                         samples[w, s, i] = 0.0
                     for i in range(3):
@@ -267,6 +268,7 @@ def pack_entry(
     jb,
     pack_status,
     *,
+    sample_capacity=128,
     mode="cuda",
 ):
     """Metadata-only checked launch; does not read values, allocate, or sync.
@@ -288,6 +290,7 @@ def pack_entry(
         (nbody, 1, 128),
         (npair, 1, 16),
         (area_capacity, 1, 512),
+        (sample_capacity, 1, 512),
     )
     if any(type(value) is not int or not low <= value <= high for value, low, high in bounds):
         raise ValueError("entry pack bounded integer dimensions")
@@ -345,9 +348,9 @@ def pack_entry(
         ((capacity, packed_width, packed_width), f32),
         ((capacity, 3, packed_width), f32),
         ((capacity,), f32),
-        ((capacity, 128, 10), f32),
-        ((capacity, 128, 3, packed_width), f32),
-        ((capacity, 128, 3, packed_width), f32),
+        ((capacity, sample_capacity, 10), f32),
+        ((capacity, sample_capacity, 3, packed_width), f32),
+        ((capacity, sample_capacity, 3, packed_width), f32),
         ((capacity,), i32),
     )
     ordinal = source_status.device_ordinal if mode == "cuda" else None
@@ -384,6 +387,7 @@ def pack_entry(
         nbody,
         npair,
         area_capacity,
+        sample_capacity,
         packed_h,
         *source,
         *outputs,

@@ -47,6 +47,7 @@ def _solve_batch(
     trace: tx.ndarray(tx.f32, 3),
     require_velocity_agreement: tx.i32,
     packed_width: tx.i32,
+    sample_capacity: tx.i32,
     row_capacity: tx.i32,
     native_physical_acceleration: tx.i32,
     native_limit_count: tx.i32,
@@ -74,7 +75,7 @@ def _solve_batch(
         for bank in range(8):
             for i in range(packed_width):
                 vectors[w, bank, i] = 0.0
-        for sample in range(128):
+        for sample in range(sample_capacity):
             for i in range(17):
                 contact[w, sample, i] = 0.0
         for row in range(290):
@@ -146,7 +147,7 @@ def _solve_batch(
                 nv < 1
                 or nv > packed_width
                 or ns < 0
-                or ns > 128
+                or ns > sample_capacity
                 or budget < 0
                 or budget > 24
                 or searches < 0
@@ -1411,6 +1412,7 @@ def solve_batch(
     mass,
     *buffers,
     require_velocity_agreement=False,
+    sample_capacity=128,
     native_rows=None,
     native_physical_acceleration=0,
     native_source_forces=None,
@@ -1465,7 +1467,7 @@ def solve_batch(
     if len(mass.shape) != 3 or mass.shape[1] not in (6, 8):
         raise ValueError("invalid packed area-friction mass layout")
     width = mass.shape[1]
-    layout = scratch_layout(capacity, width)
+    layout = scratch_layout(capacity, width, sample_capacity=sample_capacity)
     for name, array in zip(FRICTION_FIELDS, (sizes, mass, *buffers), strict=True):
         if array.shape != layout[name][0]:
             raise ValueError(f"invalid packed area-friction {name} layout")
@@ -1500,6 +1502,7 @@ def solve_batch(
         *buffers,
         int(require_velocity_agreement),
         width,
+        sample_capacity,
         row_capacity,
         int(native_physical_acceleration),
         native_limit_count,

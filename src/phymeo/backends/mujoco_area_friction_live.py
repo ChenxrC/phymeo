@@ -37,7 +37,7 @@ def publish(runtime, result, index):
     meta = result["friction_meta"][index]
     _require(np.array_equal(sizes, (n, ns, 24, 12)), "solver sizes")
     _require(result["friction_pack_status"][index] == 0 and meta[0] == 0, "solver status")
-    _require(0 <= ns <= 128, "sample count")
+    _require(0 <= ns <= runtime._constraint_capacity, "sample count")
     mass = result["friction_mass"][index, :n, :n]
     inputs = result["friction_inputs"][index, :, :n]
     h = result["friction_steps"][index]

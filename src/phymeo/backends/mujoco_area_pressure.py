@@ -240,7 +240,7 @@ def pack(runtime, mapping, expected_revision):
                 and surface.identity != runtime._area_friction_laws[pi].identity
             ):
                 raise ValueError("area-friction body/material identity differs")
-            if cursor + n > min(cap - native_rows, 128 if runtime._area_friction_laws else cap):
+            if cursor + n + native_rows > cap:
                 raise ValueError("area-pressure samples exceed constraint capacity")
             with np.errstate(over="raise", invalid="raise", divide="raise"):
                 k = quad.dA * quad.gradient

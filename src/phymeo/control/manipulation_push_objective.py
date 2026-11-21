@@ -42,6 +42,14 @@ class NativePlanarPushProposal:
     cost_after: float
     predicted_improvement: float
     sort_key: tuple[int, float, int, int]
+    # Defaults also permit decoding archived proposals made before this policy.
+    selection_policy: str = "pose-cost"
+    selection_eligible: bool = True
+    selection_reason: str = "legacy_pose_cost"
+    position_error_before_m: float | None = None
+    position_error_after_m: float | None = None
+    yaw_error_before_rad: float | None = None
+    yaw_error_after_rad: float | None = None
 
 
 def _vector(value, width, name):
@@ -76,6 +84,44 @@ def _cost(position, yaw, target, target_yaw, position_tolerance, yaw_tolerance):
     return value
 
 
+def _joint_selection(
+    usable,
+    position_before,
+    position_after,
+    yaw_before,
+    yaw_after,
+    moment,
+    position_tolerance,
+    yaw_tolerance,
+    improvement,
+):
+    """Finite-push heuristic admission, with no predicted/actual conflation."""
+    if not usable:
+        return False, "reference_unusable"
+    position_met = position_before <= position_tolerance
+    yaw_met = abs(yaw_before) <= yaw_tolerance
+    if position_met and yaw_met:
+        return False, "already_within_pose_tolerances"
+    if position_met:
+        if position_after > position_tolerance:
+            return False, "position_tolerance_lost"
+    elif not position_after < position_before:
+        return False, "position_not_improved"
+    if yaw_met:
+        if abs(yaw_after) > yaw_tolerance:
+            return False, "yaw_tolerance_lost"
+    else:
+        # Compare signs without an underflow-prone product. The zero of both
+        # yaw angles is the same world +X axis used by the current rotation.
+        if not ((moment > 0 and yaw_before > 0) or (moment < 0 and yaw_before < 0)):
+            return False, "yaw_wrong_signed_moment"
+        if not abs(yaw_after) < abs(yaw_before):
+            return False, "yaw_not_improved"
+    if not improvement > 0:
+        return False, "nonpositive_pose_improvement"
+    return True, "joint_pose_descent"
+
+
 def propose_planar_pushes(
     query,
     *,
@@ -90,6 +136,7 @@ def propose_planar_pushes(
     yaw_tolerance_rad,
     push_distances_m=(0.005, 0.01, 0.02),
     stand_off_m=0.012,
+    selection_policy="pose-cost",
 ):
     """Return every bounded proposal, sorted by reference usability and pose improvement.
 
@@ -115,8 +162,20 @@ def propose_planar_pushes(
     Lengths are 1..3 distinct explicit values in (0,.03] m; all <=384 combinations
     remain, including negative improvement and reference-unusable proposals.
     Sorting is (0 if reference_usable else 1, -improvement, index, distance_ordinal).
+    The default pose-cost policy retains this ordering and its original input
+    binding. Explicit joint-pose-descent instead puts eligible proposals first:
+    every component outside its supplied Goal tolerance must strictly improve;
+    an already qualified component must remain within that same tolerance.
+    Unmet yaw additionally requires correctly signed world-Z moment. Total pose
+    cost must still strictly improve. When both components already qualify no
+    push is eligible. Rejected proposals and their reasons are retained, and
+    input bindings include the new policy. Error fields are predictions only.
     No full 3D clearance, CCD, delivered force, actual motion or success is claimed.
     """
+    _require(
+        type(selection_policy) is str and selection_policy in ("pose-cost", "joint-pose-descent"),
+        "unsupported selection policy",
+    )
     _validate_query(query)
     reference = _vector(reference_position, 3, "reference position")
     current = _vector(current_position, 3, "current position")
@@ -160,6 +219,11 @@ def propose_planar_pushes(
     _require(np.isfinite(com).all(), "nonfinite transported COM")
     current_yaw = atan2(float(current_r[1, 0]), float(current_r[0, 0]))
     before = _cost(current_array[:2], current_yaw, target, target_yaw, pos_tol, yaw_tol)
+    position_before = yaw_before = None
+    if selection_policy == "joint-pose-descent":
+        position_before = hypot(target[0] - current[0], target[1] - current[1])
+        yaw_before = _wrap(target_yaw - current_yaw)
+        _require(isfinite(position_before) and isfinite(yaw_before), "nonfinite pose error")
 
     saved_query = asdict(query)
     saved_query["q"] = query.q.tobytes().hex()
@@ -195,6 +259,14 @@ def propose_planar_pushes(
             sorting="reference-unusable, negative-improvement, source-index, distance-ordinal",
         ),
     )
+    if selection_policy == "joint-pose-descent":
+        request["policy"].update(
+            selection_policy=selection_policy,
+            component_admission="strict-unmet-error-descent; preserve-met-Goal-tolerance",
+            yaw_admission="same-world-zero; signed-Mz-matches-short-target-error",
+            goal_admission="both-met-refuses-push; positive-total-improvement-required",
+            sorting="eligible-first, negative-improvement, source-index, distance-ordinal",
+        )
     binding = sha256(
         json.dumps(
             request,
@@ -258,7 +330,33 @@ def propose_planar_pushes(
             after = _cost(predicted, predicted_yaw, target, target_yaw, pos_tol, yaw_tol)
             improvement = before - after
             _require(isfinite(improvement), "nonfinite predicted improvement")
-            key = (0 if candidate.usable else 1, -improvement, candidate.index, ordinal)
+            position_after = yaw_after = None
+            eligible = candidate.usable and improvement > 0
+            if not candidate.usable:
+                reason = "reference_unusable"
+            else:
+                reason = "pose_cost_improvement" if eligible else "nonpositive_pose_improvement"
+            admitted = candidate.usable
+            if selection_policy == "joint-pose-descent":
+                position_after = hypot(target[0] - predicted[0], target[1] - predicted[1])
+                yaw_after = _wrap(target_yaw - predicted_yaw)
+                _require(
+                    isfinite(position_after) and isfinite(yaw_after),
+                    "nonfinite predicted pose error",
+                )
+                eligible, reason = _joint_selection(
+                    candidate.usable,
+                    position_before,
+                    position_after,
+                    yaw_before,
+                    yaw_after,
+                    moment,
+                    pos_tol,
+                    yaw_tol,
+                    improvement,
+                )
+                admitted = eligible
+            key = (0 if admitted else 1, -improvement, candidate.index, ordinal)
             records.append(
                 NativePlanarPushProposal(
                     "PROPOSAL_ONLY",
@@ -284,6 +382,13 @@ def propose_planar_pushes(
                     after,
                     improvement,
                     key,
+                    selection_policy,
+                    eligible,
+                    reason,
+                    position_before,
+                    position_after,
+                    yaw_before,
+                    yaw_after,
                 )
             )
     return tuple(sorted(records, key=lambda record: record.sort_key))

@@ -191,6 +191,45 @@ class NativePushRoutePlanner:
                 elapsed += part[-1][0]
             return tuple(nodes)
 
+        policies = {getattr(p, "selection_policy", "pose-cost") for p in proposals}
+        _require(
+            len(policies) == 1 and policies <= {"pose-cost", "joint-pose-descent"},
+            "route proposals must share one supported selection policy",
+        )
+        joint_selection = policies == {"joint-pose-descent"}
+        if joint_selection:
+            _require(
+                all(
+                    p.status == "PROPOSAL_ONLY"
+                    and type(p.selection_eligible) is bool
+                    and type(p.selection_reason) is str
+                    and p.selection_reason
+                    for p in proposals
+                ),
+                "joint pose selection evidence",
+            )
+            if not any(
+                p.selection_eligible and p.reference_usable and p.predicted_improvement > 0
+                for p in proposals
+            ):
+                attempts.append(
+                    {
+                        "kind": "selection",
+                        "policy": "joint-pose-descent",
+                        "reason": "no_jointly_improving_proposal",
+                        "rejected_proposals": tuple(
+                            {
+                                "index": p.index,
+                                "distance_ordinal": p.distance_ordinal,
+                                "input_binding": p.input_binding,
+                                "reason": p.selection_reason,
+                            }
+                            for p in proposals
+                        ),
+                    }
+                )
+                return finish("no_jointly_improving_proposal")
+
         scratch = mj.MjData(self.model)
         scratch.qpos[:] = start
         mj.mj_kinematics(self.model, scratch)
@@ -261,7 +300,11 @@ class NativePushRoutePlanner:
             groups = {}
             for p in proposals:
                 _require(p.status == "PROPOSAL_ONLY", "proposal status")
-                if p.reference_usable and p.predicted_improvement > 0:
+                if (
+                    p.reference_usable
+                    and p.predicted_improvement > 0
+                    and (not joint_selection or p.selection_eligible)
+                ):
                     groups.setdefault(p.index, []).append(p)
             for index, choices in list(groups.items())[: self.max_candidates]:
                 candidate = {

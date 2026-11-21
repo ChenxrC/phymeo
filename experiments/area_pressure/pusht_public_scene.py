@@ -12,6 +12,7 @@ not the capsule-distance midpoint material of the older entry experiment.
 import argparse
 import hashlib
 import json
+from fractions import Fraction
 from itertools import product
 from pathlib import Path
 from time import perf_counter
@@ -31,6 +32,7 @@ from phymeo.backends.mujoco_runtime import MuJoCoControl, MuJoCoInitialState
 from phymeo.builders.mujoco_compiler import compile_mujoco_xml
 from phymeo.geometry.area_pressure import AreaPressureIdentity
 from phymeo.geometry.area_pressure_intersection import RigidPressureMesh, TetraPressureMesh
+from phymeo.geometry.box_union_surface import axis_aligned_box_union_mesh
 from phymeo.training.manipulation_tasks import manipulation_scenes
 
 from .pusht_entry_rows import DEFAULT_INPUTS, _digest, iter_controls, load_entries
@@ -46,16 +48,157 @@ IDENTITY = AreaPressureIdentity(
     "test-axially-extended-octagonal-PL-pressure",
     "original-T-finite-negative-y-side-faces",
 )
+ALL_LATERAL_IDENTITY = AreaPressureIdentity(
+    IDENTITY.compliant_body,
+    IDENTITY.rigid_body,
+    IDENTITY.compliant_material,
+    "original-T-finite-all-lateral-faces",
+)
 
 
-def build_side_asset(model):
-    """28 tetrahedra with 18000 Pa at the center and zero boundary pressure.
+def side_identity(side_coverage="negative-y"):
+    """Resolve the complete material identity; coverage is an explicit choice."""
+    if type(side_coverage) is not str or side_coverage not in ("negative-y", "all-lateral"):
+        raise ValueError("side_coverage must be 'negative-y' or 'all-lateral'")
+    return IDENTITY if side_coverage == "negative-y" else ALL_LATERAL_IDENTITY
 
-    The octagonal prism circumscribes the original .018 m pusher radius. Its
-    .212 m half-height places the zero-pressure caps outside the T side band.
-    Only the finite negative-y exterior T faces are declared. The whole body
-    pair is replaced, so omitted top/bottom faces have no native fallback.
+
+LATERAL_COORDINATE_POLICY = "shortest-decimal-center-halfsize-single-round-v1"
+
+
+def side_geometry_provenance(model, *, side_coverage="all-lateral"):
+    """Record the material coordinate convention without claiming XML recovery.
+
+    The all-lateral material interprets each compiled center and half-size via
+    its shortest round-trip decimal string, performs exact rational +/- and
+    rounds each resulting material plane once to binary64. This explicit new
+    material convention joins equal decimal planes; it does not weld arbitrary
+    nearby bounds. Raw bounds, declared bounds and every displacement are saved.
+    The low-level typed-bounds union helper retains genuinely distinct planes.
     """
+    identity = side_identity(side_coverage)
+    result = dict(
+        side_coverage=side_coverage,
+        coordinate_frame="object-body-local",
+        identity=dict(
+            compliant_body=identity.compliant_body,
+            rigid_body=identity.rigid_body,
+            compliant_material=identity.compliant_material,
+            rigid_material=identity.rigid_material,
+        ),
+        scope="finite lateral union of direct unrotated object-body boxes; no top/bottom",
+    )
+    if side_coverage == "all-lateral":
+        _lateral_box_bounds(model, provenance=result)
+    else:
+        result.update(
+            coordinate_policy="legacy-negative-y-binary64-midpoint-grid-v1",
+            source_interpretation="unchanged-historical-material-and-asset-hash",
+        )
+    return result
+
+
+def _lateral_box_bounds(model, *, provenance=None):
+    """Original named tool/T sources plus any other direct object-body boxes.
+
+    Returned bounds are object-body local. The body pose is unrestricted; geom
+    frames must be unrotated in their own bodies (either quaternion sign).
+    Child-body geometry and non-box object geoms are unsupported, not omitted.
+    """
+    tool, body = int(model.body("tool").id), int(model.body("object").id)
+    pusher = int(model.geom("pusher").id)
+
+    def unrotated(geom):
+        q = np.asarray(model.geom_quat[geom])
+        return np.array_equal(q, (1.0, 0.0, 0.0, 0.0)) or np.array_equal(q, (-1.0, 0.0, 0.0, 0.0))
+
+    if (
+        model.geom_bodyid[pusher] != tool
+        or model.geom_type[pusher] != mj.mjtGeom.mjGEOM_CAPSULE
+        or not unrotated(pusher)
+        or not np.isfinite(model.geom_pos[pusher]).all()
+        or not np.isfinite(model.geom_size[pusher, :2]).all()
+        or np.any(model.geom_size[pusher, :2] <= 0)
+    ):
+        raise ValueError("all-lateral requires the body-local z-axis-aligned tool capsule")
+    for name in ("object-0", "object-1"):
+        if model.geom_bodyid[model.geom(name).id] != body:
+            raise ValueError(
+                "all-lateral requires both original boxes in the object body-local frame"
+            )
+    # A descendant has a separate frame and may move independently. Do not
+    # silently drop its geometry from a declaration of the object's sides.
+    for geom in range(model.ngeom):
+        owner = int(model.geom_bodyid[geom])
+        if owner == body:
+            continue
+        while owner > 0 and owner != body:
+            owner = int(model.body_parentid[owner])
+        if owner == body:
+            raise ValueError("all-lateral does not support child-body box geometry")
+    boxes, records = [], []
+    for geom in np.flatnonzero(model.geom_bodyid == body):
+        if (
+            model.geom_type[geom] != mj.mjtGeom.mjGEOM_BOX
+            or not unrotated(geom)
+            or not np.isfinite(model.geom_pos[geom]).all()
+            or not np.isfinite(model.geom_size[geom]).all()
+            or np.any(model.geom_size[geom] <= 0)
+        ):
+            raise ValueError("all-lateral requires finite axis-aligned body-local object boxes")
+        center = [str(float(value)) for value in model.geom_pos[geom]]
+        half_size = [str(float(value)) for value in model.geom_size[geom]]
+        raw = np.array(
+            (
+                model.geom_pos[geom] - model.geom_size[geom],
+                model.geom_pos[geom] + model.geom_size[geom],
+            )
+        )
+        # These are declared material coordinates, not recovered XML tokens.
+        # Equal decimal expressions share one plane without a gap tolerance.
+        material = np.array(
+            [
+                [
+                    float(Fraction(c) + sign * Fraction(s))
+                    for c, s in zip(center, half_size, strict=True)
+                ]
+                for sign in (-1, 1)
+            ]
+        )
+        boxes.append(material)
+        records.append(
+            dict(
+                geometry_id=int(geom),
+                geometry_name=model.geom(int(geom)).name,
+                center_decimal_m=center,
+                half_size_decimal_m=half_size,
+                raw_bounds_body_local_m=raw.tolist(),
+                material_bounds_body_local_m=material.tolist(),
+                material_minus_raw_m=(material - raw).tolist(),
+            )
+        )
+    if provenance is not None:
+        provenance.update(
+            coordinate_policy=LATERAL_COORDINATE_POLICY,
+            source_interpretation="compiled-float-shortest-roundtrip-decimal-not-original-XML",
+            boxes=records,
+        )
+    return np.asarray(boxes)
+
+
+def build_side_asset(model, *, side_coverage="negative-y"):
+    """28 pressure tetrahedra and explicitly selected finite object sides.
+
+    The unchanged octagonal PL prism has 18000 Pa at its center and zero boundary
+    pressure; its caps lie outside the original T side band. ``negative-y``
+    preserves the historical identity, vertex/face order and asset hash.
+    ``all-lateral`` uses the union exterior normal to local +/-x and +/-y of
+    unrotated object-body boxes, under the named single-round decimal material
+    convention recorded by ``side_geometry_provenance``. Neither mode declares top/bottom contact; the
+    whole body pair is replaced, so omitted faces have no native fallback.
+    """
+    identity = side_identity(side_coverage)
+    lateral_boxes = _lateral_box_bounds(model) if side_coverage == "all-lateral" else None
     pusher = model.geom("pusher").id
     radius, half_axis = model.geom_size[pusher, :2]
     center = model.geom_pos[pusher]
@@ -85,6 +228,19 @@ def build_side_asset(model):
         (0.0,) * 16 + (18000.0,),
         tuple(f"cell{i}" for i in range(28)),
     )
+    if lateral_boxes is not None:
+        nodes, faces = axis_aligned_box_union_mesh(
+            lateral_boxes, face_directions=((0, -1), (0, 1), (1, -1), (1, 1))
+        )
+        rigid = RigidPressureMesh(
+            tuple(f"r{i}" for i in range(len(nodes))),
+            nodes,
+            faces,
+            tuple(f"T-all-lateral-exterior-{i}" for i in range(len(faces))),
+        )
+        return BodyAreaPressureAsset(identity, pressure, rigid)
+    # Keep this historical path's coordinates, triangulation order and IDs
+    # unchanged: archived native Scene checkpoints bind its exact asset hash.
     boxes = np.asarray(
         [
             (
@@ -158,15 +314,19 @@ def legal_initial_q(model, archived):
     return q
 
 
-def build_scene_spec(mjcf, *, key="original-RR-public-mixed-area"):
-    """Compile the unmodified source with the same declared PL contact material."""
+def build_scene_spec(mjcf, *, key="original-RR-public-mixed-area", side_coverage="negative-y"):
+    """Compile the unchanged source and bind the explicitly selected material."""
+    identity = side_identity(side_coverage)
+    compilation = compile_mujoco_xml(mjcf, require_asset=False)
+    if side_coverage == "all-lateral":
+        _lateral_box_bounds(compilation.mj_model)
     return MuJoCoTyxModelSpec(
         key,
-        compile_mujoco_xml(mjcf, require_asset=False),
+        compilation,
         contact_capacity=64,
         constraint_capacity=512,
         area_pressure_pairs=(("tool", "object"),),
-        area_friction_laws=(AreaFrictionPairLaw(IDENTITY, MU, SLIP),),
+        area_friction_laws=(AreaFrictionPairLaw(identity, MU, SLIP),),
     )
 
 

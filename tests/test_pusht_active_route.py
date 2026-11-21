@@ -172,3 +172,28 @@ def test_checkpoint_command_offsets_local_tick_without_restarting_route(monkeypa
     np.testing.assert_array_equal(actual.ctrl, [1.0, 2.0])
     assert diagnostic["active_phase"]["absolute_tick"] == 2014
     assert diagnostic["active_phase"]["remaining_steps"] == 2186
+
+
+def test_feedback_changes_only_motor_input_before_the_existing_transport(monkeypatch):
+    from phymeo.backends.mujoco_runtime import MuJoCoControl
+
+    entry, snapshot = entry_at_phase()
+    original = MuJoCoControl([0.25, -0.5], qfrc_applied=np.zeros(8), xfrc_applied=np.zeros((5, 6)))
+    diag = {"route": {"route_start_tick": 1950, "route_elapsed_s": 0.064}, "stage": "entry"}
+    monkeypatch.setattr(active, "command_from_snapshot", lambda *a, **kw: (original, diag))
+    row = {"correction_nm": [0.5, 0.0]}
+
+    def compensate(current_entry, current_snapshot, diagnostic):
+        assert current_entry is entry and current_snapshot is snapshot and diagnostic is diag
+        return np.array([0.75, -0.5]), row
+
+    def transport(effort):
+        np.testing.assert_array_equal(effort, [0.75, -0.5])
+        return np.array([0.75001, -0.5]), {"kind": "test-transport"}
+
+    monkeypatch.setattr(active, "_original_action_transport", transport)
+    out, diagnostic = active.active_command(entry, snapshot, compensate=compensate)
+    np.testing.assert_array_equal(out.ctrl, [0.75001, -0.5])
+    np.testing.assert_array_equal(out.qfrc_applied, original.qfrc_applied)
+    np.testing.assert_array_equal(out.xfrc_applied, original.xfrc_applied)
+    assert diagnostic["load_compensation"] == row

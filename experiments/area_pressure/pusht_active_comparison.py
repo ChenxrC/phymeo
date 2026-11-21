@@ -173,7 +173,120 @@ def _first(binding, controller, state, tick, route, target, velocity):
         )
 
 
-def _control(row, summary, index, base):
+class _LoadCompensationAudit:
+    """One-step force feedback with independent current-state RR kinematics."""
+
+    def __init__(self, summary, source, route_file):
+        import mujoco as mj
+
+        from phymeo.training.manipulation_tasks import manipulation_scenes
+
+        trials = source.get("trials", [])
+        _require(type(trials) is list, "compensation release trial list")
+        selected = [row for row in trials if row.get("selected") is True]
+        _require(bool(selected), "compensation source has no selected release step")
+        seed = selected[-1]
+        initial = summary["initial_state"]
+        _require(
+            seed.get("restored") is False
+            and seed["original_input_tick"] == summary["start_tick"] - 1
+            and seed["original_output_tick"] == summary["start_tick"]
+            and seed["input_state"]["local_tick"] == initial["local_tick"] - 1
+            and seed["output_state"] == initial,
+            "compensation last selected release endpoint",
+        )
+        self.previous_state = initial
+        self.previous_force = _array(
+            seed["area"]["total_force_on_pusher_world_n"], (3,), "compensation source tool force"
+        )
+        self.direction = _array(
+            route_file["route"]["proposal"]["direction_world"],
+            (3,),
+            "compensation route push direction",
+        )
+        _require(
+            abs(np.linalg.norm(self.direction) - 1.0) <= 1e-12 and abs(self.direction[2]) <= 1e-12,
+            "compensation unit horizontal route direction",
+        )
+        scene = next(scene for scene in manipulation_scenes() if scene.key == "pusht-planar")
+        self.mj, self.model = mj, mj.MjModel.from_xml_string(scene.mjcf)
+        self.data = mj.MjData(self.model)
+        self.dofs = [
+            int(self.model.jnt_dofadr[self.model.joint(name).id])
+            for name in scene.robot_joint_names
+        ]
+        self.geom = int(self.model.geom("pusher").id)
+        _require(
+            tuple(scene.robot_kinds) == ("R", "R")
+            and self.model.nq == 9
+            and self.model.nv == 8
+            and self.dofs == [0, 1],
+            "compensation original RR model identities",
+        )
+
+    def effort(self, row, raw):
+        state, controller = row["input_state"], row["controller"]
+        c = controller.get("load_compensation")
+        _require(type(c) is dict, "compensation per-step evidence missing")
+        _require(
+            type(c["source_local_tick"]) is int
+            and c["source_local_tick"] == state["local_tick"]
+            and c["source_output_time"] == state["time"]
+            and state == self.previous_state,
+            "compensation previous accepted output phase",
+        )
+        force = _array(c["previous_force_on_tool_world_n"], (3,), "compensation saved tool force")
+        _require(
+            np.array_equal(force, self.previous_force), "compensation previous actual tool force"
+        )
+        direction = _array(c["push_direction_world"], (3,), "compensation saved direction")
+        _close(direction, self.direction, "compensation selected route direction")
+        _require(c["gain"] == 0.5, "compensation half gain")
+        enabled = controller["stage"] in ("entry", "push")
+        _require(
+            type(c["enabled"]) is bool and c["enabled"] == enabled, "compensation stage enable"
+        )
+        resisting = max(0.0, -float(self.previous_force @ self.direction))
+        _close(c["resisting_force_n"], resisting, "compensation resisting force")
+        # Only kinematics/computation of a point Jacobian: no CPU forward solve
+        # or step, and no production feedback helper is reused by this reader.
+        self.data.qpos[:] = state["q"]
+        self.mj.mj_kinematics(self.model, self.data)
+        self.mj.mj_comPos(self.model, self.data)
+        jacp = np.zeros((3, self.model.nv))
+        self.mj.mj_jacGeom(self.model, self.data, jacp, None, self.geom)
+        jacobian = jacp[:, self.dofs]
+        _close(
+            _array(c["jacobian_world"], (3, 2), "compensation Jacobian dimensions"),
+            jacobian,
+            "compensation current pusher Jacobian",
+        )
+        correction = jacobian.T @ (0.5 * resisting * self.direction) if enabled else np.zeros(2)
+        _close(
+            _array(c["correction_nm"], (2,), "compensation correction dimensions"),
+            correction,
+            "compensation force/Jacobian torque mapping",
+        )
+        combined = raw + correction
+        _close(
+            _array(c["combined_unclipped_nm"], (2,), "compensation combined dimensions"),
+            combined,
+            "compensation adds to unclipped PD",
+        )
+        effort = _array(c["combined_effort_nm"], (2,), "compensation effort dimensions")
+        _close(effort, np.clip(combined, -19.9, 19.9), "compensation combined effort clipping")
+        return effort
+
+    def accepted(self, row):
+        # Called after the row's receipt/load checks, so rejected or future
+        # candidate forces cannot be consumed as feedback for the next command.
+        self.previous_force = _array(
+            row["area"]["total_force_on_pusher_world_n"], (3,), "compensation accepted tool force"
+        )
+        self.previous_state = row["output_state"]
+
+
+def _control(row, summary, index, base, compensation=None):
     tick, route = summary["start_tick"] + index, summary["active_route"]
     state, c = row["input_state"], row["controller"]
     _require(
@@ -229,7 +342,14 @@ def _control(row, summary, index, base):
         and transport["operator"] == "bias + scale * torch.tanh(raw)",
         "CUDA action transport",
     )
-    direct = np.asarray(pd["effort"], np.float32)
+    if compensation is None:
+        _require("load_compensation" not in c, "compensation evidence requires explicit variant")
+        effort = pd["effort"]
+    else:
+        effort = compensation.effort(row, raw)
+    # The transport's historical direct_pd_ctrl name contains the actual
+    # combined effort for this variant; pd.effort remains the original PD value.
+    direct = np.asarray(effort, np.float32)
     _require(np.array_equal(transport["direct_pd_ctrl"], direct), "PD/direct FP32 effort")
     _require(
         np.array_equal(transport["raw_action"], np.arctanh(direct / np.float32(20))),
@@ -447,6 +567,8 @@ def compare(path):
     path = Path(path).resolve()
     summary, base = _read(path), path.parent
     _require(summary["schema"] == "phymeo-pusht-active-route-v1", "summary schema")
+    variant = summary.get("control_variant", "position")
+    _require(variant in ("position", "load-compensation-half"), "supported control variant")
     count, accepted = summary["recorded_steps"], summary["accepted_steps"]
     _require(
         type(count) is int
@@ -499,6 +621,11 @@ def compare(path):
     _close(route["duration_s"], route["nodes"][-1][0], "route duration")
     _close(route["duration_s"], (route["end_tick"] - route["start_tick"]) * H, "route end tick")
     _close(route["elapsed_at_entry_s"], (start - route["start_tick"]) * H, "source route phase")
+    compensation = (
+        _LoadCompensationAudit(summary, source, route_file)
+        if variant == "load-compensation-half"
+        else None
+    )
     goal = summary["goal"]
     _array(goal["target_xy"], (2,), "goal target")
     _require(
@@ -535,13 +662,15 @@ def compare(path):
             _require(before == prior, "continuous accepted q/v/time chain")
             qe, te = _integration(before, after)
             max_q_error, max_clock_error = max(max_q_error, qe), max(max_clock_error, te)
-            stage = _control(row, summary, index, base)
+            stage = _control(row, summary, index, base, compensation)
             if not stages or stages[-1]["stage"] != stage:
                 stages.append(dict(input_tick=tick, stage=stage))
             if _goal(row, summary, tick):
                 success_ticks.append(tick)
             _receipt(row)
             load, support = _load(row)
+            if compensation is not None:
+                compensation.accepted(row)
             min_support = support if min_support is None else min(min_support, support)
             impulse += H * load
             if load > peak:
@@ -639,6 +768,8 @@ def compare(path):
             stages=stages,
         ),
         control=dict(
+            variant=variant,
+            load_compensation_verified_steps=count if compensation is not None else 0,
             reference_phase_verified_steps=count,
             current_state_bound_steps=count,
             transport="saved CUDA output/publication binding; no NumPy tanh substitute",

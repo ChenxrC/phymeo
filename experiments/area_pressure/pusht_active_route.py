@@ -53,7 +53,7 @@ def active_phase(entry, snapshot):
     )
 
 
-def active_command(entry, snapshot):
+def active_command(entry, snapshot, *, compensate=None):
     """Use the original active reference/PD and its actual CUDA action transport."""
     phase = active_phase(entry, snapshot)
     driver = entry.driver
@@ -83,7 +83,11 @@ def active_command(entry, snapshot):
         and route_info["route_elapsed_s"] == phase["elapsed_s"],
         "reference phase differs",
     )
-    actual, transport = _original_action_transport(control.ctrl)
+    motor_command = control.ctrl
+    if compensate is not None:
+        motor_command, feedback = compensate(entry, snapshot, diagnostic)
+        diagnostic["load_compensation"] = feedback
+    actual, transport = _original_action_transport(motor_command)
     result = MuJoCoControl(
         actual, qfrc_applied=control.qfrc_applied, xfrc_applied=control.xfrc_applied
     )
@@ -212,7 +216,13 @@ def _save_final_checkpoint(scene, batch, entry, output, report, history):
 
 
 def run(
-    prior_summary_path, release_report_path, output, *, checkpoint_metadata_path, cache_root=None
+    prior_summary_path,
+    release_report_path,
+    output,
+    *,
+    checkpoint_metadata_path,
+    cache_root=None,
+    control_variant="position",
 ):
     from phymeo.backends.mujoco_heterogeneous import MuJoCoTyxHeterogeneousBatch, MuJoCoTyxWorldSpec
     from phymeo.backends.mujoco_heterogeneous_area_scene import (
@@ -235,6 +245,7 @@ def run(
     prior_summary_path, release_report_path, output = map(
         lambda p: Path(p).resolve(), (prior_summary_path, release_report_path, output)
     )
+    _require(control_variant in ("position", "load-compensation-half"), "unknown control variant")
     checkpoint_metadata_path = Path(checkpoint_metadata_path).resolve()
     journal_path = output.with_suffix(".steps.jsonl")
     journal_hash = hashlib.sha256()
@@ -247,7 +258,8 @@ def run(
         journal=dict(file=journal_path.name, records=0, sha256=journal_hash.hexdigest()),
         physics="public CUDA Scene; both bodies dynamic; no prior physics replay",
         force_phase="accepted-step-input-geometry",
-        control="original active route, PD, FP32 atanh/CUDA tanh; zero external force channels",
+        control_variant=control_variant,
+        control="active route, joint PD with selected load compensation, original CUDA transport and zero external force channels",
         continuation="stop at this route end, original controller stop, or physical failure; never plan a third route",
     )
     phase = "prepare_entry"
@@ -329,6 +341,11 @@ def run(
                             completed_routes_before=driver.completed,
                         ),
                     )
+                    compensate = None
+                    if control_variant == "load-compensation-half":
+                        from .pusht_load_compensation import PushLoadCompensation
+
+                        compensate = PushLoadCompensation(entry)
                     history = entry.history
                     _write_progress(stream, report)
                     for index in range(report["requested_steps"]):
@@ -338,7 +355,7 @@ def run(
                             driver.active is original_active,
                             "active route changed before its final step",
                         )
-                        control, controller = active_command(entry, prior)
+                        control, controller = active_command(entry, prior, compensate=compensate)
                         if index == 0:
                             report["first_command_binding"] = _first_binding(
                                 entry, prior, control, controller
@@ -507,6 +524,9 @@ def main():
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--checkpoint", type=Path, required=True)
     parser.add_argument("--cache-root", type=Path)
+    parser.add_argument(
+        "--control-variant", choices=("position", "load-compensation-half"), default="position"
+    )
     args = parser.parse_args()
     result = run(
         args.summary,
@@ -514,6 +534,7 @@ def main():
         args.output,
         checkpoint_metadata_path=args.checkpoint,
         cache_root=args.cache_root,
+        control_variant=args.control_variant,
     )
     print(
         json.dumps(

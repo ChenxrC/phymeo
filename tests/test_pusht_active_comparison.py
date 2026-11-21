@@ -355,3 +355,251 @@ def test_post_accept_callback_failure_reports_only_the_verified_recorded_prefix(
     assert result["unrecorded_accepted_step"]["transition_verified"] is False
     assert result["goal"]["last_input_tick"] == 2022
     assert result["contact"]["normal_impulse_ns"] == pytest.approx(0.003)
+
+
+def _variant_case(
+    tmp_path, *, stage="push", zero_load=False, assisting=False, joint_position=(0.0, 0.0)
+):
+    """Synthetic saved-record fixture, with an analytic RR point Jacobian."""
+    import math
+    from pathlib import Path
+
+    summary, rows = _case(tmp_path)
+    summary["control_variant"] = "load-compensation-half"
+    direction = np.array([0.6, 0.8, 0.0])
+    # Keep the static saved-state fixture coherent at either joint posture.
+    for state in (summary["initial_state"], summary["final_state"]):
+        state["q"][:2] = joint_position
+    summary["first_command_binding"]["measurement_q"][:2] = joint_position
+    for row in rows:
+        for state in (row["input_state"], row["output_state"]):
+            state["q"][:2] = joint_position
+        c = row["controller"]
+        c["measurement_q"] = deepcopy(row["input_state"]["q"])
+        pd = c["pd"]
+        pd["position"] = list(joint_position)
+        raw = (
+            np.asarray(pd["bias"])
+            + 25 * (np.asarray(pd["target"]) - joint_position)
+            + 3 * np.asarray(pd["target_velocity"])
+        )
+        pd["unclipped_effort"] = raw.tolist()
+        pd["effort"] = np.clip(raw, -19.9, 19.9).tolist()
+        pd["saturated"] = (np.abs(raw) > 19.9).tolist()
+    # The catalog RR has two 0.3 m links and fixed yaw offsets +0.6, -1.2.
+    # This current-posture analytic value is independent of mj_jacGeom.
+    a, b = 0.6 + joint_position[0], -0.6 + sum(joint_position)
+    jacobian = 0.3 * np.array(
+        [
+            [-math.sin(a) - math.sin(b), -math.sin(b)],
+            [math.cos(a) + math.cos(b), math.cos(b)],
+            [0.0, 0.0],
+        ]
+    )
+    route_path = Path(summary["active_route"]["file"])
+    route = json.loads(route_path.read_text())
+    route["route"]["proposal"]["direction_world"] = direction.tolist()
+    for node in route["route"]["nodes"]:
+        node[1] = stage
+    route_sha = _write_json(route_path, route)
+    summary["active_route"].update(nodes=deepcopy(route["route"]["nodes"]), sha256=route_sha)
+    seed_force = np.zeros(3) if zero_load else (-1000 if not assisting else 1000) * direction
+    seed = dict(
+        selected=True,
+        restored=False,
+        original_input_tick=summary["start_tick"] - 1,
+        original_output_tick=summary["start_tick"],
+        input_state=_state(319, 2.019),
+        output_state=deepcopy(summary["initial_state"]),
+        area=dict(total_force_on_pusher_world_n=seed_force.tolist()),
+    )
+    seed["input_state"]["q"][:2] = joint_position
+    release_path = Path(summary["provenance"]["release_report_path"])
+    release = json.loads(release_path.read_text())
+    # An unselected candidate after the seed must never become feedback input.
+    rejected = deepcopy(seed)
+    rejected.update(selected=False, restored=True)
+    rejected["area"]["total_force_on_pusher_world_n"] = [1234.0, 5678.0, 0.0]
+    release["final_state"] = deepcopy(summary["initial_state"])
+    release["trials"] = [seed, rejected]
+    release_sha = _write_json(release_path, release)
+    summary["provenance"]["release_report_sha256"] = release_sha
+    metadata_path = Path(summary["provenance"]["checkpoint_metadata_path"])
+    metadata = json.loads(metadata_path.read_text())
+    metadata["release_sha256"] = release_sha
+    metadata["state"] = deepcopy(summary["initial_state"])
+    summary["provenance"]["checkpoint_metadata_sha256"] = _write_json(metadata_path, metadata)
+    previous_force = seed_force
+    for row in rows:
+        c, before, area = row["controller"], row["input_state"], row["area"]
+        c["stage"], c["route"]["route_sha256"] = stage, route_sha
+        force = (0 if zero_load else area["normal_load_n"]) * direction
+        if not assisting:
+            force = -force
+        area["total_force_on_pusher_world_n"] = force.tolist()
+        row["feedback_accepted"]["measurement"]["group_force_world"] = (-force).tolist()
+        enabled = stage in ("entry", "push")
+        resisting = max(0.0, -float(previous_force @ direction))
+        correction = jacobian.T @ (0.5 * resisting * direction) if enabled else np.zeros(2)
+        combined = np.asarray(c["pd"]["unclipped_effort"]) + correction
+        c["load_compensation"] = dict(
+            source_local_tick=before["local_tick"],
+            source_output_time=before["time"],
+            previous_force_on_tool_world_n=previous_force.tolist(),
+            push_direction_world=direction.tolist(),
+            jacobian_world=jacobian.tolist(),
+            resisting_force_n=resisting,
+            gain=0.5,
+            enabled=enabled,
+            correction_nm=correction.tolist(),
+            combined_unclipped_nm=combined.tolist(),
+            combined_effort_nm=np.clip(combined, -19.9, 19.9).tolist(),
+        )
+        _variant_transport(row)
+        previous_force = force
+    return summary, rows
+
+
+def _variant_transport(row):
+    """Bind fixture transport to the combined command, without invoking CUDA."""
+    c = row["controller"]
+    direct = np.asarray(c["load_compensation"]["combined_effort_nm"], dtype=np.float32)
+    # Like the existing fixture, a zero delta is a saved transport witness only.
+    c["transport"].update(
+        direct_pd_ctrl=direct.tolist(),
+        raw_action=np.arctanh(direct / np.float32(20)).tolist(),
+        transported_ctrl=direct.tolist(),
+        direct_to_transported_delta=[0.0, 0.0],
+    )
+    c["generated_channels"]["ctrl"] = direct.tolist()
+    row["submitted_control"]["ctrl"] = direct.tolist()
+
+
+@pytest.mark.parametrize("stage", ["entry", "push", "approach"])
+def test_half_load_compensation_audits_previous_force_current_jacobian_and_transport(
+    tmp_path, stage
+):
+    summary, rows = _variant_case(tmp_path, stage=stage)
+    result = compare(_write(tmp_path, summary, rows))
+    assert result["control"]["variant"] == "load-compensation-half"
+    assert result["control"]["load_compensation_verified_steps"] == 4
+    c = rows[0]["controller"]["load_compensation"]
+    assert c["resisting_force_n"] == pytest.approx(1000)
+    if stage in ("entry", "push"):
+        assert c["combined_effort_nm"] == [19.9, 19.9]
+        assert max(c["combined_unclipped_nm"]) > 19.9
+    else:
+        assert c["correction_nm"] == [0.0, 0.0]
+
+
+def test_half_load_compensation_does_not_oppose_an_assisting_load(tmp_path):
+    summary, rows = _variant_case(tmp_path, assisting=True)
+    result = compare(_write(tmp_path, summary, rows))
+    assert result["control"]["load_compensation_verified_steps"] == 4
+    assert all(row["controller"]["load_compensation"]["resisting_force_n"] == 0 for row in rows)
+
+
+@pytest.mark.parametrize(
+    "fault",
+    [
+        "source-tick",
+        "source-time",
+        "previous-force",
+        "direction",
+        "nonunit-direction",
+        "gain",
+        "enabled",
+        "jacobian",
+        "resisting",
+        "correction",
+        "combined",
+        "clipped",
+    ],
+)
+def test_half_load_compensation_rejects_forged_zero_load_evidence(tmp_path, fault):
+    # The old PD-only reader accepts these commands, so rejection cannot be a
+    # side effect of an already-different direct command or a broken file hash.
+    summary, rows = _variant_case(tmp_path, zero_load=True)
+    c = rows[1]["controller"]["load_compensation"]
+    if fault == "source-tick":
+        c["source_local_tick"] -= 1
+    elif fault == "source-time":
+        c["source_output_time"] -= 0.001
+    elif fault == "previous-force":
+        c["previous_force_on_tool_world_n"] = [1.0, 0.0, 0.0]
+    elif fault == "direction":
+        c["push_direction_world"] = [-0.6, -0.8, 0.0]
+    elif fault == "nonunit-direction":
+        c["push_direction_world"] = [1.2, 1.6, 0.0]
+    elif fault == "gain":
+        c["gain"] = 1.0
+    elif fault == "enabled":
+        c["enabled"] = False
+    elif fault == "jacobian":
+        c["jacobian_world"][0][1] += 0.01
+    elif fault == "resisting":
+        c["resisting_force_n"] = 1.0
+    elif fault == "correction":
+        c["correction_nm"][0] = 1.0
+    elif fault == "combined":
+        c["combined_unclipped_nm"][0] += 1.0
+    else:
+        c["combined_effort_nm"][0] += 1.0
+    with pytest.raises(ValueError, match="compensation"):
+        compare(_write(tmp_path, summary, rows))
+
+
+def test_half_load_compensation_rejects_a_self_consistent_wrong_jacobian(tmp_path):
+    summary, rows = _variant_case(tmp_path)
+    c = rows[2]["controller"]["load_compensation"]
+    wrong = np.asarray(c["jacobian_world"])[:, ::-1]
+    c["jacobian_world"] = wrong.tolist()
+    correction = wrong.T @ (0.5 * c["resisting_force_n"] * np.asarray(c["push_direction_world"]))
+    c["correction_nm"] = correction.tolist()
+    combined = np.asarray(rows[2]["controller"]["pd"]["unclipped_effort"]) + correction
+    c["combined_unclipped_nm"] = combined.tolist()
+    c["combined_effort_nm"] = np.clip(combined, -19.9, 19.9).tolist()
+    _variant_transport(rows[2])
+    with pytest.raises(ValueError, match="compensation.*Jacobian"):
+        compare(_write(tmp_path, summary, rows))
+
+
+@pytest.mark.parametrize("fault", ["force", "endpoint", "selection"])
+def test_half_load_compensation_binds_first_force_to_last_selected_release_step(tmp_path, fault):
+    from pathlib import Path
+
+    summary, rows = _variant_case(tmp_path, zero_load=True)
+    release_path = Path(summary["provenance"]["release_report_path"])
+    release = json.loads(release_path.read_text())
+    seed = release["trials"][0]
+    if fault == "force":
+        seed["area"]["total_force_on_pusher_world_n"] = [1.0, 0.0, 0.0]
+    elif fault == "endpoint":
+        seed["output_state"]["local_tick"] -= 1
+    else:
+        seed["selected"] = False
+    sha = _write_json(release_path, release)
+    summary["provenance"]["release_report_sha256"] = sha
+    metadata_path = Path(summary["provenance"]["checkpoint_metadata_path"])
+    metadata = json.loads(metadata_path.read_text())
+    metadata["release_sha256"] = sha
+    summary["provenance"]["checkpoint_metadata_sha256"] = _write_json(metadata_path, metadata)
+    with pytest.raises(ValueError, match="compensation"):
+        compare(_write(tmp_path, summary, rows))
+
+
+def test_old_position_variant_remains_explicit_and_does_not_require_mujoco_compensation(tmp_path):
+    summary, rows = _case(tmp_path)
+    summary["control_variant"] = "position"
+    result = compare(_write(tmp_path, summary, rows))
+    assert result["control"]["variant"] == "position"
+    assert result["control"]["load_compensation_verified_steps"] == 0
+
+
+def test_half_load_compensation_uses_nonzero_current_rr_joint_posture(tmp_path):
+    summary, rows = _variant_case(tmp_path, joint_position=(0.125, 0.25))
+    result = compare(_write(tmp_path, summary, rows))
+    assert result["control"]["load_compensation_verified_steps"] == 4
+    jacobian = np.asarray(rows[0]["controller"]["load_compensation"]["jacobian_world"])
+    # q=(0,0) has exactly zero first-column x derivative; this posture does not.
+    assert abs(jacobian[0, 0]) > 0.1

@@ -9,6 +9,27 @@ import tyx as tx
 
 
 @tx.kernel
+def add_trial_load(
+    count: tx.i32,
+    nv: tx.i32,
+    width: tx.i32,
+    applied: tx.ndarray(tx.f32, 2),
+    extra: tx.ndarray(tx.f32, 2),
+    destination: tx.ndarray(tx.f32, 2),
+    status: tx.ndarray(tx.i32, 1),
+):
+    for w in tx.range(count):
+        for i in range(width):
+            destination[w, i] = 0.0
+            if i < nv and status[w] == 0:
+                value = applied[w, i] + extra[w, i]
+                if tx.isfinite(value):
+                    destination[w, i] = value
+                else:
+                    status[w] = 2
+
+
+@tx.kernel
 def solve(
     count: tx.i32,
     nv: tx.i32,

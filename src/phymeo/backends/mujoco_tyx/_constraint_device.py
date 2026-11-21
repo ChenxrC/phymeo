@@ -1,5 +1,9 @@
 """Resident mixed constraint assembly, bounded face solve and atomic integration."""
 
+from contextlib import contextmanager
+
+import numpy as np
+
 from . import _actuator_device
 from ._device import TyxDevice
 from ._floating_device import TyxFloatingDevice
@@ -46,6 +50,7 @@ class TyxConstraintDevice(TyxDevice):
             self.contacts = (_normal_geometry.contacts, _normal_geometry.contacts_other)
             self.assemble = (_constraint_rows.assemble, _constraint_rows.assemble_other)
             self.constraint_solve = _constraint_solver.solve
+            self._trial_scope = None
             self.decode = _constraint_rows.decode
             self.extended_contacts = None
             if plan.extended_contacts:
@@ -100,126 +105,307 @@ class TyxConstraintDevice(TyxDevice):
         )
         self.counts["completed_kernels"] += 1
 
-    def advance(self, controls, applied, body_force):
-        old, new = self.active, 1 - self.active
-        with self.tx.use_runtime(self.runtime):
-            self._put(self.controls, controls)
-            self._put(self.applied_input, applied)
-            self._put(self.body_force, body_force)
-            geometry_args = [self.nworld, self.nbody, self.plan.nv]
-            if self.plan.base.kind == 3:
-                geometry_args.append(len(self.plan.joint_ids))
-            self.geometry[old](
-                *geometry_args,
-                self.parents,
-                self.ranges,
-                self.body_data,
-                self.joints,
-                self.joint_data,
-                self.vectors,
-                self.q[old],
-                self.v[old],
-                self.motion,
-                self.rotation,
-                self.axes,
-                self.anchors,
-                self.work,
-                self.work_rotation,
-                self.status,
-                mode=self.mode,
-            )
-            self.counts["completed_kernels"] += 1
-            self.mechanics[old](
-                self.nworld,
-                self.nbody,
-                self.plan.nv,
-                0 if self.activation_enabled else self.plan.nu,
-                self.body_data,
-                self.dofs,
-                self.ancestors,
-                self.vectors,
-                self.gravity,
-                self.act_ids,
-                self.act_values,
-                int(self.transmission_enabled),
-                self.transmission_offsets,
-                self.transmission_dofs,
-                self.transmission_moment,
-                self.transmission_fields,
-                self.controls,
-                self.applied_input,
-                self.body_force,
-                self.q[old],
-                self.v[old],
-                self.motion,
-                self.rotation,
-                self.axes,
-                self.anchors,
-                self.inertia,
-                self.jacobian,
-                self.mass,
-                self.bias,
-                self.passive,
-                self.applied,
-                self.actuator,
-                self.work,
-                self.status,
-                mode=self.mode,
-            )
-            self.counts["completed_kernels"] += 1
-            _actuator_device.advance(self, old, new)
-            live_friction = bool(getattr(self.plan, "area_friction_laws", ()))
-            mixed_support = live_friction and self.plan.damped_contact_dofs > 0
-            if not live_friction or mixed_support:
-                if self.extended_contacts is not None:
-                    self.extended_contacts(
-                        self.nworld,
-                        self.ngeom,
-                        self.npair,
-                        self.nslot,
-                        self.geom_ids,
-                        self.geom_data,
-                        self.pair_ids,
-                        self.pair_law,
-                        self.motion,
-                        self.rotation,
-                        self.geom_world,
-                        self.raw_contacts,
-                        self.extended_work,
-                        self.status,
-                        mode=self.mode,
-                    )
-                    self.counts["completed_kernels"] += 1
-                self.contacts[old](
+    def _prepare_entry(self, old, controls, applied, body_force, *, assemble_contacts):
+        new = 1 - old
+        self._put(self.controls, controls)
+        self._put(self.applied_input, applied)
+        self._put(self.body_force, body_force)
+        geometry_args = [self.nworld, self.nbody, self.plan.nv]
+        if self.plan.base.kind == 3:
+            geometry_args.append(len(self.plan.joint_ids))
+        self.geometry[old](
+            *geometry_args,
+            self.parents,
+            self.ranges,
+            self.body_data,
+            self.joints,
+            self.joint_data,
+            self.vectors,
+            self.q[old],
+            self.v[old],
+            self.motion,
+            self.rotation,
+            self.axes,
+            self.anchors,
+            self.work,
+            self.work_rotation,
+            self.status,
+            mode=self.mode,
+        )
+        self.counts["completed_kernels"] += 1
+        self.mechanics[old](
+            self.nworld,
+            self.nbody,
+            self.plan.nv,
+            0 if self.activation_enabled else self.plan.nu,
+            self.body_data,
+            self.dofs,
+            self.ancestors,
+            self.vectors,
+            self.gravity,
+            self.act_ids,
+            self.act_values,
+            int(self.transmission_enabled),
+            self.transmission_offsets,
+            self.transmission_dofs,
+            self.transmission_moment,
+            self.transmission_fields,
+            self.controls,
+            self.applied_input,
+            self.body_force,
+            self.q[old],
+            self.v[old],
+            self.motion,
+            self.rotation,
+            self.axes,
+            self.anchors,
+            self.inertia,
+            self.jacobian,
+            self.mass,
+            self.bias,
+            self.passive,
+            self.applied,
+            self.actuator,
+            self.work,
+            self.status,
+            mode=self.mode,
+        )
+        self.counts["completed_kernels"] += 1
+        _actuator_device.advance(self, old, new)
+        if assemble_contacts:
+            if self.extended_contacts is not None:
+                self.extended_contacts(
                     self.nworld,
-                    self.plan.nv,
                     self.ngeom,
                     self.npair,
                     self.nslot,
-                    *self.capacities,
-                    self.h,
                     self.geom_ids,
                     self.geom_data,
                     self.pair_ids,
                     self.pair_law,
                     self.motion,
                     self.rotation,
-                    self.jacobian,
-                    self.v[old],
                     self.geom_world,
-                    self.normal_rows,
-                    self.normal_jacobian,
-                    self.contact_work,
                     self.raw_contacts,
-                    self.geometry_diagnostics,
+                    self.extended_work,
                     self.status,
                     mode=self.mode,
                 )
                 self.counts["completed_kernels"] += 1
-                self._assemble_rows(old)
-            elif self.plan.nfriction or self.plan.nlimit:
-                self._assemble_rows(old)
+            self.contacts[old](
+                self.nworld,
+                self.plan.nv,
+                self.ngeom,
+                self.npair,
+                self.nslot,
+                *self.capacities,
+                self.h,
+                self.geom_ids,
+                self.geom_data,
+                self.pair_ids,
+                self.pair_law,
+                self.motion,
+                self.rotation,
+                self.jacobian,
+                self.v[old],
+                self.geom_world,
+                self.normal_rows,
+                self.normal_jacobian,
+                self.contact_work,
+                self.raw_contacts,
+                self.geometry_diagnostics,
+                self.status,
+                mode=self.mode,
+            )
+            self.counts["completed_kernels"] += 1
+            self._assemble_rows(old)
+        elif self.plan.nfriction or self.plan.nlimit:
+            self._assemble_rows(old)
 
+    def _solve_rows(self, mass, applied):
+        self.constraint_solve(
+            self.nworld,
+            self.plan.nv,
+            self.capacities[1],
+            self.plan.solver_iterations,
+            self.plan.solver_tolerance,
+            mass,
+            self.bias,
+            self.passive,
+            applied,
+            self.efc_data,
+            self.efc_jacobian,
+            self.constraint_counts,
+            self.physical_factor,
+            self.mass_work,
+            self.smooth_acc,
+            self.face_matrix,
+            self.face_factor,
+            self.face_rhs,
+            self.face_forward,
+            self.trial_acc,
+            self.trial_force,
+            self.working,
+            self.previous_working,
+            self.previous_force,
+            self.free_ids,
+            self.mixed_constraint,
+            self.total_applied,
+            self.physical_acc,
+            self.solver_diagnostics,
+            self.status,
+            mode=self.mode,
+        )
+        self.counts["completed_kernels"] += 1
+
+    def _integrate_candidate(self, old, new):
+        # Shared native tail retains physical M acceleration. The live mode
+        # consumes the common velocity; the old mode solves M+hD as before.
+        # Both integrate native q/clock once; constraint/rows are disposable.
+        solve_args = [self.nworld, self.plan.nv]
+        if self.plan.base.kind == 2:
+            solve_args.extend((self.plan.nq, len(self.plan.joint_ids)))
+        solve_args.append(self.h)
+        if self.plan.base.kind == 2:
+            solve_args.append(self.joints)
+        integrator = self.solve[old]
+        if getattr(self.plan, "area_friction_laws", ()):
+            if self.plan.base.kind == 3:
+                from ._floating_kernels import solve_live, solve_live_other
+            else:
+                from ._tree_kernels import solve_live, solve_live_other
+            integrator = (solve_live, solve_live_other)[old]
+        integrator(
+            *solve_args,
+            self.vectors,
+            self.mass,
+            self.bias,
+            self.passive,
+            self.total_applied,
+            self.q[old],
+            self.v[old],
+            self.time[old],
+            self.q[new],
+            self.v[new],
+            self.time[new],
+            self.factor,
+            self.rhs,
+            self.forward,
+            self.acceleration,
+            self.integration_acc,
+            self.constraint,
+            self.rows,
+            self.status,
+            *(
+                (
+                    self.plan.nq,
+                    len(self.plan.joint_ids),
+                    self.joints,
+                )
+                if self.plan.base.kind == 3
+                else ()
+            ),
+            mode=self.mode,
+        )
+        self.counts["completed_kernels"] += 1
+
+    @contextmanager
+    def prepare_native_rows(self, controls, applied, body_force):
+        """Assemble the active entry once and borrow its CUDA working set.
+
+        The owner holds exclusive access until return. Each evaluation accepts
+        an additional resident generalized force, or None for the original
+        load. Results and per-world status stay in the existing solve buffers.
+        A failed world remains failed until a new entry is prepared. Pass
+        integrate=True on the last load to write a one-step candidate into
+        the inactive physical bank. That call checks all working-set statuses
+        before integration. The caller must still check the integrator status
+        and validate the candidate to publish it. This scope never publishes.
+        """
+        from ._constraint_solver import add_trial_load
+
+        if self.resources.state != "OPEN" or self._trial_scope is not None:
+            raise RuntimeError("native row workspace is closed or in use")
+        if self.mode != "cuda" or self.activation_enabled or hasattr(self.plan, "area_pair_names"):
+            raise ValueError("native row trials require a stateless native CUDA constraint plan")
+        old = self.active
+
+        finalized = False
+
+        def evaluate(extra_load=None, *, integrate=False):
+            nonlocal finalized
+            if type(integrate) is not bool:
+                raise ValueError("integrate must be a boolean")
+            if finalized:
+                raise RuntimeError("native trial entry already finalized")
+            if (
+                self._trial_scope is not evaluate
+                or self.active != old
+                or self.resources.state != "OPEN"
+            ):
+                raise RuntimeError("native row trial entry has expired")
+            with self.tx.use_runtime(self.runtime):
+                trial = self.applied
+                if extra_load is not None:
+                    if (
+                        not isinstance(extra_load, self.tx.CudaArray)
+                        or extra_load.shape != self.applied.shape
+                        or np.dtype(extra_load.host_dtype) != np.float32
+                        or extra_load.device_ordinal != self.applied.device_ordinal
+                    ):
+                        raise ValueError("expected a same-device padded FP32 generalized load")
+                    extra_load._ensure_alive()
+                    # The integrator RHS is idle until the physical step tail.
+                    # The working-set kernel clears its own outputs at each solve.
+                    trial = self.rhs
+                    start, dest = int(extra_load.device_ptr), int(trial.device_ptr)
+                    if start < dest + trial.nbytes and dest < start + extra_load.nbytes:
+                        raise ValueError("extra load overlaps native trial scratch")
+                    add_trial_load(
+                        self.nworld,
+                        self.plan.nv,
+                        self.width,
+                        self.applied,
+                        extra_load,
+                        trial,
+                        self.status,
+                        mode=self.mode,
+                    )
+                    self.counts["completed_kernels"] += 1
+                self._solve_rows(self.mass, trial)
+                if integrate:
+                    finalized = True
+                    if np.any(self._get(self.status)):
+                        raise RuntimeError("native trial rejected before candidate integration")
+                    self._integrate_candidate(old, 1 - old)
+
+        self._trial_scope = evaluate
+        try:
+            with self.tx.use_runtime(self.runtime):
+                self._prepare_entry(old, controls, applied, body_force, assemble_contacts=True)
+            yield evaluate
+        finally:
+            self._trial_scope = None
+
+    def publish(self):
+        if self._trial_scope is not None:
+            raise RuntimeError("cannot publish during native row trials")
+        super().publish()
+
+    def advance(self, controls, applied, body_force):
+        if self._trial_scope is not None:
+            raise RuntimeError("cannot advance during native row trials")
+        old, new = self.active, 1 - self.active
+        with self.tx.use_runtime(self.runtime):
+            live_friction = bool(getattr(self.plan, "area_friction_laws", ()))
+            mixed_support = live_friction and self.plan.damped_contact_dofs > 0
+            self._prepare_entry(
+                old,
+                controls,
+                applied,
+                body_force,
+                assemble_contacts=not live_friction or mixed_support,
+            )
             if live_friction:
                 from ._area_friction_device import solve_contact
 
@@ -260,40 +446,7 @@ class TyxConstraintDevice(TyxDevice):
                     self.counts["completed_kernels"] += 1
                     if not self.plan.scalar_damped_contacts:
                         response_mass = self.area_response_mass
-                self.constraint_solve(
-                    self.nworld,
-                    self.plan.nv,
-                    self.capacities[1],
-                    self.plan.solver_iterations,
-                    self.plan.solver_tolerance,
-                    response_mass,
-                    self.bias,
-                    self.passive,
-                    self.applied,
-                    self.efc_data,
-                    self.efc_jacobian,
-                    self.constraint_counts,
-                    self.physical_factor,
-                    self.mass_work,
-                    self.smooth_acc,
-                    self.face_matrix,
-                    self.face_factor,
-                    self.face_rhs,
-                    self.face_forward,
-                    self.trial_acc,
-                    self.trial_force,
-                    self.working,
-                    self.previous_working,
-                    self.previous_force,
-                    self.free_ids,
-                    self.mixed_constraint,
-                    self.total_applied,
-                    self.physical_acc,
-                    self.solver_diagnostics,
-                    self.status,
-                    mode=self.mode,
-                )
-                self.counts["completed_kernels"] += 1
+                self._solve_rows(response_mass, self.applied)
             if not live_friction or mixed_support:
                 self.decode(
                     self.nworld,
@@ -310,55 +463,7 @@ class TyxConstraintDevice(TyxDevice):
                     mode=self.mode,
                 )
                 self.counts["completed_kernels"] += 1
-            # Shared native tail retains physical M acceleration. The live mode
-            # consumes the common velocity; the old mode solves M+hD as before.
-            # Both integrate native q/clock once; constraint/rows are disposable.
-            solve_args = [self.nworld, self.plan.nv]
-            if self.plan.base.kind == 2:
-                solve_args.extend((self.plan.nq, len(self.plan.joint_ids)))
-            solve_args.append(self.h)
-            if self.plan.base.kind == 2:
-                solve_args.append(self.joints)
-            integrator = self.solve[old]
-            if getattr(self.plan, "area_friction_laws", ()):
-                if self.plan.base.kind == 3:
-                    from ._floating_kernels import solve_live, solve_live_other
-                else:
-                    from ._tree_kernels import solve_live, solve_live_other
-                integrator = (solve_live, solve_live_other)[old]
-            integrator(
-                *solve_args,
-                self.vectors,
-                self.mass,
-                self.bias,
-                self.passive,
-                self.total_applied,
-                self.q[old],
-                self.v[old],
-                self.time[old],
-                self.q[new],
-                self.v[new],
-                self.time[new],
-                self.factor,
-                self.rhs,
-                self.forward,
-                self.acceleration,
-                self.integration_acc,
-                self.constraint,
-                self.rows,
-                self.status,
-                *(
-                    (
-                        self.plan.nq,
-                        len(self.plan.joint_ids),
-                        self.joints,
-                    )
-                    if self.plan.base.kind == 3
-                    else ()
-                ),
-                mode=self.mode,
-            )
-            self.counts["completed_kernels"] += 1
+            self._integrate_candidate(old, new)
             if live_friction and (mixed_support or self.plan.nfriction or self.plan.nlimit):
                 from ._area_friction_live_kernels import store_native_gradients
 

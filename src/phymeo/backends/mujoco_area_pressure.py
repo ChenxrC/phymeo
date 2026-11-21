@@ -90,6 +90,19 @@ def area_collision_ownership(mj, model, pairs):
     return AreaCollisionOwnership(tuple(ids), tuple(map(tuple, replaced)), tuple(remaining))
 
 
+def compile_area_native_rows(mj, model, pairs):
+    """Compile the native half of a replacement-contact calculation.
+
+    The supplied model is left intact. Only native collision candidates owned by
+    a declared body pair are removed. Joint rows and other contacts still come
+    from the original dynamics. The caller owns the replacement load.
+    """
+    from .mujoco_tyx._constraint_model import compile_constraint_model
+
+    ownership = area_collision_ownership(mj, model, pairs)
+    return compile_constraint_model(mj, model, ownership.native_geometry_pairs)
+
+
 def compile_area_plan(mj, model, pairs, friction_laws=()):
     from .area_friction_law import capture_pair_laws
     from .mujoco_tyx._constraint_model import compile_constraint_model

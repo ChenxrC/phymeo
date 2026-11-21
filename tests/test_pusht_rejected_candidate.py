@@ -189,15 +189,19 @@ def test_rejected_capture_retains_evaluation_half_step_phases_without_claiming_v
     device = owner._device
     device.status[0] = 8  # The one-world fixture otherwise initializes lane 0 to status zero.
     device.area_native_meta[0] = (8, 3, 4, 0)
-    device.area_native_trace_meta[0, :4, 0] = (0, 1, 2, 2)
+    device.area_native_trace_meta[0, :4, 0] = (0, 1, 2, 3)
     result = capture_rejected_candidate(_batch(owner), RuntimeError("candidate rejected"))
     lane = result["lanes"][0]
-    assert [row[0] for row in lane["area_native_trace_meta"]] == [0, 1, 2, 2]
+    assert [row[0] for row in lane["area_native_trace_meta"]] == [0, 1, 2, 3]
     assert result["columns"]["area_native_trace_meta"][0] == (
-        "evaluation_phase_0_baseline_1_full_2_half"
+        "evaluation_phase_0_baseline_1_full_2_half_3_quarter"
     )
     assert result["columns"]["trace_phase_values"][2] == (
-        "2: this evaluation uses a half update if not converged; half mode persists within this solve"
+        "2: half update if a further trial is needed"
+    )
+    assert (
+        result["columns"]["trace_phase_values"][3]
+        == "3: quarter update after a slow reversal in damped mode"
     )
     # This helper records the producer's values; it is not the restore validator
     # and does not certify the trigger, convergence, or freshness of this scratch.

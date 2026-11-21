@@ -159,7 +159,7 @@ def evaluate(
         trace_meta[w, iteration, 0] = 0
         if iteration > 0:
             trace_meta[w, iteration, 0] = 1
-            if trace_meta[w, iteration - 1, 0] == 2:
+            if trace_meta[w, iteration - 1, 0] >= 2:
                 trace_meta[w, iteration, 0] = 2
         trace_meta[w, iteration, 1] = status[w]
         for i in range(10):
@@ -295,9 +295,9 @@ def evaluate(
             # Converged lanes retain the load actually solved. While other lanes
             # continue they repeat the same native call, with a real trace row.
             if converged == 0 and iteration < 24 and status[w] == 0:
-                # A full fixed-point update can alternate around the root. Use
-                # the existing defects to detect a slow reversal of the dominant
-                # load coordinate. Damping changes only the next native trial.
+                # Halve the next update on a slow reversal. When a damped
+                # trial still reverses, use a quarter step for this update.
+                # A later trial without a fresh reversal returns to half.
                 if iteration >= 2 and load_scaled >= 0.5 * trace[w, iteration - 1, 10]:
                     for i in range(nv):
                         delta = vectors[w, 3, i]
@@ -306,8 +306,12 @@ def evaluate(
                             (delta > 0.0 and previous < 0.0) or (delta < 0.0 and previous > 0.0)
                         ):
                             trace_meta[w, iteration, 0] = 2
+                            if trace_meta[w, iteration - 1, 0] >= 2:
+                                trace_meta[w, iteration, 0] = 3
                 for i in range(nv):
-                    if trace_meta[w, iteration, 0] == 2:
+                    if trace_meta[w, iteration, 0] == 3:
+                        vectors[w, 4, i] = vectors[w, 4, i] + 0.25 * vectors[w, 3, i]
+                    elif trace_meta[w, iteration, 0] == 2:
                         vectors[w, 4, i] = vectors[w, 4, i] + 0.5 * vectors[w, 3, i]
                     else:
                         vectors[w, 4, i] = vectors[w, 5, i]

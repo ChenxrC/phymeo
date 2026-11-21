@@ -37,14 +37,15 @@ _NATIVE_COLUMNS = (
 _COLUMNS = {
     "area_native_meta": ("final_status", "last_outer_index", "native_calls", "converged"),
     "area_native_trace_meta": (
-        "evaluation_phase_0_baseline_1_full_2_half",
+        "evaluation_phase_0_baseline_1_full_2_half_3_quarter",
         "status_before_area_evaluation",
         "converged",
     ),
     "trace_phase_values": (
         "0: baseline with zero area trial load",
         "1: this evaluation uses full updates if not converged",
-        "2: this evaluation uses a half update if not converged; half mode persists within this solve",
+        "2: half update if a further trial is needed",
+        "3: quarter update after a slow reversal in damped mode",
     ),
     "solver_diagnostics": _NATIVE_COLUMNS,
     "constraint_counts": ("detected_contacts", "active_contacts", "native_rows_required"),

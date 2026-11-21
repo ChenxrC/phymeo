@@ -88,7 +88,7 @@ INPUTS = {
 }
 
 
-def _legal_initial(model, source):
+def _legal_initial(model, source, *, time=TIME):
     q, v = np.asarray(source["q"], dtype=np.float64), np.asarray(source["v"], dtype=np.float64)
     np.testing.assert_array_equal(q, q.astype(np.float32))
     np.testing.assert_array_equal(v, v.astype(np.float32))
@@ -103,7 +103,7 @@ def _legal_initial(model, source):
     assert np.max(abs(declared - q)) < 1e-7
     np.testing.assert_array_equal(declared[:address], q[:address])
     packed = declared.astype(np.float32).astype(np.float64)
-    return MuJoCoInitialState(declared, v, time=TIME), packed
+    return MuJoCoInitialState(declared, v, time=time), packed
 
 
 def test_real_rr_oscillatory_entry_closes_both_lanes_with_original_gates(record_property):
@@ -222,3 +222,70 @@ def test_real_rr_oscillatory_entry_closes_both_lanes_with_original_gates(record_
             record_property(INPUTS[key]["lane"] + "_calls", calls)
             record_property(INPUTS[key]["lane"] + "_area_normal_n", audit["normal"])
             record_property(INPUTS[key]["lane"] + "_support_n", audit["support"])
+
+
+def test_loaded_rr_entry_closes_with_existing_budget_and_gates():
+    """Portable public initialization from the first rejected half-compensation step."""
+    import mujoco as mj
+
+    original = next(scene for scene in manipulation_scenes() if scene.key == "pusht-planar")
+    assert original.source_sha256 == SOURCE_SHA
+    model = mj.MjModel.from_xml_string(original.mjcf)
+    source = dict(
+        q=(
+            -0.6002522110939026,
+            0.9449527859687805,
+            0.5189886093139648,
+            0.00947501789778471,
+            0.014993463642895222,
+            0.9987941384315491,
+            -9.678622154751793e-05,
+            0.0002173582761315629,
+            -0.049094825983047485,
+        ),
+        v=(
+            0.07553205639123917,
+            -0.05074348300695419,
+            0.008799377828836441,
+            0.028477977961301804,
+            0.002139165299013257,
+            -0.004497183486819267,
+            0.03524314984679222,
+            -0.10292518138885498,
+        ),
+    )
+    initial, packed = _legal_initial(model, source, time=3.7190001766430214)
+    spec, asset = build_scene_spec(original.mjcf), build_side_asset(model)
+    world = MuJoCoTyxWorldSpec(6, spec.key, initial)
+    with MuJoCoTyxHeterogeneousBatch((spec,), (world,), mode="cuda") as batch:
+        scene = MuJoCoTyxHeterogeneousAreaPressureScene(batch, {spec.key: (asset,)})
+        batch.set_controls({6: MuJoCoControl([0.6415153741836548, 0.3015781044960022])})
+        before = batch.integration_snapshot()[6]
+        np.testing.assert_array_equal(before.q, packed)
+        revision = batch.checkpoint_revision
+        assert scene.step(H, expected_revision=revision) == {6: True}
+        after = batch.integration_snapshot()[6]
+        assert batch.checkpoint_revision == revision + 1
+        closure = after.last_step.raw_contact_fields["area_friction_solver"]["raw_diagnostics"]
+        calls = int(closure["meta"][2])
+        assert 1 <= calls <= 25
+        assert closure["trace_meta"][calls - 1, 2] == 1
+        assert closure["trace"][calls - 1, 10] <= np.float32(1e-6)
+        assert closure["trace"][calls - 1, 11] <= np.float32(1e-7)
+        audit = _audit(model, asset, before, after, scene.last_geometry[6][0])
+        assert audit["normal"] > 0 and audit["support"] > 0
+        phases = closure["trace_meta"][:calls, 0]
+        assert np.any(phases == 3)
+        solver = after.last_step.raw_contact_fields["area_friction_solver"]
+        owner = batch._buckets[batch.layout[6].bucket]
+        for index, replacement, reason in (
+            (int(np.flatnonzero(phases == 2)[0]), 3, "damped trial"),
+            (int(np.flatnonzero(phases == 3)[0]), 2, "area-load source binding"),
+        ):
+            claimed = closure["trace_meta"].copy()
+            claimed[index, 0] = replacement
+            forged = _solver_receipt(
+                after.last_step, {**solver, "raw_diagnostics": {**closure, "trace_meta": claimed}}
+            )
+            with pytest.raises(ValueError, match=reason):
+                validate_friction_receipt(owner, 6, forged, owner._data[6])

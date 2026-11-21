@@ -155,6 +155,23 @@ def _case(*, force=(0.0, -12.0, 0.0), raw=(1.0, 2.0), stage="push", swap_motors=
     return entry, snapshot, diagnostic, pair
 
 
+def test_compensation_binds_the_registered_material_to_pair_and_quadrature():
+    entry, snapshot, diagnostic, pair = _case()
+    material = replace(IDENTITY, rigid_material="another-finite-side-set")
+    feedback = PushLoadCompensation(entry, identity=material)
+    with pytest.raises(ValueError, match="ordered declared"):
+        feedback(entry, snapshot, diagnostic)
+    pair["identity"] = material
+    with pytest.raises(ValueError, match="quadrature"):
+        feedback(entry, snapshot, diagnostic)
+    pair["source_quadrature"] = replace(pair["source_quadrature"], identity=material)
+    _, report = feedback(entry, snapshot, diagnostic)
+    assert report["source_identity"] == asdict(material)
+    assert report["gain"] == 0.5 and report["resisting_force_n"] == 12.0
+    with pytest.raises(ValueError, match="ordered declared"):
+        PushLoadCompensation(entry)(entry, snapshot, diagnostic)
+
+
 def _analytic_j(q):
     a, b = q
     return np.array(

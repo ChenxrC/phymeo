@@ -374,7 +374,9 @@ class PublicFeedbackMeasurement:
     force_source: str = "actual area sample forces on object plus retained native pusher contacts"
 
 
-def accepted_measurement_and_goal(scene, model, world, absolute_tick, before, after, history):
+def accepted_measurement_and_goal(
+    scene, model, world, absolute_tick, before, after, history, *, goal_tick=None
+):
     """Bind actual mixed forces and input-state Goal fields to one accepted step."""
     receipt = after.last_step
     _require(
@@ -439,10 +441,15 @@ def accepted_measurement_and_goal(scene, model, world, absolute_tick, before, af
     jac = np.asarray(dyn.jacobian_com[body])
     linear_com, angular = jac[:3] @ before.v, jac[3:] @ before.v
     linear = linear_com - np.cross(angular, dyn.body_com[body] - dyn.body_position[body])
+    if goal_tick is not None:
+        _require(
+            type(goal_tick) is int and goal_tick == before.tick,
+            "Goal tick must equal the episode input tick",
+        )
     frame = SuccessFrame(
         world,
         0,
-        absolute_tick,
+        absolute_tick if goal_tick is None else goal_tick,
         before.time,
         tuple(dyn.body_position[body]),
         tuple(before.q[qa + 3 : qa + 7]),

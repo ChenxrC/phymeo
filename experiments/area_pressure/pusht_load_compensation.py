@@ -14,7 +14,7 @@ import numpy as np
 
 from phymeo.control.manipulation_diagnostic import NativeJointPD
 from phymeo.control.manipulation_push_planner import NativePushRoute
-from phymeo.geometry.area_pressure import AreaPressureQuadrature
+from phymeo.geometry.area_pressure import AreaPressureIdentity, AreaPressureQuadrature
 from phymeo.solvers.area_friction import LAW
 
 from .pusht_public_scene import IDENTITY
@@ -107,14 +107,16 @@ class PushLoadCompensation:
     nor approach permits skipping source-receipt validation.
     """
 
-    def __init__(self, entry):
+    def __init__(self, entry, *, identity=IDENTITY):
+        _require(isinstance(identity, AreaPressureIdentity), "registered area material identity")
+        self._identity = identity
         self._entry, self._driver = entry, entry.driver
         self._layout = _layout(entry)
         self._model = entry.model
         self._scratch = mj.MjData(self._model)
         self._bodies = (
-            int(entry.model.body(IDENTITY.compliant_body).id),
-            int(entry.model.body(IDENTITY.rigid_body).id),
+            int(entry.model.body(identity.compliant_body).id),
+            int(entry.model.body(identity.rigid_body).id),
         )
         self._pusher = int(entry.model.geom("pusher").id)
         _require(
@@ -162,7 +164,7 @@ class PushLoadCompensation:
         )
         pair = pairs[0]
         _require(
-            pair["identity"] == IDENTITY
+            pair["identity"] == self._identity
             and tuple(pair["body_ids"]) == self._bodies
             and pair["law"] == LAW,
             "ordered declared tool/load material pair",
@@ -170,7 +172,7 @@ class PushLoadCompensation:
         quad = pair["source_quadrature"]
         _require(
             isinstance(quad, AreaPressureQuadrature)
-            and quad.identity == IDENTITY
+            and quad.identity == self._identity
             and pair["stamp"] == quad.stamp
             and quad.stamp.world_id == str(snapshot.world)
             and quad.stamp.step_index == snapshot.tick - 1
@@ -301,7 +303,7 @@ class PushLoadCompensation:
             source_world=int(receipt.world),
             source_backend=receipt.backend,
             source_schema=SOURCE_SCHEMA,
-            source_identity=asdict(IDENTITY),
+            source_identity=asdict(self._identity),
             source_body_ids=list(self._bodies),
             source_sample_count=len(quad.sample_ids),
             force_phase="previous-accepted-step-input-geometry",

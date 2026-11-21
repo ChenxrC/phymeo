@@ -22,6 +22,7 @@ from scripts.run_manipulation_control import plain
 H = 0.001
 RESET_YAW = 0.50
 SELECTION_POLICY = "joint-pose-descent"
+SELECTION_POLICIES = (SELECTION_POLICY, "joint-pose-balanced")
 
 
 def _require(ok, detail):
@@ -199,8 +200,9 @@ def _fresh_entry(prior_path, bound, route_output):
     return ReleaseEntry(original, model, driver, pd, None, {}, None, 0, initial, {})
 
 
-def _plan_ordinary(entry, snapshot, tick):
+def _plan_ordinary(entry, snapshot, tick, *, selection_policy=SELECTION_POLICY):
     """Exactly one explicit policy selection, using the original path/IK gates."""
+    _require(selection_policy in SELECTION_POLICIES, "supported ordinary selection policy")
     from phymeo.control.manipulation_push_objective import propose_planar_pushes
 
     driver = entry.driver
@@ -224,7 +226,7 @@ def _plan_ordinary(entry, snapshot, tick):
         pusher_height_m=float(pusher[2]),
         position_tolerance_m=driver.goal.position_tolerance_m,
         yaw_tolerance_rad=driver.goal.yaw_tolerance_rad,
-        selection_policy=SELECTION_POLICY,
+        selection_policy=selection_policy,
     )
     route = driver.planner.plan(snapshot.q, proposals, previous_direction=None)
     path = driver.output / f"route-{len(driver.routes) + 1:02}.json.gz"
@@ -264,12 +266,23 @@ def _plan_ordinary(entry, snapshot, tick):
         source_v=plain(snapshot.v),
         tick=tick,
         status=route.status,
-        selection_policy=SELECTION_POLICY,
+        selection_policy=selection_policy,
     )
 
 
 def _run_case(
-    key, output, prior, release, source, audit, metadata, bound, *, step_budget, cache_root
+    key,
+    output,
+    prior,
+    release,
+    source,
+    audit,
+    metadata,
+    bound,
+    *,
+    step_budget,
+    cache_root,
+    selection_policy=SELECTION_POLICY,
 ):
     from phymeo.backends.mujoco_heterogeneous import MuJoCoTyxHeterogeneousBatch, MuJoCoTyxWorldSpec
     from phymeo.backends.mujoco_heterogeneous_area_scene import (
@@ -328,7 +341,7 @@ def _run_case(
         goal_success=False,
         journal=dict(file=journal_path.name, records=0, sha256=journal_hash.hexdigest()),
         control_variant="load-compensation-half",
-        selection_policy=SELECTION_POLICY,
+        selection_policy=selection_policy,
         force_phase="accepted-step-input-geometry",
         provenance=dict(
             source_report_path=str(source),
@@ -506,7 +519,9 @@ def _run_case(
                                 report["planner_calls"] == 0, "only one ordinary replan per case"
                             )
                             report["planner_calls"] += 1
-                            route, plan_record = _plan_ordinary(entry, before, tick)
+                            route, plan_record = _plan_ordinary(
+                                entry, before, tick, selection_policy=selection_policy
+                            )
                             report["ordinary_route"] = plan_record
                             emit("planner", plan_record)
                             if route.status != "sampled_reference_ready":
@@ -823,11 +838,29 @@ def _run_case(
 
 
 def run(
-    prior, release, source, audit, metadata, output, *, case="both", steps=4000, cache_root=None
+    prior,
+    release,
+    source,
+    audit,
+    metadata,
+    output,
+    *,
+    case="both",
+    steps=4000,
+    cache_root=None,
+    selection_policy=SELECTION_POLICY,
 ):
     from .pusht_active_resume import load_resume_source
 
     _require(case in ("A", "B", "both"), "registered case selection")
+    _require(
+        type(selection_policy) is str and selection_policy in SELECTION_POLICIES,
+        "supported pose selection policy",
+    )
+    _require(
+        selection_policy == SELECTION_POLICY or case == "A",
+        "balanced selection is an explicit A-only experiment; B retains its original policy",
+    )
     _require(type(steps) is int and 1 <= steps <= 4000, "finite 1..4000 physical-attempt budget")
     prior, release, source, audit, metadata, output = map(
         lambda p: Path(p).resolve(), (prior, release, source, audit, metadata, output)
@@ -864,6 +897,7 @@ def run(
                     bound,
                     step_budget=steps,
                     cache_root=cache_root,
+                    selection_policy=selection_policy,
                 )
             )
             for key in selected
@@ -876,6 +910,7 @@ def run(
         cases[key] = dict(file=paths[key].name, sha256=_digest(paths[key]), summary=report)
     result = dict(
         schema="phymeo-pusht-pose-replan-v1",
+        selection_policy=selection_policy,
         cases=cases,
         source=dict(
             summary_path=str(source),
@@ -899,6 +934,7 @@ def main():
         parser.add_argument("--" + flag, required=True, type=Path)
     parser.add_argument("--case", choices=("A", "B", "both"), default="both")
     parser.add_argument("--steps", type=int, default=4000)
+    parser.add_argument("--selection-policy", choices=SELECTION_POLICIES, default=SELECTION_POLICY)
     parser.add_argument("--cache-root", type=Path)
     args = parser.parse_args()
     result = run(
@@ -911,6 +947,7 @@ def main():
         case=args.case,
         steps=args.steps,
         cache_root=args.cache_root,
+        selection_policy=args.selection_policy,
     )
     print(json.dumps({key: value["summary"]["status"] for key, value in result["cases"].items()}))
     raise SystemExit(

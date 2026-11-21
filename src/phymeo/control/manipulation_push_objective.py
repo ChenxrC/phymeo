@@ -41,7 +41,7 @@ class NativePlanarPushProposal:
     cost_before: float
     cost_after: float
     predicted_improvement: float
-    sort_key: tuple[int, float, int, int]
+    sort_key: tuple[int, float, int, int] | tuple[int, float, float, int, int]
     # Defaults also permit decoding archived proposals made before this policy.
     selection_policy: str = "pose-cost"
     selection_eligible: bool = True
@@ -207,10 +207,16 @@ def propose_planar_pushes(
     cost must still strictly improve. When both components already qualify no
     push is eligible. Rejected proposals and their reasons are retained, and
     input bindings include the new policy. Error fields are predictions only.
+    Explicit joint-pose-balanced uses exactly the same admission, then maximizes
+    the minimum fractional reduction of currently unmet components, normalized
+    by each current error. Components already in tolerance do not enter this
+    balance score. Ties use predicted total cost, source index and length ordinal.
+    Both older policies and their bindings retain their original behavior.
     No full 3D clearance, CCD, delivered force, actual motion or success is claimed.
     """
     _require(
-        type(selection_policy) is str and selection_policy in ("pose-cost", "joint-pose-descent"),
+        type(selection_policy) is str
+        and selection_policy in ("pose-cost", "joint-pose-descent", "joint-pose-balanced"),
         "unsupported selection policy",
     )
     _validate_query(query)
@@ -257,7 +263,7 @@ def propose_planar_pushes(
     current_yaw = atan2(float(current_r[1, 0]), float(current_r[0, 0]))
     before = _cost(current_array[:2], current_yaw, target, target_yaw, pos_tol, yaw_tol)
     position_before = yaw_before = None
-    if selection_policy == "joint-pose-descent":
+    if selection_policy != "pose-cost":
         position_before = hypot(target[0] - current[0], target[1] - current[1])
         yaw_before = _wrap(target_yaw - current_yaw)
         _require(isfinite(position_before) and isfinite(yaw_before), "nonfinite pose error")
@@ -296,13 +302,18 @@ def propose_planar_pushes(
             sorting="reference-unusable, negative-improvement, source-index, distance-ordinal",
         ),
     )
-    if selection_policy == "joint-pose-descent":
+    if selection_policy != "pose-cost":
         request["policy"].update(
             selection_policy=selection_policy,
             component_admission="strict-unmet-error-descent; preserve-met-Goal-tolerance",
             yaw_admission="same-world-zero; signed-Mz-matches-short-target-error",
             goal_admission="both-met-refuses-push; positive-total-improvement-required",
             sorting="eligible-first, negative-improvement, source-index, distance-ordinal",
+        )
+    if selection_policy == "joint-pose-balanced":
+        request["policy"].update(
+            balance="minimum (error_before-error_after)/error_before over unmet components only",
+            sorting="eligible-first, negative-minimum-fractional-reduction, cost-after, source-index, distance-ordinal",
         )
     binding = sha256(
         json.dumps(
@@ -369,11 +380,11 @@ def propose_planar_pushes(
             _require(isfinite(improvement), "nonfinite predicted improvement")
             position_after = yaw_after = None
             # The optional extension has exact defaults for legacy policy.
-            # Its eligibility bit is interpreted only by joint-pose-descent;
+            # Its eligibility bit is interpreted only by the joint-pose policies;
             # the legacy route still uses reference_usable and improvement.
             eligible, reason = True, "legacy_pose_cost"
             admitted = candidate.usable
-            if selection_policy == "joint-pose-descent":
+            if selection_policy != "pose-cost":
                 position_after = hypot(target[0] - predicted[0], target[1] - predicted[1])
                 yaw_after = _wrap(target_yaw - predicted_yaw)
                 _require(
@@ -393,6 +404,21 @@ def propose_planar_pushes(
                 )
                 admitted = eligible
             key = (0 if admitted else 1, -improvement, candidate.index, ordinal)
+            if selection_policy == "joint-pose-balanced":
+                balance = 0.0
+                if eligible:
+                    reductions = []
+                    if position_before > pos_tol:
+                        reductions.append((position_before - position_after) / position_before)
+                    if abs(yaw_before) > yaw_tol:
+                        reductions.append((abs(yaw_before) - abs(yaw_after)) / abs(yaw_before))
+                    _require(bool(reductions), "balanced proposal needs an unmet component")
+                    balance = min(reductions)
+                    _require(
+                        isfinite(balance) and 0 <= balance <= 1, "finite fractional pose reduction"
+                    )
+                    reason = "joint_pose_balanced"
+                key = (0 if admitted else 1, -balance, after, candidate.index, ordinal)
             records.append(
                 NativePlanarPushProposal(
                     "PROPOSAL_ONLY",

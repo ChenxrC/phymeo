@@ -206,10 +206,13 @@ class NativePushRoutePlanner:
 
         policies = {getattr(p, "selection_policy", "pose-cost") for p in proposals}
         _require(
-            len(policies) == 1 and policies <= {"pose-cost", "joint-pose-descent"},
+            len(policies) == 1
+            and policies <= {"pose-cost", "joint-pose-descent", "joint-pose-balanced"},
             "route proposals must share one supported selection policy",
         )
-        joint_selection = policies == {"joint-pose-descent"}
+        policy = next(iter(policies))
+        joint_selection = policy != "pose-cost"
+        balanced = policy == "joint-pose-balanced"
         if joint_selection:
             _require(
                 all(
@@ -228,7 +231,7 @@ class NativePushRoutePlanner:
                 attempts.append(
                     {
                         "kind": "selection",
-                        "policy": "joint-pose-descent",
+                        "policy": policy,
                         "reason": "no_jointly_improving_proposal",
                         "rejected_proposals": tuple(
                             {
@@ -311,7 +314,23 @@ class NativePushRoutePlanner:
                 mj.mj_kinematics(self.model, scratch)
                 center = scratch.geom_xpos[self.pusher].copy()
             groups = {}
-            for p in proposals:
+            if balanced:
+                _require(
+                    all(
+                        len(p.sort_key) == 5
+                        and all(np.isfinite(x) for x in p.sort_key)
+                        and p.sort_key[0] == (0 if p.selection_eligible else 1)
+                        and -1 <= p.sort_key[1] <= 0
+                        and p.sort_key[2] >= 0
+                        and tuple(p.sort_key[3:]) == (p.index, p.distance_ordinal)
+                        for p in proposals
+                    ),
+                    "balanced proposal ordering witness",
+                )
+                ordered = sorted(proposals, key=lambda p: p.sort_key)
+            else:
+                ordered = proposals
+            for p in ordered:
                 _require(p.status == "PROPOSAL_ONLY", "proposal status")
                 if (
                     p.reference_usable
@@ -319,6 +338,27 @@ class NativePushRoutePlanner:
                     and (not joint_selection or p.selection_eligible)
                 ):
                     groups.setdefault(p.index, []).append(p)
+            if balanced:
+                # Rank contact groups by their best proposal; reuse its approach
+                # branch and path audits while trying this group's ranked lengths.
+                # This bounded group search is not a global best-feasible claim.
+                attempts.append(
+                    dict(
+                        kind="selection",
+                        policy=policy,
+                        ordering="best-balanced-contact-group; ranked-lengths-with-shared-approach",
+                        available_groups=len(groups),
+                        candidate_limit=self.max_candidates,
+                        ordered_groups=tuple(
+                            dict(
+                                index=index,
+                                best_sort_key=choices[0].sort_key,
+                                length_order=tuple(p.distance_ordinal for p in choices),
+                            )
+                            for index, choices in groups.items()
+                        ),
+                    )
+                )
             for index, choices in list(groups.items())[: self.max_candidates]:
                 candidate = {
                     "kind": "candidate",
@@ -408,6 +448,15 @@ class NativePushRoutePlanner:
                         proposal,
                         combine((*base_parts, approach, entry, pushing)),
                     )
+            if balanced and len(groups) > self.max_candidates:
+                attempts.append(
+                    dict(
+                        kind="budget",
+                        reason="candidate_budget",
+                        unchecked_groups=tuple(list(groups)[self.max_candidates :]),
+                    )
+                )
+                return finish("candidate_budget")
             return finish("no_qualified_route")
         except RuntimeError as error:
             if str(error) not in ("ik_budget", "path_budget"):

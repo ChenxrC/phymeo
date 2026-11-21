@@ -234,7 +234,7 @@ def _goal_row(row, goal, world):
         _close(metrics[key], errors[key], "independent " + key, atol=2e-6, rtol=2e-6)
 
 
-def _planner(base, payload, retained, tick):
+def _planner(base, payload, retained, tick, *, selection_policy="joint-pose-descent"):
     path, saved = _bound(base, payload["route_file"], payload["route_sha256"], "planner route")
     _require(
         payload["tick"] == saved["tick"] == tick
@@ -243,11 +243,16 @@ def _planner(base, payload, retained, tick):
         and payload["status"] == saved["route"]["status"],
         "planner uses retained actual state",
     )
+    _require(
+        selection_policy in ("joint-pose-descent", "joint-pose-balanced")
+        and payload["selection_policy"] == selection_policy,
+        "planner/case selection policy",
+    )
     proposal = saved["route"].get("proposal")
     prediction = None
     if proposal is not None:
         _require(
-            payload["selection_policy"] == proposal["selection_policy"] == "joint-pose-descent"
+            payload["selection_policy"] == proposal["selection_policy"] == selection_policy
             and proposal["selection_eligible"] is True,
             "selected pose prediction policy",
         )
@@ -308,6 +313,10 @@ def compare_case(path):
     path = Path(path).resolve()
     summary, base = _read(path), path.parent
     _require(summary["schema"] == "phymeo-pusht-pose-replan-case-v1", "case schema")
+    selection_policy = summary["selection_policy"]
+    _require(
+        selection_policy in ("joint-pose-descent", "joint-pose-balanced"), "case selection policy"
+    )
     initial, goal = summary["initial_state"], summary["goal"]
     origin, start, world = summary["local_tick_origin"], summary["start_tick"], summary["world"]
     _state(initial, origin)
@@ -474,7 +483,9 @@ def compare_case(path):
             elif kind == "planner":
                 _require(pending is None, "planner runs after full accepted callback")
                 verify_separation(latest_evidence, retained, start + selected)
-                record, proposal = _planner(base, payload, retained, start + selected)
+                record, proposal = _planner(
+                    base, payload, retained, start + selected, selection_policy=selection_policy
+                )
                 plans.append(record)
                 direction = None if proposal is None else proposal["direction_world"]
             elif kind == "failure":
@@ -557,6 +568,7 @@ def compare_case(path):
         status="verified-saved-prefix",
         source=dict(file=str(path), sha256=_digest(path), journal_sha256=journal["sha256"]),
         initialization_mode=mode,
+        selection_policy=selection_policy,
         goal=goal,
         physical_budget=summary["step_budget"],
         physical_attempts=summary["physical_attempts"],
@@ -593,6 +605,11 @@ def compare(path):
     _require(
         summary["schema"] == "phymeo-pusht-pose-replan-v1" and set(summary["cases"]) == {"A", "B"},
         "two independent pose cases",
+    )
+    policies = {item["summary"]["selection_policy"] for item in summary["cases"].values()}
+    _require(
+        len(policies) == 1 and policies <= {"joint-pose-descent", "joint-pose-balanced"},
+        "same fixed pose selection policy",
     )
     cases = {}
     for key, item in summary["cases"].items():
@@ -645,7 +662,8 @@ def compare_cases(case_a, case_b):
         common[field] = a["provenance"][field]
     _require(a["goal"] == b["goal"], "same split-case original Goal")
     _require(
-        a["selection_policy"] == b["selection_policy"] == "joint-pose-descent",
+        a["selection_policy"] == b["selection_policy"]
+        and a["selection_policy"] in ("joint-pose-descent", "joint-pose-balanced"),
         "same fixed pose selection policy",
     )
     _require(
@@ -671,17 +689,22 @@ def compare_cases(case_a, case_b):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input", type=Path)
+    parser.add_argument("--case-report", type=Path)
     parser.add_argument("--case-a", type=Path)
     parser.add_argument("--case-b", type=Path)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
-    if args.input is not None:
+    if args.case_report is not None:
+        if args.input is not None or args.case_a is not None or args.case_b is not None:
+            parser.error("--case-report requires a single source")
+        result = compare_case(args.case_report)
+    elif args.input is not None:
         if args.case_a is not None or args.case_b is not None:
             parser.error("--input cannot be combined with --case-a or --case-b")
         result = compare(args.input)
     else:
         if args.case_a is None or args.case_b is None:
-            parser.error("provide --input or both --case-a and --case-b")
+            parser.error("provide --case-report, --input, or both --case-a and --case-b")
         result = compare_cases(args.case_a, args.case_b)
     with args.output.open("x", encoding="utf-8") as stream:
         json.dump(result, stream, indent=2, allow_nan=False)

@@ -174,14 +174,19 @@ def bind_resume_source(summary, parent, parent_audit, metadata, seed):
 
 def verify_first_retry_command(summary, parent, command):
     """Check actual saved channels, not just the producer's matching assertion."""
-    saved = parent.get("failed_candidate", {}).get("submitted_control")
+    if parent.get("schema") == "phymeo-pusht-pose-replan-case-v1":
+        saved = parent["failed_candidate"]["control"]
+        failure_tick = parent["start_tick"] + parent["recorded_steps"]
+    else:
+        saved = parent.get("failed_candidate", {}).get("submitted_control")
+        failure_tick = parent.get("failed_original_input_tick")
     marker = summary.get("first_command_binding", {}).get("matches_parent_rejected_command")
     if saved is None:
         _require(marker is None, "retry match claimed without a parent rejected command")
         return dict(verified=False, reason="parent has no saved rejected command")
     start = summary["start_tick"]
     _require(
-        marker is True and parent.get("failed_original_input_tick") == start,
+        marker is True and failure_tick == start,
         "first retry saved binding flag/source failure tick",
     )
     _require(
@@ -315,10 +320,99 @@ def _source_files(path, summary):
     )
 
 
+def bind_pose_boundary(summary, bound):
+    """Check the cross-schema trajectory boundary against the previous pose audit."""
+    parent, meta, audit = bound["report"], bound["metadata"], bound["audit"]
+    actual = audit["actual"]
+    state, start = meta["state"], meta["source_tick"]
+    count = parent["recorded_steps"]
+    proof = summary["checkpoint_restore"]
+    _require(
+        summary["schema"] == "phymeo-pusht-active-route-v1"
+        and parent["key"] == "B"
+        and summary["control_variant"] == parent["control_variant"] == "load-compensation-half"
+        and summary["world"] == meta["world"] == parent["world"]
+        and summary["provenance"]["scene_asset_sha256"] == meta["asset_sha256"]
+        and summary["initial_state"]
+        == state
+        == parent["final_state"]
+        == actual["verified_final_state"]
+        and start == summary["start_tick"] == parent["start_tick"] + count
+        and count == actual["verified_steps"] == audit["recorded_steps"]
+        and summary["local_tick_origin"] == state["local_tick"] == meta["local_tick"]
+        and summary["controller_initial"] == meta["controller"] == parent["controller_final"]
+        and summary["goal"] == meta["target"] == parent["goal"],
+        "pose resume audited physical/controller/Goal endpoint",
+    )
+    _require(
+        proof["checkpoint_sha256"] == meta["checkpoint_sha256"]
+        and proof["restored_local_tick"] == state["local_tick"]
+        and proof["absolute_input_tick"] == start
+        and proof["time"] == state["time"],
+        "pose resume material capsule restore",
+    )
+    route = summary["active_route"]
+    for key in ("start_tick", "end_tick", "nodes", "sha256", "completed_routes_before"):
+        _require(
+            route[key] == parent["active_route"][key] == meta["active_route"][key],
+            "original selected pose route " + key,
+        )
+    _require(
+        route["start_tick"] <= start < route["end_tick"]
+        and route["end_tick"] - start == route["remaining_steps"] == summary["requested_steps"],
+        "original remaining pose route window",
+    )
+    return dict(
+        source_tick=start,
+        control_variant=summary["control_variant"],
+        parent_verified_steps=count,
+        verified_chain_steps=count,
+        checkpoint_sha256=meta["checkpoint_sha256"],
+    )
+
+
+def _pose_source_files(path, summary):
+    from .pusht_pose_resume import load_pose_source
+
+    base, p = path.parent, summary["provenance"]
+    parent_path = base / p["parent_pose_report_path"]
+    audit_path = base / p["parent_pose_comparison_path"]
+    meta_path = base / p["checkpoint_metadata_path"]
+    bound = load_pose_source(parent_path, audit_path, meta_path)
+    for filename, key in (
+        (parent_path, "parent_pose_report_sha256"),
+        (audit_path, "parent_pose_comparison_sha256"),
+        (meta_path, "checkpoint_metadata_sha256"),
+        (bound["journal_path"], "parent_pose_journal_sha256"),
+    ):
+        _require(_digest(filename) == p[key], "pose resume input file " + key)
+    binding = bind_pose_boundary(summary, bound)
+    seed = bound["previous"]
+    _require(
+        seed["original_output_tick"] == binding["source_tick"]
+        and seed["output_state"] == summary["initial_state"],
+        "pose feedback uses immediately preceding accepted endpoint",
+    )
+    _receipt(seed)
+    _load(seed)
+    sources = dict(
+        parent_report_file=str(parent_path),
+        parent_report_sha256=_digest(parent_path),
+        parent_audit_file=str(audit_path),
+        parent_audit_sha256=_digest(audit_path),
+        checkpoint_metadata_file=str(meta_path),
+        checkpoint_metadata_sha256=_digest(meta_path),
+    )
+    return bound["report"], seed, binding, sources
+
+
 def compare(path):
     path = Path(path).resolve()
     summary, base = _read(path), path.parent
-    parent, seed, binding, sources = _source_files(path, summary)
+    source_reader = (
+        _pose_source_files if "parent_pose_report_path" in summary["provenance"] else _source_files
+    )
+    parent, seed, binding, sources = source_reader(path, summary)
     start, origin = summary["start_tick"], summary["local_tick_origin"]
     initial, route, goal = summary["initial_state"], summary["active_route"], summary["goal"]
     _state(initial, origin)

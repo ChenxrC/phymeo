@@ -281,6 +281,7 @@ def run(
     control_variant="position",
     resume_source_path=None,
     resume_audit_path=None,
+    prepared_resume=None,
 ):
     from phymeo.backends.mujoco_heterogeneous import MuJoCoTyxHeterogeneousBatch, MuJoCoTyxWorldSpec
     from phymeo.backends.mujoco_heterogeneous_area_scene import (
@@ -300,8 +301,19 @@ def run(
         build_side_asset,
     )
 
-    prior_summary_path, release_report_path, output = map(
-        lambda p: Path(p).resolve(), (prior_summary_path, release_report_path, output)
+    prior_summary_path, output = map(lambda p: Path(p).resolve(), (prior_summary_path, output))
+    release_report_path = (
+        None if release_report_path is None else Path(release_report_path).resolve()
+    )
+    _require(
+        (prepared_resume is None and release_report_path is not None)
+        or (
+            prepared_resume is not None
+            and release_report_path is None
+            and resume_source_path is None
+            and resume_audit_path is None
+        ),
+        "choose the existing release source or one explicitly prepared pose resume",
     )
     _require(control_variant in ("position", "load-compensation-half"), "unknown control variant")
     _require(
@@ -330,7 +342,18 @@ def run(
         _write_progress(stream, report)
         try:
             resume = None
-            if resume_source_path is None:
+            if prepared_resume is not None:
+                entry, resume = prepared_resume
+                _require(
+                    resume["report"]["schema"] == "phymeo-pusht-pose-replan-case-v1"
+                    and resume["report"]["key"] == "B"
+                    and resume["report"]["control_variant"] == control_variant
+                    and resume["metadata_path"] == checkpoint_metadata_path
+                    and resume["metadata"]["state"] == entry.state
+                    and resume["metadata"]["source_tick"] == entry.tick,
+                    "prepared pose resume source/endpoint/variant",
+                )
+            elif resume_source_path is None:
                 entry = prepare_active_entry(
                     prior_summary_path, release_report_path, output.with_suffix(".routes")
                 )
@@ -363,14 +386,19 @@ def run(
             report["provenance"].update(
                 prior_summary_path=str(prior_summary_path),
                 prior_summary_sha256=hashlib.sha256(prior_summary_path.read_bytes()).hexdigest(),
-                release_report_path=str(release_report_path),
-                release_report_sha256=hashlib.sha256(release_report_path.read_bytes()).hexdigest(),
                 checkpoint_metadata_path=str(checkpoint_metadata_path),
                 checkpoint_metadata_sha256=hashlib.sha256(
                     checkpoint_metadata_path.read_bytes()
                 ).hexdigest(),
                 script_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
             )
+            if release_report_path is not None:
+                report["provenance"].update(
+                    release_report_path=str(release_report_path),
+                    release_report_sha256=hashlib.sha256(
+                        release_report_path.read_bytes()
+                    ).hexdigest(),
+                )
             spec, asset = build_scene_spec(entry.scene.mjcf), build_side_asset(model)
             qa = int(model.jnt_qposadr[model.joint("object-free").id])
             declaration = MuJoCoTyxWorldSpec(world, spec.key, entry.initial)

@@ -169,7 +169,7 @@ def summarize_motion(initial, goal, rows):
         prior = after
     first, last = _pose_errors(initial, goal), _pose_errors(prior, goal)
     return dict(
-        verified_steps=len(rows),
+        verified_steps=len(trajectory),
         initial=first,
         final=last,
         verified_final_state=prior,
@@ -215,11 +215,11 @@ def _wrench(row, measurement, world):
     _close(a, -b, "actual bilateral force ownership", atol=1e-7, rtol=8 * np.finfo(np.float32).eps)
 
 
-def _goal_row(row, goal, world):
+def _goal_row(row, goal, world, *, goal_tick=None):
     before, frame, result = row["input_state"], row["goal_frame"], row["goal_result"]
     _require(
         frame["world"] == world
-        and frame["tick"] == row["original_input_tick"]
+        and frame["tick"] == (row["original_input_tick"] if goal_tick is None else goal_tick)
         and frame["time_s"] == before["time"]
         and frame["phase"] == "accepted-entry"
         and frame["object_position"] == before["object_position_world_m"]
@@ -243,6 +243,7 @@ def _planner(
     selection_policy="joint-pose-descent",
     material_admission="none",
     material_asset_sha256=None,
+    side_coverage="negative-y",
 ):
     path, saved = _bound(base, payload["route_file"], payload["route_sha256"], "planner route")
     _require(
@@ -282,10 +283,17 @@ def _planner(
 
         original = next(s for s in manipulation_scenes() if s.key == "pusht-planar")
         model = mj.MjModel.from_xml_string(original.mjcf)
-        asset = build_side_asset(model)
+        asset = build_side_asset(model, side_coverage=side_coverage)
+        dtype = material_records[0]["q_dtype"]
+        _require(
+            dtype in (np.dtype(np.float32).str, np.dtype(np.float64).str),
+            "material observation dtype",
+        )
+        source_q = np.asarray(retained["q"], dtype=dtype)
+        _require(np.array_equal(source_q, retained["q"]), "lossless material observation recovery")
         frozen = freeze_declared_material(
             model,
-            np.asarray(retained["q"], dtype=np.float32),
+            source_q,
             asset,
             model_key="original-RR-public-mixed-area",
             scene_asset_sha256=material_asset_sha256,

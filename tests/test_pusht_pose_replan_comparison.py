@@ -48,6 +48,14 @@ def accepted(before, after, phase, *, load=2.0, moment=0.3):
     )
 
 
+def test_streaming_motion_counts_only_consumed_steps():
+    initial, next_state = state(0), state(1)
+    rows = iter([accepted(initial, next_state, "regular")])
+    result = summarize_motion(initial, GOAL, rows)
+    assert result["verified_steps"] == len(result["trajectory"]) == 1
+    assert result["verified_final_state"] == next_state
+
+
 def test_zero_step_rejection_reports_initial_pose_and_no_measured_load_or_goal():
     initial = state(0)
     result = summarize_motion(initial, GOAL, [])

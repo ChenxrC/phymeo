@@ -34,11 +34,14 @@ def _read(path):
     return json.loads(Path(path).read_text("utf-8-sig"), parse_constant=_bad_constant)
 
 
-def load_resume_source(report_path, audit_path, metadata_path, *, control_variant):
+def load_resume_source(
+    report_path, audit_path, metadata_path, *, control_variant, allow_completed=False
+):
     """Bind a fully recorded endpoint, its audit, terminal metadata and capsule."""
     report_path, audit_path, metadata_path = map(
         lambda p: Path(p).resolve(), (report_path, audit_path, metadata_path)
     )
+    _require(type(allow_completed) is bool, "explicit completed-endpoint mode")
     report, audit, metadata = map(_read, (report_path, audit_path, metadata_path))
     count = report["recorded_steps"]
     _require(
@@ -84,7 +87,6 @@ def load_resume_source(report_path, audit_path, metadata_path, *, control_varian
         and metadata["controller"] == report["controller_final"]
         and metadata["controller"]["tick"] == metadata["source_tick"]
         and metadata["controller"]["status"] == "continue"
-        and metadata["controller"]["partial_route"] is not None
         and metadata["goal_history"] == report["goal_history_final"]
         and metadata["goal_history"]["tick"] == metadata["source_tick"] - 1
         and metadata["active_route"] == report["active_route"]
@@ -103,11 +105,23 @@ def load_resume_source(report_path, audit_path, metadata_path, *, control_varian
         "physical_state_matches_report",
     ):
         _require(saved[key] == metadata[key], "terminal checkpoint summary " + key)
+    active = (
+        metadata["controller"]["partial_route"] is not None
+        and metadata["source_tick"] < report["active_route"]["end_tick"]
+    )
+    completed = (
+        allow_completed
+        and report["status"] == "route_complete"
+        and metadata["controller"]["partial_route"] is None
+        and metadata["source_tick"] == report["active_route"]["end_tick"]
+        and metadata["controller"]["completed_routes"]
+        == report["active_route"]["completed_routes_before"] + 1
+    )
     _require(
         metadata["controller_at_physical_endpoint"] is True
         and metadata["physical_state_matches_report"] is True
-        and metadata["source_tick"] < report["active_route"]["end_tick"],
-        "terminal capsule lacks a continuing exact controller boundary",
+        and (active or completed),
+        "terminal capsule lacks a continuing or explicitly completed exact controller boundary",
     )
     leaf = Path(metadata["checkpoint_file"])
     _require(
@@ -147,13 +161,17 @@ def load_resume_source(report_path, audit_path, metadata_path, *, control_varian
     )
 
 
-def prepare_resume_entry(prior, release, source, audit, metadata, route_output, *, control_variant):
+def prepare_resume_entry(
+    prior, release, source, audit, metadata, route_output, *, control_variant, allow_completed=False
+):
     """Rebuild controller/Goal from the release seed and each bound accepted suffix."""
     from scripts.run_manipulation_control import plain
 
     from .pusht_active_entry import _accepted, _state, prepare_active_entry
 
-    latest = load_resume_source(source, audit, metadata, control_variant=control_variant)
+    latest = load_resume_source(
+        source, audit, metadata, control_variant=control_variant, allow_completed=allow_completed
+    )
     chain, seen, current = [], set(), latest
     while True:
         _require(

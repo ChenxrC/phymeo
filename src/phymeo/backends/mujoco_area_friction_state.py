@@ -634,7 +634,8 @@ def _resident_diagnostics(raw, solver_velocity, plan, native_rows):
     )
     _require(
         tm[0, 0] == 0
-        and np.all(tm[1:calls, 0] == 1)
+        and np.isin(tm[1:calls, 0], (1, 2)).all()
+        and np.all(np.diff(tm[:calls, 0]) >= 0)
         and np.all(tm[:calls, 1] == 0)
         and np.isin(tm[:calls, 2], (0, 1)).all()
         and tm[calls - 1, 2] == 1,
@@ -750,8 +751,21 @@ def _resident_trace_sources(raw, pairs, response, v0, applied, h, final_trial_ap
         )
         closed = trace[i, 10] <= float(np.float32(1e-6)) and trace[i, 11] <= float(np.float32(1e-7))
         _require(bool(converged[i]) == closed, "resident actual closure/exit status")
+        phase = raw["trace_meta"][i, 0]
+        if phase == 2 and raw["trace_meta"][i - 1, 0] != 2:
+            # Old receipts contain full steps only. A new half-step marker
+            # must have a witness in the unscaled, actually evaluated defects.
+            dominant = abs(deltas[i]) == trace[i, 12]
+            _require(
+                i >= 2
+                and i + 1 < calls
+                and not converged[i]
+                and trace[i, 10] >= 0.5 * trace[i - 1, 10]
+                and np.any(dominant & (deltas[i] * deltas[i - 1] < 0)),
+                "resident half-step lacks a slow load reversal",
+            )
         if not converged[i]:
-            trial = current
+            trial = trial + 0.5 * deltas[i] if phase == 2 else current
     allowance = 128 * eps * (abs(applied) + abs(trial)) + 2e-5
     _require(
         np.all(abs(final_trial_applied - (applied + trial)) <= allowance),

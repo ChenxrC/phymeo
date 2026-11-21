@@ -17,6 +17,7 @@ from .manipulation_diagnostic import (
     solve_native_point_ik,
 )
 from .manipulation_path import audit_native_joint_path
+from .manipulation_push_material import NativePushMaterialFaces
 from .manipulation_push_objective import complete_saved_push_proposal
 
 
@@ -119,9 +120,15 @@ class NativePushRoutePlanner:
         )
         self.ik_calls = self.path_calls = 0
 
-    def plan(self, q, proposals, *, previous_direction=None):
+    def plan(self, q, proposals, *, previous_direction=None, material_faces=None):
         import mujoco as mj
 
+        if material_faces is not None:
+            _require(
+                isinstance(material_faces, NativePushMaterialFaces),
+                "frozen material face constraint",
+            )
+            material_faces.validate_source(q)
         source = _configuration(mj, self.model, q)
         _require(type(proposals) is tuple and 1 <= len(proposals) <= 384, "bounded proposal tuple")
         qa = list(self.qa)
@@ -213,6 +220,23 @@ class NativePushRoutePlanner:
         policy = next(iter(policies))
         joint_selection = policy != "pose-cost"
         balanced = policy == "joint-pose-balanced"
+        material_allowed = None
+        if material_faces is not None:
+            material_record = material_faces.audit(proposals)
+            attempts.append(material_record)
+            material_allowed = {
+                (p["index"], p["distance_ordinal"])
+                for p in material_record["proposals"]
+                if p["eligible"]
+            }
+            if not any(
+                (p.index, p.distance_ordinal) in material_allowed
+                and p.reference_usable
+                and p.predicted_improvement > 0
+                and (not joint_selection or p.selection_eligible)
+                for p in proposals
+            ):
+                return finish("no_material_qualified_proposal")
         if joint_selection:
             _require(
                 all(
@@ -336,6 +360,10 @@ class NativePushRoutePlanner:
                     p.reference_usable
                     and p.predicted_improvement > 0
                     and (not joint_selection or p.selection_eligible)
+                    and (
+                        material_allowed is None
+                        or (p.index, p.distance_ordinal) in material_allowed
+                    )
                 ):
                     groups.setdefault(p.index, []).append(p)
             if balanced:

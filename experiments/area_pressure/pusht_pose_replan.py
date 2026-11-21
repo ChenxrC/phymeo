@@ -200,7 +200,30 @@ def _fresh_entry(prior_path, bound, route_output):
     return ReleaseEntry(original, model, driver, pd, None, {}, None, 0, initial, {})
 
 
-def _plan_ordinary(entry, snapshot, tick, *, selection_policy=SELECTION_POLICY):
+def freeze_declared_material(model, q, asset, *, model_key, scene_asset_sha256):
+    """Freeze this scene's actual finite rigid material at the unchanged q."""
+    from phymeo.backends.mujoco_heterogeneous_area_scene import _asset_digest
+    from phymeo.control.manipulation_push_material import NativePushMaterialFaces
+
+    from .pusht_release_material import _data, _world
+
+    _require(
+        _asset_digest({model_key: (asset,)}) == scene_asset_sha256, "same scene material asset SHA"
+    )
+    bodies = (
+        model.body(asset.identity.compliant_body).id,
+        model.body(asset.identity.rigid_body).id,
+    )
+    data = _data(model, dict(q=q, v=np.zeros(model.nv), time=0.0))
+    rigid_world = _world(asset, data, bodies)[1][0]
+    return NativePushMaterialFaces(
+        q, scene_asset_sha256, asset.rigid_local.face_ids, rigid_world[asset.rigid_local.faces]
+    )
+
+
+def _plan_ordinary(
+    entry, snapshot, tick, *, selection_policy=SELECTION_POLICY, material_faces=None
+):
     """Exactly one explicit policy selection, using the original path/IK gates."""
     _require(selection_policy in SELECTION_POLICIES, "supported ordinary selection policy")
     from phymeo.control.manipulation_push_objective import propose_planar_pushes
@@ -228,7 +251,9 @@ def _plan_ordinary(entry, snapshot, tick, *, selection_policy=SELECTION_POLICY):
         yaw_tolerance_rad=driver.goal.yaw_tolerance_rad,
         selection_policy=selection_policy,
     )
-    route = driver.planner.plan(snapshot.q, proposals, previous_direction=None)
+    route = driver.planner.plan(
+        snapshot.q, proposals, previous_direction=None, material_faces=material_faces
+    )
     path = driver.output / f"route-{len(driver.routes) + 1:02}.json.gz"
     with gzip.open(path, "xt", encoding="utf-8") as stream:
         json.dump(
@@ -267,6 +292,8 @@ def _plan_ordinary(entry, snapshot, tick, *, selection_policy=SELECTION_POLICY):
         tick=tick,
         status=route.status,
         selection_policy=selection_policy,
+        material_admission="declared-finite-faces-v1" if material_faces is not None else "none",
+        material_binding=None if material_faces is None else material_faces.binding,
     )
 
 
@@ -283,6 +310,7 @@ def _run_case(
     step_budget,
     cache_root,
     selection_policy=SELECTION_POLICY,
+    require_declared_material=False,
 ):
     from phymeo.backends.mujoco_heterogeneous import MuJoCoTyxHeterogeneousBatch, MuJoCoTyxWorldSpec
     from phymeo.backends.mujoco_heterogeneous_area_scene import (
@@ -342,6 +370,7 @@ def _run_case(
         journal=dict(file=journal_path.name, records=0, sha256=journal_hash.hexdigest()),
         control_variant="load-compensation-half",
         selection_policy=selection_policy,
+        material_admission="declared-finite-faces-v1" if require_declared_material else "none",
         force_phase="accepted-step-input-geometry",
         provenance=dict(
             source_report_path=str(source),
@@ -519,8 +548,21 @@ def _run_case(
                                 report["planner_calls"] == 0, "only one ordinary replan per case"
                             )
                             report["planner_calls"] += 1
+                            material_faces = None
+                            if require_declared_material:
+                                material_faces = freeze_declared_material(
+                                    model,
+                                    before.q,
+                                    asset,
+                                    model_key=spec.key,
+                                    scene_asset_sha256=scene.asset_sha256,
+                                )
                             route, plan_record = _plan_ordinary(
-                                entry, before, tick, selection_policy=selection_policy
+                                entry,
+                                before,
+                                tick,
+                                selection_policy=selection_policy,
+                                material_faces=material_faces,
                             )
                             report["ordinary_route"] = plan_record
                             emit("planner", plan_record)
@@ -849,10 +891,15 @@ def run(
     steps=4000,
     cache_root=None,
     selection_policy=SELECTION_POLICY,
+    require_declared_material=False,
 ):
     from .pusht_active_resume import load_resume_source
 
     _require(case in ("A", "B", "both"), "registered case selection")
+    _require(
+        type(require_declared_material) is bool and (not require_declared_material or case == "A"),
+        "declared material admission is an explicit A-only experiment",
+    )
     _require(
         type(selection_policy) is str and selection_policy in SELECTION_POLICIES,
         "supported pose selection policy",
@@ -898,6 +945,7 @@ def run(
                     step_budget=steps,
                     cache_root=cache_root,
                     selection_policy=selection_policy,
+                    require_declared_material=require_declared_material,
                 )
             )
             for key in selected
@@ -911,6 +959,7 @@ def run(
     result = dict(
         schema="phymeo-pusht-pose-replan-v1",
         selection_policy=selection_policy,
+        material_admission="declared-finite-faces-v1" if require_declared_material else "none",
         cases=cases,
         source=dict(
             summary_path=str(source),
@@ -935,6 +984,7 @@ def main():
     parser.add_argument("--case", choices=("A", "B", "both"), default="both")
     parser.add_argument("--steps", type=int, default=4000)
     parser.add_argument("--selection-policy", choices=SELECTION_POLICIES, default=SELECTION_POLICY)
+    parser.add_argument("--require-declared-material", action="store_true")
     parser.add_argument("--cache-root", type=Path)
     args = parser.parse_args()
     result = run(
@@ -948,6 +998,7 @@ def main():
         steps=args.steps,
         cache_root=args.cache_root,
         selection_policy=args.selection_policy,
+        require_declared_material=args.require_declared_material,
     )
     print(json.dumps({key: value["summary"]["status"] for key, value in result["cases"].items()}))
     raise SystemExit(

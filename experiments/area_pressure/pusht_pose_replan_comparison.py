@@ -234,7 +234,16 @@ def _goal_row(row, goal, world):
         _close(metrics[key], errors[key], "independent " + key, atol=2e-6, rtol=2e-6)
 
 
-def _planner(base, payload, retained, tick, *, selection_policy="joint-pose-descent"):
+def _planner(
+    base,
+    payload,
+    retained,
+    tick,
+    *,
+    selection_policy="joint-pose-descent",
+    material_admission="none",
+    material_asset_sha256=None,
+):
     path, saved = _bound(base, payload["route_file"], payload["route_sha256"], "planner route")
     _require(
         payload["tick"] == saved["tick"] == tick
@@ -248,7 +257,58 @@ def _planner(base, payload, retained, tick, *, selection_policy="joint-pose-desc
         and payload["selection_policy"] == selection_policy,
         "planner/case selection policy",
     )
+    _require(
+        payload.get("material_admission", "none") == material_admission,
+        "planner/case material admission",
+    )
+    material_records = [
+        r for r in saved["route"].get("attempts", ()) if r.get("kind") == "material_admission"
+    ]
+    if material_admission == "none":
+        _require(not material_records, "undeclared material gate in saved route")
+    else:
+        _require(
+            material_admission == "declared-finite-faces-v1" and len(material_records) == 1,
+            "one declared finite material admission",
+        )
+        from types import SimpleNamespace
+
+        import mujoco as mj
+
+        from phymeo.training.manipulation_tasks import manipulation_scenes
+
+        from .pusht_pose_replan import freeze_declared_material
+        from .pusht_public_scene import build_side_asset
+
+        original = next(s for s in manipulation_scenes() if s.key == "pusht-planar")
+        model = mj.MjModel.from_xml_string(original.mjcf)
+        asset = build_side_asset(model)
+        frozen = freeze_declared_material(
+            model,
+            np.asarray(retained["q"], dtype=np.float32),
+            asset,
+            model_key="original-RR-public-mixed-area",
+            scene_asset_sha256=material_asset_sha256,
+        )
+        expected = frozen.audit(tuple(SimpleNamespace(**p) for p in saved["proposals"]))
+        _require(
+            material_records[0] == json.loads(json.dumps(expected, allow_nan=False))
+            and payload["material_binding"] == frozen.binding,
+            "independent same-q/asset finite material admission",
+        )
     proposal = saved["route"].get("proposal")
+    if proposal is not None and material_records:
+        matched = [
+            r
+            for r in material_records[0]["proposals"]
+            if r["index"] == proposal["index"]
+            and r["distance_ordinal"] == proposal["distance_ordinal"]
+            and r["input_binding"] == proposal["input_binding"]
+        ]
+        _require(
+            len(matched) == 1 and matched[0]["eligible"] and matched[0]["face_ids"],
+            "selected proposal has declared finite material face",
+        )
     prediction = None
     if proposal is not None:
         _require(
@@ -313,6 +373,8 @@ def compare_case(path):
     path = Path(path).resolve()
     summary, base = _read(path), path.parent
     _require(summary["schema"] == "phymeo-pusht-pose-replan-case-v1", "case schema")
+    material_admission = summary.get("material_admission", "none")
+    _require(material_admission in ("none", "declared-finite-faces-v1"), "case material admission")
     selection_policy = summary["selection_policy"]
     _require(
         selection_policy in ("joint-pose-descent", "joint-pose-balanced"), "case selection policy"
@@ -484,7 +546,13 @@ def compare_case(path):
                 _require(pending is None, "planner runs after full accepted callback")
                 verify_separation(latest_evidence, retained, start + selected)
                 record, proposal = _planner(
-                    base, payload, retained, start + selected, selection_policy=selection_policy
+                    base,
+                    payload,
+                    retained,
+                    start + selected,
+                    selection_policy=selection_policy,
+                    material_admission=material_admission,
+                    material_asset_sha256=p["scene_asset_sha256"],
                 )
                 plans.append(record)
                 direction = None if proposal is None else proposal["direction_world"]
@@ -569,6 +637,7 @@ def compare_case(path):
         source=dict(file=str(path), sha256=_digest(path), journal_sha256=journal["sha256"]),
         initialization_mode=mode,
         selection_policy=selection_policy,
+        material_admission=material_admission,
         goal=goal,
         physical_budget=summary["step_budget"],
         physical_attempts=summary["physical_attempts"],
@@ -605,6 +674,13 @@ def compare(path):
     _require(
         summary["schema"] == "phymeo-pusht-pose-replan-v1" and set(summary["cases"]) == {"A", "B"},
         "two independent pose cases",
+    )
+    materials = {
+        item["summary"].get("material_admission", "none") for item in summary["cases"].values()
+    }
+    _require(
+        len(materials) == 1 and materials <= {"none", "declared-finite-faces-v1"},
+        "same material admission protocol",
     )
     policies = {item["summary"]["selection_policy"] for item in summary["cases"].values()}
     _require(
@@ -656,6 +732,11 @@ def compare_cases(case_a, case_b):
             "fixed split-case initialization identity " + key,
         )
     a, b = reports["A"], reports["B"]
+    _require(
+        a.get("material_admission", "none") == b.get("material_admission", "none")
+        and a.get("material_admission", "none") in ("none", "declared-finite-faces-v1"),
+        "same material admission protocol",
+    )
     common = {}
     for field in ("source_report_sha256", "source_checkpoint_sha256", "scene_asset_sha256"):
         _require(a["provenance"][field] == b["provenance"][field], "same split-case " + field)

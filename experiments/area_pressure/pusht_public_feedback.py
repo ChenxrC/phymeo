@@ -58,6 +58,7 @@ from .pusht_public_scene import (
     control_from_record,
     legal_initial_q,
 )
+from .pusht_rejected_candidate import capture_rejected_candidate
 
 MAX_STEPS = 2048
 WORLDS = {"open": 5, "feedback": 6}
@@ -66,6 +67,26 @@ WORLDS = {"open": 5, "feedback": 6}
 def _require(ok, message):
     if not ok:
         raise ValueError("public feedback: " + message)
+
+
+def _accepted_controller_stop(*, stopped, reason, monitor_status, accepted_steps):
+    """Classify an already recorded step without treating planner errors as stops."""
+    _require(
+        type(stopped) is bool and type(accepted_steps) is int and accepted_steps > 0,
+        "terminal classification requires an accepted paired step",
+    )
+    if not stopped:
+        _require(
+            reason == monitor_status == "continue",
+            "running controller and progress status disagree",
+        )
+        return None
+    _require(
+        reason in ("success", "no_progress", "segment_budget", "step_budget")
+        and monitor_status == reason,
+        "accepted stop is not an original progress-monitor termination",
+    )
+    return reason
 
 
 def command_from_snapshot(driver, pd, absolute_tick, snapshot, *, start_tick=0):
@@ -467,6 +488,7 @@ def run_window(trajectory, source, output, *, start=1699, steps=69, cache_root=N
     report = dict(
         schema="phymeo-pusht-public-feedback-v1",
         status="running",
+        controller_status=None,
         start_tick=start,
         requested_steps=steps,
         accepted_pair_steps=0,
@@ -483,7 +505,7 @@ def run_window(trajectory, source, output, *, start=1699, steps=69, cache_root=N
             geometric_accuracy_validated=False,
         ),
     )
-    stage, current_tick, pair = "bootstrap", start, None
+    stage, current_tick, pair, driver = "bootstrap", start, None, None
     with (
         output.open("x+", encoding="utf-8") as summary,
         journal_path.open("x", encoding="utf-8") as journal,
@@ -640,7 +662,26 @@ def run_window(trajectory, source, output, *, start=1699, steps=69, cache_root=N
                     _check_pair(batch.integration_snapshot(), before)
                     stage = "paired_scene_step"
                     begun = perf_counter()
-                    accepted = dict(scene.step(H, expected_revision=batch.checkpoint_revision))
+                    try:
+                        accepted = dict(scene.step(H, expected_revision=batch.checkpoint_revision))
+                    except Exception as error:
+                        # Capture scratch before closing the owner. The simulation
+                        # error and the last published physical frame stay authoritative.
+                        try:
+                            report["rejected_attempt"] = dict(
+                                input_tick=current_tick,
+                                submitted={
+                                    lane: {
+                                        key: plain(getattr(submitted[world], key))
+                                        for key in CHANNELS
+                                    }
+                                    for lane, world in WORLDS.items()
+                                },
+                                candidate=capture_rejected_candidate(batch, error),
+                            )
+                        except Exception as diagnostic_error:
+                            report["candidate_capture_error"] = _error_chain(diagnostic_error)
+                        raise
                     wall = perf_counter() - begun
                     _require(
                         accepted == {5: True, 6: True}, "paired Scene did not accept both worlds"
@@ -726,10 +767,27 @@ def run_window(trajectory, source, output, *, start=1699, steps=69, cache_root=N
                     report["recorded_pair_steps"] += 1
                     report["journal"]["records"] += 1
                     report["controller_final"] = plain(driver.summary())
+                    stop = _accepted_controller_stop(
+                        stopped=driver.stopped,
+                        reason=driver.reason,
+                        monitor_status=driver.monitor.status,
+                        accepted_steps=report["recorded_pair_steps"],
+                    )
+                    report["controller_status"] = driver.reason
+                    if stop is not None:
+                        report.update(
+                            status="controller_stopped",
+                            stopped_after_original_output_tick=current_tick + 1,
+                        )
                     _write_progress(summary, report)
+                    if stop is not None:
+                        break
                 stage = "scene_cleanup"
-            report["status"] = "complete"
+            if report["status"] == "running":
+                report["status"] = "complete"
         except Exception as error:
+            if driver is not None:
+                report["controller_status"] = driver.reason
             report.update(
                 status="partial_failure",
                 failure_stage=stage,
@@ -765,7 +823,7 @@ def main():
         steps=args.steps,
         cache_root=args.cache_root,
     )
-    if report["status"] != "complete":
+    if report["status"] not in ("complete", "controller_stopped"):
         raise SystemExit(1)
 
 

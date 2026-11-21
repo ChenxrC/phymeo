@@ -13,6 +13,8 @@ from pathlib import Path
 
 import numpy as np
 
+from phymeo.control.manipulation_push_planner import complete_saved_push_route
+
 LANES = ("open", "feedback")
 CHANNELS = ("ctrl", "qfrc_applied", "xfrc_applied")
 
@@ -498,9 +500,16 @@ def compare(path):
                                 # Re-serialization may change gzip timestamp bytes;
                                 # bind the actual route and its source state instead.
                                 for field in ("tick", "q", "v", "route"):
-                                    _same(
+                                    current_value, original_value = (
                                         plan[field],
                                         original_plan[field],
+                                    )
+                                    if field == "route":
+                                        current_value = complete_saved_push_route(current_value)
+                                        original_value = complete_saved_push_route(original_value)
+                                    _same(
+                                        current_value,
+                                        original_value,
                                         "historical route payload " + field,
                                     )
                             routes.append(

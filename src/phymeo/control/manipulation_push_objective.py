@@ -6,7 +6,7 @@ oracle. A later full 3D path check and actual contact loads remain necessary.
 """
 
 import json
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, fields
 from hashlib import sha256
 from math import acos, atan2, cos, hypot, isfinite, sin
 
@@ -50,6 +50,43 @@ class NativePlanarPushProposal:
     position_error_after_m: float | None = None
     yaw_error_before_rad: float | None = None
     yaw_error_after_rad: float | None = None
+
+
+def complete_saved_push_proposal(record):
+    """Copy a JSON proposal, filling only the seven legacy policy defaults.
+
+    The source bytes/digest are not changed. Existing values are never replaced;
+    every old field is required and unknown keys are rejected. Partly omitted
+    extensions are accepted only when all supplied extension fields are exact
+    legacy defaults, never as an incomplete new-policy receipt.
+    """
+    defaults = {
+        "selection_policy": "pose-cost",
+        "selection_eligible": True,
+        "selection_reason": "legacy_pose_cost",
+        "position_error_before_m": None,
+        "position_error_after_m": None,
+        "yaw_error_before_rad": None,
+        "yaw_error_after_rad": None,
+    }
+    required = {field.name for field in fields(NativePlanarPushProposal)} - defaults.keys()
+    _require(
+        type(record) is dict and required <= record.keys() <= required | defaults.keys(),
+        "saved push proposal fields",
+    )
+    missing = defaults.keys() - record.keys()
+    if missing:
+        _require(
+            all(
+                type(record[key]) is type(value) and record[key] == value
+                for key, value in defaults.items()
+                if key in record
+            ),
+            "incomplete nondefault saved push proposal policy",
+        )
+    result = dict(record)
+    result.update((key, defaults[key]) for key in missing)
+    return result
 
 
 def _vector(value, width, name):
@@ -331,11 +368,10 @@ def propose_planar_pushes(
             improvement = before - after
             _require(isfinite(improvement), "nonfinite predicted improvement")
             position_after = yaw_after = None
-            eligible = candidate.usable and improvement > 0
-            if not candidate.usable:
-                reason = "reference_unusable"
-            else:
-                reason = "pose_cost_improvement" if eligible else "nonpositive_pose_improvement"
+            # The optional extension has exact defaults for legacy policy.
+            # Its eligibility bit is interpreted only by joint-pose-descent;
+            # the legacy route still uses reference_usable and improvement.
+            eligible, reason = True, "legacy_pose_cost"
             admitted = candidate.usable
             if selection_policy == "joint-pose-descent":
                 position_after = hypot(target[0] - predicted[0], target[1] - predicted[1])

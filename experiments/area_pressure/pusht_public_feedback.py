@@ -23,8 +23,11 @@ import numpy as np
 from phymeo.backends.mujoco_heterogeneous import MuJoCoTyxHeterogeneousBatch, MuJoCoTyxWorldSpec
 from phymeo.backends.mujoco_heterogeneous_area_scene import MuJoCoTyxHeterogeneousAreaPressureScene
 from phymeo.backends.mujoco_runtime import MuJoCoControl, MuJoCoInitialState
-from phymeo.control.manipulation_push_objective import NativePlanarPushProposal
-from phymeo.control.manipulation_push_planner import NativePushRoute
+from phymeo.control.manipulation_push_objective import (
+    NativePlanarPushProposal,
+    complete_saved_push_proposal,
+)
+from phymeo.control.manipulation_push_planner import NativePushRoute, complete_saved_push_route
 from phymeo.control.manipulation_wrench import (
     ObjectContactWrenchMeasurement,
     ObjectContactWrenchRecord,
@@ -211,12 +214,16 @@ class _PrefixPlanner:
             and np.array_equal(raw["source_q"], q),
             "historical route source state",
         )
-        _require(plain(proposals) == saved["proposals"], "historical current-pose proposals differ")
+        _require(
+            plain(proposals) == [complete_saved_push_proposal(p) for p in saved["proposals"]],
+            "historical current-pose proposals differ",
+        )
+        complete = complete_saved_push_route(raw)
         proposal = (
             None
-            if raw["proposal"] is None
+            if complete["proposal"] is None
             else NativePlanarPushProposal(
-                **{k: tuple_values(v) for k, v in raw["proposal"].items()}
+                **{k: tuple_values(v) for k, v in complete["proposal"].items()}
             )
         )
         route = NativePushRoute(
@@ -231,6 +238,7 @@ class _PrefixPlanner:
             int(raw["path_calls"]),
             tuple(raw["initial_reference_projection"]),
         )
+        _require(plain(route) == complete, "lossless historical route reconstruction")
         _require(
             route.ik_calls == record["ik_calls"] and route.path_calls == record["path_calls"],
             "historical planner budget",

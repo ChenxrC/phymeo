@@ -4,7 +4,7 @@ No dynamics or state writes: all FK/IK/collision work uses scratch native data.
 Each returned phase is sampled; neither proposal nor route is a CCD certificate.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from math import atan2, ceil, cos, pi, sin
 
 import numpy as np
@@ -17,6 +17,7 @@ from .manipulation_diagnostic import (
     solve_native_point_ik,
 )
 from .manipulation_path import audit_native_joint_path
+from .manipulation_push_objective import complete_saved_push_proposal
 
 
 @dataclass(frozen=True)
@@ -29,6 +30,18 @@ class NativePushRoute:
     ik_calls: int
     path_calls: int
     initial_reference_projection: tuple
+
+
+def complete_saved_push_route(record):
+    """Keep the entire saved route, adding only legacy proposal policy defaults."""
+    _require(
+        type(record) is dict and set(record) == {field.name for field in fields(NativePushRoute)},
+        "saved push route fields",
+    )
+    result = dict(record)
+    if record["proposal"] is not None:
+        result["proposal"] = complete_saved_push_proposal(record["proposal"])
+    return result
 
 
 def orbit_waypoints(center_xy, start_xy, end_xy, radius_m, clockwise):

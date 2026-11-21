@@ -91,7 +91,9 @@ def test_saved_route02_resumes_at_64ms_with_both_impulses_and_exact_state(
     assert hashlib.sha256(copied.read_bytes()).hexdigest() == record["sha256"]
     with gzip.open(copied, "rt", encoding="utf-8") as stream:
         saved_route = json.load(stream)
-    assert plain(route) == saved_route["route"]
+    from phymeo.control.manipulation_push_planner import complete_saved_push_route
+
+    assert plain(route) == complete_saved_push_route(saved_route["route"])
     assert entry.provenance["active_route_sha256"] == record["sha256"]
     assert entry.provenance["controller_replayed_callbacks"] == 314
     assert "fresh" in entry.provenance["owner_scope"]
@@ -228,7 +230,9 @@ def test_portable_active_route_restore_binds_source_and_keeps_accumulated_impuls
     current = driver()
     _restore_active_route(current, record, saved, state)
     assert current.active[0] == 1000
-    assert plain(current.active[1]) == raw
+    from phymeo.control.manipulation_push_planner import complete_saved_push_route
+
+    assert plain(current.active[1]) == complete_saved_push_route(raw)
     assert current.segment_impulse == 0.03 and current.total_impulse == 0.7
     assert current.previous_direction is None
     assert current.planner.ik_calls == 4 and current.planner.path_calls == 2

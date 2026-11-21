@@ -16,7 +16,7 @@ from shutil import copyfile
 import numpy as np
 
 from phymeo.control.manipulation_push_objective import NativePlanarPushProposal
-from phymeo.control.manipulation_push_planner import NativePushRoute
+from phymeo.control.manipulation_push_planner import NativePushRoute, complete_saved_push_route
 from phymeo.training.manipulation_tasks import H, SuccessFrame, evaluate_goal
 from scripts.run_manipulation_control import plain, reference
 from scripts.run_manipulation_push import tuple_values
@@ -127,7 +127,10 @@ def _restore_active_route(driver, record, saved, state):
         ),
         "finite saved route nodes",
     )
-    proposal = NativePlanarPushProposal(**{k: tuple_values(v) for k, v in raw["proposal"].items()})
+    complete = complete_saved_push_route(raw)
+    proposal = NativePlanarPushProposal(
+        **{k: tuple_values(v) for k, v in complete["proposal"].items()}
+    )
     route = NativePushRoute(
         raw["status"],
         proposal,
@@ -138,7 +141,7 @@ def _restore_active_route(driver, record, saved, state):
         raw["path_calls"],
         tuple(raw["initial_reference_projection"]),
     )
-    _require(plain(route) == raw, "lossless saved route reconstruction")
+    _require(plain(route) == complete, "lossless saved route reconstruction")
     driver.previous_direction = None
     driver.active = (record["tick"], route)
     driver.routes.append(deepcopy(record))

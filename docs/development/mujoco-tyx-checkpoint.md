@@ -53,6 +53,12 @@ the captured source transaction, not a requirement that the destination already
 be at the same point. `checkpoint.sha256` is the digest of the complete serialized
 capsule. `checkpoint.binding` is detached, immutable metadata.
 
+### Forwarding a heterogeneous checkpoint
+
+A fresh compatible heterogeneous scene can restore a later checkpoint and save it again before taking a physical step. Each restore advances the destination's local revision by one. The last-step receipt keeps the source owner's joint states, applied controls, world identities and original aggregate and bucket revisions. Replacing the held control changes the next input while retaining that historical receipt.
+
+The heterogeneous writer uses `PHYMEOTYXHET2` when the saved publication came from a restore. Its `source_checkpoint` records the revision and SHA-256 of the original capsule that supplied the publication, including across successive transfers. The envelope exposes the current writer's revision. A new local physical step produces a local publication and the writer returns to `PHYMEOTYXHET1`. Current readers accept both formats. To read a forwarded historical publication, the receiving installation needs the v2-capable reader.
+
 ## Complete state boundary
 
 The capsule retains:

@@ -10,6 +10,7 @@ from types import MappingProxyType
 from .mujoco_checkpoint import MuJoCoTyxCheckpoint
 
 MAGIC = b"PHYMEOTYXHET1\n"
+HISTORICAL_MAGIC = b"PHYMEOTYXHET2\n"
 MAX_BYTES = 128 * 1024 * 1024
 MAX_BUCKETS = 32
 
@@ -64,7 +65,7 @@ class MuJoCoTyxHeterogeneousCheckpoint:
         if size > MAX_BYTES:
             raise ValueError("heterogeneous checkpoint exceeds 128 MiB")
         owned = bytes(raw)
-        if not owned.startswith(MAGIC):
+        if not owned.startswith((MAGIC, HISTORICAL_MAGIC)):
             raise ValueError("heterogeneous checkpoint header")
         digest, separator, body = owned[len(MAGIC) :].partition(b"\n")
         if not separator or digest != hashlib.sha256(body).hexdigest().encode():
@@ -97,15 +98,37 @@ class MuJoCoTyxHeterogeneousCheckpoint:
             ):
                 raise ValueError("heterogeneous checkpoint leaf schema")
         publication = value["publication"]
+        historical = self._bytes.startswith(HISTORICAL_MAGIC)
+        if historical and publication is None:
+            raise ValueError("heterogeneous checkpoint lacks historical publication")
         if publication is not None:
-            if type(publication) is not dict or set(publication) != {
+            fields = {
                 "schema",
                 "revision_before",
                 "revision_after",
                 "bucket_revisions",
                 "world_keys",
-            }:
+            }
+            if historical:
+                fields.add("source_checkpoint")
+            if type(publication) is not dict or set(publication) != fields:
                 raise ValueError("heterogeneous checkpoint publication schema")
+            publication_revision = value["revision"]
+            if "source_checkpoint" in publication:
+                # A restored historical step belongs to the original owner's
+                # revision sequence. The envelope revision belongs to the writer.
+                origin = publication["source_checkpoint"]
+                if (
+                    type(origin) is not dict
+                    or set(origin) != {"sha256", "revision"}
+                    or type(origin["revision"]) is not int
+                    or origin["revision"] < 0
+                    or type(origin["sha256"]) is not str
+                    or len(origin["sha256"]) != 64
+                    or any(c not in "0123456789abcdef" for c in origin["sha256"])
+                ):
+                    raise ValueError("heterogeneous checkpoint publication origin")
+                publication_revision = origin["revision"]
             if publication["schema"] != "mujoco-tyx-heterogeneous-step-v1":
                 raise ValueError("heterogeneous checkpoint publication kind")
             before, after = publication["revision_before"], publication["revision_after"]
@@ -114,7 +137,7 @@ class MuJoCoTyxHeterogeneousCheckpoint:
                 or type(after) is not int
                 or before < 0
                 or after != before + 1
-                or after > value["revision"]
+                or after > publication_revision
             ):
                 raise ValueError("heterogeneous checkpoint publication revision")
             if publication["world_keys"] != value["binding"].get("world_keys"):
@@ -184,6 +207,11 @@ def _capture(binding, revision, leaves, publication):
     body = _json(dict(binding=binding, revision=revision, leaves=rows, publication=publication))
     if len(MAGIC) + 65 + len(body) > MAX_BYTES:
         raise ValueError("heterogeneous checkpoint exceeds size limit")
+    magic = (
+        HISTORICAL_MAGIC
+        if publication is not None and "source_checkpoint" in publication
+        else MAGIC
+    )
     return MuJoCoTyxHeterogeneousCheckpoint(
-        MAGIC + hashlib.sha256(body).hexdigest().encode() + b"\n" + body
+        magic + hashlib.sha256(body).hexdigest().encode() + b"\n" + body
     )

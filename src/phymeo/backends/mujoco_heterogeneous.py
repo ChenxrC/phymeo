@@ -240,6 +240,7 @@ class MuJoCoTyxHeterogeneousBatch:
         self._lock = RLock() if resource_budget is None else resource_budget._lock
         self._busy, self._closed = False, False
         self._revision, self._last_step = 0, None
+        self._publication_source = None
         lineage = uuid4().hex
         self._world_boundaries = {k: (lineage, 0, "initial") for k in world_keys}
         self._mode, self._cache_root, self._h = mode, cache_root, h
@@ -736,6 +737,7 @@ class MuJoCoTyxHeterogeneousBatch:
             ) from error
         for owner, draft in zip(self._buckets, drafts, strict=True):
             owner._commit_step_draft_locked(draft)
+        self._publication_source = None
         self._last_step, self._revision, self._stats = (
             publication,
             publication.revision_after,
@@ -773,6 +775,11 @@ class MuJoCoTyxHeterogeneousBatch:
             revision_after=row.revision_after,
             world_keys=row.world_keys,
             bucket_revisions=row.bucket_revisions,
+            **(
+                {"source_checkpoint": self._publication_source}
+                if self._publication_source is not None
+                else {}
+            ),
         )
 
     def checkpoint(self):
@@ -899,6 +906,7 @@ class MuJoCoTyxHeterogeneousBatch:
                     "heterogeneous boundary preparation and cleanup failed", [primary, *failures]
                 ) from None
             raise
+        self._publication_source = publication.get("source_checkpoint") if publication else None
         self._buckets, self._last_step = replacement_buckets, restored_publication
         self._world_boundaries = boundaries
         self._revision, self._stats = result.revision_after, counters
@@ -919,6 +927,14 @@ class MuJoCoTyxHeterogeneousBatch:
             leaves, publication = checkpoint._read(self._binding)
             if len(leaves) != len(self._buckets):
                 raise ValueError("heterogeneous checkpoint bucket binding")
+            if publication is not None and "source_checkpoint" not in publication:
+                publication = dict(
+                    publication,
+                    source_checkpoint={
+                        "revision": checkpoint.source_revision,
+                        "sha256": checkpoint.sha256,
+                    },
+                )
             return self._boundary("restore", self._world_keys, leaves, publication)
 
     def close(self):

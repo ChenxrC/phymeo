@@ -68,9 +68,12 @@ class NativePushRoutePlanner:
         max_ik_per_segment=64,
         max_ik=512,
         max_paths=128,
+        allow_loaded_withdrawal=False,
     ):
         import mujoco as mj
 
+        _require(type(allow_loaded_withdrawal) is bool, "loaded withdrawal opt-in must be a bool")
+        self.allow_loaded_withdrawal = allow_loaded_withdrawal
         self.model = model
         self.names, _, self.qa, _, self.lower, self.upper = _joints(mj, model, joint_names)
         self.object_names = tuple(object_geom_names)
@@ -205,6 +208,50 @@ class NativePushRoutePlanner:
                 withdrawal = phase((start, freed), "withdraw", 0.001, release)
                 if withdrawal is None:
                     release["reason"] = "withdraw_path"
+                    if self.allow_loaded_withdrawal:
+                        declared = {
+                            tuple(sorted((self.pusher, int(self.model.geom(name).id))))
+                            for name in self.object_names
+                        }
+                        ordinary = release["paths"][-1][1]
+                        initial_violation = any(
+                            not contact.sampled_clear
+                            and tuple(sorted(contact.geometry_ids)) in declared
+                            for contact in ordinary.samples[0].contacts
+                        )
+                        if not initial_violation:
+                            release["release_reason"] = "no_initial_declared_violation"
+                        elif any(value != 0 for value in projection):
+                            # A projected reference is not the actual loaded
+                            # input. Do not waive a collision by moving its start.
+                            release["release_reason"] = "projected_start_not_actual"
+                        else:
+                            if self.path_calls >= self.max_paths:
+                                raise RuntimeError("path_budget")
+                            self.path_calls += 1
+                            from .manipulation_push_release import audit_native_push_release
+
+                            audit = audit_native_push_release(
+                                self.model,
+                                (0.0, 0.25),
+                                (start, freed),
+                                self.names,
+                                pusher_geom_name=self.pusher_name,
+                                object_geom_names=self.object_names,
+                            )
+                            release["release_audit"] = audit
+                            release["release_reason"] = audit.reason
+                            if audit.sampled_release:
+                                # Return only the checked release. A caller must
+                                # observe actual unloading before planning any
+                                # subsequent approach with the ordinary gates.
+                                return finish(
+                                    "sampled_release_ready",
+                                    nodes=(
+                                        (0.0, "withdraw", _readonly(start[qa])),
+                                        (0.25, "withdraw", _readonly(freed[qa])),
+                                    ),
+                                )
                     return finish("withdraw_rejected")
                 base_parts.append(withdrawal)
                 approach_start = freed

@@ -228,3 +228,39 @@ def test_driver_accepted_force_clock_and_partial_endpoint(
     assert (driver.active is None) == complete
     assert driver.segment_impulse == pytest.approx(0 if complete else 0.105)
     assert driver.total_impulse == pytest.approx(0.205)
+
+
+def test_published_measurement_rejects_wrong_frame_or_load_before_consuming_step():
+    module = load_driver()
+    from phymeo.control.manipulation_push_progress import BoundedPushProgress
+
+    driver = object.__new__(module.PushFeedbackDriver)
+    driver.model = SimpleNamespace(nq=1)
+    driver.monitor = BoundedPushProgress()
+    driver.monitor.start(0, 1.0)
+    driver.tick = 3
+    driver.last_q = np.array([0.25])
+    driver.last_cost = 1.0
+    driver.segment_impulse, driver.total_impulse = 0.1, 0.2
+    driver.active = None
+    driver.reason = "continue"
+    driver.cost = lambda q: float(q[0])
+    result = SimpleNamespace(success=False)
+    endpoint = np.array([0.26])
+    for start_q, tick, force in (
+        (np.array([0.251]), 3, (1.0, 0.0, 0.0)),
+        (np.array([0.25]), 2, (1.0, 0.0, 0.0)),
+        (np.array([0.25]), 3, (float("nan"), 0.0, 0.0)),
+        (np.array([0.25]), 3, (1.0, 0.0)),
+    ):
+        measurement = SimpleNamespace(input_tick=tick, output_tick=4, group_force_world=force)
+        with pytest.raises(ValueError):
+            driver.accepted_measurement(4, endpoint, measurement, result, input_q=start_q)
+        assert driver.tick == 3 and list(driver.last_q) == [0.25]
+        assert (driver.segment_impulse, driver.total_impulse) == (0.1, 0.2)
+    measurement = SimpleNamespace(input_tick=3, output_tick=4, group_force_world=(0.0, 3.0, 4.0))
+    report = driver.accepted_measurement(4, endpoint, measurement, result, input_q=driver.last_q)
+    assert report["measurement"] is measurement and report["progress"] is None
+    assert report["segment_impulse_ns"] == pytest.approx(0.105)
+    assert report["total_impulse_ns"] == pytest.approx(0.205)
+    assert driver.tick == 4 and np.array_equal(driver.last_q, endpoint)

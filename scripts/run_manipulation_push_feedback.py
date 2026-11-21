@@ -195,16 +195,33 @@ class PushFeedbackDriver:
             object_com_world=com,
             group_geom_ids=(self.pusher,),
         )
+        return self.accepted_measurement(tick, q, measurement, result, input_q=entry_q)
+
+    def accepted_measurement(self, tick, q, measurement, result, *, input_q):
+        """Advance progress once using a wrench on the object from this accepted entry."""
+        if tick != self.tick + 1 or not np.array_equal(input_q, self.last_q):
+            raise ValueError("feedback measurement differs from preceding accepted endpoint")
         if measurement is None or (measurement.input_tick, measurement.output_tick) != (
             tick - 1,
             tick,
         ):
             raise ValueError("feedback lacks preceding accepted force entry")
-        impulse = float(np.linalg.norm(measurement.group_force_world)) * H
+        force = np.asarray(measurement.group_force_world, dtype=np.float64)
+        if force.shape != (3,) or not np.isfinite(force).all():
+            raise ValueError("feedback requires a finite object force in world coordinates")
+        impulse = float(np.linalg.norm(force)) * H
+        if not math.isfinite(impulse):
+            raise ValueError("nonfinite feedback impulse")
+        endpoint = np.asarray(q)
+        if endpoint.shape != (self.model.nq,) or not np.isfinite(endpoint).all():
+            raise ValueError("feedback requires a finite accepted endpoint")
+        cost = self.cost(endpoint)
+        if not math.isfinite(cost):
+            raise ValueError("nonfinite feedback endpoint cost")
         self.segment_impulse += impulse
         self.total_impulse += impulse
-        self.tick, self.last_q = tick, q.copy()
-        self.last_cost = self.cost(q)
+        self.tick, self.last_q = tick, endpoint.copy()
+        self.last_cost = cost
         receipt = None
         complete = (
             self.active is not None

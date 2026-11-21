@@ -151,8 +151,19 @@ def test_working_set_history_and_actual_trial_input_are_bound(accepted_peak, mon
         raw["meta"][:] = (0, 0, 1, 1)
         raw["trace_meta"][:] = 0
         raw["trace_meta"][0] = (0, 0, 1)
+        # Relabel every per-call record together. Leaving the original later
+        # publication rows would test unused padding, not the claimed baseline.
+        publication = raw.get("publication")
+        if publication is not None:
+            final_publication = publication[last].copy()
+            publication[:] = 0
+            publication[0] = final_publication
         if fault != "relabel-final-as-baseline":
             trace[0, 10 if fault == "baseline-load-gate" else 11] = np.float32(1e-3)
+            if publication is not None:
+                # A failed area gate never requests a native publication check.
+                publication[0] = 0
+                publication[0, 0] = -1
             expected = "constitutive closure gates"
         else:
             expected = "baseline/outer area-load source binding"

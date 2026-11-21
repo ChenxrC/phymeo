@@ -7,6 +7,30 @@ actual working-set calls, including the zero-area baseline, not Newton steps.
 import tyx as tx
 
 
+@tx.func
+def _publication_sum_error(a: tx.f32, b: tx.f32, rounded: tx.f32) -> tx.f32:
+    return tx.add_rn(
+        tx.sub_rn(a, tx.sub_rn(rounded, tx.sub_rn(rounded, a))),
+        tx.sub_rn(b, tx.sub_rn(rounded, a)),
+    )
+
+
+@tx.func
+def _publication_product(total: tx.vec2f, a: tx.f32, b: tx.f32) -> tx.vec2f:
+    return tx.vec2f(
+        tx.add_rn(total[0], tx.mul_rn(a, b)),
+        tx.add_rn(
+            total[1],
+            tx.add_rn(
+                _publication_sum_error(
+                    total[0], tx.mul_rn(a, b), tx.add_rn(total[0], tx.mul_rn(a, b))
+                ),
+                tx.fma(a, b, -tx.mul_rn(a, b)),
+            ),
+        ),
+    )
+
+
 @tx.kernel
 def initialize(
     count: tx.i32,
@@ -35,6 +59,7 @@ def initialize(
     meta: tx.ndarray(tx.i32, 2),
     trace_meta: tx.ndarray(tx.i32, 3),
     trace: tx.ndarray(tx.f32, 3),
+    publication: tx.ndarray(tx.f32, 3),
     status: tx.ndarray(tx.i32, 1),
 ):
     for w in tx.range(count):
@@ -54,6 +79,8 @@ def initialize(
                 trace_meta[w, r, i] = 0
             for i in range(14 + 2 * packed_width):
                 trace[w, r, i] = 0.0
+            for i in range(1 + packed_width + row_capacity):
+                publication[w, r, i] = 0.0
         for s in range(sample_capacity):
             for i in range(17):
                 contact[w, s, i] = 0.0
@@ -292,32 +319,111 @@ def evaluate(
                 converged = 1
             meta[w, 3] = converged
             trace_meta[w, iteration, 2] = converged
-            # Converged lanes retain the load actually solved. While other lanes
-            # continue they repeat the same native call, with a real trace row.
-            if converged == 0 and iteration < 24 and status[w] == 0:
-                # Halve the next update on a slow reversal. When a damped
-                # trial still reverses, use a quarter step for this update.
-                # A later trial without a fresh reversal returns to half.
-                if iteration >= 2 and load_scaled >= 0.5 * trace[w, iteration - 1, 10]:
-                    for i in range(nv):
-                        delta = vectors[w, 3, i]
-                        previous = trace[w, iteration - 1, 14 + packed_width + i]
-                        if tx.abs(delta) == load_absolute and (
-                            (delta > 0.0 and previous < 0.0) or (delta < 0.0 and previous > 0.0)
-                        ):
-                            trace_meta[w, iteration, 0] = 2
-                            if trace_meta[w, iteration - 1, 0] >= 2:
-                                trace_meta[w, iteration, 0] = 3
+        meta[w, 0] = status[w]
+
+
+@tx.kernel
+def qualify_publication(
+    count: tx.i32,
+    nv: tx.i32,
+    packed_width: tx.i32,
+    iteration: tx.i32,
+    tolerance: tx.f32,
+    counts: tx.ndarray(tx.i32, 2),
+    physical_factor: tx.ndarray(tx.f32, 3),
+    native_constraint: tx.ndarray(tx.f32, 2),
+    rows: tx.ndarray(tx.f32, 3),
+    jacobian: tx.ndarray(tx.f32, 3),
+    applied: tx.ndarray(tx.f32, 2),
+    passive: tx.ndarray(tx.f32, 2),
+    bias: tx.ndarray(tx.f32, 2),
+    vectors: tx.ndarray(tx.f32, 3),
+    trial_applied: tx.ndarray(tx.f32, 2),
+    meta: tx.ndarray(tx.i32, 2),
+    trace_meta: tx.ndarray(tx.i32, 3),
+    trace: tx.ndarray(tx.f32, 3),
+    publication: tx.ndarray(tx.f32, 3),
+    status: tx.ndarray(tx.i32, 1),
+):
+    for w in tx.range(count):
+        # -1 means not evaluated: either an original area closure gate is still
+        # open, or there are no native rows. Unvisited trace rows remain zero.
+        publication[w, iteration, 0] = -1.0
+        if status[w] == 0 and meta[w, 3] == 1 and counts[w, 2] > 0:
+            # The final tail uses M, not A=M+hD. Reuse the same physical Cholesky
+            # and reproduce finish's two stored additions before the tail RHS.
+            # No q/clock integration or native force optimization occurs here.
+            for i in range(nv):
+                value = tx.add_rn(native_constraint[w, i], vectors[w, 5, i])
+                value = tx.add_rn(applied[w, i], value)
+                value = tx.sub_rn(tx.add_rn(value, passive[w, i]), bias[w, i])
+                for j in range(i):
+                    value = value - physical_factor[w, i, j] * vectors[w, 6, j]
+                vectors[w, 6, i] = value / physical_factor[w, i, i]
+            for reverse in range(nv):
+                i = nv - 1 - reverse
+                value = vectors[w, 6, i]
+                for j in range(i + 1, nv):
+                    value = value - physical_factor[w, j, i] * vectors[w, 2, j]
+                value = value / physical_factor[w, i, i]
+                vectors[w, 2, i] = value
+                publication[w, iteration, 1 + i] = value
+                if not tx.isfinite(value):
+                    status[w] = 8
+            maximum = 0.0
+            for r in range(counts[w, 2]):
+                force = rows[w, r, 9]
+                publication[w, iteration, 1 + packed_width + r] = force
+                total = tx.vec2f(-rows[w, r, 3], 0.0)
                 for i in range(nv):
-                    if trace_meta[w, iteration, 0] == 3:
-                        vectors[w, 4, i] = vectors[w, 4, i] + 0.25 * vectors[w, 3, i]
-                    elif trace_meta[w, iteration, 0] == 2:
-                        vectors[w, 4, i] = vectors[w, 4, i] + 0.5 * vectors[w, 3, i]
-                    else:
-                        vectors[w, 4, i] = vectors[w, 5, i]
-                    trial_applied[w, i] = applied[w, i] + vectors[w, 4, i]
-                    if not tx.isfinite(trial_applied[w, i]):
-                        status[w] = 8
+                    total = _publication_product(total, jacobian[w, r, i], vectors[w, 2, i])
+                total = _publication_product(total, rows[w, r, 4], force)
+                gradient = tx.add_rn(total[0], total[1])
+                violation = tx.abs(gradient)
+                if force == rows[w, r, 7]:
+                    violation = tx.max(0.0, -gradient)
+                elif rows[w, r, 12] == 1.0 and force == rows[w, r, 8]:
+                    violation = tx.max(0.0, gradient)
+                scale = tx.max(1.0, tx.abs(rows[w, r, 4] * force))
+                ratio = violation / (tolerance * scale)
+                maximum = tx.max(maximum, ratio)
+                if (
+                    not tx.isfinite(ratio)
+                    or force < rows[w, r, 7]
+                    or (rows[w, r, 12] == 1.0 and force > rows[w, r, 8])
+                ):
+                    status[w] = 8
+            publication[w, iteration, 0] = maximum
+            if maximum > 1.0 or status[w] != 0:
+                meta[w, 3] = 0
+        trace_meta[w, iteration, 2] = meta[w, 3]
+        # Only a common candidate that also passes the publication row gate may
+        # freeze. Failed qualification consumes no extra native call: update the
+        # true trial load and use the next call within the original 25-call cap.
+        if meta[w, 3] == 0 and iteration < 24 and status[w] == 0:
+            # Halve the next update on a slow reversal. When a damped
+            # trial still reverses, use a quarter step for this update.
+            # A later trial without a fresh reversal returns to half.
+            if iteration >= 2 and trace[w, iteration, 10] >= 0.5 * trace[w, iteration - 1, 10]:
+                for i in range(nv):
+                    delta = vectors[w, 3, i]
+                    previous = trace[w, iteration - 1, 14 + packed_width + i]
+                    if tx.abs(delta) == trace[w, iteration, 12] and (
+                        (delta > 0.0 and previous < 0.0) or (delta < 0.0 and previous > 0.0)
+                    ):
+                        trace_meta[w, iteration, 0] = 2
+                        if trace_meta[w, iteration - 1, 0] >= 2:
+                            trace_meta[w, iteration, 0] = 3
+            for i in range(nv):
+                if trace_meta[w, iteration, 0] == 3:
+                    vectors[w, 4, i] = vectors[w, 4, i] + 0.25 * vectors[w, 3, i]
+                elif trace_meta[w, iteration, 0] == 2:
+                    vectors[w, 4, i] = vectors[w, 4, i] + 0.5 * vectors[w, 3, i]
+                else:
+                    vectors[w, 4, i] = vectors[w, 5, i]
+                trial_applied[w, i] = applied[w, i] + vectors[w, 4, i]
+                if not tx.isfinite(trial_applied[w, i]):
+                    status[w] = 8
         meta[w, 0] = status[w]
 
 

@@ -45,6 +45,7 @@ def solve_contact(device, old):
         device.area_native_meta,
         device.area_native_trace_meta,
         device.area_native_trace,
+        device.area_native_publication,
         device.status,
         mode=device.mode,
     )
@@ -77,6 +78,30 @@ def solve_contact(device, old):
             device.area_native_meta,
             device.area_native_trace_meta,
             device.area_native_trace,
+            device.status,
+            mode=device.mode,
+        )
+        device.counts["completed_kernels"] += 1
+        kernels.qualify_publication(
+            device.nworld,
+            device.plan.nv,
+            packed_width,
+            iteration,
+            device.plan.solver_tolerance,
+            device.constraint_counts,
+            device.physical_factor,
+            device.mixed_constraint,
+            device.efc_data,
+            device.efc_jacobian,
+            device.applied,
+            device.passive,
+            device.bias,
+            out("vectors"),
+            device.area_native_applied,
+            device.area_native_meta,
+            device.area_native_trace_meta,
+            device.area_native_trace,
+            device.area_native_publication,
             device.status,
             mode=device.mode,
         )

@@ -282,6 +282,7 @@ def allocation_manifest(plan, nworld, nbody, capacities):
             add("area_native_meta", (w, 4), "int32")
             add("area_native_trace_meta", (w, 25, 3), "int32")
             add("area_native_trace", (w, 25, 14 + 2 * friction_width(plan.nv)))
+            add("area_native_publication", (w, 25, 1 + friction_width(plan.nv) + capacities[1]))
     from ._entry_storage import entry_layout, entry_static_layout
 
     for name, (shape, dtype) in entry_layout(plan, w, capacities).items():

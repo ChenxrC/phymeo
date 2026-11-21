@@ -231,7 +231,7 @@ def publish(runtime, result, index):
                         result[("area_native_" if resident else "friction_") + name][index]
                     )
                     for name in (
-                        ("meta", "trace_meta", "trace")
+                        ("meta", "trace_meta", "trace", "publication")
                         if resident
                         else ("meta", "scalars", "trace_meta", "trace")
                     )

@@ -363,7 +363,11 @@ def _validate(runtime, key, receipt, state):
         time_bound = 32 * np.finfo(np.float32).eps * h + 4 * np.finfo(float).eps * abs(time)
         _require(abs(end - (time + h)) <= time_bound, "resident native single-step clock")
         resident_final_trace = _resident_diagnostics(
-            solver["raw_diagnostics"], velocity, runtime._plan, len(receipt.constraints)
+            solver["raw_diagnostics"],
+            velocity,
+            runtime._plan,
+            len(receipt.constraints),
+            publication_capacity=runtime._constraint_capacity,
         )
     else:
         _diagnostics(solver["raw_diagnostics"], velocity, nv)
@@ -580,6 +584,12 @@ def _validate(runtime, key, receipt, state):
             data["applied"],
             h,
             trial_applied,
+            native_rows=receipt.constraints,
+            mass=mass,
+            passive=data["passive"],
+            bias=data["bias"],
+            physical_acceleration=qacc,
+            native_tolerance=runtime._plan.solver_tolerance,
         )
         defect = h * np.linalg.solve(response, delta)
         saved_defect = float(resident_final_trace[13])
@@ -610,16 +620,30 @@ def _validate(runtime, key, receipt, state):
     return data["body_position"], data["body_com"]
 
 
-def _resident_diagnostics(raw, solver_velocity, plan, native_rows):
+def _resident_diagnostics(raw, solver_velocity, plan, native_rows, *, publication_capacity=None):
     """Audit actual working-set calls; do not reinterpret them as Newton traces."""
     _require(
-        isinstance(raw, Mapping) and set(raw) == {"meta", "trace_meta", "trace"},
+        isinstance(raw, Mapping)
+        and set(raw)
+        in ({"meta", "trace_meta", "trace"}, {"meta", "trace_meta", "trace", "publication"}),
         "resident diagnostics fields",
     )
     meta = _array(raw["meta"], (4,), "resident meta", np.int32)
     tm = _array(raw["trace_meta"], (25, 3), "resident trace metadata", np.int32)
     width = friction_width(plan.nv)
     trace = _array(raw["trace"], (25, 14 + 2 * width), "resident trace", np.float32)
+    publication = None
+    if "publication" in raw:
+        _require(
+            type(publication_capacity) is int and native_rows <= publication_capacity <= 512,
+            "resident publication row capacity",
+        )
+        publication = _array(
+            raw["publication"],
+            (25, 1 + width + publication_capacity),
+            "resident publication trace",
+            np.float32,
+        )
     iterations, calls = int(meta[1]), int(meta[2])
     _require(
         meta[0] == 0 and meta[3] == 1 and 0 <= iterations <= 24 and calls == iterations + 1,
@@ -642,6 +666,13 @@ def _resident_diagnostics(raw, solver_velocity, plan, native_rows):
         "resident native call phases/status",
     )
     _require(np.all(np.diff(tm[:calls, 2]) >= 0), "resident converged lane remains frozen")
+    if publication is not None:
+        _require(
+            np.all(publication[calls:] == 0)
+            and np.all(publication[:calls, 1 + plan.nv : 1 + width] == 0)
+            and np.all(publication[:calls, 1 + width + native_rows :] == 0),
+            "resident publication diagnostic padding",
+        )
     native = trace[:calls, :10]
     _require(
         np.all(native >= 0)
@@ -660,15 +691,28 @@ def _resident_diagnostics(raw, solver_velocity, plan, native_rows):
     )
     _require(np.all(trace[:calls, 10:14] >= 0), "resident closure metrics")
     for i in range(calls):
+        area_closed = trace[i, 10] <= np.float32(1e-6) and trace[i, 11] <= np.float32(1e-7)
         delta = trace[i, 14 + width : 14 + width + plan.nv]
         _require(
             float(trace[i, 12]) == float(np.max(np.abs(delta), initial=0.0)),
             "resident absolute load-defect witness",
         )
         if tm[i, 2]:
+            # A claimed exit must first satisfy the original area gates. The
+            # additional native publication check cannot replace that reason.
+            _require(area_closed, "resident constitutive closure gates")
+        if publication is not None:
+            needed = native_rows > 0 and area_closed
+            if needed:
+                _require(publication[i, 0] >= 0, "resident missing publication row check")
+            else:
+                _require(
+                    publication[i, 0] == -1 and np.all(publication[i, 1:] == 0),
+                    "resident unnecessary or unbound publication row check",
+                )
             _require(
-                trace[i, 10] <= np.float32(1e-6) and trace[i, 11] <= np.float32(1e-7),
-                "resident constitutive closure gates",
+                bool(tm[i, 2]) == (area_closed and (not needed or publication[i, 0] <= 1)),
+                "resident publication-aware closure status",
             )
     _same(
         trace[calls - 1, 14 : 14 + plan.nv].astype(float),
@@ -678,11 +722,27 @@ def _resident_diagnostics(raw, solver_velocity, plan, native_rows):
     return trace[calls - 1]
 
 
-def _resident_trace_sources(raw, pairs, response, v0, applied, h, final_trial_applied):
+def _resident_trace_sources(
+    raw,
+    pairs,
+    response,
+    v0,
+    applied,
+    h,
+    final_trial_applied,
+    *,
+    native_rows=(),
+    mass=None,
+    passive=None,
+    bias=None,
+    physical_acceleration=None,
+    native_tolerance=None,
+):
     """Bind saved outer calls algebraically; no native solver is replayed.
 
-    Only native KKT summaries are recorded per call. Area loads, unlike native
-    row forces, can be independently reconstructed from every saved velocity.
+    Area loads are reconstructed from every saved velocity. New receipts also
+    bind each actually needed publication check to its physical acceleration and
+    all native row forces; legacy three-field histories keep their old meaning.
     """
     nv, width = len(v0), friction_width(len(v0))
     calls = int(raw["meta"][2])
@@ -690,6 +750,15 @@ def _resident_trace_sources(raw, pairs, response, v0, applied, h, final_trial_ap
     converged = raw["trace_meta"][:calls, 2]
     velocities = trace[:, 14 : 14 + nv]
     deltas = trace[:, 14 + width : 14 + width + nv]
+    publication = raw.get("publication")
+    if publication is not None:
+        publication = publication[:calls].astype(float)
+    if publication is not None and native_rows:
+        native_j = np.asarray([row.jacobian for row in native_rows], dtype=float)
+        native_r = np.asarray([row.regularization for row in native_rows], dtype=float)
+        native_aref = np.asarray([row.reference_acceleration for row in native_rows], dtype=float)
+        lower = np.asarray([row.lower for row in native_rows], dtype=float)
+        upper = np.asarray([np.inf if row.upper is None else row.upper for row in native_rows])
     area = np.zeros((calls, nv))
     magnitude = np.zeros_like(area)
     for pair in pairs:
@@ -750,6 +819,57 @@ def _resident_trace_sources(raw, pairs, response, v0, applied, h, final_trial_ap
             relative=2e-4,
         )
         closed = trace[i, 10] <= float(np.float32(1e-6)) and trace[i, 11] <= float(np.float32(1e-7))
+        if publication is not None and publication[i, 0] >= 0:
+            acceleration = publication[i, 1 : 1 + nv]
+            forces = publication[i, 1 + width : 1 + width + len(native_rows)]
+            _require(
+                np.all(forces >= lower) and np.all(forces <= upper),
+                "resident publication native force bounds",
+            )
+            regularizer = native_r * forces
+            gradient = native_j @ acceleration - native_aref + regularizer
+            violation = np.where(
+                forces == lower,
+                np.maximum(0.0, -gradient),
+                np.where(forces == upper, np.maximum(0.0, gradient), abs(gradient)),
+            )
+            ratio = float(
+                np.max(
+                    violation
+                    / (float(np.float32(native_tolerance)) * np.maximum(1.0, abs(regularizer))),
+                    initial=0.0,
+                )
+            )
+            _close(
+                publication[i, 0],
+                ratio,
+                "resident publication original row ratio",
+                absolute=2e-6,
+                relative=2e-4,
+            )
+            _require(
+                (publication[i, 0] <= 1) == (ratio <= 1),
+                "resident publication original row decision",
+            )
+            # This is a source-rounding allowance, not a relaxation of either
+            # physical acceptance gate. The final tail is separately checked.
+            native_q = native_j.T @ forces
+            source_magnitude = (
+                abs(applied)
+                + abs(passive)
+                + abs(bias)
+                + abs(native_j).T @ abs(forces)
+                + magnitude[i]
+            )
+            source_allowance = 128 * eps * source_magnitude + 2e-5
+            _require(
+                np.all(
+                    abs(mass @ acceleration - (applied + passive - bias + native_q + current))
+                    <= source_allowance
+                ),
+                "resident publication actual force/physical-M source",
+            )
+            closed = closed and ratio <= 1
         _require(bool(converged[i]) == closed, "resident actual closure/exit status")
         phase = raw["trace_meta"][i, 0]
         previous_phase = raw["trace_meta"][i - 1, 0] if i else 0
@@ -778,6 +898,17 @@ def _resident_trace_sources(raw, pairs, response, v0, applied, h, final_trial_ap
         np.all(abs(final_trial_applied - (applied + trial)) <= allowance),
         "resident final native trial/source history",
     )
+    if publication is not None and native_rows:
+        _same(
+            publication[-1, 1 : 1 + nv],
+            physical_acceleration,
+            "resident publication candidate/actual physical acceleration",
+        )
+        _same(
+            publication[-1, 1 + width : 1 + width + len(native_rows)],
+            np.asarray([row.force for row in native_rows]),
+            "resident publication candidate/actual row forces",
+        )
 
 
 def _resident_endpoint(plan, input_q, output_v, h, endpoint):

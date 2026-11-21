@@ -163,6 +163,7 @@ def download(device, result):
                 "area_native_meta",
                 "area_native_trace_meta",
                 "area_native_trace",
+                "area_native_publication",
                 "solver_diagnostics",
                 "working",
             ):

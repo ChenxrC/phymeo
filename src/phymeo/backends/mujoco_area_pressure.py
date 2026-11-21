@@ -22,6 +22,7 @@ class _AreaPlan:
     area_friction_laws: tuple = ()
     area_friction_parameters: np.ndarray | None = None
     damped_contact_dofs: int = 0
+    resident_native_contacts: bool = False
 
     @property
     def scalar_damped_contacts(self):
@@ -113,6 +114,16 @@ def compile_area_plan(mj, model, pairs, friction_laws=()):
     if model.na or np.any(model.jnt_type == mj.mjtJoint.mjJNT_BALL):
         raise ValueError("first area route supports stateless hinge/slide or free-root trees")
     limit_count = np.count_nonzero(model.jnt_limited)
+    joint = mj.mjtJoint
+    resident_native_contacts = bool(
+        remaining
+        and friction_laws
+        and 6 <= model.nv <= 8
+        and np.count_nonzero(model.jnt_type == joint.mjJNT_FREE) == 1
+        and np.isin(model.jnt_type, (joint.mjJNT_FREE, joint.mjJNT_HINGE, joint.mjJNT_SLIDE)).all()
+        and not (model.neq or model.ntendon or np.any(model.dof_frictionloss))
+        and not np.any(model.jnt_limited[model.jnt_type == joint.mjJNT_FREE])
+    )
     damped_contact_dofs = 0
     if (
         remaining
@@ -127,7 +138,7 @@ def compile_area_plan(mj, model, pairs, friction_laws=()):
     ):
         damped_contact_dofs = model.nv
     if (
-        not damped_contact_dofs
+        not (damped_contact_dofs or resident_native_contacts)
         and np.any(model.dof_damping)
         and (remaining or np.any(model.jnt_limited) or np.any(model.dof_frictionloss))
     ):
@@ -138,16 +149,26 @@ def compile_area_plan(mj, model, pairs, friction_laws=()):
         friction_width(model.nv)
         if model.nbody > 128 or model.ngeom > 128:
             raise ValueError("live area-friction capacity: 128 bodies/geoms")
-        if model.neq or model.ntendon or (remaining and not damped_contact_dofs):
+        if (
+            model.neq
+            or model.ntendon
+            or (remaining and not (damped_contact_dofs or resident_native_contacts))
+        ):
             raise ValueError(
                 "live area friction requires area-only constraints or supported scalar joint rows"
             )
         dry_count = np.count_nonzero(model.dof_frictionloss)
-        if (dry_count or limit_count) and not (
-            1 <= model.nv == model.njnt <= 2
-            and np.isin(model.jnt_type, (mj.mjtJoint.mjJNT_SLIDE, mj.mjtJoint.mjJNT_HINGE)).all()
-            and dry_count <= 1
-            and limit_count <= (2 if damped_contact_dofs == 2 else 1)
+        if (
+            (dry_count or limit_count)
+            and not resident_native_contacts
+            and not (
+                1 <= model.nv == model.njnt <= 2
+                and np.isin(
+                    model.jnt_type, (mj.mjtJoint.mjJNT_SLIDE, mj.mjtJoint.mjJNT_HINGE)
+                ).all()
+                and dry_count <= 1
+                and limit_count <= (2 if damped_contact_dofs == 2 else 1)
+            )
         ):
             raise ValueError(
                 "mixed area friction requires a supported scalar joint limit and dry-friction layout"
@@ -155,6 +176,16 @@ def compile_area_plan(mj, model, pairs, friction_laws=()):
         if not np.isfinite(model.dof_damping).all() or np.any(model.dof_damping < 0):
             raise ValueError("live area friction requires nonnegative finite damping")
     base = compile_constraint_model(mj, model, remaining)
+    if resident_native_contacts:
+        # Native geometry is independently checked against the same entry at publication.
+        if base.kind != 3 or np.any(base.pair_condim[: base.npair] != 3):
+            raise ValueError(
+                "resident mixed contacts require a free root and native condim-3 pairs"
+            )
+        if not np.isin(model.geom_type[np.array(remaining)], (0, 2, 3, 6)).all():
+            raise ValueError(
+                "resident mixed contacts require plane, sphere, capsule or box geometry"
+            )
     if friction_laws and damped_contact_dofs:
         max_pairs = 2 if damped_contact_dofs == 2 and not limit_count else 1
         plane_sphere = (mj.mjtGeom.mjGEOM_PLANE, mj.mjtGeom.mjGEOM_SPHERE)
@@ -186,7 +217,15 @@ def compile_area_plan(mj, model, pairs, friction_laws=()):
         if not np.isfinite(parameters).all() or np.any((values > 0) & (parameters <= 0)):
             raise ValueError("area-friction parameters are not positive finite FP32")
         parameters = np.frombuffer(parameters.tobytes(), dtype=np.float32).reshape(-1, 2)
-    return _AreaPlan(base, tuple(pairs), body_ids, friction_laws, parameters, damped_contact_dofs)
+    return _AreaPlan(
+        base,
+        tuple(pairs),
+        body_ids,
+        friction_laws,
+        parameters,
+        damped_contact_dofs,
+        resident_native_contacts,
+    )
 
 
 def configuration_id(runtime, key):
@@ -225,9 +264,14 @@ def pack(runtime, mapping, expected_revision):
     for wi, key in enumerate(runtime._world_keys):
         native_rows = plan.nfriction if plan.area_friction_laws else 0
         if plan.area_friction_laws and plan.nlimit:
-            from .mujoco_area_limit import expected_limit_sides
+            from .mujoco_area_limit import expected_limit_sides, expected_resident_limit_rows
 
-            native_rows += len(expected_limit_sides(plan, runtime._data[key].qpos))
+            limits = (
+                expected_resident_limit_rows
+                if plan.resident_native_contacts
+                else expected_limit_sides
+            )
+            native_rows += len(limits(plan, runtime._data[key].qpos))
         surfaces = mapping[key]
         if not isinstance(surfaces, tuple) or len(surfaces) != len(plan.area_pair_names):
             raise ValueError("every declared area pair requires a surface, including empty")

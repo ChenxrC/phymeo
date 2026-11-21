@@ -602,6 +602,17 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                         if self._plan.npair == 2
                         else "single-condim3-plane-sphere",
                     )
+            if getattr(self._plan, "resident_native_contacts", False):
+                from .area_friction_law import numerical_solver
+
+                info.update(
+                    domain="area-friction-cuda-resident-native-free-scalar-v1",
+                    numerical_solver=numerical_solver(self._plan),
+                    native_contact_operator="M",
+                    native_contact_scope="source-condim3-plane-primitives-with-separated-other-candidates",
+                    area_pressure_integration="native-damped-euler-coordinate-tail-v1",
+                    mixed_articulated_constraints_supported=True,
+                )
             self._capabilities = MappingProxyType(info)
 
     @property
@@ -1192,7 +1203,7 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                         raw_contact_fields=raw_fields,
                         source_solver=self._plan.source_solver,
                         numerical_solver=(
-                            "area-friction-newton-v1"
+                            self._capabilities["numerical_solver"]
                             if self._area_friction_laws
                             else "pyramidal-box-active-set-v1"
                             if getattr(self._plan, "constraint_contact", False)

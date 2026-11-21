@@ -37,12 +37,15 @@ def area_binding(runtime):
                 {
                     "native_contact_operator": "M",
                     "native_contact_scope": (
-                        f"coupled-damped-geometry-{runtime._plan.coupled_contact_variant}"
+                        "resident-native-free-scalar-v1"
+                        if getattr(runtime._plan, "resident_native_contacts", False)
+                        else f"coupled-damped-geometry-{runtime._plan.coupled_contact_variant}"
                         if getattr(runtime._plan, "coupled_damped_contacts", False)
                         else "scalar-damped-geometry-v1"
                     ),
                 }
                 if runtime._plan.damped_contact_dofs
+                or getattr(runtime._plan, "resident_native_contacts", False)
                 else {}
             ),
             storage="host-owned-accepted-receipt; area-entry-v2",

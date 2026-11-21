@@ -29,13 +29,14 @@ def _owned(value):
 
 def publish(runtime, result, index):
     n = runtime._plan.nv
+    resident = bool(getattr(runtime._plan, "resident_native_contacts", False))
     if getattr(runtime._plan, "coupled_damped_contacts", False):
         _require(n == runtime._plan.nq == 2, "coupled native scalar coordinate layout")
     packet = runtime._area_packet
     ns = int(packet[2][index])
     sizes = result["friction_sizes"][index]
-    meta = result["friction_meta"][index]
-    _require(np.array_equal(sizes, (n, ns, 24, 12)), "solver sizes")
+    meta = result["area_native_meta" if resident else "friction_meta"][index]
+    _require(np.array_equal(sizes, (n, ns, 24, 0 if resident else 12)), "solver sizes")
     _require(result["friction_pack_status"][index] == 0 and meta[0] == 0, "solver status")
     _require(0 <= ns <= runtime._constraint_capacity, "sample count")
     mass = result["friction_mass"][index, :n, :n]
@@ -191,7 +192,7 @@ def publish(runtime, result, index):
             )
         )
     net_load = {}
-    if runtime._plan.two_native_supports:
+    if runtime._plan.two_native_supports or resident:
         applied_with_contact = result["applied_with_contact"][index, :n]
         _require(
             np.array_equal(applied_with_contact, vectors[4, :n])
@@ -204,6 +205,8 @@ def publish(runtime, result, index):
             "integrator applied load from external force and individual contacts",
         )
         net_load["applied_with_contact"] = _frozen(applied_with_contact)
+        if resident:
+            net_load["native_trial_applied"] = _frozen(result["area_native_applied"][index, :n])
     solver = MappingProxyType(
         dict(
             **net_load,
@@ -224,8 +227,14 @@ def publish(runtime, result, index):
             solver_status=int(meta[0]),
             raw_diagnostics=MappingProxyType(
                 {
-                    name: _owned(result["friction_" + name][index])
-                    for name in ("meta", "scalars", "trace_meta", "trace")
+                    name: _owned(
+                        result[("area_native_" if resident else "friction_") + name][index]
+                    )
+                    for name in (
+                        ("meta", "trace_meta", "trace")
+                        if resident
+                        else ("meta", "scalars", "trace_meta", "trace")
+                    )
                 }
             ),
         )

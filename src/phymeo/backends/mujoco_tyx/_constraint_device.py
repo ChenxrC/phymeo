@@ -398,7 +398,8 @@ class TyxConstraintDevice(TyxDevice):
         old, new = self.active, 1 - self.active
         with self.tx.use_runtime(self.runtime):
             live_friction = bool(getattr(self.plan, "area_friction_laws", ()))
-            mixed_support = live_friction and self.plan.damped_contact_dofs > 0
+            resident_native = bool(getattr(self.plan, "resident_native_contacts", False))
+            mixed_support = live_friction and (self.plan.damped_contact_dofs > 0 or resident_native)
             self._prepare_entry(
                 old,
                 controls,
@@ -407,7 +408,10 @@ class TyxConstraintDevice(TyxDevice):
                 assemble_contacts=not live_friction or mixed_support,
             )
             if live_friction:
-                from ._area_friction_device import solve_contact
+                if resident_native:
+                    from ._area_native_coupled import solve_contact
+                else:
+                    from ._area_friction_device import solve_contact
 
                 solve_contact(self, old)
             else:

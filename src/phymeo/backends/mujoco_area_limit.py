@@ -37,6 +37,8 @@ def _intermediate32(value):
 
 
 def _damped_native_limit(plan):
+    if getattr(plan, "resident_native_contacts", False):
+        return True
     return bool(
         getattr(plan, "damped_contact_dofs", 0) == 2
         and plan.nv == plan.nq == 2
@@ -48,6 +50,8 @@ def _damped_native_limit(plan):
 
 
 def _layout(plan, input_q):
+    if getattr(plan, "resident_native_contacts", False):
+        return _resident_layout(plan, input_q)
     nv = plan.nv
     _require(type(nv) is int and nv in (1, 2), "one or two scalar DOFs")
     damped_native = _damped_native_limit(plan)
@@ -351,3 +355,76 @@ def _validate(plan, row, input_q, input_v, output_v, h, physical_qacc):
     _require(np.isfinite(predicted), "finite predicted force")
     _require(abs(force - predicted) <= 0.002 + 0.002 * abs(predicted), "predicted native force")
     return float(predicted)
+
+
+def _resident_layout(plan, input_q):
+    """Source-addressed FREE/scalar limit layout, independent of contact count."""
+    nv, nq = plan.nv, plan.nq
+    _require(
+        getattr(plan, "resident_native_contacts", False)
+        and plan.kind == 3
+        and 6 <= nv <= 8
+        and nq == nv + 1
+        and plan.nfriction == 0
+        and 0 <= plan.nlimit <= 2,
+        "resident FREE/scalar source layout",
+    )
+    joints = plan.joint_ids
+    _require(
+        isinstance(joints, np.ndarray)
+        and joints.dtype == np.int32
+        and joints.shape == (nv - 5, 4)
+        and np.count_nonzero(joints[:, 0] == 3) == 1
+        and np.isin(joints[:, 0], (0, 1, 3)).all(),
+        "complete resident native joint mapping",
+    )
+    q = _vector(input_q, "resident limit input q", nq)
+    q32 = q.astype(np.float32)
+    _require(np.isfinite(q32).all(), "finite packed resident q")
+    entries, seen_qa, seen_dof = [], set(), set()
+    previous = -1
+    _require(
+        plan.limit_ids.dtype == np.int32
+        and plan.limit_ids.shape == (max(1, plan.nlimit), 3)
+        and plan.limit_law.dtype == np.float32
+        and plan.limit_law.shape == (max(1, plan.nlimit), 11),
+        "resident source limit arrays",
+    )
+    for identity, law in zip(
+        plan.limit_ids[: plan.nlimit], plan.limit_law[: plan.nlimit], strict=True
+    ):
+        joint, qa, dof = map(int, identity)
+        _require(
+            previous < joint < len(joints)
+            and 0 <= qa < nq
+            and 0 <= dof < nv
+            and joints[joint, 0] in (0, 1)
+            and (qa, dof) == tuple(map(int, joints[joint, 1:3]))
+            and qa not in seen_qa
+            and dof not in seen_dof,
+            "resident ordered unique joint/qpos/DOF identities",
+        )
+        _require(
+            np.isfinite(law).all() and law[3] > 0 and (law[4] > 0) == (law[5] > 0),
+            "resident finite source limit law",
+        )
+        previous = joint
+        seen_qa.add(qa)
+        seen_dof.add(dof)
+        entries.append((joint, qa, dof, tuple(map(float, law))))
+    return nv, tuple(entries), q32
+
+
+def expected_resident_limit_rows(plan, input_q):
+    """All active (joint, DOF, side) rows in original native ordering.
+
+    The compiled source owns margins and address layout. Both sides are retained
+    if an admitted source has overlapping margins, exactly as T4 assembles them.
+    """
+    _, entries, q32 = _resident_layout(plan, input_q)
+    return tuple(
+        (joint, dof, side)
+        for joint, qa, dof, law in entries
+        for side, distance in _distances(q32, qa, law)
+        if distance < law[2]
+    )

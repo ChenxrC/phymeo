@@ -16,7 +16,7 @@ from ..geometry.area_pressure import (
     AreaPressureStamp,
     _quadrature,
 )
-from .area_friction_law import LAW, PRECISION, capture_pair_laws, solver_schema
+from .area_friction_law import LAW, PRECISION, capture_pair_laws, numerical_solver, solver_schema
 from .mujoco_area_guide import expected_scalar_rows, validate_guide_row
 from .mujoco_area_native_contact import enabled as native_contact_enabled
 from .mujoco_tyx._area_friction_layout import MAX_LIVE_DOF, friction_width
@@ -181,6 +181,7 @@ def _diagnostics(raw, solver_velocity, nv):
 def _validate(runtime, key, receipt, state):
     from ._mujoco_tyx_runtime import MuJoCoTyxDynamics, MuJoCoTyxStepReceipt
 
+    resident = bool(getattr(runtime._plan, "resident_native_contacts", False))
     laws = capture_pair_laws(runtime._plan.area_pair_names, runtime._area_friction_laws)
     _require(bool(laws), "missing opt-in laws")
     if receipt is None:
@@ -196,7 +197,7 @@ def _validate(runtime, key, receipt, state):
     _require(
         type(receipt.contact_law) is str
         and receipt.contact_law == LAW
-        and _tag(receipt.numerical_solver, "area-friction-newton-v1")
+        and _tag(receipt.numerical_solver, numerical_solver(runtime._plan))
         and _tag(receipt.source_solver, runtime._plan.source_solver)
         and _tag(receipt.backend, "mujoco-tyx-" + runtime._mode)
         and _tag(receipt.state_precision, "fp32-device-integration"),
@@ -237,8 +238,10 @@ def _validate(runtime, key, receipt, state):
     pairs, solver = fields["area_friction"], fields["area_friction_solver"]
     _require(type(pairs) is tuple and len(pairs) == len(laws), "complete pair records")
     solver_fields = SOLVER_FIELDS
-    if runtime._plan.two_native_supports:
+    if runtime._plan.two_native_supports or resident:
         solver_fields = solver_fields | {"applied_with_contact"}
+    if resident:
+        solver_fields = solver_fields | {"native_trial_applied"}
     _require(
         isinstance(solver, Mapping) and set(solver) == solver_fields,
         "solver record fields",
@@ -354,7 +357,16 @@ def _validate(runtime, key, receipt, state):
         _array(state.qfrc_actuator, (nv,), "state actuator force"),
         "actuator publication",
     )
-    _diagnostics(solver["raw_diagnostics"], velocity, nv)
+    resident_final_trace = None
+    if resident:
+        _resident_endpoint(runtime._plan, data["input_q"], output, h, state.qpos)
+        time_bound = 32 * np.finfo(np.float32).eps * h + 4 * np.finfo(float).eps * abs(time)
+        _require(abs(end - (time + h)) <= time_bound, "resident native single-step clock")
+        resident_final_trace = _resident_diagnostics(
+            solver["raw_diagnostics"], velocity, runtime._plan, len(receipt.constraints)
+        )
+    else:
+        _diagnostics(solver["raw_diagnostics"], velocity, nv)
     count, common_stamp = 0, None
     summed, law_total = np.zeros(nv), np.zeros(nv)
     if native_geometry:
@@ -390,6 +402,7 @@ def _validate(runtime, key, receipt, state):
             predicted = validate_limit_row(runtime._plan, row, data["input_q"], v0, output, h, qacc)
         summed += row.jacobian * row.force
         law_total += row.jacobian * predicted
+    native_summed = summed.copy()
     for raw, law, body_ids in zip(pairs, laws, ids, strict=True):
         _require(
             isinstance(raw, Mapping) and len(raw) == len(PAIR_FIELDS) and set(raw) == PAIR_FIELDS,
@@ -525,7 +538,7 @@ def _validate(runtime, key, receipt, state):
             summed += np.einsum("sij,si->j", ja - jb, fa)
             law_total += np.einsum("sij,si->j", ja - jb, predicted_force)
     _close(total, summed, "complete two-sided generalized force")
-    if runtime._plan.two_native_supports:
+    if runtime._plan.two_native_supports or resident:
         net = _packed(solver["applied_with_contact"], (nv,), "integrator applied/contact load")
         _close(
             net,
@@ -540,6 +553,42 @@ def _validate(runtime, key, receipt, state):
             "actual integrated net load",
             absolute=2e-5,
             relative=2e-5,
+        )
+    if resident:
+        width = friction_width(nv)
+        delta = resident_final_trace[14 + width : 14 + width + nv].astype(float)
+        trial_applied = _packed(solver["native_trial_applied"], (nv,), "native trial applied force")
+        # The last working set consumed external + trial area Q. The native
+        # integration tail instead consumes external + native Q + final area Q.
+        # Retain those two true inputs separately, including source-addition rounding.
+        area_summed = summed - native_summed
+        allowance = (
+            128
+            * np.finfo(np.float32).eps
+            * (np.abs(data["applied"]) + np.abs(area_summed) + np.abs(trial_applied))
+            + 2e-5
+        )
+        _require(
+            np.all(np.abs(delta - (data["applied"] + area_summed - trial_applied)) <= allowance),
+            "resident final load-defect/source binding",
+        )
+        _resident_trace_sources(
+            solver["raw_diagnostics"],
+            pairs,
+            response,
+            v0,
+            data["applied"],
+            h,
+            trial_applied,
+        )
+        defect = h * np.linalg.solve(response, delta)
+        saved_defect = float(resident_final_trace[13])
+        _close(
+            saved_defect,
+            np.max(np.abs(defect), initial=0.0),
+            "resident physical velocity-defect witness",
+            absolute=2e-8,
+            relative=2e-4,
         )
     residual = response @ output - mass @ v0 - h * (external + total)
     saved_residual = _array(solver["residual"], (nv,), "actual residual")
@@ -559,6 +608,201 @@ def _validate(runtime, key, receipt, state):
         "actual-velocity stored-force/law residual gate",
     )
     return data["body_position"], data["body_com"]
+
+
+def _resident_diagnostics(raw, solver_velocity, plan, native_rows):
+    """Audit actual working-set calls; do not reinterpret them as Newton traces."""
+    _require(
+        isinstance(raw, Mapping) and set(raw) == {"meta", "trace_meta", "trace"},
+        "resident diagnostics fields",
+    )
+    meta = _array(raw["meta"], (4,), "resident meta", np.int32)
+    tm = _array(raw["trace_meta"], (25, 3), "resident trace metadata", np.int32)
+    width = friction_width(plan.nv)
+    trace = _array(raw["trace"], (25, 14 + 2 * width), "resident trace", np.float32)
+    iterations, calls = int(meta[1]), int(meta[2])
+    _require(
+        meta[0] == 0 and meta[3] == 1 and 0 <= iterations <= 24 and calls == iterations + 1,
+        "resident converged call counts",
+    )
+    _require(
+        np.all(tm[calls:] == 0)
+        and np.all(trace[calls:] == 0)
+        and np.all(trace[:calls, 14 + plan.nv : 14 + width] == 0)
+        and np.all(trace[:calls, 14 + width + plan.nv :] == 0),
+        "resident diagnostic padding",
+    )
+    _require(
+        tm[0, 0] == 0
+        and np.all(tm[1:calls, 0] == 1)
+        and np.all(tm[:calls, 1] == 0)
+        and np.isin(tm[:calls, 2], (0, 1)).all()
+        and tm[calls - 1, 2] == 1,
+        "resident native call phases/status",
+    )
+    _require(np.all(np.diff(tm[:calls, 2]) >= 0), "resident converged lane remains frozen")
+    native = trace[:calls, :10]
+    _require(
+        np.all(native >= 0)
+        and np.all(native[:, 0] <= plan.solver_iterations)
+        and np.all(native[:, 0] == np.floor(native[:, 0]))
+        and np.all(native[:, 4] == native_rows)
+        and np.all(native[:, 5] <= native_rows)
+        and np.all(native[:, 5] == np.floor(native[:, 5]))
+        and np.all(native[:, 6] == 1)
+        and np.all(native[:, 7] == plan.solver_iterations)
+        and np.all(native[:, 9] >= 1)
+        and np.all(native[:, 1] <= plan.solver_tolerance)
+        and np.all(native[:, 3] <= plan.solver_tolerance)
+        and np.all(native[:, 8] <= plan.solver_tolerance),
+        "resident actual native working-set diagnostics",
+    )
+    _require(np.all(trace[:calls, 10:14] >= 0), "resident closure metrics")
+    for i in range(calls):
+        delta = trace[i, 14 + width : 14 + width + plan.nv]
+        _require(
+            float(trace[i, 12]) == float(np.max(np.abs(delta), initial=0.0)),
+            "resident absolute load-defect witness",
+        )
+        if tm[i, 2]:
+            _require(
+                trace[i, 10] <= np.float32(1e-6) and trace[i, 11] <= np.float32(1e-7),
+                "resident constitutive closure gates",
+            )
+    _same(
+        trace[calls - 1, 14 : 14 + plan.nv].astype(float),
+        solver_velocity,
+        "resident final candidate velocity",
+    )
+    return trace[calls - 1]
+
+
+def _resident_trace_sources(raw, pairs, response, v0, applied, h, final_trial_applied):
+    """Bind saved outer calls algebraically; no native solver is replayed.
+
+    Only native KKT summaries are recorded per call. Area loads, unlike native
+    row forces, can be independently reconstructed from every saved velocity.
+    """
+    nv, width = len(v0), friction_width(len(v0))
+    calls = int(raw["meta"][2])
+    trace = raw["trace"][:calls].astype(float)
+    converged = raw["trace_meta"][:calls, 2]
+    velocities = trace[:, 14 : 14 + nv]
+    deltas = trace[:, 14 + width : 14 + width + nv]
+    area = np.zeros((calls, nv))
+    magnitude = np.zeros_like(area)
+    for pair in pairs:
+        jac = pair["jacobian_a"] - pair["jacobian_b"]
+        normals = pair["normals"]
+        relative = np.einsum("sij,kj->ksi", jac, velocities)
+        vn = np.einsum("si,ksi->ks", normals, relative)
+        tangent = (
+            np.cross(normals, np.cross(relative, normals))
+            / np.sum(normals * normals, axis=1)[None, :, None]
+        )
+        fn = np.maximum(0.0, -pair["stiffness"] * (pair["surrogate_gap"] + h * vn))
+        force = fn[:, :, None] * (
+            normals
+            - pair["mu"]
+            * tangent
+            / np.sqrt(np.sum(tangent * tangent, axis=2) + pair["slip_speed_m_s"] ** 2)[:, :, None]
+        )
+        area += np.einsum("sij,ksi->kj", jac, force)
+        magnitude += np.einsum("sij,ksi->kj", abs(jac), abs(force))
+    defects = h * np.linalg.solve(response, deltas.T).T
+    trial = np.zeros(nv)
+    eps = np.finfo(np.float32).eps
+    for i in range(calls):
+        current = trial + deltas[i]
+        # Sequential FP32 accumulation and source addition may cancel. Bound
+        # source magnitudes rather than widening either constitutive exit gate.
+        allowance = 128 * eps * (magnitude[i] + abs(trial) + abs(deltas[i])) + 2e-5
+        _require(
+            np.all(abs(current - area[i]) <= allowance),
+            "resident baseline/outer area-load source binding",
+        )
+        load_metric = np.max(
+            abs(deltas[i]) / (1 + np.maximum(abs(current), abs(trial))), initial=0.0
+        )
+        velocity_metric = np.max(
+            abs(defects[i]) / (1 + np.maximum(abs(v0), abs(velocities[i]))), initial=0.0
+        )
+        _close(
+            trace[i, 10],
+            load_metric,
+            "resident scaled load-defect source",
+            absolute=1e-12,
+            relative=2e-4,
+        )
+        _close(
+            trace[i, 11],
+            velocity_metric,
+            "resident scaled velocity-defect source",
+            absolute=1e-12,
+            relative=2e-4,
+        )
+        _close(
+            trace[i, 13],
+            np.max(abs(defects[i]), initial=0.0),
+            "resident each-call physical velocity defect",
+            absolute=2e-8,
+            relative=2e-4,
+        )
+        closed = trace[i, 10] <= float(np.float32(1e-6)) and trace[i, 11] <= float(np.float32(1e-7))
+        _require(bool(converged[i]) == closed, "resident actual closure/exit status")
+        if not converged[i]:
+            trial = current
+    allowance = 128 * eps * (abs(applied) + abs(trial)) + 2e-5
+    _require(
+        np.all(abs(final_trial_applied - (applied + trial)) <= allowance),
+        "resident final native trial/source history",
+    )
+
+
+def _resident_endpoint(plan, input_q, output_v, h, endpoint):
+    """Substitute native scalar/FREE Euler coordinates without FK or a solve."""
+    q = _packed(endpoint, (plan.nq,), "resident endpoint q")
+    expected = input_q.copy()
+    bound = np.zeros(plan.nq)
+    eps, tiny = np.finfo(np.float32).eps, np.finfo(np.float32).tiny
+    covered = []
+    free_count = 0
+    for kind, qa, dof, _body in plan.joint_ids:
+        kind, qa, dof = int(kind), int(qa), int(dof)
+        _require(kind in (0, 1, 3), "resident scalar/FREE integration domain")
+        if kind in (0, 1):
+            expected[qa] = input_q[qa] + h * output_v[dof]
+            bound[qa] = 16 * eps * (abs(input_q[qa]) + h * abs(output_v[dof])) + tiny
+            covered.append(qa)
+            continue
+        free_count += 1
+        expected[qa : qa + 3] = input_q[qa : qa + 3] + h * output_v[dof : dof + 3]
+        bound[qa : qa + 3] = (
+            16 * eps * (abs(input_q[qa : qa + 3]) + h * abs(output_v[dof : dof + 3])) + tiny
+        )
+        original = input_q[qa + 3 : qa + 7]
+        length = float(np.linalg.norm(original))
+        _require(length > 0, "resident input FREE quaternion")
+        w0, xyz0 = original[0] / length, original[1:] / length
+        angular = output_v[dof + 3 : dof + 6]
+        speed = float(np.linalg.norm(angular))
+        angle = 0.5 * h * speed
+        dw = np.cos(angle)
+        dxyz = angular * (np.sin(angle) / speed if speed else 0.0)
+        quaternion = np.r_[w0 * dw - xyz0 @ dxyz, w0 * dxyz + dw * xyz0 + np.cross(xyz0, dxyz)]
+        quaternion /= np.linalg.norm(quaternion)
+        expected[qa + 3 : qa + 7] = quaternion
+        bound[qa + 3 : qa + 7] = 16 * eps
+        _require(
+            abs(np.linalg.norm(q[qa + 3 : qa + 7]) - 1) <= 2e-6,
+            "resident endpoint FREE quaternion norm",
+        )
+        covered.extend(range(qa, qa + 7))
+    _require(
+        free_count == 1 and sorted(covered) == list(range(plan.nq)),
+        "resident complete coordinate integration",
+    )
+    _require(np.all(np.abs(q - expected) <= bound), "resident native endpoint integration")
 
 
 def validate_friction_receipt(runtime, key, receipt, state):

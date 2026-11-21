@@ -17,6 +17,8 @@ PRECISION = "actual-packed-point-fp32"
 
 
 def solver_schema(plan):
+    if getattr(plan, "resident_native_contacts", False):
+        return "mujoco-tyx-area-friction-resident-native-v1"
     if getattr(plan, "coupled_damped_contacts", False) and plan.area_friction_laws:
         return f"mujoco-tyx-area-friction-coupled-contact-{plan.coupled_contact_variant}"
     if getattr(plan, "scalar_damped_contacts", False) and plan.area_friction_laws:
@@ -120,4 +122,12 @@ def law_binding(laws):
             )
             for item in owned
         ),
+    )
+
+
+def numerical_solver(plan):
+    return (
+        "area-native-working-set-fixed-point-v1"
+        if getattr(plan, "resident_native_contacts", False)
+        else "area-friction-newton-v1"
     )

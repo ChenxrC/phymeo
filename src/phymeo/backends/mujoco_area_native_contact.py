@@ -29,7 +29,13 @@ RAW_FIELDS = frozenset(
 
 
 def enabled(plan):
-    return bool(getattr(plan, "damped_contact_dofs", 0) and plan.area_friction_laws)
+    return bool(
+        (
+            getattr(plan, "damped_contact_dofs", 0)
+            or getattr(plan, "resident_native_contacts", False)
+        )
+        and plan.area_friction_laws
+    )
 
 
 def _require(ok, message):
@@ -48,7 +54,7 @@ def _close(actual, expected, name, *, absolute=2e-6, relative=2e-5):
 
 def publish(runtime, result, index):
     """Adapt the live download names to the shared native contact decoder."""
-    _require(enabled(runtime._plan), "explicit damped native contact scope required")
+    _require(enabled(runtime._plan), "explicit mixed native contact scope required")
     adapted = dict(result)
     adapted["efc_J"] = result["efc_jacobian"]
     adapted["counts"] = result["constraint_counts"]
@@ -218,25 +224,39 @@ def _source_law(plan, row, h, *, pair=0):
 def validate(runtime, raw, contacts, constraints, dynamics, qacc, h, *, output_v=None):
     """Return stored and independent-law native generalized loads.
 
-    Scope is one plane/sphere condim=3 pair on one damped scalar joint
-    or the admitted two-scalar route with one or two native pairs. Joint limits
-    remain confined to the single-pair route. No native pair is inferred from
-    an area pair or from receipt fields.
+    Legacy routes retain their scalar plane/sphere scope. The explicit resident
+    route retains complete source-addressed FREE/scalar rows and validates its
+    candidate geometry independently. No native pair is inferred from an area
+    pair or from receipt fields.
     The physical-M row law intentionally uses qacc, not integration acceleration.
     """
     plan = runtime._plan
+    resident = bool(getattr(plan, "resident_native_contacts", False))
     _require(
         enabled(plan)
-        and plan.damped_contact_dofs in (1, 2)
-        and plan.nv == plan.nq == plan.damped_contact_dofs
-        and plan.npair == plan.nslot
         and (
-            plan.nslot == 1
-            or (plan.nslot == 2 and plan.damped_contact_dofs == 2 and plan.nlimit == 0)
-        )
-        and plan.nfriction == 0
-        and (plan.nlimit == 0 or (plan.damped_contact_dofs == 2 and plan.nlimit in (1, 2)))
-        and np.all(plan.pair_condim[: plan.npair] == 3),
+            (
+                resident
+                and plan.kind == 3
+                and 6 <= plan.nv <= 8
+                and plan.nq == plan.nv + 1
+                and plan.nfriction == 0
+                and 0 <= plan.nlimit <= 2
+                and np.all(plan.pair_condim[: plan.npair] == 3)
+            )
+            or (
+                plan.damped_contact_dofs in (1, 2)
+                and plan.nv == plan.nq == plan.damped_contact_dofs
+                and plan.npair == plan.nslot
+                and (
+                    plan.nslot == 1
+                    or (plan.nslot == 2 and plan.damped_contact_dofs == 2 and plan.nlimit == 0)
+                )
+                and plan.nfriction == 0
+                and (plan.nlimit == 0 or (plan.damped_contact_dofs == 2 and plan.nlimit in (1, 2)))
+                and np.all(plan.pair_condim[: plan.npair] == 3)
+            )
+        ),
         "unsupported native geometry scope",
     )
     _require(isinstance(raw, Mapping) and set(raw) == RAW_FIELDS, "raw native fields")
@@ -276,18 +296,34 @@ def validate(runtime, raw, contacts, constraints, dynamics, qacc, h, *, output_v
     ground_rows = tuple(row for row in constraints if row.constraint_type == 6)
     _require(len(limit_rows) + len(ground_rows) == len(constraints), "native row groups")
     if plan.nlimit:
-        from .mujoco_area_limit import expected_limit_sides, validate_limit_row
+        from .mujoco_area_limit import (
+            expected_limit_sides,
+            expected_resident_limit_rows,
+            validate_limit_row,
+        )
 
-        expected = expected_limit_sides(plan, dynamics.input_q)
+        expected = (expected_resident_limit_rows if resident else expected_limit_sides)(
+            plan, dynamics.input_q
+        )
         _require(
-            len(expected) <= plan.nlimit
-            and len({joint for joint, _, _ in expected}) == len(expected)
+            (
+                resident
+                or (
+                    len(expected) <= plan.nlimit
+                    and len({joint for joint, _, _ in expected}) == len(expected)
+                )
+            )
             and tuple((row.source_id, row.dof, row.side_or_edge) for row in limit_rows) == expected,
             "complete nonoverlapping source limit rows",
         )
     decoded_contacts, decoded_rows, _ = publish_constraints(runtime, replay, 0, native_only=True)
+    if resident:
+        from .mujoco_area_native_geometry import validate_geometry
+
+        validate_geometry(plan, raw["candidate_rows"], dynamics)
     for slot in range(plan.nslot):
-        _source_geometry(plan, raw["candidate_rows"][slot], dynamics, slot=slot)
+        if not resident:
+            _source_geometry(plan, raw["candidate_rows"][slot], dynamics, slot=slot)
         if not raw["candidate_rows"][slot, 0]:
             _require(
                 np.all(raw["candidate_jacobian"][slot] == 0),

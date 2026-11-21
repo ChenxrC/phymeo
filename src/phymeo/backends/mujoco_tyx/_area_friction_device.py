@@ -7,10 +7,9 @@ lives here. The caller still owns the original inactive physical/entry bank.
 from ._area_friction_layout import FRICTION_FIELDS
 
 
-def solve_contact(device, old):
+def pack_contact(device, old):
+    """Pack the same frozen entry for either admitted live friction solver."""
     from .._tyx_area_friction_entry import pack_entry
-    from .._tyx_area_friction_kernels import solve_batch
-    from ._area_friction_live_kernels import apply_load
 
     packet = device.area_packet
     sample_capacity = device.friction_samples.shape[1]
@@ -54,6 +53,18 @@ def solve_contact(device, old):
         mode=device.mode,
     )
     device.counts["completed_kernels"] += 1
+
+
+def solve_contact(device, old):
+    from .._tyx_area_friction_kernels import solve_batch
+    from ._area_friction_live_kernels import apply_load
+
+    pack_contact(device, old)
+    sample_capacity = device.friction_samples.shape[1]
+
+    def out(name):
+        return getattr(device, "friction_" + name)
+
     coupled_limit = device.plan.coupled_damped_contacts and device.plan.nlimit > 0
     coupled_supports = device.plan.two_native_supports
     native_mode = device.plan.damped_contact_dofs
@@ -128,18 +139,41 @@ def stage_entry(device, new):
 
 
 def download(device, result):
+    resident_native = bool(getattr(device.plan, "resident_native_contacts", False))
     with device.tx.use_runtime(device.runtime):
         for name in FRICTION_FIELDS + ("pack_status",):
             result["friction_" + name] = device._get(getattr(device, "friction_" + name))
-        if device.plan.nfriction or device.plan.nlimit or device.plan.damped_contact_dofs:
+        if (
+            device.plan.nfriction
+            or device.plan.nlimit
+            or device.plan.damped_contact_dofs
+            or resident_native
+        ):
             for name in ("efc_ids", "efc_data", "efc_jacobian", "constraint_counts"):
                 result[name] = device._get(getattr(device, name))
-        if device.plan.damped_contact_dofs:
+        if device.plan.damped_contact_dofs or resident_native:
             for name in ("normal_rows", "normal_jacobian", "contact_map", "contact_wrench"):
                 result[name] = device._get(getattr(device, name))
             result["contact_J"] = device._get(device.contact_jacobian)
-        if device.plan.two_native_supports:
+        if device.plan.two_native_supports or resident_native:
             result["applied_with_contact"] = device._get(device.total_applied)
+        if resident_native:
+            for name in (
+                "area_native_applied",
+                "area_native_meta",
+                "area_native_trace_meta",
+                "area_native_trace",
+                "solver_diagnostics",
+                "working",
+            ):
+                result["working_set" if name == "working" else name] = device._get(
+                    getattr(device, name)
+                )
+            result["efc_J"] = result["efc_jacobian"]
+            result["counts"] = result["constraint_counts"]
+            # The common native tail recomputes physical M acceleration from
+            # the final published loads; the last trial's a is not a receipt.
+            result["qacc"] = device._get(device.acceleration)
         result["constraint"] = device._get(device.mixed_constraint)
         result["smooth_acceleration"] = device._get(device.smooth_acc)
     return result

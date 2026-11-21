@@ -83,10 +83,19 @@ def publish(runtime, result, index, *, native_only=False):
         "normal_jacobian": (max(1, plan.nslot), width),
     }
     if native_only:
-        if not (getattr(plan, "damped_contact_dofs", 0) and plan.area_friction_laws):
-            raise RuntimeError("native-only publication requires damped mixed area friction")
-        # The common friction solve owns convergence; the legacy QP receipt is
-        # neither produced nor fabricated for this route.
+        if not (
+            (
+                getattr(plan, "damped_contact_dofs", 0)
+                or getattr(plan, "resident_native_contacts", False)
+            )
+            and plan.area_friction_laws
+        ):
+            raise RuntimeError(
+                "native-only publication requires an explicit mixed area-friction route"
+            )
+        # The enclosing area solve owns constitutive closure. Legacy coupled
+        # routes have no QP diagnostics; resident working-set traces retain the
+        # real QP diagnostics separately in their versioned solver record.
         del expected["working_set"], expected["solver_diagnostics"]
     fields = {name: result[name][index] for name in expected}
     for name, shape in expected.items():
@@ -211,7 +220,9 @@ def publish(runtime, result, index, *, native_only=False):
             or (not row[12] and row[8] != 0)
         ):
             raise RuntimeError("invalid mixed force bounds or regularization")
-        if getattr(plan, "damped_contact_dofs", 0):
+        if getattr(plan, "damped_contact_dofs", 0) or getattr(
+            plan, "resident_native_contacts", False
+        ):
             # Check both row laws against the acceleration actually published by
             # the integration tail, in their original (unscaled) units.
             acceleration = result["integration_acc" if ids[i, 0] == 7 else "qacc"][index, : plan.nv]

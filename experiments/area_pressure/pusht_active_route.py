@@ -3,6 +3,9 @@
 python -m experiments.area_pressure.pusht_active_route --summary ORIGINAL.json
     --release RELEASE.json --checkpoint BOUND.metadata.json --output NEW.json [--cache-root CACHE]
 
+Use --resume-source PARENT.json --resume-audit PARENT-AUDIT.json with its terminal
+--checkpoint to continue the same control variant from that exact saved capsule.
+
 The append-only journal has one line per fully recorded accepted step. A callback
 failure can leave one committed endpoint beyond that prefix; counters and the
 unrecorded tail keep this distinction explicit. No release geometry audit runs.
@@ -124,7 +127,58 @@ def _controller_boundary(driver):
 def _first_binding(entry, snapshot, command, diagnostic):
     phase = diagnostic["active_phase"]
     qref, vref, stage = reference(entry.driver.active[1].nodes, phase["elapsed_s"])
-    direct, _ = entry.pd.command(snapshot.q, snapshot.v, qref, vref)
+    direct, pd = entry.pd.command(snapshot.q, snapshot.v, qref, vref)
+    original_pd_direct = np.asarray(direct, np.float32)
+    if "load_compensation" in diagnostic:
+        import mujoco as mj
+
+        saved = diagnostic["load_compensation"]
+        receipt = snapshot.last_step
+        _require(
+            receipt is not None
+            and receipt.tick == snapshot.tick
+            and receipt.output_time == snapshot.time
+            and saved["source_local_tick"] == snapshot.tick
+            and saved["source_output_time"] == snapshot.time,
+            "first compensation source receipt phase",
+        )
+        pairs = receipt.raw_contact_fields["area_friction"]
+        _require(len(pairs) == 1, "first compensation unique preceding pair")
+        force = np.asarray(pairs[0]["force_on_a"], dtype=np.float64).sum(axis=0)
+        direction = np.asarray(entry.driver.active[1].proposal.direction_world)
+        _require(
+            direction.shape == force.shape == (3,)
+            and np.isfinite(force).all()
+            and direction[2] == 0.0
+            and abs(direction @ direction - 1.0) <= 64 * np.finfo(float).eps
+            and saved["gain"] == 0.5
+            and saved["enabled"] == (stage in ("entry", "push"))
+            and np.array_equal(saved["previous_force_on_tool_world_n"], force),
+            "first compensation force/direction/gate binding",
+        )
+        order = np.argsort(pd.actuator_ids)
+        _require(
+            np.array_equal(np.asarray(pd.actuator_ids)[order], [0, 1]),
+            "first compensation motor identities",
+        )
+        data = mj.MjData(entry.model)
+        data.qpos[:] = snapshot.q
+        mj.mj_kinematics(entry.model, data)
+        mj.mj_comPos(entry.model, data)
+        jac = np.zeros((3, entry.model.nv))
+        mj.mj_jacGeom(entry.model, data, jac, None, entry.model.geom("pusher").id)
+        jac = jac[:, np.asarray(pd.dof_addresses)[order]]
+        resisting = max(0.0, -float(force @ direction))
+        correction = (
+            jac.T @ (0.5 * resisting * direction) if stage in ("entry", "push") else np.zeros(2)
+        )
+        combined = np.clip(np.asarray(pd.unclipped_effort)[order] + correction, -19.9, 19.9)
+        _require(
+            np.allclose(saved["correction_nm"], correction, atol=1e-12, rtol=1e-12)
+            and np.allclose(saved["combined_effort_nm"], combined, atol=1e-12, rtol=1e-12),
+            "first independent compensation torque/clipping",
+        )
+        direct = combined
     expected_direct = np.asarray(direct, np.float32)
     supplied_direct = np.asarray(diagnostic["transport"]["direct_pd_ctrl"], np.float32)
     _require(
@@ -146,6 +200,7 @@ def _first_binding(entry, snapshot, command, diagnostic):
         stage=stage,
         independently_recomputed_target_q=plain(qref),
         independently_recomputed_target_v=plain(vref),
+        independently_recomputed_original_pd_ctrl=plain(original_pd_direct),
         independently_recomputed_direct_ctrl=plain(expected_direct),
         submitted_ctrl=plain(command.ctrl),
         transport=diagnostic["transport"],
@@ -182,6 +237,7 @@ def _save_final_checkpoint(scene, batch, entry, output, report, history):
         q=plain(snapshot.q),
         v=plain(snapshot.v),
         asset_sha256=scene.asset_sha256,
+        control_variant=report.get("control_variant", "position"),
         active_route=report.get("active_route"),
         target=report.get("goal"),
         controller=plain(entry.driver.summary()),
@@ -223,6 +279,8 @@ def run(
     checkpoint_metadata_path,
     cache_root=None,
     control_variant="position",
+    resume_source_path=None,
+    resume_audit_path=None,
 ):
     from phymeo.backends.mujoco_heterogeneous import MuJoCoTyxHeterogeneousBatch, MuJoCoTyxWorldSpec
     from phymeo.backends.mujoco_heterogeneous_area_scene import (
@@ -246,6 +304,10 @@ def run(
         lambda p: Path(p).resolve(), (prior_summary_path, release_report_path, output)
     )
     _require(control_variant in ("position", "load-compensation-half"), "unknown control variant")
+    _require(
+        (resume_source_path is None) == (resume_audit_path is None),
+        "resume source and audit must be supplied together",
+    )
     checkpoint_metadata_path = Path(checkpoint_metadata_path).resolve()
     journal_path = output.with_suffix(".steps.jsonl")
     journal_hash = hashlib.sha256()
@@ -267,9 +329,23 @@ def run(
     with output.open("x+", encoding="utf-8") as stream, journal_path.open("xb") as journal:
         _write_progress(stream, report)
         try:
-            entry = prepare_active_entry(
-                prior_summary_path, release_report_path, output.with_suffix(".routes")
-            )
+            resume = None
+            if resume_source_path is None:
+                entry = prepare_active_entry(
+                    prior_summary_path, release_report_path, output.with_suffix(".routes")
+                )
+            else:
+                from .pusht_active_resume import prepare_resume_entry
+
+                entry, resume = prepare_resume_entry(
+                    prior_summary_path,
+                    release_report_path,
+                    resume_source_path,
+                    resume_audit_path,
+                    checkpoint_metadata_path,
+                    output.with_suffix(".routes"),
+                    control_variant=control_variant,
+                )
             world, model = 6, entry.model
             driver = entry.driver
             report.update(
@@ -304,11 +380,15 @@ def run(
             ) as batch:
                 scene = MuJoCoTyxHeterogeneousAreaPressureScene(batch, {spec.key: (asset,)})
                 phase = "restore_checkpoint"
-                report["checkpoint_restore"] = plain(
-                    restore_bound_entry(
+                if resume is None:
+                    proof = restore_bound_entry(
                         scene, batch, entry, release_report_path, checkpoint_metadata_path
                     )
-                )
+                else:
+                    from .pusht_active_resume import restore_resume_entry
+
+                    proof = restore_resume_entry(scene, batch, entry, resume)
+                report["checkpoint_restore"] = plain(proof)
                 try:
                     prior = batch.integration_snapshot()[world]
                     _require(
@@ -360,6 +440,12 @@ def run(
                             report["first_command_binding"] = _first_binding(
                                 entry, prior, control, controller
                             )
+                            if resume is not None:
+                                from .pusht_active_resume import bind_retry_command
+
+                                report["first_command_binding"][
+                                    "matches_parent_rejected_command"
+                                ] = bind_retry_command(resume, current_tick, control)
                             _write_progress(stream, report)
                         command = dict(
                             tick=current_tick,
@@ -524,6 +610,8 @@ def main():
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--checkpoint", type=Path, required=True)
     parser.add_argument("--cache-root", type=Path)
+    parser.add_argument("--resume-source", type=Path)
+    parser.add_argument("--resume-audit", type=Path)
     parser.add_argument(
         "--control-variant", choices=("position", "load-compensation-half"), default="position"
     )
@@ -535,6 +623,8 @@ def main():
         checkpoint_metadata_path=args.checkpoint,
         cache_root=args.cache_root,
         control_variant=args.control_variant,
+        resume_source_path=args.resume_source,
+        resume_audit_path=args.resume_audit,
     )
     print(
         json.dumps(

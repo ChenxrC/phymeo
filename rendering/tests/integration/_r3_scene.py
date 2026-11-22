@@ -105,8 +105,12 @@ def build_calibration_fixture(directory):
         Material("green", (0.01, 0.8, 0.01), 0., 0.9),
         Material("blue", (0.01, 0.01, 0.8), 0., 0.9),
     )
-    scene = VisualScene("r3-calibration-v1", tuple(meshes), materials, tuple(instances),
-                        (DirectionalLight((0., 0., -1.), (1., 1., 1.)),))
+    # A visible marker must also be illuminated. The green marker's +Z light
+    # ray hits the blocker; this (+0.8,0,+0.6) ray instead reaches z=-0.4 at
+    # x=0.282666..., outside its x=0.1756 edge. One light also respects the
+    # official SAPIEN default shader's single shadow-directional-light limit.
+    scene = VisualScene("r3-calibration-v3", tuple(meshes), materials, tuple(instances),
+                        (DirectionalLight((-0.8, 0., -0.6), (1., 1., 1.)),))
     cases = []
     for index, name in enumerate(("front", "tilted", "occluded", "flipped", "reset")):
         nodes = []

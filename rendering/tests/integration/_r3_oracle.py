@@ -233,9 +233,10 @@ def exercise_calibration(test, factory, label):
               "status": "running"}
     (output/"fixture.json").write_text(json.dumps({"scene": asdict(scene), "cases": [asdict(c) for c in cases],
         "analytic_surfaces": [asdict(s) for s in surfaces]}, indent=2), encoding="utf-8")
-    session = factory().open_scene(scene)
+    session = None
     retained, first = [], {}
     try:
+        session = factory().open_scene(scene)
         for case in cases:
             for camera in case.cameras:
                 request = CaptureRequest(camera, RenderPath.RASTER, tuple(Channel))
@@ -276,8 +277,9 @@ def exercise_calibration(test, factory, label):
         raise
     finally:
         try:
-            session.close()
-            report["closed_diagnostics"] = session.diagnostics()
+            if session is not None:
+                session.close()
+                report["closed_diagnostics"] = session.diagnostics()
         finally:
             (output/"summary.json").write_text(json.dumps(report, indent=2, allow_nan=False), encoding="utf-8")
     return report

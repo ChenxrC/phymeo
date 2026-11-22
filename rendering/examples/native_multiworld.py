@@ -120,33 +120,49 @@ def timing_report(seconds, *, worlds, phase_wall_seconds=None):
 def transfer_report(diagnostics):
     data=diagnostics['device']; captures=data.get('resident_captures',data.get('captures',0))
     counters=('resident_geometry_upload_bytes','resident_transform_upload_bytes','resident_parameter_upload_bytes')
-    telemetry=data.get('resident_telemetry')
+    telemetry=data.get('resident_telemetry'); profile=data.get('resident_profile')
+    known=sum(data[key] for key in counters) if all(key in data for key in counters) else None
+    tlas=profile['tlas_upload_bytes'] if profile is not None else None
+    # These GPU buffer layouts are the resident ABI1 shader layouts. The native
+    # byte counter remains authoritative; report any decomposition disagreement.
+    sizes={'resident_vertex_count':('vertex_buffer_bytes',32),
+           'resident_index_count':('index_buffer_bytes',4),
+           'resident_mesh_count':('mesh_metadata_bytes',32),
+           'resident_instance_count':('instance_material_bytes',48),
+           'resident_bvh_nodes':('mesh_blas_bytes',48)}
+    static={'counter_bytes':data.get('resident_geometry_upload_bytes')}
+    if all(key in data for key in sizes) and 'resident_upload_calls' in data:
+        for key,(name,size) in sizes.items():
+            # Even an empty scene uploads one zero sentinel for each buffer.
+            static[name]=max(1,data[key])*size*data['resident_upload_calls']
+        static['sum_matches_counter']=sum(static[name] for name,_ in sizes.values())==static['counter_bytes']
+    uniforms=data.get('resident_parameter_upload_bytes')
+    camera_bytes=captures*272 if uniforms is not None else None
+    setup_bytes=uniforms-camera_bytes if uniforms is not None else None
+    components=dict(static_geometry=static,
+        gpu_instance_forward_and_inverse_bytes=data.get('resident_transform_upload_bytes'),
+        gpu_instance_transform_bytes_per_instance_per_capture=128,
+        host_transform_input_bytes_not_added=data.get('resident_host_transform_input_bytes'),
+        host_transform_explanation='64 B input matrix per instance is expanded to the counted 128 B forward+inverse GPU record; not an additional transfer',
+        uniforms=dict(counter_bytes=uniforms,camera_ubo_bytes=camera_bytes,
+            studio_setup_bytes_in_counter=setup_bytes,
+            studio_setup_explanation='new native code uploads one 144 B studio UBO before first capture, including all-zero default; already included, never add twice'),
+        tlas_upload_bytes=tlas,tlas_source='optional native profile counter' if profile else 'unavailable; not assumed zero')
     return dict(captures=captures,includes_warmup=True,
-        session_allocation_telemetry=telemetry,
+        session_allocation_telemetry=telemetry,capture_profile=profile,
         fence_wait_wall_ns=telemetry['fence_wait_wall_ns'] if telemetry else None,
         fence_wait_calls=telemetry['fence_wait_calls'] if telemetry else None,
         fence_wait_scope='native host fence wait wall time, upload+capture, not GPU kernel time',
-        host_to_device_bytes=sum(data[key] for key in counters) if all(key in data for key in counters) else None,
-        host_to_device_source='resident native upload counters' if all(key in data for key in counters) else 'unavailable in legacy ABI',
+        host_to_device_bytes=known+tlas if known is not None and tlas is not None else None,
+        known_upload_subtotal_bytes=known,upload_components=components,
+        host_to_device_source='native static copies plus mapped transform/UBO/TLAS writes; input bytes, not hardware PCIe traffic; unavailable if optional TLAS counter absent',
         device_to_host_bytes=telemetry['readback_bytes'] if telemetry else captures*320*240*13,
         device_to_host_source=('native completed readback memcpy bytes' if telemetry else
-            'derived from successful captures and packed RGBA/depth/ID/VALID ABI (13 B/pixel); legacy counter unavailable'),
+            'derived from successful four-channel R4 captures and packed RGBA/depth/ID/VALID ABI (13 B/pixel); native counter unavailable'),
         consumer_image_bytes=captures*320*240*12,
         synchronous_capture_completions=captures,
-        wait_source='native synchronous fence completion per capture; upload/target allocation waits not separately timed',
+        wait_source='native synchronous fence completion per capture; separate profile excludes initial static upload',
         native_counters={k:v for k,v in data.items() if k.startswith('resident_')})
-
-
-def _capture_pair(source,world,session,batch,batches):
-    ordinal,epoch=source_slot(batch,batches,source.record_count,reset_at=batches//2 if world==0 else None)
-    frame=source.frame(world,ordinal,epoch)
-    result=[]
-    for camera in source.cameras(world,frame):
-        request=CaptureRequest(camera,RenderPath.RASTER,CHANNELS)
-        if not session.supports(request): raise ValueError(f'unsupported R4 view {world}/{camera.id}')
-        result.append(session.capture(frame,request))
-    return ordinal,epoch,result
-
 
 def _luid(diagnostics):
     return (diagnostics['device'].get('resident_telemetry') or {}).get('device_luid_hex')
@@ -316,6 +332,8 @@ def run(source_directory,output,backend,*,batches=300,warmup=3,scales=(1,2,8),me
         for scale,value in report['scales'].items():
             if value['process_memory']['peak_device_memory_bytes'] is None:
                 report['measurement_gaps'].append(f'{scale} worlds: no adapter-bound PID memory peak')
+            if any(t['host_to_device_bytes'] is None for t in value['transfers']):
+                report['measurement_gaps'].append(f'{scale} worlds: complete native input-byte counters unavailable')
             if any(t['fence_wait_wall_ns'] is None for t in value['transfers']):
                 report['measurement_gaps'].append(f'{scale} worlds: optional native fence telemetry unavailable')
         report['encoding_seconds']=encoding_seconds

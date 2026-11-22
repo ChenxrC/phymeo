@@ -2,6 +2,8 @@
 
 [打开引擎架构图](architecture.html) · [画质目标与 R0–R4 路线图](../docs/rendering/roadmap.html)
 
+[开发计划与 agent 分工](plans/README.md)列出七个模块的任务单、合并次序及整机验收方法。接手单个模块从分工表进入，负责集成或签收可直接阅读[上下游合并计划](plans/08-integration.md)和[最终验收规程](plans/09-acceptance.md)。
+
 这个目录是一个独立 Python 项目，发行名为 `phymeo-rendering`，导入名为 `phymeo_rendering`。当前交付包含场景和相机的数据类型、后端协议、原生管线的阶段名称。原生设备层、着色器与 SAPIEN 适配器均待实现。基础包仅依赖 Python 3.11+ 标准库。
 
 ## 七个板块

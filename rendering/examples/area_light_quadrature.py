@@ -227,7 +227,7 @@ def analytic(args, output, report):
             cases += [('clear',-3.,.5),('blocked',1.,.5),('beyond-emitter',0.,1.5)]
             clear_rgb = None
             for index,(label, phase, blocker_z) in enumerate(cases):
-                frame = SceneFrame(FrameKey(scene.key,'authored',0,index,index,'experiment'),float(index),
+                frame = SceneFrame(FrameKey(scene.key,'authored',0,index,index,'authored'),float(index),
                     (NodePose('receiver',Pose()),NodePose('blocker',Pose((phase,0,blocker_z)))))
                 camera = Camera('profile',frame.key,Pose((0,0,.25)),641,129,128.,128.,320.5,64.5,.005,5.)
                 name = f'analytic-{mode}-{grid}-{label}' + ('-baseline' if is_baseline else '')
@@ -278,7 +278,7 @@ def analytic(args, output, report):
         owner = _backend(args,mode,8).open_scene(scene)
         fixture = _panel_fixture(owner,backface=True)
         try:
-            frame = SceneFrame(FrameKey(scene.key,'backface',0,0,0,'experiment'),0.,
+            frame = SceneFrame(FrameKey(scene.key,'backface',0,0,0,'authored'),0.,
                 (NodePose('receiver',Pose()),NodePose('blocker',Pose((-3,0,.5)))))
             camera = Camera('profile',frame.key,Pose((0,0,.25)),641,129,128.,128.,320.5,64.5,.005,5.)
             planes,evidence = _capture(owner,frame,camera,output,f'backface-{mode}')

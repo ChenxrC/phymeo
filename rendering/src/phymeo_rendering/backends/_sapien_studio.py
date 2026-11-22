@@ -10,6 +10,7 @@ from numbers import Real
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+from ..environment import RadianceEnvironment, write_sapien_faces
 from . import UnsupportedRequestError
 
 
@@ -34,17 +35,20 @@ def _finite(value, name, *, minimum=None, maximum=1e6):
 class SapienStudio:
     """World-Z-up, metre-scale neutral studio for the PT reference path.
 
-    Two real rectangular emitters and a uniform linear HDR environment are
+    Two real rectangular emitters and a linear HDR environment are
     added to the declared scene lights. ``panel_size_scale`` spreads the same
     power over a larger emitter: radiance is divided by its square. This is a
     lighting preset, not a material or camera change. Strengths are relative
     renderer radiance units, not a calibrated photometric-lux claim.
+    An explicit environment_map replaces only the uniform environment; its
+    declared strength and yaw are applied once by the shared map converter.
     """
     center_m: tuple[float, float, float] = (0.0, 0.0, 0.0)
     scale_m: float = 1.0
     panel_size_scale: float = 1.0
     panel_strength: float = 1.0
     environment_radiance: float = 0.125
+    environment_map: RadianceEnvironment | None = None
 
     def __post_init__(self):
         if not isinstance(self.center_m, tuple):
@@ -58,6 +62,8 @@ class SapienStudio:
         _finite(self.panel_strength, "panel_strength", minimum=0.0, maximum=100.0)
         # The official miss shader clamps environment samples to [0,100].
         _finite(self.environment_radiance, "environment_radiance", minimum=0.0, maximum=100.0)
+        if self.environment_map is not None and not isinstance(self.environment_map, RadianceEnvironment):
+            raise TypeError("environment_map must be RadianceEnvironment or None")
         if 0 < self.environment_radiance < 2.0**-128:
             raise ValueError("environment_radiance is below the RGBE nonzero range")
 
@@ -81,7 +87,7 @@ def studio_recipe(studio):
             "public_component": "RenderParallelogramLightComponent",
             "visible_geometry": False,
         })
-    return {
+    recipe = {
         "preset": "neutral-area-studio-v1",
         "center_m": list(studio.center_m), "scale_m": float(studio.scale_m),
         "panel_size_scale": float(studio.panel_size_scale),
@@ -94,6 +100,18 @@ def studio_recipe(studio):
         "reflection_method": "official diffuse/GGX direct area-light estimator plus traced HDR environment",
         "support": "path_trace RGB only; no raster studio approximation",
     }
+    if studio.environment_map is not None:
+        environment = studio.environment_map
+        recipe.update(
+            environment_radiance=None,
+            environment_source="directional-radiance-map",
+            uniform_environment_radiance_ignored=float(studio.environment_radiance),
+            environment_map={"uri": environment.uri, "sha256": environment.sha256,
+                             "strength": float(environment.strength),
+                             "yaw_degrees": float(environment.yaw_degrees),
+                             "face_size": environment.face_size},
+        )
+    return recipe
 
 
 def uniform_hdr(radiance):
@@ -156,25 +174,35 @@ class StudioResources:
         try:
             self.directory = TemporaryDirectory(prefix="phymeo-sapien-studio-")
             self.directory_path = Path(self.directory.name)
-            source = uniform_hdr(studio.environment_radiance)
-            hdr_path = self.directory_path / "neutral-linear.hdr"
-            hdr_path.write_bytes(source)
-            # Public API; six identical linear HDR faces, with SAPIEN's native
-            # cubemap preprocessing. The temporary source stays alive until
-            # the owning scene has been cleared and its RenderSystem released.
-            self.cubemap = sapien.render.RenderCubemap(*([str(hdr_path)]*6))
+            if studio.environment_map is None:
+                source = uniform_hdr(studio.environment_radiance)
+                hdr_path = self.directory_path / "neutral-linear.hdr"
+                hdr_path.write_bytes(source)
+                faces = (hdr_path,) * 6
+                environment_info = {
+                    "encoding": "linear-radiance-rgbe", "face_count": 6,
+                    "face_resolution": [64, 64], "radiance_rgb": [float(studio.environment_radiance)]*3,
+                    "source_sha256": sha256(source).hexdigest(),
+                    "source_file_bytes": len(source), "source_kind": "procedural uniform neutral HDR",
+                    "encoded_radiance_rgb": [source[-4] * 2.0**(source[-1]-136)]*3,
+                    "source_quantization": "RGBE shared 8-bit mantissa; default 0.125 is exact",
+                    "orientation": "uniform all directions; world-Z-up panel recipe",
+                }
+            else:
+                # This shared conversion owns the world-to-SAPIEN orientation,
+                # linear gain and yaw. Do not transform or multiply again.
+                faces, converted = write_sapien_faces(studio.environment_map, self.directory_path)
+                environment_info = dict(converted)
+                environment_info["encoding"] = "linear-radiance-rgbe"
+            # Public six-file API. Both paths keep sources alive until the
+            # owning scene has been cleared and its RenderSystem released.
+            self.cubemap = sapien.render.RenderCubemap(*(str(path) for path in faces))
             scene.render_system.cubemap = self.cubemap
-            self.diagnostics["environment"] = {
-                "encoding": "linear-radiance-rgbe", "face_count": 6,
-                "face_resolution": [64, 64], "radiance_rgb": [float(studio.environment_radiance)]*3,
-                "source_sha256": sha256(source).hexdigest(),
-                "source_file_bytes": len(source), "source_kind": "procedural uniform neutral HDR",
-                "encoded_radiance_rgb": [source[-4] * 2.0**(source[-1]-136)]*3,
-                "source_quantization": "RGBE shared 8-bit mantissa; default 0.125 is exact",
-                "orientation": "uniform all directions; world-Z-up panel recipe",
-                "loader": "public RenderCubemap(px,nx,py,ny,pz,nz)",
-                "source_lifetime": "owned temporary file until scene close",
-            }
+            environment_info.update(
+                loader="public RenderCubemap(px,nx,py,ny,pz,nz)",
+                source_lifetime="owned temporary file until scene close",
+            )
+            self.diagnostics["environment"] = environment_info
             if studio.panel_strength > 0:
                 for panel in self.diagnostics["panels"]:
                     light = sapien.render.RenderParallelogramLightComponent()

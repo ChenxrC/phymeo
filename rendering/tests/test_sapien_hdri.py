@@ -5,7 +5,6 @@ import importlib.util
 import math
 import os
 from pathlib import Path
-import tempfile
 import unittest
 
 from phymeo_rendering.backends import UnsupportedRequestError
@@ -94,6 +93,12 @@ class SapienHDRIContractTests(unittest.TestCase):
         probe = probe_module()
         for direction in ((1., 0., 0.), (-1., 0., 0.), (0., 1., 0.), (0., -1., 0.), (0., 0., 1.), (0., 0., -1.)):
             camera, basis = probe.view_camera(direction)
+            x, y, z, w = camera.world_pose.orientation_xyzw
+            # Independently rotate public local -Z through the actual declared
+            # quaternion, not just the separate oracle basis.
+            declared_forward = (-2*(x*z+w*y), -2*(y*z-w*x), -(1-2*(x*x+y*y)))
+            for actual, expected in zip(declared_forward, direction, strict=True):
+                self.assertAlmostEqual(actual, expected)
             # The requested principal point is between pixels; passing the
             # continuous u/v below gives its exact pixel-centre ray.
             center = probe.world_ray(camera, basis, camera.cx_px - .5, camera.cy_px - .5)

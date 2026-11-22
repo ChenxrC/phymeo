@@ -31,6 +31,7 @@ struct PrInfo {
     char device_name[256];
     uint64_t validation_errors, validation_warnings, captures;
 };
+struct PrCounts { uint64_t live_contexts, live_frames, live_resources; };
 static_assert(sizeof(PrVertex) == 64, "vertex ABI");
 static_assert(sizeof(PrParams) == 272, "uniform ABI");
 PR_API uint32_t pr_abi_version();
@@ -41,4 +42,6 @@ PR_API int pr_info(void* context, PrInfo* output);
 PR_API int pr_render(void* context, const PrVertex* vertices, uint32_t vertex_count,
     const PrParams* params, uint32_t width, uint32_t height,
     uint8_t* output, size_t output_bytes);
-PR_API int pr_destroy(void* context);
+PR_API int pr_counts(PrCounts* output);
+// ABI 2: diagnostics are copied after actual teardown, including failure paths.
+PR_API int pr_destroy(void* context, PrInfo* final_info);

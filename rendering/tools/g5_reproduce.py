@@ -167,6 +167,9 @@ def reproduce(args):
         spec = importlib.util.spec_from_file_location("g5_feature_smoke", Path(__file__).with_name("g5_feature_smoke.py"))
         features = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(features)
+    requested = [] if args.base_only else (args.run_path or ["native-raster", "sapien-raster", "sapien-pt"])
+    feature_plan = (features.plan_features(requested, skip_features=getattr(args, "skip_feature", ()) or ())
+                    if features else None)
     env = features.feature_environment(work, os.environ) if features else dict(os.environ)
     for key in ("PYTHONPATH", "PYTHONHOME"):
         env.pop(key, None)
@@ -213,7 +216,8 @@ def reproduce(args):
         provenance["coordinator.py"] = sha256((work / "coordinator.py").read_bytes())
         if features:
             feature_bundle = work/"feature-fixture"
-            report["feature_fixture"] = features.copy_feature_bundle(rendering, feature_bundle)
+            report["feature_fixture"] = features.copy_feature_bundle(rendering, feature_bundle,
+                enabled=[kind for kind, row in feature_plan.items() if row["status"] == "required"])
             feature_launcher = work/"feature_launcher.py"
             shutil.copyfile(Path(__file__).with_name("g5_feature_smoke.py"), feature_launcher)
             provenance["feature_launcher.py"] = sha256(feature_launcher.read_bytes())
@@ -230,18 +234,12 @@ def reproduce(args):
         run("base-probe", [*base, "--mode", "base"])
         report["base"] = json.loads((work / "captures/base.json").read_text())
         package = Path(report["base"]["package_directory"])
-        requested = [] if args.base_only else (args.run_path or ["native-raster", "sapien-raster", "sapien-pt"])
+
         report["requested_paths"] = requested
         if features:
-            expected = ["host"]
-            if "native-raster" in requested:
-                expected += ["uv-native", "ibl-native"]
-            for path in requested:
-                if path == "sapien-raster":
-                    expected.append("uv-sapien-raster")
-                elif path == "sapien-pt":
-                    expected += ["uv-sapien-pt", "ibl-sapien"]
-            report["features"] = {kind: {"status": "not_run", "reason": "prerequisite not completed"} for kind in expected}
+            report["feature_plan"] = feature_plan
+            report["features"] = {kind: ({"status": "not_run", "reason": "prerequisite not completed"}
+                if row["status"] == "required" else dict(row)) for kind, row in feature_plan.items()}
             if not args.wheelhouse:
                 raise ValueError("feature acceptance requires an explicit offline --wheelhouse")
             wheelhouse = Path(args.wheelhouse).resolve()
@@ -251,6 +249,8 @@ def reproduce(args):
                 "--only-binary=:all:", "--find-links", wheelhouse, str(pinned_wheel)+"[ibl,textures]"])
 
             def run_feature(kind, library=None):
+                if feature_plan[kind]["status"] != "required":
+                    return
                 target = work/"captures"/"features"/kind
                 try:
                     command = features.feature_command(
@@ -281,6 +281,8 @@ def reproduce(args):
                 if features:
                     run_feature("uv-native", libraries[0])
                     run_feature("ibl-native", libraries[0])
+                    run_feature("roughness-native", libraries[0])
+                    run_feature("ray-query-native", libraries[0])
                 report["native_build_artifacts"] = {p.name: sha256(p.read_bytes()) for p in sorted(build.iterdir())
                                                      if p.is_file() and (p.suffix in {".dll", ".so", ".dylib", ".spv"} or p.name == "CMakeCache.txt")}
             except Exception as exc:
@@ -302,16 +304,20 @@ def reproduce(args):
                         report["paths"][name] = json.loads((work / "captures" / (name + ".json")).read_text())
                         if features:
                             run_feature("uv-"+name)
+                            run_feature("roughness-"+name)
                             if name == "sapien-pt":
                                 run_feature("ibl-sapien")
                     except Exception as exc:
                         report["paths"][name] = {"status": "failed", "error": str(exc)}
+                if features:
+                    run_feature("neutral-sapien")
             except Exception as exc:
                 for name in reference:
                     report["paths"][name] = {"status": "failed", "error": str(exc)}
         run("installed-freeze", [python, "-I", "-m", "pip", "freeze", "--all"])
         checked = list(report["paths"].values()) + list(report.get("features", {}).values())
-        report["status"] = "passed" if all(row["status"] == "passed" for row in checked) else "failed"
+        report["status"] = ("failed" if any(row["status"] not in ("passed", "not_verified") for row in checked)
+                            else "partial" if any(row["status"] == "not_verified" for row in checked) else "passed")
     except Exception as exc:
         report.update(status="failed", error=f"{type(exc).__name__}: {exc}")
     finally:
@@ -326,7 +332,9 @@ def main():
     parser.add_argument("--work-dir", required=True, help="NEW directory outside every candidate checkout")
     parser.add_argument("--wheelhouse", help="local wheels including all SAPIEN transitives; no index fallback")
     parser.add_argument("--base-only", action="store_true")
-    parser.add_argument("--feature-smoke", action="store_true", help="run copied UV/HDRI HOST and real feature protocols in this same installed environment")
+    parser.add_argument("--feature-smoke", action="store_true", help="run copied UV/HDRI/roughness/Neutral/hardware-shadow protocols in this same installed environment")
+    parser.add_argument("--skip-feature", action="append", default=[], metavar="KIND:REASON",
+                        help="explicitly leave a feature unverified; requires --feature-smoke; overall result is partial")
     parser.add_argument("--run-path", action="append", choices=("native-raster", "sapien-raster", "sapien-pt"))
     parser.add_argument("--native-device-index", type=int, default=0)
     parser.add_argument("--sapien-device", default="cuda:0")
@@ -336,9 +344,11 @@ def main():
     args = parser.parse_args()
     if args.base_only and (args.run_path or args.feature_smoke):
         parser.error("--base-only cannot request device paths or feature smoke")
+    if args.skip_feature and not args.feature_smoke:
+        parser.error("--skip-feature requires --feature-smoke")
     report = reproduce(args)
     print(json.dumps({"status": report["status"], "report": str(Path(args.work_dir).resolve() / "report.json")}))
-    return 0 if report["status"] == "passed" else 1
+    return 0 if report["status"] in ("passed", "partial") else 1
 
 
 if __name__ == "__main__":

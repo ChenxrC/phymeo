@@ -1,7 +1,21 @@
-"""Home for the native graphics backend and its private device layer (RHI).
+"""Explicit entry point for the future native Vulkan implementation.
 
-The backend will translate a native pass plan into resource bindings and commands.
-The device layer will own GPU buffers, textures, pipelines, barriers, queue
-submission, completion fences and readback. Vulkan is the proposed first device.
-Concrete handles and synchronization APIs are deferred until the first device port.
+G2 provides checked session contracts, not a graphics device. Native raster and
+native path tracing require independent device implementations and acceptance.
+Importing this module does not load Vulkan, choose a GPU or create resources.
 """
+
+from ..scene import VisualScene
+from . import BackendUnavailableError, RenderSession
+
+
+class NativeBackend:
+    """No native rendering paths are currently implemented."""
+
+    def open_scene(self, scene: VisualScene) -> RenderSession:
+        if not isinstance(scene, VisualScene):
+            raise TypeError("scene must be VisualScene")
+        raise BackendUnavailableError(
+            "native raster and path_trace are not implemented; "
+            "no Vulkan device was initialized and no fallback was selected"
+        )

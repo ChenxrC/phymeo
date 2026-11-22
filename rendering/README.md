@@ -8,6 +8,8 @@
 
 [Panda 抓取回放与同机位布光对照](results/r1/README.md)展示 R1 的两个归档姿态、固定及腕部相机，以及自研 Vulkan 的局部采集。
 
+[观看 Panda 抓取视频](results/panda-movies/README.md)，包括摄影棚全景、同步布光对比、木纹工作台全景与近景、同一方块的红漆与铜色金属对比。
+
 ## 七个板块
 
 G1 输入合同已接通。仓库根目录下设置 `$env:PYTHONPATH=(Resolve-Path rendering/src).Path`，运行 `python -m unittest discover -s rendering/tests -v` 可验证资产声明、场景引用、位姿组合和相机曝光。两帧使用同一张[自制标定桌](tests/fixtures/g1/README.md)，在无图形设备环境下即可检查腕部转动前后的解析投影。同一份夹具也用于 R0 真机采集。

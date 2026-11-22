@@ -1,0 +1,26 @@
+{
+  "panda-studio.mp4": {
+    "frames": 108,
+    "view_comparisons": 108,
+    "mean_abs_rgb8": 1.1559549409284622,
+    "worst_frame_view_mae_rgb8": 1.2247879593460649
+  },
+  "panda-lighting.mp4": {
+    "frames": 108,
+    "view_comparisons": 216,
+    "mean_abs_rgb8": 0.8463459302695527,
+    "worst_frame_view_mae_rgb8": 1.2277749144000771
+  },
+  "panda-materials.mp4": {
+    "frames": 216,
+    "view_comparisons": 216,
+    "mean_abs_rgb8": 1.4994918272055935,
+    "worst_frame_view_mae_rgb8": 1.680798942660108
+  },
+  "panda-surface.mp4": {
+    "frames": 108,
+    "view_comparisons": 216,
+    "mean_abs_rgb8": 1.5514967351075337,
+    "worst_frame_view_mae_rgb8": 1.6938582055362654
+  }
+}

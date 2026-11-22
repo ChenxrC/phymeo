@@ -62,7 +62,8 @@ class G5PackagingTests(unittest.TestCase):
         cls.files[DIST + "METADATA"] = (
             b"Metadata-Version: 2.4\nName: phymeo-rendering\nVersion: 0.1.0a0\n"
             b"Provides-Extra: sapien\nRequires-Dist: sapien==3.0.3; extra == 'sapien'\n"
-            b"Requires-Dist: numpy==1.26.4; extra == 'sapien'\n\n"
+            b"Requires-Dist: numpy==1.26.4; extra == 'sapien'\n"
+            b"Provides-Extra: textures\nRequires-Dist: Pillow==12.2.0; extra == 'textures'\n\n"
         )
 
     def inspect(self, files=None):
@@ -71,6 +72,19 @@ class G5PackagingTests(unittest.TestCase):
             path.write_bytes(wheel_bytes(self.files if files is None else files))
             return driver().inspect_wheel(path, ROOT)
 
+    def test_texture_dependency_is_optional_pinned_and_separate_from_sapien(self):
+        config = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+        self.assertFalse(config["project"].get("dependencies", []))
+        self.assertEqual(config["project"]["optional-dependencies"]["textures"], ["Pillow==12.2.0"])
+        self.assertEqual(config["project"]["optional-dependencies"]["sapien"], ["sapien==3.0.3", "numpy==1.26.4"])
+        report = self.inspect()
+        self.assertEqual(report["base_dependencies"], [])
+        self.assertEqual(len(report["optional_dependencies"]), 3)
+        files = dict(self.files)
+        files[DIST + "METADATA"] = files[DIST + "METADATA"].replace(
+            b"Pillow==12.2.0; extra == 'textures'", b"Pillow==12.2.0; extra == 'sapien'")
+        with self.assertRaisesRegex(ValueError, "dependenc"):
+            self.inspect(files)
     def test_package_maps_existing_assets_without_repository_copy(self):
         config = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
         settings = config["tool"]["setuptools"]

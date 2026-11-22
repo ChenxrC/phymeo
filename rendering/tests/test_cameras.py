@@ -143,6 +143,14 @@ class CameraValidationTests(unittest.TestCase):
                     with self.assertRaisesRegex(ValueError, field):
                         _camera(**{field: value})
 
+    def test_camera_rejects_unrepresentable_calibration(self):
+        values = (10**1000, Fraction(10**1000, 3))
+        for field in ("fx_px", "fy_px", "cx_px", "cy_px", "near_m", "far_m"):
+            for value in values:
+                with self.subTest(field=field, numeric_type=type(value).__name__):
+                    with self.assertRaisesRegex(ValueError, field):
+                        _camera(**{field: value})
+
     def test_camera_rejects_nonpositive_focal_lengths(self):
         for field in ("fx_px", "fy_px"):
             for value in (0, -0.0, -1):

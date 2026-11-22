@@ -48,7 +48,11 @@ class Camera:
             value = getattr(self, name)
             if isinstance(value, bool) or not isinstance(value, Real):
                 raise TypeError(f"camera {name} must be a real number")
-            if not isfinite(value):
+            try:
+                finite = isfinite(value)
+            except OverflowError as exc:
+                raise ValueError(f"camera {name} must be finite and representable") from exc
+            if not finite:
                 raise ValueError(f"camera {name} must be finite")
 
         for name in ("fx_px", "fy_px", "near_m"):

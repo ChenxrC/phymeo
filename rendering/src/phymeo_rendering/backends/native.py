@@ -122,6 +122,25 @@ def _parameters(scene, request, triangle_count, exposure):
     return result
 
 
+def _image_planes(raw, pixels, channels, attachment_mask):
+    """Decode only requested tightly packed attachments into immutable planes."""
+    requested=set(channels); values={}; offset=0
+    for bit,(channel,width) in enumerate(zip(Channel,(4,4,4,1),strict=True)):
+        if not attachment_mask&(1<<bit): continue
+        length=pixels*width
+        if channel in requested:
+            part=raw[offset:offset+length]
+            if channel is Channel.RGB:
+                rgb=bytearray(pixels*3)
+                rgb[0::3],rgb[1::3],rgb[2::3]=part[0::4],part[1::4],part[2::4]
+                values[channel]=bytes(rgb)
+            else: values[channel]=part
+        offset+=length
+    if offset!=len(raw) or set(values)!=requested:
+        raise ValueError('native attachment packing does not match requested channels')
+    return tuple(ImagePlane(channel,values[channel]) for channel in channels)
+
+
 class _NativeDelegate:
     def __init__(self, scene, meshes, device, exposure, *, resident=False, studio=None):
         self.scene, self.meshes, self.device, self.exposure = scene, meshes, device, exposure
@@ -163,29 +182,21 @@ class _NativeDelegate:
         parameters = _parameters(self.scene, request, self.triangles, self.exposure)
         if self.resident:
             parameters.counts[3] = len(self.scene.instances)
-        raw = self.device.render(vertices, parameters, camera.width, camera.height)
-        count = camera.width * camera.height
-        # Native attachments are top-left tightly packed RGBA8/depth/ID/VALID.
-        rgba = raw[: count * 4]
-        rgb = bytearray(count * 3)
-        rgb[0::3], rgb[1::3], rgb[2::3] = rgba[0::4], rgba[1::4], rgba[2::4]
-        planes = {
-            Channel.RGB: bytes(rgb),
-            Channel.FORWARD_DEPTH: raw[count * 4 : count * 8],
-            Channel.INSTANCE_ID: raw[count * 8 : count * 12],
-            Channel.VALID: raw[count * 12 :],
-        }
-        result = Capture(
-            frame.key,
-            frame.time_s,
-            camera,
-            tuple(ImagePlane(channel, planes[channel]) for channel in request.channels),
-        )
+        attachment_mask=15
+        if self.resident and self.limits.get('resident_render_planes_available',False):
+            attachment_mask=sum(1<<index for index,channel in enumerate(Channel) if channel in request.channels)
+            raw=self.device.render_planes(vertices,parameters,camera.width,camera.height,attachment_mask)
+        else:
+            raw=self.device.render(vertices,parameters,camera.width,camera.height)
+        result=Capture(frame.key,frame.time_s,camera,
+            _image_planes(raw,camera.width*camera.height,request.channels,attachment_mask))
         self.last_passes = tuple(stage.value for stage in plan)
         self.last_request = dict(
             width=camera.width,
             height=camera.height,
             channels=[channel.value for channel in request.channels],
+            native_attachment_mask=attachment_mask,
+            native_output_bytes=len(raw),
         )
         return result
 
@@ -218,7 +229,10 @@ class _NativeDelegate:
             minimum_perceptual_roughness=0.045,
             exposure=self.exposure,
             display="clamp linear exposure to [0,1], then IEC sRGB once",
-            readback="explicit synchronous HOST coherent staging after fence",
+            readback='explicit synchronous host-visible staging after fence; actual flags in resident_readback when available',
+            readback_channels_mode=('compact requested attachments' if self.resident and self.limits.get('resident_render_planes_available',False)
+                                    else 'legacy all attachments'),
+            published_ownership='immutable CPU bytes; private resident host buffer may be reused after each copy',
             attachment_formats=["RGBA8_UNORM", "R32_SFLOAT", "R32_UINT", "R8_UINT"],
             last_passes=list(self.last_passes),
             last_request=self.last_request,

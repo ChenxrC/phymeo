@@ -104,16 +104,39 @@ class ResidentTelemetry(ct.Structure):
         'submissions', 'allocation_count', 'free_count')]
 
 
+class ResidentProfile(ct.Structure):
+    _fields_ = [(name,ct.c_uint32) for name in
+        ('profile_abi_version','timestamp_supported','timestamp_valid_bits','tlas_node_count')] + [
+        ('timestamp_period_ns',ct.c_double)] + [(name,ct.c_uint64) for name in
+        ('captures','host_prepare_ns','host_upload_ns','host_record_ns','host_submit_ns','host_wait_ns',
+         'host_readback_ns','gpu_render_ns','gpu_copy_ns','gpu_total_ns','tlas_upload_bytes',
+         'timestamp_samples','reserved')]
+
+
+class ResidentReadbackInfo(ct.Structure):
+    _fields_ = [(name,ct.c_uint32) for name in
+        ('readback_abi_version','memory_type_index','memory_property_flags','persistent_mapped','last_channel_mask')] + [
+        ('reserved',ct.c_uint32*3)] + [(name,ct.c_uint64) for name in
+        ('capacity_bytes','copied_bytes','map_calls','unmap_calls')]
+
+
 class ResidentDevice(NativeDevice):
     _shader_prefix = 'resident'
 
     def __init__(self, *args):
         self._resident_info = {}
         self._telemetry = None
+        self._profile = None
+        self._profile_function = None
         self._telemetry_function = None
         self._resident_destroy = None
         self._studio_function = None
         self._has_captured = False
+        self._render_planes_function = None
+        self._readback_function = None
+        self._readback = None
+        self._output_buffer = None
+        self._output_capacity = 0
         self._uploaded = False
         self._instance_count = 0
         super().__init__(*args)
@@ -143,6 +166,23 @@ class ResidentDevice(NativeDevice):
         self._telemetry_function = getattr(lib, 'pr_resident_telemetry', None)
         self._resident_destroy = getattr(lib, 'pr_resident_destroy', None)
         self._studio_function = getattr(lib, 'pr_resident_set_studio', None)
+        self._profile_function = getattr(lib, 'pr_resident_profile', None)
+        self._render_planes_function = getattr(lib, 'pr_resident_render_planes', None)
+        self._readback_function = getattr(lib, 'pr_resident_readback_info', None)
+        if ct.sizeof(ResidentReadbackInfo) != 64:
+            raise BackendUnavailableError('resident readback structure layout mismatch')
+        if self._render_planes_function is not None:
+            self._render_planes_function.argtypes = [ct.c_void_p, ct.POINTER(ct.c_float), ct.c_uint32,
+                ct.POINTER(Parameters), ct.c_uint32, ct.c_uint32, ct.c_uint32, ct.POINTER(ct.c_uint8), ct.c_size_t]
+            self._render_planes_function.restype = ct.c_int
+        if self._readback_function is not None:
+            self._readback_function.argtypes = [ct.c_void_p, ct.POINTER(ResidentReadbackInfo)]
+            self._readback_function.restype = ct.c_int
+        if ct.sizeof(ResidentProfile) != 128:
+            raise BackendUnavailableError('resident profile structure layout mismatch')
+        if self._profile_function is not None:
+            self._profile_function.argtypes = [ct.c_void_p, ct.POINTER(ResidentProfile)]
+            self._profile_function.restype = ct.c_int
         if self._studio_function is not None:
             self._studio_function.argtypes = [ct.c_void_p, ct.POINTER(NativeStudio)]
             self._studio_function.restype = ct.c_int
@@ -168,6 +208,24 @@ class ResidentDevice(NativeDevice):
         self._telemetry['allocation_scope'] = 'this context explicit VkDeviceMemory allocations; not driver total VRAM'
         self._telemetry['wait_scope'] = 'host wall time blocked in fence waits, including upload; not GPU kernel time'
 
+    def _remember_profile(self, value):
+        if value.profile_abi_version != 1:
+            raise RuntimeError('unsupported resident profile ABI')
+        self._profile = {name: (float(getattr(value,name)) if name=='timestamp_period_ns' else int(getattr(value,name)))
+                         for name,_ in ResidentProfile._fields_ if name!='reserved'}
+        self._profile['scope'] = 'cumulative successful captures including warmup; excludes initial static geometry upload'
+        self._profile['gpu_scope'] = 'Vulkan timestamps: raster plus fragment work, then attachment copies; no per-light kernel claim'
+        self._profile['snapshot'] = 'last live query, retained after close; final ownership is checked by telemetry'
+
+    def _remember_readback(self, value):
+        if value.readback_abi_version != 1:
+            raise RuntimeError('unsupported resident readback ABI')
+        self._readback={name:int(getattr(value,name)) for name,_ in ResidentReadbackInfo._fields_ if name!='reserved'}
+        flags=value.memory_property_flags
+        self._readback.update(host_visible=bool(flags&2),host_coherent=bool(flags&4),host_cached=bool(flags&8),
+            device_local=bool(flags&1),snapshot='last live query, not final mapping state; teardown verified by allocation telemetry',
+            capacity_scope='logical Vulkan readback buffer capacity, not total VkDeviceMemory allocation size')
+
     def info(self):
         result = super().info()
         if self._handle is not None:
@@ -181,7 +239,20 @@ class ResidentDevice(NativeDevice):
                 if self._telemetry_function(self._handle, ct.byref(telemetry)):
                     raise RuntimeError(self._error())
                 self._remember_telemetry(telemetry, final=False)
+            if self._profile_function is not None:
+                profile = ResidentProfile()
+                if self._profile_function(self._handle, ct.byref(profile)):
+                    raise RuntimeError(self._error())
+                self._remember_profile(profile)
+            if self._readback_function is not None:
+                readback = ResidentReadbackInfo()
+                if self._readback_function(self._handle, ct.byref(readback)):
+                    raise RuntimeError(self._error())
+                self._remember_readback(readback)
         result.update(self._resident_info)
+        result['resident_render_planes_available'] = self._render_planes_function is not None
+        result['resident_readback'] = dict(self._readback) if self._readback is not None else None
+        result['resident_profile'] = dict(self._profile) if self._profile is not None else None
         result['resident_telemetry'] = dict(self._telemetry) if self._telemetry is not None else None
         result['resident_studio_available'] = self._studio_function is not None
         return result
@@ -211,28 +282,56 @@ class ResidentDevice(NativeDevice):
             raise RuntimeError(self._error())
 
     def render(self, matrices, parameters, width, height):
+        """Original ABI1 full-attachment read, including older DLL support."""
+        return self._capture_bytes(matrices,parameters,width,height,None)
+
+    def render_planes(self, matrices, parameters, width, height, channel_mask):
+        """Explicit optional compact ABI; never pretend an old DLL supports it."""
+        if type(channel_mask) is not int:
+            raise TypeError('resident channel mask must be int, not bool')
+        if not 0 < channel_mask <= 15:
+            raise ValueError('resident channel mask must be nonzero bits 0..3')
+        if self._render_planes_function is None:
+            raise BackendUnavailableError('native compact readback export is unavailable')
+        if parameters.counts[2] != bool(channel_mask&1):
+            raise ValueError('resident RGB uniform disagrees with channel mask')
+        return self._capture_bytes(matrices,parameters,width,height,channel_mask)
+
+    def _capture_bytes(self, matrices, parameters, width, height, channel_mask):
         if self._handle is None or not self._uploaded:
             raise RuntimeError('resident device is closed or has no uploaded scene')
-        limits = self._last_info
+        limits=self._last_info
         if (type(width) is not int or type(height) is not int or
-            not 0 < width <= min(limits['max_width'], 2**32-1) or
-            not 0 < height <= min(limits['max_height'], 2**32-1) or width*height > 4096*4096):
+            not 0 < width <= min(limits['max_width'],2**32-1) or
+            not 0 < height <= min(limits['max_height'],2**32-1) or width*height > 4096*4096):
             raise ValueError('native capture extent or pixel budget exceeded')
-        if len(matrices) != 16*self._instance_count or not all(math.isfinite(x) for x in matrices):
+        if len(matrices)!=16*self._instance_count or not all(math.isfinite(x) for x in matrices):
             raise ValueError('resident instance matrices are incomplete or nonfinite FP32')
         validate_parameters(parameters)
-        if parameters.clipping[0] != width or parameters.clipping[1] != height:
+        if parameters.clipping[0]!=width or parameters.clipping[1]!=height:
             raise ValueError('native clipping extent mismatch')
-        if parameters.counts[3] != self._instance_count:
+        if parameters.counts[3]!=self._instance_count:
             raise ValueError('resident parameter instance count mismatch')
-        output = (ct.c_uint8 * (width*height*13))()
-        if self._lib.pr_resident_render(self._handle, matrices, self._instance_count,
-                ct.byref(parameters), width, height, output, ct.sizeof(output)):
-            raise RuntimeError(self._error())
-        self._has_captured = True
-        return bytes(output)
-
+        mask=15 if channel_mask is None else channel_mask
+        size=width*height*sum(width for bit,width in enumerate((4,4,4,1)) if mask&(1<<bit))
+        if self._output_capacity<size:
+            self._output_buffer=(ct.c_uint8*size)()
+            self._output_capacity=size
+        output=self._output_buffer
+        if channel_mask is None:
+            result=self._lib.pr_resident_render(self._handle,matrices,self._instance_count,
+                ct.byref(parameters),width,height,output,size)
+        else:
+            result=self._render_planes_function(self._handle,matrices,self._instance_count,
+                ct.byref(parameters),width,height,channel_mask,output,size)
+        if result: raise RuntimeError(self._error())
+        self._has_captured=True
+        # This is the single ownership copy from reusable private storage.
+        # Only this call's compact length is copied, never the old capacity.
+        return ct.string_at(output,size)
     def close(self):
+        self._output_buffer = None
+        self._output_capacity = 0
         if self._handle is None:
             return
         # Preserve resident counters at the last live point, without allowing a

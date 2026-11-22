@@ -1,6 +1,7 @@
 """Backend protocols and checked publication of immutable camera exposures."""
 
 import struct
+import sys
 from threading import RLock
 from typing import Protocol
 
@@ -9,6 +10,17 @@ from ..outputs import Capture, Channel
 from ..pipeline import CaptureRequest, validate_capture_request
 from ..scene import SceneFrame, VisualScene, validate_scene_frame
 
+
+def _scene_ids_valid(raw: bytes, allowed: frozenset) -> bool:
+    """Check unique IDs in bounded chunks; preserve uint32 identity throughout."""
+    np = sys.modules.get("numpy")
+    if len(raw) < 8192 * 4 or not hasattr(np, "frombuffer"):
+        return all(identity == 0 or identity in allowed for (identity,) in struct.iter_unpack("<I", raw))
+    pixels = np.frombuffer(raw, dtype="<u4")
+    for start in range(0, len(pixels), 8192):
+        if any(i != 0 and i not in allowed for i in np.unique(pixels[start:start + 8192]).tolist()):
+            return False
+    return True
 
 class BackendUnavailableError(RuntimeError):
     """The requested implementation, dependency or device is unavailable."""
@@ -116,7 +128,7 @@ class ValidatedRenderSession:
             # Capture already validates layout, depth, masks and background.
             # Only this scene-owning layer can validate positive instance IDs.
             for plane in result.planes:
-                if plane.channel is Channel.INSTANCE_ID:
+                if plane.channel is Channel.INSTANCE_ID and not _scene_ids_valid(plane.data, self._instance_ids):
                     for (identity,) in struct.iter_unpack("<I", plane.data):
                         if identity != 0 and identity not in self._instance_ids:
                             raise ValueError(

@@ -5,6 +5,7 @@ from enum import Enum
 from math import inf, isfinite
 from numbers import Real
 from struct import iter_unpack
+import sys
 
 from .cameras import Camera
 from .scene import FrameKey
@@ -58,6 +59,38 @@ def _visible_samples(plane: ImagePlane):
             yield valid == 1
 
 
+def _valid_sensor_blocks(planes, pixels):
+    """Prove visibility agreement in bounded blocks when NumPy is already loaded.
+
+    Return False to use the scalar checker, including its first-error diagnosis.
+    The standalone package needs no array dependency.
+    """
+    np = sys.modules.get("numpy")
+    if pixels < 8192 or not hasattr(np, "frombuffer"):
+        return False
+    data = {p.channel: np.frombuffer(p.data, dtype="u1" if p.channel is Channel.VALID else "<u4")
+            for p in planes}
+    for start in range(0, pixels, 8192):
+        expected = None
+        for channel, samples in data.items():
+            block = samples[start:start+8192]
+            if channel is Channel.FORWARD_DEPTH:
+                # In little-endian binary32, all positive finite encodings
+                # precede +infinity. This also handles subnormals and sNaNs
+                # without depending on the caller's floating-point settings.
+                if np.any(block == 0) or np.any(block > 0x7f800000):
+                    return False
+                visible = block != 0x7f800000
+            else:
+                if channel is Channel.VALID and np.any(block > 1):
+                    return False
+                visible = block != 0
+            if expected is not None and not np.array_equal(visible, expected):
+                return False
+            expected = visible
+    return True
+
+
 @dataclass(frozen=True, slots=True)
 class Capture:
     """Validated planes from one exposure, with independent immutable host storage.
@@ -107,12 +140,10 @@ class Capture:
                     f"got {len(plane.data)}"
                 )
 
-        # At most three iterators and three flags are live per pixel. Sensor
-        # samples never pass through a colour transform, float ID conversion,
-        # resampling, or a full-image decoded list.
-        streams = tuple(
-            _visible_samples(plane) for plane in self.planes if plane.channel is not Channel.RGB
-        )
+        sensors = tuple(plane for plane in self.planes if plane.channel is not Channel.RGB)
+        if not sensors or _valid_sensor_blocks(sensors, pixels):
+            return
+        streams = tuple(_visible_samples(plane) for plane in sensors)
         for index, visible in enumerate(zip(*streams, strict=True)):
             if any(hit != visible[0] for hit in visible[1:]):
                 raise ValueError(f"sensor background mismatch at pixel {index}")

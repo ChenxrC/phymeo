@@ -1,0 +1,328 @@
+{
+  "schema": "phymeo-native-neutral-verification-v1",
+  "checks": [
+    {
+      "baseline": "surface-maps-regression-01",
+      "candidate": "display-default-regression-01",
+      "field": "moving_shadow.frames.0.planes_sha256.srgb8_rgb",
+      "identical": true
+    },
+    {
+      "baseline": "surface-maps-regression-01",
+      "candidate": "display-default-regression-01",
+      "field": "moving_shadow.frames.0.planes_sha256.forward_depth_m_f32",
+      "identical": true
+    },
+    {
+      "baseline": "surface-maps-regression-01",
+      "candidate": "display-default-regression-01",
+      "field": "moving_shadow.frames.0.planes_sha256.instance_id_u32",
+      "identical": true
+    },
+    {
+      "baseline": "surface-maps-regression-01",
+      "candidate": "display-default-regression-01",
+      "field": "moving_shadow.frames.0.planes_sha256.valid_u8",
+      "identical": true
+    },
+    {
+      "baseline": "surface-maps-regression-01",
+      "candidate": "display-default-regression-01",
+      "field": "moving_shadow.frames.1.planes_sha256.srgb8_rgb",
+      "identical": true
+    },
+    {
+      "baseline": "surface-maps-regression-01",
+      "candidate": "display-default-regression-01",
+      "field": "moving_shadow.frames.1.planes_sha256.forward_depth_m_f32",
+      "identical": true
+    },
+    {
+      "baseline": "surface-maps-regression-01",
+      "candidate": "display-default-regression-01",
+      "field": "moving_shadow.frames.1.planes_sha256.instance_id_u32",
+      "identical": true
+    },
+    {
+      "baseline": "surface-maps-regression-01",
+      "candidate": "display-default-regression-01",
+      "field": "moving_shadow.frames.1.planes_sha256.valid_u8",
+      "identical": true
+    },
+    {
+      "baseline": "surface-maps-regression-01",
+      "candidate": "display-default-regression-01",
+      "field": "moving_shadow.frames.2.planes_sha256.srgb8_rgb",
+      "identical": true
+    },
+    {
+      "baseline": "surface-maps-regression-01",
+      "candidate": "display-default-regression-01",
+      "field": "moving_shadow.frames.2.planes_sha256.forward_depth_m_f32",
+      "identical": true
+    },
+    {
+      "baseline": "surface-maps-regression-01",
+      "candidate": "display-default-regression-01",
+      "field": "moving_shadow.frames.2.planes_sha256.instance_id_u32",
+      "identical": true
+    },
+    {
+      "baseline": "surface-maps-regression-01",
+      "candidate": "display-default-regression-01",
+      "field": "moving_shadow.frames.2.planes_sha256.valid_u8",
+      "identical": true
+    },
+    {
+      "baseline": "surface-maps-regression-01",
+      "candidate": "display-default-regression-01",
+      "field": "full_panda.frames.0.planes_sha256.srgb8_rgb",
+      "identical": true
+    },
+    {
+      "baseline": "surface-maps-regression-01",
+      "candidate": "display-default-regression-01",
+      "field": "full_panda.frames.0.planes_sha256.forward_depth_m_f32",
+      "identical": true
+    },
+    {
+      "baseline": "surface-maps-regression-01",
+      "candidate": "display-default-regression-01",
+      "field": "full_panda.frames.0.planes_sha256.instance_id_u32",
+      "identical": true
+    },
+    {
+      "baseline": "surface-maps-regression-01",
+      "candidate": "display-default-regression-01",
+      "field": "full_panda.frames.0.planes_sha256.valid_u8",
+      "identical": true
+    },
+    {
+      "baseline": "surface-maps-regression-01",
+      "candidate": "display-default-regression-01",
+      "field": "full_panda.frames.1.planes_sha256.srgb8_rgb",
+      "identical": true
+    },
+    {
+      "baseline": "surface-maps-regression-01",
+      "candidate": "display-default-regression-01",
+      "field": "full_panda.frames.1.planes_sha256.forward_depth_m_f32",
+      "identical": true
+    },
+    {
+      "baseline": "surface-maps-regression-01",
+      "candidate": "display-default-regression-01",
+      "field": "full_panda.frames.1.planes_sha256.instance_id_u32",
+      "identical": true
+    },
+    {
+      "baseline": "surface-maps-regression-01",
+      "candidate": "display-default-regression-01",
+      "field": "full_panda.frames.1.planes_sha256.valid_u8",
+      "identical": true
+    },
+    {
+      "baseline": "surface-maps-green-01",
+      "candidate": "display-surface-regression-01",
+      "field": "direct.0.output_sha256",
+      "identical": true
+    },
+    {
+      "baseline": "surface-maps-green-01",
+      "candidate": "display-surface-regression-01",
+      "field": "direct.1.output_sha256",
+      "identical": true
+    },
+    {
+      "baseline": "surface-maps-green-01",
+      "candidate": "display-surface-regression-01",
+      "field": "direct.2.output_sha256",
+      "identical": true
+    },
+    {
+      "baseline": "surface-maps-green-01",
+      "candidate": "display-surface-regression-01",
+      "field": "direct.3.output_sha256",
+      "identical": true
+    },
+    {
+      "baseline": "surface-maps-green-01",
+      "candidate": "display-surface-regression-01",
+      "field": "direct.4.output_sha256",
+      "identical": true
+    },
+    {
+      "baseline": "surface-maps-green-01",
+      "candidate": "display-surface-regression-01",
+      "field": "direct.5.output_sha256",
+      "identical": true
+    },
+    {
+      "baseline": "surface-maps-green-01",
+      "candidate": "display-surface-regression-01",
+      "field": "direct.6.output_sha256",
+      "identical": true
+    },
+    {
+      "baseline": "surface-maps-green-01",
+      "candidate": "display-surface-regression-01",
+      "field": "direct.7.output_sha256",
+      "identical": true
+    },
+    {
+      "baseline": "surface-maps-green-01",
+      "candidate": "display-surface-regression-01",
+      "field": "actual_lights.sha256",
+      "identical": true
+    },
+    {
+      "baseline": "surface-maps-hw-green-01",
+      "candidate": "display-hw-surface-regression-01",
+      "field": "direct.0.output_sha256",
+      "identical": true
+    },
+    {
+      "baseline": "surface-maps-hw-green-01",
+      "candidate": "display-hw-surface-regression-01",
+      "field": "direct.1.output_sha256",
+      "identical": true
+    },
+    {
+      "baseline": "surface-maps-hw-green-01",
+      "candidate": "display-hw-surface-regression-01",
+      "field": "direct.2.output_sha256",
+      "identical": true
+    },
+    {
+      "baseline": "surface-maps-hw-green-01",
+      "candidate": "display-hw-surface-regression-01",
+      "field": "direct.3.output_sha256",
+      "identical": true
+    },
+    {
+      "baseline": "surface-maps-hw-green-01",
+      "candidate": "display-hw-surface-regression-01",
+      "field": "direct.4.output_sha256",
+      "identical": true
+    },
+    {
+      "baseline": "surface-maps-hw-green-01",
+      "candidate": "display-hw-surface-regression-01",
+      "field": "direct.5.output_sha256",
+      "identical": true
+    },
+    {
+      "baseline": "surface-maps-hw-green-01",
+      "candidate": "display-hw-surface-regression-01",
+      "field": "direct.6.output_sha256",
+      "identical": true
+    },
+    {
+      "baseline": "surface-maps-hw-green-01",
+      "candidate": "display-hw-surface-regression-01",
+      "field": "direct.7.output_sha256",
+      "identical": true
+    },
+    {
+      "baseline": "surface-maps-hw-green-01",
+      "candidate": "display-hw-surface-regression-01",
+      "field": "actual_lights.sha256",
+      "identical": true
+    }
+  ],
+  "calibration": [
+    {
+      "source": "display-green-01",
+      "captures": 177,
+      "max_rgb8_error": 1,
+      "sky_hdr_grays": [
+        {
+          "radiance": 1.0,
+          "rgb8": [
+            240,
+            240,
+            240
+          ]
+        },
+        {
+          "radiance": 2.0,
+          "rgb8": [
+            250,
+            250,
+            250
+          ]
+        },
+        {
+          "radiance": 4.0,
+          "rgb8": [
+            253,
+            253,
+            253
+          ]
+        },
+        {
+          "radiance": 8.0,
+          "rgb8": [
+            254,
+            254,
+            254
+          ]
+        }
+      ]
+    },
+    {
+      "source": "display-hw-green-01",
+      "captures": 177,
+      "max_rgb8_error": 1,
+      "sky_hdr_grays": [
+        {
+          "radiance": 1.0,
+          "rgb8": [
+            240,
+            240,
+            240
+          ]
+        },
+        {
+          "radiance": 2.0,
+          "rgb8": [
+            250,
+            250,
+            250
+          ]
+        },
+        {
+          "radiance": 4.0,
+          "rgb8": [
+            253,
+            253,
+            253
+          ]
+        },
+        {
+          "radiance": 8.0,
+          "rgb8": [
+            254,
+            254,
+            254
+          ]
+        }
+      ]
+    }
+  ],
+  "build_files": {
+    "native.frag.spv": "cd6f295432a75c7383357cb9d4805f72f8ea5a47f7c117adb2975ae919c90066",
+    "native.vert.spv": "9595a6722905db50583a3d3518c4853463568124bade005db7ffa04f2d1f41b4",
+    "phymeo_native.dll": "794dcd024fa68e67edfded2011e523053da79802bf49981bd77a35e1f9763930",
+    "resident.frag.spv": "932d4807945b92d6629a303f5d03fe8f4d4f3251f39300920810ee65af4f704f",
+    "resident.vert.spv": "b1cb30601e2f8ff78e7a14818d3253ec95806b4ba22039b106927ffa4ca86810",
+    "resident_area4.frag.spv": "30722e75d3a14aa380e013302305e7758ddf2e7d3d112241b3a38a1214526bea",
+    "resident_area8.frag.spv": "ee56f769da6d7c31bca0f379514794bbc1e16e5ab8196304a498aa3371e0683a",
+    "resident_rayquery.frag.spv": "26d88301a85b868c2f423cc19440bdd3ea81d7ee2fe35107ae018e837252ed4a",
+    "resident_rayquery.vert.spv": "b1069d14f062dcf3b441d1c44286068b92754557dbe8ce8327e9407cd7c0ec82",
+    "resident_rayquery_area4.frag.spv": "702d2cfca15158086867711b8de3e1eb9029e4e0947f8e09d448c70c6a79c409",
+    "resident_rayquery_area8.frag.spv": "2310c4971e18d8909079bd3fe80b48f07e583896039f05c7f4fdd9eb1d9e0877",
+    "resident_sky.frag.spv": "460ba70c274ce9adda99c506e5b2c2ae80d9534f986e6aab3aa62c61f3b5d8d7",
+    "resident_sky.vert.spv": "d9bbb44453660efa44c1f5f6c2861102b62f6b23b400400fac7d7f3faa02b798"
+  }
+}

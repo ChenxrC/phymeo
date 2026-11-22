@@ -1,0 +1,113 @@
+{
+  "samples_per_seed": 512,
+  "effective_primary_samples": 4096,
+  "frame": 36,
+  "revision": 1972,
+  "physics_time_s": 1.233125,
+  "display": "linear mean, exposure 8, clip and sRGB once",
+  "rois": {
+    "whole": [
+      0,
+      0,
+      960,
+      540
+    ],
+    "shell": [
+      410,
+      70,
+      490,
+      90
+    ],
+    "wood": [
+      690,
+      465,
+      820,
+      500
+    ]
+  },
+  "reference_rgb_sha256": "418bf9e3a8e0ba46e5d036a7722659f4bd610c9c363ff76bbf57c421008042f8",
+  "captures": [
+    {
+      "seed": 1709,
+      "samples": 512,
+      "ms": 769.024300010642,
+      "linear_sha256": "de7d58586d3b2fff82506c076219ae95520bf1614dc55d8add5e6fb86aec926f",
+      "rgb_sha256": "593106d0d44e634a3a9fc2afcc2386023681015c79fe7ea95deb14b82e16d7c3",
+      "raw_file": "linear-seed-1709.npy"
+    },
+    {
+      "seed": 1129,
+      "samples": 512,
+      "ms": 800.1406000112183,
+      "linear_sha256": "7869c8d95ac36b1df8c8d98d3b0c92ee779b40f60461a13f155afa82ede67319",
+      "rgb_sha256": "0b6ae9f139b62789ba12f9b486413ed321d933bca3cb3d4cd7fb236ef0a5e6ee",
+      "raw_file": "linear-seed-1129.npy"
+    },
+    {
+      "seed": 3331,
+      "samples": 512,
+      "ms": 776.3348000007682,
+      "linear_sha256": "7fcf03155e7b45ef0aac191bfa85eeaaf3fb78cf6bd40a449cbddca74c30cc92",
+      "rgb_sha256": "e890101c6d69cb5c3b5653e60ec6f9d79d18e5b76ece133bc83495e11ef8ce33",
+      "raw_file": "linear-seed-3331.npy"
+    },
+    {
+      "seed": 4591,
+      "samples": 512,
+      "ms": 766.0667999880388,
+      "linear_sha256": "380ef2bb72ff849a42f2f6f67e1fc0a2af67f0cfb831b7b01657c727feef7a35",
+      "rgb_sha256": "562fe65ba4684aafb1cb2bbd9c547c086e49eda18ce030ce92c96257615d494f",
+      "raw_file": "linear-seed-4591.npy"
+    },
+    {
+      "seed": 5003,
+      "samples": 512,
+      "ms": 753.8935999909882,
+      "linear_sha256": "2888868257a6da845495b18fd76d3adadd820e242dbcaf51f2942f5c31537e22",
+      "rgb_sha256": "7c4f39f89821ba9ad983c80fb999c20ac79b3f95e15ba5f7a20c92de79c99b3c",
+      "raw_file": "linear-seed-5003.npy"
+    },
+    {
+      "seed": 6011,
+      "samples": 512,
+      "ms": 753.1517000170425,
+      "linear_sha256": "629c41ab66303bfa2e64432515e27621890b517f40f7ec7ff605674bd176063b",
+      "rgb_sha256": "a2e000817fbc3fbdf9b6a7b229838edfac1512f7bb4164e33e7dde6b07e67b4e",
+      "raw_file": "linear-seed-6011.npy"
+    },
+    {
+      "seed": 7001,
+      "samples": 512,
+      "ms": 783.7803000002168,
+      "linear_sha256": "a5b8dcf774ebe89060901d3867a376dd109518f1fdc554d20f8aeda5508b4c30",
+      "rgb_sha256": "0e60acc4e4cc5d05a566e39a9067ce066690c0a13e7d313f576316e44429411c",
+      "raw_file": "linear-seed-7001.npy"
+    },
+    {
+      "seed": 8017,
+      "samples": 512,
+      "ms": 764.1800000274088,
+      "linear_sha256": "1d84c5162156bd09d3bedee6a6b4a6681a4d86c617f00d745e6870b0cf0447a3",
+      "rgb_sha256": "65222c8a982f9a68133bda41501dcd7df7177157dcfe6c567d56aff2a1dce6e8",
+      "raw_file": "linear-seed-8017.npy"
+    }
+  ],
+  "mse": {
+    "256": {
+      "whole": 0.00019150360418515824,
+      "shell": 0.0005114475201845443,
+      "wood": 0.00033793145211830327
+    },
+    "1024": {
+      "whole": 5.754626267516609e-05,
+      "shell": 0.00014427143406382163,
+      "wood": 0.00010336402031903763
+    },
+    "4096": {
+      "whole": 2.3624668337439058e-05,
+      "shell": 5.878187876457772e-05,
+      "wood": 4.3326249554623255e-05
+    }
+  },
+  "actual_source_sha256": "58073ab38acab8f5057061fa487117aa0284f81b097a4f5bb0473f890515f118"
+}

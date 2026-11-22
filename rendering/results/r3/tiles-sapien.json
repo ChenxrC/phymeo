@@ -1,0 +1,334 @@
+{
+  "audit": {
+    "analytic": [
+      {
+        "background_false_hits": 0,
+        "capture": "full",
+        "edge_oracle_id_mismatches": 1,
+        "interior_id_mismatches": 0,
+        "interior_max_depth_error_m": 4.768371586472142e-08,
+        "interior_pixels": 183718,
+        "surface_interior_counts": {
+          "10597059": 89775,
+          "16909060": 89748,
+          "4043440900": 4195
+        }
+      },
+      {
+        "background_false_hits": 0,
+        "capture": "tiled",
+        "edge_oracle_id_mismatches": 1,
+        "interior_id_mismatches": 0,
+        "interior_max_depth_error_m": 4.768371586472142e-08,
+        "interior_pixels": 183718,
+        "surface_interior_counts": {
+          "10597059": 89775,
+          "16909060": 89748,
+          "4043440900": 4195
+        }
+      }
+    ],
+    "center_full_id": 10597059,
+    "center_tiled_id": 10597059,
+    "common_foreground_max_depth_difference_m": 0.0,
+    "edge_policy": "fixed <=2px to authored projected exterior edges plus outer 2px image border; ID/VALID pair comparison excludes nothing",
+    "id_mismatches_all": 0,
+    "id_mismatches_away_from_edge": 0,
+    "id_mismatches_geometric_edge": 0,
+    "interior_max_depth_difference_m": 0.0,
+    "mismatch_xy_prefix": [],
+    "passed": true,
+    "rgb_acceptance": "reported only; screen-space/shadow differences are not geometry equivalence",
+    "rgb_differing_pixels": 0,
+    "rgb_max_abs_code_difference": 0,
+    "seams": [
+      {
+        "axis": "x",
+        "coordinate": 257,
+        "full_foreground": 684,
+        "id_mismatches": 0,
+        "tiled_foreground": 684,
+        "valid_mismatches": 0
+      },
+      {
+        "axis": "x",
+        "coordinate": 514,
+        "full_foreground": 684,
+        "id_mismatches": 0,
+        "tiled_foreground": 684,
+        "valid_mismatches": 0
+      },
+      {
+        "axis": "y",
+        "coordinate": 173,
+        "full_foreground": 1138,
+        "id_mismatches": 0,
+        "tiled_foreground": 1138,
+        "valid_mismatches": 0
+      },
+      {
+        "axis": "y",
+        "coordinate": 346,
+        "full_foreground": 1138,
+        "id_mismatches": 0,
+        "tiled_foreground": 1138,
+        "valid_mismatches": 0
+      }
+    ],
+    "valid_mismatches_all": 0
+  },
+  "backend": "sapien",
+  "captures": {
+    "full": {
+      "forward_depth_m_f32": {
+        "bytes": 1084372,
+        "file": "full.forward_depth_m_f32.raw",
+        "sha256": "08cf92fcfc91f5450a8a31307bbe802099215db0d61823ddbe2de7f87fe851a2"
+      },
+      "instance_id_u32": {
+        "bytes": 1084372,
+        "file": "full.instance_id_u32.raw",
+        "sha256": "d2dfacd9dfc2c0921a63501bbba2198d356b5b0d2e967bfe8b1fe9dc46265dda"
+      },
+      "srgb8_rgb": {
+        "bytes": 813279,
+        "file": "full.srgb8_rgb.raw",
+        "sha256": "b19a5067b10a823af91a7fb70e9fd8a385ce1b675d8129d79d7c5386573a4a2e"
+      },
+      "valid_u8": {
+        "bytes": 271093,
+        "file": "full.valid_u8.raw",
+        "sha256": "91a3daf58fe31df24ff91f0ce91b0d8aeb993387cac65a5672611eab2384f2d6"
+      }
+    },
+    "tiled": {
+      "forward_depth_m_f32": {
+        "bytes": 1084372,
+        "file": "tiled.forward_depth_m_f32.raw",
+        "sha256": "08cf92fcfc91f5450a8a31307bbe802099215db0d61823ddbe2de7f87fe851a2"
+      },
+      "instance_id_u32": {
+        "bytes": 1084372,
+        "file": "tiled.instance_id_u32.raw",
+        "sha256": "d2dfacd9dfc2c0921a63501bbba2198d356b5b0d2e967bfe8b1fe9dc46265dda"
+      },
+      "srgb8_rgb": {
+        "bytes": 813279,
+        "file": "tiled.srgb8_rgb.raw",
+        "sha256": "b19a5067b10a823af91a7fb70e9fd8a385ce1b675d8129d79d7c5386573a4a2e"
+      },
+      "valid_u8": {
+        "bytes": 271093,
+        "file": "tiled.valid_u8.raw",
+        "sha256": "91a3daf58fe31df24ff91f0ce91b0d8aeb993387cac65a5672611eab2384f2d6"
+      }
+    }
+  },
+  "closed_diagnostics": {
+    "accumulation": "fresh camera per exposure; no temporal history",
+    "ambient_linear_rgb": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "backend": "sapien-reference",
+    "denoiser": "none",
+    "device_description": "cuda:0",
+    "device_name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+    "device_pci": "0000:01:00.0",
+    "display": "exposure=1; clamp linear [0,1]; standard sRGB OETF; half-up UNORM8",
+    "display_transform": "clip",
+    "display_transform_source": null,
+    "driver_version": null,
+    "effective_path": "raster",
+    "exposure": 1.0,
+    "geometry": {
+      "instances": 3,
+      "limits": {
+        "instances": 256,
+        "mesh_slots": 256,
+        "uploaded_triangles": 200000,
+        "uploaded_vertices": 600000
+      },
+      "mesh_slots": 3,
+      "scope": "per-instance uploaded geometry; shared per-mesh decoding guards unchanged",
+      "uploaded_triangles": 6,
+      "uploaded_vertices": 12
+    },
+    "global_config_note": "camera default mutations serialized/restored inside this adapter only",
+    "library_version": "3.0.3",
+    "lifecycle": {
+      "attached_cameras": 0,
+      "attached_cameras_after_clear": 0,
+      "attached_entities": 0,
+      "attached_entities_after_clear": 0,
+      "attached_entities_before_clear": 4,
+      "attached_lights": 0,
+      "attached_lights_after_clear": 0,
+      "attached_render_bodies": 0,
+      "attached_render_bodies_after_clear": 0,
+      "close_error": null,
+      "closed": true,
+      "completed_captures": 10,
+      "scope": "this scene attachments only; no driver/cache/process-memory release claim",
+      "studio_temporary_files_exist": false
+    },
+    "linear_rgb_target": "Lighting",
+    "max_bounces": null,
+    "numpy_version": "1.26.4",
+    "official_shader_sha256": "3dcc99e5302c9b7118b661fe129190d27dd938659245d5f004a3c817f5b7ddb9",
+    "physics_steps": 0,
+    "physics_systems": [],
+    "pt_clip_limit": "all vertices inside near+0.002/far and range<9999m, with FP32 clearance",
+    "pt_precision_policy": "8*FP32-epsilon*transform-scale clearance; reject >=1% scene span; pragmatic admission, not a global error proof",
+    "readback": "blocking SAPIEN get_picture CPU download, then owned bytes",
+    "requested_device": "cuda:0",
+    "requested_path": "raster",
+    "resolution_limit": 4096,
+    "samples_per_pixel": 1,
+    "sampling_pattern": null,
+    "sapien_scene_id": 1,
+    "seed": null,
+    "seed_note": "sampling_pattern specifies the actual shader and device scope",
+    "seed_support": "not-user-configurable",
+    "shader_directory": "C:\\Users\\38347\\.codex\\worktrees\\phymeo-rendering\\phymeo\\artifacts\\rendering\\g3-table\\ref-env\\Lib\\site-packages\\sapien\\vulkan_shader\\default",
+    "shader_pack": "default",
+    "shader_probe": "selected shader executed and CPU target read back",
+    "shader_sha256": "3dcc99e5302c9b7118b661fe129190d27dd938659245d5f004a3c817f5b7ddb9",
+    "shadow_map_size": 2048,
+    "studio": null,
+    "supported_channels": [
+      "srgb8_rgb",
+      "forward_depth_m_f32",
+      "instance_id_u32",
+      "valid_u8"
+    ],
+    "textures": {
+      "actual_uploads": [],
+      "bindings": [],
+      "decoded_rgb8_bytes": 0,
+      "factor_policy": "white: sRGB8 hardware decode; nonwhite: standard EOTF times linear factor, FP32 texture; material uniform white",
+      "limits": {
+        "decoded_rgb8_bytes": 67108864,
+        "upload_bytes": 134217728
+      },
+      "sampling": {
+        "address": "repeat",
+        "filter": "linear",
+        "mipmap_levels": 1,
+        "uv_origin": "upper-left; unmodified glTF TEXCOORD_0"
+      },
+      "shader_semantics": "SAPIEN 3.0.3 takes sampled color and roughness in place of the corresponding uniform",
+      "upload_bytes": 0,
+      "uploads": []
+    },
+    "vulkan_api_version": null
+  },
+  "diagnostics": {
+    "accumulation": "fresh camera per exposure; no temporal history",
+    "ambient_linear_rgb": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "backend": "sapien-reference",
+    "denoiser": "none",
+    "device_description": "cuda:0",
+    "device_name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+    "device_pci": "0000:01:00.0",
+    "display": "exposure=1; clamp linear [0,1]; standard sRGB OETF; half-up UNORM8",
+    "display_transform": "clip",
+    "display_transform_source": null,
+    "driver_version": null,
+    "effective_path": "raster",
+    "exposure": 1.0,
+    "geometry": {
+      "instances": 3,
+      "limits": {
+        "instances": 256,
+        "mesh_slots": 256,
+        "uploaded_triangles": 200000,
+        "uploaded_vertices": 600000
+      },
+      "mesh_slots": 3,
+      "scope": "per-instance uploaded geometry; shared per-mesh decoding guards unchanged",
+      "uploaded_triangles": 6,
+      "uploaded_vertices": 12
+    },
+    "global_config_note": "camera default mutations serialized/restored inside this adapter only",
+    "library_version": "3.0.3",
+    "lifecycle": {
+      "attached_cameras": 0,
+      "attached_cameras_after_clear": null,
+      "attached_entities": 4,
+      "attached_entities_after_clear": null,
+      "attached_entities_before_clear": null,
+      "attached_lights": 1,
+      "attached_lights_after_clear": null,
+      "attached_render_bodies": 3,
+      "attached_render_bodies_after_clear": null,
+      "close_error": null,
+      "closed": false,
+      "completed_captures": 10,
+      "scope": "this scene attachments only; no driver/cache/process-memory release claim",
+      "studio_temporary_files_exist": false
+    },
+    "linear_rgb_target": "Lighting",
+    "max_bounces": null,
+    "numpy_version": "1.26.4",
+    "official_shader_sha256": "3dcc99e5302c9b7118b661fe129190d27dd938659245d5f004a3c817f5b7ddb9",
+    "physics_steps": 0,
+    "physics_systems": [],
+    "pt_clip_limit": "all vertices inside near+0.002/far and range<9999m, with FP32 clearance",
+    "pt_precision_policy": "8*FP32-epsilon*transform-scale clearance; reject >=1% scene span; pragmatic admission, not a global error proof",
+    "readback": "blocking SAPIEN get_picture CPU download, then owned bytes",
+    "requested_device": "cuda:0",
+    "requested_path": "raster",
+    "resolution_limit": 4096,
+    "samples_per_pixel": 1,
+    "sampling_pattern": null,
+    "sapien_scene_id": 1,
+    "seed": null,
+    "seed_note": "sampling_pattern specifies the actual shader and device scope",
+    "seed_support": "not-user-configurable",
+    "shader_directory": "C:\\Users\\38347\\.codex\\worktrees\\phymeo-rendering\\phymeo\\artifacts\\rendering\\g3-table\\ref-env\\Lib\\site-packages\\sapien\\vulkan_shader\\default",
+    "shader_pack": "default",
+    "shader_probe": "selected shader executed and CPU target read back",
+    "shader_sha256": "3dcc99e5302c9b7118b661fe129190d27dd938659245d5f004a3c817f5b7ddb9",
+    "shadow_map_size": 2048,
+    "studio": null,
+    "supported_channels": [
+      "srgb8_rgb",
+      "forward_depth_m_f32",
+      "instance_id_u32",
+      "valid_u8"
+    ],
+    "textures": {
+      "actual_uploads": [],
+      "bindings": [],
+      "decoded_rgb8_bytes": 0,
+      "factor_policy": "white: sRGB8 hardware decode; nonwhite: standard EOTF times linear factor, FP32 texture; material uniform white",
+      "limits": {
+        "decoded_rgb8_bytes": 67108864,
+        "upload_bytes": 134217728
+      },
+      "sampling": {
+        "address": "repeat",
+        "filter": "linear",
+        "mipmap_levels": 1,
+        "uv_origin": "upper-left; unmodified glTF TEXCOORD_0"
+      },
+      "shader_semantics": "SAPIEN 3.0.3 takes sampled color and roughness in place of the corresponding uniform",
+      "upload_bytes": 0,
+      "uploads": []
+    },
+    "vulkan_api_version": null
+  },
+  "full_wall_s": 0.047331899986602366,
+  "physics_steps": 0,
+  "protocol_sha256": "0d45d42ec1af7c7fca76392885a3a971da9345d132ca1335d253654dcb0f085a",
+  "schema": "phymeo-tiled-camera-calibration-v1",
+  "status": "passed",
+  "tiled_wall_s": 0.0482555000053253,
+  "timing_scope": "single sequential full then tiles, no warmup; not a performance comparison"
+}

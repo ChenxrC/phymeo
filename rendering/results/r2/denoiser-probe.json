@@ -1,0 +1,41 @@
+{
+  "schema": "phymeo-denoiser-probe-process-results-v1",
+  "scope": "Observed exit codes of the three explicitly authorized independent processes; original child reports preserved",
+  "processes": [
+    {
+      "mode": "none",
+      "exit_code": 0,
+      "native_exit_hex": null,
+      "report_file": "none-01/report.json",
+      "report_sha256": "365d67140caebff406b19c6ab5e5da4e7934463d7a8331b41ab4e7c86e0e2211",
+      "last_persisted_stage": "capture_and_readback",
+      "requested_mode_readback": "none",
+      "global_restored": "none",
+      "completed_readback": true
+    },
+    {
+      "mode": "oidn",
+      "exit_code": -1073741819,
+      "native_exit_hex": "0xC0000005",
+      "report_file": "oidn-01/report.json",
+      "report_sha256": "be9266f75ab4b7f786d08b8451478eff9d366cd28c88e309251f4a04f70cc62d",
+      "last_persisted_stage": "capture_and_readback",
+      "requested_mode_readback": "oidn",
+      "global_restored": "none",
+      "completed_readback": false
+    },
+    {
+      "mode": "optix",
+      "exit_code": -1073741819,
+      "native_exit_hex": "0xC0000005",
+      "report_file": "optix-01/report.json",
+      "report_sha256": "990f78f5ffba3977887de3132e9e19e6e142fbdd54587263db82d4e6dff995d9",
+      "last_persisted_stage": "capture_and_readback",
+      "requested_mode_readback": "optix",
+      "global_restored": "none",
+      "completed_readback": false
+    }
+  ],
+  "decision": "Stop: no usable SDK denoised image from either requested backend; quality and reset phases not run",
+  "failure_scope": "Both enabled modes attached and roundtripped before native access violation in the first render/readback interval; the available breadcrumbs do not identify the exact failing native call"
+}

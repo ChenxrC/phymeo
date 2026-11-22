@@ -63,6 +63,8 @@ struct Context {
     PrResidentTelemetry telemetry{};
     PrResidentProfile profile{};
     PrResidentReadbackInfo readback_info{};
+    PrResidentTextureInfo texture_info{};
+    uint32_t storage_buffer_limit{};
     PrStudio studio{};
     std::shared_ptr<ResidentState> resident_state;
     VkInstance instance{};
@@ -87,6 +89,7 @@ struct Context {
     Context() {
         ++live_contexts; telemetry.telemetry_abi_version=1; profile.profile_abi_version=1;
         readback_info.readback_abi_version=1; readback_info.memory_type_index=UINT32_MAX;
+        texture_info.texture_abi_version=1;
     }
     ~Context() { shutdown(); --live_contexts; }
     VkResult shutdown() noexcept {
@@ -277,11 +280,32 @@ struct Context {
         properties.max_vertices = std::min(MAX_VERTICES,
             static_cast<uint32_t>(p.limits.maxStorageBufferRange/sizeof(PrVertex)));
         if (resident) {
-            require(p.limits.maxPerStageDescriptorStorageBuffers >= 7 &&
-                    p.limits.maxDescriptorSetStorageBuffers >= 7,
-                    "resident rendering requires seven fragment storage buffers");
+            require(p.limits.maxPerStageDescriptorStorageBuffers >= 8 &&
+                    p.limits.maxDescriptorSetStorageBuffers >= 8,
+                    "resident rendering requires eight fragment storage buffers");
             require(p.limits.maxPerStageDescriptorUniformBuffers >= 2 &&
                     p.limits.maxDescriptorSetUniformBuffers >= 2, "resident studio uniform capacity unavailable");
+            require(p.limits.maxPerStageDescriptorSamplers>=1 && p.limits.maxDescriptorSetSamplers>=1,
+                    "resident texture sampler capacity unavailable");
+            storage_buffer_limit=p.limits.maxStorageBufferRange;
+            VkFormatProperties sampled{};
+            vkGetPhysicalDeviceFormatProperties(physical,VK_FORMAT_R8G8B8A8_SRGB,&sampled);
+            VkFormatFeatureFlags features=VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT |
+                VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT;
+            require((sampled.optimalTilingFeatures & features)==features,"resident sRGB linear texture format unavailable");
+            VkImageFormatProperties texture_limits{};
+            check(vkGetPhysicalDeviceImageFormatProperties(physical,VK_FORMAT_R8G8B8A8_SRGB,VK_IMAGE_TYPE_2D,
+                VK_IMAGE_TILING_OPTIMAL,VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,0,&texture_limits),
+                "resident texture image properties");
+            require(texture_limits.maxExtent.width>2 && texture_limits.maxExtent.height>2,
+                    "resident texture guard extent unavailable");
+            auto& texture=texture_info;
+            texture.max_textures=std::min({64u,p.limits.maxImageArrayLayers,texture_limits.maxArrayLayers});
+            texture.max_layers=texture.max_textures;
+            texture.max_width=std::min({2048u,p.limits.maxImageDimension2D-2,texture_limits.maxExtent.width-2});
+            texture.max_height=std::min({2048u,p.limits.maxImageDimension2D-2,texture_limits.maxExtent.height-2});
+            texture.max_array_bytes=std::min<uint64_t>(128ull*1024*1024,texture_limits.maxResourceSize);
+            texture.sampler_filter=VK_FILTER_LINEAR; texture.mip_levels=1; texture.format=VK_FORMAT_R8G8B8A8_SRGB;
             auto& r = resident_properties;
             r.resident_abi_version = 1;
             r.max_vertices = std::min(1048576u, p.limits.maxStorageBufferRange / 32u);
@@ -327,7 +351,7 @@ struct Context {
         pool.queueFamilyIndex = queue_family; pool.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT |
             (resident ? VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT : 0u);
         acquire(command_pool, "vkCreateCommandPool", [&](auto* output) { return vkCreateCommandPool(device, &pool, nullptr, output); });
-        std::array<VkDescriptorSetLayoutBinding, 9> bindings{};
+        std::array<VkDescriptorSetLayoutBinding, 11> bindings{};
         bindings[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
         bindings[1] = {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1,
                        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
@@ -342,8 +366,11 @@ struct Context {
         if (resident) {
             bindings[7] = {7, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
             bindings[8] = {8, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
+            bindings[9] = {9, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
+            bindings[10] = {10, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1,
+                            VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
         }
-        layout.bindingCount = resident ? 9u : 2u; layout.pBindings = bindings.data();
+        layout.bindingCount = resident ? 11u : 2u; layout.pBindings = bindings.data();
         acquire(descriptor_layout, "descriptor layout", [&](auto* output) { return vkCreateDescriptorSetLayout(device, &layout, nullptr, output); });
         VkPipelineLayoutCreateInfo pipeline_info{VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO};
         pipeline_info.setLayoutCount = 1; pipeline_info.pSetLayouts = &descriptor_layout;
@@ -775,5 +802,25 @@ int pr_resident_readback_info(void* handle, PrResidentReadbackInfo* output) {
         output->persistent_mapped=frame.readback_mapping ? 1u : 0u;
         output->capacity_bytes=frame.readback_capacity;
     }
+    return 0;
+}
+
+uint32_t pr_resident_texture_abi_version() { return 1; }
+int pr_resident_set_textures(void* handle,const PrResidentTexture* textures,uint32_t texture_count,
+    const uint8_t* rgba,size_t rgba_bytes,const PrResidentUV* uv,uint32_t uv_count,
+    const uint32_t* instance_slots,uint32_t instance_count) {
+    try {
+        last_error.clear(); require(handle,"null resident texture context");
+        resident_set_textures(*static_cast<Context*>(handle),textures,texture_count,rgba,rgba_bytes,
+                              uv,uv_count,instance_slots,instance_count);
+        return 0;
+    } catch (const std::exception& e) { last_error=e.what(); return -1; }
+      catch (...) { last_error="unknown resident texture upload error"; return -1; }
+}
+int pr_resident_texture_info(void* handle,PrResidentTextureInfo* output) {
+    if (!handle || !output) { last_error="null resident texture info argument"; return -1; }
+    auto& context=*static_cast<Context*>(handle);
+    if (!context.resident) { last_error="context does not use resident rendering"; return -1; }
+    *output=context.texture_info;
     return 0;
 }

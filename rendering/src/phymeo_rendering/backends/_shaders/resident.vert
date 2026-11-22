@@ -20,6 +20,10 @@ layout(location=1) out vec3 worldNormal;
 layout(location=2) out vec3 baseColor;
 layout(location=3) out vec2 metalRough;
 layout(location=4) flat out uvec2 ids;
+// Default smooth interpolation is perspective-correct, matching gl_Position.w.
+layout(location=5) out vec2 meshUV;
+layout(location=6) flat out uint textureSlot;
+layout(set=0,binding=10,std430) readonly buffer TextureMetadata { uint words[]; } textureData;
 void main() {
     uint slot = uint(gl_InstanceIndex);
     Instance instance = scene.instances[slot];
@@ -38,4 +42,10 @@ void main() {
     baseColor = instance.colorRoughness.xyz;
     metalRough = vec2(instance.material.x, instance.colorRoughness.w);
     ids = uvec2(instance.binding.y, slot);
+    textureSlot=textureData.words[4u+slot];
+    meshUV=vec2(0.0);
+    if (textureSlot!=0xffffffffu) {
+        uint address=textureData.words[3]+2u*uint(gl_VertexIndex);
+        meshUV=uintBitsToFloat(uvec2(textureData.words[address],textureData.words[address+1u]));
+    }
 }

@@ -166,3 +166,27 @@ static_assert(sizeof(PrResidentReadbackInfo) == 64, "resident readback info ABI"
 // Actual selected Vulkan memory flags, not a request or a simulated capability.
 // A close-time cached query is a last-live observation, not final allocator state.
 PR_API int pr_resident_readback_info(void* context, PrResidentReadbackInfo* output);
+
+// Optional opaque base-color textures, independent of existing resident ABI1.
+// Source pixels are top-row-first RGBA8 sRGB, alpha=255. Ranges are tightly
+// packed; no external decoder, resizing, mip generation or hidden I/O occurs.
+struct PrResidentTexture { uint32_t width, height, first_byte, reserved; };
+struct PrResidentUV { float u, v; };
+struct PrResidentTextureInfo {
+    uint32_t texture_abi_version, max_textures, max_width, max_height, max_layers;
+    uint32_t texture_count, array_width, array_height, array_layers, uv_count;
+    uint32_t bound_instances, loaded, sampler_filter, mip_levels, format, reserved;
+    uint64_t max_array_bytes, source_rgba_bytes, padded_rgba_bytes, metadata_upload_bytes;
+    uint64_t upload_calls, image_upload_bytes, rgb_captures_with_textures, reserved64;
+};
+static_assert(sizeof(PrResidentTexture)==16 && sizeof(PrResidentUV)==8, "texture input ABI");
+static_assert(sizeof(PrResidentTextureInfo)==128, "texture info ABI");
+PR_API uint32_t pr_resident_texture_abi_version();
+// Exactly once after geometry upload and before any successful capture. UVs
+// follow the complete original vertex table, slots follow instance order;
+// UINT32_MAX is an untextured instance. Caller arrays are copied, never retained.
+PR_API int pr_resident_set_textures(void* context,
+    const PrResidentTexture* textures, uint32_t texture_count,
+    const uint8_t* rgba, size_t rgba_bytes, const PrResidentUV* uv, uint32_t uv_count,
+    const uint32_t* instance_slots, uint32_t instance_count);
+PR_API int pr_resident_texture_info(void* context, PrResidentTextureInfo* output);

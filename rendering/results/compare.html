@@ -203,6 +203,10 @@ video.addEventListener('play', () => { $('play').textContent = '暂停'; status.
 video.addEventListener('pause', () => { $('play').textContent = '播放'; });
 video.addEventListener('ended', () => { $('play').textContent = '回到首帧'; status.textContent = '播放结束。'; });
 video.addEventListener('error', () => fallback('影片未找到或此浏览器不支持 H.264。'));
+// A failed child <source> emits its own non-bubbling error, with video.error possibly null.
+for (const source of video.querySelectorAll('source')) {
+  source.addEventListener('error', () => fallback('影片未找到或此浏览器不支持 H.264。'));
+}
 video.addEventListener('loadedmetadata', start);
 function dragTo(event) {
   const bounds = stage.getBoundingClientRect();

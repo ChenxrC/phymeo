@@ -283,6 +283,7 @@ def reproduce(args):
                     run_feature("ibl-native", libraries[0])
                     run_feature("roughness-native", libraries[0])
                     run_feature("ray-query-native", libraries[0])
+                    run_feature("neutral-native", libraries[0])
                 report["native_build_artifacts"] = {p.name: sha256(p.read_bytes()) for p in sorted(build.iterdir())
                                                      if p.is_file() and (p.suffix in {".dll", ".so", ".dylib", ".spv"} or p.name == "CMakeCache.txt")}
             except Exception as exc:

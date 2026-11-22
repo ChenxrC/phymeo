@@ -26,11 +26,13 @@ BASE_FEATURE_FILES = (
 NEUTRAL_FILES = ("examples/reference_neutral_calibration.py",)
 RAY_QUERY_FILES = ("examples/native_resident_smoke.py", "tests/fixtures/g1/table.gltf",
                    "tests/fixtures/g1/block.gltf")
-FEATURE_FILES = BASE_FEATURE_FILES + NEUTRAL_FILES + RAY_QUERY_FILES
+NATIVE_NEUTRAL_FILES = ("tests/test_native_display_device.py", "tests/test_reference_neutral.py",
+                        "tests/test_native_ray_query_device.py")
+FEATURE_FILES = BASE_FEATURE_FILES + NEUTRAL_FILES + RAY_QUERY_FILES + NATIVE_NEUTRAL_FILES
 KINDS = ("host", "uv-native", "uv-sapien-raster", "uv-sapien-pt", "ibl-native", "ibl-sapien",
          "roughness-native", "roughness-sapien-raster", "roughness-sapien-pt",
-         "neutral-sapien", "ray-query-native")
-NATIVE_KINDS = ("uv-native", "ibl-native", "roughness-native", "ray-query-native")
+         "neutral-sapien", "ray-query-native", "neutral-native")
+NATIVE_KINDS = ("uv-native", "ibl-native", "roughness-native", "ray-query-native", "neutral-native")
 
 
 def _digest(path):
@@ -72,7 +74,8 @@ def _fixture_members(enabled):
     if not values or len(values) != len(set(values)) or not set(values) <= set(KINDS):
         raise ValueError("unexpected feature fixture selection")
     return (BASE_FEATURE_FILES + (NEUTRAL_FILES if "neutral-sapien" in values else ())
-            + (RAY_QUERY_FILES if "ray-query-native" in values else ()))
+            + (RAY_QUERY_FILES if "ray-query-native" in values else ())
+            + (NATIVE_NEUTRAL_FILES if "neutral-native" in values else ()))
 
 
 def copy_feature_bundle(rendering_root, destination, *, enabled=None):
@@ -206,6 +209,20 @@ def validate_feature_result(kind, result):
         if (result.get("shadow_mode") != "ray_query" or result.get("primary_visibility") != "raster"
                 or result.get("ray_query_enabled") is not True or len(result.get("captures", [])) != 3):
             raise ValueError("installed public hardware-shadow evidence missing")
+    elif kind == "neutral-native":
+        captures = result.get("captures", [])
+        expected = {(scene, mode, grid, transform) for scene in ("display-empty", "gray-display")
+                    for mode in ("software", "ray_query") for grid in (2, 4, 8)
+                    for transform in ("clip", "pbr-neutral")}
+        observed = {(row.get("scene"), row.get("shadow_mode"), row.get("area_light_grid"),
+                     row.get("display_transform")) for row in captures}
+        if (result.get("schema") != "phymeo-g5-public-native-neutral-v1"
+                or result.get("tests_run") != 2 or result.get("tests_skipped") != 0
+                or result.get("highlight_recovered") is not True or result.get("sensors_unchanged") is not True
+                or len(captures) != 24 or observed != expected
+                or any(row.get("display_transform_abi") != 1 for row in captures
+                       if row.get("display_transform") == "pbr-neutral")):
+            raise ValueError("installed native Neutral public coverage/highlight/sensor proof missing")
 
 
 def _ray_query(bundle, output, library, device_index):
@@ -271,6 +288,128 @@ def _ray_query(bundle, output, library, device_index):
         _save(output/"summary.json", report)
     return report
 
+
+def native_display_build_binding(library, source_root):
+    """Bind the installed build, including all twelve actual shader variants."""
+    library, source = Path(library).resolve(), Path(source_root).resolve()
+    if library.is_relative_to(source) or not library.is_file():
+        raise ValueError("native display library must be an existing source-external build outside source")
+    names = tuple(f"{program}.{stage}.spv" for program in
+                  ("native", "resident", "resident_sky", "resident_rayquery") for stage in ("vert", "frag"))
+    names += tuple(f"{program}_area{grid}.frag.spv" for program in
+                   ("resident", "resident_rayquery") for grid in (4, 8))
+    shaders = {}
+    for name in names:
+        path = (library.parent/name).resolve()
+        if not path.is_relative_to(library.parent) or not path.is_file():
+            raise ValueError(f"missing or escaped native display shader: {name}")
+        raw = path.read_bytes()
+        if raw[:4] != bytes.fromhex("03022307"):
+            raise ValueError(f"native display shader is not SPIR-V: {name}")
+        shaders[name] = hashlib.sha256(raw).hexdigest()
+    return {"library": {"file": str(library), "sha256": _digest(library)}, "shaders": shaders}
+
+
+def _native_neutral(bundle, output, library, device_index, source):
+    """Run the two original public device tests, with observation-only recording."""
+    import os
+    from unittest.mock import patch
+    from phymeo_rendering.outputs import Channel
+
+    output.mkdir(parents=True, exist_ok=False)
+    build = native_display_build_binding(library, source)
+    report = {"schema": "phymeo-g5-public-native-neutral-v1", "status": "running", "build": build,
+              "tests_run": 0, "tests_skipped": 0, "captures": [], "closed_sessions": [],
+              "highlight_recovered": False, "sensors_unchanged": False,
+              "scope": "original installed public tests: constant HDR background and analytic lit GGX foreground; software/ray-query, grids 2/4/8; no old-shader or 177-sample rerun"}
+    captures, owners, paired = report["captures"], [], {}
+    stream = io.StringIO()
+    try:
+        # Load exact SHA-bound test helpers, never product source copies. The
+        # reference test module supplies only its independent Decimal oracle;
+        # its SAPIEN device tests are neither selected nor executed.
+        _module("test_reference_neutral", bundle/"tests/test_reference_neutral.py")
+        _module("test_native_ray_query_device", bundle/"tests/test_native_ray_query_device.py")
+        with patch.dict(os.environ, PHYMEO_NATIVE_DISPLAY_DLL=str(library),
+                        PHYMEO_NATIVE_DEVICE_INDEX=str(device_index)):
+            tests = _module("g5_copied_native_display_tests", bundle/"tests/test_native_display_device.py")
+            original_backend = tests.NativeBackend
+            report["public_api"] = original_backend.__module__+"."+original_backend.__qualname__
+            if report["public_api"] != "phymeo_rendering.backends.native.NativeBackend":
+                raise ValueError("native display protocol did not use the installed public NativeBackend")
+
+            class RecordedSession:
+                def __init__(self, owner, scene, config):
+                    self.owner, self.scene, self.config = owner, scene, config
+                def capture(self, frame, request):
+                    captured = self.owner.capture(frame, request)
+                    diagnostic = self.owner.diagnostics()
+                    if (diagnostic["library_sha256"] != build["library"]["sha256"]
+                            or not set(diagnostic["shader_sha256"].values()) <= set(build["shaders"].values())):
+                        raise ValueError("native display used a different DLL or shader than the installed build")
+                    for field in ("shadow_mode", "area_light_grid", "display_transform"):
+                        if diagnostic[field] != self.config[field]:
+                            raise ValueError(f"public native display {field} differs from requested mode")
+                    prefix = "resident_rayquery" if diagnostic["shadow_mode"] == "ray_query" else "resident"
+                    grid = diagnostic["area_light_grid"]
+                    fragment = prefix+(f"_area{grid}" if grid != 2 else "")+".frag.spv"
+                    if diagnostic["shader_sha256"]["frag"] != build["shaders"][fragment]:
+                        raise ValueError("native display did not load the selected installed panel-grid shader")
+                    planes = {plane.channel: plane.data for plane in captured.planes}
+                    row = {"scene": self.scene.key, "tick": frame.key.tick,
+                           "shadow_mode": diagnostic["shadow_mode"],
+                           "area_light_grid": diagnostic["area_light_grid"],
+                           "display_transform": diagnostic["display_transform"],
+                           "display_transform_abi": diagnostic["display_transform_abi"],
+                           "diagnostics": diagnostic, "planes": {}}
+                    stem = f"capture-{len(captures):02d}"
+                    for channel, raw in planes.items():
+                        filename = stem+"."+channel.name.lower()+".raw"
+                        (output/filename).write_bytes(raw)
+                        row["planes"][channel.value] = {"file": filename, "sha256": _digest(output/filename)}
+                    offset = ((request.camera.height//2)*request.camera.width+request.camera.width//2)*3
+                    row["center_rgb8"] = list(planes[Channel.RGB][offset:offset+3])
+                    pair = (self.scene.key, row["shadow_mode"], row["area_light_grid"])
+                    paired.setdefault(pair, {})[row["display_transform"]] = (planes, row["center_rgb8"])
+                    captures.append(row)
+                    return captured
+                def close(self):
+                    self.owner.close()
+                def diagnostics(self):
+                    return self.owner.diagnostics()
+
+            class RecordedBackend:
+                def __init__(self, *args, **options):
+                    self.backend, self.config = original_backend(*args, **options), options
+                def open_scene(self, scene):
+                    owner = self.backend.open_scene(scene)
+                    owners.append(owner)
+                    return RecordedSession(owner, scene, self.config)
+
+            tests.NativeBackend = RecordedBackend
+            suite = unittest.defaultTestLoader.loadTestsFromTestCase(tests.NativeDisplayDeviceTests)
+            result = unittest.TextTestRunner(stream=stream, verbosity=2).run(suite)
+            report.update(tests_run=result.testsRun, tests_skipped=len(result.skipped))
+            if not result.wasSuccessful() or result.testsRun != 2 or result.skipped:
+                raise ValueError("original public native Neutral suite did not pass both real tests")
+        report["highlight_recovered"] = len(paired) == 12 and all(
+            pair["clip"][1] == [255]*3 and max(pair["pbr-neutral"][1]) < 255 for pair in paired.values())
+        report["sensors_unchanged"] = all(pair["clip"][0][channel] == pair["pbr-neutral"][0][channel]
+            for pair in paired.values() for channel in (Channel.FORWARD_DEPTH, Channel.INSTANCE_ID, Channel.VALID))
+        report["status"] = "passed"
+        validate_feature_result("neutral-native", report)
+        if native_display_build_binding(library, source) != build:
+            raise ValueError("native display build changed during public captures")
+    except BaseException as error:
+        report.update(status="failed", error=f"{type(error).__name__}: {error}")
+        raise
+    finally:
+        for owner in owners:
+            owner.close()
+            report["closed_sessions"].append(owner.diagnostics())
+        (output/"public-tests.log").write_text(stream.getvalue(), encoding="utf-8")
+        _save(output/"summary.json", report)
+    return report
 
 def _module(name, path):
     spec = importlib.util.spec_from_file_location(name, path)
@@ -398,6 +537,10 @@ def installed_feature(args):
                 report["script"] = "native_resident_smoke.py:moving_shadow"
                 result_file = "summary.json"
                 result = _ray_query(bundle, output, library, args.device_index)
+            elif args.kind == "neutral-native":
+                report["script"] = "test_native_display_device.py:NativeDisplayDeviceTests"
+                result_file = "summary.json"
+                result = _native_neutral(bundle, output, library, args.device_index, source)
             else:
                 script, result_file, argv = protocol_command(args.kind, output, library=library,
                     device_index=args.device_index, sapien_device=args.sapien_device)

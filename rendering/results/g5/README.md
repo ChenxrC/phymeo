@@ -113,15 +113,20 @@ C:/Python311/python.exe -m pip download --index-url https://pypi.org/simple `
 
 ## 扩展验收：粗糙度贴图、参考显示变换、硬件阴影
 
-未传 `--feature-smoke` 的基本安装/F0 配置保持原行为。传入后，三个默认路径会要求全部 11 个 feature 阶段：HOST、三端 UV、原生/参考 IBL、三端 roughness、参考 Neutral、原生 ray-query。所有设备输入来自同一个外部新环境，产品只从被验 wheel 导入；不会复制产品 Python 源作 oracle。
+未传 `--feature-smoke` 的基本安装/F0 配置保持原行为。传入后，三个默认路径会要求全部 12 个 feature 阶段：HOST、三端 UV、原生/参考 IBL、三端 roughness、参考 Neutral、原生 ray-query、原生 Neutral。所有设备输入来自同一个外部新环境，产品只从被验 wheel 导入；不会复制产品 Python 源作 oracle。
 
 - `roughness-native`、`roughness-sapien-raster`、`roughness-sapien-pt`：逐字复制并 SHA 绑定候选中的 `texture_calibration.py`，仅传既有 `--role roughness`。每端为同几何的贴图与解析材质各一次曝光，16 块、每块 49 像素；保留最大 RGB8 差 ≤3、解析色差跨度 ≥40 和 raster 三种传感附件逐字相同的原门。原 roughness GREEN 字节是线性数据，不能按 sRGB 解码。另一个原 `--role color` 的 16 块 base-color 测试继续执行。
-- `neutral-sapien`：复制原 `reference_neutral_calibration.py` 及已有 HDR/sphere 辅助脚本，实际 raster/PT 各拍 clip 和 pbr-neutral，共四曝光。曝光仍为 8、PT 64 spp/4 bounce/无降噪；同路径实际线性读回须完全相同，raster depth/ID/VALID 完全相同，固定前景至少 64 像素从全白剪裁恢复。保存真实线性 raw/RGB/PNG 和闭会话诊断。这项仅属于 SAPIEN，不能写为原生支持 Neutral。
+- `neutral-sapien`：复制原 `reference_neutral_calibration.py` 及已有 HDR/sphere 辅助脚本，实际 raster/PT 各拍 clip 和 pbr-neutral，共四曝光。曝光仍为 8、PT 64 spp/4 bounce/无降噪；同路径实际线性读回须完全相同，raster depth/ID/VALID 完全相同，固定前景至少 64 像素从全白剪裁恢复。保存真实线性 raw/RGB/PNG 和闭会话诊断。本项只计 SAPIEN 的四曝光；原生 Neutral 由下面的独立安装后用例签收。
 - `ray-query-native`：复用原 `native_resident_smoke.moving_shadow` 及两份原 glTF，唯一材料路径变化是把 URI 定位到复制后、SHA 相同的外部文件。通过实际公开 `NativeBackend(resident=True, shadow_mode='ray_query')` 跑遮挡/向两侧移开的三曝光；保留原 receiver 1.125 m、blocker 0.875 m、误差 <2e-6 m、ID/VALID、亮度/上传/生命周期门。保存每曝光四通道原字节、RGB PNG 和真实 `resident_ray_query_info.enabled=1`。这是硬件阴影查询，主可见性仍是 raster，不是 native path tracing；不支持的设备直接失败，无软件 fallback。
 
-新增独立输入只允许 `reference_neutral_calibration.py`、`native_resident_smoke.py` 和原 table/block glTF；加上原七份文件构成固定有界集合，每个文件单独 SHA。选择清单也写入 manifest。两新协议未选时，其额外文件无需存在，便于旧候选明确收窄验收。
+- `neutral-native`：逐字复制 `test_native_display_device.py` 两个已接受的公开测试，以及提供独立 Decimal 参考与原 quad 资产的 `test_reference_neutral.py`、`test_native_ray_query_device.py`。在相同安装环境、新 DLL 和全部 12 个 SPIR-V 上实际执行两方法：常量 HDR 背景与独立 GGX 灰面，各含 software／ray_query、灯面 2／4／8、clip／Neutral，共 24 个 7×3 曝光。保持原背景 ≤1 RGB8、灰面中心 ≤2 RGB8、三个传感通道逐字相同的门；同时要求两场景各档的中心从全白剪裁恢复为低于 255。不得 skip、不得只给旧报告。记录真实 public API、每个选中 shader 的新 build SHA、每曝光四通道 raw、诊断和完整测试日志。未复制产品源码或调用其显示变换作 oracle；不重复 177 色样本或旧 shader 兼容套。此前 `cb7dcb27` 的源码内结果是前置，不能计作安装后通过。
+新增独立输入只允许 `reference_neutral_calibration.py`、`native_resident_smoke.py` 和原 table/block glTF；另加上述三份原生 Neutral 测试，加上原七份文件构成固定有界集合，每个文件单独 SHA。选择清单也写入 manifest。对应新协议未选时，其额外文件无需存在，便于旧候选明确收窄验收。
 
 只有尚不进入该候选的功能才应显式略过，例如 `--feature-smoke --skip-feature neutral-sapien:not-in-this-release`。每项必须给非空理由，HOST 不可略过。缺硬件、异常或失败不自动转为略过。略过项以及未选设备路径均记 `not_verified`；若其余请求项通过，顶层 `status=partial`（CLI 退出 0 只表示所选流程结束，不代表完整 G5 通过）。完整默认验收只能为 `passed` 或 `failed`，本机已验证功能默认不略过。
 
 当前扩展 tests-first 固定为 `68f7d7fd`，真实 11 HOST 方法 RED：2 failures、11 errors（包含子例），0.132 秒。日志保存于 G5 作者树 `artifacts/rendering/g5-prepare/10-extended-red/`。本节描述待验收的执行合同；没有把既有源码内设备结果算作 wheel 外通过。最终构建必须使用包含这些独立脚本的精确候选提交，实际每项安装后结果和新 DLL/shader SHA 另存。
 本轮扩展 HOST GREEN：11 项 feature + 13 项 packaging，共 24 方法，23 通过、1 个真实 wheel opt-in 明确 skip，3.058 秒，退出 0。固定原日志位于 `artifacts/rendering/g5-prepare/11-extended-green/`。该结果验证调度、SHA 绑定、结果门和包配置；尚未构建/安装最终 wheel，不是源码外设备验收结果。进程 guard 保留真实 idle MSBuild nodeReuse 记录（父进程已结束、无编译子进程、短间隔 CPU/I/O 不变），没有将它伪报为机器进程为零。
+
+原生 Neutral 安装闭环 tests-first 为 `3c29fcb7`。新增四方法真实 RED：7 个失败、3 个错误（含子例），0.054 秒，退出 1；缺功能与缺证据确实被捕获。日志为 `artifacts/rendering/g5-prepare/12-native-neutral-red/`。最终 installed 用例仍等待 G5 精确候选与串行验收。
+
+原生 Neutral 驱动补齐后，完整 `test_g5_features` 的 15 个 HOST 方法实际全部通过，0.208 秒、退出 0、无 skip，日志为 `artifacts/rendering/g5-prepare/13-native-neutral-green/`。这只验证安装后协议的调度、文件／新 shader 绑定和证据负控；24 次实际安装后公开曝光仍由最终 G5 运行产生。

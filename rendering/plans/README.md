@@ -4,7 +4,7 @@
 
 G1 在 `b018b32b` 接通资产声明、场景引用、位姿和相机曝光。G2 用同一张[双帧米制标定桌](../tests/fixtures/g1/README.md)接通程序场景、请求规划、输出帧包和拍摄会话。三个开发提交为 M7 `83db6d31`、M6/M4 `2666ac84`、M5 `932e16aa`。在 Python 3.11 和 3.13 上，渲染包的 142 项测试均通过。[拍摄集成测试](../tests/integration/test_backend_contract.py)使用两个人工像素校验通道、帧身份和关闭后的所有权。
 
-下一批 G3 接入 SAPIEN 参考成像和原生 Vulkan 光栅。验收在同一张标定桌上比较真实 RGB、米制深度和实例 ID，并记录实际设备与路径。开发边界见[引擎架构图](../architecture.html)，首图的检查方法见[验收规程](09-acceptance.md)。
+G3／R0 已在 RTX 4060 Laptop 上通过。自研 Vulkan 光栅及 SAPIEN 光栅输出 RGB、深度、实例 ID 和掩码，SAPIEN 路径追踪输出参考 RGB。下一批 G4 从 R1 开始，接入带许可与单位的 Panda 视觉网格和两帧真实位姿，用固定与腕部机位检查基座、腕、手指锚点。详见[标定桌实拍与复现](../results/g3/README.md)和[验收规程](09-acceptance.md)。
 
 ## 给模块负责人的七张任务单
 

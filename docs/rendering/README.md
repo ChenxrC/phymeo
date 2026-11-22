@@ -2,7 +2,7 @@
 
 独立开发入口现位于仓库根目录 [rendering/](../../rendering/README.md)。[引擎架构图](../../rendering/architecture.html)对应当前代码骨架。下文保留首轮技术调研；其中建议的包路径以本入口为准，SAPIEN 定位为可选参考后端。
 
-2026-11-22 · 分支 `codex/rendering` · 基线 `codex/exp@761eb304`。打开[可视路线图](roadmap.html)查看 Phymeo 已有画面、桌面操作的美术目标和分阶段验收。本次交付是调研与设计。图中的机械臂效果意向由 ImageGen 生成，实际后端画面在 R0 开始产出。
+2026-11-22 · 分支 `codex/rendering` · 基线 `codex/exp@761eb304`。打开[可视路线图](roadmap.html)查看 Phymeo 已有画面、桌面操作的美术目标和分阶段验收。图中的机械臂效果意向由 ImageGen 生成。G3／R0 的[三张真实 GPU 画面与测量结果](../../rendering/results/g3/README.md)已发布。下文为首轮调研时的环境和计划记录。
 
 ## 选型
 

@@ -1,6 +1,6 @@
 # M1 外观资产开发计划
 
-G1 已实现 Mesh、Material 声明校验与无 I/O 构造，见[模块测试](../tests/test_assets.py)。后续 R1/R2 的外观解析及设备消费按下文计划开展。
+G1 已实现 Mesh、Material 声明校验与无 I/O 构造，见[模块测试](../tests/test_assets.py)。G3 的[共享解码器](../src/phymeo_rendering/mesh_data.py)已将受限的本地内嵌 glTF 三角网格交给两种后端，见[标定桌实测](../results/g3/README.md)。R1/R2 继续推进 Panda 视觉资产、材质与纹理。
 
 **目标：** 使当前 `Mesh` 与基础不透明 `Material` 成为独立、可验证的资产声明，并形成首版不透明 glTF/GLB 的共享外观描述，为 R0 标定场景、R1 真实资产和 R2 材质比较提供稳定输入。
 

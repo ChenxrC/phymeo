@@ -1,6 +1,6 @@
 # 上下游合并与联调
 
-集成人维护候选分支、共享夹具、集成测试及安装配置。每个模块在自己的工作树开发并提交；涉及公开字段的调整先落在所属模块，再由下游合入这次调整。G1 的[静态清单与双帧测试](../tests/integration/test_scene_source.py)及[腕部标定与错帧测试](../tests/integration/test_camera_capture.py)已落地。G2 的[拍摄会话联调](../tests/integration/test_backend_contract.py)使用真实程序数据源、请求规划器和发布校验，设备读回由测试记录器提供。G3–G5 待执行。
+集成人维护候选分支、共享夹具、集成测试及安装配置。每个模块在自己的工作树开发并提交；涉及公开字段的调整先落在所属模块，再由下游合入这次调整。G1 的[静态清单与双帧测试](../tests/integration/test_scene_source.py)及[腕部标定与错帧测试](../tests/integration/test_camera_capture.py)已落地。G2 的[拍摄会话联调](../tests/integration/test_backend_contract.py)使用真实程序数据源、请求规划器和发布校验，设备读回由测试记录器提供。G3 已通过。三条设备路径共用 F0，189 项渲染测试在启用真实设备的环境中全部通过。[G3 证据](../results/g3/README.md)记录了首轮测点修正。下一个关口是 G4 的 Panda 真实回放。
 
 ## 在哪些边界接起来
 

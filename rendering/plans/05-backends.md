@@ -1,6 +1,6 @@
 # M5：真实图形后端与设备会话实施计划
 
-G2 提供 `ValidatedRenderSession(scene, delegate)`，负责能力、帧绑定、输出与关闭检查。[会话测试](../tests/test_backends.py)使用记录器。原生和 SAPIEN 入口在 G3 实现设备接入前显式报告不可用。
+G2 提供 `ValidatedRenderSession(scene, delegate)`，负责能力、帧绑定、输出与关闭检查。[会话测试](../tests/test_backends.py)使用记录器。G3 已在具名 GPU 验证原生 Vulkan 光栅、SAPIEN 光栅与 SAPIEN 路径追踪。可查[逐路径通道、设备生命周期及原图](../results/g3/README.md)。
 
 **目标：** 经同一个 `RenderBackend`／`RenderSession` 公共入口产生真实图像；首版由 native raster 承担快速及传感路径，由可选 SAPIEN 参考 PT 提供真实路径追踪对照，分别记录设备、失败与成本。
 
@@ -184,4 +184,4 @@ R2 参考 PT 的未降噪采样阶梯与 ROI 噪声随采样总体下降由 09 �
 - [ ] 先执行 `python -m pytest rendering/tests/test_backends.py -q`；设备环境再显式执行 `test_native_backend_device.py` 和 `test_sapien_backend_device.py`。如引入 device markers，由 08 在独立项目配置注册；未运行的设备测试不计 PASS。
 - [ ] 会话合同、native 实现、参考实现可分别合并且如实标注能力。G2 的记录器与 M4 联测不依赖原生设备先合入；R0 可先完成参考双路径。G3 及首版里程碑必须 native raster＋真实参考 PT 同源通过，再按 R1–R4 验收，不能以纯 mock 的 GREEN 替代。
 - [ ] M1/M2/M3/M4/M6/M7 对资产解释、相机轴、帧身份和 bytes 格式无冲突；源物理模块无改动，无隐式 fallback。
-- [ ] 将机器、驱动、实际路径、依赖版本、失败日志、原图和量化结果交 09，公共入口文档由 08 更新。native PT 未实测的状态明确保持 unavailable，不勾选支持。
+- [x] G3 已将实际路径、依赖版本、失败定位、原图和量化结果交 09，公共入口已更新。当前原生端仅开放光栅。

@@ -1,10 +1,12 @@
 """Opt-in resident Vulkan ABI: indexed assets once, rigid matrices per capture."""
 import ctypes as ct
 import math
+import hashlib
 
 from . import BackendUnavailableError, UnsupportedRequestError
 from ._native_studio import NativeStudio
 from ._native_texture import ResidentTexture, ResidentUV, ResidentTextureInfo, TextureUpload
+from ._native_environment import ResidentEnvironment, ResidentEnvironmentInfo, EnvironmentUpload
 from ._native_device import NativeDevice, Parameters, _Info, validate_parameters
 
 
@@ -143,6 +145,11 @@ class ResidentDevice(NativeDevice):
         self._texture_info = None
         self._texture_abi_version = None
         self._textures_set = False
+        self._environment_function = None
+        self._environment_info_function = None
+        self._environment_info = None
+        self._environment_abi_version = None
+        self._environment_set = False
         self._uploaded = False
         self._instance_count = 0
         super().__init__(*args)
@@ -165,6 +172,23 @@ class ResidentDevice(NativeDevice):
         lib.pr_resident_render.restype = ct.c_int
         lib.pr_resident_info.argtypes = [ct.c_void_p, ct.POINTER(ResidentInfo)]
         lib.pr_resident_info.restype = ct.c_int
+        if tuple(map(ct.sizeof,(ResidentEnvironment,ResidentEnvironmentInfo))) != (160,128):
+            raise BackendUnavailableError('resident environment structure layout mismatch')
+        environment_version=getattr(lib,'pr_resident_environment_abi_version',None)
+        if environment_version is not None:
+            environment_version.argtypes=[]; environment_version.restype=ct.c_uint32
+            self._environment_abi_version=int(environment_version())
+        if self._environment_abi_version==1:
+            self._environment_function=getattr(lib,'pr_resident_set_environment',None)
+            self._environment_info_function=getattr(lib,'pr_resident_environment_info',None)
+        if self._environment_function is not None:
+            self._environment_function.argtypes=[ct.c_void_p,ct.POINTER(ResidentEnvironment),
+                ct.POINTER(ct.c_float),ct.c_size_t,ct.POINTER(ct.c_uint32),ct.c_size_t,
+                ct.POINTER(ct.c_uint32),ct.c_size_t]
+            self._environment_function.restype=ct.c_int
+        if self._environment_info_function is not None:
+            self._environment_info_function.argtypes=[ct.c_void_p,ct.POINTER(ResidentEnvironmentInfo)]
+            self._environment_info_function.restype=ct.c_int
         if tuple(map(ct.sizeof,(ResidentTexture,ResidentUV,ResidentTextureInfo))) != (16,8,128):
             raise BackendUnavailableError('resident texture structure layout mismatch')
         texture_version=getattr(lib,'pr_resident_texture_abi_version',None)
@@ -240,6 +264,13 @@ class ResidentDevice(NativeDevice):
         self._profile['gpu_scope'] = 'Vulkan timestamps: raster plus fragment work, then attachment copies; no per-light kernel claim'
         self._profile['snapshot'] = 'last live query, retained after close; final ownership is checked by telemetry'
 
+    def _remember_environment_info(self, value):
+        if value.environment_abi_version!=1:
+            raise RuntimeError('unsupported resident environment ABI')
+        self._environment_info={name:int(getattr(value,name)) for name,_ in ResidentEnvironmentInfo._fields_
+                                if name not in ('reserved','reserved64')}
+        self._environment_info['capture_scope']='successful RGB captures with an uploaded directional environment; sky draw count is not foreground pixel count'
+        self._environment_info['snapshot']='last live query; final GPU allocations are reported by teardown telemetry'
     def _remember_texture_info(self, value):
         if value.texture_abi_version!=1:
             raise RuntimeError('unsupported resident texture ABI')
@@ -285,8 +316,16 @@ class ResidentDevice(NativeDevice):
                 if self._texture_info_function(self._handle,ct.byref(texture)):
                     raise RuntimeError(self._error())
                 self._remember_texture_info(texture)
+            if self._environment_info_function is not None:
+                environment=ResidentEnvironmentInfo()
+                if self._environment_info_function(self._handle,ct.byref(environment)):
+                    raise RuntimeError(self._error())
+                self._remember_environment_info(environment)
         result.update(self._resident_info)
         result['resident_render_planes_available'] = self._render_planes_function is not None
+        result['resident_environment_available'] = self._environment_function is not None and (self._environment_info is None or bool(self._environment_info['supported'] and self._environment_info['shader_compatible']))
+        result['resident_environment_abi_version'] = self._environment_abi_version
+        result['resident_environment_info'] = dict(self._environment_info) if self._environment_info is not None else None
         result['resident_texture_available'] = self._texture_function is not None
         result['resident_texture_abi_version'] = self._texture_abi_version
         result['resident_texture_info'] = dict(self._texture_info) if self._texture_info is not None else None
@@ -308,6 +347,31 @@ class ResidentDevice(NativeDevice):
         self._instance_count = len(instances)
         self.info()
 
+    def set_environment(self, upload):
+        if self._handle is None or not self._uploaded:
+            raise RuntimeError('resident environment requires an open uploaded scene')
+        if self._has_captured or self._environment_set:
+            raise RuntimeError('resident environment may be set once before the first capture')
+        if self._environment_function is None:
+            raise BackendUnavailableError('native resident directional environment ABI1 export is unavailable')
+        if not isinstance(upload,EnvironmentUpload):
+            raise TypeError('environment upload must be EnvironmentUpload')
+        shaders=[]; hashes={}
+        for stage in ('vert','frag'):
+            path=self.shader_directory/f'resident_sky.{stage}.spv'
+            try:
+                with path.open('rb') as stream: raw=stream.read(4*1024*1024+1)
+            except OSError as error:
+                raise BackendUnavailableError(f'native environment SPIR-V unavailable: {path}') from error
+            if len(raw)<20 or len(raw)>4*1024*1024 or len(raw)%4 or raw[:4]!=b'\x03\x02\x23\x07':
+                raise BackendUnavailableError(f'invalid native environment SPIR-V: {path}')
+            shaders.append((ct.c_uint32*(len(raw)//4)).from_buffer_copy(raw))
+            hashes['environment_sky_'+stage]=hashlib.sha256(raw).hexdigest()
+        if self._environment_function(self._handle,ct.byref(upload.config),upload.rgba,ct.sizeof(upload.rgba),
+                shaders[0],ct.sizeof(shaders[0]),shaders[1],ct.sizeof(shaders[1])):
+            raise RuntimeError(self._error())
+        self._environment_set=True
+        self.shader_sha256.update(hashes)
     def set_textures(self, upload):
         if self._handle is None or not self._uploaded:
             raise RuntimeError('resident textures require an open uploaded scene')

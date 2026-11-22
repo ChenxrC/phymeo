@@ -19,10 +19,11 @@ from ..outputs import Capture, Channel, ImagePlane
 from ..studio import StudioLighting
 from ..pipeline import DefaultPassPlanner, RenderPath
 from ..scene import VisualScene, compose_pose
-from . import UnsupportedRequestError, ValidatedRenderSession
+from . import BackendUnavailableError, UnsupportedRequestError, ValidatedRenderSession
 from ._native_resident import ResidentDevice, pack_scene
 from ._native_studio import pack_studio
 from ._native_texture import pack_textures
+from ._native_environment import pack_environment
 from ._native_device import (
     NativeDevice,
     Parameters,
@@ -144,11 +145,12 @@ def _image_planes(raw, pixels, channels, attachment_mask):
 
 
 class _NativeDelegate:
-    def __init__(self, scene, meshes, device, exposure, *, resident=False, studio=None, textures=None):
+    def __init__(self, scene, meshes, device, exposure, *, resident=False, studio=None, textures=None, environment=None):
         self.scene, self.meshes, self.device, self.exposure = scene, meshes, device, exposure
         self.resident = resident
         self.studio = deepcopy(studio)
         self.textures = deepcopy(textures)
+        self.environment = deepcopy(environment)
         self.limits = device.info()
         self.triangles = sum(len(meshes[item.mesh_id].triangles) for item in scene.instances)
         self.last_passes = ()
@@ -225,6 +227,7 @@ class _NativeDelegate:
             lighting=('native GGX/Smith/Schlick plus explicit resident studio shader' if self.studio else
                       'direct GGX/Smith/Schlick metallic-roughness; no ambient or IBL'),
             studio=deepcopy(self.studio),
+            environment=deepcopy(self.environment),
             shadows=('native resident finite-emitter visibility via mesh BVH; see bound shader' if self.studio
                      else ('GPU fragment hard-shadow mesh BVH rays' if self.resident
                            else 'GPU fragment hard-shadow triangle rays')),
@@ -344,12 +347,23 @@ class NativeBackend:
                 if textures is not None:
                     device.set_textures(textures)
                     texture_info = textures.diagnostics
+            environment_info = None
+            if self.studio is not None and self.studio.environment_map is not None:
+                if not device.info().get('resident_environment_available',False):
+                    raise BackendUnavailableError('native resident directional environment ABI/shaders are unavailable')
             studio_info = None
             if self.studio is not None:
                 payload, studio_info = pack_studio(self.studio)
                 device.set_studio(payload)
+                if self.studio.environment_map is not None:
+                    from ..environment import prepare_native_environment
+                    environment = pack_environment(prepare_native_environment(self.studio.environment_map))
+                    device.set_environment(environment)
+                    environment_info = environment.diagnostics
+                    studio_info['environment']['active_lighting'] = False
+                    studio_info['environment']['replaced_by'] = 'directional environment map'
             return NativeRenderSession(scene, _NativeDelegate(
-                scene, meshes, device, self.exposure, resident=self.resident, studio=studio_info, textures=texture_info))
+                scene, meshes, device, self.exposure, resident=self.resident, studio=studio_info, textures=texture_info, environment=environment_info))
         except BaseException as primary:
             try:
                 device.close()

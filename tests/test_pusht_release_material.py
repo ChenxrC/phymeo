@@ -336,3 +336,51 @@ def test_cpu_device_face_disagreement_cannot_silently_drop_new_contact(device_co
     assert diagnostics["input_face_contact_agreement"] is False
     changed = diagnostics["device_only_input_faces" if device_contact else "cpu_only_input_faces"]
     assert changed == list(asset.rigid_local.face_ids[:2])
+
+
+def test_release_reconstructs_each_endpoint_at_its_own_rigid_body_origin(monkeypatch):
+    from experiments.area_pressure import pusht_release_material as material
+
+    _, asset, _ = _fixture()
+    model = mj.MjModel.from_xml_string("""<mujoco><worldbody>
+      <body name="tool"><freejoint/><geom type="sphere" size=".01" mass="1"/></body>
+      <body name="object"><freejoint/><geom type="sphere" size=".01" mass="1"/></body>
+    </worldbody></mujoco>""")
+    before = dict(q=model.qpos0.copy(), v=np.zeros(model.nv), time=0.0)
+    before["q"][[0, 7]] = 0.52
+    after = _after(before, z=0.025)
+    after["q"][[0, 7]] += 0.01
+    seen = []
+    original = material._intersect_checked
+
+    def observe(*args, **kwargs):
+        result = original(*args, **kwargs)
+        assert result.surface.triangles
+        seen.append(kwargs["origin_world"].copy())
+        for tri in result.surface.triangles:
+            np.testing.assert_array_equal(tri.origin_world, seen[-1])
+            np.testing.assert_array_equal(tri.vertices, tri.local_vertices + seen[-1])
+        return result
+
+    monkeypatch.setattr(material, "_intersect_checked", observe)
+    rows = material_evidence(
+        model,
+        asset,
+        before,
+        after,
+        previous=_previous(before, after),
+        publication_frame="rigid-origin",
+    )
+    np.testing.assert_array_equal(seen, [before["q"][7:10], after["q"][7:10]])
+    assert rows[0].input_depth_m == pytest.approx(0.05, abs=2e-15)
+    assert rows[0].output_depth_m == pytest.approx(0.025, abs=2e-15)
+    assert rows[0].normal_load_n == 17.0
+    with pytest.raises(ValueError, match="publication_frame"):
+        material_evidence(
+            model,
+            asset,
+            before,
+            after,
+            previous=_previous(before, after),
+            publication_frame="unknown",
+        )

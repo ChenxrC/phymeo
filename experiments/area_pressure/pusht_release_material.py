@@ -13,7 +13,10 @@ from dataclasses import replace
 import mujoco as mj
 import numpy as np
 
-from phymeo.backends.mujoco_area_pressure_scene import BodyAreaPressureAsset
+from phymeo.backends.mujoco_area_pressure_scene import (
+    BodyAreaPressureAsset,
+    _checked_publication_frame,
+)
 from phymeo.control.manipulation_release_monitor import ReleasePairEvidence, ReleasePairKey
 from phymeo.geometry.area_pressure import AreaPressureStamp, quadrature_area_pressure
 from phymeo.geometry.area_pressure_intersection import (
@@ -99,7 +102,7 @@ def _world(asset, data, bodies):
     )
 
 
-def _cpu_geometry(asset, data, bodies):
+def _cpu_geometry(asset, data, bodies, publication_frame):
     transformed = _world(asset, data, bodies)
     pressure = replace(asset.pressure_local, world_vertices=transformed[0][0])
     rigid = replace(asset.rigid_local, world_vertices=transformed[1][0])
@@ -109,6 +112,7 @@ def _cpu_geometry(asset, data, bodies):
         rigid,
         identity=asset.identity,
         stamp=AreaPressureStamp("release-cpu", 0, float(data.time), "independent-FK"),
+        origin_world=data.xpos[bodies[1]] if publication_frame == "rigid-origin" else None,
     )
     return geometry, transformed
 
@@ -128,9 +132,9 @@ def _phase(model, asset, data, bodies, geometry, *, transformed=None):
             and triangle.compliant_cell_id in asset.pressure_local.cell_ids,
             "foreign material face/cell",
         )
-        normal = np.cross(
-            triangle.vertices[1] - triangle.vertices[0], triangle.vertices[2] - triangle.vertices[0]
-        )
+        # The translated chart preserves narrow facet edges. Point Jacobians below use world positions.
+        vertices = triangle.vertices if triangle.local_vertices is None else triangle.local_vertices
+        normal = np.cross(vertices[1] - vertices[0], vertices[2] - vertices[0])
         magnitude = float(np.linalg.norm(normal))
         _require(np.isfinite(magnitude) and magnitude > 0, "positive contact patch area")
         normal /= magnitude
@@ -315,6 +319,7 @@ def material_evidence(
     receipt=None,
     previous=None,
     diagnostics=None,
+    publication_frame="world",
 ):
     """Return one whole audit plus every actual rigid face in asset order.
 
@@ -355,17 +360,18 @@ def material_evidence(
         or (not live and previous is not None),
         "one live or previous-seed force phase",
     )
+    publication_frame = _checked_publication_frame(publication_frame)
     input_data, output_data = _data(model, before), _data(model, after)
     if live:
         whole_force, forces = _live_forces(asset, bodies, before, after, geometry, receipt)
     else:
         whole_force = _seed_forces(model, before, after, previous)
         forces = {face: (None, None, None) for face in asset.rigid_local.face_ids}
-    input_geometry, input_transformed = _cpu_geometry(asset, input_data, bodies)
+    input_geometry, input_transformed = _cpu_geometry(asset, input_data, bodies, publication_frame)
     first, inputs = _phase(
         model, asset, input_data, bodies, input_geometry, transformed=input_transformed
     )
-    output_geometry, transformed = _cpu_geometry(asset, output_data, bodies)
+    output_geometry, transformed = _cpu_geometry(asset, output_data, bodies, publication_frame)
     last, outputs = _phase(
         model, asset, output_data, bodies, output_geometry, transformed=transformed
     )

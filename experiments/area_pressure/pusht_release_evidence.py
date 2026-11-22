@@ -103,6 +103,7 @@ def _build(
     receipt=None,
     geometry=None,
     diagnostics=None,
+    publication_frame="world",
 ):
     from .pusht_release_material import material_evidence
 
@@ -148,6 +149,7 @@ def _build(
             receipt=receipt,
             geometry=geometry,
             diagnostics=diagnostics,
+            publication_frame=publication_frame,
         )
     )
     return ReleaseStep(
@@ -164,7 +166,7 @@ def _build(
     )
 
 
-def build_release_seed(entry, asset):
+def build_release_seed(entry, asset, *, publication_frame="world"):
     previous = entry.previous
     if (
         previous["output_state"] != entry.state
@@ -173,11 +175,19 @@ def build_release_seed(entry, asset):
     ):
         raise ValueError("release seed differs from archived state")
     return _build(
-        entry.model, asset, previous["input_state"], entry.state, entry.tick - 1, previous=previous
+        entry.model,
+        asset,
+        previous["input_state"],
+        entry.state,
+        entry.tick - 1,
+        previous=previous,
+        publication_frame=publication_frame,
     )
 
 
-def build_release_step(entry, asset, before, after, geometry, *, diagnostics=None):
+def build_release_step(
+    entry, asset, before, after, geometry, *, diagnostics=None, publication_frame="world"
+):
     receipt = after.last_step
     if (
         receipt is None
@@ -203,6 +213,7 @@ def build_release_step(entry, asset, before, after, geometry, *, diagnostics=Non
         receipt=receipt,
         geometry=geometry,
         diagnostics=diagnostics,
+        publication_frame=publication_frame,
     )
 
 

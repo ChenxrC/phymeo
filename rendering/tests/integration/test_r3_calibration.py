@@ -34,6 +34,18 @@ class CalibrationDefinitionTest(unittest.TestCase):
                     self.assertAlmostEqual(depth, expected_depth, delta=1e-12)
         self.assertGreater(max(BOARD_IDS), 2**24)
 
+    def test_authored_quad_assets_pass_the_real_shared_loader(self):
+        from phymeo_rendering.mesh_data import load_mesh
+        surfaces = {surface.identity: surface for surface in self.surfaces}
+        meshes = {mesh.id: load_mesh(mesh) for mesh in self.scene.meshes}
+        for instance in self.scene.instances:
+            shape = meshes[instance.mesh_id]
+            surface = surfaces[instance.id]
+            self.assertEqual(len(shape.positions), 4)
+            self.assertEqual(len(shape.triangles), 2)
+            self.assertEqual(max(abs(v[0]) for v in shape.positions), surface.half_size[0])
+            self.assertEqual(max(abs(v[1]) for v in shape.positions), surface.half_size[1])
+            self.assertTrue(all(v[2] == 0.0 for v in shape.positions))
     def test_depth_is_axis_distance_and_background_is_not_a_far_plane(self):
         from ._r3_oracle import ray_hit
         depth, identity = ray_hit(self.cases[0].frame, "fixed", 170, 140, self.surfaces)
@@ -104,6 +116,7 @@ class CalibrationAuditNegativeTest(unittest.TestCase):
             for name, corrupted in (
                 ("depth", capture(d=bad_depth)),
                 ("ID", capture(identities=bad_ids)),
+                ("ID endian", capture(identities=ids.byteswap())),
                 ("flip", capture(d=depth[::-1].copy(), identities=ids[::-1].copy(), colors=rgb[::-1].copy())),
                 ("RGB marker", capture(colors=np.roll(rgb, 4, axis=1))),
             ):

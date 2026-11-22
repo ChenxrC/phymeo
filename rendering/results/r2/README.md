@@ -40,6 +40,7 @@
 | [木材、钢柱和橡胶台面](workshop-reference.mp4) | 看搬运过程里钢柱的反光、木纹与黑台面的差异。 | SAPIEN 路径追踪，256 样本/像素 |
 | [同材质的自研回放](workshop-native.mp4) | 同一相机和运动，观察直接照明和接触阴影。 | Vulkan 单次光栅，有限矩形面积灯与均匀环境光 |
 | [真实车间环境光](workshop-daylight-native.mp4) | 看机械臂转动时外壳的亮暗和钢柱对环境方向的响应。 | Vulkan 光栅、球谐漫反射、GGX 预过滤镜面、两盏矩形灯 |
+| [车间日光光追版](workshop-daylight-reference.mp4) | 在 1.2 秒暂停，比较夹爪与方块之间的反光、桌面的柔和投影，以及钢柱映出的环境。 | SAPIEN 路径追踪，960×540，每像素 1024 样本 |
 
 在出步 2159（1.35 秒），原生单方向光相对摄影棚高采样参考图的前景 MSE 为 0.16699，增加相同的两盏面积灯和环境光后为 0.00208。分母是两种渲染都标为前景的 130,139 个像素，信号为 sRGB8/255。原生两次曝光的几何传感相同；参考栅格器的 5 个轮廓像素标签有差异。双灯固定机位的 720p p95 为 43.26 ms，带木纹的运镜版为 45.62 ms。[同帧单灯](native-key.png) · [同帧双灯](native-studio.png) · [逐区比较](studio-ablation.json)
 
@@ -54,3 +55,11 @@
 日光片取源 HDR 的 0.5 倍作为相对光强。图中的原始峰值 1072，渲染时统一按 1/8 缩放全景、方向光和矩形灯，入射全景峰值因此为 67，显示前在原始线性颜色上乘回 8。该过程保留了窗户与暗处的光强比例。最终普通 sRGB8 显示会截断过亮的像素。全景使用每面 256 像素的立方体贴图。[轨迹第 36 帧，4096 样本光追](daylight-reference-4096.png) · [同帧自研原图](daylight-native.png) · [原生逐帧耗时](daylight-native-camera.json)
 
 在原摄影棚材质片的 300 帧中每隔 15 帧抽一帧。相同计算机、机位和每像素 256 样本下，SAPIEN 参考路径修改显示转换前后的 20 对公开 RGB 均逐字节相同。这些对应帧的采集 p95 从 900.46 ms 降至 400.16 ms。[逐帧身份、输出哈希和计时](reference-display-parity.json)
+
+## 阴影求交与高光显示
+
+同一 10 秒、300 姿态的 720p 车间视频，在同一 DLL 上只切换阴影求交。两个版本都在每盏矩形灯上采 2×2 个点。软件遍历的采集 p95 为 41.62 ms；GPU 光线查询为 10.65 ms，最大 21.61 ms，全部 300 帧在 33.3 ms 内。光线查询使用 61 个网格加速结构以及 63 个实例；首次建立顶层结构，之后随真实姿态更新。计时包含同步 RGB 读回，编码另计。[软件逐帧计时](daylight-software-camera.json) · [硬件逐帧计时与设备清单](daylight-hardware-camera.json)
+
+两种求交下共有 239 帧的完整 RGB 字节相同。在全部 276,480,000 个像素采样中，63 个有差异，最大单通道差 18；两个画面局部都平滑的像素差最多 1 个码值。独立路径追踪的 300 次采集 p95 为 1214.24 ms，H.264 解码后最差单帧平均绝对误差为 1.833 个 RGB8 码值。[整帧差异](daylight-shadow-difference.json) · [参考采集](daylight-reference-camera.json) · [参考片解码核对](workshop-daylight-reference.decoded.json)
+
+在固定强曝光的独立高光标定中，SAPIEN 相机可选择 Khronos PBR Neutral。相同线性 HDR 下，球体中央 40×40 采样的 1600 个全白像素均恢复了层次，映射后的通道范围为 216–254。两个显示模式读回的原始 HDR 相同，光栅相机的深度、ID 和掩码相同。[硬截断](neutral-control-clip.png) · [Neutral](neutral-control-mapped.png) · [四次曝光原始记录](reference-neutral-calibration.json)

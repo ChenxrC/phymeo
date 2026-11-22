@@ -1,0 +1,1345 @@
+{
+  "captures": [
+    {
+      "diagnostics": {
+        "accumulation": "fresh camera per exposure; no temporal history",
+        "ambient_linear_rgb": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "backend": "sapien-reference",
+        "denoiser": "none",
+        "device_description": "cuda:0",
+        "device_name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+        "device_pci": "0000:01:00.0",
+        "display": "exposure=8; clamp linear [0,1]; standard sRGB OETF; half-up UNORM8",
+        "display_transform": "clip",
+        "display_transform_source": null,
+        "driver_version": null,
+        "effective_path": "raster",
+        "exposure": 8.0,
+        "geometry": {
+          "instances": 1,
+          "limits": {
+            "instances": 256,
+            "mesh_slots": 256,
+            "uploaded_triangles": 200000,
+            "uploaded_vertices": 600000
+          },
+          "mesh_slots": 1,
+          "scope": "per-instance uploaded geometry; shared per-mesh decoding guards unchanged",
+          "uploaded_triangles": 16128,
+          "uploaded_vertices": 8066
+        },
+        "global_config_note": "camera default mutations serialized/restored inside this adapter only",
+        "library_version": "3.0.3",
+        "lifecycle": {
+          "attached_cameras": 0,
+          "attached_cameras_after_clear": null,
+          "attached_entities": 2,
+          "attached_entities_after_clear": null,
+          "attached_entities_before_clear": null,
+          "attached_lights": 1,
+          "attached_lights_after_clear": null,
+          "attached_render_bodies": 1,
+          "attached_render_bodies_after_clear": null,
+          "close_error": null,
+          "closed": false,
+          "completed_captures": 1,
+          "scope": "this scene attachments only; no driver/cache/process-memory release claim",
+          "studio_temporary_files_exist": false
+        },
+        "linear_rgb_target": "Lighting",
+        "max_bounces": null,
+        "numpy_version": "1.26.4",
+        "official_shader_sha256": "3dcc99e5302c9b7118b661fe129190d27dd938659245d5f004a3c817f5b7ddb9",
+        "physics_steps": 0,
+        "physics_systems": [],
+        "pt_clip_limit": "all vertices inside near+0.002/far and range<9999m, with FP32 clearance",
+        "pt_precision_policy": "8*FP32-epsilon*transform-scale clearance; reject >=1% scene span; pragmatic admission, not a global error proof",
+        "readback": "blocking SAPIEN get_picture CPU download, then owned bytes",
+        "requested_device": "cuda:0",
+        "requested_path": "raster",
+        "resolution_limit": 4096,
+        "samples_per_pixel": 1,
+        "sampling_pattern": null,
+        "sapien_scene_id": 1,
+        "seed": null,
+        "seed_note": "sampling_pattern specifies the actual shader and device scope",
+        "seed_support": "not-user-configurable",
+        "shader_directory": "C:\\Users\\38347\\.codex\\worktrees\\phymeo-rendering\\phymeo\\artifacts\\rendering\\g3-table\\ref-env\\Lib\\site-packages\\sapien\\vulkan_shader\\default",
+        "shader_pack": "default",
+        "shader_probe": "selected shader executed and CPU target read back",
+        "shader_sha256": "3dcc99e5302c9b7118b661fe129190d27dd938659245d5f004a3c817f5b7ddb9",
+        "shadow_map_size": 2048,
+        "studio": null,
+        "supported_channels": [
+          "srgb8_rgb",
+          "forward_depth_m_f32",
+          "instance_id_u32",
+          "valid_u8"
+        ],
+        "textures": {
+          "actual_uploads": [],
+          "bindings": [],
+          "decoded_rgb8_bytes": 0,
+          "factor_policy": "white: sRGB8 hardware decode; nonwhite: standard EOTF times linear factor, FP32 texture; material uniform white",
+          "limits": {
+            "decoded_rgb8_bytes": 67108864,
+            "upload_bytes": 134217728
+          },
+          "sampling": {
+            "address": "repeat",
+            "filter": "linear",
+            "mipmap_levels": 1,
+            "uv_origin": "upper-left; unmodified glTF TEXCOORD_0"
+          },
+          "shader_semantics": "SAPIEN 3.0.3 default/gbuffer.frag and rt/camera.rchit replace baseColor when diffuse texture exists",
+          "upload_bytes": 0,
+          "uploads": []
+        },
+        "vulkan_api_version": null
+      },
+      "display_transform": "clip",
+      "exposure": 8.0,
+      "image_file": "raster-clip.png",
+      "linear_file": "raster-clip.linear-f32.raw",
+      "linear_sha256": "6335218fe0f785bd5ea4d4b2080609f290b65b63e9fcea0965d8ab792ccd95ca",
+      "path": "raster",
+      "rgb_file": "raster-clip.rgb8.raw",
+      "rgb_sha256": "f4cdc9ad9fd70f467baaa0f392fd20df76b2ffc7094402413d96e12a41c127f8",
+      "sensor_sha256": {
+        "forward_depth_m_f32": "e32c394b871fa57958a11b87b2bd53c6c75f889e733840feccbad58181d9fcd6",
+        "instance_id_u32": "f3258db0f138c262ad8494663dcdc3f296d0b21c0a67b5a660d654eec5dc88b9",
+        "valid_u8": "e1c512f70120c91ae9dfc4318e4867f85ba88d3a7c7223af66a40c7f739c002a"
+      },
+      "shape": [
+        120,
+        160,
+        3
+      ]
+    },
+    {
+      "diagnostics": {
+        "accumulation": "fresh camera per exposure; no temporal history",
+        "ambient_linear_rgb": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "backend": "sapien-reference",
+        "denoiser": "none",
+        "device_description": "cuda:0",
+        "device_name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+        "device_pci": "0000:01:00.0",
+        "display": "exposure=8; nonnegative linear Rec.709; Khronos PBR Neutral; standard sRGB OETF; half-up UNORM8",
+        "display_transform": "pbr-neutral",
+        "display_transform_source": "https://github.com/KhronosGroup/ToneMapping/blob/b5a2eed5ddf6c2227090449399de9c7affb9e4c9/PBR_Neutral/pbrNeutral.glsl",
+        "driver_version": null,
+        "effective_path": "raster",
+        "exposure": 8.0,
+        "geometry": {
+          "instances": 1,
+          "limits": {
+            "instances": 256,
+            "mesh_slots": 256,
+            "uploaded_triangles": 200000,
+            "uploaded_vertices": 600000
+          },
+          "mesh_slots": 1,
+          "scope": "per-instance uploaded geometry; shared per-mesh decoding guards unchanged",
+          "uploaded_triangles": 16128,
+          "uploaded_vertices": 8066
+        },
+        "global_config_note": "camera default mutations serialized/restored inside this adapter only",
+        "library_version": "3.0.3",
+        "lifecycle": {
+          "attached_cameras": 0,
+          "attached_cameras_after_clear": null,
+          "attached_entities": 2,
+          "attached_entities_after_clear": null,
+          "attached_entities_before_clear": null,
+          "attached_lights": 1,
+          "attached_lights_after_clear": null,
+          "attached_render_bodies": 1,
+          "attached_render_bodies_after_clear": null,
+          "close_error": null,
+          "closed": false,
+          "completed_captures": 1,
+          "scope": "this scene attachments only; no driver/cache/process-memory release claim",
+          "studio_temporary_files_exist": false
+        },
+        "linear_rgb_target": "Lighting",
+        "max_bounces": null,
+        "numpy_version": "1.26.4",
+        "official_shader_sha256": "3dcc99e5302c9b7118b661fe129190d27dd938659245d5f004a3c817f5b7ddb9",
+        "physics_steps": 0,
+        "physics_systems": [],
+        "pt_clip_limit": "all vertices inside near+0.002/far and range<9999m, with FP32 clearance",
+        "pt_precision_policy": "8*FP32-epsilon*transform-scale clearance; reject >=1% scene span; pragmatic admission, not a global error proof",
+        "readback": "blocking SAPIEN get_picture CPU download, then owned bytes",
+        "requested_device": "cuda:0",
+        "requested_path": "raster",
+        "resolution_limit": 4096,
+        "samples_per_pixel": 1,
+        "sampling_pattern": null,
+        "sapien_scene_id": 2,
+        "seed": null,
+        "seed_note": "sampling_pattern specifies the actual shader and device scope",
+        "seed_support": "not-user-configurable",
+        "shader_directory": "C:\\Users\\38347\\.codex\\worktrees\\phymeo-rendering\\phymeo\\artifacts\\rendering\\g3-table\\ref-env\\Lib\\site-packages\\sapien\\vulkan_shader\\default",
+        "shader_pack": "default",
+        "shader_probe": "selected shader executed and CPU target read back",
+        "shader_sha256": "3dcc99e5302c9b7118b661fe129190d27dd938659245d5f004a3c817f5b7ddb9",
+        "shadow_map_size": 2048,
+        "studio": null,
+        "supported_channels": [
+          "srgb8_rgb",
+          "forward_depth_m_f32",
+          "instance_id_u32",
+          "valid_u8"
+        ],
+        "textures": {
+          "actual_uploads": [],
+          "bindings": [],
+          "decoded_rgb8_bytes": 0,
+          "factor_policy": "white: sRGB8 hardware decode; nonwhite: standard EOTF times linear factor, FP32 texture; material uniform white",
+          "limits": {
+            "decoded_rgb8_bytes": 67108864,
+            "upload_bytes": 134217728
+          },
+          "sampling": {
+            "address": "repeat",
+            "filter": "linear",
+            "mipmap_levels": 1,
+            "uv_origin": "upper-left; unmodified glTF TEXCOORD_0"
+          },
+          "shader_semantics": "SAPIEN 3.0.3 default/gbuffer.frag and rt/camera.rchit replace baseColor when diffuse texture exists",
+          "upload_bytes": 0,
+          "uploads": []
+        },
+        "vulkan_api_version": null
+      },
+      "display_transform": "pbr-neutral",
+      "exposure": 8.0,
+      "image_file": "raster-pbr-neutral.png",
+      "linear_file": "raster-pbr-neutral.linear-f32.raw",
+      "linear_sha256": "6335218fe0f785bd5ea4d4b2080609f290b65b63e9fcea0965d8ab792ccd95ca",
+      "path": "raster",
+      "rgb_file": "raster-pbr-neutral.rgb8.raw",
+      "rgb_sha256": "c2f12586d9c5e49fe64a89e608b19236d53c57b84c1fbc865b3658845da6f794",
+      "sensor_sha256": {
+        "forward_depth_m_f32": "e32c394b871fa57958a11b87b2bd53c6c75f889e733840feccbad58181d9fcd6",
+        "instance_id_u32": "f3258db0f138c262ad8494663dcdc3f296d0b21c0a67b5a660d654eec5dc88b9",
+        "valid_u8": "e1c512f70120c91ae9dfc4318e4867f85ba88d3a7c7223af66a40c7f739c002a"
+      },
+      "shape": [
+        120,
+        160,
+        3
+      ]
+    },
+    {
+      "diagnostics": {
+        "accumulation": "fresh camera per exposure; no temporal history",
+        "ambient_linear_rgb": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "backend": "sapien-reference",
+        "denoiser": "none",
+        "device_description": "cuda:0",
+        "device_name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+        "device_pci": "0000:01:00.0",
+        "display": "exposure=8; clamp linear [0,1]; standard sRGB OETF; half-up UNORM8",
+        "display_transform": "clip",
+        "display_transform_source": null,
+        "driver_version": null,
+        "effective_path": "path_trace",
+        "exposure": 8.0,
+        "geometry": {
+          "instances": 1,
+          "limits": {
+            "instances": 256,
+            "mesh_slots": 256,
+            "uploaded_triangles": 200000,
+            "uploaded_vertices": 600000
+          },
+          "mesh_slots": 1,
+          "scope": "per-instance uploaded geometry; shared per-mesh decoding guards unchanged",
+          "uploaded_triangles": 16128,
+          "uploaded_vertices": 8066
+        },
+        "global_config_note": "camera default mutations serialized/restored inside this adapter only",
+        "library_version": "3.0.3",
+        "lifecycle": {
+          "attached_cameras": 0,
+          "attached_cameras_after_clear": null,
+          "attached_entities": 2,
+          "attached_entities_after_clear": null,
+          "attached_entities_before_clear": null,
+          "attached_lights": 1,
+          "attached_lights_after_clear": null,
+          "attached_render_bodies": 1,
+          "attached_render_bodies_after_clear": null,
+          "close_error": null,
+          "closed": false,
+          "completed_captures": 1,
+          "scope": "this scene attachments only; no driver/cache/process-memory release claim",
+          "studio_temporary_files_exist": true
+        },
+        "linear_rgb_target": "HdrColor",
+        "max_bounces": 4,
+        "numpy_version": "1.26.4",
+        "official_shader_sha256": "4358e2244c99e37d9c8dcd3ee91a9e9d30b1af52b804aa9d7f9cc4b4f50f3d6b",
+        "physics_steps": 0,
+        "physics_systems": [],
+        "pt_clip_limit": "all vertices inside near+0.002/far and range<9999m, with FP32 clearance",
+        "pt_precision_policy": "8*FP32-epsilon*transform-scale clearance; reject >=1% scene span; pragmatic admission, not a global error proof",
+        "readback": "blocking SAPIEN get_picture CPU download, then owned bytes",
+        "requested_device": "cuda:0",
+        "requested_path": "path_trace",
+        "resolution_limit": 4096,
+        "samples_per_pixel": 64,
+        "sampling_pattern": {
+          "arbitrary_seed_supported": false,
+          "cross_device_bitwise_guarantee": false,
+          "frame_count_policy": "first render of a newly constructed camera each exposure",
+          "magic_hex": "0x9e3779b9",
+          "mode": "official-fixed-sequence-fresh-camera",
+          "path_rng": "TEA(pixel index + width*height*spp*frameCount, magic)",
+          "primary_pixel_sequence": "Halton bases 2 and 3; frameCount*spp+i",
+          "scope": "same installed shader/device/config; repeated public bytes audited in device test"
+        },
+        "sapien_scene_id": 3,
+        "seed": null,
+        "seed_note": "sampling_pattern specifies the actual shader and device scope",
+        "seed_support": "not-user-configurable",
+        "shader_directory": "C:\\Users\\38347\\.codex\\worktrees\\phymeo-rendering\\phymeo\\artifacts\\rendering\\g3-table\\ref-env\\Lib\\site-packages\\sapien\\vulkan_shader\\rt",
+        "shader_pack": "rt",
+        "shader_probe": "selected shader executed and CPU target read back",
+        "shader_sha256": "4358e2244c99e37d9c8dcd3ee91a9e9d30b1af52b804aa9d7f9cc4b4f50f3d6b",
+        "shadow_map_size": 2048,
+        "studio": {
+          "attached_area_lights": 0,
+          "center_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "declared_scene_lights": "retained unchanged",
+          "environment": {
+            "encoding": "linear-radiance-rgbe",
+            "face_count": 6,
+            "face_resolution": [
+              128,
+              128
+            ],
+            "face_sha256": [
+              "5b22e48b09e988a2648dd5ef0f37492a6e8b4e49820caf371ec47dea268b6c1d",
+              "afa6e0a2c4a5e68526337854415d75fbab862b0fd8d4ad72f37abe336efce53c",
+              "fed595af47114119f1e5f3aca156f5b2278b54ccc1becfc4fbd8d135cfa11e57",
+              "eaaad79f4eb5ea494ca8cce995d1065deb10ac69641d08d122a24c34858ea97c",
+              "2bb800f909b3d60125740bfed31aaf9f0de9e8eb29ffd61b816ebdfa04ac7074",
+              "66979d9a566e2cae3b15c0428be99524f8d81f32104dc13750ad85f49c98990b"
+            ],
+            "loader": "public RenderCubemap(px,nx,py,ny,pz,nz)",
+            "orientation": "world +Z up, panorama centre +X, increasing longitude toward +Y; sampler receives ray.xzy",
+            "peak_linear_radiance": 0.6484375,
+            "source_kind": "local equirectangular Radiance RGBE",
+            "source_lifetime": "owned temporary file until scene close",
+            "source_sha256": "644d666a4d21cf8e3e86eb68f4a3a874ddb3dd58f1c625dc8ff2f96871e95092",
+            "source_size": [
+              512,
+              256
+            ],
+            "strength": 1.0,
+            "yaw_degrees": 0.0
+          },
+          "environment_map": {
+            "face_size": 128,
+            "sha256": "644d666a4d21cf8e3e86eb68f4a3a874ddb3dd58f1c625dc8ff2f96871e95092",
+            "strength": 1.0,
+            "uri": "file:///C:/Users/38347/.codex/worktrees/render-reference-neutral/phymeo/artifacts/rendering/neutral-validation/03-device/capture/calibration.hdr",
+            "yaw_degrees": 0.0
+          },
+          "environment_radiance": null,
+          "environment_source": "directional-radiance-map",
+          "panel_size_scale": 1.0,
+          "panel_strength": 0.0,
+          "panels": [
+            {
+              "emission_direction_world": [
+                0.4656903154237997,
+                0.543305367994433,
+                -0.6985354731356995
+              ],
+              "half_size_m": [
+                0.8,
+                0.55
+              ],
+              "name": "key",
+              "position_m": [
+                -1.2,
+                -1.4,
+                1.8
+              ],
+              "public_component": "RenderParallelogramLightComponent",
+              "radiance_linear_rgb": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "visible_geometry": false
+            },
+            {
+              "emission_direction_world": [
+                -0.7098281771887514,
+                -0.3549140885943757,
+                -0.6084241518760726
+              ],
+              "half_size_m": [
+                0.65,
+                0.8
+              ],
+              "name": "fill",
+              "position_m": [
+                1.4,
+                0.7,
+                1.2
+              ],
+              "public_component": "RenderParallelogramLightComponent",
+              "radiance_linear_rgb": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "visible_geometry": false
+            }
+          ],
+          "preset": "neutral-area-studio-v1",
+          "reflection_method": "official diffuse/GGX direct area-light estimator plus traced HDR environment",
+          "scale_m": 1.0,
+          "soft_shadow_method": "official RT samples emitter surface and traces finite shadow rays",
+          "support": "path_trace RGB only; no raster studio approximation",
+          "uniform_environment_radiance_ignored": 0.125,
+          "units": "positions and emitter half sizes in metres; colors linear relative radiance"
+        },
+        "supported_channels": [
+          "srgb8_rgb"
+        ],
+        "textures": {
+          "actual_uploads": [],
+          "bindings": [],
+          "decoded_rgb8_bytes": 0,
+          "factor_policy": "white: sRGB8 hardware decode; nonwhite: standard EOTF times linear factor, FP32 texture; material uniform white",
+          "limits": {
+            "decoded_rgb8_bytes": 67108864,
+            "upload_bytes": 134217728
+          },
+          "sampling": {
+            "address": "repeat",
+            "filter": "linear",
+            "mipmap_levels": 1,
+            "uv_origin": "upper-left; unmodified glTF TEXCOORD_0"
+          },
+          "shader_semantics": "SAPIEN 3.0.3 default/gbuffer.frag and rt/camera.rchit replace baseColor when diffuse texture exists",
+          "upload_bytes": 0,
+          "uploads": []
+        },
+        "vulkan_api_version": null
+      },
+      "display_transform": "clip",
+      "exposure": 8.0,
+      "image_file": "pt-clip.png",
+      "linear_file": "pt-clip.linear-f32.raw",
+      "linear_sha256": "4486b6e51556f92363bb927cf75b544eb5155a0b1bafa86a4044d5dad91b6376",
+      "path": "pt",
+      "rgb_file": "pt-clip.rgb8.raw",
+      "rgb_sha256": "6364066cdff89acf5c8439baf90b282fdec7ae7be50b93c3dd4151162a5d0b98",
+      "shape": [
+        120,
+        160,
+        3
+      ]
+    },
+    {
+      "diagnostics": {
+        "accumulation": "fresh camera per exposure; no temporal history",
+        "ambient_linear_rgb": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "backend": "sapien-reference",
+        "denoiser": "none",
+        "device_description": "cuda:0",
+        "device_name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+        "device_pci": "0000:01:00.0",
+        "display": "exposure=8; nonnegative linear Rec.709; Khronos PBR Neutral; standard sRGB OETF; half-up UNORM8",
+        "display_transform": "pbr-neutral",
+        "display_transform_source": "https://github.com/KhronosGroup/ToneMapping/blob/b5a2eed5ddf6c2227090449399de9c7affb9e4c9/PBR_Neutral/pbrNeutral.glsl",
+        "driver_version": null,
+        "effective_path": "path_trace",
+        "exposure": 8.0,
+        "geometry": {
+          "instances": 1,
+          "limits": {
+            "instances": 256,
+            "mesh_slots": 256,
+            "uploaded_triangles": 200000,
+            "uploaded_vertices": 600000
+          },
+          "mesh_slots": 1,
+          "scope": "per-instance uploaded geometry; shared per-mesh decoding guards unchanged",
+          "uploaded_triangles": 16128,
+          "uploaded_vertices": 8066
+        },
+        "global_config_note": "camera default mutations serialized/restored inside this adapter only",
+        "library_version": "3.0.3",
+        "lifecycle": {
+          "attached_cameras": 0,
+          "attached_cameras_after_clear": null,
+          "attached_entities": 2,
+          "attached_entities_after_clear": null,
+          "attached_entities_before_clear": null,
+          "attached_lights": 1,
+          "attached_lights_after_clear": null,
+          "attached_render_bodies": 1,
+          "attached_render_bodies_after_clear": null,
+          "close_error": null,
+          "closed": false,
+          "completed_captures": 1,
+          "scope": "this scene attachments only; no driver/cache/process-memory release claim",
+          "studio_temporary_files_exist": true
+        },
+        "linear_rgb_target": "HdrColor",
+        "max_bounces": 4,
+        "numpy_version": "1.26.4",
+        "official_shader_sha256": "4358e2244c99e37d9c8dcd3ee91a9e9d30b1af52b804aa9d7f9cc4b4f50f3d6b",
+        "physics_steps": 0,
+        "physics_systems": [],
+        "pt_clip_limit": "all vertices inside near+0.002/far and range<9999m, with FP32 clearance",
+        "pt_precision_policy": "8*FP32-epsilon*transform-scale clearance; reject >=1% scene span; pragmatic admission, not a global error proof",
+        "readback": "blocking SAPIEN get_picture CPU download, then owned bytes",
+        "requested_device": "cuda:0",
+        "requested_path": "path_trace",
+        "resolution_limit": 4096,
+        "samples_per_pixel": 64,
+        "sampling_pattern": {
+          "arbitrary_seed_supported": false,
+          "cross_device_bitwise_guarantee": false,
+          "frame_count_policy": "first render of a newly constructed camera each exposure",
+          "magic_hex": "0x9e3779b9",
+          "mode": "official-fixed-sequence-fresh-camera",
+          "path_rng": "TEA(pixel index + width*height*spp*frameCount, magic)",
+          "primary_pixel_sequence": "Halton bases 2 and 3; frameCount*spp+i",
+          "scope": "same installed shader/device/config; repeated public bytes audited in device test"
+        },
+        "sapien_scene_id": 4,
+        "seed": null,
+        "seed_note": "sampling_pattern specifies the actual shader and device scope",
+        "seed_support": "not-user-configurable",
+        "shader_directory": "C:\\Users\\38347\\.codex\\worktrees\\phymeo-rendering\\phymeo\\artifacts\\rendering\\g3-table\\ref-env\\Lib\\site-packages\\sapien\\vulkan_shader\\rt",
+        "shader_pack": "rt",
+        "shader_probe": "selected shader executed and CPU target read back",
+        "shader_sha256": "4358e2244c99e37d9c8dcd3ee91a9e9d30b1af52b804aa9d7f9cc4b4f50f3d6b",
+        "shadow_map_size": 2048,
+        "studio": {
+          "attached_area_lights": 0,
+          "center_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "declared_scene_lights": "retained unchanged",
+          "environment": {
+            "encoding": "linear-radiance-rgbe",
+            "face_count": 6,
+            "face_resolution": [
+              128,
+              128
+            ],
+            "face_sha256": [
+              "5b22e48b09e988a2648dd5ef0f37492a6e8b4e49820caf371ec47dea268b6c1d",
+              "afa6e0a2c4a5e68526337854415d75fbab862b0fd8d4ad72f37abe336efce53c",
+              "fed595af47114119f1e5f3aca156f5b2278b54ccc1becfc4fbd8d135cfa11e57",
+              "eaaad79f4eb5ea494ca8cce995d1065deb10ac69641d08d122a24c34858ea97c",
+              "2bb800f909b3d60125740bfed31aaf9f0de9e8eb29ffd61b816ebdfa04ac7074",
+              "66979d9a566e2cae3b15c0428be99524f8d81f32104dc13750ad85f49c98990b"
+            ],
+            "loader": "public RenderCubemap(px,nx,py,ny,pz,nz)",
+            "orientation": "world +Z up, panorama centre +X, increasing longitude toward +Y; sampler receives ray.xzy",
+            "peak_linear_radiance": 0.6484375,
+            "source_kind": "local equirectangular Radiance RGBE",
+            "source_lifetime": "owned temporary file until scene close",
+            "source_sha256": "644d666a4d21cf8e3e86eb68f4a3a874ddb3dd58f1c625dc8ff2f96871e95092",
+            "source_size": [
+              512,
+              256
+            ],
+            "strength": 1.0,
+            "yaw_degrees": 0.0
+          },
+          "environment_map": {
+            "face_size": 128,
+            "sha256": "644d666a4d21cf8e3e86eb68f4a3a874ddb3dd58f1c625dc8ff2f96871e95092",
+            "strength": 1.0,
+            "uri": "file:///C:/Users/38347/.codex/worktrees/render-reference-neutral/phymeo/artifacts/rendering/neutral-validation/03-device/capture/calibration.hdr",
+            "yaw_degrees": 0.0
+          },
+          "environment_radiance": null,
+          "environment_source": "directional-radiance-map",
+          "panel_size_scale": 1.0,
+          "panel_strength": 0.0,
+          "panels": [
+            {
+              "emission_direction_world": [
+                0.4656903154237997,
+                0.543305367994433,
+                -0.6985354731356995
+              ],
+              "half_size_m": [
+                0.8,
+                0.55
+              ],
+              "name": "key",
+              "position_m": [
+                -1.2,
+                -1.4,
+                1.8
+              ],
+              "public_component": "RenderParallelogramLightComponent",
+              "radiance_linear_rgb": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "visible_geometry": false
+            },
+            {
+              "emission_direction_world": [
+                -0.7098281771887514,
+                -0.3549140885943757,
+                -0.6084241518760726
+              ],
+              "half_size_m": [
+                0.65,
+                0.8
+              ],
+              "name": "fill",
+              "position_m": [
+                1.4,
+                0.7,
+                1.2
+              ],
+              "public_component": "RenderParallelogramLightComponent",
+              "radiance_linear_rgb": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "visible_geometry": false
+            }
+          ],
+          "preset": "neutral-area-studio-v1",
+          "reflection_method": "official diffuse/GGX direct area-light estimator plus traced HDR environment",
+          "scale_m": 1.0,
+          "soft_shadow_method": "official RT samples emitter surface and traces finite shadow rays",
+          "support": "path_trace RGB only; no raster studio approximation",
+          "uniform_environment_radiance_ignored": 0.125,
+          "units": "positions and emitter half sizes in metres; colors linear relative radiance"
+        },
+        "supported_channels": [
+          "srgb8_rgb"
+        ],
+        "textures": {
+          "actual_uploads": [],
+          "bindings": [],
+          "decoded_rgb8_bytes": 0,
+          "factor_policy": "white: sRGB8 hardware decode; nonwhite: standard EOTF times linear factor, FP32 texture; material uniform white",
+          "limits": {
+            "decoded_rgb8_bytes": 67108864,
+            "upload_bytes": 134217728
+          },
+          "sampling": {
+            "address": "repeat",
+            "filter": "linear",
+            "mipmap_levels": 1,
+            "uv_origin": "upper-left; unmodified glTF TEXCOORD_0"
+          },
+          "shader_semantics": "SAPIEN 3.0.3 default/gbuffer.frag and rt/camera.rchit replace baseColor when diffuse texture exists",
+          "upload_bytes": 0,
+          "uploads": []
+        },
+        "vulkan_api_version": null
+      },
+      "display_transform": "pbr-neutral",
+      "exposure": 8.0,
+      "image_file": "pt-pbr-neutral.png",
+      "linear_file": "pt-pbr-neutral.linear-f32.raw",
+      "linear_sha256": "4486b6e51556f92363bb927cf75b544eb5155a0b1bafa86a4044d5dad91b6376",
+      "path": "pt",
+      "rgb_file": "pt-pbr-neutral.rgb8.raw",
+      "rgb_sha256": "856ff03d1d025a4b8059cd750dd3bec5f06957b2959167b650f4b2b8cc7924e5",
+      "shape": [
+        120,
+        160,
+        3
+      ]
+    }
+  ],
+  "closed_sessions": [
+    {
+      "accumulation": "fresh camera per exposure; no temporal history",
+      "ambient_linear_rgb": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "backend": "sapien-reference",
+      "denoiser": "none",
+      "device_description": "cuda:0",
+      "device_name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "device_pci": "0000:01:00.0",
+      "display": "exposure=8; clamp linear [0,1]; standard sRGB OETF; half-up UNORM8",
+      "display_transform": "clip",
+      "display_transform_source": null,
+      "driver_version": null,
+      "effective_path": "raster",
+      "exposure": 8.0,
+      "geometry": {
+        "instances": 1,
+        "limits": {
+          "instances": 256,
+          "mesh_slots": 256,
+          "uploaded_triangles": 200000,
+          "uploaded_vertices": 600000
+        },
+        "mesh_slots": 1,
+        "scope": "per-instance uploaded geometry; shared per-mesh decoding guards unchanged",
+        "uploaded_triangles": 16128,
+        "uploaded_vertices": 8066
+      },
+      "global_config_note": "camera default mutations serialized/restored inside this adapter only",
+      "library_version": "3.0.3",
+      "lifecycle": {
+        "attached_cameras": 0,
+        "attached_cameras_after_clear": 0,
+        "attached_entities": 0,
+        "attached_entities_after_clear": 0,
+        "attached_entities_before_clear": 2,
+        "attached_lights": 0,
+        "attached_lights_after_clear": 0,
+        "attached_render_bodies": 0,
+        "attached_render_bodies_after_clear": 0,
+        "close_error": null,
+        "closed": true,
+        "completed_captures": 1,
+        "scope": "this scene attachments only; no driver/cache/process-memory release claim",
+        "studio_temporary_files_exist": false
+      },
+      "linear_rgb_target": "Lighting",
+      "max_bounces": null,
+      "numpy_version": "1.26.4",
+      "official_shader_sha256": "3dcc99e5302c9b7118b661fe129190d27dd938659245d5f004a3c817f5b7ddb9",
+      "physics_steps": 0,
+      "physics_systems": [],
+      "pt_clip_limit": "all vertices inside near+0.002/far and range<9999m, with FP32 clearance",
+      "pt_precision_policy": "8*FP32-epsilon*transform-scale clearance; reject >=1% scene span; pragmatic admission, not a global error proof",
+      "readback": "blocking SAPIEN get_picture CPU download, then owned bytes",
+      "requested_device": "cuda:0",
+      "requested_path": "raster",
+      "resolution_limit": 4096,
+      "samples_per_pixel": 1,
+      "sampling_pattern": null,
+      "sapien_scene_id": 1,
+      "seed": null,
+      "seed_note": "sampling_pattern specifies the actual shader and device scope",
+      "seed_support": "not-user-configurable",
+      "shader_directory": "C:\\Users\\38347\\.codex\\worktrees\\phymeo-rendering\\phymeo\\artifacts\\rendering\\g3-table\\ref-env\\Lib\\site-packages\\sapien\\vulkan_shader\\default",
+      "shader_pack": "default",
+      "shader_probe": "selected shader executed and CPU target read back",
+      "shader_sha256": "3dcc99e5302c9b7118b661fe129190d27dd938659245d5f004a3c817f5b7ddb9",
+      "shadow_map_size": 2048,
+      "studio": null,
+      "supported_channels": [
+        "srgb8_rgb",
+        "forward_depth_m_f32",
+        "instance_id_u32",
+        "valid_u8"
+      ],
+      "textures": {
+        "actual_uploads": [],
+        "bindings": [],
+        "decoded_rgb8_bytes": 0,
+        "factor_policy": "white: sRGB8 hardware decode; nonwhite: standard EOTF times linear factor, FP32 texture; material uniform white",
+        "limits": {
+          "decoded_rgb8_bytes": 67108864,
+          "upload_bytes": 134217728
+        },
+        "sampling": {
+          "address": "repeat",
+          "filter": "linear",
+          "mipmap_levels": 1,
+          "uv_origin": "upper-left; unmodified glTF TEXCOORD_0"
+        },
+        "shader_semantics": "SAPIEN 3.0.3 default/gbuffer.frag and rt/camera.rchit replace baseColor when diffuse texture exists",
+        "upload_bytes": 0,
+        "uploads": []
+      },
+      "vulkan_api_version": null
+    },
+    {
+      "accumulation": "fresh camera per exposure; no temporal history",
+      "ambient_linear_rgb": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "backend": "sapien-reference",
+      "denoiser": "none",
+      "device_description": "cuda:0",
+      "device_name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "device_pci": "0000:01:00.0",
+      "display": "exposure=8; nonnegative linear Rec.709; Khronos PBR Neutral; standard sRGB OETF; half-up UNORM8",
+      "display_transform": "pbr-neutral",
+      "display_transform_source": "https://github.com/KhronosGroup/ToneMapping/blob/b5a2eed5ddf6c2227090449399de9c7affb9e4c9/PBR_Neutral/pbrNeutral.glsl",
+      "driver_version": null,
+      "effective_path": "raster",
+      "exposure": 8.0,
+      "geometry": {
+        "instances": 1,
+        "limits": {
+          "instances": 256,
+          "mesh_slots": 256,
+          "uploaded_triangles": 200000,
+          "uploaded_vertices": 600000
+        },
+        "mesh_slots": 1,
+        "scope": "per-instance uploaded geometry; shared per-mesh decoding guards unchanged",
+        "uploaded_triangles": 16128,
+        "uploaded_vertices": 8066
+      },
+      "global_config_note": "camera default mutations serialized/restored inside this adapter only",
+      "library_version": "3.0.3",
+      "lifecycle": {
+        "attached_cameras": 0,
+        "attached_cameras_after_clear": 0,
+        "attached_entities": 0,
+        "attached_entities_after_clear": 0,
+        "attached_entities_before_clear": 2,
+        "attached_lights": 0,
+        "attached_lights_after_clear": 0,
+        "attached_render_bodies": 0,
+        "attached_render_bodies_after_clear": 0,
+        "close_error": null,
+        "closed": true,
+        "completed_captures": 1,
+        "scope": "this scene attachments only; no driver/cache/process-memory release claim",
+        "studio_temporary_files_exist": false
+      },
+      "linear_rgb_target": "Lighting",
+      "max_bounces": null,
+      "numpy_version": "1.26.4",
+      "official_shader_sha256": "3dcc99e5302c9b7118b661fe129190d27dd938659245d5f004a3c817f5b7ddb9",
+      "physics_steps": 0,
+      "physics_systems": [],
+      "pt_clip_limit": "all vertices inside near+0.002/far and range<9999m, with FP32 clearance",
+      "pt_precision_policy": "8*FP32-epsilon*transform-scale clearance; reject >=1% scene span; pragmatic admission, not a global error proof",
+      "readback": "blocking SAPIEN get_picture CPU download, then owned bytes",
+      "requested_device": "cuda:0",
+      "requested_path": "raster",
+      "resolution_limit": 4096,
+      "samples_per_pixel": 1,
+      "sampling_pattern": null,
+      "sapien_scene_id": 2,
+      "seed": null,
+      "seed_note": "sampling_pattern specifies the actual shader and device scope",
+      "seed_support": "not-user-configurable",
+      "shader_directory": "C:\\Users\\38347\\.codex\\worktrees\\phymeo-rendering\\phymeo\\artifacts\\rendering\\g3-table\\ref-env\\Lib\\site-packages\\sapien\\vulkan_shader\\default",
+      "shader_pack": "default",
+      "shader_probe": "selected shader executed and CPU target read back",
+      "shader_sha256": "3dcc99e5302c9b7118b661fe129190d27dd938659245d5f004a3c817f5b7ddb9",
+      "shadow_map_size": 2048,
+      "studio": null,
+      "supported_channels": [
+        "srgb8_rgb",
+        "forward_depth_m_f32",
+        "instance_id_u32",
+        "valid_u8"
+      ],
+      "textures": {
+        "actual_uploads": [],
+        "bindings": [],
+        "decoded_rgb8_bytes": 0,
+        "factor_policy": "white: sRGB8 hardware decode; nonwhite: standard EOTF times linear factor, FP32 texture; material uniform white",
+        "limits": {
+          "decoded_rgb8_bytes": 67108864,
+          "upload_bytes": 134217728
+        },
+        "sampling": {
+          "address": "repeat",
+          "filter": "linear",
+          "mipmap_levels": 1,
+          "uv_origin": "upper-left; unmodified glTF TEXCOORD_0"
+        },
+        "shader_semantics": "SAPIEN 3.0.3 default/gbuffer.frag and rt/camera.rchit replace baseColor when diffuse texture exists",
+        "upload_bytes": 0,
+        "uploads": []
+      },
+      "vulkan_api_version": null
+    },
+    {
+      "accumulation": "fresh camera per exposure; no temporal history",
+      "ambient_linear_rgb": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "backend": "sapien-reference",
+      "denoiser": "none",
+      "device_description": "cuda:0",
+      "device_name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "device_pci": "0000:01:00.0",
+      "display": "exposure=8; clamp linear [0,1]; standard sRGB OETF; half-up UNORM8",
+      "display_transform": "clip",
+      "display_transform_source": null,
+      "driver_version": null,
+      "effective_path": "path_trace",
+      "exposure": 8.0,
+      "geometry": {
+        "instances": 1,
+        "limits": {
+          "instances": 256,
+          "mesh_slots": 256,
+          "uploaded_triangles": 200000,
+          "uploaded_vertices": 600000
+        },
+        "mesh_slots": 1,
+        "scope": "per-instance uploaded geometry; shared per-mesh decoding guards unchanged",
+        "uploaded_triangles": 16128,
+        "uploaded_vertices": 8066
+      },
+      "global_config_note": "camera default mutations serialized/restored inside this adapter only",
+      "library_version": "3.0.3",
+      "lifecycle": {
+        "attached_cameras": 0,
+        "attached_cameras_after_clear": 0,
+        "attached_entities": 0,
+        "attached_entities_after_clear": 0,
+        "attached_entities_before_clear": 2,
+        "attached_lights": 0,
+        "attached_lights_after_clear": 0,
+        "attached_render_bodies": 0,
+        "attached_render_bodies_after_clear": 0,
+        "close_error": null,
+        "closed": true,
+        "completed_captures": 1,
+        "scope": "this scene attachments only; no driver/cache/process-memory release claim",
+        "studio_temporary_files_exist": false
+      },
+      "linear_rgb_target": "HdrColor",
+      "max_bounces": 4,
+      "numpy_version": "1.26.4",
+      "official_shader_sha256": "4358e2244c99e37d9c8dcd3ee91a9e9d30b1af52b804aa9d7f9cc4b4f50f3d6b",
+      "physics_steps": 0,
+      "physics_systems": [],
+      "pt_clip_limit": "all vertices inside near+0.002/far and range<9999m, with FP32 clearance",
+      "pt_precision_policy": "8*FP32-epsilon*transform-scale clearance; reject >=1% scene span; pragmatic admission, not a global error proof",
+      "readback": "blocking SAPIEN get_picture CPU download, then owned bytes",
+      "requested_device": "cuda:0",
+      "requested_path": "path_trace",
+      "resolution_limit": 4096,
+      "samples_per_pixel": 64,
+      "sampling_pattern": {
+        "arbitrary_seed_supported": false,
+        "cross_device_bitwise_guarantee": false,
+        "frame_count_policy": "first render of a newly constructed camera each exposure",
+        "magic_hex": "0x9e3779b9",
+        "mode": "official-fixed-sequence-fresh-camera",
+        "path_rng": "TEA(pixel index + width*height*spp*frameCount, magic)",
+        "primary_pixel_sequence": "Halton bases 2 and 3; frameCount*spp+i",
+        "scope": "same installed shader/device/config; repeated public bytes audited in device test"
+      },
+      "sapien_scene_id": 3,
+      "seed": null,
+      "seed_note": "sampling_pattern specifies the actual shader and device scope",
+      "seed_support": "not-user-configurable",
+      "shader_directory": "C:\\Users\\38347\\.codex\\worktrees\\phymeo-rendering\\phymeo\\artifacts\\rendering\\g3-table\\ref-env\\Lib\\site-packages\\sapien\\vulkan_shader\\rt",
+      "shader_pack": "rt",
+      "shader_probe": "selected shader executed and CPU target read back",
+      "shader_sha256": "4358e2244c99e37d9c8dcd3ee91a9e9d30b1af52b804aa9d7f9cc4b4f50f3d6b",
+      "shadow_map_size": 2048,
+      "studio": {
+        "attached_area_lights": 0,
+        "center_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "declared_scene_lights": "retained unchanged",
+        "environment": {
+          "encoding": "linear-radiance-rgbe",
+          "face_count": 6,
+          "face_resolution": [
+            128,
+            128
+          ],
+          "face_sha256": [
+            "5b22e48b09e988a2648dd5ef0f37492a6e8b4e49820caf371ec47dea268b6c1d",
+            "afa6e0a2c4a5e68526337854415d75fbab862b0fd8d4ad72f37abe336efce53c",
+            "fed595af47114119f1e5f3aca156f5b2278b54ccc1becfc4fbd8d135cfa11e57",
+            "eaaad79f4eb5ea494ca8cce995d1065deb10ac69641d08d122a24c34858ea97c",
+            "2bb800f909b3d60125740bfed31aaf9f0de9e8eb29ffd61b816ebdfa04ac7074",
+            "66979d9a566e2cae3b15c0428be99524f8d81f32104dc13750ad85f49c98990b"
+          ],
+          "loader": "public RenderCubemap(px,nx,py,ny,pz,nz)",
+          "orientation": "world +Z up, panorama centre +X, increasing longitude toward +Y; sampler receives ray.xzy",
+          "peak_linear_radiance": 0.6484375,
+          "source_kind": "local equirectangular Radiance RGBE",
+          "source_lifetime": "owned temporary file until scene close",
+          "source_sha256": "644d666a4d21cf8e3e86eb68f4a3a874ddb3dd58f1c625dc8ff2f96871e95092",
+          "source_size": [
+            512,
+            256
+          ],
+          "strength": 1.0,
+          "yaw_degrees": 0.0
+        },
+        "environment_map": {
+          "face_size": 128,
+          "sha256": "644d666a4d21cf8e3e86eb68f4a3a874ddb3dd58f1c625dc8ff2f96871e95092",
+          "strength": 1.0,
+          "uri": "file:///C:/Users/38347/.codex/worktrees/render-reference-neutral/phymeo/artifacts/rendering/neutral-validation/03-device/capture/calibration.hdr",
+          "yaw_degrees": 0.0
+        },
+        "environment_radiance": null,
+        "environment_source": "directional-radiance-map",
+        "panel_size_scale": 1.0,
+        "panel_strength": 0.0,
+        "panels": [
+          {
+            "emission_direction_world": [
+              0.4656903154237997,
+              0.543305367994433,
+              -0.6985354731356995
+            ],
+            "half_size_m": [
+              0.8,
+              0.55
+            ],
+            "name": "key",
+            "position_m": [
+              -1.2,
+              -1.4,
+              1.8
+            ],
+            "public_component": "RenderParallelogramLightComponent",
+            "radiance_linear_rgb": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "visible_geometry": false
+          },
+          {
+            "emission_direction_world": [
+              -0.7098281771887514,
+              -0.3549140885943757,
+              -0.6084241518760726
+            ],
+            "half_size_m": [
+              0.65,
+              0.8
+            ],
+            "name": "fill",
+            "position_m": [
+              1.4,
+              0.7,
+              1.2
+            ],
+            "public_component": "RenderParallelogramLightComponent",
+            "radiance_linear_rgb": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "visible_geometry": false
+          }
+        ],
+        "preset": "neutral-area-studio-v1",
+        "reflection_method": "official diffuse/GGX direct area-light estimator plus traced HDR environment",
+        "scale_m": 1.0,
+        "soft_shadow_method": "official RT samples emitter surface and traces finite shadow rays",
+        "support": "path_trace RGB only; no raster studio approximation",
+        "uniform_environment_radiance_ignored": 0.125,
+        "units": "positions and emitter half sizes in metres; colors linear relative radiance"
+      },
+      "supported_channels": [
+        "srgb8_rgb"
+      ],
+      "textures": {
+        "actual_uploads": [],
+        "bindings": [],
+        "decoded_rgb8_bytes": 0,
+        "factor_policy": "white: sRGB8 hardware decode; nonwhite: standard EOTF times linear factor, FP32 texture; material uniform white",
+        "limits": {
+          "decoded_rgb8_bytes": 67108864,
+          "upload_bytes": 134217728
+        },
+        "sampling": {
+          "address": "repeat",
+          "filter": "linear",
+          "mipmap_levels": 1,
+          "uv_origin": "upper-left; unmodified glTF TEXCOORD_0"
+        },
+        "shader_semantics": "SAPIEN 3.0.3 default/gbuffer.frag and rt/camera.rchit replace baseColor when diffuse texture exists",
+        "upload_bytes": 0,
+        "uploads": []
+      },
+      "vulkan_api_version": null
+    },
+    {
+      "accumulation": "fresh camera per exposure; no temporal history",
+      "ambient_linear_rgb": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "backend": "sapien-reference",
+      "denoiser": "none",
+      "device_description": "cuda:0",
+      "device_name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "device_pci": "0000:01:00.0",
+      "display": "exposure=8; nonnegative linear Rec.709; Khronos PBR Neutral; standard sRGB OETF; half-up UNORM8",
+      "display_transform": "pbr-neutral",
+      "display_transform_source": "https://github.com/KhronosGroup/ToneMapping/blob/b5a2eed5ddf6c2227090449399de9c7affb9e4c9/PBR_Neutral/pbrNeutral.glsl",
+      "driver_version": null,
+      "effective_path": "path_trace",
+      "exposure": 8.0,
+      "geometry": {
+        "instances": 1,
+        "limits": {
+          "instances": 256,
+          "mesh_slots": 256,
+          "uploaded_triangles": 200000,
+          "uploaded_vertices": 600000
+        },
+        "mesh_slots": 1,
+        "scope": "per-instance uploaded geometry; shared per-mesh decoding guards unchanged",
+        "uploaded_triangles": 16128,
+        "uploaded_vertices": 8066
+      },
+      "global_config_note": "camera default mutations serialized/restored inside this adapter only",
+      "library_version": "3.0.3",
+      "lifecycle": {
+        "attached_cameras": 0,
+        "attached_cameras_after_clear": 0,
+        "attached_entities": 0,
+        "attached_entities_after_clear": 0,
+        "attached_entities_before_clear": 2,
+        "attached_lights": 0,
+        "attached_lights_after_clear": 0,
+        "attached_render_bodies": 0,
+        "attached_render_bodies_after_clear": 0,
+        "close_error": null,
+        "closed": true,
+        "completed_captures": 1,
+        "scope": "this scene attachments only; no driver/cache/process-memory release claim",
+        "studio_temporary_files_exist": false
+      },
+      "linear_rgb_target": "HdrColor",
+      "max_bounces": 4,
+      "numpy_version": "1.26.4",
+      "official_shader_sha256": "4358e2244c99e37d9c8dcd3ee91a9e9d30b1af52b804aa9d7f9cc4b4f50f3d6b",
+      "physics_steps": 0,
+      "physics_systems": [],
+      "pt_clip_limit": "all vertices inside near+0.002/far and range<9999m, with FP32 clearance",
+      "pt_precision_policy": "8*FP32-epsilon*transform-scale clearance; reject >=1% scene span; pragmatic admission, not a global error proof",
+      "readback": "blocking SAPIEN get_picture CPU download, then owned bytes",
+      "requested_device": "cuda:0",
+      "requested_path": "path_trace",
+      "resolution_limit": 4096,
+      "samples_per_pixel": 64,
+      "sampling_pattern": {
+        "arbitrary_seed_supported": false,
+        "cross_device_bitwise_guarantee": false,
+        "frame_count_policy": "first render of a newly constructed camera each exposure",
+        "magic_hex": "0x9e3779b9",
+        "mode": "official-fixed-sequence-fresh-camera",
+        "path_rng": "TEA(pixel index + width*height*spp*frameCount, magic)",
+        "primary_pixel_sequence": "Halton bases 2 and 3; frameCount*spp+i",
+        "scope": "same installed shader/device/config; repeated public bytes audited in device test"
+      },
+      "sapien_scene_id": 4,
+      "seed": null,
+      "seed_note": "sampling_pattern specifies the actual shader and device scope",
+      "seed_support": "not-user-configurable",
+      "shader_directory": "C:\\Users\\38347\\.codex\\worktrees\\phymeo-rendering\\phymeo\\artifacts\\rendering\\g3-table\\ref-env\\Lib\\site-packages\\sapien\\vulkan_shader\\rt",
+      "shader_pack": "rt",
+      "shader_probe": "selected shader executed and CPU target read back",
+      "shader_sha256": "4358e2244c99e37d9c8dcd3ee91a9e9d30b1af52b804aa9d7f9cc4b4f50f3d6b",
+      "shadow_map_size": 2048,
+      "studio": {
+        "attached_area_lights": 0,
+        "center_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "declared_scene_lights": "retained unchanged",
+        "environment": {
+          "encoding": "linear-radiance-rgbe",
+          "face_count": 6,
+          "face_resolution": [
+            128,
+            128
+          ],
+          "face_sha256": [
+            "5b22e48b09e988a2648dd5ef0f37492a6e8b4e49820caf371ec47dea268b6c1d",
+            "afa6e0a2c4a5e68526337854415d75fbab862b0fd8d4ad72f37abe336efce53c",
+            "fed595af47114119f1e5f3aca156f5b2278b54ccc1becfc4fbd8d135cfa11e57",
+            "eaaad79f4eb5ea494ca8cce995d1065deb10ac69641d08d122a24c34858ea97c",
+            "2bb800f909b3d60125740bfed31aaf9f0de9e8eb29ffd61b816ebdfa04ac7074",
+            "66979d9a566e2cae3b15c0428be99524f8d81f32104dc13750ad85f49c98990b"
+          ],
+          "loader": "public RenderCubemap(px,nx,py,ny,pz,nz)",
+          "orientation": "world +Z up, panorama centre +X, increasing longitude toward +Y; sampler receives ray.xzy",
+          "peak_linear_radiance": 0.6484375,
+          "source_kind": "local equirectangular Radiance RGBE",
+          "source_lifetime": "owned temporary file until scene close",
+          "source_sha256": "644d666a4d21cf8e3e86eb68f4a3a874ddb3dd58f1c625dc8ff2f96871e95092",
+          "source_size": [
+            512,
+            256
+          ],
+          "strength": 1.0,
+          "yaw_degrees": 0.0
+        },
+        "environment_map": {
+          "face_size": 128,
+          "sha256": "644d666a4d21cf8e3e86eb68f4a3a874ddb3dd58f1c625dc8ff2f96871e95092",
+          "strength": 1.0,
+          "uri": "file:///C:/Users/38347/.codex/worktrees/render-reference-neutral/phymeo/artifacts/rendering/neutral-validation/03-device/capture/calibration.hdr",
+          "yaw_degrees": 0.0
+        },
+        "environment_radiance": null,
+        "environment_source": "directional-radiance-map",
+        "panel_size_scale": 1.0,
+        "panel_strength": 0.0,
+        "panels": [
+          {
+            "emission_direction_world": [
+              0.4656903154237997,
+              0.543305367994433,
+              -0.6985354731356995
+            ],
+            "half_size_m": [
+              0.8,
+              0.55
+            ],
+            "name": "key",
+            "position_m": [
+              -1.2,
+              -1.4,
+              1.8
+            ],
+            "public_component": "RenderParallelogramLightComponent",
+            "radiance_linear_rgb": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "visible_geometry": false
+          },
+          {
+            "emission_direction_world": [
+              -0.7098281771887514,
+              -0.3549140885943757,
+              -0.6084241518760726
+            ],
+            "half_size_m": [
+              0.65,
+              0.8
+            ],
+            "name": "fill",
+            "position_m": [
+              1.4,
+              0.7,
+              1.2
+            ],
+            "public_component": "RenderParallelogramLightComponent",
+            "radiance_linear_rgb": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "visible_geometry": false
+          }
+        ],
+        "preset": "neutral-area-studio-v1",
+        "reflection_method": "official diffuse/GGX direct area-light estimator plus traced HDR environment",
+        "scale_m": 1.0,
+        "soft_shadow_method": "official RT samples emitter surface and traces finite shadow rays",
+        "support": "path_trace RGB only; no raster studio approximation",
+        "uniform_environment_radiance_ignored": 0.125,
+        "units": "positions and emitter half sizes in metres; colors linear relative radiance"
+      },
+      "supported_channels": [
+        "srgb8_rgb"
+      ],
+      "textures": {
+        "actual_uploads": [],
+        "bindings": [],
+        "decoded_rgb8_bytes": 0,
+        "factor_policy": "white: sRGB8 hardware decode; nonwhite: standard EOTF times linear factor, FP32 texture; material uniform white",
+        "limits": {
+          "decoded_rgb8_bytes": 67108864,
+          "upload_bytes": 134217728
+        },
+        "sampling": {
+          "address": "repeat",
+          "filter": "linear",
+          "mipmap_levels": 1,
+          "uv_origin": "upper-left; unmodified glTF TEXCOORD_0"
+        },
+        "shader_semantics": "SAPIEN 3.0.3 default/gbuffer.frag and rt/camera.rchit replace baseColor when diffuse texture exists",
+        "upload_bytes": 0,
+        "uploads": []
+      },
+      "vulkan_api_version": null
+    }
+  ],
+  "foreground_rgb8": {
+    "clip_mean": [
+      255.0,
+      255.0,
+      255.0
+    ],
+    "clip_range": [
+      255,
+      255
+    ],
+    "neutral_mean": [
+      223.990625,
+      232.6225,
+      254.0
+    ],
+    "neutral_range": [
+      216,
+      254
+    ]
+  },
+  "protocol_sha256": "9669c1cce2afb6c6ca1abecfef191174f8a7a16456cbc12c780708bda0ecb6ed",
+  "pt_foreground_recovered_pixels": 1600,
+  "raster_sensors_unchanged": true,
+  "raw_readbacks_unchanged": {
+    "pt": true,
+    "raster": true
+  },
+  "schema": "phymeo-reference-neutral-result-v1",
+  "status": "passed"
+}

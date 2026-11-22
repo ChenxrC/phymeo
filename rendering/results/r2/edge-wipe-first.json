@@ -1,0 +1,156 @@
+{
+  "schema": "phymeo-real-browser-qa-v1",
+  "started": "2026-11-22T20:45:08.504Z",
+  "root": "C:/Users/38347/.codex/worktrees/phymeo-rendering/phymeo/rendering/results",
+  "checks": [
+    {
+      "name": "file_decode",
+      "url": "file:///C:/Users/38347/.codex/worktrees/phymeo-rendering/phymeo/rendering/results/compare.html",
+      "codec": "probably",
+      "width": 1920,
+      "height": 540,
+      "duration": 10,
+      "readyState": 4,
+      "canvasReadable": "SecurityError"
+    },
+    {
+      "name": "frame_0",
+      "frame": "0 / 299",
+      "motion": "0.033125 s",
+      "pts": "0.000000 s",
+      "decoded": null,
+      "time": 0.016666,
+      "expectedSourceTime": 0.033125,
+      "sourceTimeMatches": true
+    },
+    {
+      "name": "frame_149",
+      "frame": "149 / 299",
+      "motion": "5.000000 s",
+      "pts": "4.966667 s",
+      "decoded": {
+        "mediaTime": 4.966667,
+        "presentedFrames": 2
+      },
+      "time": 4.983333,
+      "expectedSourceTime": 5,
+      "sourceTimeMatches": true
+    },
+    {
+      "name": "frame_299",
+      "frame": "299 / 299",
+      "motion": "10.000000 s",
+      "pts": "9.966667 s",
+      "decoded": {
+        "mediaTime": 9.966667,
+        "presentedFrames": 3
+      },
+      "time": 9.983333,
+      "expectedSourceTime": 10,
+      "sourceTimeMatches": true
+    },
+    {
+      "name": "step_forward_back",
+      "forward": {
+        "mediaTime": 5,
+        "presentedFrames": 5
+      },
+      "back": {
+        "mediaTime": 4.966667,
+        "presentedFrames": 6
+      }
+    },
+    {
+      "name": "motion_jump",
+      "frame": "36 / 299",
+      "motion": "1.233125 s",
+      "decoded": {
+        "mediaTime": 1.2,
+        "presentedFrames": 7
+      }
+    },
+    {
+      "name": "play_pause",
+      "count": 17,
+      "paused": true,
+      "decoded": {
+        "mediaTime": 1.566667,
+        "presentedFrames": 18
+      },
+      "laterCount": 17
+    },
+    {
+      "name": "actual_wipe_pixels",
+      "sourceSideDifferentPixels": 510629,
+      "comparedPixels": 518400,
+      "checks": [
+        {
+          "wipe": 0,
+          "mismatches": 0
+        },
+        {
+          "wipe": 100,
+          "mismatches": 0
+        },
+        {
+          "wipe": 50,
+          "mismatches": 0
+        }
+      ],
+      "decoded": {
+        "mediaTime": 1.2,
+        "presentedFrames": 2
+      }
+    },
+    {
+      "name": "narrow_compare",
+      "viewport": 720,
+      "documentWidth": 720,
+      "controls": {
+        "x": 24,
+        "y": 560.546875,
+        "width": 672,
+        "height": 243.6875,
+        "top": 560.546875,
+        "right": 696,
+        "bottom": 804.234375,
+        "left": 24
+      }
+    },
+    {
+      "name": "gallery_two_movies",
+      "before": {
+        "time": 1.3,
+        "src": "http://127.0.0.1:63252/r2/workshop-daylight-reference.mp4",
+        "decoded": {
+          "mediaTime": 1.3,
+          "presentedFrames": 9
+        }
+      },
+      "after": {
+        "time": 1.3,
+        "src": "http://127.0.0.1:63252/r2/workshop-daylight-native.mp4",
+        "width": 1280
+      },
+      "preserved": true,
+      "secondDecoded": {
+        "mediaTime": 1.466667,
+        "presentedFrames": 6
+      }
+    }
+  ],
+  "errors": [
+    "Error: wait timeout document.getElementById('source').error!==null\n    at until (C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\browser-qa\\run.cjs:11:163)\n    at async C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\browser-qa\\run.cjs:41:47"
+  ],
+  "browser": {
+    "Browser": "Edg/154.0.4258.37",
+    "Protocol-Version": "1.3",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36 Edg/154.0.0.0",
+    "V8-Version": "15.4.11.5",
+    "WebKit-Version": "537.36 (@f6ddc7bb8d2ad05a6979ebc09b83893c2d128a62)",
+    "webSocketDebuggerUrl": "ws://127.0.0.1:58572/devtools/browser/eae9026a-3ba4-4dcd-9824-b1228a9a4703"
+  },
+  "loopback": "http://127.0.0.1:63252",
+  "status": "failed",
+  "closed": "2026-11-22T20:45:26.163Z"
+}

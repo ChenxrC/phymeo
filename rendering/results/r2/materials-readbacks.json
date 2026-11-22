@@ -1,0 +1,141 @@
+{
+  "registered_source": {
+    "source_excerpt_sha256": "58073ab38acab8f5057061fa487117aa0284f81b097a4f5bb0473f890515f118",
+    "source_indices": [
+      1972
+    ],
+    "source_times_s": [
+      1.233125
+    ],
+    "camera_setup": "wide",
+    "size": [
+      960,
+      540
+    ],
+    "lighting": "workshop daylight + area lights"
+  },
+  "rois": {
+    "whole": [
+      0,
+      0,
+      960,
+      540
+    ],
+    "shell": [
+      410,
+      70,
+      490,
+      90
+    ],
+    "wood": [
+      690,
+      465,
+      820,
+      500
+    ]
+  },
+  "metrics": {
+    "scanned_roughness": {
+      "whole": {
+        "pixels": 518400,
+        "rmse_rgb8": 6.4396081589442025,
+        "signed_mean_rgb8": [
+          -0.7953260030864198,
+          -1.3555131172839505,
+          -1.675125385802469
+        ],
+        "fully_white": [
+          10268,
+          10273
+        ]
+      },
+      "shell": {
+        "pixels": 1600,
+        "rmse_rgb8": 0.7850159234053791,
+        "signed_mean_rgb8": [
+          0.006875,
+          0.001875,
+          0.0225
+        ],
+        "fully_white": [
+          182,
+          180
+        ]
+      },
+      "wood": {
+        "pixels": 4550,
+        "rmse_rgb8": 7.1138002394046636,
+        "signed_mean_rgb8": [
+          -3.5373626373626372,
+          -6.438021978021978,
+          -8.217142857142857
+        ],
+        "fully_white": [
+          0,
+          0
+        ]
+      }
+    },
+    "neutral_display": {
+      "whole": {
+        "pixels": 518400,
+        "rmse_rgb8": 19.3844878866472,
+        "signed_mean_rgb8": [
+          -14.33191936728395,
+          -17.879139660493827,
+          -21.916113040123456
+        ],
+        "fully_white": [
+          10273,
+          0
+        ]
+      },
+      "shell": {
+        "pixels": 1600,
+        "rmse_rgb8": 9.443979563722065,
+        "signed_mean_rgb8": [
+          -7.9325,
+          -8.34,
+          -9.265
+        ],
+        "fully_white": [
+          180,
+          0
+        ]
+      },
+      "wood": {
+        "pixels": 4550,
+        "rmse_rgb8": 18.87007243493341,
+        "signed_mean_rgb8": [
+          -7.942197802197803,
+          -16.228571428571428,
+          -26.892307692307693
+        ],
+        "fully_white": [
+          0,
+          0
+        ]
+      }
+    }
+  },
+  "exposures": [
+    {
+      "image": "d8e72b7979b0b9241855cfd4306f35e9d31b86c05e9c8023195c7f5b96718e9d",
+      "ms": 1187.6550999877509,
+      "samples": 1024,
+      "tiles": 1
+    },
+    {
+      "image": "4cb3da3b6a18ccb3602a900b331886b624d966dc3123e24058c99de81c44ee56",
+      "ms": 1410.1709999958985,
+      "samples": 1024,
+      "tiles": 1
+    },
+    {
+      "image": "f3e87d090be9791015d420382489b9692e14420cde85ef3387c9c0a02a68d705",
+      "ms": 1447.177099995315,
+      "samples": 1024,
+      "tiles": 1
+    }
+  ]
+}

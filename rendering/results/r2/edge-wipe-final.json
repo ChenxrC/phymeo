@@ -1,0 +1,46 @@
+{
+  "schema": "phymeo-real-browser-qa-v1",
+  "started": "2026-11-22T20:47:01.842Z",
+  "root": "C:/Users/38347/.codex/worktrees/phymeo-rendering/phymeo/rendering/results",
+  "checks": [
+    {
+      "name": "decoded_first_frame",
+      "frame": "0 / 299",
+      "motion": "0.033125 s",
+      "pts": "0.000000 s",
+      "decoded": {
+        "mediaTime": 0,
+        "presentedFrames": 3
+      },
+      "time": 0.016666
+    },
+    {
+      "name": "keyboard_step",
+      "frame": "1 / 299",
+      "decoded": {
+        "mediaTime": 0.033333,
+        "presentedFrames": 4
+      }
+    },
+    {
+      "name": "missing_movie_fallback",
+      "status": "影片未找到或此浏览器不支持 H.264。 可使用原始视频控件或打开影片文件。",
+      "videoControls": true,
+      "comparisonControls": false,
+      "error": null,
+      "networkState": 3
+    }
+  ],
+  "errors": [],
+  "browser": {
+    "Browser": "Edg/154.0.4258.37",
+    "Protocol-Version": "1.3",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36 Edg/154.0.0.0",
+    "V8-Version": "15.4.11.5",
+    "WebKit-Version": "537.36 (@f6ddc7bb8d2ad05a6979ebc09b83893c2d128a62)",
+    "webSocketDebuggerUrl": "ws://127.0.0.1:63825/devtools/browser/d067ebdd-83a9-4b43-bfd0-6042033cba34"
+  },
+  "loopback": "http://127.0.0.1:51442",
+  "status": "passed",
+  "closed": "2026-11-22T20:47:04.703Z"
+}

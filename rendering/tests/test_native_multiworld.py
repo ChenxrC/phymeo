@@ -171,4 +171,20 @@ class TransferAccounting(unittest.TestCase):
         self.assertIsNone(report['upload_components']['tlas_upload_bytes'])
 
 
+
+
+class TextureTransferAccounting(unittest.TestCase):
+    def test_optional_texture_uploads_count_once_and_missing_info_is_unknown(self):
+        data=dict(resident_captures=1,resident_geometry_upload_bytes=100,
+            resident_transform_upload_bytes=128,resident_parameter_upload_bytes=416,
+            resident_profile={'tlas_upload_bytes':48},resident_texture_abi_version=1,
+            resident_texture_info={'image_upload_bytes':68,'metadata_upload_bytes':80})
+        report=runner.transfer_report({'device':data})
+        self.assertEqual(report['host_to_device_bytes'],840)
+        self.assertEqual(report['upload_components']['texture_image_upload_bytes'],68)
+        self.assertEqual(report['upload_components']['texture_metadata_upload_bytes'],80)
+        data['resident_texture_info']=None
+        self.assertIsNone(runner.transfer_report({'device':data})['host_to_device_bytes'])
+
+
 if __name__=='__main__': unittest.main()

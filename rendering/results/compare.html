@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>同帧擦拭比较 · 原生 Vulkan / 路径追踪参考</title>
+<style>
+:root{color-scheme:dark;--bg:#11151b;--panel:#1b222c;--ink:#eef2f7;--muted:#aab7c7;--line:#3b485a;--accent:#8ad6ff}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif}main{max-width:1160px;margin:0 auto;padding:28px 24px 36px}a{color:var(--accent)}h1{font-size:clamp(22px,3.5vw,32px);line-height:1.25;margin:8px 0 12px}p{margin:8px 0}.intro,.notes{color:var(--muted);font-size:14px}.stage{position:relative;isolation:isolate;margin-top:22px;overflow:hidden;background:#080b0e;border:1px solid var(--line);border-radius:10px;touch-action:none}.stage video{display:block;width:100%;height:auto}.stage canvas{display:none;width:100%;height:auto;aspect-ratio:16/9}.stage.enhanced video{position:absolute;inset:0;width:100%;height:100%;opacity:0;pointer-events:none}.stage.enhanced canvas{display:block}.legend,.divider{display:none}.enhanced .legend{display:block;position:absolute;top:12px;max-width:44%;padding:5px 9px;background:#111b25dc;border:1px solid #ffffff40;border-radius:5px;font-size:13px;pointer-events:none}.legend.native{left:12px}.legend.reference{right:12px;text-align:right}.enhanced .divider{display:block;position:absolute;top:0;bottom:0;left:50%;width:2px;transform:translateX(-1px);background:white;box-shadow:0 0 4px #0008;pointer-events:none}.divider span{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);padding:6px 9px;border-radius:18px;background:#162330e8;border:1px solid white;white-space:nowrap;font-size:15px}.controls{display:none;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;margin-top:12px}.controls.ready{display:block}.row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.row+.row{margin-top:14px}.range-label{min-width:76px}input[type=range]{flex:1;min-width:120px;accent-color:var(--accent);height:28px;cursor:pointer}button,input[type=number]{font:inherit;border:1px solid #5c6c80;border-radius:6px;color:var(--ink);background:#253142;padding:7px 11px}button{cursor:pointer;min-height:42px}button:hover{background:#34455b}button:disabled{opacity:.45;cursor:default}button:focus-visible,input:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-offset:3px}output,.readout{font-variant-numeric:tabular-nums}.readout{display:flex;gap:8px 22px;flex-wrap:wrap;margin:12px 0 0;font-size:14px}.readout strong{font-weight:600}#play{min-width:94px}#motion-time{width:120px}.jump{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:0}.spacer{flex:1}.status{font-size:14px;color:var(--muted);min-height:22px;margin-top:10px}.notes{margin-top:14px}noscript{display:block;padding:12px;background:var(--panel)}[hidden]{display:none!important}@media(max-width:600px){main{padding:16px 12px 24px}.controls{padding:12px}.legend{font-size:11px!important;top:7px!important;padding:3px 6px!important}.legend.native{left:7px}.legend.reference{right:7px}.row{gap:8px}.range-label{min-width:66px;font-size:14px}.notes{font-size:12px}.readout{gap:4px 14px}.spacer{display:none}}
+</style>
+</head>
+<body>
+<main>
+<a href="index.html">← 渲染结果</a>
+<h1>同一运动、同一帧：两种渲染算法</h1>
+<p class="intro">拖动分界，看白色外壳高光、物体接触阴影与台边半影。左侧是硬件原生 Vulkan，右侧是 1024 spp 路径追踪参考。</p>
+<div id="stage" class="stage">
+  <video id="source" controls playsinline preload="auto" aria-label="原生与参考左右拼接的原始比较视频">
+    <source src="r2/daylight-comparison-atlas.mp4" type="video/mp4">
+    浏览器无法播放此视频，请使用下方原始影片链接。
+  </video>
+  <canvas id="comparison" width="960" height="540" role="img" aria-label="同一视频帧的擦拭比较：分界左边原生 Vulkan，右边路径追踪参考"></canvas>
+  <span class="legend native" aria-hidden="true">原生 Vulkan · 硬件阴影</span>
+  <span class="legend reference" aria-hidden="true">路径追踪参考 · 1024 spp</span>
+  <div id="divider" class="divider" aria-hidden="true"><span>‹ ›</span></div>
+</div>
+<section id="controls" class="controls" aria-label="比较与播放控制">
+  <div class="row">
+    <label class="range-label" for="wipe">原生占比</label>
+    <input id="wipe" type="range" min="0" max="100" step="0.1" value="50" aria-label="擦拭分界，0为全部参考，100为全部原生">
+    <output id="wipe-value" for="wipe">50%</output>
+  </div>
+  <div class="row">
+    <button id="play" type="button" aria-keyshortcuts="Space">播放</button>
+    <button id="previous" type="button" aria-label="暂停并后退一帧" aria-keyshortcuts="ArrowLeft">← 前一帧</button>
+    <button id="next" type="button" aria-label="暂停并前进一帧" aria-keyshortcuts="ArrowRight">后一帧 →</button>
+    <span class="spacer"></span>
+    <button id="first" type="button">首帧</button>
+    <button id="last" type="button">末帧</button>
+  </div>
+  <div class="row">
+    <label class="range-label" for="frame">影片帧</label>
+    <input id="frame" type="range" min="0" max="299" step="1" value="0" aria-label="影片帧序号，0到299">
+  </div>
+  <div class="readout" aria-live="off">
+    <span>帧 <strong id="frame-value">0 / 299</strong></span>
+    <span>运动时刻 <strong id="motion-value">—</strong></span>
+    <span>影片 PTS <strong id="pts-value">0.000000 s</strong></span>
+  </div>
+  <div class="row">
+    <form id="jump-form" class="jump">
+      <label for="motion-time">跳到运动时刻</label>
+      <input id="motion-time" type="number" min="0.033125" max="10" step="any" value="0.033125" required inputmode="decimal">
+      <span>s</span><button type="submit">跳转</button>
+    </form>
+  </div>
+</section>
+<p id="status" class="status" role="status" aria-live="polite">正在加载同帧比较影片…</p>
+<p class="notes">原生画面由 1280×720 缩至 960×540；参考画面原始为 960×540。共 300 帧、30 fps。运动时刻取封存的实际状态时间，跳转选择最近原状态；播放速度不代表渲染速度。</p>
+<p class="notes">键盘：空格播放 / 暂停，← → 逐帧，Home / End 首末帧；滑块可用方向键调整。<a href="r2/daylight-comparison-atlas.mp4">打开原始拼接影片</a></p>
+<noscript>JavaScript 未启用：可直接使用上方视频控件观看左右拼接影片。</noscript>
+</main>
+<script>
+'use strict';
+// Inline for file:// use: no fetch, network dependency or JSON CORS requirement.
+// Source: rendering/results/r2/daylight-hardware-camera.json
+// Exact source file SHA256: 5e604052861c00d0db7ab40b6e319e76f4f37dc141e944b62fdf3da4fbf9e440
+const SOURCE_TIMES = Object.freeze([0.033125,0.066875,0.1,0.133125,0.166875,0.2,0.233125,0.26687500000000003,0.3,0.333125,0.366875,0.4,0.433125,0.466875,0.5,0.533125,0.566875,0.6,0.633125,0.666875,0.7000000000000001,0.733125,0.766875,0.8,0.833125,0.8668750000000001,0.9,0.933125,0.966875,1.0,1.033125,1.066875,1.1,1.133125,1.166875,1.2,1.233125,1.266875,1.3,1.3331250000000001,1.366875,1.4000000000000001,1.433125,1.466875,1.5,1.533125,1.566875,1.6,1.633125,1.666875,1.7,1.733125,1.766875,1.8,1.8331250000000001,1.866875,1.9000000000000001,1.933125,1.9668750000000002,2.0,2.033125,2.066875,2.1,2.133125,2.166875,2.2,2.2331250000000002,2.266875,2.3000000000000003,2.333125,2.366875,2.4,2.433125,2.466875,2.5,2.533125,2.566875,2.6,2.633125,2.666875,2.7,2.7331250000000002,2.766875,2.8000000000000003,2.833125,2.866875,2.9,2.933125,2.966875,3.0,3.033125,3.066875,3.1,3.133125,3.166875,3.2,3.2331250000000002,3.266875,3.3000000000000003,3.333125,3.3668750000000003,3.4,3.433125,3.466875,3.5,3.533125,3.566875,3.6,3.633125,3.666875,3.7,3.7331250000000002,3.766875,3.8000000000000003,3.833125,3.8668750000000003,3.9,3.933125,3.966875,4.0,4.033125,4.0668750000000005,4.1,4.133125,4.166875,4.2,4.233125,4.266875,4.3,4.333125,4.366875,4.4,4.433125,4.466875,4.5,4.533125,4.5668750000000005,4.6000000000000005,4.633125,4.666875,4.7,4.733125,4.766875,4.8,4.833125,4.866875,4.9,4.933125,4.966875,5.0,5.033125,5.0668750000000005,5.1000000000000005,5.133125,5.166875,5.2,5.233125,5.266875,5.3,5.333125,5.366875,5.4,5.433125,5.466875,5.5,5.533125,5.5668750000000005,5.6000000000000005,5.633125,5.666875,5.7,5.733125,5.766875,5.8,5.833125,5.866875,5.9,5.933125,5.966875,6.0,6.033125,6.0668750000000005,6.1000000000000005,6.133125,6.166875,6.2,6.233125,6.266875,6.3,6.333125,6.366875,6.4,6.433125,6.466875,6.5,6.533125,6.5668750000000005,6.6000000000000005,6.633125,6.666875,6.7,6.733125,6.766875,6.8,6.833125,6.866875,6.9,6.933125,6.966875,7.0,7.033125,7.0668750000000005,7.1000000000000005,7.133125,7.166875,7.2,7.233125,7.266875,7.3,7.333125,7.366875,7.4,7.433125,7.466875,7.5,7.533125,7.5668750000000005,7.6000000000000005,7.633125,7.666875,7.7,7.733125,7.766875,7.8,7.833125,7.866875,7.9,7.933125,7.966875,8.0,8.033125,8.066875,8.1,8.133125,8.166875000000001,8.2,8.233125,8.266875,8.3,8.333125,8.366875,8.4,8.433125,8.466875,8.5,8.533125,8.566875,8.6,8.633125,8.666875000000001,8.700000000000001,8.733125,8.766875,8.8,8.833125,8.866875,8.9,8.933125,8.966875,9.0,9.033125,9.066875,9.1,9.133125,9.166875000000001,9.200000000000001,9.233125,9.266875,9.3,9.333125,9.366875,9.4,9.433125,9.466875,9.5,9.533125,9.566875,9.6,9.633125,9.666875000000001,9.700000000000001,9.733125,9.766875,9.8,9.833125,9.866875,9.9,9.933125,9.966875,10.0]);
+const FPS = 30, FRAME_COUNT = 300, WIDTH = 960, HEIGHT = 540;
+const $ = id => document.getElementById(id);
+const video = $('source'), canvas = $('comparison'), stage = $('stage');
+const controls = $('controls'), wipe = $('wipe'), frameInput = $('frame');
+const status = $('status');
+let context, snapshotContext, snapshot;
+let enhanced = false, failed = false, hasFrame = false;
+let displayedFrame = 0, requestedFrame = null, frameCallback = null;
+let seekTimer = null, dragging = false;
+
+function fallback(message) {
+  failed = true; enhanced = false;
+  if (frameCallback !== null && video.cancelVideoFrameCallback) video.cancelVideoFrameCallback(frameCallback);
+  clearTimeout(seekTimer);
+  stage.classList.remove('enhanced'); controls.classList.remove('ready');
+  video.controls = true;
+  status.textContent = message + ' 可使用原始视频控件或打开影片文件。';
+}
+function clampFrame(frame) { return Math.max(0, Math.min(FRAME_COUNT - 1, frame)); }
+function paint() {
+  if (!hasFrame || failed) return;
+  const boundary = WIDTH * Number(wipe.value) / 100;
+  // One owned snapshot of one decoded atlas frame supplies both algorithms.
+  context.clearRect(0, 0, WIDTH, HEIGHT);
+  context.drawImage(snapshot, 0, 0, WIDTH, HEIGHT, 0, 0, WIDTH, HEIGHT);
+  context.save(); context.beginPath(); context.rect(boundary, 0, WIDTH-boundary, HEIGHT); context.clip();
+  context.drawImage(snapshot, WIDTH, 0, WIDTH, HEIGHT, 0, 0, WIDTH, HEIGHT);
+  context.restore();
+  $('divider').style.left = wipe.value + '%';
+  $('wipe-value').value = Number(wipe.value).toFixed(1).replace(/\.0$/, '') + '%';
+}
+function updateReadout(frame) {
+  displayedFrame = frame;
+  if (requestedFrame === null) frameInput.value = frame;
+  $('frame-value').textContent = frame + ' / ' + (FRAME_COUNT - 1);
+  $('motion-value').textContent = SOURCE_TIMES[frame].toFixed(6) + ' s';
+  $('pts-value').textContent = (frame / FPS).toFixed(6) + ' s';
+  $('previous').disabled = frame === 0 && requestedFrame === null;
+  $('next').disabled = frame === FRAME_COUNT - 1 && requestedFrame === null;
+}
+function captureDecodedFrame(metadata) {
+  if (failed) return;
+  const measured = metadata.mediaTime * FPS;
+  const frame = Math.round(measured);
+  // This page's frame stepping contract requires the authored 30 fps CFR atlas.
+  if (frame < 0 || frame >= FRAME_COUNT || Math.abs(measured-frame) > 0.02) {
+    fallback('影片时间戳不符合预定的 300 帧 / 30 fps，已停止逐帧比较。'); return;
+  }
+  // Rapid clicks can leave an older seek completion in flight. Do not publish it.
+  if (requestedFrame !== null && frame !== requestedFrame) return;
+  try { snapshotContext.drawImage(video, 0, 0, WIDTH*2, HEIGHT); }
+  catch (_) { fallback('浏览器无法将本地影片绘制到画布。'); return; }
+  hasFrame = true;
+  if (requestedFrame === frame) {
+    requestedFrame = null; clearTimeout(seekTimer);
+    status.textContent = '已定位到原状态 ' + SOURCE_TIMES[frame].toFixed(6) + ' s。';
+  }
+  updateReadout(frame); paint();
+  stage.classList.add('enhanced'); controls.classList.add('ready');
+  video.controls = false;
+}
+function watchFrame() {
+  if (!enhanced || failed) return;
+  frameCallback = video.requestVideoFrameCallback((_, metadata) => {
+    frameCallback = null;
+    captureDecodedFrame(metadata);
+    watchFrame();
+  });
+}
+function pause() { video.pause(); $('play').textContent = '播放'; }
+function seekFrame(frame) {
+  if (!enhanced || failed) return;
+  pause();
+  const target = clampFrame(Math.round(frame));
+  requestedFrame = target; frameInput.value = target;
+  clearTimeout(seekTimer);
+  if (hasFrame && target === displayedFrame && !video.seeking) {
+    requestedFrame = null; updateReadout(target);
+    status.textContent = '已定位到原状态 ' + SOURCE_TIMES[target].toFixed(6) + ' s。'; return;
+  }
+  status.textContent = '正在定位第 ' + target + ' 帧…';
+  // Seek inside the selected CFR frame's interval, not onto a rounded boundary.
+  // rVFC mediaTime must confirm the exact requested frame before it is displayed.
+  try { video.currentTime = (target + 0.5) / FPS; }
+  catch (_) { fallback('浏览器未能定位影片帧。'); return; }
+  seekTimer = setTimeout(() => {
+    if (requestedFrame !== null) fallback('浏览器未确认所选帧，已切回直接视频。');
+  }, 10000);
+}
+function nearestSourceFrame(time) {
+  let low = 0, high = SOURCE_TIMES.length - 1;
+  while (low < high) {
+    const middle = Math.floor((low + high) / 2);
+    if (SOURCE_TIMES[middle] < time) low = middle + 1; else high = middle;
+  }
+  return low > 0 && time-SOURCE_TIMES[low-1] <= SOURCE_TIMES[low]-time ? low-1 : low;
+}
+async function togglePlay() {
+  if (!enhanced || failed) return;
+  if (!video.paused) { pause(); return; }
+  if (requestedFrame !== null) return;
+  if (video.ended || displayedFrame === FRAME_COUNT-1) { seekFrame(0); return; }
+  try { await video.play(); }
+  catch (_) { status.textContent = '浏览器阻止了播放，请再次点击播放或打开原始影片。'; }
+}
+function start() {
+  if (enhanced || failed) return;
+  if (SOURCE_TIMES.length !== FRAME_COUNT || SOURCE_TIMES.some((t,i) => !Number.isFinite(t) || (i && t <= SOURCE_TIMES[i-1]))) {
+    fallback('封存状态时间表无效。'); return;
+  }
+  if (video.videoWidth !== WIDTH*2 || video.videoHeight !== HEIGHT || !Number.isFinite(video.duration) || Math.round(video.duration*FPS) !== FRAME_COUNT) {
+    fallback('影片尺寸或时长不符合此比较页。'); return;
+  }
+  try {
+    context = canvas.getContext('2d'); snapshot = document.createElement('canvas');
+    snapshot.width = WIDTH*2; snapshot.height = HEIGHT; snapshotContext = snapshot.getContext('2d');
+    if (!context || !snapshotContext) throw new Error('Canvas unavailable');
+  } catch (_) { fallback('浏览器不支持 Canvas 比较。'); return; }
+  if (!video.requestVideoFrameCallback) { fallback('浏览器不支持解码帧确认，无法保证准确逐帧。'); return; }
+  enhanced = true; watchFrame(); seekFrame(0);
+}
+$('play').addEventListener('click', togglePlay);
+$('previous').addEventListener('click', () => seekFrame((requestedFrame ?? displayedFrame)-1));
+$('next').addEventListener('click', () => seekFrame((requestedFrame ?? displayedFrame)+1));
+$('first').addEventListener('click', () => seekFrame(0));
+$('last').addEventListener('click', () => seekFrame(FRAME_COUNT-1));
+frameInput.addEventListener('input', () => seekFrame(Number(frameInput.value)));
+wipe.addEventListener('input', paint);
+$('jump-form').addEventListener('submit', event => {
+  event.preventDefault();
+  const time = Number($('motion-time').value);
+  if (Number.isFinite(time)) seekFrame(nearestSourceFrame(time));
+});
+video.addEventListener('play', () => { $('play').textContent = '暂停'; status.textContent = '播放中 · 两侧取自同一解码帧'; });
+video.addEventListener('pause', () => { $('play').textContent = '播放'; });
+video.addEventListener('ended', () => { $('play').textContent = '回到首帧'; status.textContent = '播放结束。'; });
+video.addEventListener('error', () => fallback('影片未找到或此浏览器不支持 H.264。'));
+video.addEventListener('loadedmetadata', start);
+function dragTo(event) {
+  const bounds = stage.getBoundingClientRect();
+  wipe.value = Math.max(0, Math.min(100, (event.clientX-bounds.left)/bounds.width*100)); paint();
+}
+stage.addEventListener('pointerdown', event => {
+  if (!enhanced || !hasFrame || failed || event.button !== 0) return;
+  dragging = true; stage.setPointerCapture(event.pointerId); dragTo(event);
+});
+stage.addEventListener('pointermove', event => { if (dragging) dragTo(event); });
+stage.addEventListener('pointerup', () => { dragging = false; });
+stage.addEventListener('pointercancel', () => { dragging = false; });
+document.addEventListener('keydown', event => {
+  if (!enhanced || failed || event.altKey || event.ctrlKey || event.metaKey || /^(INPUT|TEXTAREA|SELECT)$/.test(event.target.tagName) || event.target.isContentEditable) return;
+  const actions = {'ArrowLeft': () => seekFrame((requestedFrame ?? displayedFrame)-1),
+    'ArrowRight': () => seekFrame((requestedFrame ?? displayedFrame)+1),
+    'Home': () => seekFrame(0), 'End': () => seekFrame(FRAME_COUNT-1), ' ': togglePlay};
+  if (actions[event.key]) { event.preventDefault(); actions[event.key](); }
+});
+if (!video.canPlayType('video/mp4; codecs="avc1.640028"')) fallback('浏览器未声明 H.264 支持。');
+else if (video.readyState >= 1) start();
+</script>
+</body>
+</html>

@@ -119,4 +119,27 @@ class ProcessMemorySampling(unittest.TestCase):
             summarize_samples([sample],pid=42,luid='7856341201000000',start=0,end=2,period_s=.25)
 
 
+class TransferAccounting(unittest.TestCase):
+    def test_tlas_and_studio_are_counted_once_not_duplicated_with_host_matrices(self):
+        device=dict(resident_captures=2,resident_upload_calls=1,resident_vertex_count=3,
+            resident_index_count=3,resident_mesh_count=1,resident_instance_count=1,resident_bvh_nodes=1,
+            resident_geometry_upload_bytes=236,resident_transform_upload_bytes=256,
+            resident_host_transform_input_bytes=128,resident_parameter_upload_bytes=688,
+            resident_profile=dict(tlas_upload_bytes=96),resident_telemetry=None)
+        report=runner.transfer_report(dict(device=device))
+        self.assertEqual(report['host_to_device_bytes'],236+256+688+96)
+        self.assertEqual(report['upload_components']['static_geometry']['vertex_buffer_bytes'],96)
+        self.assertEqual(report['upload_components']['static_geometry']['index_buffer_bytes'],12)
+        self.assertTrue(report['upload_components']['static_geometry']['sum_matches_counter'])
+        self.assertEqual(report['upload_components']['uniforms']['studio_setup_bytes_in_counter'],144)
+        self.assertEqual(report['upload_components']['host_transform_input_bytes_not_added'],128)
+    def test_absent_profile_does_not_invent_zero_tlas_or_total(self):
+        device=dict(resident_captures=1,resident_geometry_upload_bytes=100,
+            resident_transform_upload_bytes=128,resident_parameter_upload_bytes=272)
+        report=runner.transfer_report(dict(device=device))
+        self.assertIsNone(report['host_to_device_bytes'])
+        self.assertEqual(report['known_upload_subtotal_bytes'],500)
+        self.assertIsNone(report['upload_components']['tlas_upload_bytes'])
+
+
 if __name__=='__main__': unittest.main()

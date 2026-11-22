@@ -1,6 +1,6 @@
 # M3 标定相机开发计划
 
-> 状态：仅计划，2026-11-22。按 [通用指南](README.md) 执行并保存失败／通过证据。
+G1 已实现相机参数校验和六字段曝光绑定，见[模块测试](../tests/test_cameras.py)。设备成像与 R3 像素级验收待执行。
 
 **目标：** 让固定相机和腕部相机用同一种显式曝光类型，正确绑定标定、米制坐标、曝光位姿与来源帧。
 
@@ -32,7 +32,7 @@
 
 上游 M7 解析固定外参，或从当帧腕部节点与安装外参组合曝光位姿；M2 提供完整 `FrameKey` 和 `Pose`。下游 M4 将此相机放入 `CaptureRequest`；M5 消费同帧的 `SceneFrame` 与请求；M6 输出保留这次曝光的标定与帧键。
 
-计划增加 `validate_exposure(frame: SceneFrame, camera: Camera) -> None`，当前没有此函数。它只逐字段精确核对 `camera.frame_key == frame.key`，成功无返回值，失败抛带字段名的 `ValueError`，不读取设备、不改变位姿。`scene_key` 与已打开会话的关系由 M2/M5 检查。
+G1 提供 `validate_exposure(frame: SceneFrame, camera: Camera) -> None`。它逐字段核对 `camera.frame_key == frame.key`，键不匹配时抛出带字段名的 `ValueError`。`scene_key` 与已打开场景的关系由 M2/M5 检查。
 
 ## 顺序开发步骤
 

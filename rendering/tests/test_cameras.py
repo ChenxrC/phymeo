@@ -13,7 +13,6 @@ from phymeo_rendering import cameras
 from phymeo_rendering.cameras import Camera
 from phymeo_rendering.scene import FrameKey, NodePose, Pose, SceneFrame
 
-
 # (camera-space point in metres, expected pixel centre coordinates, forward depth)
 CALIBRATION_SAMPLES = (
     ((0.0, 0.0, -1.0), (320.0, 240.0), 1.0),

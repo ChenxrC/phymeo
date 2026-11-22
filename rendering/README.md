@@ -8,6 +8,8 @@
 
 ## 七个板块
 
+G1 输入合同已接通。仓库根目录下设置 `$env:PYTHONPATH=(Resolve-Path rendering/src).Path`，运行 `python -m unittest discover -s rendering/tests -v` 可验证资产声明、场景引用、位姿组合和相机曝光。两帧使用同一张[自制标定桌](tests/fixtures/g1/README.md)，在无图形设备环境下即可检查腕部转动前后的解析投影。实际成像在后续 R0 验收。
+
 | 板块 | 开发入口 | 谁负责什么 |
 | --- | --- | --- |
 | 外观资产 | [assets.py](src/phymeo_rendering/assets.py) | `Mesh` 引用以米为单位的网格，`Material` 描述不透明表面的线性底色、金属度、粗糙度。后续在此定义纹理、UV、色域与来源元数据。 |

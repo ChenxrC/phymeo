@@ -43,3 +43,31 @@ python rendering/tools/g5_reproduce.py `
 ## 已有 RED 证据
 
 固定 tests-first 提交 `03b203cf`，从 Git archive 独立提取：10 方法，3 个 `.inc/.glsl` 包配置子例失败、20 个缺新入口/映射的子例错误、1 个未提供实际 wheel 的节点跳过，退出码 1。原日志在作者工作树 `artifacts/rendering/g5-red/01/`。后续 GREEN 与实际 wheel 结果需另加，不覆盖此证据。
+
+## Windows CPython 3.11 的离线准备清单
+
+[参考环境版本清单](reference-windows-cp311.txt) 来自既有 G3 环境的真实 `.dist-info`，不把缓存目录当作原 wheel 文件。[独立构建工具清单](build-requirements.txt) 将 setuptools 固定在当前 build-system 的 `>=77,<83` 内；参考运行环境里的 84.2.1 与构建环境分离。
+
+只读检查发现：本机 `C:/Users/38347/AppData/Local/uv/cache/wheels-v6/pypi` 未找到 SAPIEN 的完整原 wheel 集；G3 环境包含展开后的 SDK 和一个 NumPy wheel，但不构成完整离线安装源。因此优先复用已保存的原 wheel；缺件时从公共 PyPI 固定版本补齐，不从 site-packages 重新打包冒充官方发行。下面是待实际执行的准备命令；下载成功前不宣称版本可用或 SHA 已验证：
+
+```powershell
+C:/Python311/python.exe -m pip download --index-url https://pypi.org/simple `
+  --only-binary=:all: --no-deps --dest C:/independent/g5-wheelhouse-build `
+  -r rendering/results/g5/build-requirements.txt
+C:/Python311/python.exe -m pip download --index-url https://pypi.org/simple `
+  --only-binary=:all: --no-deps --dest C:/independent/g5-wheelhouse-reference `
+  -r rendering/results/g5/reference-windows-cp311.txt
+```
+
+下载后清单必须保存每个包的官方版本 JSON 地址 `https://pypi.org/pypi/NAME/VERSION/json`、选定 wheel 文件名、官方 SHA256、实际 SHA256和字节数。任一固定版本/平台 wheel 缺失应报告阻塞；不得改版本后仍声称复用了旧环境。下载阶段可联网，之后构建和安装均只用本地文件。
+
+构建应从最终集成**精确提交**的 `git archive` 提取到新的构建目录，避免旧 `build/lib` 或 egg-info 残留；在另一个空 venv 以 `--no-index --find-links <build-wheelhouse>` 安装构建清单，然后 `python -m build --wheel --no-isolation --outdir <dist> <snapshot>/rendering`。运行时 `--source-root` 指这份相同快照。报告同时保存 Git 提交、archive SHA、wheel SHA及外部探测 driver SHA。任何后续源码变化形成新 wheel/hash，不能沿用这份 F0 结果。
+
+已存在且可复用的 native 工具位于父集成树 `artifacts/rendering/g3-table/toolchain/`：
+
+- headers：`Vulkan-Headers-vulkan-sdk-1.4.363.0/include`；
+- loader import library：`vulkan-1.lib`（加载器运行时由系统 Vulkan 驱动提供）；
+- shader compiler：`glslang-16.6.0-windows-x86_64-release/bin/glslang.exe`；
+- validation manifest/DLL：`Validation_Layers_Windows_64/`。
+
+沿用 VS 2022 C++ 编译器和 CMake，实际版本/缓存必须留档。外部构建只引用上述 SDK，C++/.inc/CMake/shader 输入必须来自**安装后的 wheel**。当前机器 native adapter index=1、SAPIEN `cuda:0`；每次实际诊断仍保存设备名，不能把这组索引当作跨机器保证。

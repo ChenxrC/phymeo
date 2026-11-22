@@ -48,7 +48,12 @@ constexpr uint32_t MAX_VERTICES = 4096u*3u;
 constexpr std::array<VkFormat, 5> FORMATS = {
     VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R32_SFLOAT,
     VK_FORMAT_R32_UINT, VK_FORMAT_R8_UINT, VK_FORMAT_D32_SFLOAT};
-struct Allocation { VkDeviceSize bytes{}; bool local_heap{}, host_visible{}; };
+struct Allocation {
+    VkDeviceSize bytes{};
+    bool local_heap{}, host_visible{};
+    uint32_t type_index{};
+    VkMemoryPropertyFlags property_flags{};
+};
 struct Buffer { VkBuffer handle{}; VkDeviceMemory memory{}; Allocation allocation{}; };
 struct Image { VkImage handle{}; VkDeviceMemory memory{}; VkImageView view{}; Allocation allocation{}; };
 struct ResidentState;
@@ -57,6 +62,7 @@ struct Context {
     PrResidentInfo resident_properties{};
     PrResidentTelemetry telemetry{};
     PrResidentProfile profile{};
+    PrResidentReadbackInfo readback_info{};
     PrStudio studio{};
     std::shared_ptr<ResidentState> resident_state;
     VkInstance instance{};
@@ -78,7 +84,10 @@ struct Context {
     std::string validation_message;
     bool poisoned = false;
 
-    Context() { ++live_contexts; telemetry.telemetry_abi_version = 1; profile.profile_abi_version = 1; }
+    Context() {
+        ++live_contexts; telemetry.telemetry_abi_version=1; profile.profile_abi_version=1;
+        readback_info.readback_abi_version=1; readback_info.memory_type_index=UINT32_MAX;
+    }
     ~Context() { shutdown(); --live_contexts; }
     VkResult shutdown() noexcept {
         VkResult waited = VK_SUCCESS;
@@ -120,15 +129,22 @@ struct Context {
         std::fprintf(stderr, "phymeo-native validation: %s\n", message);
         return VK_FALSE;
     }
-    uint32_t memory_type(uint32_t bits, VkMemoryPropertyFlags wanted) const {
-        for (uint32_t i=0; i<memory_properties.memoryTypeCount; ++i)
-            if ((bits & (1u<<i)) &&
-                (memory_properties.memoryTypes[i].propertyFlags & wanted) == wanted) return i;
+    uint32_t memory_type(uint32_t bits, VkMemoryPropertyFlags wanted,
+                         VkMemoryPropertyFlags preferred=0) const {
+        // HOST_CACHED is a preference, never a relaxation of HOST_COHERENT.
+        // A coherent fallback needs no invalidate and keeps the same contract.
+        for (uint32_t pass=0; pass<(preferred ? 2u : 1u); ++pass) {
+            VkMemoryPropertyFlags required=wanted | (pass==0 ? preferred : 0u);
+            for (uint32_t i=0; i<memory_properties.memoryTypeCount; ++i)
+                if ((bits & (1u<<i)) &&
+                    (memory_properties.memoryTypes[i].propertyFlags & required)==required) return i;
+        }
         throw std::runtime_error("required Vulkan memory type unavailable");
     }
     void account_allocation(Allocation& owner, const VkMemoryAllocateInfo& allocation) {
         owner.bytes = allocation.allocationSize;
         const auto& type = memory_properties.memoryTypes[allocation.memoryTypeIndex];
+        owner.type_index=allocation.memoryTypeIndex; owner.property_flags=type.propertyFlags;
         owner.local_heap = (memory_properties.memoryHeaps[type.heapIndex].flags &
                             VK_MEMORY_HEAP_DEVICE_LOCAL_BIT) != 0;
         owner.host_visible = (type.propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) != 0;
@@ -156,14 +172,15 @@ struct Context {
     }
     void make_buffer(Buffer& value, VkDeviceSize bytes, VkBufferUsageFlags usage,
                      VkMemoryPropertyFlags memory_flags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-                                                          VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) {
+                                                          VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                     VkMemoryPropertyFlags preferred_flags=0) {
         VkBufferCreateInfo create{VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
         create.size = bytes; create.usage = usage; create.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         acquire(value.handle, "vkCreateBuffer", [&](auto* output) { return vkCreateBuffer(device, &create, nullptr, output); });
         VkMemoryRequirements needed{}; vkGetBufferMemoryRequirements(device, value.handle, &needed);
         VkMemoryAllocateInfo alloc{VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
         alloc.allocationSize = needed.size;
-        alloc.memoryTypeIndex = memory_type(needed.memoryTypeBits, memory_flags);
+        alloc.memoryTypeIndex = memory_type(needed.memoryTypeBits, memory_flags, preferred_flags);
         acquire(value.memory, "vkAllocateMemory buffer", [&](auto* output) { return vkAllocateMemory(device, &alloc, nullptr, output); });
         account_allocation(value.allocation, alloc);
         check(vkBindBufferMemory(device, value.handle, value.memory, 0), "vkBindBufferMemory");
@@ -416,6 +433,8 @@ struct Context {
 struct FrameResources {
     Context& c;
     Buffer vertices{}, uniform{}, readback{};
+    void* readback_mapping{};
+    size_t readback_capacity{};
     std::array<Image,5> images{};
     VkFramebuffer framebuffer{};
     VkDescriptorPool descriptors{};
@@ -435,6 +454,10 @@ struct FrameResources {
             release(image.view, [&](auto owned) { vkDestroyImageView(c.device,owned,nullptr); });
             release(image.handle, [&](auto owned) { vkDestroyImage(c.device,owned,nullptr); });
             c.free_memory(image.memory, image.allocation);
+        }
+        if (readback_mapping) {
+            vkUnmapMemory(c.device,readback.memory); readback_mapping=nullptr;
+            ++c.readback_info.unmap_calls;
         }
         for(auto* buffer:{&vertices,&uniform,&readback}) {
             release(buffer->handle, [&](auto owned) { vkDestroyBuffer(c.device,owned,nullptr); });
@@ -724,5 +747,33 @@ int pr_resident_profile(void* handle, PrResidentProfile* output) {
     auto& context=*static_cast<Context*>(handle);
     if (!context.resident) { last_error="context does not use resident rendering"; return -1; }
     *output=context.profile;
+    return 0;
+}
+
+int pr_resident_render_planes(void* handle, const float* matrices, uint32_t instance_count,
+                             const PrParams* params, uint32_t width, uint32_t height,
+                             uint32_t channel_mask, uint8_t* output, size_t output_bytes) {
+    try {
+        last_error.clear(); require(handle && params,"null resident compact capture argument");
+        resident_render(*static_cast<Context*>(handle),matrices,instance_count,*params,
+                        width,height,output,output_bytes,channel_mask,true);
+        return 0;
+    } catch (const std::exception& e) { last_error=e.what(); return -1; }
+      catch (...) { last_error="unknown resident compact capture error"; return -1; }
+}
+int pr_resident_readback_info(void* handle, PrResidentReadbackInfo* output) {
+    if (!handle || !output) { last_error="null resident readback info argument"; return -1; }
+    auto& context=*static_cast<Context*>(handle);
+    if (!context.resident) { last_error="context does not use resident rendering"; return -1; }
+    *output=context.readback_info;
+    output->memory_type_index=UINT32_MAX; output->memory_property_flags=0;
+    output->persistent_mapped=0; output->capacity_bytes=0;
+    if (context.resident_state && context.resident_state->target) {
+        const auto& frame=*context.resident_state->target;
+        output->memory_type_index=frame.readback.allocation.type_index;
+        output->memory_property_flags=frame.readback.allocation.property_flags;
+        output->persistent_mapped=frame.readback_mapping ? 1u : 0u;
+        output->capacity_bytes=frame.readback_capacity;
+    }
     return 0;
 }

@@ -148,3 +148,21 @@ struct PrResidentProfile {
 };
 static_assert(sizeof(PrResidentProfile) == 128, "resident profile ABI");
 PR_API int pr_resident_profile(void* context, PrResidentProfile* output);
+
+// Optional compact HOST readback. Bits 0..3 select RGBA8, depth F32, ID U32,
+// VALID U8. Nonempty planes are tightly concatenated in that order. VALID is
+// last, so every GPU copy starts on a four-byte boundary even at odd extents.
+// params.counts[2] must equal (channel_mask & 1) != 0. Original render retains
+// its fixed 13-byte layout and original RGB flag semantics.
+PR_API int pr_resident_render_planes(void* context, const float* world_from_mesh,
+    uint32_t instance_count, const PrParams* params, uint32_t width, uint32_t height,
+    uint32_t channel_mask, uint8_t* output, size_t output_bytes);
+struct PrResidentReadbackInfo {
+    uint32_t readback_abi_version, memory_type_index, memory_property_flags;
+    uint32_t persistent_mapped, last_channel_mask, reserved[3];
+    uint64_t capacity_bytes, copied_bytes, map_calls, unmap_calls;
+};
+static_assert(sizeof(PrResidentReadbackInfo) == 64, "resident readback info ABI");
+// Actual selected Vulkan memory flags, not a request or a simulated capability.
+// A close-time cached query is a last-live observation, not final allocator state.
+PR_API int pr_resident_readback_info(void* context, PrResidentReadbackInfo* output);

@@ -126,3 +126,25 @@ PR_API int pr_resident_telemetry(void* context, PrResidentTelemetry* output);
 // Optional teardown returns final counters after actual resource destruction.
 // Call either this or pr_destroy exactly once for the owned context.
 PR_API int pr_resident_destroy(void* context, PrInfo* final_info, PrResidentTelemetry* final_telemetry);
+
+// Optional static studio input (std140 binding 7). panel halfU x halfV points
+// along the emitter normal; radiance is linear RGB. All padding must be zero.
+struct PrStudioPanel { float position[4], half_u[4], half_v[4], radiance[4]; };
+struct PrStudio { float environment[4]; PrStudioPanel panels[2]; };
+static_assert(sizeof(PrStudio) == 144, "studio ABI");
+PR_API int pr_resident_set_studio(void* context, const PrStudio* studio);
+
+// Optional per-capture cumulative profile, excluding initial static upload.
+// HOST upload includes target allocation on first use/resize. GPU timestamps
+// separate raster+fragment work from attachment copies, not individual lights.
+// Unsupported device timestamps have supported=0, samples=0, GPU times=0.
+struct PrResidentProfile {
+    uint32_t profile_abi_version, timestamp_supported, timestamp_valid_bits, tlas_node_count;
+    double timestamp_period_ns;
+    uint64_t captures, host_prepare_ns, host_upload_ns, host_record_ns;
+    uint64_t host_submit_ns, host_wait_ns, host_readback_ns;
+    uint64_t gpu_render_ns, gpu_copy_ns, gpu_total_ns;
+    uint64_t tlas_upload_bytes, timestamp_samples, reserved;
+};
+static_assert(sizeof(PrResidentProfile) == 128, "resident profile ABI");
+PR_API int pr_resident_profile(void* context, PrResidentProfile* output);

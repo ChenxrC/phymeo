@@ -2,10 +2,12 @@
 
 The native graphics implementation is independently built from _native/ and
 _shaders/. No runtime, compiler or device is imported at module import time.
-No path tracing, texture, environment-light or software fallback is provided.
+No path tracing, textures or software fallback is provided. Uniform environment
+and rectangular studio emitters require the explicit resident studio extension.
 """
 
 import ctypes as ct
+from copy import deepcopy
 import hashlib
 import json
 import math
@@ -13,10 +15,12 @@ from numbers import Real
 from pathlib import Path
 
 from ..outputs import Capture, Channel, ImagePlane
+from ..studio import StudioLighting
 from ..pipeline import DefaultPassPlanner, RenderPath
 from ..scene import VisualScene, compose_pose
 from . import UnsupportedRequestError, ValidatedRenderSession
 from ._native_resident import ResidentDevice, pack_scene
+from ._native_studio import pack_studio
 from ._native_device import (
     NativeDevice,
     Parameters,
@@ -119,9 +123,10 @@ def _parameters(scene, request, triangle_count, exposure):
 
 
 class _NativeDelegate:
-    def __init__(self, scene, meshes, device, exposure, *, resident=False):
+    def __init__(self, scene, meshes, device, exposure, *, resident=False, studio=None):
         self.scene, self.meshes, self.device, self.exposure = scene, meshes, device, exposure
         self.resident = resident
+        self.studio = deepcopy(studio)
         self.limits = device.info()
         self.triangles = sum(len(meshes[item.mesh_id].triangles) for item in scene.instances)
         self.last_passes = ()
@@ -203,9 +208,12 @@ class _NativeDelegate:
             geometry_residency=('static indexed meshes; per-frame instance matrices' if self.resident
                                 else 'expanded world triangles per capture'),
             primary_visibility="single-sample Vulkan raster, two-sided opaque triangles",
-            lighting="direct GGX/Smith/Schlick metallic-roughness; no ambient or IBL",
-            shadows=('GPU fragment hard-shadow mesh BVH rays' if self.resident
-                     else 'GPU fragment hard-shadow triangle rays'),
+            lighting=('native GGX/Smith/Schlick plus explicit resident studio shader' if self.studio else
+                      'direct GGX/Smith/Schlick metallic-roughness; no ambient or IBL'),
+            studio=deepcopy(self.studio),
+            shadows=('native resident finite-emitter visibility via mesh BVH; see bound shader' if self.studio
+                     else ('GPU fragment hard-shadow mesh BVH rays' if self.resident
+                           else 'GPU fragment hard-shadow triangle rays')),
             shadow_bias_m=1e-5,
             minimum_perceptual_roughness=0.045,
             exposure=self.exposure,
@@ -242,6 +250,8 @@ class NativeBackend:
     resident=True requires the resident ABI and shaders, uploads indexed assets
     once, and submits rigid instance matrices per frame. The default False keeps
     the original ABI2-only library contract; neither mode falls back to the other.
+    studio=StudioLighting(...) is separately opt-in and requires the resident
+    studio export. None retains only the declared scene lights.
     """
 
     def __init__(
@@ -253,6 +263,7 @@ class NativeBackend:
         validation=False,
         exposure=1.0,
         resident=False,
+        studio=None,
     ):
         if isinstance(device_index, bool) or not isinstance(device_index, int):
             raise TypeError("device_index must be an integer, not bool")
@@ -261,6 +272,12 @@ class NativeBackend:
         if type(resident) is not bool:
             raise TypeError('resident must be bool')
         self.resident = resident
+        if studio is not None:
+            if not isinstance(studio, StudioLighting):
+                raise TypeError('studio must be StudioLighting or None')
+            if not resident:
+                raise UnsupportedRequestError('native studio requires resident=True; no legacy approximation')
+        self.studio = studio
         if type(validation) is not bool:
             raise TypeError("validation must be bool")
         if isinstance(exposure, bool) or not isinstance(exposure, Real):
@@ -301,8 +318,12 @@ class NativeBackend:
                 raise UnsupportedRequestError("scene exceeds native device storage-buffer capacity")
             if self.resident:
                 device.upload(*pack_scene(scene, meshes, device.info()))
+            studio_info = None
+            if self.studio is not None:
+                payload, studio_info = pack_studio(self.studio)
+                device.set_studio(payload)
             return NativeRenderSession(scene, _NativeDelegate(
-                scene, meshes, device, self.exposure, resident=self.resident))
+                scene, meshes, device, self.exposure, resident=self.resident, studio=studio_info))
         except BaseException as primary:
             try:
                 device.close()

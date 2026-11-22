@@ -3,6 +3,7 @@ import ctypes as ct
 import math
 
 from . import BackendUnavailableError, UnsupportedRequestError
+from ._native_studio import NativeStudio
 from ._native_device import NativeDevice, Parameters, _Info, validate_parameters
 
 
@@ -111,6 +112,8 @@ class ResidentDevice(NativeDevice):
         self._telemetry = None
         self._telemetry_function = None
         self._resident_destroy = None
+        self._studio_function = None
+        self._has_captured = False
         self._uploaded = False
         self._instance_count = 0
         super().__init__(*args)
@@ -139,6 +142,10 @@ class ResidentDevice(NativeDevice):
         # change the resident raster capability of an older resident ABI1 DLL.
         self._telemetry_function = getattr(lib, 'pr_resident_telemetry', None)
         self._resident_destroy = getattr(lib, 'pr_resident_destroy', None)
+        self._studio_function = getattr(lib, 'pr_resident_set_studio', None)
+        if self._studio_function is not None:
+            self._studio_function.argtypes = [ct.c_void_p, ct.POINTER(NativeStudio)]
+            self._studio_function.restype = ct.c_int
         if self._telemetry_function is not None:
             self._telemetry_function.argtypes = [ct.c_void_p, ct.POINTER(ResidentTelemetry)]
             self._telemetry_function.restype = ct.c_int
@@ -176,6 +183,7 @@ class ResidentDevice(NativeDevice):
                 self._remember_telemetry(telemetry, final=False)
         result.update(self._resident_info)
         result['resident_telemetry'] = dict(self._telemetry) if self._telemetry is not None else None
+        result['resident_studio_available'] = self._studio_function is not None
         return result
 
     def upload(self, vertices, indices, meshes, instances):
@@ -189,6 +197,18 @@ class ResidentDevice(NativeDevice):
         self._uploaded = True
         self._instance_count = len(instances)
         self.info()
+
+    def set_studio(self, value):
+        if self._handle is None:
+            raise RuntimeError('resident device is closed')
+        if self._has_captured:
+            raise RuntimeError('resident studio must be set before the first capture')
+        if self._studio_function is None:
+            raise BackendUnavailableError('native resident studio export is unavailable')
+        if not isinstance(value, NativeStudio):
+            raise TypeError('studio upload must be NativeStudio')
+        if self._studio_function(self._handle, ct.byref(value)):
+            raise RuntimeError(self._error())
 
     def render(self, matrices, parameters, width, height):
         if self._handle is None or not self._uploaded:
@@ -209,6 +229,7 @@ class ResidentDevice(NativeDevice):
         if self._lib.pr_resident_render(self._handle, matrices, self._instance_count,
                 ct.byref(parameters), width, height, output, ct.sizeof(output)):
             raise RuntimeError(self._error())
+        self._has_captured = True
         return bytes(output)
 
     def close(self):

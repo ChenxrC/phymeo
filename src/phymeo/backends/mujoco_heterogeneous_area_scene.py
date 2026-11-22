@@ -15,6 +15,7 @@ import numpy as np
 from .mujoco_area_pressure_scene import (
     BodyAreaPressureAsset,
     _check_intersector,
+    _checked_publication_frame,
     _geometry_requests,
     _intersect_requests,
 )
@@ -83,7 +84,8 @@ class MuJoCoTyxHeterogeneousAreaSceneCheckpoint:
 class MuJoCoTyxHeterogeneousAreaPressureScene:
     """Per-model immutable assets; current geometry and physics commit together."""
 
-    def __init__(self, batch, assets, *, intersector=None):
+    def __init__(self, batch, assets, *, intersector=None, publication_frame="world"):
+        self._publication_frame = _checked_publication_frame(publication_frame)
         if not isinstance(batch, MuJoCoTyxHeterogeneousBatch):
             raise TypeError("expected MuJoCoTyxHeterogeneousBatch")
         if not isinstance(assets, Mapping):
@@ -122,6 +124,11 @@ class MuJoCoTyxHeterogeneousAreaPressureScene:
             self._geometry_revision = None
 
     @property
+    def publication_frame(self):
+        """Coordinate origin for clipping publication across all worlds."""
+        return self._publication_frame
+
+    @property
     def assets(self):
         return self._assets
 
@@ -157,7 +164,9 @@ class MuJoCoTyxHeterogeneousAreaPressureScene:
                 assets_by_world = {
                     key: self._assets[batch._layout[key].model_key] for key in owner.world_keys
                 }
-                requests_by_world.update(_geometry_requests(owner, assets_by_world))
+                requests_by_world.update(
+                    _geometry_requests(owner, assets_by_world, self.publication_frame)
+                )
             generated, surfaces = _intersect_requests(requests_by_world, self._intersector)
             publication = MappingProxyType(
                 {key: generated[key] for key in batch._world_keys if key in generated}

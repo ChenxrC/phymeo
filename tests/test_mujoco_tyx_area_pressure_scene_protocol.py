@@ -91,6 +91,7 @@ class _Runtime:
         self._data = {key: SimpleNamespace(time=0.0) for key in KEYS}
         self._model = SimpleNamespace(nbody=4)
         self._area_pressure_pairs = pairs
+        self._area_friction_laws = ()
         self._plan = SimpleNamespace(
             area_pair_names=pairs,
             area_body_ids=np.asarray([(2, 1), (3, 1)][: len(pairs)], dtype=np.int32).reshape(-1, 2),
@@ -409,3 +410,37 @@ def test_external_revision_invalidates_geometry_and_next_step_rebuilds_pose(monk
     assert stamp.configuration_id == f"fake-state-23-2-{expected_tick}"
     assert scene.last_geometry[23][0].surface.stamp == stamp
     assert runtime.checkpoint_revision == 3
+
+
+def test_rigid_origin_follows_each_current_rigid_body_before_physics(monkeypatch):
+    runtime, _, assets, _ = _fixture(monkeypatch)
+    runtime._plan.area_body_ids = np.array([[2, 1], [3, 2]])
+    origins = []
+
+    def observe(pressure, rigid, *, identity, stamp, origin_world):
+        assert runtime._lock.depth > 0
+        origins.append(origin_world)
+        return AreaPressureIntersection(
+            AreaPressureSurface(identity, stamp, ()),
+            "full",
+            len(pressure.cells) * len(rigid.faces),
+            0,
+            0,
+        )
+
+    monkeypatch.setattr(scene_module, "_intersect_checked", observe)
+    scene = MuJoCoTyxAreaPressureScene(runtime, assets, publication_frame="rigid-origin")
+    assert scene.publication_frame == "rigid-origin"
+    for step in range(2):
+        runtime.poses[KEYS[0]][0][1, 0] += 0.25
+        expected = [runtime.poses[key][0][body].copy() for key in KEYS for body in (1, 2)]
+        scene.step(H, expected_revision=runtime.checkpoint_revision)
+        np.testing.assert_array_equal(origins[4 * step :], expected)
+        assert all(not item.flags.writeable for item in origins)
+
+
+def test_scene_default_frame_and_unknown_frame(monkeypatch):
+    runtime, _, assets, scene = _fixture(monkeypatch)
+    assert scene.publication_frame == "world"
+    with pytest.raises(ValueError, match="publication_frame"):
+        MuJoCoTyxAreaPressureScene(runtime, assets, publication_frame="other")

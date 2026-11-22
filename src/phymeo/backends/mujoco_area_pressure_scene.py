@@ -148,7 +148,13 @@ def _check_intersector(intersector, mode):
             raise ValueError("intersector must be open and match the physics mode")
 
 
-def _geometry_requests(runtime, assets_by_world):
+def _checked_publication_frame(value):
+    if type(value) is not str or value not in ("world", "rigid-origin"):
+        raise ValueError("publication_frame must be 'world' or 'rigid-origin'")
+    return value
+
+
+def _geometry_requests(runtime, assets_by_world, publication_frame="world"):
     """Collect owned current meshes before any intersection or dynamics work."""
     if set(assets_by_world) != set(runtime._world_keys):
         raise ValueError("assets must cover every world in the current bucket")
@@ -180,7 +186,12 @@ def _geometry_requests(runtime, assets_by_world):
                 faces=b.faces,
                 face_ids=b.face_ids,
             )
-            requests.append(_AreaPressureGeometryInput(pressure, rigid, asset.identity, stamp))
+            origin = position[bb] if publication_frame == "rigid-origin" else None
+            requests.append(
+                _AreaPressureGeometryInput(
+                    pressure, rigid, asset.identity, stamp, origin_world=origin
+                )
+            )
         requests_by_world[key] = tuple(requests)
     return requests_by_world
 
@@ -189,10 +200,13 @@ def _intersect_requests(requests_by_world, intersector=None):
     requests = tuple(request for group in requests_by_world.values() for request in group)
     if intersector is None:
         checked = tuple(_build_geometry_inputs(requests))
-        results = tuple(
-            _intersect_checked(pressure, rigid, identity=identity, stamp=stamp)
-            for pressure, rigid, identity, stamp in checked
-        )
+        results = []
+        for request, (pressure, rigid, identity, stamp) in zip(requests, checked, strict=True):
+            frame = {} if request.origin_world is None else {"origin_world": request.origin_world}
+            results.append(
+                _intersect_checked(pressure, rigid, identity=identity, stamp=stamp, **frame)
+            )
+        results = tuple(results)
     else:
         results = intersector._intersect_geometry_inputs(requests)
     generated, surfaces, offset = {}, {}, 0
@@ -204,15 +218,18 @@ def _intersect_requests(requests_by_world, intersector=None):
     return MappingProxyType(generated), surfaces
 
 
-def _prepare_geometry(runtime, assets_by_world, intersector=None):
+def _prepare_geometry(runtime, assets_by_world, intersector=None, publication_frame="world"):
     """Prepare all current input geometry without advancing accepted state."""
-    return _intersect_requests(_geometry_requests(runtime, assets_by_world), intersector)
+    return _intersect_requests(
+        _geometry_requests(runtime, assets_by_world, publication_frame), intersector
+    )
 
 
 class MuJoCoTyxAreaPressureScene:
     """Immutable local assets, fresh geometry, existing atomic dynamics owner."""
 
-    def __init__(self, runtime, assets, *, intersector=None):
+    def __init__(self, runtime, assets, *, intersector=None, publication_frame="world"):
+        self._publication_frame = _checked_publication_frame(publication_frame)
         if not isinstance(assets, tuple) or not 1 <= len(assets) <= 16:
             raise ValueError("assets must contain 1..16 declared pairs")
         owned = []
@@ -240,6 +257,11 @@ class MuJoCoTyxAreaPressureScene:
             self._geometry_revision = None
 
     @property
+    def publication_frame(self):
+        """Origin for publishing clipped triangles. Solver points stay in world coordinates."""
+        return self._publication_frame
+
+    @property
     def assets(self):
         return self._assets
 
@@ -263,7 +285,10 @@ class MuJoCoTyxAreaPressureScene:
             if not np.isfinite(h) or float(h) != runtime._timestep:
                 raise ValueError("scene timestep must equal the compiled timestep")
             publication, surfaces = _prepare_geometry(
-                runtime, {key: self._assets for key in runtime._world_keys}, self._intersector
+                runtime,
+                {key: self._assets for key in runtime._world_keys},
+                self._intersector,
+                self.publication_frame,
             )
             # Prepare all metadata before physics; only two non-failing pointer
             # assignments remain after the runtime's physical commit.
@@ -307,7 +332,12 @@ class MuJoCoTyxAreaPressureScene:
         with self.runtime._lock:
             cloned = self.runtime.clone(world_keys)
             try:
-                return type(self)(cloned, self._assets, intersector=self._intersector)
+                return type(self)(
+                    cloned,
+                    self._assets,
+                    intersector=self._intersector,
+                    publication_frame=self.publication_frame,
+                )
             except BaseException as error:
                 try:
                     cloned.close()

@@ -6,6 +6,8 @@
 #include <cmath>
 #include <cstdio>
 #include <cstring>
+#include <functional>
+#include <unordered_set>
 #include <limits>
 #include <memory>
 #include <mutex>
@@ -47,7 +49,11 @@ constexpr std::array<VkFormat, 5> FORMATS = {
     VK_FORMAT_R32_UINT, VK_FORMAT_R8_UINT, VK_FORMAT_D32_SFLOAT};
 struct Buffer { VkBuffer handle{}; VkDeviceMemory memory{}; };
 struct Image { VkImage handle{}; VkDeviceMemory memory{}; VkImageView view{}; };
+struct ResidentState;
 struct Context {
+    bool resident = false;
+    PrResidentInfo resident_properties{};
+    std::shared_ptr<ResidentState> resident_state;
     VkInstance instance{};
     VkDebugUtilsMessengerEXT messenger{};
     VkPhysicalDevice physical{};
@@ -73,6 +79,7 @@ struct Context {
         VkResult waited = VK_SUCCESS;
         if (device) {
             waited = vkDeviceWaitIdle(device);
+            resident_state.reset(); // dependent buffers/targets die before VkDevice
             release(pipeline, [&](auto h) { vkDestroyPipeline(device,h,nullptr); });
             release(pipeline_layout, [&](auto h) { vkDestroyPipelineLayout(device,h,nullptr); });
             release(render_pass, [&](auto h) { vkDestroyRenderPass(device,h,nullptr); });
@@ -114,15 +121,16 @@ struct Context {
                 (memory_properties.memoryTypes[i].propertyFlags & wanted) == wanted) return i;
         throw std::runtime_error("required Vulkan memory type unavailable");
     }
-    void make_buffer(Buffer& value, VkDeviceSize bytes, VkBufferUsageFlags usage) {
+    void make_buffer(Buffer& value, VkDeviceSize bytes, VkBufferUsageFlags usage,
+                     VkMemoryPropertyFlags memory_flags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                                                          VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) {
         VkBufferCreateInfo create{VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
         create.size = bytes; create.usage = usage; create.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         acquire(value.handle, "vkCreateBuffer", [&](auto* output) { return vkCreateBuffer(device, &create, nullptr, output); });
         VkMemoryRequirements needed{}; vkGetBufferMemoryRequirements(device, value.handle, &needed);
         VkMemoryAllocateInfo alloc{VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
         alloc.allocationSize = needed.size;
-        alloc.memoryTypeIndex = memory_type(needed.memoryTypeBits,
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+        alloc.memoryTypeIndex = memory_type(needed.memoryTypeBits, memory_flags);
         acquire(value.memory, "vkAllocateMemory buffer", [&](auto* output) { return vkAllocateMemory(device, &alloc, nullptr, output); });
         check(vkBindBufferMemory(device, value.handle, value.memory, 0), "vkBindBufferMemory");
     }
@@ -154,7 +162,8 @@ struct Context {
         acquire(value.view, "vkCreateImageView", [&](auto* output) { return vkCreateImageView(device, &view, nullptr, output); });
     }
     void init(uint32_t selected, bool validation, const uint32_t* vert, size_t vert_bytes,
-              const uint32_t* frag, size_t frag_bytes) {
+              const uint32_t* frag, size_t frag_bytes, bool resident_path = false) {
+        resident = resident_path;
         require(vert && frag && vert_bytes >= 20 && frag_bytes >= 20 &&
             vert_bytes%4 == 0 && frag_bytes%4 == 0, "invalid SPIR-V input");
         require(vert[0] == 0x07230203 && frag[0] == 0x07230203, "invalid SPIR-V magic");
@@ -215,6 +224,20 @@ struct Context {
                                           p.limits.maxViewportDimensions[1]});
         properties.max_vertices = std::min(MAX_VERTICES,
             static_cast<uint32_t>(p.limits.maxStorageBufferRange/sizeof(PrVertex)));
+        if (resident) {
+            require(p.limits.maxPerStageDescriptorStorageBuffers >= 6 &&
+                    p.limits.maxDescriptorSetStorageBuffers >= 6,
+                    "resident rendering requires six fragment storage buffers");
+            auto& r = resident_properties;
+            r.resident_abi_version = 1;
+            r.max_vertices = std::min(1048576u, p.limits.maxStorageBufferRange / 32u);
+            r.max_indices = std::min(1572864u, p.limits.maxStorageBufferRange / 4u);
+            r.max_meshes = std::min(1024u, p.limits.maxStorageBufferRange / 32u);
+            r.max_instances = std::min(1024u, p.limits.maxStorageBufferRange / 128u);
+            r.max_bvh_nodes = std::min(262144u, p.limits.maxStorageBufferRange / 48u);
+            r.max_instanced_triangles = 1048576u;
+            properties.max_vertices = r.max_vertices;
+        }
         std::memcpy(properties.device_uuid, identity.deviceUUID, 16);
         std::memcpy(properties.device_name, p.deviceName, sizeof(properties.device_name));
         for (size_t i=0; i<FORMATS.size(); ++i) {
@@ -239,14 +262,22 @@ struct Context {
         acquire(device, "vkCreateDevice", [&](auto* output) { return vkCreateDevice(physical, &device_info, nullptr, output); });
         vkGetDeviceQueue(device, queue_family, 0, &queue);
         VkCommandPoolCreateInfo pool{VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO};
-        pool.queueFamilyIndex = queue_family; pool.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
+        pool.queueFamilyIndex = queue_family; pool.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT |
+            (resident ? VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT : 0u);
         acquire(command_pool, "vkCreateCommandPool", [&](auto* output) { return vkCreateCommandPool(device, &pool, nullptr, output); });
-        std::array<VkDescriptorSetLayoutBinding, 2> bindings{};
+        std::array<VkDescriptorSetLayoutBinding, 7> bindings{};
         bindings[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
         bindings[1] = {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1,
                        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
         VkDescriptorSetLayoutCreateInfo layout{VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO};
-        layout.bindingCount = 2; layout.pBindings = bindings.data();
+        if (resident) {
+            for (uint32_t i = 2; i < 7; ++i) {
+                VkShaderStageFlags stages = VK_SHADER_STAGE_FRAGMENT_BIT;
+                if (i == 2 || i == 3) stages |= VK_SHADER_STAGE_VERTEX_BIT;
+                bindings[i] = {i, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, stages, nullptr};
+            }
+        }
+        layout.bindingCount = resident ? 7u : 2u; layout.pBindings = bindings.data();
         acquire(descriptor_layout, "descriptor layout", [&](auto* output) { return vkCreateDescriptorSetLayout(device, &layout, nullptr, output); });
         VkPipelineLayoutCreateInfo pipeline_info{VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO};
         pipeline_info.setLayoutCount = 1; pipeline_info.pSetLayouts = &descriptor_layout;
@@ -287,13 +318,16 @@ struct Context {
         for (auto& stage:stages) { stage.sType=VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO; stage.pName="main"; }
         stages[0].stage=VK_SHADER_STAGE_VERTEX_BIT; stages[0].module=vertex_shader;
         stages[1].stage=VK_SHADER_STAGE_FRAGMENT_BIT; stages[1].module=fragment_shader;
-        VkVertexInputBindingDescription vertex_binding{0,sizeof(PrVertex),VK_VERTEX_INPUT_RATE_VERTEX};
+        VkVertexInputBindingDescription vertex_binding{0,
+            resident ? static_cast<uint32_t>(sizeof(PrResidentVertex)) : static_cast<uint32_t>(sizeof(PrVertex)),
+            VK_VERTEX_INPUT_RATE_VERTEX};
         std::array<VkVertexInputAttributeDescription,4> attributes{};
         for (uint32_t i=0;i<4;++i) attributes[i]={i,0,
             i==3?VK_FORMAT_R32G32B32A32_UINT:VK_FORMAT_R32G32B32A32_SFLOAT,i*16u};
         VkPipelineVertexInputStateCreateInfo vertex_input{VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO};
         vertex_input.vertexBindingDescriptionCount=1; vertex_input.pVertexBindingDescriptions=&vertex_binding;
-        vertex_input.vertexAttributeDescriptionCount=4; vertex_input.pVertexAttributeDescriptions=attributes.data();
+        vertex_input.vertexAttributeDescriptionCount=resident ? 2u : 4u;
+        vertex_input.pVertexAttributeDescriptions=attributes.data();
         VkPipelineInputAssemblyStateCreateInfo assembly{VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO};
         assembly.topology=VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
         VkPipelineViewportStateCreateInfo viewport{VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO};
@@ -361,6 +395,7 @@ struct FrameResources {
 
 void render(Context& c,const PrVertex* vertices,uint32_t vertex_count,const PrParams& params,
             uint32_t width,uint32_t height,uint8_t* output,size_t output_bytes) {
+    require(!c.resident,"use pr_resident_render for a resident context");
     require(!c.poisoned,"Vulkan session failed; close and open an explicit new session");
     require(width && height && width<=c.properties.max_width && height<=c.properties.max_height,
             "capture extent exceeds device capability");
@@ -473,6 +508,7 @@ void render(Context& c,const PrVertex* vertices,uint32_t vertex_count,const PrPa
     std::memcpy(output,mapped,output_bytes); vkUnmapMemory(c.device,f.readback.memory);
     ++c.properties.captures;
 }
+#include "resident.inc"
 } // namespace
 
 uint32_t pr_abi_version() { return 2; }
@@ -513,5 +549,51 @@ int pr_destroy(void* handle,PrInfo* final_info) {
     delete context;
     if(waited!=VK_SUCCESS) { last_error="vkDeviceWaitIdle during close: "+std::to_string(waited); return -1; }
     if(errors) { last_error="Vulkan validation reported errors before close completed"; return -1; }
+    return 0;
+}
+
+
+uint32_t pr_resident_abi_version() { return 1; }
+void* pr_resident_create(uint32_t selected, uint32_t validation,
+                         const uint32_t* vert, size_t vert_bytes,
+                         const uint32_t* frag, size_t frag_bytes) {
+    try {
+        last_error.clear();
+        auto context = std::make_unique<Context>();
+        context->init(selected, validation != 0, vert, vert_bytes, frag, frag_bytes, true);
+        return context.release();
+    } catch (const std::exception& error) { last_error = error.what(); return nullptr; }
+      catch (...) { last_error = "unknown resident creation error"; return nullptr; }
+}
+int pr_resident_upload(void* handle,
+                       const PrResidentVertex* vertices, uint32_t vertex_count,
+                       const uint32_t* indices, uint32_t index_count,
+                       const PrResidentMesh* meshes, uint32_t mesh_count,
+                       const PrResidentInstance* instances, uint32_t instance_count) {
+    try {
+        last_error.clear(); require(handle, "null resident upload context");
+        resident_upload(*static_cast<Context*>(handle), vertices, vertex_count, indices, index_count,
+                        meshes, mesh_count, instances, instance_count);
+        return 0;
+    } catch (const std::exception& error) { last_error = error.what(); return -1; }
+      catch (...) { last_error = "unknown resident upload error"; return -1; }
+}
+int pr_resident_render(void* handle, const float* matrices, uint32_t instance_count,
+                       const PrParams* params, uint32_t width, uint32_t height,
+                       uint8_t* output, size_t bytes) {
+    try {
+        last_error.clear(); require(handle && params, "null resident capture argument");
+        resident_render(*static_cast<Context*>(handle), matrices, instance_count, *params,
+                        width, height, output, bytes);
+        return 0;
+    } catch (const std::exception& error) { last_error = error.what(); return -1; }
+      catch (...) { last_error = "unknown resident capture error"; return -1; }
+}
+int pr_resident_info(void* handle, PrResidentInfo* output) {
+    if (!handle || !output) { last_error = "null resident info argument"; return -1; }
+    auto& context = *static_cast<Context*>(handle);
+    if (!context.resident) { last_error = "context does not use resident rendering"; return -1; }
+    *output = context.resident_properties;
+    output->poisoned = context.poisoned ? 1u : 0u;
     return 0;
 }

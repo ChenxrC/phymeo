@@ -26,13 +26,16 @@ foreach(configuration DEBUG RELEASE RELWITHDEBINFO MINSIZEREL)
     RUNTIME_OUTPUT_DIRECTORY_${configuration} "${CMAKE_BINARY_DIR}"
     LIBRARY_OUTPUT_DIRECTORY_${configuration} "${CMAKE_BINARY_DIR}")
 endforeach()
-foreach(stage vert frag)
-  set(source "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/native.${stage}")
-  set(output "${CMAKE_BINARY_DIR}/native.${stage}.spv")
-  add_custom_command(OUTPUT "${output}"
-    COMMAND "${GLSLANG_VALIDATOR}" -V --target-env vulkan1.1 "${source}" -o "${output}"
-    DEPENDS "${source}" VERBATIM)
-  list(APPEND shader_outputs "${output}")
+foreach(program native resident)
+  foreach(stage vert frag)
+    set(source "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/${program}.${stage}")
+    set(output "${CMAKE_BINARY_DIR}/${program}.${stage}.spv")
+    add_custom_command(OUTPUT "${output}"
+      COMMAND "${GLSLANG_VALIDATOR}" -V --target-env vulkan1.1 "${source}" -o "${output}"
+      DEPENDS "${source}" VERBATIM)
+    list(APPEND shader_outputs "${output}")
+  endforeach()
 endforeach()
+
 add_custom_target(native_shaders ALL DEPENDS ${shader_outputs})
 add_dependencies(phymeo_native native_shaders)

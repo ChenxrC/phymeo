@@ -56,6 +56,7 @@ struct Allocation {
 };
 struct Buffer { VkBuffer handle{}; VkDeviceMemory memory{}; Allocation allocation{}; };
 struct Image { VkImage handle{}; VkDeviceMemory memory{}; VkImageView view{}; Allocation allocation{}; };
+#include "resident_spirv.inc"
 struct ResidentState;
 struct Context {
     bool resident = false;
@@ -64,6 +65,7 @@ struct Context {
     PrResidentProfile profile{};
     PrResidentReadbackInfo readback_info{};
     PrResidentTextureInfo texture_info{};
+    PrResidentEnvironmentInfo environment_info{};
     uint32_t storage_buffer_limit{};
     PrStudio studio{};
     std::shared_ptr<ResidentState> resident_state;
@@ -90,6 +92,7 @@ struct Context {
         ++live_contexts; telemetry.telemetry_abi_version=1; profile.profile_abi_version=1;
         readback_info.readback_abi_version=1; readback_info.memory_type_index=UINT32_MAX;
         texture_info.texture_abi_version=1;
+        environment_info.environment_abi_version=1;
     }
     ~Context() { shutdown(); --live_contexts; }
     VkResult shutdown() noexcept {
@@ -264,6 +267,8 @@ struct Context {
         description.pNext = &identity;
         vkGetPhysicalDeviceProperties2(physical, &description);
         const auto& p = description.properties;
+        VkPhysicalDeviceFeatures available_features{};
+        vkGetPhysicalDeviceFeatures(physical,&available_features);
         require(p.apiVersion >= VK_API_VERSION_1_1, "Vulkan 1.1 device is required");
         require(p.deviceType != VK_PHYSICAL_DEVICE_TYPE_CPU, "CPU Vulkan devices are not a GPU fallback");
         require(p.limits.maxColorAttachments >= 4 && p.limits.maxFragmentOutputAttachments >= 4,
@@ -283,9 +288,9 @@ struct Context {
             require(p.limits.maxPerStageDescriptorStorageBuffers >= 8 &&
                     p.limits.maxDescriptorSetStorageBuffers >= 8,
                     "resident rendering requires eight fragment storage buffers");
-            require(p.limits.maxPerStageDescriptorUniformBuffers >= 2 &&
-                    p.limits.maxDescriptorSetUniformBuffers >= 2, "resident studio uniform capacity unavailable");
-            require(p.limits.maxPerStageDescriptorSamplers>=1 && p.limits.maxDescriptorSetSamplers>=1,
+            require(p.limits.maxPerStageDescriptorUniformBuffers >= 3 &&
+                    p.limits.maxDescriptorSetUniformBuffers >= 3, "resident uniform capacity unavailable");
+            require(p.limits.maxPerStageDescriptorSamplers>=2 && p.limits.maxDescriptorSetSamplers>=2,
                     "resident texture sampler capacity unavailable");
             storage_buffer_limit=p.limits.maxStorageBufferRange;
             VkFormatProperties sampled{};
@@ -306,6 +311,26 @@ struct Context {
             texture.max_height=std::min({2048u,p.limits.maxImageDimension2D-2,texture_limits.maxExtent.height-2});
             texture.max_array_bytes=std::min<uint64_t>(128ull*1024*1024,texture_limits.maxResourceSize);
             texture.sampler_filter=VK_FILTER_LINEAR; texture.mip_levels=1; texture.format=VK_FORMAT_R8G8B8A8_SRGB;
+            auto& environment=environment_info;
+            const auto fragment_interface=spirv_interface(frag,frag_bytes,4);
+            environment.shader_compatible=fragment_interface.valid && fragment_interface.main &&
+                (fragment_interface.bindings & ((1ull<<11)|(1ull<<12)))==((1ull<<11)|(1ull<<12));
+            environment.axis_transform=1; environment.diffuse_basis=1;
+            environment.cube_layers=6; environment.sh_coefficients=9;
+            environment.format=VK_FORMAT_R8G8B8A8_SRGB;
+            VkFormatProperties hdr_format{};
+            vkGetPhysicalDeviceFormatProperties(physical,VK_FORMAT_R32G32B32A32_SFLOAT,&hdr_format);
+            VkImageFormatProperties hdr_limits{};
+            VkResult hdr_result=vkGetPhysicalDeviceImageFormatProperties(physical,VK_FORMAT_R32G32B32A32_SFLOAT,
+                VK_IMAGE_TYPE_2D,VK_IMAGE_TILING_OPTIMAL,VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+                VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT,&hdr_limits);
+            environment.supported=hdr_result==VK_SUCCESS && available_features.independentBlend &&
+                (hdr_format.optimalTilingFeatures & features)==features && hdr_limits.maxArrayLayers>=6;
+            if (environment.supported) {
+                environment.max_side=std::min({1024u,p.limits.maxImageDimensionCube,hdr_limits.maxExtent.width,hdr_limits.maxExtent.height});
+                environment.max_mip_levels=std::min(11u,hdr_limits.maxMipLevels);
+                environment.max_rgba_bytes=std::min<uint64_t>(128ull*1024*1024,hdr_limits.maxResourceSize);
+            }
             auto& r = resident_properties;
             r.resident_abi_version = 1;
             r.max_vertices = std::min(1048576u, p.limits.maxStorageBufferRange / 32u);
@@ -345,13 +370,18 @@ struct Context {
         queue_info.queueFamilyIndex = queue_family; queue_info.queueCount = 1; queue_info.pQueuePriorities = &priority;
         VkDeviceCreateInfo device_info{VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO};
         device_info.queueCreateInfoCount = 1; device_info.pQueueCreateInfos = &queue_info;
+        VkPhysicalDeviceFeatures enabled_features{};
+        // The sky pipeline disables writes on the three sensor attachments.
+        // Optional support is reported false when independentBlend is absent.
+        enabled_features.independentBlend=resident ? available_features.independentBlend : VK_FALSE;
+        device_info.pEnabledFeatures=&enabled_features;
         acquire(device, "vkCreateDevice", [&](auto* output) { return vkCreateDevice(physical, &device_info, nullptr, output); });
         vkGetDeviceQueue(device, queue_family, 0, &queue);
         VkCommandPoolCreateInfo pool{VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO};
         pool.queueFamilyIndex = queue_family; pool.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT |
             (resident ? VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT : 0u);
         acquire(command_pool, "vkCreateCommandPool", [&](auto* output) { return vkCreateCommandPool(device, &pool, nullptr, output); });
-        std::array<VkDescriptorSetLayoutBinding, 11> bindings{};
+        std::array<VkDescriptorSetLayoutBinding, 13> bindings{};
         bindings[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
         bindings[1] = {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1,
                        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
@@ -370,7 +400,11 @@ struct Context {
             bindings[10] = {10, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1,
                             VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
         }
-        layout.bindingCount = resident ? 11u : 2u; layout.pBindings = bindings.data();
+        if (resident) {
+            bindings[11]={11,VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,1,VK_SHADER_STAGE_FRAGMENT_BIT,nullptr};
+            bindings[12]={12,VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,1,VK_SHADER_STAGE_FRAGMENT_BIT,nullptr};
+        }
+        layout.bindingCount = resident ? 13u : 2u; layout.pBindings = bindings.data();
         acquire(descriptor_layout, "descriptor layout", [&](auto* output) { return vkCreateDescriptorSetLayout(device, &layout, nullptr, output); });
         VkPipelineLayoutCreateInfo pipeline_info{VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO};
         pipeline_info.setLayoutCount = 1; pipeline_info.pSetLayouts = &descriptor_layout;
@@ -822,5 +856,24 @@ int pr_resident_texture_info(void* handle,PrResidentTextureInfo* output) {
     auto& context=*static_cast<Context*>(handle);
     if (!context.resident) { last_error="context does not use resident rendering"; return -1; }
     *output=context.texture_info;
+    return 0;
+}
+
+uint32_t pr_resident_environment_abi_version() { return 1; }
+int pr_resident_set_environment(void* handle,const PrResidentEnvironment* environment,
+    const float* rgba,size_t rgba_bytes,const uint32_t* sky_vert,size_t sky_vert_bytes,
+    const uint32_t* sky_frag,size_t sky_frag_bytes) {
+    try {
+        require(handle && environment,"null resident environment argument");
+        resident_set_environment(*static_cast<Context*>(handle),*environment,rgba,rgba_bytes,
+            sky_vert,sky_vert_bytes,sky_frag,sky_frag_bytes);
+        return 0;
+    } catch (const std::exception& error) { last_error=error.what(); return -1; }
+}
+int pr_resident_environment_info(void* handle,PrResidentEnvironmentInfo* output) {
+    if (!handle || !output) { last_error="null resident environment info"; return -1; }
+    auto& context=*static_cast<Context*>(handle);
+    if (!context.resident) { last_error="not a resident context"; return -1; }
+    *output=context.environment_info;
     return 0;
 }

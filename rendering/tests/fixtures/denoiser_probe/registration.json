@@ -1,0 +1,48 @@
+{
+  "schema": "phymeo-reference-denoiser-registration-v1",
+  "status": "preregistered-not-executed",
+  "sdk": "sapien==3.0.3, already installed Windows wheel; no downloads or dependency changes",
+  "scout_sha256": "1c3e213eae5028525c523d2a5c62854de692b80bffd07fd525f04ad410de43d9",
+  "scout_source": "artifacts/rendering/overnight-1123/hd-material-scout/capture.json",
+  "episode_indices": [20,36],
+  "original_scout_episode_index": 36,
+  "original_scout_record_index": 1972,
+  "original_scout_time_s": 1.233125,
+  "resolution": [480,270],
+  "camera": "Both states use the exact scout world pose and FOV; intrinsics scaled from 1920x1080 by 1/4",
+  "source_radiance_unit_scale": 0.125,
+  "display_exposure": 8.0,
+  "display_transform": "pbr-neutral",
+  "environment_peak_in_integrator_units": 67.0,
+  "environment_source_sha256": "a125ada38fc602025326f29b68df09531bb16f899f1973b03d9ac5ac98142548",
+  "capability": {
+    "spp": 16,
+    "modes": ["none","oidn","optix"],
+    "isolation": "One process per explicit mode; initialize no physics system; restore SDK globals on camera attachment failure",
+    "required_targets": ["Radiance","HdrColor","Albedo","Normal","Segmentation"],
+    "positive_evidence": "Raw Radiance from the same official seed must be identical to none; none HdrColor must equal Radiance; enabled HdrColor must observably change, remain finite and preserve real guides",
+    "stop": "Missing targets, exception, no observable filtering, or raw overwritten: stop and report limitation, no custom filter or assumed fallback"
+  },
+  "quality_if_capability_passes": {
+    "spp": 64,
+    "held_out_reference": {"per_dispatch_spp":256,"seeds":[101,211,307,401],"average":"Owned raw linear Radiance RGB only, never sRGB8; existing explicit shifted-Halton shader helper"},
+    "roi": {
+      "white_shell":"source Panda material base_color min RGB >= .85; source IDs frozen before denoiser output; report empty ROI",
+      "gripper_contour":"panda_hand/leftfinger/rightfinger source IDs; 2-pixel boundary band from independent reference segmentation",
+      "wood_high_frequency":"original tabletop source ID; upper quartile spatial gradient selected once using independent reference only",
+      "whole_image":"all pixels, same camera and lighting"
+    },
+    "metrics":"Linear L1/RMSE normalized by fixed independent-reference 99th percentile luminance; signed bias; contour-gradient change; wood high-frequency retention; unclipped HDR ranges and clipping only at final display reported separately",
+    "decision":"Candidate requires >=20% whole/white RMSE reduction, no >5% RMSE regression on gripper/wood, <=10% loss in reference-normalized wood gradient energy. Each ROI/pose separately; empty evidence is unavailable, never passing. Report raw numbers even on failure.",
+    "reset":"20 -> 36 -> 20, fresh attached camera per exposure; repeat 20 after closing/recreating the owner. Compare raw and filtered owned arrays exactly, or report discrepancy; no claimed temporal denoiser history",
+    "cost":"Per-mode owner setup, camera attach, take_picture plus synchronous target readbacks, all target copies, display/PNG/NPZ separately and total wall. No unsupported claim of separate GPU denoise time.",
+    "bounded_dispatches":"No 4096spp or 1080p dispatch; first capability only, quality requires a subsequent explicit execution slot"
+  },
+  "limitations": [
+    "SDK enum/getter and DLL presence are not proof of functioning camera denoising",
+    "Official environment miss shader clamps each channel to 100; actual source peak67 stays below that known clamp, but do not claim unrestricted physical HDR",
+    "Albedo/Normal guides are first-bounce data overwritten per primary sample in the shipped raygen, not sample-averaged guides",
+    "Results concern these two poses, fixed daylight/materials and reduced resolution, not arbitrary scenes or 1080p quality",
+    "A prior 4096spp 960x540 independent dispatch lost the device; this protocol deliberately uses bounded independent raw batches"
+  ]
+}

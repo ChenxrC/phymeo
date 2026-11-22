@@ -13,6 +13,22 @@ static_assert(sizeof(GpuResidentMesh) == 32, "resident mesh shader layout");
 static_assert(sizeof(GpuBvhNode) == 48, "resident BVH shader layout");
 static_assert(sizeof(GpuTransform) == 128, "resident transform shader layout");
 
+struct ResidentTextures {
+    Context& c;
+    Image image{};
+    Buffer metadata{};
+    VkSampler sampler{};
+    size_t metadata_bytes{};
+    explicit ResidentTextures(Context& context):c(context) {}
+    ~ResidentTextures() {
+        release(sampler,[&](auto h){vkDestroySampler(c.device,h,nullptr);});
+        release(image.view,[&](auto h){vkDestroyImageView(c.device,h,nullptr);});
+        release(image.handle,[&](auto h){vkDestroyImage(c.device,h,nullptr);});
+        c.free_memory(image.memory,image.allocation);
+        release(metadata.handle,[&](auto h){vkDestroyBuffer(c.device,h,nullptr);});
+        c.free_memory(metadata.memory,metadata.allocation);
+    }
+};
 struct ResidentState {
     Context& c;
     Buffer vertices{}, indices{}, meshes_buffer{}, instances_buffer{}, nodes{}, transforms{}, tlas{}, studio{};
@@ -20,11 +36,13 @@ struct ResidentState {
     std::vector<PrResidentInstance> instances;
     std::vector<std::array<float, 6>> bounds;
     std::unique_ptr<FrameResources> target;
+    std::unique_ptr<ResidentTextures> textures;
     VkDescriptorSet descriptor_set{};
     uint32_t width{}, height{};
     explicit ResidentState(Context& context) : c(context) {}
     ~ResidentState() {
         target.reset();
+        textures.reset();
         for (auto* buffer : {&vertices, &indices, &meshes_buffer, &instances_buffer, &nodes, &transforms, &tlas, &studio}) {
             release(buffer->handle, [&](auto h) { vkDestroyBuffer(c.device, h, nullptr); });
             c.free_memory(buffer->memory, buffer->allocation);
@@ -201,6 +219,8 @@ uint64_t upload_static(Context& c, const std::vector<StaticUpload>& uploads) {
     return total;
 }
 
+#include "resident_textures.inc"
+
 void resident_upload(Context& c, const PrResidentVertex* vertices, uint32_t vertex_count,
                      const uint32_t* indices, uint32_t index_count,
                      const PrResidentMesh* meshes, uint32_t mesh_count,
@@ -300,6 +320,14 @@ void resident_upload(Context& c, const PrResidentVertex* vertices, uint32_t vert
     c.make_buffer(state->tlas, std::max<size_t>(1, instance_count ? 2ull*instance_count-1 : 0)*sizeof(GpuBvhNode),
                   VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
     c.make_buffer(state->studio, sizeof(PrStudio), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+    std::vector<uint32_t> plain_metadata(4ull+instance_count,UINT32_MAX);
+    plain_metadata[0]=0; plain_metadata[1]=instance_count; plain_metadata[2]=vertex_count;
+    plain_metadata[3]=static_cast<uint32_t>(plain_metadata.size());
+    state->textures=upload_texture_resource(c,1,1,1,std::vector<uint8_t>{255,255,255,255},plain_metadata);
+    auto& texture_info=c.texture_info;
+    texture_info.array_width=texture_info.array_height=texture_info.array_layers=1;
+    texture_info.padded_rgba_bytes=4; texture_info.image_upload_bytes+=4;
+    texture_info.metadata_upload_bytes+=plain_metadata.size()*sizeof(uint32_t);
     c.make_buffer(state->transforms, std::max<size_t>(1, instance_count)*sizeof(GpuTransform),
                   VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
     if (c.errors.load() != errors_before) {
@@ -495,10 +523,11 @@ void resident_target(Context& c, ResidentState& state, uint32_t width, uint32_t 
     acquire(frame->framebuffer, "resident framebuffer", [&](auto* out) {
         return vkCreateFramebuffer(c.device, &framebuffer, nullptr, out);
     });
-    std::array<VkDescriptorPoolSize, 2> sizes{{
-        {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 7}, {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2}}};
+    std::array<VkDescriptorPoolSize, 3> sizes{{
+        {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 8}, {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2},
+        {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,1}}};
     VkDescriptorPoolCreateInfo pool{VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO};
-    pool.maxSets = 1; pool.poolSizeCount = 2; pool.pPoolSizes = sizes.data();
+    pool.maxSets = 1; pool.poolSizeCount = 3; pool.pPoolSizes = sizes.data();
     acquire(frame->descriptors, "resident descriptor pool", [&](auto* out) {
         return vkCreateDescriptorPool(c.device, &pool, nullptr, out);
     });
@@ -507,7 +536,7 @@ void resident_target(Context& c, ResidentState& state, uint32_t width, uint32_t 
     allocate.descriptorSetCount = 1; allocate.pSetLayouts = &c.descriptor_layout;
     VkDescriptorSet set{};
     check(vkAllocateDescriptorSets(c.device, &allocate, &set), "resident descriptor allocation");
-    std::array<VkDescriptorBufferInfo, 9> buffers{{
+    std::array<VkDescriptorBufferInfo, 11> buffers{{
         {state.vertices.handle, 0, std::max<size_t>(1, info.vertex_count)*sizeof(PrResidentVertex)},
         {frame->uniform.handle, 0, sizeof(PrParams)},
         {state.transforms.handle, 0, std::max<size_t>(1, info.instance_count)*sizeof(GpuTransform)},
@@ -516,17 +545,23 @@ void resident_target(Context& c, ResidentState& state, uint32_t width, uint32_t 
         {state.indices.handle, 0, std::max<size_t>(1, info.index_count)*sizeof(uint32_t)},
         {state.meshes_buffer.handle, 0, std::max<size_t>(1, info.mesh_count)*sizeof(GpuResidentMesh)},
         {state.studio.handle, 0, sizeof(PrStudio)},
-        {state.tlas.handle, 0, std::max<size_t>(1, c.profile.tlas_node_count)*sizeof(GpuBvhNode)}
+        {state.tlas.handle, 0, std::max<size_t>(1, c.profile.tlas_node_count)*sizeof(GpuBvhNode)},
+        {},
+        {state.textures->metadata.handle,0,state.textures->metadata_bytes}
     }};
-    std::array<VkWriteDescriptorSet, 9> writes{};
-    for (uint32_t i = 0; i < 9; ++i) {
+    VkDescriptorImageInfo image{state.textures->sampler,state.textures->image.view,VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
+    std::array<VkWriteDescriptorSet, 11> writes{};
+    for (uint32_t i = 0; i < 11; ++i) {
         writes[i].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         writes[i].dstSet = set; writes[i].dstBinding = i;
         writes[i].descriptorCount = 1;
         writes[i].descriptorType = (i == 1 || i == 7) ? VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER : VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-        writes[i].pBufferInfo = &buffers[i];
+        if (i==9) {
+            writes[i].descriptorType=VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+            writes[i].pImageInfo=&image;
+        } else writes[i].pBufferInfo=&buffers[i];
     }
-    vkUpdateDescriptorSets(c.device, 9, writes.data(), 0, nullptr);
+    vkUpdateDescriptorSets(c.device, 11, writes.data(), 0, nullptr);
     make_commands(c, *frame);
     if (c.profile.timestamp_supported) {
         VkQueryPoolCreateInfo query{VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO};
@@ -737,6 +772,7 @@ void resident_render(Context& c, const float* matrices, uint32_t instance_count,
     profile.host_wait_ns+=timing.wait; profile.host_readback_ns+=elapsed_ns(readback_begin);
     profile.gpu_render_ns+=gpu_render; profile.gpu_copy_ns+=gpu_copy; profile.gpu_total_ns+=gpu_total;
     profile.timestamp_samples+=timestamp_samples; profile.tlas_upload_bytes+=tlas.size()*sizeof(GpuBvhNode);
+    if (c.texture_info.loaded && params.counts[2]) ++c.texture_info.rgb_captures_with_textures;
     ++c.properties.captures; ++info.captures;
     } catch (...) {
         c.poisoned = true; // a failed GPU operation cannot publish or be silently retried

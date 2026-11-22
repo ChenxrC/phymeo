@@ -31,6 +31,10 @@ layout(location=1) in vec3 worldNormal;
 layout(location=2) in vec3 baseColor;
 layout(location=3) in vec2 metalRough;
 layout(location=4) flat in uvec2 ids;
+layout(location=5) in vec2 meshUV;
+layout(location=6) flat in uint textureSlot;
+layout(set=0,binding=9) uniform sampler2DArray baseColorTextures;
+layout(set=0,binding=10,std430) readonly buffer TextureMetadata { uint words[]; } textureData;
 layout(location=0) out vec4 rgb;
 layout(location=1) out float forwardDepth;
 layout(location=2) out uint instanceId;
@@ -127,6 +131,18 @@ void main() {
     instanceId = ids.x;
     valid = 1u;
     vec3 color = vec3(0.0);
+    vec3 albedo=baseColor;
+    if (u.counts.z!=0u && textureSlot!=0xffffffffu) {
+        uint dimensions=4u+u.counts.w+2u*textureSlot;
+        vec2 sourceSize=vec2(textureData.words[dimensions],textureData.words[dimensions+1u]);
+        vec2 arraySize=vec2(textureSize(baseColorTextures,0).xy);
+        // Each original image has one wrapped guard texel on every side.
+        // frac supports negative UV; layer isolation prevents material bleed.
+        // R8G8B8A8_SRGB decodes texels BEFORE hardware bilinear filtering.
+        vec2 coordinate=(fract(meshUV)*sourceSize+vec2(1.0))/arraySize;
+        vec3 texel=textureLod(baseColorTextures,vec3(coordinate,float(textureSlot)),0.0).rgb;
+        albedo*=texel; // factor and sampled texture meet in the linear domain
+    }
     if (u.counts.z != 0u) {
         vec3 N = normalize(worldNormal);
         vec3 V = normalize(u.camera.xyz-worldPosition);
@@ -136,7 +152,7 @@ void main() {
         // Explicit finite GGX lobe: perceptual roughness minimum 0.045.
         float alpha = max(metalRough.y*metalRough.y, 0.045*0.045);
         float a2 = alpha*alpha;
-        vec3 f0 = mix(vec3(0.04), baseColor, metallic);
+        vec3 f0 = mix(vec3(0.04), albedo, metallic);
         for (uint i=0u; i<u.counts.x; ++i) {
             vec3 L = normalize(-u.lightDirections[i].xyz);
             float nl = max(dot(N,L), 0.0);
@@ -150,7 +166,7 @@ void main() {
             float Gl = 2.0*nl/(nl+sqrt(a2+(1.0-a2)*nl*nl));
             vec3 F = f0+(1.0-f0)*pow(1.0-vh,5.0);
             vec3 specular = D*Gv*Gl*F/max(4.0*nv*nl,1e-8);
-            vec3 diffuse = (1.0-F)*(1.0-metallic)*baseColor/PI;
+            vec3 diffuse = (1.0-F)*(1.0-metallic)*albedo/PI;
             color += (diffuse+specular)*u.lightColors[i].rgb*nl;
         }
     }
@@ -158,7 +174,7 @@ void main() {
         vec3 N = normalize(worldNormal);
         vec3 V = normalize(u.camera.xyz-worldPosition);
         if (dot(N,V) < 0.0) N = -N;
-        color += residentStudioRadiance(worldPosition,N,V,baseColor,metalRough.x,metalRough.y);
+        color += residentStudioRadiance(worldPosition,N,V,albedo,metalRough.x,metalRough.y);
     }
     rgb = vec4(encodeSRGB(color*u.options.x), 1.0);
 }

@@ -131,6 +131,9 @@ def transfer_report(diagnostics):
     environment_expected=data.get('resident_environment_abi_version') is not None
     environment_image=environment['image_upload_bytes'] if environment is not None else (None if environment_expected else 0)
     environment_parameters=environment['parameter_upload_bytes'] if environment is not None else (None if environment_expected else 0)
+    ray_query=data.get('resident_ray_query_info')
+    ray_query_expected=data.get('resident_ray_query_abi_version') is not None
+    ray_query_instances=ray_query['instance_upload_bytes'] if ray_query is not None else (None if ray_query_expected else 0)
     # These GPU buffer layouts are the resident ABI1 shader layouts. The native
     # byte counter remains authoritative; report any decomposition disagreement.
     sizes={'resident_vertex_count':('vertex_buffer_bytes',32),
@@ -148,6 +151,8 @@ def transfer_report(diagnostics):
     camera_bytes=captures*272 if uniforms is not None else None
     setup_bytes=uniforms-camera_bytes if uniforms is not None else None
     components=dict(static_geometry=static,
+        ray_query_instance_upload_bytes=ray_query_instances,
+        ray_query_scope='additional actual Vulkan AS instance records; AS/scratch buffer capacities are allocations, not transfer bytes',
         environment_image_upload_bytes=environment_image,environment_parameter_upload_bytes=environment_parameters,
         environment_scope='actual cube image and SH/config UBO writes including dummy cube; separate from camera/studio uniforms',
         texture_image_upload_bytes=texture_image,texture_metadata_upload_bytes=texture_metadata,
@@ -165,7 +170,7 @@ def transfer_report(diagnostics):
         fence_wait_wall_ns=telemetry['fence_wait_wall_ns'] if telemetry else None,
         fence_wait_calls=telemetry['fence_wait_calls'] if telemetry else None,
         fence_wait_scope='native host fence wait wall time, upload+capture, not GPU kernel time',
-        host_to_device_bytes=known+tlas+texture_image+texture_metadata+environment_image+environment_parameters if all(x is not None for x in (known,tlas,texture_image,texture_metadata,environment_image,environment_parameters)) else None,
+        host_to_device_bytes=known+tlas+texture_image+texture_metadata+environment_image+environment_parameters+ray_query_instances if all(x is not None for x in (known,tlas,texture_image,texture_metadata,environment_image,environment_parameters,ray_query_instances)) else None,
         known_upload_subtotal_bytes=known,upload_components=components,
         host_to_device_source='native static copies plus mapped transform/UBO/TLAS writes; input bytes, not hardware PCIe traffic; unavailable if optional TLAS counter absent',
         device_to_host_bytes=telemetry['readback_bytes'] if telemetry else captures*320*240*13,
@@ -213,7 +218,7 @@ def run(source_directory,output,backend,*,batches=300,warmup=3,scales=(1,2,8),me
         raise ValueError('scales must be a unique subset of 1,2,8')
     output=Path(output).resolve(); output.mkdir(parents=True,exist_ok=False)
     report=dict(schema='phymeo-rendering-native-r4-v1',status='running',requested_batches=batches,
-        requested_scales=list(scales),warmup_batches_per_session=warmup,resident=backend.resident,
+        requested_scales=list(scales),warmup_batches_per_session=warmup,resident=backend.resident,shadow_mode=backend.shadow_mode,
         resolution=[320,240],channels=[c.value for c in CHANNELS],
         runtime=dict(python=platform.python_version(),platform=platform.platform()),
         reference={},scales={},physics_steps=0,encoding='zlib level1 raw reference planes; no video encoding',
@@ -375,6 +380,7 @@ def main():
     parser.add_argument('--device-index',type=int,default=0)
     parser.add_argument('--validation',action='store_true')
     parser.add_argument('--legacy',action='store_true')
+    parser.add_argument('--shadow-mode',choices=('software','ray_query'),default='software')
     parser.add_argument('--batches',type=int,default=300)
     parser.add_argument('--warmup',type=int,default=3)
     parser.add_argument('--scales',type=int,nargs='+',default=[1,2,8])
@@ -382,7 +388,7 @@ def main():
     args=parser.parse_args()
     from phymeo_rendering.backends.native import NativeBackend
     backend=NativeBackend(library_path=args.library,shader_directory=args.shaders,
-        device_index=args.device_index,validation=args.validation,resident=not args.legacy)
+        device_index=args.device_index,validation=args.validation,resident=not args.legacy,shadow_mode=args.shadow_mode)
     report=run(args.source,args.output,backend,batches=args.batches,warmup=args.warmup,scales=tuple(args.scales),memory_period_s=args.memory_period)
     print(json.dumps(dict(status=report['status'],summary=str(args.output/'summary.json'),
                          progress=report.get('progress'),error=report.get('error')),indent=2))

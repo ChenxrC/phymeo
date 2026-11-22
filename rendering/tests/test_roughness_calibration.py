@@ -75,6 +75,13 @@ class RoughnessDeclarationTest(unittest.TestCase):
             decoded = load_mesh(mesh)
             self.assertEqual(len(decoded.triangles), 16128)
             self.assertEqual(len(decoded.positions), 8066)
+            # The real mesh has outward winding; geometry admission alone does
+            # not establish the orientation of its finite triangle surfaces.
+            for ia, ib, ic in decoded.triangles:
+                a, b, c = (decoded.positions[i] for i in (ia, ib, ic))
+                u, v = tuple(b[i]-a[i] for i in range(3)), tuple(c[i]-a[i] for i in range(3))
+                cross = (u[1]*v[2]-u[2]*v[1], u[2]*v[0]-u[0]*v[2], u[0]*v[1]-u[1]*v[0])
+                self.assertGreater(sum(cross[i]*(a[i]+b[i]+c[i]) for i in range(3)), 0.)
             scenes = [module.make_scene(mesh, value) for value in (0.18, 0.52)]
             first, second = (asdict(scene) for scene in scenes)
             first.pop("key")

@@ -5,6 +5,7 @@ _shaders/. No runtime, compiler or device is imported at module import time.
 No path tracing, texture, environment-light or software fallback is provided.
 """
 
+import ctypes as ct
 import hashlib
 import json
 import math
@@ -15,6 +16,7 @@ from ..outputs import Capture, Channel, ImagePlane
 from ..pipeline import DefaultPassPlanner, RenderPath
 from ..scene import VisualScene, compose_pose
 from . import UnsupportedRequestError, ValidatedRenderSession
+from ._native_resident import ResidentDevice, pack_scene
 from ._native_device import (
     NativeDevice,
     Parameters,
@@ -72,6 +74,21 @@ def _vertices(scene, meshes, frame):
     return result
 
 
+def _instance_matrices(scene, frame):
+    """World-from-mesh rigid transforms in the static instance table order."""
+    nodes = {node.node_id: node.world_pose for node in frame.nodes}
+    result = (ct.c_float * (16 * len(scene.instances)))()
+    for index, instance in enumerate(scene.instances):
+        pose = compose_pose(nodes[instance.node_id], instance.local_pose)
+        rotation = _rotation(pose)
+        values = tuple(value for column in range(3)
+                       for value in (*[rotation[row][column] for row in range(3)], 0.))
+        result[16*index:16*(index+1)] = (*values, *pose.position_m, 1.)
+    if not all(math.isfinite(value) for value in result):
+        raise ValueError('resident transform FP32 conversion is nonfinite')
+    return result
+
+
 def _parameters(scene, request, triangle_count, exposure):
     camera = request.camera
     rotation = _rotation(camera.world_pose)
@@ -102,8 +119,9 @@ def _parameters(scene, request, triangle_count, exposure):
 
 
 class _NativeDelegate:
-    def __init__(self, scene, meshes, device, exposure):
+    def __init__(self, scene, meshes, device, exposure, *, resident=False):
         self.scene, self.meshes, self.device, self.exposure = scene, meshes, device, exposure
+        self.resident = resident
         self.limits = device.info()
         self.triangles = sum(len(meshes[item.mesh_id].triangles) for item in scene.instances)
         self.last_passes = ()
@@ -133,8 +151,13 @@ class _NativeDelegate:
     def capture(self, frame, request):
         camera = request.camera
         plan = DefaultPassPlanner().plan(request)
-        vertices = _vertices(self.scene, self.meshes, frame)
+        vertices = (
+            _instance_matrices(self.scene, frame) if self.resident
+            else _vertices(self.scene, self.meshes, frame)
+        )
         parameters = _parameters(self.scene, request, self.triangles, self.exposure)
+        if self.resident:
+            parameters.counts[3] = len(self.scene.instances)
         raw = self.device.render(vertices, parameters, camera.width, camera.height)
         count = camera.width * camera.height
         # Native attachments are top-left tightly packed RGBA8/depth/ID/VALID.
@@ -174,10 +197,15 @@ class _NativeDelegate:
             triangles=self.triangles,
             light_count=len(self.scene.lights),
             max_lights=4,
-            max_triangles=self.limits["max_vertices"] // 3,
+            max_triangles=(self.limits.get('resident_max_instanced_triangles') if self.resident
+                           else self.limits['max_vertices'] // 3),
+            resident=self.resident,
+            geometry_residency=('static indexed meshes; per-frame instance matrices' if self.resident
+                                else 'expanded world triangles per capture'),
             primary_visibility="single-sample Vulkan raster, two-sided opaque triangles",
             lighting="direct GGX/Smith/Schlick metallic-roughness; no ambient or IBL",
-            shadows="GPU fragment hard-shadow triangle rays",
+            shadows=('GPU fragment hard-shadow mesh BVH rays' if self.resident
+                     else 'GPU fragment hard-shadow triangle rays'),
             shadow_bias_m=1e-5,
             minimum_perceptual_roughness=0.045,
             exposure=self.exposure,
@@ -211,6 +239,9 @@ class NativeBackend:
     Paths are explicit build/install artifacts. With no override, the loader
     searches only the package's private _native directory, never another engine.
     Validation is opt-in and requires the requested Khronos layer to exist.
+    resident=True requires the resident ABI and shaders, uploads indexed assets
+    once, and submits rigid instance matrices per frame. The default False keeps
+    the original ABI2-only library contract; neither mode falls back to the other.
     """
 
     def __init__(
@@ -221,11 +252,15 @@ class NativeBackend:
         device_index=0,
         validation=False,
         exposure=1.0,
+        resident=False,
     ):
         if isinstance(device_index, bool) or not isinstance(device_index, int):
             raise TypeError("device_index must be an integer, not bool")
         if not 0 <= device_index <= 2**32 - 1:
             raise ValueError("device_index must be a nonnegative uint32")
+        if type(resident) is not bool:
+            raise TypeError('resident must be bool')
+        self.resident = resident
         if type(validation) is not bool:
             raise TypeError("validation must be bool")
         if isinstance(exposure, bool) or not isinstance(exposure, Real):
@@ -255,15 +290,19 @@ class NativeBackend:
 
         meshes = {mesh.id: load_mesh(mesh) for mesh in scene.meshes}
         triangles = sum(len(meshes[item.mesh_id].triangles) for item in scene.instances)
-        if triangles > 4096:
+        if not self.resident and triangles > 4096:
             raise UnsupportedRequestError("native raster currently supports at most 4096 triangles")
-        device = NativeDevice(
+        device_type = ResidentDevice if self.resident else NativeDevice
+        device = device_type(
             self.library_path, self.shader_directory, self.device_index, self.validation
         )
         try:
-            if triangles * 3 > device.info()["max_vertices"]:
+            if not self.resident and triangles * 3 > device.info()["max_vertices"]:
                 raise UnsupportedRequestError("scene exceeds native device storage-buffer capacity")
-            return NativeRenderSession(scene, _NativeDelegate(scene, meshes, device, self.exposure))
+            if self.resident:
+                device.upload(*pack_scene(scene, meshes, device.info()))
+            return NativeRenderSession(scene, _NativeDelegate(
+                scene, meshes, device, self.exposure, resident=self.resident))
         except BaseException as primary:
             try:
                 device.close()

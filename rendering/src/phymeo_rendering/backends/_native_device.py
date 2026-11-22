@@ -94,6 +94,8 @@ def require_library(path):
 
 
 class NativeDevice:
+    _shader_prefix = 'native'
+
     def __init__(self, library_path, shader_directory, device_index, validation):
         self._handle = None
         self._last_info = {}
@@ -106,7 +108,7 @@ class NativeDevice:
         shaders = []
         self.shader_sha256 = {}
         for stage in ("vert", "frag"):
-            path = self.shader_directory / f"native.{stage}.spv"
+            path = self.shader_directory / f"{self._shader_prefix}.{stage}.spv"
             try:
                 data = path.read_bytes()
             except OSError as error:
@@ -126,7 +128,7 @@ class NativeDevice:
         if self._lib.pr_abi_version() != 2:
             raise BackendUnavailableError("unsupported native Vulkan C ABI version")
         self.validation = validation
-        self._handle = self._lib.pr_create(
+        self._handle = self._create(
             device_index,
             int(validation),
             shaders[0],
@@ -146,6 +148,9 @@ class NativeDevice:
                     "native initialization and cleanup failed", [primary, cleanup]
                 )
             raise
+
+    def _create(self, *args):
+        return self._lib.pr_create(*args)
 
     def _bind(self):
         lib = self._lib

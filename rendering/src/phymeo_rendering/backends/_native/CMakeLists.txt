@@ -37,7 +37,8 @@ foreach(program native resident resident_sky resident_rayquery)
     set(output "${CMAKE_BINARY_DIR}/${program}.${stage}.spv")
     set(shader_dependencies "${source}")
     if((program STREQUAL "resident" OR program STREQUAL "resident_sky" OR program STREQUAL "resident_rayquery") AND stage STREQUAL "frag")
-      list(APPEND shader_dependencies "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident_environment.glsl")
+      list(APPEND shader_dependencies "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident_environment.glsl"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident_display.glsl")
     endif()
     if((program STREQUAL "resident" OR program STREQUAL "resident_rayquery") AND stage STREQUAL "frag")
       list(APPEND shader_dependencies "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident_studio.glsl")
@@ -59,7 +60,8 @@ foreach(program resident resident_rayquery)
     set(shader_options --target-env vulkan1.1 -DPR_STUDIO_AREA_GRID=${grid})
     set(shader_dependencies "${source}"
       "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident_environment.glsl"
-      "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident_studio.glsl")
+      "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident_studio.glsl"
+      "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident_display.glsl")
     if(program STREQUAL "resident_rayquery")
       set(shader_options --target-env vulkan1.2 --glsl-version 460 -DPR_RESIDENT_RAY_QUERY=1 -DPR_STUDIO_AREA_GRID=${grid})
       list(APPEND shader_dependencies "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident_rayquery.glsl")

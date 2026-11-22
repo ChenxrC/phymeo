@@ -255,3 +255,11 @@ PR_API int pr_resident_set_surface_maps(void* context,
     const PrResidentTexture* textures,uint32_t texture_count,
     const uint8_t* rgba,size_t rgba_bytes,const PrResidentUV* uv,uint32_t uv_count,
     const uint32_t* instance_slots,uint32_t instance_count);
+
+// Optional display extension v1: 0 preserves clip, 1 Khronos PBR Neutral.
+// Same linear exposure -> display map -> sRGB order for main, sky and clear.
+// Mode is immutable after any capture; sensors and lighting are unchanged.
+// Named uint32 SpecId58/default1 must be declared by main and loaded sky SPV.
+PR_API uint32_t pr_resident_display_transform_abi_version();
+PR_API int pr_resident_display_transform_shader_compatible(void* context);
+PR_API int pr_resident_set_display_transform(void* context,uint32_t mode);

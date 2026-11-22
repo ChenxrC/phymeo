@@ -71,5 +71,26 @@ class NativeDisplayTests(unittest.TestCase):
             configure_display(device(), 'unknown')
 
 
+    def test_public_wiring_and_open_failure_cleanup(self):
+        from unittest.mock import patch
+        from test_native_resident import fixture, Recorder
+        scene, mesh=fixture()
+        for fail in (False, True):
+            recorder=Recorder(); raw=device(status=-1 if fail else 0)
+            recorder._lib,recorder._handle,recorder._error=raw._lib,raw._handle,raw._error
+            with patch('phymeo_rendering.backends.native.require_library'), \
+                 patch('phymeo_rendering.mesh_data.load_mesh',return_value=mesh), \
+                 patch('phymeo_rendering.backends.native.ResidentDevice',return_value=recorder):
+                backend=NativeBackend(resident=True,display_transform='pbr-neutral')
+                if fail:
+                    with self.assertRaises(BackendUnavailableError): backend.open_scene(scene)
+                    self.assertTrue(recorder.closed)
+                    self.assertEqual(recorder.uploads,[])
+                else:
+                    session=backend.open_scene(scene)
+                    self.assertEqual(session.diagnostics()['display_transform'],'pbr-neutral')
+                    self.assertEqual(session.diagnostics()['display_transform_abi'],1)
+                    session.close()
+
 if __name__ == '__main__':
     unittest.main()

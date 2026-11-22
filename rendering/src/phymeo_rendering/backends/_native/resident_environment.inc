@@ -156,11 +156,15 @@ void resident_set_environment(Context& c,const PrResidentEnvironment& config,con
     constexpr uint64_t sky_bindings=(1ull<<1)|(1ull<<11)|(1ull<<12);
     require(fragment.valid && fragment.main && fragment.bindings==sky_bindings && fragment.locations==1,
         "resident sky fragment SPIR-V has incompatible stage/interface");
+    const bool display_compatible=display_shader_marker(frag,frag_bytes);
+    require(c.display_transform!=1 || display_compatible,
+        "resident sky fragment lacks named display-transform ABI marker" );
     // All deterministic input/ABI checks above precede any resource allocation.
     uint64_t errors_before=c.errors.load();
     try {
         auto resource=upload_environment_resource(c,config,rgba,rgba_bytes,VK_FORMAT_R32G32B32A32_SFLOAT,true);
         make_sky_pipeline(c,*resource,vert,vert_bytes,frag,frag_bytes);
+        resource->display_compatible=display_compatible;
         require(c.errors.load()==errors_before,"Vulkan validation failed during environment upload");
         c.resident_state->environment=std::move(resource);
     } catch (...) { c.poisoned=true; throw; }

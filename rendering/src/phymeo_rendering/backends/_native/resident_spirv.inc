@@ -38,10 +38,10 @@ SpirvInterface spirv_interface(const uint32_t* code,size_t bytes,uint32_t model)
 }
 
 // This named uint specialization constant is a declared bundle ABI, not a
-// general proof of arbitrary shader behavior. No pipeline overrides SpecId 57.
+// general proof of arbitrary shader behavior. No pipeline overrides these SpecIds.
 // Validate stage, exact OpName, SpecId, uint32 type and literal default before
-// accepting alpha as a roughness channel. Old main fragments fail closed.
-bool surface_maps_shader_marker(const uint32_t* code,size_t bytes) {
+// accepting an optional shader semantic. Old main fragments fail closed.
+bool named_shader_marker(const uint32_t* code,size_t bytes,uint32_t spec_id,const char* marker_name) {
     const auto interface=spirv_interface(code,bytes,4);
     if (!interface.valid || !interface.main) return false;
     const size_t words=bytes/4;
@@ -49,17 +49,17 @@ bool surface_maps_shader_marker(const uint32_t* code,size_t bytes) {
     bool named=false,constant=false,unsigned32=false;
     for (size_t p=5;p<words;p+=code[p]>>16) {
         uint32_t count=code[p]>>16,opcode=code[p]&0xffffu;
-        if (opcode==71 && count==4 && code[p+2]==1 && code[p+3]==57) {
+        if (opcode==71 && count==4 && code[p+2]==1 && code[p+3]==spec_id) {
             if (marker) return false;
             marker=code[p+1];
         }
     }
     if (!marker) return false;
-    constexpr char marker_name[]="PR_SURFACE_MAPS_ABI";
+    const size_t name_bytes=std::strlen(marker_name)+1;
     for (size_t p=5;p<words;p+=code[p]>>16) {
         uint32_t count=code[p]>>16,opcode=code[p]&0xffffu;
-        if (opcode==5 && count==2+(sizeof(marker_name)+3)/4 && code[p+1]==marker)
-            named=std::memcmp(code+p+2,marker_name,sizeof(marker_name))==0;
+        if (opcode==5 && count==2+(name_bytes+3)/4 && code[p+1]==marker)
+            named=std::memcmp(code+p+2,marker_name,name_bytes)==0;
         if (opcode==50 && count==4 && code[p+2]==marker) {
             if (constant || code[p+3]!=1) return false;
             constant=true; type=code[p+1];
@@ -69,4 +69,11 @@ bool surface_maps_shader_marker(const uint32_t* code,size_t bytes) {
         if ((code[p]&0xffffu)==21 && (code[p]>>16)==4 && code[p+1]==type)
             unsigned32=code[p+2]==32 && code[p+3]==0;
     return named && constant && unsigned32;
+}
+
+bool surface_maps_shader_marker(const uint32_t* code,size_t bytes) {
+    return named_shader_marker(code,bytes,57,"PR_SURFACE_MAPS_ABI");
+}
+bool display_shader_marker(const uint32_t* code,size_t bytes) {
+    return named_shader_marker(code,bytes,58,"PR_DISPLAY_TRANSFORM_ABI");
 }

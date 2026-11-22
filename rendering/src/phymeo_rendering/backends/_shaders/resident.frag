@@ -134,6 +134,8 @@ bool occluded(vec3 worldOrigin, vec3 worldDirection, float tMax) {
 #define PR_RESIDENT_DIRECTIONAL_ENVIRONMENT
 #include "resident_studio.glsl"
 
+#include "resident_display.glsl"
+
 vec3 encodeSRGB(vec3 linearColor) {
     vec3 x = clamp(linearColor, 0.0, 1.0);
     return mix(12.92*x, 1.055*pow(x, vec3(1.0/2.4))-0.055,
@@ -193,5 +195,5 @@ void main() {
         if (dot(N,V) < 0.0) N = -N;
         color += residentStudioRadiance(worldPosition,N,V,albedo,metalRough.x,surfaceRoughness);
     }
-    rgb = vec4(encodeSRGB(color*u.options.x), 1.0);
+    rgb = vec4(encodeSRGB(residentDisplayLinear(color*u.options.x,u.options.z)), 1.0);
 }

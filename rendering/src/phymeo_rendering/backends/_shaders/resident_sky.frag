@@ -6,6 +6,7 @@ layout(set=0,binding=1,std140) uniform Parameters {
 } u;
 #include "resident_environment.glsl"
 layout(location=0) out vec4 rgb;
+#include "resident_display.glsl"
 vec3 encodeSky(vec3 linearColor) {
     vec3 x=clamp(linearColor,0.0,1.0);
     return mix(12.92*x,1.055*pow(x,vec3(1.0/2.4))-0.055,greaterThan(x,vec3(0.0031308)));
@@ -17,5 +18,5 @@ void main() {
     vec3 ray=transpose(mat3(u.view))*normalize(vec3(sensor.x,-sensor.y,-1.0));
     vec3 radiance=textureLod(environmentCube,ray.xzy,0.0).rgb;
     // Reading enabled makes a mismatched sky UBO visible to interface checks.
-    rgb=vec4(encodeSky((residentEnvironmentEnabled()?radiance:vec3(0.0))*u.options.x),1.0);
+    rgb=vec4(encodeSky(residentDisplayLinear((residentEnvironmentEnabled()?radiance:vec3(0.0))*u.options.x,u.options.z)),1.0);
 }

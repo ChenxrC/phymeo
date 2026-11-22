@@ -57,11 +57,14 @@ struct Allocation {
 struct Buffer { VkBuffer handle{}; VkDeviceMemory memory{}; Allocation allocation{}; };
 struct Image { VkImage handle{}; VkDeviceMemory memory{}; VkImageView view{}; Allocation allocation{}; };
 #include "resident_spirv.inc"
+#include "resident_display.inc"
 #include "resident_rayquery_types.inc"
 struct ResidentState;
 struct Context {
     bool resident = false;
     bool surface_maps_compatible = false;
+    bool display_compatible = false;
+    uint32_t display_transform = 0;
     bool ray_query = false;
     RayDispatch ray;
     PrResidentRayQueryInfo ray_info{};
@@ -235,6 +238,7 @@ struct Context {
               const uint32_t* frag, size_t frag_bytes, bool resident_path = false, bool hardware_shadow = false) {
         resident = resident_path; ray_query=hardware_shadow;
         surface_maps_compatible=resident && surface_maps_shader_marker(frag,frag_bytes);
+        display_compatible=resident && display_shader_marker(frag,frag_bytes);
         require(!ray_query || resident,"ray-query shadows require resident geometry");
         if (ray_query) {
             auto interface=spirv_interface(frag,frag_bytes,4);
@@ -991,6 +995,31 @@ int pr_resident_set_surface_maps(void* handle,const PrResidentTexture* textures,
         require(handle,"null resident surface-map context");
         resident_set_textures(*static_cast<Context*>(handle),textures,texture_count,rgba,rgba_bytes,
             uv,uv_count,instance_slots,instance_count,true);
+        return 0;
+    } catch (const std::exception& error) { last_error=error.what(); return -1; }
+}
+
+uint32_t pr_resident_display_transform_abi_version() { return 1; }
+int pr_resident_display_transform_shader_compatible(void* handle) {
+    if (!handle) { last_error="null resident display context"; return -1; }
+    const auto& c=*static_cast<Context*>(handle);
+    if (!c.resident) { last_error="not a resident context"; return -1; }
+    return c.display_compatible ? 1 : 0;
+}
+int pr_resident_set_display_transform(void* handle,uint32_t mode) {
+    try {
+        require(handle,"null resident display context");
+        auto& c=*static_cast<Context*>(handle);
+        require(c.resident && !c.poisoned,"resident display context unavailable");
+        require(mode<=1,"unknown resident display transform");
+        require(c.properties.captures==0,"resident display transform is immutable after capture");
+        if (mode==1) {
+            require(c.display_compatible,"resident fragment lacks named display-transform ABI marker");
+            require(!c.environment_info.loaded || (c.resident_state && c.resident_state->environment &&
+                c.resident_state->environment->display_compatible),
+                "resident sky fragment lacks named display-transform ABI marker");
+        }
+        c.display_transform=mode;
         return 0;
     } catch (const std::exception& error) { last_error=error.what(); return -1; }
 }

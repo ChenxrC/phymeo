@@ -25,6 +25,7 @@ from ._native_ray_query import RayQueryResidentDevice
 from ._native_studio import pack_studio
 from ._native_texture import pack_textures
 from ._native_environment import pack_environment
+from ._native_display import configure_display
 from ._native_device import (
     NativeDevice,
     Parameters,
@@ -146,8 +147,9 @@ def _image_planes(raw, pixels, channels, attachment_mask):
 
 
 class _NativeDelegate:
-    def __init__(self, scene, meshes, device, exposure, *, resident=False, studio=None, textures=None, environment=None, shadow_mode='software', area_light_grid=2):
+    def __init__(self, scene, meshes, device, exposure, *, resident=False, studio=None, textures=None, environment=None, shadow_mode='software', area_light_grid=2, display_info=None):
         self.scene, self.meshes, self.device, self.exposure = scene, meshes, device, exposure
+        self.display_info = display_info or {'display_transform':'clip', 'display_transform_abi':None}
         self.resident = resident
         self.studio = deepcopy(studio)
         self.textures = deepcopy(textures)
@@ -242,7 +244,9 @@ class _NativeDelegate:
             shadow_bias_m=1e-5,
             minimum_perceptual_roughness=0.045,
             exposure=self.exposure,
-            display="clamp linear exposure to [0,1], then IEC sRGB once",
+            display=('clamp linear exposure to [0,1], then IEC sRGB once' if self.display_info['display_transform']=='clip'
+                     else 'nonnegative linear exposure, Khronos PBR Neutral, then IEC sRGB once'),
+            **self.display_info,
             readback='explicit synchronous host-visible staging after fence; actual flags in resident_readback when available',
             readback_channels_mode=('compact requested attachments' if self.resident and self.limits.get('resident_render_planes_available',False)
                                     else 'legacy all attachments'),
@@ -287,6 +291,8 @@ class NativeBackend:
     area_light_grid=4 or 8 selects a separate resident fragment shader with
     midpoint panel integration; default 2 retains the original shader artifact.
     BRDF samples remain eight. Missing dense artifacts never fall back.
+    display_transform='pbr-neutral' requires a declared resident display ABI;
+    default 'clip' preserves the previous output and never probes that extension.
     """
 
     def __init__(
@@ -301,6 +307,7 @@ class NativeBackend:
         studio=None,
         shadow_mode='software',
         area_light_grid=2,
+        display_transform='clip',
     ):
         if isinstance(device_index, bool) or not isinstance(device_index, int):
             raise TypeError("device_index must be an integer, not bool")
@@ -309,6 +316,13 @@ class NativeBackend:
         if type(resident) is not bool:
             raise TypeError('resident must be bool')
         self.resident = resident
+        if not isinstance(display_transform, str):
+            raise TypeError('display_transform must be clip or pbr-neutral')
+        if display_transform not in ('clip', 'pbr-neutral'):
+            raise ValueError('display_transform must be clip or pbr-neutral')
+        if display_transform != 'clip' and not resident:
+            raise ValueError('pbr-neutral display_transform requires resident=True')
+        self.display_transform = display_transform
         if type(area_light_grid) is not int:
             raise TypeError('area_light_grid must be an integer, not bool')
         if area_light_grid not in (2, 4, 8):
@@ -369,6 +383,7 @@ class NativeBackend:
             **({'area_light_grid': self.area_light_grid} if self.area_light_grid != 2 else {})
         )
         try:
+            display_info = configure_display(device, self.display_transform)
             if not self.resident and triangles * 3 > device.info()["max_vertices"]:
                 raise UnsupportedRequestError("scene exceeds native device storage-buffer capacity")
             if self.resident:
@@ -395,7 +410,7 @@ class NativeBackend:
                     studio_info['environment']['active_lighting'] = False
                     studio_info['environment']['replaced_by'] = 'directional environment map'
             return NativeRenderSession(scene, _NativeDelegate(
-                scene, meshes, device, self.exposure, resident=self.resident, studio=studio_info, textures=texture_info, environment=environment_info, shadow_mode=self.shadow_mode, area_light_grid=self.area_light_grid))
+                scene, meshes, device, self.exposure, resident=self.resident, studio=studio_info, textures=texture_info, environment=environment_info, shadow_mode=self.shadow_mode, area_light_grid=self.area_light_grid, display_info=display_info))
         except BaseException as primary:
             try:
                 device.close()

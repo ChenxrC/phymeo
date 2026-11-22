@@ -36,6 +36,7 @@ struct ResidentEnvironment {
     VkSampler sampler{};
     VkPipeline sky_pipeline{};
     VkShaderModule sky_vertex{},sky_fragment{};
+    bool display_compatible=false;
     explicit ResidentEnvironment(Context& context):c(context) {}
     ~ResidentEnvironment() {
         release(sky_pipeline,[&](auto h){vkDestroyPipeline(c.device,h,nullptr);});
@@ -728,7 +729,10 @@ void resident_render(Context& c, const float* matrices, uint32_t instance_count,
     }
     info.transform_upload_bytes += transforms.size()*sizeof(GpuTransform);
     info.host_transform_input_bytes += static_cast<uint64_t>(instance_count)*64;
-    c.upload(frame.uniform, &params, sizeof(params));
+    PrParams submitted=params;
+    // Reserved caller words never opt into a display change; only the checked setter does.
+    submitted.options[2]=static_cast<float>(c.display_transform);
+    c.upload(frame.uniform, &submitted, sizeof(submitted));
     info.parameter_upload_bytes += sizeof(params);
     const auto record_begin=HostClock::now();
     check(vkResetFences(c.device, 1, &frame.fence), "resident reset fence");
@@ -757,8 +761,10 @@ void resident_render(Context& c, const float* matrices, uint32_t instance_count,
     std::array<VkClearValue, 5> clear{};
     clear[0].color.float32[3] = 1;
     if (c.studio.environment[3] != 0 && params.counts[2] != 0) {
+        const auto mapped=c.display_transform==1 ? neutral_clear(c.studio.environment,params.options[0]) : std::array<double,3>{};
         for (uint32_t k=0; k<3; ++k) {
-            double linear=std::clamp(static_cast<double>(c.studio.environment[k])*params.options[0],0.0,1.0);
+            double linear=c.display_transform==1 ? std::clamp(mapped[k],0.0,1.0) :
+                std::clamp(static_cast<double>(c.studio.environment[k])*params.options[0],0.0,1.0);
             clear[0].color.float32[k]=static_cast<float>(linear<=0.0031308 ? 12.92*linear :
                 1.055*std::pow(linear,1.0/2.4)-0.055);
         }

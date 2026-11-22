@@ -160,4 +160,45 @@ class ResidentCapacity(unittest.TestCase):
         self.assertEqual(tuple(map(len,packed)),(0,0,0,0))
 
 
+class ResidentTelemetry(unittest.TestCase):
+    def test_layout_and_adapter_luid_are_exact(self):
+        from phymeo_rendering.backends._native_resident import ResidentTelemetry, ResidentDevice
+        value=ResidentTelemetry(); value.telemetry_abi_version=1
+        value.device_luid_valid=1; value.device_luid[:]=bytes.fromhex('7856341201000000')
+        value.device_local_bytes_current=4096; value.fence_wait_wall_ns=123
+        owner=ResidentDevice.__new__(ResidentDevice)
+        owner._remember_telemetry(value,final=False)
+        self.assertEqual(ct.sizeof(value),128)
+        self.assertEqual(owner._telemetry['device_luid_hex'],'7856341201000000')
+        self.assertEqual(owner._telemetry['device_local_bytes_current'],4096)
+        self.assertFalse(owner._telemetry['final_after_destroy'])
+
+    def test_unknown_telemetry_version_cannot_be_mislabelled(self):
+        from phymeo_rendering.backends._native_resident import ResidentTelemetry, ResidentDevice
+        value=ResidentTelemetry(); value.telemetry_abi_version=2
+        owner=ResidentDevice.__new__(ResidentDevice)
+        with self.assertRaisesRegex(RuntimeError,'telemetry ABI'):
+            owner._remember_telemetry(value,final=False)
+
+    def test_optional_destroy_returns_real_final_allocation_counters(self):
+        from phymeo_rendering.backends._native_resident import ResidentTelemetry, ResidentDevice
+        from phymeo_rendering.backends._native_device import _Info
+        calls=[]
+        def destroy(handle,info,telemetry):
+            calls.append(handle)
+            ct.cast(info,ct.POINTER(_Info)).contents.captures=2
+            value=ct.cast(telemetry,ct.POINTER(ResidentTelemetry)).contents
+            value.telemetry_abi_version=1; value.device_local_bytes_peak=8192
+            value.allocation_count=5; value.free_count=5
+            return 0
+        owner=ResidentDevice.__new__(ResidentDevice)
+        owner._handle=123; owner._resident_destroy=destroy; owner._last_info={}
+        owner.info=lambda: {}
+        owner.close(); owner.close()
+        self.assertEqual(calls,[123])
+        self.assertEqual(owner._telemetry['device_local_bytes_current'],0)
+        self.assertEqual(owner._telemetry['device_local_bytes_peak'],8192)
+        self.assertTrue(owner._telemetry['final_after_destroy'])
+
+
 if __name__ == '__main__': unittest.main()

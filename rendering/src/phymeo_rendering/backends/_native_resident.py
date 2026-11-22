@@ -3,7 +3,7 @@ import ctypes as ct
 import math
 
 from . import BackendUnavailableError, UnsupportedRequestError
-from ._native_device import NativeDevice, Parameters, validate_parameters
+from ._native_device import NativeDevice, Parameters, _Info, validate_parameters
 
 
 class ResidentVertex(ct.Structure):
@@ -93,11 +93,24 @@ def pack_scene(scene, decoded, info=None):
     return vertices, indices, meshes, instances
 
 
+class ResidentTelemetry(ct.Structure):
+    _fields_ = [(name, ct.c_uint32) for name in
+        ('telemetry_abi_version', 'device_luid_valid', 'device_node_mask', 'reserved')] + [
+        ('device_luid', ct.c_uint8 * 8), ('reserved_identity', ct.c_uint8 * 8)] + [
+        (name, ct.c_uint64) for name in ('device_local_bytes_current', 'device_local_bytes_peak',
+        'device_local_bytes_allocated', 'host_visible_bytes_current', 'host_visible_bytes_peak',
+        'host_visible_bytes_allocated', 'readback_bytes', 'fence_wait_wall_ns', 'fence_wait_calls',
+        'submissions', 'allocation_count', 'free_count')]
+
+
 class ResidentDevice(NativeDevice):
     _shader_prefix = 'resident'
 
     def __init__(self, *args):
         self._resident_info = {}
+        self._telemetry = None
+        self._telemetry_function = None
+        self._resident_destroy = None
         self._uploaded = False
         self._instance_count = 0
         super().__init__(*args)
@@ -120,11 +133,33 @@ class ResidentDevice(NativeDevice):
         lib.pr_resident_render.restype = ct.c_int
         lib.pr_resident_info.argtypes = [ct.c_void_p, ct.POINTER(ResidentInfo)]
         lib.pr_resident_info.restype = ct.c_int
+        if ct.sizeof(ResidentTelemetry) != 128:
+            raise BackendUnavailableError('resident telemetry structure layout mismatch')
+        # Optional, independently versioned extension. Its absence does not
+        # change the resident raster capability of an older resident ABI1 DLL.
+        self._telemetry_function = getattr(lib, 'pr_resident_telemetry', None)
+        self._resident_destroy = getattr(lib, 'pr_resident_destroy', None)
+        if self._telemetry_function is not None:
+            self._telemetry_function.argtypes = [ct.c_void_p, ct.POINTER(ResidentTelemetry)]
+            self._telemetry_function.restype = ct.c_int
+        if self._resident_destroy is not None:
+            self._resident_destroy.argtypes = [ct.c_void_p, ct.POINTER(_Info), ct.POINTER(ResidentTelemetry)]
+            self._resident_destroy.restype = ct.c_int
 
     def _create(self, *args):
         if self._lib.pr_resident_abi_version() != 1:
             raise BackendUnavailableError('unsupported resident Vulkan C ABI version')
         return self._lib.pr_resident_create(*args)
+
+    def _remember_telemetry(self, value, *, final):
+        if value.telemetry_abi_version != 1:
+            raise RuntimeError('unsupported resident telemetry ABI')
+        self._telemetry = {name: int(getattr(value, name)) for name, _ in ResidentTelemetry._fields_
+                           if name not in ('device_luid', 'reserved_identity', 'reserved')}
+        self._telemetry['device_luid_hex'] = bytes(value.device_luid).hex() if value.device_luid_valid else None
+        self._telemetry['final_after_destroy'] = final
+        self._telemetry['allocation_scope'] = 'this context explicit VkDeviceMemory allocations; not driver total VRAM'
+        self._telemetry['wait_scope'] = 'host wall time blocked in fence waits, including upload; not GPU kernel time'
 
     def info(self):
         result = super().info()
@@ -134,7 +169,13 @@ class ResidentDevice(NativeDevice):
                 raise RuntimeError(self._error())
             self._resident_info = {(name if name == 'resident_abi_version' else 'resident_' + name): int(getattr(value, name))
                                    for name, _ in ResidentInfo._fields_}
+            if self._telemetry_function is not None:
+                telemetry = ResidentTelemetry()
+                if self._telemetry_function(self._handle, ct.byref(telemetry)):
+                    raise RuntimeError(self._error())
+                self._remember_telemetry(telemetry, final=False)
         result.update(self._resident_info)
+        result['resident_telemetry'] = dict(self._telemetry) if self._telemetry is not None else None
         return result
 
     def upload(self, vertices, indices, meshes, instances):
@@ -181,7 +222,16 @@ class ResidentDevice(NativeDevice):
         except BaseException as error:
             diagnostic_error = error
         try:
-            super().close()
+            if self._resident_destroy is None:
+                super().close()
+            else:
+                handle, self._handle = self._handle, None
+                final, telemetry = _Info(), ResidentTelemetry()
+                result = self._resident_destroy(handle, ct.byref(final), ct.byref(telemetry))
+                self._remember(final)
+                self._remember_telemetry(telemetry, final=True)
+                if result:
+                    raise RuntimeError(self._error())
         except BaseException as cleanup:
             if diagnostic_error is not None:
                 raise BaseExceptionGroup('resident diagnostics and cleanup failed',

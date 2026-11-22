@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Phymeo · 渲染回放</title>
+<style>
+  :root{color-scheme:dark;font-family:Inter,"Microsoft YaHei UI",system-ui,sans-serif;background:#161a1c;color:#eff1ed}
+  *{box-sizing:border-box}body{max-width:1540px;margin:auto;padding:clamp(16px,3.5vw,56px)}
+  header{display:flex;align-items:baseline;justify-content:space-between;gap:24px;border-bottom:1px solid #414748;margin-bottom:26px;padding-bottom:16px}
+  h1{font-size:clamp(25px,3.2vw,45px);font-weight:600;letter-spacing:-.04em;margin:0}h2{font-weight:580;font-size:clamp(19px,2vw,29px);margin:16px 0 4px}
+  a{color:#cadfb8;text-underline-offset:4px}main{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,28%);gap:clamp(18px,3vw,48px)}
+  video{width:100%;display:block;aspect-ratio:16/9;background:#101214;object-fit:contain}
+  p{line-height:1.65}#caption{margin:6px 0 12px;color:#c9cdca}
+  .shots{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}
+  button{font:inherit;color:inherit;cursor:pointer}button:focus-visible,a:focus-visible{outline:3px solid #c0e895;outline-offset:3px}
+  .shots button{border:1px solid #636b64;background:#222926;padding:6px 12px;border-radius:5px}
+  nav button{display:block;width:100%;text-align:left;border:0;border-bottom:1px solid #414748;background:transparent;padding:15px 12px;line-height:1.5}
+  nav button:first-child{border-top:1px solid #414748}nav button:hover,.shots button:hover{background:#303832}
+  nav button[aria-pressed=true]{background:#2e3a30;box-shadow:inset 3px 0 #b9df94}
+  .sub{display:block;color:#b8bfb9;font-size:.84em}.meta{color:#b5bcb6;font-size:.9em}
+  .meta a{margin-left:14px}#error{color:#ffd9a8}
+  @media(max-width:760px){main{grid-template-columns:1fr}header{margin-bottom:16px}nav{order:2}header a{font-size:.85em}}
+</style>
+<header><h1>Phymeo 渲染回放</h1><a href="../architecture.html">引擎架构</a></header>
+<main>
+  <section aria-label="当前影片">
+    <video id="film" controls playsinline preload="metadata" poster="r2/daylight-reference-4096.png">
+      <source src="r2/workshop-daylight-native.mp4" type="video/mp4">
+    </video>
+    <h2 id="title">车间日光下的抓放</h2>
+    <p id="caption"></p><div id="shots" class="shots" aria-label="跳转到动作"></div>
+    <div class="meta"><span id="detail"></span><a id="original" href="r2/workshop-daylight-native.mp4">打开 MP4</a></div>
+    <p id="error" hidden>当前播放器未能解码，可用上方链接在本机播放器中打开。</p>
+  </section>
+  <nav id="choices" aria-label="选择回放"></nav>
+</main>
+<script>
+  const panda = [[0,"从头播放"],[1.2,"搬运方块"],[1.9,"放回台面"],[2.25,"开爪回程"]];
+  const movies = [
+    {id:"daylight", title:"车间日光下的抓放", description:"自研 Vulkan · 720p", file:"r2/workshop-daylight-native.mp4", poster:"r2/daylight-native.png", group:"panda", shots:panda,
+     caption:"先看前 2.25 秒。两指夹住红方块、抬起、放到目标处，随后空手返回。木纹来自实拍扫描，车间全景同时提供背景、环境光和钢柱上的反射。", detail:"10 秒 · 原速 · 300 次公开相机读回"},
+    {id:"lighting",title:"同一动作，两种布光",description:"自研 Vulkan · 同步分屏",file:"r2/lighting-in-motion.mp4",poster:"r2/native-studio.png",group:"panda",shots:panda,
+     caption:"左右相机、姿态和材质完全相同。左边用一盏方向光，右边加两盏矩形面积灯和均匀环境光。停在搬运段，看指缝里的亮度和台面上的投影。",detail:"10 秒 · 左右共 600 张源图"},
+    {id:"studio",title:"木纹、橡胶和金属",description:"SAPIEN 路径追踪 · 摄影棚",file:"r2/workshop-reference.mp4",poster:"r2/workshop-reference.png",group:"panda",shots:panda,
+     caption:"相机轻微移动时，看钢柱上的反光如何变化，再看哑光橡胶台面和有方向的木纹。机械臂和方块沿同一条物理记录运动。",detail:"10 秒 · 960 × 540 · 每像素 256 样本"},
+    {id:"worlds",title:"八个世界同时回放",description:"自研 Vulkan · 八路前相机",file:"r4/eight-worlds.mp4",poster:"r4/reset.png",group:"worlds",shots:[[0,"从头播放"],[4.8,"查看单世界重置"]],
+     caption:"每格是一台前相机。播放到 5 秒，左上角世界重置；其余七个世界按自己的时钟继续。这些诊断轨迹用于检验相机隔离和读回。",detail:"300 批 · 2,400 张前相机源图"},
+    {id:"pusht",title:"单世界推 T 近景",description:"SAPIEN 路径追踪 · 慢放",file:"r4/pusht-reference.mp4",group:"pusht",shots:[[0,"从头播放"],[3,"查看推移"]],
+     caption:"观察连杆末端接近 T 形件并推动它。该次控制器未达到推 T 的目标。镜头使用完整记录的运动范围，画面以 0.3 倍物理速度播放。",detail:"2.20 秒物理记录 · 221 个原始姿态"}
+  ];
+  const player=document.getElementById("film"), picker=document.getElementById("choices");
+  let current=null, generation=0;
+  function choose(movie){
+    if(current===movie)return;
+    const oldTime=current && current.group===movie.group ? player.currentTime : 0;
+    const playing=!player.paused && !player.ended, version=++generation;
+    current=movie;
+    document.getElementById("title").textContent=movie.title;
+    document.getElementById("caption").textContent=movie.caption;
+    document.getElementById("detail").textContent=movie.detail;
+    document.getElementById("original").href=movie.file;
+    document.getElementById("error").hidden=true;
+    const markers=document.getElementById("shots");
+    markers.replaceChildren();
+    for(const [time,name] of movie.shots){
+      const button=document.createElement("button");button.textContent=name;
+      button.onclick=()=>{player.currentTime=time;player.play().catch(()=>{});};markers.append(button);
+    }
+    for(const button of picker.children)button.setAttribute("aria-pressed",String(button.dataset.id===movie.id));
+    player.poster=movie.poster || "";
+    player.addEventListener("loadedmetadata",()=>{
+      if(version!==generation)return;
+      if(oldTime>0)player.currentTime=Math.min(oldTime,player.duration);
+      if(playing)player.play().catch(()=>{});
+    },{once:true});
+    player.src=movie.file;
+  }
+  for(const movie of movies){
+    const button=document.createElement("button"),sub=document.createElement("span");
+    button.dataset.id=movie.id;button.textContent=movie.title;sub.className="sub";sub.textContent=movie.description;
+    button.append(sub);button.onclick=()=>choose(movie);picker.append(button);
+  }
+  player.addEventListener("error",()=>{document.getElementById("error").hidden=false;});
+  choose(movies[0]);
+</script>
+</html>

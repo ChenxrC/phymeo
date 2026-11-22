@@ -10,6 +10,8 @@
 
 [观看 Panda 抓取视频](results/panda-movies/README.md)，包括摄影棚全景、同步布光对比、木纹工作台全景与近景、同一方块的红漆与铜色金属对比。
 
+[打开本地影片页](results/index.html)。用同一段十秒真实抓放切换车间日光、双面积灯和摄影棚材质；点“搬运方块”可直接看夹指、金属反射和桌面投影。另有八世界同步回放与推 T 近景。[Panda 画质及延迟](results/r2/README.md) · [训练相机](results/r3/README.md) · [八世界资源和独跑对照](results/r4/README.md)
+
 ## 七个板块
 
 G1 输入合同已接通。仓库根目录下设置 `$env:PYTHONPATH=(Resolve-Path rendering/src).Path`，运行 `python -m unittest discover -s rendering/tests -v` 可验证资产声明、场景引用、位姿组合和相机曝光。两帧使用同一张[自制标定桌](tests/fixtures/g1/README.md)，在无图形设备环境下即可检查腕部转动前后的解析投影。同一份夹具也用于 R0 真机采集。
@@ -18,7 +20,7 @@ G2 把同一张标定桌的两帧交给拍摄会话。请求可以只取深度�
 
 | 板块 | 开发入口 | 谁负责什么 |
 | --- | --- | --- |
-| 外观资产 | [assets.py](src/phymeo_rendering/assets.py) | `Mesh` 引用以米为单位的网格，`Material` 描述不透明表面的线性底色、金属度、粗糙度。后续在此定义纹理、UV、色域与来源元数据。 |
+| 外观资产 | [assets.py](src/phymeo_rendering/assets.py) | `Mesh` 引用以米为单位的网格，`Material` 描述不透明表面的线性底色、金属度、粗糙度。`TexturedMaterial` 按 TEXCOORD_0 读取带内容哈希的本地 sRGB 贴图。 |
 | 场景与帧 | [scene.py](src/phymeo_rendering/scene.py) | `VisualScene` 保存静态资产、实例、节点绑定和方向光。`SceneFrame` 只发布这一帧的节点世界位姿、来源标识和时间。多个实例可共享同一网格。 |
 | 标定相机 | [cameras.py](src/phymeo_rendering/cameras.py) | `Camera` 表示一次曝光，包含内参、已解析的世界位姿、分辨率、裁剪面与帧标识。固定机位与腕部机位共用这一类型。 |
 | 渲染路径与阶段 | [pipeline.py](src/phymeo_rendering/pipeline.py) | `CaptureRequest` 选择相机、光栅或路径追踪、所需通道。`PassPlanner` 是原生后端的扩展点，将请求翻译成有序阶段，例如可见性、阴影、光照或光线积分，最后按通道导出。 |

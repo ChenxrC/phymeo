@@ -1,0 +1,806 @@
+{
+  "backend": "native",
+  "passed": true,
+  "cells": [
+    {
+      "uv": [
+        0.25,
+        0.25
+      ],
+      "factor": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "mean_rgb_actual": [
+        111.0,
+        29.0,
+        24.0
+      ],
+      "mean_rgb_oracle": [
+        111.0,
+        29.0,
+        24.0
+      ],
+      "max_absolute_rgb8": 0
+    },
+    {
+      "uv": [
+        0.75,
+        0.25
+      ],
+      "factor": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "mean_rgb_actual": [
+        31.959183673469386,
+        110.0,
+        41.0
+      ],
+      "mean_rgb_oracle": [
+        31.959183673469386,
+        110.0,
+        41.0
+      ],
+      "max_absolute_rgb8": 0
+    },
+    {
+      "uv": [
+        0.25,
+        0.75
+      ],
+      "factor": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "mean_rgb_actual": [
+        30.0,
+        44.0,
+        115.0
+      ],
+      "mean_rgb_oracle": [
+        30.0,
+        44.0,
+        115.0
+      ],
+      "max_absolute_rgb8": 0
+    },
+    {
+      "uv": [
+        0.75,
+        0.75
+      ],
+      "factor": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "mean_rgb_actual": [
+        84.0,
+        87.0,
+        94.0
+      ],
+      "mean_rgb_oracle": [
+        84.0,
+        87.0,
+        94.0
+      ],
+      "max_absolute_rgb8": 0
+    },
+    {
+      "uv": [
+        0.5,
+        0.25
+      ],
+      "factor": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "mean_rgb_actual": [
+        85.0,
+        84.0,
+        38.0
+      ],
+      "mean_rgb_oracle": [
+        85.0,
+        84.0,
+        38.0
+      ],
+      "max_absolute_rgb8": 0
+    },
+    {
+      "uv": [
+        -0.25,
+        1.25
+      ],
+      "factor": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "mean_rgb_actual": [
+        34.0,
+        111.0,
+        42.89795918367347
+      ],
+      "mean_rgb_oracle": [
+        34.0,
+        111.0,
+        42.87755102040816
+      ],
+      "max_absolute_rgb8": 1
+    },
+    {
+      "uv": [
+        1.0,
+        0.5
+      ],
+      "factor": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "mean_rgb_actual": [
+        73.0,
+        75.0,
+        79.0
+      ],
+      "mean_rgb_oracle": [
+        73.0,
+        75.0,
+        79.0
+      ],
+      "max_absolute_rgb8": 0
+    },
+    {
+      "uv": [
+        -0.08,
+        -0.17
+      ],
+      "factor": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "mean_rgb_actual": [
+        69.0,
+        76.91836734693878,
+        93.0
+      ],
+      "mean_rgb_oracle": [
+        69.0,
+        77.0,
+        94.0
+      ],
+      "max_absolute_rgb8": 1
+    },
+    {
+      "uv": [
+        0.25,
+        0.25
+      ],
+      "factor": [
+        0.48,
+        0.72,
+        0.31
+      ],
+      "mean_rgb_actual": [
+        80.0,
+        27.0,
+        21.0
+      ],
+      "mean_rgb_oracle": [
+        80.0,
+        27.0,
+        21.0
+      ],
+      "max_absolute_rgb8": 0
+    },
+    {
+      "uv": [
+        0.75,
+        0.25
+      ],
+      "factor": [
+        0.48,
+        0.72,
+        0.31
+      ],
+      "mean_rgb_actual": [
+        27.0,
+        95.0,
+        29.0
+      ],
+      "mean_rgb_oracle": [
+        27.0,
+        95.0,
+        29.0
+      ],
+      "max_absolute_rgb8": 0
+    },
+    {
+      "uv": [
+        0.25,
+        0.75
+      ],
+      "factor": [
+        0.48,
+        0.72,
+        0.31
+      ],
+      "mean_rgb_actual": [
+        28.0,
+        40.0,
+        69.06122448979592
+      ],
+      "mean_rgb_oracle": [
+        28.0,
+        40.0,
+        69.59183673469387
+      ],
+      "max_absolute_rgb8": 1
+    },
+    {
+      "uv": [
+        0.75,
+        0.75
+      ],
+      "factor": [
+        0.48,
+        0.72,
+        0.31
+      ],
+      "mean_rgb_actual": [
+        62.0,
+        76.0,
+        58.06122448979592
+      ],
+      "mean_rgb_oracle": [
+        62.0,
+        76.0,
+        58.183673469387756
+      ],
+      "max_absolute_rgb8": 1
+    },
+    {
+      "uv": [
+        0.5,
+        0.25
+      ],
+      "factor": [
+        0.48,
+        0.72,
+        0.31
+      ],
+      "mean_rgb_actual": [
+        63.0,
+        73.0,
+        31.979591836734695
+      ],
+      "mean_rgb_oracle": [
+        63.0,
+        73.0,
+        32.0
+      ],
+      "max_absolute_rgb8": 1
+    },
+    {
+      "uv": [
+        -0.25,
+        1.25
+      ],
+      "factor": [
+        0.48,
+        0.72,
+        0.31
+      ],
+      "mean_rgb_actual": [
+        30.0,
+        96.0,
+        32.0
+      ],
+      "mean_rgb_oracle": [
+        30.0,
+        96.0,
+        32.0
+      ],
+      "max_absolute_rgb8": 0
+    },
+    {
+      "uv": [
+        1.0,
+        0.5
+      ],
+      "factor": [
+        0.48,
+        0.72,
+        0.31
+      ],
+      "mean_rgb_actual": [
+        54.0,
+        65.0,
+        48.0
+      ],
+      "mean_rgb_oracle": [
+        54.0,
+        65.0,
+        48.0
+      ],
+      "max_absolute_rgb8": 0
+    },
+    {
+      "uv": [
+        -0.08,
+        -0.17
+      ],
+      "factor": [
+        0.48,
+        0.72,
+        0.31
+      ],
+      "mean_rgb_actual": [
+        50.0,
+        66.0,
+        56.0
+      ],
+      "mean_rgb_oracle": [
+        50.0,
+        66.0,
+        56.0
+      ],
+      "max_absolute_rgb8": 0
+    }
+  ],
+  "max_absolute_rgb8": 1,
+  "sample_count": 784,
+  "oracle_color_span": 94.0,
+  "sensor_differences": {
+    "forward_depth_m_f32": false,
+    "instance_id_u32": false,
+    "valid_u8": false
+  },
+  "limits": {
+    "max_rgb8": 3,
+    "min_span": 40
+  },
+  "diagnostics": [
+    {
+      "backend": "phymeo-native-vulkan",
+      "path": "raster",
+      "device": {
+        "abi_version": 2,
+        "device_index": 1,
+        "api_version": 4206881,
+        "driver_version": 2374090752,
+        "vendor_id": 4318,
+        "device_id": 10464,
+        "device_type": 2,
+        "max_width": 32768,
+        "max_height": 32768,
+        "max_vertices": 1048576,
+        "validation_errors": 0,
+        "validation_warnings": 0,
+        "captures": 1,
+        "device_name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+        "device_uuid": "3b78d98198a3be57a8cb4d72fdfbfa96",
+        "closed": true,
+        "validation_enabled": true,
+        "live_contexts": 0,
+        "live_frames": 0,
+        "live_resources": 0,
+        "resident_abi_version": 1,
+        "resident_max_vertices": 1048576,
+        "resident_max_indices": 1572864,
+        "resident_max_meshes": 1024,
+        "resident_max_instances": 1024,
+        "resident_max_bvh_nodes": 262144,
+        "resident_max_instanced_triangles": 1048576,
+        "resident_vertex_count": 64,
+        "resident_index_count": 96,
+        "resident_mesh_count": 16,
+        "resident_instance_count": 16,
+        "resident_bvh_nodes": 16,
+        "resident_instanced_triangles": 32,
+        "resident_loaded": 1,
+        "resident_poisoned": 0,
+        "resident_reserved": 0,
+        "resident_upload_calls": 1,
+        "resident_geometry_upload_bytes": 4480,
+        "resident_transform_upload_bytes": 2048,
+        "resident_parameter_upload_bytes": 416,
+        "resident_captures": 1,
+        "resident_shadow_node_budget": 47,
+        "resident_target_rebuilds": 1,
+        "resident_host_transform_input_bytes": 1024,
+        "resident_render_planes_available": true,
+        "resident_texture_available": true,
+        "resident_texture_abi_version": 1,
+        "resident_texture_info": {
+          "texture_abi_version": 1,
+          "max_textures": 64,
+          "max_width": 2048,
+          "max_height": 2048,
+          "max_layers": 64,
+          "texture_count": 1,
+          "array_width": 4,
+          "array_height": 4,
+          "array_layers": 1,
+          "uv_count": 64,
+          "bound_instances": 16,
+          "loaded": 1,
+          "sampler_filter": 1,
+          "mip_levels": 1,
+          "format": 43,
+          "max_array_bytes": 134217728,
+          "source_rgba_bytes": 16,
+          "padded_rgba_bytes": 64,
+          "metadata_upload_bytes": 680,
+          "upload_calls": 1,
+          "image_upload_bytes": 68,
+          "rgb_captures_with_textures": 1,
+          "capture_scope": "successful RGB captures with bound texture instances, not visible textured pixel count",
+          "upload_scope": "cumulative actual texture image and metadata GPU writes, including default white sentinel; excluded from geometry_upload_bytes",
+          "snapshot": "last live query, not final allocation state; teardown verified by allocation telemetry"
+        },
+        "resident_readback": {
+          "readback_abi_version": 1,
+          "memory_type_index": 3,
+          "memory_property_flags": 14,
+          "persistent_mapped": 1,
+          "last_channel_mask": 15,
+          "capacity_bytes": 1996800,
+          "copied_bytes": 1996800,
+          "map_calls": 1,
+          "unmap_calls": 0,
+          "host_visible": true,
+          "host_coherent": true,
+          "host_cached": true,
+          "device_local": false,
+          "snapshot": "last live query, not final mapping state; teardown verified by allocation telemetry",
+          "capacity_scope": "logical Vulkan readback buffer capacity, not total VkDeviceMemory allocation size"
+        },
+        "resident_profile": {
+          "profile_abi_version": 1,
+          "timestamp_supported": 1,
+          "timestamp_valid_bits": 64,
+          "tlas_node_count": 31,
+          "timestamp_period_ns": 1.0,
+          "captures": 1,
+          "host_prepare_ns": 16000,
+          "host_upload_ns": 1394300,
+          "host_record_ns": 837800,
+          "host_submit_ns": 75200,
+          "host_wait_ns": 294900,
+          "host_readback_ns": 192600,
+          "gpu_render_ns": 36320,
+          "gpu_copy_ns": 154624,
+          "gpu_total_ns": 190944,
+          "tlas_upload_bytes": 1488,
+          "timestamp_samples": 1,
+          "scope": "cumulative successful captures including warmup; excludes initial static geometry upload",
+          "gpu_scope": "Vulkan timestamps: raster plus fragment work, then attachment copies; no per-light kernel claim",
+          "snapshot": "last live query, retained after close; final ownership is checked by telemetry"
+        },
+        "resident_telemetry": {
+          "telemetry_abi_version": 1,
+          "device_luid_valid": 1,
+          "device_node_mask": 1,
+          "device_local_bytes_current": 0,
+          "device_local_bytes_peak": 2790880,
+          "device_local_bytes_allocated": 2791472,
+          "host_visible_bytes_current": 0,
+          "host_visible_bytes_peak": 2000848,
+          "host_visible_bytes_allocated": 2006076,
+          "readback_bytes": 1996800,
+          "fence_wait_wall_ns": 662400,
+          "fence_wait_calls": 4,
+          "submissions": 4,
+          "allocation_count": 22,
+          "free_count": 22,
+          "device_luid_hex": "ef22010000000000",
+          "final_after_destroy": true,
+          "allocation_scope": "this context explicit VkDeviceMemory allocations; not driver total VRAM",
+          "wait_scope": "host wall time blocked in fence waits, including upload; not GPU kernel time"
+        },
+        "resident_studio_available": true
+      },
+      "library_path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\resident-native\\build-textures\\phymeo_native.dll",
+      "library_sha256": "28f8338793d5fb855599c776f928a6b6bb3357ad0a57b207f53c7efc9b162af8",
+      "shader_sha256": {
+        "vert": "b1cb30601e2f8ff78e7a14818d3253ec95806b4ba22039b106927ffa4ca86810",
+        "frag": "c689cd0799b8cb813f7071860f39f9da3e6dd3b0b337580e86604e2697135349"
+      },
+      "scene_key": "uv-chart-texture",
+      "decoded_geometry_sha256": "b35c9e6db32f0329d0816421856ee3d5dc0839e0d1192c8443a52eb38554dbd3",
+      "triangles": 32,
+      "light_count": 1,
+      "max_lights": 4,
+      "max_triangles": 1048576,
+      "resident": true,
+      "geometry_residency": "static indexed meshes; per-frame instance matrices",
+      "primary_visibility": "single-sample Vulkan raster, two-sided opaque triangles",
+      "lighting": "direct GGX/Smith/Schlick metallic-roughness; no ambient or IBL",
+      "studio": null,
+      "shadows": "GPU fragment hard-shadow mesh BVH rays",
+      "shadow_bias_m": 1e-05,
+      "minimum_perceptual_roughness": 0.045,
+      "exposure": 1.0,
+      "display": "clamp linear exposure to [0,1], then IEC sRGB once",
+      "readback": "explicit synchronous host-visible staging after fence; actual flags in resident_readback when available",
+      "readback_channels_mode": "compact requested attachments",
+      "published_ownership": "immutable CPU bytes; private resident host buffer may be reused after each copy",
+      "attachment_formats": [
+        "RGBA8_UNORM",
+        "R32_SFLOAT",
+        "R32_UINT",
+        "R8_UINT"
+      ],
+      "last_passes": [
+        "visibility",
+        "shadows",
+        "lighting",
+        "display_transform",
+        "sensor_export"
+      ],
+      "last_request": {
+        "width": 640,
+        "height": 240,
+        "channels": [
+          "srgb8_rgb",
+          "forward_depth_m_f32",
+          "instance_id_u32",
+          "valid_u8"
+        ],
+        "native_attachment_mask": 15,
+        "native_output_bytes": 1996800
+      },
+      "stage_execution": "visibility raster + fused fragment shadows/lighting/display/sensors",
+      "lifecycle_counts": "DLL-wide owned contexts, frames, and explicit Vulkan handles; pools own descriptor sets",
+      "path_trace": false,
+      "textures": true,
+      "texture_assets": {
+        "textures": [
+          {
+            "uri": "file:///C:/Users/38347/.codex/worktrees/phymeo-rendering/phymeo/artifacts/rendering/overnight-1123/texture-chart-native/geometry/chips.png",
+            "source_sha256": "e888b685941becf19f89244859907bfd83ea0385c3e27171372931795b1703bc",
+            "width": 2,
+            "height": 2,
+            "first_byte": 0,
+            "rgb8_sha256": "079e8e0772593007fb62b6cf4e9ac55e802ac78afa757b904ad25bdb66ed894f"
+          }
+        ],
+        "source_rgba_bytes": 16,
+        "padded_array_bytes": 64,
+        "array_width": 4,
+        "array_height": 4,
+        "array_layers": 1,
+        "uv_count": 64,
+        "instance_slots": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "uv_fp32_sha256": "953193466ad854fe0678e345602130b256f7db6b4ee89b85a1e5ba7f9968f969",
+        "image_encoding": "original top-row-first sRGB8 RGB plus opaque alpha; no flip or re-encoding",
+        "material_factor": "linear base_color multiplied after sRGB texel decode in native shader",
+        "sampler": "bilinear repeat, mip level 0, one wrap guard texel on each side; no resizing",
+        "admission": "native limits and device-reported lower limits; no alternate renderer"
+      },
+      "physics_steps": 0
+    },
+    {
+      "backend": "phymeo-native-vulkan",
+      "path": "raster",
+      "device": {
+        "abi_version": 2,
+        "device_index": 1,
+        "api_version": 4206881,
+        "driver_version": 2374090752,
+        "vendor_id": 4318,
+        "device_id": 10464,
+        "device_type": 2,
+        "max_width": 32768,
+        "max_height": 32768,
+        "max_vertices": 1048576,
+        "validation_errors": 0,
+        "validation_warnings": 0,
+        "captures": 1,
+        "device_name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+        "device_uuid": "3b78d98198a3be57a8cb4d72fdfbfa96",
+        "closed": true,
+        "validation_enabled": true,
+        "live_contexts": 0,
+        "live_frames": 0,
+        "live_resources": 0,
+        "resident_abi_version": 1,
+        "resident_max_vertices": 1048576,
+        "resident_max_indices": 1572864,
+        "resident_max_meshes": 1024,
+        "resident_max_instances": 1024,
+        "resident_max_bvh_nodes": 262144,
+        "resident_max_instanced_triangles": 1048576,
+        "resident_vertex_count": 64,
+        "resident_index_count": 96,
+        "resident_mesh_count": 16,
+        "resident_instance_count": 16,
+        "resident_bvh_nodes": 16,
+        "resident_instanced_triangles": 32,
+        "resident_loaded": 1,
+        "resident_poisoned": 0,
+        "resident_reserved": 0,
+        "resident_upload_calls": 1,
+        "resident_geometry_upload_bytes": 4480,
+        "resident_transform_upload_bytes": 2048,
+        "resident_parameter_upload_bytes": 416,
+        "resident_captures": 1,
+        "resident_shadow_node_budget": 47,
+        "resident_target_rebuilds": 1,
+        "resident_host_transform_input_bytes": 1024,
+        "resident_render_planes_available": true,
+        "resident_texture_available": true,
+        "resident_texture_abi_version": 1,
+        "resident_texture_info": {
+          "texture_abi_version": 1,
+          "max_textures": 64,
+          "max_width": 2048,
+          "max_height": 2048,
+          "max_layers": 64,
+          "texture_count": 0,
+          "array_width": 1,
+          "array_height": 1,
+          "array_layers": 1,
+          "uv_count": 0,
+          "bound_instances": 0,
+          "loaded": 0,
+          "sampler_filter": 1,
+          "mip_levels": 1,
+          "format": 43,
+          "max_array_bytes": 134217728,
+          "source_rgba_bytes": 0,
+          "padded_rgba_bytes": 4,
+          "metadata_upload_bytes": 80,
+          "upload_calls": 0,
+          "image_upload_bytes": 4,
+          "rgb_captures_with_textures": 0,
+          "capture_scope": "successful RGB captures with bound texture instances, not visible textured pixel count",
+          "upload_scope": "cumulative actual texture image and metadata GPU writes, including default white sentinel; excluded from geometry_upload_bytes",
+          "snapshot": "last live query, not final allocation state; teardown verified by allocation telemetry"
+        },
+        "resident_readback": {
+          "readback_abi_version": 1,
+          "memory_type_index": 3,
+          "memory_property_flags": 14,
+          "persistent_mapped": 1,
+          "last_channel_mask": 15,
+          "capacity_bytes": 1996800,
+          "copied_bytes": 1996800,
+          "map_calls": 1,
+          "unmap_calls": 0,
+          "host_visible": true,
+          "host_coherent": true,
+          "host_cached": true,
+          "device_local": false,
+          "snapshot": "last live query, not final mapping state; teardown verified by allocation telemetry",
+          "capacity_scope": "logical Vulkan readback buffer capacity, not total VkDeviceMemory allocation size"
+        },
+        "resident_profile": {
+          "profile_abi_version": 1,
+          "timestamp_supported": 1,
+          "timestamp_valid_bits": 64,
+          "tlas_node_count": 31,
+          "timestamp_period_ns": 1.0,
+          "captures": 1,
+          "host_prepare_ns": 13300,
+          "host_upload_ns": 1195100,
+          "host_record_ns": 334900,
+          "host_submit_ns": 56800,
+          "host_wait_ns": 313600,
+          "host_readback_ns": 198100,
+          "gpu_render_ns": 35264,
+          "gpu_copy_ns": 154656,
+          "gpu_total_ns": 189920,
+          "tlas_upload_bytes": 1488,
+          "timestamp_samples": 1,
+          "scope": "cumulative successful captures including warmup; excludes initial static geometry upload",
+          "gpu_scope": "Vulkan timestamps: raster plus fragment work, then attachment copies; no per-light kernel claim",
+          "snapshot": "last live query, retained after close; final ownership is checked by telemetry"
+        },
+        "resident_telemetry": {
+          "telemetry_abi_version": 1,
+          "device_luid_valid": 1,
+          "device_node_mask": 1,
+          "device_local_bytes_current": 0,
+          "device_local_bytes_peak": 2790352,
+          "device_local_bytes_allocated": 2790352,
+          "host_visible_bytes_current": 0,
+          "host_visible_bytes_peak": 2000848,
+          "host_visible_bytes_allocated": 2005412,
+          "readback_bytes": 1996800,
+          "fence_wait_wall_ns": 521100,
+          "fence_wait_calls": 3,
+          "submissions": 3,
+          "allocation_count": 19,
+          "free_count": 19,
+          "device_luid_hex": "ef22010000000000",
+          "final_after_destroy": true,
+          "allocation_scope": "this context explicit VkDeviceMemory allocations; not driver total VRAM",
+          "wait_scope": "host wall time blocked in fence waits, including upload; not GPU kernel time"
+        },
+        "resident_studio_available": true
+      },
+      "library_path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\resident-native\\build-textures\\phymeo_native.dll",
+      "library_sha256": "28f8338793d5fb855599c776f928a6b6bb3357ad0a57b207f53c7efc9b162af8",
+      "shader_sha256": {
+        "vert": "b1cb30601e2f8ff78e7a14818d3253ec95806b4ba22039b106927ffa4ca86810",
+        "frag": "c689cd0799b8cb813f7071860f39f9da3e6dd3b0b337580e86604e2697135349"
+      },
+      "scene_key": "uv-chart-analytic",
+      "decoded_geometry_sha256": "b35c9e6db32f0329d0816421856ee3d5dc0839e0d1192c8443a52eb38554dbd3",
+      "triangles": 32,
+      "light_count": 1,
+      "max_lights": 4,
+      "max_triangles": 1048576,
+      "resident": true,
+      "geometry_residency": "static indexed meshes; per-frame instance matrices",
+      "primary_visibility": "single-sample Vulkan raster, two-sided opaque triangles",
+      "lighting": "direct GGX/Smith/Schlick metallic-roughness; no ambient or IBL",
+      "studio": null,
+      "shadows": "GPU fragment hard-shadow mesh BVH rays",
+      "shadow_bias_m": 1e-05,
+      "minimum_perceptual_roughness": 0.045,
+      "exposure": 1.0,
+      "display": "clamp linear exposure to [0,1], then IEC sRGB once",
+      "readback": "explicit synchronous host-visible staging after fence; actual flags in resident_readback when available",
+      "readback_channels_mode": "compact requested attachments",
+      "published_ownership": "immutable CPU bytes; private resident host buffer may be reused after each copy",
+      "attachment_formats": [
+        "RGBA8_UNORM",
+        "R32_SFLOAT",
+        "R32_UINT",
+        "R8_UINT"
+      ],
+      "last_passes": [
+        "visibility",
+        "shadows",
+        "lighting",
+        "display_transform",
+        "sensor_export"
+      ],
+      "last_request": {
+        "width": 640,
+        "height": 240,
+        "channels": [
+          "srgb8_rgb",
+          "forward_depth_m_f32",
+          "instance_id_u32",
+          "valid_u8"
+        ],
+        "native_attachment_mask": 15,
+        "native_output_bytes": 1996800
+      },
+      "stage_execution": "visibility raster + fused fragment shadows/lighting/display/sensors",
+      "lifecycle_counts": "DLL-wide owned contexts, frames, and explicit Vulkan handles; pools own descriptor sets",
+      "path_trace": false,
+      "textures": false,
+      "texture_assets": null,
+      "physics_steps": 0
+    }
+  ]
+}

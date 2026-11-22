@@ -12,7 +12,8 @@ from PIL import Image
 
 def encode(directory, movie):
     journal = json.loads((directory / "capture.json").read_text(encoding="utf-8"))
-    size, count, fps = tuple(journal["size"]), journal["frames"], journal["fps"]
+    size, count = tuple(journal["size"]), journal["frames"]
+    fps = Fraction(str(journal["fps"]))
     names = [directory / "frames" / f"{i:04d}.png" for i in range(count)]
     if sorted((directory / "frames").glob("*.png")) != names or len(journal["frame_sha256"]) != count:
         raise ValueError("PNG sequence and capture journal disagree")
@@ -32,8 +33,8 @@ def encode(directory, movie):
     stream, = info["streams"]
     if ((stream["width"],stream["height"]) != size or Fraction(stream["avg_frame_rate"]) != fps
             or len(info["frames"]) != count or int(stream["nb_frames"]) != count
-            or stream["duration_ts"] * Fraction(stream["time_base"]) != Fraction(count,fps)
-            or any(Fraction(f["pts"])*Fraction(stream["time_base"]) != Fraction(i,fps)
+            or stream["duration_ts"] * Fraction(stream["time_base"]) != count / fps
+            or any(Fraction(f["pts"])*Fraction(stream["time_base"]) != i / fps
                    for i,f in enumerate(info["frames"]))):
         raise ValueError("encoded stream differs from source clock or dimensions")
     width,height = size

@@ -1,0 +1,4990 @@
+{
+  "source_sha256": "644d666a4d21cf8e3e86eb68f4a3a874ddb3dd58f1c625dc8ff2f96871e95092",
+  "background_exposures": 12,
+  "sky_samples": [
+    {
+      "yaw": 0.0,
+      "axis": "px",
+      "pixel": [
+        24,
+        18
+      ],
+      "expected": [
+        157,
+        163,
+        181
+      ],
+      "actual": [
+        157,
+        163,
+        181
+      ],
+      "error": 0
+    },
+    {
+      "yaw": 0.0,
+      "axis": "px",
+      "pixel": [
+        48,
+        18
+      ],
+      "expected": [
+        159,
+        149,
+        182
+      ],
+      "actual": [
+        158,
+        148,
+        181
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 0.0,
+      "axis": "px",
+      "pixel": [
+        72,
+        18
+      ],
+      "expected": [
+        157,
+        132,
+        181
+      ],
+      "actual": [
+        157,
+        132,
+        181
+      ],
+      "error": 0
+    },
+    {
+      "yaw": 0.0,
+      "axis": "px",
+      "pixel": [
+        24,
+        36
+      ],
+      "expected": [
+        158,
+        163,
+        169
+      ],
+      "actual": [
+        158,
+        163,
+        169
+      ],
+      "error": 0
+    },
+    {
+      "yaw": 0.0,
+      "axis": "px",
+      "pixel": [
+        48,
+        36
+      ],
+      "expected": [
+        160,
+        149,
+        169
+      ],
+      "actual": [
+        160,
+        148,
+        169
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 0.0,
+      "axis": "px",
+      "pixel": [
+        72,
+        36
+      ],
+      "expected": [
+        158,
+        132,
+        169
+      ],
+      "actual": [
+        157,
+        131,
+        169
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 0.0,
+      "axis": "px",
+      "pixel": [
+        24,
+        54
+      ],
+      "expected": [
+        157,
+        163,
+        157
+      ],
+      "actual": [
+        157,
+        163,
+        156
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 0.0,
+      "axis": "px",
+      "pixel": [
+        48,
+        54
+      ],
+      "expected": [
+        158,
+        149,
+        156
+      ],
+      "actual": [
+        158,
+        148,
+        156
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 0.0,
+      "axis": "px",
+      "pixel": [
+        72,
+        54
+      ],
+      "expected": [
+        157,
+        132,
+        157
+      ],
+      "actual": [
+        156,
+        132,
+        156
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 0.0,
+      "axis": "nx",
+      "pixel": [
+        24,
+        18
+      ],
+      "expected": [
+        71,
+        133,
+        181
+      ],
+      "actual": [
+        71,
+        133,
+        181
+      ],
+      "error": 0
+    },
+    {
+      "yaw": 0.0,
+      "axis": "nx",
+      "pixel": [
+        48,
+        18
+      ],
+      "expected": [
+        66,
+        149,
+        182
+      ],
+      "actual": [
+        66,
+        149,
+        181
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 0.0,
+      "axis": "nx",
+      "pixel": [
+        72,
+        18
+      ],
+      "expected": [
+        71,
+        163,
+        181
+      ],
+      "actual": [
+        71,
+        163,
+        181
+      ],
+      "error": 0
+    },
+    {
+      "yaw": 0.0,
+      "axis": "nx",
+      "pixel": [
+        24,
+        36
+      ],
+      "expected": [
+        69,
+        132,
+        169
+      ],
+      "actual": [
+        68,
+        132,
+        169
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 0.0,
+      "axis": "nx",
+      "pixel": [
+        48,
+        36
+      ],
+      "expected": [
+        63,
+        149,
+        169
+      ],
+      "actual": [
+        62,
+        149,
+        169
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 0.0,
+      "axis": "nx",
+      "pixel": [
+        72,
+        36
+      ],
+      "expected": [
+        69,
+        164,
+        169
+      ],
+      "actual": [
+        68,
+        164,
+        169
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 0.0,
+      "axis": "nx",
+      "pixel": [
+        24,
+        54
+      ],
+      "expected": [
+        71,
+        133,
+        157
+      ],
+      "actual": [
+        71,
+        133,
+        156
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 0.0,
+      "axis": "nx",
+      "pixel": [
+        48,
+        54
+      ],
+      "expected": [
+        67,
+        149,
+        156
+      ],
+      "actual": [
+        66,
+        149,
+        156
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 0.0,
+      "axis": "nx",
+      "pixel": [
+        72,
+        54
+      ],
+      "expected": [
+        72,
+        163,
+        157
+      ],
+      "actual": [
+        71,
+        163,
+        156
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 0.0,
+      "axis": "py",
+      "pixel": [
+        24,
+        18
+      ],
+      "expected": [
+        108,
+        185,
+        181
+      ],
+      "actual": [
+        108,
+        184,
+        181
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 0.0,
+      "axis": "py",
+      "pixel": [
+        48,
+        18
+      ],
+      "expected": [
+        124,
+        186,
+        182
+      ],
+      "actual": [
+        123,
+        186,
+        181
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 0.0,
+      "axis": "py",
+      "pixel": [
+        72,
+        18
+      ],
+      "expected": [
+        137,
+        184,
+        181
+      ],
+      "actual": [
+        137,
+        184,
+        181
+      ],
+      "error": 0
+    },
+    {
+      "yaw": 0.0,
+      "axis": "py",
+      "pixel": [
+        24,
+        36
+      ],
+      "expected": [
+        108,
+        185,
+        169
+      ],
+      "actual": [
+        107,
+        185,
+        169
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 0.0,
+      "axis": "py",
+      "pixel": [
+        48,
+        36
+      ],
+      "expected": [
+        124,
+        188,
+        169
+      ],
+      "actual": [
+        123,
+        187,
+        169
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 0.0,
+      "axis": "py",
+      "pixel": [
+        72,
+        36
+      ],
+      "expected": [
+        138,
+        185,
+        169
+      ],
+      "actual": [
+        137,
+        185,
+        169
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 0.0,
+      "axis": "py",
+      "pixel": [
+        24,
+        54
+      ],
+      "expected": [
+        108,
+        184,
+        157
+      ],
+      "actual": [
+        108,
+        184,
+        156
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 0.0,
+      "axis": "py",
+      "pixel": [
+        48,
+        54
+      ],
+      "expected": [
+        124,
+        186,
+        156
+      ],
+      "actual": [
+        123,
+        186,
+        156
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 0.0,
+      "axis": "py",
+      "pixel": [
+        72,
+        54
+      ],
+      "expected": [
+        137,
+        184,
+        157
+      ],
+      "actual": [
+        137,
+        184,
+        156
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 0.0,
+      "axis": "ny",
+      "pixel": [
+        24,
+        18
+      ],
+      "expected": [
+        137,
+        96,
+        181
+      ],
+      "actual": [
+        136,
+        96,
+        181
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 0.0,
+      "axis": "ny",
+      "pixel": [
+        48,
+        18
+      ],
+      "expected": [
+        123,
+        92,
+        182
+      ],
+      "actual": [
+        123,
+        91,
+        181
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 0.0,
+      "axis": "ny",
+      "pixel": [
+        72,
+        18
+      ],
+      "expected": [
+        108,
+        97,
+        181
+      ],
+      "actual": [
+        107,
+        96,
+        181
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 0.0,
+      "axis": "ny",
+      "pixel": [
+        24,
+        36
+      ],
+      "expected": [
+        137,
+        94,
+        169
+      ],
+      "actual": [
+        137,
+        93,
+        169
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 0.0,
+      "axis": "ny",
+      "pixel": [
+        48,
+        36
+      ],
+      "expected": [
+        123,
+        89,
+        169
+      ],
+      "actual": [
+        123,
+        89,
+        169
+      ],
+      "error": 0
+    },
+    {
+      "yaw": 0.0,
+      "axis": "ny",
+      "pixel": [
+        72,
+        36
+      ],
+      "expected": [
+        107,
+        94,
+        169
+      ],
+      "actual": [
+        107,
+        94,
+        169
+      ],
+      "error": 0
+    },
+    {
+      "yaw": 0.0,
+      "axis": "ny",
+      "pixel": [
+        24,
+        54
+      ],
+      "expected": [
+        137,
+        97,
+        157
+      ],
+      "actual": [
+        136,
+        96,
+        156
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 0.0,
+      "axis": "ny",
+      "pixel": [
+        48,
+        54
+      ],
+      "expected": [
+        123,
+        92,
+        156
+      ],
+      "actual": [
+        123,
+        92,
+        156
+      ],
+      "error": 0
+    },
+    {
+      "yaw": 0.0,
+      "axis": "ny",
+      "pixel": [
+        72,
+        54
+      ],
+      "expected": [
+        108,
+        97,
+        157
+      ],
+      "actual": [
+        107,
+        96,
+        156
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 0.0,
+      "axis": "pz",
+      "pixel": [
+        24,
+        18
+      ],
+      "expected": [
+        137,
+        159,
+        208
+      ],
+      "actual": [
+        136,
+        159,
+        207
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 0.0,
+      "axis": "pz",
+      "pixel": [
+        48,
+        18
+      ],
+      "expected": [
+        123,
+        160,
+        210
+      ],
+      "actual": [
+        122,
+        160,
+        209
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 0.0,
+      "axis": "pz",
+      "pixel": [
+        72,
+        18
+      ],
+      "expected": [
+        108,
+        159,
+        207
+      ],
+      "actual": [
+        107,
+        159,
+        207
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 0.0,
+      "axis": "pz",
+      "pixel": [
+        24,
+        36
+      ],
+      "expected": [
+        137,
+        149,
+        209
+      ],
+      "actual": [
+        137,
+        148,
+        208
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 0.0,
+      "axis": "pz",
+      "pixel": [
+        48,
+        36
+      ],
+      "expected": [
+        123,
+        149,
+        211
+      ],
+      "actual": [
+        123,
+        148,
+        211
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 0.0,
+      "axis": "pz",
+      "pixel": [
+        72,
+        36
+      ],
+      "expected": [
+        107,
+        149,
+        208
+      ],
+      "actual": [
+        107,
+        148,
+        208
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 0.0,
+      "axis": "pz",
+      "pixel": [
+        24,
+        54
+      ],
+      "expected": [
+        137,
+        137,
+        207
+      ],
+      "actual": [
+        136,
+        136,
+        207
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 0.0,
+      "axis": "pz",
+      "pixel": [
+        48,
+        54
+      ],
+      "expected": [
+        123,
+        136,
+        209
+      ],
+      "actual": [
+        122,
+        135,
+        209
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 0.0,
+      "axis": "pz",
+      "pixel": [
+        72,
+        54
+      ],
+      "expected": [
+        108,
+        137,
+        207
+      ],
+      "actual": [
+        107,
+        136,
+        207
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 0.0,
+      "axis": "nz",
+      "pixel": [
+        24,
+        18
+      ],
+      "expected": [
+        108,
+        159,
+        115
+      ],
+      "actual": [
+        108,
+        159,
+        115
+      ],
+      "error": 0
+    },
+    {
+      "yaw": 0.0,
+      "axis": "nz",
+      "pixel": [
+        48,
+        18
+      ],
+      "expected": [
+        124,
+        160,
+        111
+      ],
+      "actual": [
+        124,
+        160,
+        111
+      ],
+      "error": 0
+    },
+    {
+      "yaw": 0.0,
+      "axis": "nz",
+      "pixel": [
+        72,
+        18
+      ],
+      "expected": [
+        137,
+        159,
+        116
+      ],
+      "actual": [
+        137,
+        159,
+        115
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 0.0,
+      "axis": "nz",
+      "pixel": [
+        24,
+        36
+      ],
+      "expected": [
+        108,
+        149,
+        113
+      ],
+      "actual": [
+        107,
+        148,
+        113
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 0.0,
+      "axis": "nz",
+      "pixel": [
+        48,
+        36
+      ],
+      "expected": [
+        124,
+        149,
+        108
+      ],
+      "actual": [
+        124,
+        148,
+        107
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 0.0,
+      "axis": "nz",
+      "pixel": [
+        72,
+        36
+      ],
+      "expected": [
+        138,
+        149,
+        113
+      ],
+      "actual": [
+        137,
+        148,
+        113
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 0.0,
+      "axis": "nz",
+      "pixel": [
+        24,
+        54
+      ],
+      "expected": [
+        108,
+        137,
+        115
+      ],
+      "actual": [
+        108,
+        136,
+        115
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 0.0,
+      "axis": "nz",
+      "pixel": [
+        48,
+        54
+      ],
+      "expected": [
+        124,
+        136,
+        111
+      ],
+      "actual": [
+        124,
+        136,
+        111
+      ],
+      "error": 0
+    },
+    {
+      "yaw": 0.0,
+      "axis": "nz",
+      "pixel": [
+        72,
+        54
+      ],
+      "expected": [
+        137,
+        137,
+        116
+      ],
+      "actual": [
+        137,
+        136,
+        115
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 90.0,
+      "axis": "px",
+      "pixel": [
+        24,
+        18
+      ],
+      "expected": [
+        137,
+        96,
+        181
+      ],
+      "actual": [
+        136,
+        96,
+        181
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 90.0,
+      "axis": "px",
+      "pixel": [
+        48,
+        18
+      ],
+      "expected": [
+        123,
+        92,
+        182
+      ],
+      "actual": [
+        123,
+        91,
+        181
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 90.0,
+      "axis": "px",
+      "pixel": [
+        72,
+        18
+      ],
+      "expected": [
+        108,
+        97,
+        181
+      ],
+      "actual": [
+        107,
+        96,
+        181
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 90.0,
+      "axis": "px",
+      "pixel": [
+        24,
+        36
+      ],
+      "expected": [
+        137,
+        94,
+        169
+      ],
+      "actual": [
+        137,
+        93,
+        169
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 90.0,
+      "axis": "px",
+      "pixel": [
+        48,
+        36
+      ],
+      "expected": [
+        123,
+        89,
+        169
+      ],
+      "actual": [
+        123,
+        89,
+        169
+      ],
+      "error": 0
+    },
+    {
+      "yaw": 90.0,
+      "axis": "px",
+      "pixel": [
+        72,
+        36
+      ],
+      "expected": [
+        107,
+        94,
+        169
+      ],
+      "actual": [
+        107,
+        94,
+        169
+      ],
+      "error": 0
+    },
+    {
+      "yaw": 90.0,
+      "axis": "px",
+      "pixel": [
+        24,
+        54
+      ],
+      "expected": [
+        137,
+        97,
+        157
+      ],
+      "actual": [
+        136,
+        96,
+        156
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 90.0,
+      "axis": "px",
+      "pixel": [
+        48,
+        54
+      ],
+      "expected": [
+        123,
+        92,
+        156
+      ],
+      "actual": [
+        123,
+        92,
+        156
+      ],
+      "error": 0
+    },
+    {
+      "yaw": 90.0,
+      "axis": "px",
+      "pixel": [
+        72,
+        54
+      ],
+      "expected": [
+        108,
+        97,
+        157
+      ],
+      "actual": [
+        107,
+        96,
+        156
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 90.0,
+      "axis": "nx",
+      "pixel": [
+        24,
+        18
+      ],
+      "expected": [
+        108,
+        185,
+        181
+      ],
+      "actual": [
+        108,
+        184,
+        181
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 90.0,
+      "axis": "nx",
+      "pixel": [
+        48,
+        18
+      ],
+      "expected": [
+        124,
+        186,
+        182
+      ],
+      "actual": [
+        123,
+        186,
+        181
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 90.0,
+      "axis": "nx",
+      "pixel": [
+        72,
+        18
+      ],
+      "expected": [
+        137,
+        184,
+        181
+      ],
+      "actual": [
+        137,
+        184,
+        181
+      ],
+      "error": 0
+    },
+    {
+      "yaw": 90.0,
+      "axis": "nx",
+      "pixel": [
+        24,
+        36
+      ],
+      "expected": [
+        108,
+        185,
+        169
+      ],
+      "actual": [
+        107,
+        185,
+        169
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 90.0,
+      "axis": "nx",
+      "pixel": [
+        48,
+        36
+      ],
+      "expected": [
+        124,
+        188,
+        169
+      ],
+      "actual": [
+        123,
+        187,
+        169
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 90.0,
+      "axis": "nx",
+      "pixel": [
+        72,
+        36
+      ],
+      "expected": [
+        138,
+        185,
+        169
+      ],
+      "actual": [
+        137,
+        185,
+        169
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 90.0,
+      "axis": "nx",
+      "pixel": [
+        24,
+        54
+      ],
+      "expected": [
+        108,
+        184,
+        157
+      ],
+      "actual": [
+        108,
+        184,
+        156
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 90.0,
+      "axis": "nx",
+      "pixel": [
+        48,
+        54
+      ],
+      "expected": [
+        124,
+        186,
+        156
+      ],
+      "actual": [
+        123,
+        186,
+        156
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 90.0,
+      "axis": "nx",
+      "pixel": [
+        72,
+        54
+      ],
+      "expected": [
+        137,
+        184,
+        157
+      ],
+      "actual": [
+        137,
+        184,
+        156
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 90.0,
+      "axis": "py",
+      "pixel": [
+        24,
+        18
+      ],
+      "expected": [
+        157,
+        163,
+        181
+      ],
+      "actual": [
+        157,
+        163,
+        181
+      ],
+      "error": 0
+    },
+    {
+      "yaw": 90.0,
+      "axis": "py",
+      "pixel": [
+        48,
+        18
+      ],
+      "expected": [
+        159,
+        149,
+        182
+      ],
+      "actual": [
+        158,
+        148,
+        181
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 90.0,
+      "axis": "py",
+      "pixel": [
+        72,
+        18
+      ],
+      "expected": [
+        157,
+        132,
+        181
+      ],
+      "actual": [
+        157,
+        132,
+        181
+      ],
+      "error": 0
+    },
+    {
+      "yaw": 90.0,
+      "axis": "py",
+      "pixel": [
+        24,
+        36
+      ],
+      "expected": [
+        158,
+        163,
+        169
+      ],
+      "actual": [
+        158,
+        163,
+        169
+      ],
+      "error": 0
+    },
+    {
+      "yaw": 90.0,
+      "axis": "py",
+      "pixel": [
+        48,
+        36
+      ],
+      "expected": [
+        160,
+        149,
+        169
+      ],
+      "actual": [
+        160,
+        148,
+        169
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 90.0,
+      "axis": "py",
+      "pixel": [
+        72,
+        36
+      ],
+      "expected": [
+        158,
+        132,
+        169
+      ],
+      "actual": [
+        157,
+        131,
+        169
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 90.0,
+      "axis": "py",
+      "pixel": [
+        24,
+        54
+      ],
+      "expected": [
+        157,
+        163,
+        157
+      ],
+      "actual": [
+        157,
+        163,
+        156
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 90.0,
+      "axis": "py",
+      "pixel": [
+        48,
+        54
+      ],
+      "expected": [
+        158,
+        149,
+        156
+      ],
+      "actual": [
+        158,
+        148,
+        156
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 90.0,
+      "axis": "py",
+      "pixel": [
+        72,
+        54
+      ],
+      "expected": [
+        157,
+        132,
+        157
+      ],
+      "actual": [
+        156,
+        132,
+        156
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 90.0,
+      "axis": "ny",
+      "pixel": [
+        24,
+        18
+      ],
+      "expected": [
+        71,
+        133,
+        181
+      ],
+      "actual": [
+        71,
+        133,
+        181
+      ],
+      "error": 0
+    },
+    {
+      "yaw": 90.0,
+      "axis": "ny",
+      "pixel": [
+        48,
+        18
+      ],
+      "expected": [
+        66,
+        149,
+        182
+      ],
+      "actual": [
+        66,
+        149,
+        181
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 90.0,
+      "axis": "ny",
+      "pixel": [
+        72,
+        18
+      ],
+      "expected": [
+        71,
+        163,
+        181
+      ],
+      "actual": [
+        71,
+        163,
+        181
+      ],
+      "error": 0
+    },
+    {
+      "yaw": 90.0,
+      "axis": "ny",
+      "pixel": [
+        24,
+        36
+      ],
+      "expected": [
+        69,
+        132,
+        169
+      ],
+      "actual": [
+        68,
+        132,
+        169
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 90.0,
+      "axis": "ny",
+      "pixel": [
+        48,
+        36
+      ],
+      "expected": [
+        63,
+        149,
+        169
+      ],
+      "actual": [
+        62,
+        149,
+        169
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 90.0,
+      "axis": "ny",
+      "pixel": [
+        72,
+        36
+      ],
+      "expected": [
+        69,
+        164,
+        169
+      ],
+      "actual": [
+        68,
+        164,
+        169
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 90.0,
+      "axis": "ny",
+      "pixel": [
+        24,
+        54
+      ],
+      "expected": [
+        71,
+        133,
+        157
+      ],
+      "actual": [
+        71,
+        133,
+        156
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 90.0,
+      "axis": "ny",
+      "pixel": [
+        48,
+        54
+      ],
+      "expected": [
+        67,
+        149,
+        156
+      ],
+      "actual": [
+        66,
+        149,
+        156
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 90.0,
+      "axis": "ny",
+      "pixel": [
+        72,
+        54
+      ],
+      "expected": [
+        72,
+        163,
+        157
+      ],
+      "actual": [
+        71,
+        163,
+        156
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 90.0,
+      "axis": "pz",
+      "pixel": [
+        24,
+        18
+      ],
+      "expected": [
+        134,
+        133,
+        208
+      ],
+      "actual": [
+        133,
+        132,
+        207
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 90.0,
+      "axis": "pz",
+      "pixel": [
+        48,
+        18
+      ],
+      "expected": [
+        134,
+        149,
+        210
+      ],
+      "actual": [
+        134,
+        149,
+        209
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 90.0,
+      "axis": "pz",
+      "pixel": [
+        72,
+        18
+      ],
+      "expected": [
+        134,
+        163,
+        207
+      ],
+      "actual": [
+        133,
+        163,
+        207
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 90.0,
+      "axis": "pz",
+      "pixel": [
+        24,
+        36
+      ],
+      "expected": [
+        123,
+        132,
+        209
+      ],
+      "actual": [
+        122,
+        132,
+        208
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 90.0,
+      "axis": "pz",
+      "pixel": [
+        48,
+        36
+      ],
+      "expected": [
+        123,
+        149,
+        211
+      ],
+      "actual": [
+        123,
+        149,
+        211
+      ],
+      "error": 0
+    },
+    {
+      "yaw": 90.0,
+      "axis": "pz",
+      "pixel": [
+        72,
+        36
+      ],
+      "expected": [
+        123,
+        164,
+        208
+      ],
+      "actual": [
+        122,
+        163,
+        208
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 90.0,
+      "axis": "pz",
+      "pixel": [
+        24,
+        54
+      ],
+      "expected": [
+        112,
+        133,
+        207
+      ],
+      "actual": [
+        111,
+        132,
+        207
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 90.0,
+      "axis": "pz",
+      "pixel": [
+        48,
+        54
+      ],
+      "expected": [
+        111,
+        149,
+        209
+      ],
+      "actual": [
+        110,
+        149,
+        209
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 90.0,
+      "axis": "pz",
+      "pixel": [
+        72,
+        54
+      ],
+      "expected": [
+        112,
+        163,
+        207
+      ],
+      "actual": [
+        111,
+        163,
+        207
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 90.0,
+      "axis": "nz",
+      "pixel": [
+        24,
+        18
+      ],
+      "expected": [
+        134,
+        163,
+        115
+      ],
+      "actual": [
+        133,
+        163,
+        115
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 90.0,
+      "axis": "nz",
+      "pixel": [
+        48,
+        18
+      ],
+      "expected": [
+        134,
+        149,
+        111
+      ],
+      "actual": [
+        134,
+        148,
+        111
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 90.0,
+      "axis": "nz",
+      "pixel": [
+        72,
+        18
+      ],
+      "expected": [
+        134,
+        132,
+        116
+      ],
+      "actual": [
+        133,
+        132,
+        115
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 90.0,
+      "axis": "nz",
+      "pixel": [
+        24,
+        36
+      ],
+      "expected": [
+        123,
+        163,
+        113
+      ],
+      "actual": [
+        123,
+        163,
+        113
+      ],
+      "error": 0
+    },
+    {
+      "yaw": 90.0,
+      "axis": "nz",
+      "pixel": [
+        48,
+        36
+      ],
+      "expected": [
+        123,
+        149,
+        108
+      ],
+      "actual": [
+        123,
+        148,
+        107
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 90.0,
+      "axis": "nz",
+      "pixel": [
+        72,
+        36
+      ],
+      "expected": [
+        123,
+        132,
+        113
+      ],
+      "actual": [
+        123,
+        132,
+        113
+      ],
+      "error": 0
+    },
+    {
+      "yaw": 90.0,
+      "axis": "nz",
+      "pixel": [
+        24,
+        54
+      ],
+      "expected": [
+        112,
+        163,
+        115
+      ],
+      "actual": [
+        111,
+        163,
+        115
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 90.0,
+      "axis": "nz",
+      "pixel": [
+        48,
+        54
+      ],
+      "expected": [
+        111,
+        149,
+        111
+      ],
+      "actual": [
+        111,
+        148,
+        111
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 90.0,
+      "axis": "nz",
+      "pixel": [
+        72,
+        54
+      ],
+      "expected": [
+        112,
+        132,
+        116
+      ],
+      "actual": [
+        112,
+        132,
+        116
+      ],
+      "error": 0
+    }
+  ],
+  "mirror_samples": [
+    {
+      "yaw": 0.0,
+      "pixel": [
+        54,
+        52
+      ],
+      "expected": [
+        69,
+        157,
+        179
+      ],
+      "actual": [
+        69,
+        157,
+        179
+      ],
+      "error": 0
+    },
+    {
+      "yaw": 0.0,
+      "pixel": [
+        54,
+        62
+      ],
+      "expected": [
+        68,
+        141,
+        181
+      ],
+      "actual": [
+        67,
+        141,
+        181
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 0.0,
+      "pixel": [
+        54,
+        70
+      ],
+      "expected": [
+        71,
+        128,
+        177
+      ],
+      "actual": [
+        70,
+        128,
+        176
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 0.0,
+      "pixel": [
+        64,
+        52
+      ],
+      "expected": [
+        89,
+        158,
+        196
+      ],
+      "actual": [
+        88,
+        158,
+        195
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 0.0,
+      "pixel": [
+        64,
+        62
+      ],
+      "expected": [
+        89,
+        141,
+        197
+      ],
+      "actual": [
+        88,
+        140,
+        197
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 0.0,
+      "pixel": [
+        64,
+        70
+      ],
+      "expected": [
+        90,
+        125,
+        194
+      ],
+      "actual": [
+        89,
+        124,
+        193
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 0.0,
+      "pixel": [
+        74,
+        52
+      ],
+      "expected": [
+        110,
+        159,
+        203
+      ],
+      "actual": [
+        110,
+        159,
+        203
+      ],
+      "error": 0
+    },
+    {
+      "yaw": 0.0,
+      "pixel": [
+        74,
+        62
+      ],
+      "expected": [
+        110,
+        141,
+        205
+      ],
+      "actual": [
+        109,
+        140,
+        205
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 0.0,
+      "pixel": [
+        74,
+        70
+      ],
+      "expected": [
+        110,
+        124,
+        201
+      ],
+      "actual": [
+        110,
+        123,
+        201
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 0.0,
+      "pixel": [
+        85,
+        52
+      ],
+      "expected": [
+        130,
+        159,
+        203
+      ],
+      "actual": [
+        130,
+        159,
+        203
+      ],
+      "error": 0
+    },
+    {
+      "yaw": 0.0,
+      "pixel": [
+        85,
+        62
+      ],
+      "expected": [
+        130,
+        141,
+        205
+      ],
+      "actual": [
+        130,
+        140,
+        205
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 0.0,
+      "pixel": [
+        85,
+        70
+      ],
+      "expected": [
+        130,
+        124,
+        201
+      ],
+      "actual": [
+        130,
+        123,
+        201
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 0.0,
+      "pixel": [
+        95,
+        52
+      ],
+      "expected": [
+        144,
+        158,
+        196
+      ],
+      "actual": [
+        144,
+        158,
+        195
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 0.0,
+      "pixel": [
+        95,
+        62
+      ],
+      "expected": [
+        145,
+        141,
+        197
+      ],
+      "actual": [
+        144,
+        140,
+        197
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 0.0,
+      "pixel": [
+        95,
+        70
+      ],
+      "expected": [
+        144,
+        125,
+        194
+      ],
+      "actual": [
+        143,
+        124,
+        193
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 0.0,
+      "pixel": [
+        105,
+        52
+      ],
+      "expected": [
+        153,
+        157,
+        179
+      ],
+      "actual": [
+        153,
+        157,
+        179
+      ],
+      "error": 0
+    },
+    {
+      "yaw": 0.0,
+      "pixel": [
+        105,
+        62
+      ],
+      "expected": [
+        154,
+        141,
+        181
+      ],
+      "actual": [
+        154,
+        141,
+        181
+      ],
+      "error": 0
+    },
+    {
+      "yaw": 0.0,
+      "pixel": [
+        105,
+        70
+      ],
+      "expected": [
+        153,
+        128,
+        177
+      ],
+      "actual": [
+        153,
+        128,
+        176
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 90.0,
+      "pixel": [
+        54,
+        52
+      ],
+      "expected": [
+        131,
+        180,
+        179
+      ],
+      "actual": [
+        131,
+        180,
+        179
+      ],
+      "error": 0
+    },
+    {
+      "yaw": 90.0,
+      "pixel": [
+        54,
+        62
+      ],
+      "expected": [
+        117,
+        181,
+        181
+      ],
+      "actual": [
+        116,
+        181,
+        181
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 90.0,
+      "pixel": [
+        54,
+        70
+      ],
+      "expected": [
+        104,
+        180,
+        177
+      ],
+      "actual": [
+        103,
+        180,
+        176
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 90.0,
+      "pixel": [
+        64,
+        52
+      ],
+      "expected": [
+        133,
+        171,
+        196
+      ],
+      "actual": [
+        132,
+        170,
+        195
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 90.0,
+      "pixel": [
+        64,
+        62
+      ],
+      "expected": [
+        116,
+        171,
+        197
+      ],
+      "actual": [
+        116,
+        171,
+        197
+      ],
+      "error": 0
+    },
+    {
+      "yaw": 90.0,
+      "pixel": [
+        64,
+        70
+      ],
+      "expected": [
+        101,
+        170,
+        194
+      ],
+      "actual": [
+        100,
+        170,
+        193
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 90.0,
+      "pixel": [
+        74,
+        52
+      ],
+      "expected": [
+        133,
+        155,
+        203
+      ],
+      "actual": [
+        133,
+        155,
+        203
+      ],
+      "error": 0
+    },
+    {
+      "yaw": 90.0,
+      "pixel": [
+        74,
+        62
+      ],
+      "expected": [
+        116,
+        156,
+        205
+      ],
+      "actual": [
+        115,
+        155,
+        205
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 90.0,
+      "pixel": [
+        74,
+        70
+      ],
+      "expected": [
+        100,
+        155,
+        201
+      ],
+      "actual": [
+        99,
+        155,
+        201
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 90.0,
+      "pixel": [
+        85,
+        52
+      ],
+      "expected": [
+        133,
+        134,
+        203
+      ],
+      "actual": [
+        133,
+        134,
+        203
+      ],
+      "error": 0
+    },
+    {
+      "yaw": 90.0,
+      "pixel": [
+        85,
+        62
+      ],
+      "expected": [
+        116,
+        134,
+        205
+      ],
+      "actual": [
+        115,
+        134,
+        205
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 90.0,
+      "pixel": [
+        85,
+        70
+      ],
+      "expected": [
+        100,
+        135,
+        201
+      ],
+      "actual": [
+        99,
+        134,
+        201
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 90.0,
+      "pixel": [
+        95,
+        52
+      ],
+      "expected": [
+        133,
+        113,
+        196
+      ],
+      "actual": [
+        132,
+        112,
+        195
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 90.0,
+      "pixel": [
+        95,
+        62
+      ],
+      "expected": [
+        116,
+        112,
+        197
+      ],
+      "actual": [
+        116,
+        112,
+        197
+      ],
+      "error": 0
+    },
+    {
+      "yaw": 90.0,
+      "pixel": [
+        95,
+        70
+      ],
+      "expected": [
+        101,
+        114,
+        194
+      ],
+      "actual": [
+        100,
+        113,
+        193
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 90.0,
+      "pixel": [
+        105,
+        52
+      ],
+      "expected": [
+        131,
+        94,
+        179
+      ],
+      "actual": [
+        131,
+        93,
+        179
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 90.0,
+      "pixel": [
+        105,
+        62
+      ],
+      "expected": [
+        117,
+        92,
+        181
+      ],
+      "actual": [
+        116,
+        92,
+        181
+      ],
+      "error": 1
+    },
+    {
+      "yaw": 90.0,
+      "pixel": [
+        105,
+        70
+      ],
+      "expected": [
+        104,
+        95,
+        177
+      ],
+      "actual": [
+        103,
+        95,
+        176
+      ],
+      "error": 1
+    }
+  ],
+  "material_exposures": 4,
+  "red_values": {
+    "mirror": [
+      77.11733333333333,
+      119.292
+    ],
+    "matte": [
+      91.42,
+      103.532
+    ]
+  },
+  "closed_sessions": [
+    {
+      "backend": "phymeo-native-vulkan",
+      "path": "raster",
+      "device": {
+        "abi_version": 2,
+        "device_index": 1,
+        "api_version": 4206881,
+        "driver_version": 2374090752,
+        "vendor_id": 4318,
+        "device_id": 10464,
+        "device_type": 2,
+        "max_width": 32768,
+        "max_height": 32768,
+        "max_vertices": 1048576,
+        "validation_errors": 0,
+        "validation_warnings": 0,
+        "captures": 6,
+        "device_name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+        "device_uuid": "3b78d98198a3be57a8cb4d72fdfbfa96",
+        "closed": true,
+        "validation_enabled": true,
+        "live_contexts": 0,
+        "live_frames": 0,
+        "live_resources": 0,
+        "resident_abi_version": 1,
+        "resident_max_vertices": 1048576,
+        "resident_max_indices": 1572864,
+        "resident_max_meshes": 1024,
+        "resident_max_instances": 1024,
+        "resident_max_bvh_nodes": 262144,
+        "resident_max_instanced_triangles": 1048576,
+        "resident_vertex_count": 0,
+        "resident_index_count": 0,
+        "resident_mesh_count": 0,
+        "resident_instance_count": 0,
+        "resident_bvh_nodes": 0,
+        "resident_instanced_triangles": 0,
+        "resident_loaded": 1,
+        "resident_poisoned": 0,
+        "resident_reserved": 0,
+        "resident_upload_calls": 1,
+        "resident_geometry_upload_bytes": 164,
+        "resident_transform_upload_bytes": 0,
+        "resident_parameter_upload_bytes": 1776,
+        "resident_captures": 6,
+        "resident_shadow_node_budget": 0,
+        "resident_target_rebuilds": 1,
+        "resident_host_transform_input_bytes": 0,
+        "resident_render_planes_available": true,
+        "resident_environment_available": true,
+        "resident_environment_abi_version": 1,
+        "resident_environment_info": {
+          "environment_abi_version": 1,
+          "supported": 1,
+          "shader_compatible": 1,
+          "max_side": 1024,
+          "max_mip_levels": 11,
+          "side": 128,
+          "mip_levels": 8,
+          "loaded": 1,
+          "format": 109,
+          "cube_layers": 6,
+          "sh_coefficients": 9,
+          "axis_transform": 1,
+          "diffuse_basis": 1,
+          "max_rgba_bytes": 134217728,
+          "source_rgba_bytes": 2097120,
+          "image_upload_bytes": 2097144,
+          "parameter_upload_bytes": 320,
+          "upload_calls": 1,
+          "rgb_captures_with_environment": 6,
+          "sky_draws": 6,
+          "capture_scope": "successful RGB captures with an uploaded directional environment; sky draw count is not foreground pixel count",
+          "snapshot": "last live query; final GPU allocations are reported by teardown telemetry"
+        },
+        "resident_texture_available": true,
+        "resident_texture_abi_version": 1,
+        "resident_texture_info": {
+          "texture_abi_version": 1,
+          "max_textures": 64,
+          "max_width": 2048,
+          "max_height": 2048,
+          "max_layers": 64,
+          "texture_count": 0,
+          "array_width": 1,
+          "array_height": 1,
+          "array_layers": 1,
+          "uv_count": 0,
+          "bound_instances": 0,
+          "loaded": 0,
+          "sampler_filter": 1,
+          "mip_levels": 1,
+          "format": 43,
+          "max_array_bytes": 134217728,
+          "source_rgba_bytes": 0,
+          "padded_rgba_bytes": 4,
+          "metadata_upload_bytes": 16,
+          "upload_calls": 0,
+          "image_upload_bytes": 4,
+          "rgb_captures_with_textures": 0,
+          "capture_scope": "successful RGB captures with bound texture instances, not visible textured pixel count",
+          "upload_scope": "cumulative actual texture image and metadata GPU writes, including default white sentinel; excluded from geometry_upload_bytes",
+          "snapshot": "last live query, not final allocation state; teardown verified by allocation telemetry"
+        },
+        "resident_readback": {
+          "readback_abi_version": 1,
+          "memory_type_index": 3,
+          "memory_property_flags": 14,
+          "persistent_mapped": 1,
+          "last_channel_mask": 15,
+          "capacity_bytes": 89856,
+          "copied_bytes": 539136,
+          "map_calls": 1,
+          "unmap_calls": 0,
+          "host_visible": true,
+          "host_coherent": true,
+          "host_cached": true,
+          "device_local": false,
+          "snapshot": "last live query, not final mapping state; teardown verified by allocation telemetry",
+          "capacity_scope": "logical Vulkan readback buffer capacity, not total VkDeviceMemory allocation size"
+        },
+        "resident_profile": {
+          "profile_abi_version": 1,
+          "timestamp_supported": 1,
+          "timestamp_valid_bits": 64,
+          "tlas_node_count": 0,
+          "timestamp_period_ns": 1.0,
+          "captures": 6,
+          "host_prepare_ns": 4100,
+          "host_upload_ns": 1315500,
+          "host_record_ns": 1218600,
+          "host_submit_ns": 358400,
+          "host_wait_ns": 714500,
+          "host_readback_ns": 60400,
+          "gpu_render_ns": 113600,
+          "gpu_copy_ns": 57568,
+          "gpu_total_ns": 171168,
+          "tlas_upload_bytes": 0,
+          "timestamp_samples": 6,
+          "scope": "cumulative successful captures including warmup; excludes initial static geometry upload",
+          "gpu_scope": "Vulkan timestamps: raster plus fragment work, then attachment copies; no per-light kernel claim",
+          "snapshot": "last live query, retained after close; final ownership is checked by telemetry"
+        },
+        "resident_telemetry": {
+          "telemetry_abi_version": 1,
+          "device_luid_valid": 1,
+          "device_node_mask": 1,
+          "device_local_bytes_current": 0,
+          "device_local_bytes_peak": 2327424,
+          "device_local_bytes_allocated": 2330688,
+          "host_visible_bytes_current": 0,
+          "host_visible_bytes_peak": 2097648,
+          "host_visible_bytes_allocated": 2188192,
+          "readback_bytes": 539136,
+          "fence_wait_wall_ns": 1294700,
+          "fence_wait_calls": 10,
+          "submissions": 10,
+          "allocation_count": 25,
+          "free_count": 25,
+          "device_luid_hex": "ef22010000000000",
+          "final_after_destroy": true,
+          "allocation_scope": "this context explicit VkDeviceMemory allocations; not driver total VRAM",
+          "wait_scope": "host wall time blocked in fence waits, including upload; not GPU kernel time"
+        },
+        "resident_studio_available": true
+      },
+      "library_path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\resident-native\\build-environment\\phymeo_native.dll",
+      "library_sha256": "98021cfde92b7c2bacd573db46fbedf33f3d174ddfb524c0e365a54adc9110ab",
+      "shader_sha256": {
+        "vert": "b1cb30601e2f8ff78e7a14818d3253ec95806b4ba22039b106927ffa4ca86810",
+        "frag": "9132f3936f0753775440997fa8dddddbf344f5f31a4565ada83d1d7e9d4e43ca",
+        "environment_sky_vert": "d9bbb44453660efa44c1f5f6c2861102b62f6b23b400400fac7d7f3faa02b798",
+        "environment_sky_frag": "16bdd92f809783a4989086c1e7d895be8a3266d3b8395fa3e3e168e7a96a8461"
+      },
+      "scene_key": "sky-directions",
+      "decoded_geometry_sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "triangles": 0,
+      "light_count": 0,
+      "max_lights": 4,
+      "max_triangles": 1048576,
+      "resident": true,
+      "geometry_residency": "static indexed meshes; per-frame instance matrices",
+      "primary_visibility": "single-sample Vulkan raster, two-sided opaque triangles",
+      "lighting": "native GGX/Smith/Schlick plus explicit resident studio shader",
+      "studio": {
+        "preset": "neutral-area-studio-v1",
+        "center_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale_m": 1.0,
+        "panel_size_scale": 1.0,
+        "panel_strength": 0.0,
+        "panels": [
+          {
+            "name": "key",
+            "position_m": [
+              -1.2000000476837158,
+              -1.399999976158142,
+              1.7999999523162842
+            ],
+            "half_u_world_m": [
+              -0.43464428186416626,
+              0.6388850808143616,
+              0.2071477472782135
+            ],
+            "half_v_world_m": [
+              0.3841945230960846,
+              0.14241407811641693,
+              0.3668961822986603
+            ],
+            "emission_direction_world": [
+              0.4656903154237997,
+              0.543305367994433,
+              -0.6985354731356995
+            ],
+            "half_size_m": [
+              0.8,
+              0.55
+            ],
+            "radiance_linear_rgb": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "visible_geometry": false
+          },
+          {
+            "name": "fill",
+            "position_m": [
+              1.399999976158142,
+              0.699999988079071,
+              1.2000000476837158
+            ],
+            "half_u_world_m": [
+              0.23069415986537933,
+              0.36783406138420105,
+              -0.4837130606174469
+            ],
+            "half_v_world_m": [
+              0.48673930764198303,
+              -0.5953391194343567,
+              -0.22058138251304626
+            ],
+            "emission_direction_world": [
+              -0.7098281771887514,
+              -0.3549140885943757,
+              -0.6084241518760726
+            ],
+            "half_size_m": [
+              0.65,
+              0.8
+            ],
+            "radiance_linear_rgb": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "visible_geometry": false
+          }
+        ],
+        "basis_sources": [
+          {
+            "url": "https://github.com/haosulab/SAPIEN/blob/8360d517770f24f00bacef7d906ddf1380b8967c/src/sapien_renderer/light_component.cpp",
+            "fact": "internalUpdate composes entity global pose with POSE_GL_TO_ROS before setting the renderer light transform"
+          },
+          {
+            "url": "https://github.com/haosulab/sapien-vulkan-2/blob/62e2511930e43db9fc7d384a49da4f374b35f701/src/scene/light.cpp",
+            "fact": "centered rectangle half width along GL +X, half height along GL +Y at shape angle pi/2"
+          },
+          {
+            "reference": "installed SAPIEN 3.0.3 public headers and shipped rt shader",
+            "pose_header_sha256": "122446114db45d1ad78e47394a31e86cb6c01efc07f1a30bcf657d81f64dce0e",
+            "rt_shading_sha256": "4f7421b369f75e14fa22dc623b770f346800b8c05470fc5d682ccb4f2d52efc4",
+            "fact": "GL_TO_ROS quaternion wxyz=(-.5,-.5,.5,.5); RT shader uses cross(edge0,edge1) dotted with point-to-light"
+          }
+        ],
+        "basis": "entity shortest_rotation(+X to direction); halfU=R*(0,width,0), halfV=R*(0,0,height); U cross V emits",
+        "rectangle_equivalence": "same authored pi/2 rectangle; first GL edge reflected for emission-oriented normal",
+        "arithmetic_scope": "FP64 host basis packed to FP32; not bitwise equivalence to SAPIEN FP32 quaternion/trigonometric evaluation",
+        "environment": {
+          "source_requested_radiance": 0.125,
+          "radiance_linear_rgb": [
+            0.125,
+            0.125,
+            0.125
+          ],
+          "enabled": true,
+          "quantization": "same RGBE shared 8-bit mantissa decode as reference uniform HDR",
+          "source_hdr_sha256": "ab52b11ca03fa82cac04dac82f6ae4a976f7131e0433c106cafe166b950317eb",
+          "active_lighting": false,
+          "replaced_by": "directional environment map"
+        },
+        "declared_scene_lights": "retained unchanged",
+        "units": "metres; relative linear radiance, not calibrated photometric lux",
+        "evaluation": "native resident studio shader; distinct estimator from SAPIEN reference path tracing",
+        "payload_bytes": 144,
+        "payload_sha256": "f743f257c6a70f8fea37655dfb7c17787d8a34a6575df81f13d54190e9ceabfa"
+      },
+      "environment": {
+        "source_sha256": "644d666a4d21cf8e3e86eb68f4a3a874ddb3dd58f1c625dc8ff2f96871e95092",
+        "input_size": [
+          512,
+          256
+        ],
+        "strength": 1.0,
+        "yaw_degrees": 0.0,
+        "peak_linear_radiance": 0.6484375,
+        "prefilter_roughness": "mip/(levels-1)",
+        "ggx_directions_per_texel": 128,
+        "gloss": "split-sum radiance prefilter, V=N, normalized positive N.L",
+        "orientation": "world Z up; Vulkan sampler ray.xzy; positive yaw turns +X toward +Y",
+        "diffuse": "world XYZ real SH9; exact texel solid-angle projection; irradiance divided by pi",
+        "rgba_sha256": "3a754865e48efcaa996381d36744c37c62fb65f39f2490e8a0fe9840aac1f93d",
+        "diffuse_sh_sha256": "65ce638c1002974ae442245ed94fc149d203f98e80daacb3413d9737e37572fc",
+        "side": 128,
+        "mip_levels": 8,
+        "rgba_bytes": 2097120,
+        "diffuse_sh_bytes": 144,
+        "native_axis_transform": "world xyz -> sampler xzy; SH basis remains world xyz",
+        "native_face_order": [
+          "+X",
+          "-X",
+          "+Y",
+          "-Y",
+          "+Z",
+          "-Z"
+        ],
+        "native_layout": "level-major, then six faces, top-row-first RGBA32F little endian",
+        "native_roughness": "perceptual roughness r -> mip LOD r*(levels-1); no second prefilter",
+        "native_diffuse": "shared normalized real SH9 coefficients already include Lambert convolution / pi",
+        "native_environment_precedence": "map replaces uniform scalar environment; rectangular panels and scene lights remain"
+      },
+      "shadows": "native resident finite-emitter visibility via mesh BVH; see bound shader",
+      "shadow_bias_m": 1e-05,
+      "minimum_perceptual_roughness": 0.045,
+      "exposure": 1.0,
+      "display": "clamp linear exposure to [0,1], then IEC sRGB once",
+      "readback": "explicit synchronous host-visible staging after fence; actual flags in resident_readback when available",
+      "readback_channels_mode": "compact requested attachments",
+      "published_ownership": "immutable CPU bytes; private resident host buffer may be reused after each copy",
+      "attachment_formats": [
+        "RGBA8_UNORM",
+        "R32_SFLOAT",
+        "R32_UINT",
+        "R8_UINT"
+      ],
+      "last_passes": [
+        "visibility",
+        "shadows",
+        "lighting",
+        "display_transform",
+        "sensor_export"
+      ],
+      "last_request": {
+        "width": 96,
+        "height": 72,
+        "channels": [
+          "srgb8_rgb",
+          "forward_depth_m_f32",
+          "instance_id_u32",
+          "valid_u8"
+        ],
+        "native_attachment_mask": 15,
+        "native_output_bytes": 89856
+      },
+      "stage_execution": "visibility raster + fused fragment shadows/lighting/display/sensors",
+      "lifecycle_counts": "DLL-wide owned contexts, frames, and explicit Vulkan handles; pools own descriptor sets",
+      "path_trace": false,
+      "textures": false,
+      "texture_assets": null,
+      "physics_steps": 0
+    },
+    {
+      "backend": "phymeo-native-vulkan",
+      "path": "raster",
+      "device": {
+        "abi_version": 2,
+        "device_index": 1,
+        "api_version": 4206881,
+        "driver_version": 2374090752,
+        "vendor_id": 4318,
+        "device_id": 10464,
+        "device_type": 2,
+        "max_width": 32768,
+        "max_height": 32768,
+        "max_vertices": 1048576,
+        "validation_errors": 0,
+        "validation_warnings": 0,
+        "captures": 1,
+        "device_name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+        "device_uuid": "3b78d98198a3be57a8cb4d72fdfbfa96",
+        "closed": true,
+        "validation_enabled": true,
+        "live_contexts": 0,
+        "live_frames": 0,
+        "live_resources": 0,
+        "resident_abi_version": 1,
+        "resident_max_vertices": 1048576,
+        "resident_max_indices": 1572864,
+        "resident_max_meshes": 1024,
+        "resident_max_instances": 1024,
+        "resident_max_bvh_nodes": 262144,
+        "resident_max_instanced_triangles": 1048576,
+        "resident_vertex_count": 8066,
+        "resident_index_count": 48384,
+        "resident_mesh_count": 1,
+        "resident_instance_count": 1,
+        "resident_bvh_nodes": 4095,
+        "resident_instanced_triangles": 16128,
+        "resident_loaded": 1,
+        "resident_poisoned": 0,
+        "resident_reserved": 0,
+        "resident_upload_calls": 1,
+        "resident_geometry_upload_bytes": 648288,
+        "resident_transform_upload_bytes": 128,
+        "resident_parameter_upload_bytes": 416,
+        "resident_captures": 1,
+        "resident_shadow_node_budget": 4096,
+        "resident_target_rebuilds": 1,
+        "resident_host_transform_input_bytes": 64,
+        "resident_render_planes_available": true,
+        "resident_environment_available": true,
+        "resident_environment_abi_version": 1,
+        "resident_environment_info": {
+          "environment_abi_version": 1,
+          "supported": 1,
+          "shader_compatible": 1,
+          "max_side": 1024,
+          "max_mip_levels": 11,
+          "side": 128,
+          "mip_levels": 8,
+          "loaded": 1,
+          "format": 109,
+          "cube_layers": 6,
+          "sh_coefficients": 9,
+          "axis_transform": 1,
+          "diffuse_basis": 1,
+          "max_rgba_bytes": 134217728,
+          "source_rgba_bytes": 2097120,
+          "image_upload_bytes": 2097144,
+          "parameter_upload_bytes": 320,
+          "upload_calls": 1,
+          "rgb_captures_with_environment": 1,
+          "sky_draws": 1,
+          "capture_scope": "successful RGB captures with an uploaded directional environment; sky draw count is not foreground pixel count",
+          "snapshot": "last live query; final GPU allocations are reported by teardown telemetry"
+        },
+        "resident_texture_available": true,
+        "resident_texture_abi_version": 1,
+        "resident_texture_info": {
+          "texture_abi_version": 1,
+          "max_textures": 64,
+          "max_width": 2048,
+          "max_height": 2048,
+          "max_layers": 64,
+          "texture_count": 0,
+          "array_width": 1,
+          "array_height": 1,
+          "array_layers": 1,
+          "uv_count": 0,
+          "bound_instances": 0,
+          "loaded": 0,
+          "sampler_filter": 1,
+          "mip_levels": 1,
+          "format": 43,
+          "max_array_bytes": 134217728,
+          "source_rgba_bytes": 0,
+          "padded_rgba_bytes": 4,
+          "metadata_upload_bytes": 20,
+          "upload_calls": 0,
+          "image_upload_bytes": 4,
+          "rgb_captures_with_textures": 0,
+          "capture_scope": "successful RGB captures with bound texture instances, not visible textured pixel count",
+          "upload_scope": "cumulative actual texture image and metadata GPU writes, including default white sentinel; excluded from geometry_upload_bytes",
+          "snapshot": "last live query, not final allocation state; teardown verified by allocation telemetry"
+        },
+        "resident_readback": {
+          "readback_abi_version": 1,
+          "memory_type_index": 3,
+          "memory_property_flags": 14,
+          "persistent_mapped": 1,
+          "last_channel_mask": 15,
+          "capacity_bytes": 249600,
+          "copied_bytes": 249600,
+          "map_calls": 1,
+          "unmap_calls": 0,
+          "host_visible": true,
+          "host_coherent": true,
+          "host_cached": true,
+          "device_local": false,
+          "snapshot": "last live query, not final mapping state; teardown verified by allocation telemetry",
+          "capacity_scope": "logical Vulkan readback buffer capacity, not total VkDeviceMemory allocation size"
+        },
+        "resident_profile": {
+          "profile_abi_version": 1,
+          "timestamp_supported": 1,
+          "timestamp_valid_bits": 64,
+          "tlas_node_count": 1,
+          "timestamp_period_ns": 1.0,
+          "captures": 1,
+          "host_prepare_ns": 3900,
+          "host_upload_ns": 1111700,
+          "host_record_ns": 474200,
+          "host_submit_ns": 90300,
+          "host_wait_ns": 213400,
+          "host_readback_ns": 39000,
+          "gpu_render_ns": 62080,
+          "gpu_copy_ns": 22176,
+          "gpu_total_ns": 84256,
+          "tlas_upload_bytes": 48,
+          "timestamp_samples": 1,
+          "scope": "cumulative successful captures including warmup; excludes initial static geometry upload",
+          "gpu_scope": "Vulkan timestamps: raster plus fragment work, then attachment copies; no per-light kernel claim",
+          "snapshot": "last live query, retained after close; final ownership is checked by telemetry"
+        },
+        "resident_telemetry": {
+          "telemetry_abi_version": 1,
+          "device_luid_valid": 1,
+          "device_node_mask": 1,
+          "device_local_bytes_current": 0,
+          "device_local_bytes_peak": 3114816,
+          "device_local_bytes_allocated": 3118080,
+          "host_visible_bytes_current": 0,
+          "host_visible_bytes_peak": 2097648,
+          "host_visible_bytes_allocated": 2996064,
+          "readback_bytes": 249600,
+          "fence_wait_wall_ns": 911600,
+          "fence_wait_calls": 5,
+          "submissions": 5,
+          "allocation_count": 25,
+          "free_count": 25,
+          "device_luid_hex": "ef22010000000000",
+          "final_after_destroy": true,
+          "allocation_scope": "this context explicit VkDeviceMemory allocations; not driver total VRAM",
+          "wait_scope": "host wall time blocked in fence waits, including upload; not GPU kernel time"
+        },
+        "resident_studio_available": true
+      },
+      "library_path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\resident-native\\build-environment\\phymeo_native.dll",
+      "library_sha256": "98021cfde92b7c2bacd573db46fbedf33f3d174ddfb524c0e365a54adc9110ab",
+      "shader_sha256": {
+        "vert": "b1cb30601e2f8ff78e7a14818d3253ec95806b4ba22039b106927ffa4ca86810",
+        "frag": "9132f3936f0753775440997fa8dddddbf344f5f31a4565ada83d1d7e9d4e43ca",
+        "environment_sky_vert": "d9bbb44453660efa44c1f5f6c2861102b62f6b23b400400fac7d7f3faa02b798",
+        "environment_sky_frag": "16bdd92f809783a4989086c1e7d895be8a3266d3b8395fa3e3e168e7a96a8461"
+      },
+      "scene_key": "ibl-ball",
+      "decoded_geometry_sha256": "6d3b3e424e6a211bcf5bb8c15bb2a12946efd98770bf1959266babbe6ff5fea6",
+      "triangles": 16128,
+      "light_count": 0,
+      "max_lights": 4,
+      "max_triangles": 1048576,
+      "resident": true,
+      "geometry_residency": "static indexed meshes; per-frame instance matrices",
+      "primary_visibility": "single-sample Vulkan raster, two-sided opaque triangles",
+      "lighting": "native GGX/Smith/Schlick plus explicit resident studio shader",
+      "studio": {
+        "preset": "neutral-area-studio-v1",
+        "center_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale_m": 1.0,
+        "panel_size_scale": 1.0,
+        "panel_strength": 0.0,
+        "panels": [
+          {
+            "name": "key",
+            "position_m": [
+              -1.2000000476837158,
+              -1.399999976158142,
+              1.7999999523162842
+            ],
+            "half_u_world_m": [
+              -0.43464428186416626,
+              0.6388850808143616,
+              0.2071477472782135
+            ],
+            "half_v_world_m": [
+              0.3841945230960846,
+              0.14241407811641693,
+              0.3668961822986603
+            ],
+            "emission_direction_world": [
+              0.4656903154237997,
+              0.543305367994433,
+              -0.6985354731356995
+            ],
+            "half_size_m": [
+              0.8,
+              0.55
+            ],
+            "radiance_linear_rgb": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "visible_geometry": false
+          },
+          {
+            "name": "fill",
+            "position_m": [
+              1.399999976158142,
+              0.699999988079071,
+              1.2000000476837158
+            ],
+            "half_u_world_m": [
+              0.23069415986537933,
+              0.36783406138420105,
+              -0.4837130606174469
+            ],
+            "half_v_world_m": [
+              0.48673930764198303,
+              -0.5953391194343567,
+              -0.22058138251304626
+            ],
+            "emission_direction_world": [
+              -0.7098281771887514,
+              -0.3549140885943757,
+              -0.6084241518760726
+            ],
+            "half_size_m": [
+              0.65,
+              0.8
+            ],
+            "radiance_linear_rgb": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "visible_geometry": false
+          }
+        ],
+        "basis_sources": [
+          {
+            "url": "https://github.com/haosulab/SAPIEN/blob/8360d517770f24f00bacef7d906ddf1380b8967c/src/sapien_renderer/light_component.cpp",
+            "fact": "internalUpdate composes entity global pose with POSE_GL_TO_ROS before setting the renderer light transform"
+          },
+          {
+            "url": "https://github.com/haosulab/sapien-vulkan-2/blob/62e2511930e43db9fc7d384a49da4f374b35f701/src/scene/light.cpp",
+            "fact": "centered rectangle half width along GL +X, half height along GL +Y at shape angle pi/2"
+          },
+          {
+            "reference": "installed SAPIEN 3.0.3 public headers and shipped rt shader",
+            "pose_header_sha256": "122446114db45d1ad78e47394a31e86cb6c01efc07f1a30bcf657d81f64dce0e",
+            "rt_shading_sha256": "4f7421b369f75e14fa22dc623b770f346800b8c05470fc5d682ccb4f2d52efc4",
+            "fact": "GL_TO_ROS quaternion wxyz=(-.5,-.5,.5,.5); RT shader uses cross(edge0,edge1) dotted with point-to-light"
+          }
+        ],
+        "basis": "entity shortest_rotation(+X to direction); halfU=R*(0,width,0), halfV=R*(0,0,height); U cross V emits",
+        "rectangle_equivalence": "same authored pi/2 rectangle; first GL edge reflected for emission-oriented normal",
+        "arithmetic_scope": "FP64 host basis packed to FP32; not bitwise equivalence to SAPIEN FP32 quaternion/trigonometric evaluation",
+        "environment": {
+          "source_requested_radiance": 0.125,
+          "radiance_linear_rgb": [
+            0.125,
+            0.125,
+            0.125
+          ],
+          "enabled": true,
+          "quantization": "same RGBE shared 8-bit mantissa decode as reference uniform HDR",
+          "source_hdr_sha256": "ab52b11ca03fa82cac04dac82f6ae4a976f7131e0433c106cafe166b950317eb",
+          "active_lighting": false,
+          "replaced_by": "directional environment map"
+        },
+        "declared_scene_lights": "retained unchanged",
+        "units": "metres; relative linear radiance, not calibrated photometric lux",
+        "evaluation": "native resident studio shader; distinct estimator from SAPIEN reference path tracing",
+        "payload_bytes": 144,
+        "payload_sha256": "f743f257c6a70f8fea37655dfb7c17787d8a34a6575df81f13d54190e9ceabfa"
+      },
+      "environment": {
+        "source_sha256": "644d666a4d21cf8e3e86eb68f4a3a874ddb3dd58f1c625dc8ff2f96871e95092",
+        "input_size": [
+          512,
+          256
+        ],
+        "strength": 1.0,
+        "yaw_degrees": 0.0,
+        "peak_linear_radiance": 0.6484375,
+        "prefilter_roughness": "mip/(levels-1)",
+        "ggx_directions_per_texel": 128,
+        "gloss": "split-sum radiance prefilter, V=N, normalized positive N.L",
+        "orientation": "world Z up; Vulkan sampler ray.xzy; positive yaw turns +X toward +Y",
+        "diffuse": "world XYZ real SH9; exact texel solid-angle projection; irradiance divided by pi",
+        "rgba_sha256": "3a754865e48efcaa996381d36744c37c62fb65f39f2490e8a0fe9840aac1f93d",
+        "diffuse_sh_sha256": "65ce638c1002974ae442245ed94fc149d203f98e80daacb3413d9737e37572fc",
+        "side": 128,
+        "mip_levels": 8,
+        "rgba_bytes": 2097120,
+        "diffuse_sh_bytes": 144,
+        "native_axis_transform": "world xyz -> sampler xzy; SH basis remains world xyz",
+        "native_face_order": [
+          "+X",
+          "-X",
+          "+Y",
+          "-Y",
+          "+Z",
+          "-Z"
+        ],
+        "native_layout": "level-major, then six faces, top-row-first RGBA32F little endian",
+        "native_roughness": "perceptual roughness r -> mip LOD r*(levels-1); no second prefilter",
+        "native_diffuse": "shared normalized real SH9 coefficients already include Lambert convolution / pi",
+        "native_environment_precedence": "map replaces uniform scalar environment; rectangular panels and scene lights remain"
+      },
+      "shadows": "native resident finite-emitter visibility via mesh BVH; see bound shader",
+      "shadow_bias_m": 1e-05,
+      "minimum_perceptual_roughness": 0.045,
+      "exposure": 1.0,
+      "display": "clamp linear exposure to [0,1], then IEC sRGB once",
+      "readback": "explicit synchronous host-visible staging after fence; actual flags in resident_readback when available",
+      "readback_channels_mode": "compact requested attachments",
+      "published_ownership": "immutable CPU bytes; private resident host buffer may be reused after each copy",
+      "attachment_formats": [
+        "RGBA8_UNORM",
+        "R32_SFLOAT",
+        "R32_UINT",
+        "R8_UINT"
+      ],
+      "last_passes": [
+        "visibility",
+        "shadows",
+        "lighting",
+        "display_transform",
+        "sensor_export"
+      ],
+      "last_request": {
+        "width": 160,
+        "height": 120,
+        "channels": [
+          "srgb8_rgb",
+          "forward_depth_m_f32",
+          "instance_id_u32",
+          "valid_u8"
+        ],
+        "native_attachment_mask": 15,
+        "native_output_bytes": 249600
+      },
+      "stage_execution": "visibility raster + fused fragment shadows/lighting/display/sensors",
+      "lifecycle_counts": "DLL-wide owned contexts, frames, and explicit Vulkan handles; pools own descriptor sets",
+      "path_trace": false,
+      "textures": false,
+      "texture_assets": null,
+      "physics_steps": 0
+    },
+    {
+      "backend": "phymeo-native-vulkan",
+      "path": "raster",
+      "device": {
+        "abi_version": 2,
+        "device_index": 1,
+        "api_version": 4206881,
+        "driver_version": 2374090752,
+        "vendor_id": 4318,
+        "device_id": 10464,
+        "device_type": 2,
+        "max_width": 32768,
+        "max_height": 32768,
+        "max_vertices": 1048576,
+        "validation_errors": 0,
+        "validation_warnings": 0,
+        "captures": 1,
+        "device_name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+        "device_uuid": "3b78d98198a3be57a8cb4d72fdfbfa96",
+        "closed": true,
+        "validation_enabled": true,
+        "live_contexts": 0,
+        "live_frames": 0,
+        "live_resources": 0,
+        "resident_abi_version": 1,
+        "resident_max_vertices": 1048576,
+        "resident_max_indices": 1572864,
+        "resident_max_meshes": 1024,
+        "resident_max_instances": 1024,
+        "resident_max_bvh_nodes": 262144,
+        "resident_max_instanced_triangles": 1048576,
+        "resident_vertex_count": 8066,
+        "resident_index_count": 48384,
+        "resident_mesh_count": 1,
+        "resident_instance_count": 1,
+        "resident_bvh_nodes": 4095,
+        "resident_instanced_triangles": 16128,
+        "resident_loaded": 1,
+        "resident_poisoned": 0,
+        "resident_reserved": 0,
+        "resident_upload_calls": 1,
+        "resident_geometry_upload_bytes": 648288,
+        "resident_transform_upload_bytes": 128,
+        "resident_parameter_upload_bytes": 416,
+        "resident_captures": 1,
+        "resident_shadow_node_budget": 4096,
+        "resident_target_rebuilds": 1,
+        "resident_host_transform_input_bytes": 64,
+        "resident_render_planes_available": true,
+        "resident_environment_available": true,
+        "resident_environment_abi_version": 1,
+        "resident_environment_info": {
+          "environment_abi_version": 1,
+          "supported": 1,
+          "shader_compatible": 1,
+          "max_side": 1024,
+          "max_mip_levels": 11,
+          "side": 128,
+          "mip_levels": 8,
+          "loaded": 1,
+          "format": 109,
+          "cube_layers": 6,
+          "sh_coefficients": 9,
+          "axis_transform": 1,
+          "diffuse_basis": 1,
+          "max_rgba_bytes": 134217728,
+          "source_rgba_bytes": 2097120,
+          "image_upload_bytes": 2097144,
+          "parameter_upload_bytes": 320,
+          "upload_calls": 1,
+          "rgb_captures_with_environment": 1,
+          "sky_draws": 1,
+          "capture_scope": "successful RGB captures with an uploaded directional environment; sky draw count is not foreground pixel count",
+          "snapshot": "last live query; final GPU allocations are reported by teardown telemetry"
+        },
+        "resident_texture_available": true,
+        "resident_texture_abi_version": 1,
+        "resident_texture_info": {
+          "texture_abi_version": 1,
+          "max_textures": 64,
+          "max_width": 2048,
+          "max_height": 2048,
+          "max_layers": 64,
+          "texture_count": 0,
+          "array_width": 1,
+          "array_height": 1,
+          "array_layers": 1,
+          "uv_count": 0,
+          "bound_instances": 0,
+          "loaded": 0,
+          "sampler_filter": 1,
+          "mip_levels": 1,
+          "format": 43,
+          "max_array_bytes": 134217728,
+          "source_rgba_bytes": 0,
+          "padded_rgba_bytes": 4,
+          "metadata_upload_bytes": 20,
+          "upload_calls": 0,
+          "image_upload_bytes": 4,
+          "rgb_captures_with_textures": 0,
+          "capture_scope": "successful RGB captures with bound texture instances, not visible textured pixel count",
+          "upload_scope": "cumulative actual texture image and metadata GPU writes, including default white sentinel; excluded from geometry_upload_bytes",
+          "snapshot": "last live query, not final allocation state; teardown verified by allocation telemetry"
+        },
+        "resident_readback": {
+          "readback_abi_version": 1,
+          "memory_type_index": 3,
+          "memory_property_flags": 14,
+          "persistent_mapped": 1,
+          "last_channel_mask": 15,
+          "capacity_bytes": 249600,
+          "copied_bytes": 249600,
+          "map_calls": 1,
+          "unmap_calls": 0,
+          "host_visible": true,
+          "host_coherent": true,
+          "host_cached": true,
+          "device_local": false,
+          "snapshot": "last live query, not final mapping state; teardown verified by allocation telemetry",
+          "capacity_scope": "logical Vulkan readback buffer capacity, not total VkDeviceMemory allocation size"
+        },
+        "resident_profile": {
+          "profile_abi_version": 1,
+          "timestamp_supported": 1,
+          "timestamp_valid_bits": 64,
+          "tlas_node_count": 1,
+          "timestamp_period_ns": 1.0,
+          "captures": 1,
+          "host_prepare_ns": 4300,
+          "host_upload_ns": 1165300,
+          "host_record_ns": 365200,
+          "host_submit_ns": 85400,
+          "host_wait_ns": 273600,
+          "host_readback_ns": 22900,
+          "gpu_render_ns": 54848,
+          "gpu_copy_ns": 23296,
+          "gpu_total_ns": 78144,
+          "tlas_upload_bytes": 48,
+          "timestamp_samples": 1,
+          "scope": "cumulative successful captures including warmup; excludes initial static geometry upload",
+          "gpu_scope": "Vulkan timestamps: raster plus fragment work, then attachment copies; no per-light kernel claim",
+          "snapshot": "last live query, retained after close; final ownership is checked by telemetry"
+        },
+        "resident_telemetry": {
+          "telemetry_abi_version": 1,
+          "device_luid_valid": 1,
+          "device_node_mask": 1,
+          "device_local_bytes_current": 0,
+          "device_local_bytes_peak": 3114816,
+          "device_local_bytes_allocated": 3118080,
+          "host_visible_bytes_current": 0,
+          "host_visible_bytes_peak": 2097648,
+          "host_visible_bytes_allocated": 2996064,
+          "readback_bytes": 249600,
+          "fence_wait_wall_ns": 893800,
+          "fence_wait_calls": 5,
+          "submissions": 5,
+          "allocation_count": 25,
+          "free_count": 25,
+          "device_luid_hex": "ef22010000000000",
+          "final_after_destroy": true,
+          "allocation_scope": "this context explicit VkDeviceMemory allocations; not driver total VRAM",
+          "wait_scope": "host wall time blocked in fence waits, including upload; not GPU kernel time"
+        },
+        "resident_studio_available": true
+      },
+      "library_path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\resident-native\\build-environment\\phymeo_native.dll",
+      "library_sha256": "98021cfde92b7c2bacd573db46fbedf33f3d174ddfb524c0e365a54adc9110ab",
+      "shader_sha256": {
+        "vert": "b1cb30601e2f8ff78e7a14818d3253ec95806b4ba22039b106927ffa4ca86810",
+        "frag": "9132f3936f0753775440997fa8dddddbf344f5f31a4565ada83d1d7e9d4e43ca",
+        "environment_sky_vert": "d9bbb44453660efa44c1f5f6c2861102b62f6b23b400400fac7d7f3faa02b798",
+        "environment_sky_frag": "16bdd92f809783a4989086c1e7d895be8a3266d3b8395fa3e3e168e7a96a8461"
+      },
+      "scene_key": "ibl-ball",
+      "decoded_geometry_sha256": "6d3b3e424e6a211bcf5bb8c15bb2a12946efd98770bf1959266babbe6ff5fea6",
+      "triangles": 16128,
+      "light_count": 0,
+      "max_lights": 4,
+      "max_triangles": 1048576,
+      "resident": true,
+      "geometry_residency": "static indexed meshes; per-frame instance matrices",
+      "primary_visibility": "single-sample Vulkan raster, two-sided opaque triangles",
+      "lighting": "native GGX/Smith/Schlick plus explicit resident studio shader",
+      "studio": {
+        "preset": "neutral-area-studio-v1",
+        "center_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale_m": 1.0,
+        "panel_size_scale": 1.0,
+        "panel_strength": 0.0,
+        "panels": [
+          {
+            "name": "key",
+            "position_m": [
+              -1.2000000476837158,
+              -1.399999976158142,
+              1.7999999523162842
+            ],
+            "half_u_world_m": [
+              -0.43464428186416626,
+              0.6388850808143616,
+              0.2071477472782135
+            ],
+            "half_v_world_m": [
+              0.3841945230960846,
+              0.14241407811641693,
+              0.3668961822986603
+            ],
+            "emission_direction_world": [
+              0.4656903154237997,
+              0.543305367994433,
+              -0.6985354731356995
+            ],
+            "half_size_m": [
+              0.8,
+              0.55
+            ],
+            "radiance_linear_rgb": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "visible_geometry": false
+          },
+          {
+            "name": "fill",
+            "position_m": [
+              1.399999976158142,
+              0.699999988079071,
+              1.2000000476837158
+            ],
+            "half_u_world_m": [
+              0.23069415986537933,
+              0.36783406138420105,
+              -0.4837130606174469
+            ],
+            "half_v_world_m": [
+              0.48673930764198303,
+              -0.5953391194343567,
+              -0.22058138251304626
+            ],
+            "emission_direction_world": [
+              -0.7098281771887514,
+              -0.3549140885943757,
+              -0.6084241518760726
+            ],
+            "half_size_m": [
+              0.65,
+              0.8
+            ],
+            "radiance_linear_rgb": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "visible_geometry": false
+          }
+        ],
+        "basis_sources": [
+          {
+            "url": "https://github.com/haosulab/SAPIEN/blob/8360d517770f24f00bacef7d906ddf1380b8967c/src/sapien_renderer/light_component.cpp",
+            "fact": "internalUpdate composes entity global pose with POSE_GL_TO_ROS before setting the renderer light transform"
+          },
+          {
+            "url": "https://github.com/haosulab/sapien-vulkan-2/blob/62e2511930e43db9fc7d384a49da4f374b35f701/src/scene/light.cpp",
+            "fact": "centered rectangle half width along GL +X, half height along GL +Y at shape angle pi/2"
+          },
+          {
+            "reference": "installed SAPIEN 3.0.3 public headers and shipped rt shader",
+            "pose_header_sha256": "122446114db45d1ad78e47394a31e86cb6c01efc07f1a30bcf657d81f64dce0e",
+            "rt_shading_sha256": "4f7421b369f75e14fa22dc623b770f346800b8c05470fc5d682ccb4f2d52efc4",
+            "fact": "GL_TO_ROS quaternion wxyz=(-.5,-.5,.5,.5); RT shader uses cross(edge0,edge1) dotted with point-to-light"
+          }
+        ],
+        "basis": "entity shortest_rotation(+X to direction); halfU=R*(0,width,0), halfV=R*(0,0,height); U cross V emits",
+        "rectangle_equivalence": "same authored pi/2 rectangle; first GL edge reflected for emission-oriented normal",
+        "arithmetic_scope": "FP64 host basis packed to FP32; not bitwise equivalence to SAPIEN FP32 quaternion/trigonometric evaluation",
+        "environment": {
+          "source_requested_radiance": 0.125,
+          "radiance_linear_rgb": [
+            0.125,
+            0.125,
+            0.125
+          ],
+          "enabled": true,
+          "quantization": "same RGBE shared 8-bit mantissa decode as reference uniform HDR",
+          "source_hdr_sha256": "ab52b11ca03fa82cac04dac82f6ae4a976f7131e0433c106cafe166b950317eb",
+          "active_lighting": false,
+          "replaced_by": "directional environment map"
+        },
+        "declared_scene_lights": "retained unchanged",
+        "units": "metres; relative linear radiance, not calibrated photometric lux",
+        "evaluation": "native resident studio shader; distinct estimator from SAPIEN reference path tracing",
+        "payload_bytes": 144,
+        "payload_sha256": "f743f257c6a70f8fea37655dfb7c17787d8a34a6575df81f13d54190e9ceabfa"
+      },
+      "environment": {
+        "source_sha256": "644d666a4d21cf8e3e86eb68f4a3a874ddb3dd58f1c625dc8ff2f96871e95092",
+        "input_size": [
+          512,
+          256
+        ],
+        "strength": 1.0,
+        "yaw_degrees": 0.0,
+        "peak_linear_radiance": 0.6484375,
+        "prefilter_roughness": "mip/(levels-1)",
+        "ggx_directions_per_texel": 128,
+        "gloss": "split-sum radiance prefilter, V=N, normalized positive N.L",
+        "orientation": "world Z up; Vulkan sampler ray.xzy; positive yaw turns +X toward +Y",
+        "diffuse": "world XYZ real SH9; exact texel solid-angle projection; irradiance divided by pi",
+        "rgba_sha256": "3a754865e48efcaa996381d36744c37c62fb65f39f2490e8a0fe9840aac1f93d",
+        "diffuse_sh_sha256": "65ce638c1002974ae442245ed94fc149d203f98e80daacb3413d9737e37572fc",
+        "side": 128,
+        "mip_levels": 8,
+        "rgba_bytes": 2097120,
+        "diffuse_sh_bytes": 144,
+        "native_axis_transform": "world xyz -> sampler xzy; SH basis remains world xyz",
+        "native_face_order": [
+          "+X",
+          "-X",
+          "+Y",
+          "-Y",
+          "+Z",
+          "-Z"
+        ],
+        "native_layout": "level-major, then six faces, top-row-first RGBA32F little endian",
+        "native_roughness": "perceptual roughness r -> mip LOD r*(levels-1); no second prefilter",
+        "native_diffuse": "shared normalized real SH9 coefficients already include Lambert convolution / pi",
+        "native_environment_precedence": "map replaces uniform scalar environment; rectangular panels and scene lights remain"
+      },
+      "shadows": "native resident finite-emitter visibility via mesh BVH; see bound shader",
+      "shadow_bias_m": 1e-05,
+      "minimum_perceptual_roughness": 0.045,
+      "exposure": 1.0,
+      "display": "clamp linear exposure to [0,1], then IEC sRGB once",
+      "readback": "explicit synchronous host-visible staging after fence; actual flags in resident_readback when available",
+      "readback_channels_mode": "compact requested attachments",
+      "published_ownership": "immutable CPU bytes; private resident host buffer may be reused after each copy",
+      "attachment_formats": [
+        "RGBA8_UNORM",
+        "R32_SFLOAT",
+        "R32_UINT",
+        "R8_UINT"
+      ],
+      "last_passes": [
+        "visibility",
+        "shadows",
+        "lighting",
+        "display_transform",
+        "sensor_export"
+      ],
+      "last_request": {
+        "width": 160,
+        "height": 120,
+        "channels": [
+          "srgb8_rgb",
+          "forward_depth_m_f32",
+          "instance_id_u32",
+          "valid_u8"
+        ],
+        "native_attachment_mask": 15,
+        "native_output_bytes": 249600
+      },
+      "stage_execution": "visibility raster + fused fragment shadows/lighting/display/sensors",
+      "lifecycle_counts": "DLL-wide owned contexts, frames, and explicit Vulkan handles; pools own descriptor sets",
+      "path_trace": false,
+      "textures": false,
+      "texture_assets": null,
+      "physics_steps": 0
+    },
+    {
+      "backend": "phymeo-native-vulkan",
+      "path": "raster",
+      "device": {
+        "abi_version": 2,
+        "device_index": 1,
+        "api_version": 4206881,
+        "driver_version": 2374090752,
+        "vendor_id": 4318,
+        "device_id": 10464,
+        "device_type": 2,
+        "max_width": 32768,
+        "max_height": 32768,
+        "max_vertices": 1048576,
+        "validation_errors": 0,
+        "validation_warnings": 0,
+        "captures": 6,
+        "device_name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+        "device_uuid": "3b78d98198a3be57a8cb4d72fdfbfa96",
+        "closed": true,
+        "validation_enabled": true,
+        "live_contexts": 0,
+        "live_frames": 0,
+        "live_resources": 0,
+        "resident_abi_version": 1,
+        "resident_max_vertices": 1048576,
+        "resident_max_indices": 1572864,
+        "resident_max_meshes": 1024,
+        "resident_max_instances": 1024,
+        "resident_max_bvh_nodes": 262144,
+        "resident_max_instanced_triangles": 1048576,
+        "resident_vertex_count": 0,
+        "resident_index_count": 0,
+        "resident_mesh_count": 0,
+        "resident_instance_count": 0,
+        "resident_bvh_nodes": 0,
+        "resident_instanced_triangles": 0,
+        "resident_loaded": 1,
+        "resident_poisoned": 0,
+        "resident_reserved": 0,
+        "resident_upload_calls": 1,
+        "resident_geometry_upload_bytes": 164,
+        "resident_transform_upload_bytes": 0,
+        "resident_parameter_upload_bytes": 1776,
+        "resident_captures": 6,
+        "resident_shadow_node_budget": 0,
+        "resident_target_rebuilds": 1,
+        "resident_host_transform_input_bytes": 0,
+        "resident_render_planes_available": true,
+        "resident_environment_available": true,
+        "resident_environment_abi_version": 1,
+        "resident_environment_info": {
+          "environment_abi_version": 1,
+          "supported": 1,
+          "shader_compatible": 1,
+          "max_side": 1024,
+          "max_mip_levels": 11,
+          "side": 128,
+          "mip_levels": 8,
+          "loaded": 1,
+          "format": 109,
+          "cube_layers": 6,
+          "sh_coefficients": 9,
+          "axis_transform": 1,
+          "diffuse_basis": 1,
+          "max_rgba_bytes": 134217728,
+          "source_rgba_bytes": 2097120,
+          "image_upload_bytes": 2097144,
+          "parameter_upload_bytes": 320,
+          "upload_calls": 1,
+          "rgb_captures_with_environment": 6,
+          "sky_draws": 6,
+          "capture_scope": "successful RGB captures with an uploaded directional environment; sky draw count is not foreground pixel count",
+          "snapshot": "last live query; final GPU allocations are reported by teardown telemetry"
+        },
+        "resident_texture_available": true,
+        "resident_texture_abi_version": 1,
+        "resident_texture_info": {
+          "texture_abi_version": 1,
+          "max_textures": 64,
+          "max_width": 2048,
+          "max_height": 2048,
+          "max_layers": 64,
+          "texture_count": 0,
+          "array_width": 1,
+          "array_height": 1,
+          "array_layers": 1,
+          "uv_count": 0,
+          "bound_instances": 0,
+          "loaded": 0,
+          "sampler_filter": 1,
+          "mip_levels": 1,
+          "format": 43,
+          "max_array_bytes": 134217728,
+          "source_rgba_bytes": 0,
+          "padded_rgba_bytes": 4,
+          "metadata_upload_bytes": 16,
+          "upload_calls": 0,
+          "image_upload_bytes": 4,
+          "rgb_captures_with_textures": 0,
+          "capture_scope": "successful RGB captures with bound texture instances, not visible textured pixel count",
+          "upload_scope": "cumulative actual texture image and metadata GPU writes, including default white sentinel; excluded from geometry_upload_bytes",
+          "snapshot": "last live query, not final allocation state; teardown verified by allocation telemetry"
+        },
+        "resident_readback": {
+          "readback_abi_version": 1,
+          "memory_type_index": 3,
+          "memory_property_flags": 14,
+          "persistent_mapped": 1,
+          "last_channel_mask": 15,
+          "capacity_bytes": 89856,
+          "copied_bytes": 539136,
+          "map_calls": 1,
+          "unmap_calls": 0,
+          "host_visible": true,
+          "host_coherent": true,
+          "host_cached": true,
+          "device_local": false,
+          "snapshot": "last live query, not final mapping state; teardown verified by allocation telemetry",
+          "capacity_scope": "logical Vulkan readback buffer capacity, not total VkDeviceMemory allocation size"
+        },
+        "resident_profile": {
+          "profile_abi_version": 1,
+          "timestamp_supported": 1,
+          "timestamp_valid_bits": 64,
+          "tlas_node_count": 0,
+          "timestamp_period_ns": 1.0,
+          "captures": 6,
+          "host_prepare_ns": 4500,
+          "host_upload_ns": 950700,
+          "host_record_ns": 955300,
+          "host_submit_ns": 364600,
+          "host_wait_ns": 643600,
+          "host_readback_ns": 61400,
+          "gpu_render_ns": 113760,
+          "gpu_copy_ns": 60768,
+          "gpu_total_ns": 174528,
+          "tlas_upload_bytes": 0,
+          "timestamp_samples": 6,
+          "scope": "cumulative successful captures including warmup; excludes initial static geometry upload",
+          "gpu_scope": "Vulkan timestamps: raster plus fragment work, then attachment copies; no per-light kernel claim",
+          "snapshot": "last live query, retained after close; final ownership is checked by telemetry"
+        },
+        "resident_telemetry": {
+          "telemetry_abi_version": 1,
+          "device_luid_valid": 1,
+          "device_node_mask": 1,
+          "device_local_bytes_current": 0,
+          "device_local_bytes_peak": 2327424,
+          "device_local_bytes_allocated": 2330688,
+          "host_visible_bytes_current": 0,
+          "host_visible_bytes_peak": 2097648,
+          "host_visible_bytes_allocated": 2188192,
+          "readback_bytes": 539136,
+          "fence_wait_wall_ns": 1175900,
+          "fence_wait_calls": 10,
+          "submissions": 10,
+          "allocation_count": 25,
+          "free_count": 25,
+          "device_luid_hex": "ef22010000000000",
+          "final_after_destroy": true,
+          "allocation_scope": "this context explicit VkDeviceMemory allocations; not driver total VRAM",
+          "wait_scope": "host wall time blocked in fence waits, including upload; not GPU kernel time"
+        },
+        "resident_studio_available": true
+      },
+      "library_path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\resident-native\\build-environment\\phymeo_native.dll",
+      "library_sha256": "98021cfde92b7c2bacd573db46fbedf33f3d174ddfb524c0e365a54adc9110ab",
+      "shader_sha256": {
+        "vert": "b1cb30601e2f8ff78e7a14818d3253ec95806b4ba22039b106927ffa4ca86810",
+        "frag": "9132f3936f0753775440997fa8dddddbf344f5f31a4565ada83d1d7e9d4e43ca",
+        "environment_sky_vert": "d9bbb44453660efa44c1f5f6c2861102b62f6b23b400400fac7d7f3faa02b798",
+        "environment_sky_frag": "16bdd92f809783a4989086c1e7d895be8a3266d3b8395fa3e3e168e7a96a8461"
+      },
+      "scene_key": "sky-directions",
+      "decoded_geometry_sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "triangles": 0,
+      "light_count": 0,
+      "max_lights": 4,
+      "max_triangles": 1048576,
+      "resident": true,
+      "geometry_residency": "static indexed meshes; per-frame instance matrices",
+      "primary_visibility": "single-sample Vulkan raster, two-sided opaque triangles",
+      "lighting": "native GGX/Smith/Schlick plus explicit resident studio shader",
+      "studio": {
+        "preset": "neutral-area-studio-v1",
+        "center_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale_m": 1.0,
+        "panel_size_scale": 1.0,
+        "panel_strength": 0.0,
+        "panels": [
+          {
+            "name": "key",
+            "position_m": [
+              -1.2000000476837158,
+              -1.399999976158142,
+              1.7999999523162842
+            ],
+            "half_u_world_m": [
+              -0.43464428186416626,
+              0.6388850808143616,
+              0.2071477472782135
+            ],
+            "half_v_world_m": [
+              0.3841945230960846,
+              0.14241407811641693,
+              0.3668961822986603
+            ],
+            "emission_direction_world": [
+              0.4656903154237997,
+              0.543305367994433,
+              -0.6985354731356995
+            ],
+            "half_size_m": [
+              0.8,
+              0.55
+            ],
+            "radiance_linear_rgb": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "visible_geometry": false
+          },
+          {
+            "name": "fill",
+            "position_m": [
+              1.399999976158142,
+              0.699999988079071,
+              1.2000000476837158
+            ],
+            "half_u_world_m": [
+              0.23069415986537933,
+              0.36783406138420105,
+              -0.4837130606174469
+            ],
+            "half_v_world_m": [
+              0.48673930764198303,
+              -0.5953391194343567,
+              -0.22058138251304626
+            ],
+            "emission_direction_world": [
+              -0.7098281771887514,
+              -0.3549140885943757,
+              -0.6084241518760726
+            ],
+            "half_size_m": [
+              0.65,
+              0.8
+            ],
+            "radiance_linear_rgb": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "visible_geometry": false
+          }
+        ],
+        "basis_sources": [
+          {
+            "url": "https://github.com/haosulab/SAPIEN/blob/8360d517770f24f00bacef7d906ddf1380b8967c/src/sapien_renderer/light_component.cpp",
+            "fact": "internalUpdate composes entity global pose with POSE_GL_TO_ROS before setting the renderer light transform"
+          },
+          {
+            "url": "https://github.com/haosulab/sapien-vulkan-2/blob/62e2511930e43db9fc7d384a49da4f374b35f701/src/scene/light.cpp",
+            "fact": "centered rectangle half width along GL +X, half height along GL +Y at shape angle pi/2"
+          },
+          {
+            "reference": "installed SAPIEN 3.0.3 public headers and shipped rt shader",
+            "pose_header_sha256": "122446114db45d1ad78e47394a31e86cb6c01efc07f1a30bcf657d81f64dce0e",
+            "rt_shading_sha256": "4f7421b369f75e14fa22dc623b770f346800b8c05470fc5d682ccb4f2d52efc4",
+            "fact": "GL_TO_ROS quaternion wxyz=(-.5,-.5,.5,.5); RT shader uses cross(edge0,edge1) dotted with point-to-light"
+          }
+        ],
+        "basis": "entity shortest_rotation(+X to direction); halfU=R*(0,width,0), halfV=R*(0,0,height); U cross V emits",
+        "rectangle_equivalence": "same authored pi/2 rectangle; first GL edge reflected for emission-oriented normal",
+        "arithmetic_scope": "FP64 host basis packed to FP32; not bitwise equivalence to SAPIEN FP32 quaternion/trigonometric evaluation",
+        "environment": {
+          "source_requested_radiance": 0.125,
+          "radiance_linear_rgb": [
+            0.125,
+            0.125,
+            0.125
+          ],
+          "enabled": true,
+          "quantization": "same RGBE shared 8-bit mantissa decode as reference uniform HDR",
+          "source_hdr_sha256": "ab52b11ca03fa82cac04dac82f6ae4a976f7131e0433c106cafe166b950317eb",
+          "active_lighting": false,
+          "replaced_by": "directional environment map"
+        },
+        "declared_scene_lights": "retained unchanged",
+        "units": "metres; relative linear radiance, not calibrated photometric lux",
+        "evaluation": "native resident studio shader; distinct estimator from SAPIEN reference path tracing",
+        "payload_bytes": 144,
+        "payload_sha256": "f743f257c6a70f8fea37655dfb7c17787d8a34a6575df81f13d54190e9ceabfa"
+      },
+      "environment": {
+        "source_sha256": "644d666a4d21cf8e3e86eb68f4a3a874ddb3dd58f1c625dc8ff2f96871e95092",
+        "input_size": [
+          512,
+          256
+        ],
+        "strength": 1.0,
+        "yaw_degrees": 90.0,
+        "peak_linear_radiance": 0.6484375,
+        "prefilter_roughness": "mip/(levels-1)",
+        "ggx_directions_per_texel": 128,
+        "gloss": "split-sum radiance prefilter, V=N, normalized positive N.L",
+        "orientation": "world Z up; Vulkan sampler ray.xzy; positive yaw turns +X toward +Y",
+        "diffuse": "world XYZ real SH9; exact texel solid-angle projection; irradiance divided by pi",
+        "rgba_sha256": "97c0c67449e3b36d25ac7963eb8dc101772d3a94787b868c35268be50c54582c",
+        "diffuse_sh_sha256": "e7f956436b950bd22bc9cdc0f0838ed81d191271c8061a06ec30fc4dd152420f",
+        "side": 128,
+        "mip_levels": 8,
+        "rgba_bytes": 2097120,
+        "diffuse_sh_bytes": 144,
+        "native_axis_transform": "world xyz -> sampler xzy; SH basis remains world xyz",
+        "native_face_order": [
+          "+X",
+          "-X",
+          "+Y",
+          "-Y",
+          "+Z",
+          "-Z"
+        ],
+        "native_layout": "level-major, then six faces, top-row-first RGBA32F little endian",
+        "native_roughness": "perceptual roughness r -> mip LOD r*(levels-1); no second prefilter",
+        "native_diffuse": "shared normalized real SH9 coefficients already include Lambert convolution / pi",
+        "native_environment_precedence": "map replaces uniform scalar environment; rectangular panels and scene lights remain"
+      },
+      "shadows": "native resident finite-emitter visibility via mesh BVH; see bound shader",
+      "shadow_bias_m": 1e-05,
+      "minimum_perceptual_roughness": 0.045,
+      "exposure": 1.0,
+      "display": "clamp linear exposure to [0,1], then IEC sRGB once",
+      "readback": "explicit synchronous host-visible staging after fence; actual flags in resident_readback when available",
+      "readback_channels_mode": "compact requested attachments",
+      "published_ownership": "immutable CPU bytes; private resident host buffer may be reused after each copy",
+      "attachment_formats": [
+        "RGBA8_UNORM",
+        "R32_SFLOAT",
+        "R32_UINT",
+        "R8_UINT"
+      ],
+      "last_passes": [
+        "visibility",
+        "shadows",
+        "lighting",
+        "display_transform",
+        "sensor_export"
+      ],
+      "last_request": {
+        "width": 96,
+        "height": 72,
+        "channels": [
+          "srgb8_rgb",
+          "forward_depth_m_f32",
+          "instance_id_u32",
+          "valid_u8"
+        ],
+        "native_attachment_mask": 15,
+        "native_output_bytes": 89856
+      },
+      "stage_execution": "visibility raster + fused fragment shadows/lighting/display/sensors",
+      "lifecycle_counts": "DLL-wide owned contexts, frames, and explicit Vulkan handles; pools own descriptor sets",
+      "path_trace": false,
+      "textures": false,
+      "texture_assets": null,
+      "physics_steps": 0
+    },
+    {
+      "backend": "phymeo-native-vulkan",
+      "path": "raster",
+      "device": {
+        "abi_version": 2,
+        "device_index": 1,
+        "api_version": 4206881,
+        "driver_version": 2374090752,
+        "vendor_id": 4318,
+        "device_id": 10464,
+        "device_type": 2,
+        "max_width": 32768,
+        "max_height": 32768,
+        "max_vertices": 1048576,
+        "validation_errors": 0,
+        "validation_warnings": 0,
+        "captures": 1,
+        "device_name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+        "device_uuid": "3b78d98198a3be57a8cb4d72fdfbfa96",
+        "closed": true,
+        "validation_enabled": true,
+        "live_contexts": 0,
+        "live_frames": 0,
+        "live_resources": 0,
+        "resident_abi_version": 1,
+        "resident_max_vertices": 1048576,
+        "resident_max_indices": 1572864,
+        "resident_max_meshes": 1024,
+        "resident_max_instances": 1024,
+        "resident_max_bvh_nodes": 262144,
+        "resident_max_instanced_triangles": 1048576,
+        "resident_vertex_count": 8066,
+        "resident_index_count": 48384,
+        "resident_mesh_count": 1,
+        "resident_instance_count": 1,
+        "resident_bvh_nodes": 4095,
+        "resident_instanced_triangles": 16128,
+        "resident_loaded": 1,
+        "resident_poisoned": 0,
+        "resident_reserved": 0,
+        "resident_upload_calls": 1,
+        "resident_geometry_upload_bytes": 648288,
+        "resident_transform_upload_bytes": 128,
+        "resident_parameter_upload_bytes": 416,
+        "resident_captures": 1,
+        "resident_shadow_node_budget": 4096,
+        "resident_target_rebuilds": 1,
+        "resident_host_transform_input_bytes": 64,
+        "resident_render_planes_available": true,
+        "resident_environment_available": true,
+        "resident_environment_abi_version": 1,
+        "resident_environment_info": {
+          "environment_abi_version": 1,
+          "supported": 1,
+          "shader_compatible": 1,
+          "max_side": 1024,
+          "max_mip_levels": 11,
+          "side": 128,
+          "mip_levels": 8,
+          "loaded": 1,
+          "format": 109,
+          "cube_layers": 6,
+          "sh_coefficients": 9,
+          "axis_transform": 1,
+          "diffuse_basis": 1,
+          "max_rgba_bytes": 134217728,
+          "source_rgba_bytes": 2097120,
+          "image_upload_bytes": 2097144,
+          "parameter_upload_bytes": 320,
+          "upload_calls": 1,
+          "rgb_captures_with_environment": 1,
+          "sky_draws": 1,
+          "capture_scope": "successful RGB captures with an uploaded directional environment; sky draw count is not foreground pixel count",
+          "snapshot": "last live query; final GPU allocations are reported by teardown telemetry"
+        },
+        "resident_texture_available": true,
+        "resident_texture_abi_version": 1,
+        "resident_texture_info": {
+          "texture_abi_version": 1,
+          "max_textures": 64,
+          "max_width": 2048,
+          "max_height": 2048,
+          "max_layers": 64,
+          "texture_count": 0,
+          "array_width": 1,
+          "array_height": 1,
+          "array_layers": 1,
+          "uv_count": 0,
+          "bound_instances": 0,
+          "loaded": 0,
+          "sampler_filter": 1,
+          "mip_levels": 1,
+          "format": 43,
+          "max_array_bytes": 134217728,
+          "source_rgba_bytes": 0,
+          "padded_rgba_bytes": 4,
+          "metadata_upload_bytes": 20,
+          "upload_calls": 0,
+          "image_upload_bytes": 4,
+          "rgb_captures_with_textures": 0,
+          "capture_scope": "successful RGB captures with bound texture instances, not visible textured pixel count",
+          "upload_scope": "cumulative actual texture image and metadata GPU writes, including default white sentinel; excluded from geometry_upload_bytes",
+          "snapshot": "last live query, not final allocation state; teardown verified by allocation telemetry"
+        },
+        "resident_readback": {
+          "readback_abi_version": 1,
+          "memory_type_index": 3,
+          "memory_property_flags": 14,
+          "persistent_mapped": 1,
+          "last_channel_mask": 15,
+          "capacity_bytes": 249600,
+          "copied_bytes": 249600,
+          "map_calls": 1,
+          "unmap_calls": 0,
+          "host_visible": true,
+          "host_coherent": true,
+          "host_cached": true,
+          "device_local": false,
+          "snapshot": "last live query, not final mapping state; teardown verified by allocation telemetry",
+          "capacity_scope": "logical Vulkan readback buffer capacity, not total VkDeviceMemory allocation size"
+        },
+        "resident_profile": {
+          "profile_abi_version": 1,
+          "timestamp_supported": 1,
+          "timestamp_valid_bits": 64,
+          "tlas_node_count": 1,
+          "timestamp_period_ns": 1.0,
+          "captures": 1,
+          "host_prepare_ns": 4000,
+          "host_upload_ns": 888100,
+          "host_record_ns": 355300,
+          "host_submit_ns": 84300,
+          "host_wait_ns": 218100,
+          "host_readback_ns": 25300,
+          "gpu_render_ns": 58080,
+          "gpu_copy_ns": 22400,
+          "gpu_total_ns": 80480,
+          "tlas_upload_bytes": 48,
+          "timestamp_samples": 1,
+          "scope": "cumulative successful captures including warmup; excludes initial static geometry upload",
+          "gpu_scope": "Vulkan timestamps: raster plus fragment work, then attachment copies; no per-light kernel claim",
+          "snapshot": "last live query, retained after close; final ownership is checked by telemetry"
+        },
+        "resident_telemetry": {
+          "telemetry_abi_version": 1,
+          "device_luid_valid": 1,
+          "device_node_mask": 1,
+          "device_local_bytes_current": 0,
+          "device_local_bytes_peak": 3114816,
+          "device_local_bytes_allocated": 3118080,
+          "host_visible_bytes_current": 0,
+          "host_visible_bytes_peak": 2097648,
+          "host_visible_bytes_allocated": 2996064,
+          "readback_bytes": 249600,
+          "fence_wait_wall_ns": 962700,
+          "fence_wait_calls": 5,
+          "submissions": 5,
+          "allocation_count": 25,
+          "free_count": 25,
+          "device_luid_hex": "ef22010000000000",
+          "final_after_destroy": true,
+          "allocation_scope": "this context explicit VkDeviceMemory allocations; not driver total VRAM",
+          "wait_scope": "host wall time blocked in fence waits, including upload; not GPU kernel time"
+        },
+        "resident_studio_available": true
+      },
+      "library_path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\resident-native\\build-environment\\phymeo_native.dll",
+      "library_sha256": "98021cfde92b7c2bacd573db46fbedf33f3d174ddfb524c0e365a54adc9110ab",
+      "shader_sha256": {
+        "vert": "b1cb30601e2f8ff78e7a14818d3253ec95806b4ba22039b106927ffa4ca86810",
+        "frag": "9132f3936f0753775440997fa8dddddbf344f5f31a4565ada83d1d7e9d4e43ca",
+        "environment_sky_vert": "d9bbb44453660efa44c1f5f6c2861102b62f6b23b400400fac7d7f3faa02b798",
+        "environment_sky_frag": "16bdd92f809783a4989086c1e7d895be8a3266d3b8395fa3e3e168e7a96a8461"
+      },
+      "scene_key": "ibl-ball",
+      "decoded_geometry_sha256": "6d3b3e424e6a211bcf5bb8c15bb2a12946efd98770bf1959266babbe6ff5fea6",
+      "triangles": 16128,
+      "light_count": 0,
+      "max_lights": 4,
+      "max_triangles": 1048576,
+      "resident": true,
+      "geometry_residency": "static indexed meshes; per-frame instance matrices",
+      "primary_visibility": "single-sample Vulkan raster, two-sided opaque triangles",
+      "lighting": "native GGX/Smith/Schlick plus explicit resident studio shader",
+      "studio": {
+        "preset": "neutral-area-studio-v1",
+        "center_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale_m": 1.0,
+        "panel_size_scale": 1.0,
+        "panel_strength": 0.0,
+        "panels": [
+          {
+            "name": "key",
+            "position_m": [
+              -1.2000000476837158,
+              -1.399999976158142,
+              1.7999999523162842
+            ],
+            "half_u_world_m": [
+              -0.43464428186416626,
+              0.6388850808143616,
+              0.2071477472782135
+            ],
+            "half_v_world_m": [
+              0.3841945230960846,
+              0.14241407811641693,
+              0.3668961822986603
+            ],
+            "emission_direction_world": [
+              0.4656903154237997,
+              0.543305367994433,
+              -0.6985354731356995
+            ],
+            "half_size_m": [
+              0.8,
+              0.55
+            ],
+            "radiance_linear_rgb": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "visible_geometry": false
+          },
+          {
+            "name": "fill",
+            "position_m": [
+              1.399999976158142,
+              0.699999988079071,
+              1.2000000476837158
+            ],
+            "half_u_world_m": [
+              0.23069415986537933,
+              0.36783406138420105,
+              -0.4837130606174469
+            ],
+            "half_v_world_m": [
+              0.48673930764198303,
+              -0.5953391194343567,
+              -0.22058138251304626
+            ],
+            "emission_direction_world": [
+              -0.7098281771887514,
+              -0.3549140885943757,
+              -0.6084241518760726
+            ],
+            "half_size_m": [
+              0.65,
+              0.8
+            ],
+            "radiance_linear_rgb": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "visible_geometry": false
+          }
+        ],
+        "basis_sources": [
+          {
+            "url": "https://github.com/haosulab/SAPIEN/blob/8360d517770f24f00bacef7d906ddf1380b8967c/src/sapien_renderer/light_component.cpp",
+            "fact": "internalUpdate composes entity global pose with POSE_GL_TO_ROS before setting the renderer light transform"
+          },
+          {
+            "url": "https://github.com/haosulab/sapien-vulkan-2/blob/62e2511930e43db9fc7d384a49da4f374b35f701/src/scene/light.cpp",
+            "fact": "centered rectangle half width along GL +X, half height along GL +Y at shape angle pi/2"
+          },
+          {
+            "reference": "installed SAPIEN 3.0.3 public headers and shipped rt shader",
+            "pose_header_sha256": "122446114db45d1ad78e47394a31e86cb6c01efc07f1a30bcf657d81f64dce0e",
+            "rt_shading_sha256": "4f7421b369f75e14fa22dc623b770f346800b8c05470fc5d682ccb4f2d52efc4",
+            "fact": "GL_TO_ROS quaternion wxyz=(-.5,-.5,.5,.5); RT shader uses cross(edge0,edge1) dotted with point-to-light"
+          }
+        ],
+        "basis": "entity shortest_rotation(+X to direction); halfU=R*(0,width,0), halfV=R*(0,0,height); U cross V emits",
+        "rectangle_equivalence": "same authored pi/2 rectangle; first GL edge reflected for emission-oriented normal",
+        "arithmetic_scope": "FP64 host basis packed to FP32; not bitwise equivalence to SAPIEN FP32 quaternion/trigonometric evaluation",
+        "environment": {
+          "source_requested_radiance": 0.125,
+          "radiance_linear_rgb": [
+            0.125,
+            0.125,
+            0.125
+          ],
+          "enabled": true,
+          "quantization": "same RGBE shared 8-bit mantissa decode as reference uniform HDR",
+          "source_hdr_sha256": "ab52b11ca03fa82cac04dac82f6ae4a976f7131e0433c106cafe166b950317eb",
+          "active_lighting": false,
+          "replaced_by": "directional environment map"
+        },
+        "declared_scene_lights": "retained unchanged",
+        "units": "metres; relative linear radiance, not calibrated photometric lux",
+        "evaluation": "native resident studio shader; distinct estimator from SAPIEN reference path tracing",
+        "payload_bytes": 144,
+        "payload_sha256": "f743f257c6a70f8fea37655dfb7c17787d8a34a6575df81f13d54190e9ceabfa"
+      },
+      "environment": {
+        "source_sha256": "644d666a4d21cf8e3e86eb68f4a3a874ddb3dd58f1c625dc8ff2f96871e95092",
+        "input_size": [
+          512,
+          256
+        ],
+        "strength": 1.0,
+        "yaw_degrees": 90.0,
+        "peak_linear_radiance": 0.6484375,
+        "prefilter_roughness": "mip/(levels-1)",
+        "ggx_directions_per_texel": 128,
+        "gloss": "split-sum radiance prefilter, V=N, normalized positive N.L",
+        "orientation": "world Z up; Vulkan sampler ray.xzy; positive yaw turns +X toward +Y",
+        "diffuse": "world XYZ real SH9; exact texel solid-angle projection; irradiance divided by pi",
+        "rgba_sha256": "97c0c67449e3b36d25ac7963eb8dc101772d3a94787b868c35268be50c54582c",
+        "diffuse_sh_sha256": "e7f956436b950bd22bc9cdc0f0838ed81d191271c8061a06ec30fc4dd152420f",
+        "side": 128,
+        "mip_levels": 8,
+        "rgba_bytes": 2097120,
+        "diffuse_sh_bytes": 144,
+        "native_axis_transform": "world xyz -> sampler xzy; SH basis remains world xyz",
+        "native_face_order": [
+          "+X",
+          "-X",
+          "+Y",
+          "-Y",
+          "+Z",
+          "-Z"
+        ],
+        "native_layout": "level-major, then six faces, top-row-first RGBA32F little endian",
+        "native_roughness": "perceptual roughness r -> mip LOD r*(levels-1); no second prefilter",
+        "native_diffuse": "shared normalized real SH9 coefficients already include Lambert convolution / pi",
+        "native_environment_precedence": "map replaces uniform scalar environment; rectangular panels and scene lights remain"
+      },
+      "shadows": "native resident finite-emitter visibility via mesh BVH; see bound shader",
+      "shadow_bias_m": 1e-05,
+      "minimum_perceptual_roughness": 0.045,
+      "exposure": 1.0,
+      "display": "clamp linear exposure to [0,1], then IEC sRGB once",
+      "readback": "explicit synchronous host-visible staging after fence; actual flags in resident_readback when available",
+      "readback_channels_mode": "compact requested attachments",
+      "published_ownership": "immutable CPU bytes; private resident host buffer may be reused after each copy",
+      "attachment_formats": [
+        "RGBA8_UNORM",
+        "R32_SFLOAT",
+        "R32_UINT",
+        "R8_UINT"
+      ],
+      "last_passes": [
+        "visibility",
+        "shadows",
+        "lighting",
+        "display_transform",
+        "sensor_export"
+      ],
+      "last_request": {
+        "width": 160,
+        "height": 120,
+        "channels": [
+          "srgb8_rgb",
+          "forward_depth_m_f32",
+          "instance_id_u32",
+          "valid_u8"
+        ],
+        "native_attachment_mask": 15,
+        "native_output_bytes": 249600
+      },
+      "stage_execution": "visibility raster + fused fragment shadows/lighting/display/sensors",
+      "lifecycle_counts": "DLL-wide owned contexts, frames, and explicit Vulkan handles; pools own descriptor sets",
+      "path_trace": false,
+      "textures": false,
+      "texture_assets": null,
+      "physics_steps": 0
+    },
+    {
+      "backend": "phymeo-native-vulkan",
+      "path": "raster",
+      "device": {
+        "abi_version": 2,
+        "device_index": 1,
+        "api_version": 4206881,
+        "driver_version": 2374090752,
+        "vendor_id": 4318,
+        "device_id": 10464,
+        "device_type": 2,
+        "max_width": 32768,
+        "max_height": 32768,
+        "max_vertices": 1048576,
+        "validation_errors": 0,
+        "validation_warnings": 0,
+        "captures": 1,
+        "device_name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+        "device_uuid": "3b78d98198a3be57a8cb4d72fdfbfa96",
+        "closed": true,
+        "validation_enabled": true,
+        "live_contexts": 0,
+        "live_frames": 0,
+        "live_resources": 0,
+        "resident_abi_version": 1,
+        "resident_max_vertices": 1048576,
+        "resident_max_indices": 1572864,
+        "resident_max_meshes": 1024,
+        "resident_max_instances": 1024,
+        "resident_max_bvh_nodes": 262144,
+        "resident_max_instanced_triangles": 1048576,
+        "resident_vertex_count": 8066,
+        "resident_index_count": 48384,
+        "resident_mesh_count": 1,
+        "resident_instance_count": 1,
+        "resident_bvh_nodes": 4095,
+        "resident_instanced_triangles": 16128,
+        "resident_loaded": 1,
+        "resident_poisoned": 0,
+        "resident_reserved": 0,
+        "resident_upload_calls": 1,
+        "resident_geometry_upload_bytes": 648288,
+        "resident_transform_upload_bytes": 128,
+        "resident_parameter_upload_bytes": 416,
+        "resident_captures": 1,
+        "resident_shadow_node_budget": 4096,
+        "resident_target_rebuilds": 1,
+        "resident_host_transform_input_bytes": 64,
+        "resident_render_planes_available": true,
+        "resident_environment_available": true,
+        "resident_environment_abi_version": 1,
+        "resident_environment_info": {
+          "environment_abi_version": 1,
+          "supported": 1,
+          "shader_compatible": 1,
+          "max_side": 1024,
+          "max_mip_levels": 11,
+          "side": 128,
+          "mip_levels": 8,
+          "loaded": 1,
+          "format": 109,
+          "cube_layers": 6,
+          "sh_coefficients": 9,
+          "axis_transform": 1,
+          "diffuse_basis": 1,
+          "max_rgba_bytes": 134217728,
+          "source_rgba_bytes": 2097120,
+          "image_upload_bytes": 2097144,
+          "parameter_upload_bytes": 320,
+          "upload_calls": 1,
+          "rgb_captures_with_environment": 1,
+          "sky_draws": 1,
+          "capture_scope": "successful RGB captures with an uploaded directional environment; sky draw count is not foreground pixel count",
+          "snapshot": "last live query; final GPU allocations are reported by teardown telemetry"
+        },
+        "resident_texture_available": true,
+        "resident_texture_abi_version": 1,
+        "resident_texture_info": {
+          "texture_abi_version": 1,
+          "max_textures": 64,
+          "max_width": 2048,
+          "max_height": 2048,
+          "max_layers": 64,
+          "texture_count": 0,
+          "array_width": 1,
+          "array_height": 1,
+          "array_layers": 1,
+          "uv_count": 0,
+          "bound_instances": 0,
+          "loaded": 0,
+          "sampler_filter": 1,
+          "mip_levels": 1,
+          "format": 43,
+          "max_array_bytes": 134217728,
+          "source_rgba_bytes": 0,
+          "padded_rgba_bytes": 4,
+          "metadata_upload_bytes": 20,
+          "upload_calls": 0,
+          "image_upload_bytes": 4,
+          "rgb_captures_with_textures": 0,
+          "capture_scope": "successful RGB captures with bound texture instances, not visible textured pixel count",
+          "upload_scope": "cumulative actual texture image and metadata GPU writes, including default white sentinel; excluded from geometry_upload_bytes",
+          "snapshot": "last live query, not final allocation state; teardown verified by allocation telemetry"
+        },
+        "resident_readback": {
+          "readback_abi_version": 1,
+          "memory_type_index": 3,
+          "memory_property_flags": 14,
+          "persistent_mapped": 1,
+          "last_channel_mask": 15,
+          "capacity_bytes": 249600,
+          "copied_bytes": 249600,
+          "map_calls": 1,
+          "unmap_calls": 0,
+          "host_visible": true,
+          "host_coherent": true,
+          "host_cached": true,
+          "device_local": false,
+          "snapshot": "last live query, not final mapping state; teardown verified by allocation telemetry",
+          "capacity_scope": "logical Vulkan readback buffer capacity, not total VkDeviceMemory allocation size"
+        },
+        "resident_profile": {
+          "profile_abi_version": 1,
+          "timestamp_supported": 1,
+          "timestamp_valid_bits": 64,
+          "tlas_node_count": 1,
+          "timestamp_period_ns": 1.0,
+          "captures": 1,
+          "host_prepare_ns": 4300,
+          "host_upload_ns": 1057100,
+          "host_record_ns": 369700,
+          "host_submit_ns": 86900,
+          "host_wait_ns": 174600,
+          "host_readback_ns": 23500,
+          "gpu_render_ns": 55008,
+          "gpu_copy_ns": 23072,
+          "gpu_total_ns": 78080,
+          "tlas_upload_bytes": 48,
+          "timestamp_samples": 1,
+          "scope": "cumulative successful captures including warmup; excludes initial static geometry upload",
+          "gpu_scope": "Vulkan timestamps: raster plus fragment work, then attachment copies; no per-light kernel claim",
+          "snapshot": "last live query, retained after close; final ownership is checked by telemetry"
+        },
+        "resident_telemetry": {
+          "telemetry_abi_version": 1,
+          "device_luid_valid": 1,
+          "device_node_mask": 1,
+          "device_local_bytes_current": 0,
+          "device_local_bytes_peak": 3114816,
+          "device_local_bytes_allocated": 3118080,
+          "host_visible_bytes_current": 0,
+          "host_visible_bytes_peak": 2097648,
+          "host_visible_bytes_allocated": 2996064,
+          "readback_bytes": 249600,
+          "fence_wait_wall_ns": 1275800,
+          "fence_wait_calls": 5,
+          "submissions": 5,
+          "allocation_count": 25,
+          "free_count": 25,
+          "device_luid_hex": "ef22010000000000",
+          "final_after_destroy": true,
+          "allocation_scope": "this context explicit VkDeviceMemory allocations; not driver total VRAM",
+          "wait_scope": "host wall time blocked in fence waits, including upload; not GPU kernel time"
+        },
+        "resident_studio_available": true
+      },
+      "library_path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\resident-native\\build-environment\\phymeo_native.dll",
+      "library_sha256": "98021cfde92b7c2bacd573db46fbedf33f3d174ddfb524c0e365a54adc9110ab",
+      "shader_sha256": {
+        "vert": "b1cb30601e2f8ff78e7a14818d3253ec95806b4ba22039b106927ffa4ca86810",
+        "frag": "9132f3936f0753775440997fa8dddddbf344f5f31a4565ada83d1d7e9d4e43ca",
+        "environment_sky_vert": "d9bbb44453660efa44c1f5f6c2861102b62f6b23b400400fac7d7f3faa02b798",
+        "environment_sky_frag": "16bdd92f809783a4989086c1e7d895be8a3266d3b8395fa3e3e168e7a96a8461"
+      },
+      "scene_key": "ibl-ball",
+      "decoded_geometry_sha256": "6d3b3e424e6a211bcf5bb8c15bb2a12946efd98770bf1959266babbe6ff5fea6",
+      "triangles": 16128,
+      "light_count": 0,
+      "max_lights": 4,
+      "max_triangles": 1048576,
+      "resident": true,
+      "geometry_residency": "static indexed meshes; per-frame instance matrices",
+      "primary_visibility": "single-sample Vulkan raster, two-sided opaque triangles",
+      "lighting": "native GGX/Smith/Schlick plus explicit resident studio shader",
+      "studio": {
+        "preset": "neutral-area-studio-v1",
+        "center_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale_m": 1.0,
+        "panel_size_scale": 1.0,
+        "panel_strength": 0.0,
+        "panels": [
+          {
+            "name": "key",
+            "position_m": [
+              -1.2000000476837158,
+              -1.399999976158142,
+              1.7999999523162842
+            ],
+            "half_u_world_m": [
+              -0.43464428186416626,
+              0.6388850808143616,
+              0.2071477472782135
+            ],
+            "half_v_world_m": [
+              0.3841945230960846,
+              0.14241407811641693,
+              0.3668961822986603
+            ],
+            "emission_direction_world": [
+              0.4656903154237997,
+              0.543305367994433,
+              -0.6985354731356995
+            ],
+            "half_size_m": [
+              0.8,
+              0.55
+            ],
+            "radiance_linear_rgb": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "visible_geometry": false
+          },
+          {
+            "name": "fill",
+            "position_m": [
+              1.399999976158142,
+              0.699999988079071,
+              1.2000000476837158
+            ],
+            "half_u_world_m": [
+              0.23069415986537933,
+              0.36783406138420105,
+              -0.4837130606174469
+            ],
+            "half_v_world_m": [
+              0.48673930764198303,
+              -0.5953391194343567,
+              -0.22058138251304626
+            ],
+            "emission_direction_world": [
+              -0.7098281771887514,
+              -0.3549140885943757,
+              -0.6084241518760726
+            ],
+            "half_size_m": [
+              0.65,
+              0.8
+            ],
+            "radiance_linear_rgb": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "visible_geometry": false
+          }
+        ],
+        "basis_sources": [
+          {
+            "url": "https://github.com/haosulab/SAPIEN/blob/8360d517770f24f00bacef7d906ddf1380b8967c/src/sapien_renderer/light_component.cpp",
+            "fact": "internalUpdate composes entity global pose with POSE_GL_TO_ROS before setting the renderer light transform"
+          },
+          {
+            "url": "https://github.com/haosulab/sapien-vulkan-2/blob/62e2511930e43db9fc7d384a49da4f374b35f701/src/scene/light.cpp",
+            "fact": "centered rectangle half width along GL +X, half height along GL +Y at shape angle pi/2"
+          },
+          {
+            "reference": "installed SAPIEN 3.0.3 public headers and shipped rt shader",
+            "pose_header_sha256": "122446114db45d1ad78e47394a31e86cb6c01efc07f1a30bcf657d81f64dce0e",
+            "rt_shading_sha256": "4f7421b369f75e14fa22dc623b770f346800b8c05470fc5d682ccb4f2d52efc4",
+            "fact": "GL_TO_ROS quaternion wxyz=(-.5,-.5,.5,.5); RT shader uses cross(edge0,edge1) dotted with point-to-light"
+          }
+        ],
+        "basis": "entity shortest_rotation(+X to direction); halfU=R*(0,width,0), halfV=R*(0,0,height); U cross V emits",
+        "rectangle_equivalence": "same authored pi/2 rectangle; first GL edge reflected for emission-oriented normal",
+        "arithmetic_scope": "FP64 host basis packed to FP32; not bitwise equivalence to SAPIEN FP32 quaternion/trigonometric evaluation",
+        "environment": {
+          "source_requested_radiance": 0.125,
+          "radiance_linear_rgb": [
+            0.125,
+            0.125,
+            0.125
+          ],
+          "enabled": true,
+          "quantization": "same RGBE shared 8-bit mantissa decode as reference uniform HDR",
+          "source_hdr_sha256": "ab52b11ca03fa82cac04dac82f6ae4a976f7131e0433c106cafe166b950317eb",
+          "active_lighting": false,
+          "replaced_by": "directional environment map"
+        },
+        "declared_scene_lights": "retained unchanged",
+        "units": "metres; relative linear radiance, not calibrated photometric lux",
+        "evaluation": "native resident studio shader; distinct estimator from SAPIEN reference path tracing",
+        "payload_bytes": 144,
+        "payload_sha256": "f743f257c6a70f8fea37655dfb7c17787d8a34a6575df81f13d54190e9ceabfa"
+      },
+      "environment": {
+        "source_sha256": "644d666a4d21cf8e3e86eb68f4a3a874ddb3dd58f1c625dc8ff2f96871e95092",
+        "input_size": [
+          512,
+          256
+        ],
+        "strength": 1.0,
+        "yaw_degrees": 90.0,
+        "peak_linear_radiance": 0.6484375,
+        "prefilter_roughness": "mip/(levels-1)",
+        "ggx_directions_per_texel": 128,
+        "gloss": "split-sum radiance prefilter, V=N, normalized positive N.L",
+        "orientation": "world Z up; Vulkan sampler ray.xzy; positive yaw turns +X toward +Y",
+        "diffuse": "world XYZ real SH9; exact texel solid-angle projection; irradiance divided by pi",
+        "rgba_sha256": "97c0c67449e3b36d25ac7963eb8dc101772d3a94787b868c35268be50c54582c",
+        "diffuse_sh_sha256": "e7f956436b950bd22bc9cdc0f0838ed81d191271c8061a06ec30fc4dd152420f",
+        "side": 128,
+        "mip_levels": 8,
+        "rgba_bytes": 2097120,
+        "diffuse_sh_bytes": 144,
+        "native_axis_transform": "world xyz -> sampler xzy; SH basis remains world xyz",
+        "native_face_order": [
+          "+X",
+          "-X",
+          "+Y",
+          "-Y",
+          "+Z",
+          "-Z"
+        ],
+        "native_layout": "level-major, then six faces, top-row-first RGBA32F little endian",
+        "native_roughness": "perceptual roughness r -> mip LOD r*(levels-1); no second prefilter",
+        "native_diffuse": "shared normalized real SH9 coefficients already include Lambert convolution / pi",
+        "native_environment_precedence": "map replaces uniform scalar environment; rectangular panels and scene lights remain"
+      },
+      "shadows": "native resident finite-emitter visibility via mesh BVH; see bound shader",
+      "shadow_bias_m": 1e-05,
+      "minimum_perceptual_roughness": 0.045,
+      "exposure": 1.0,
+      "display": "clamp linear exposure to [0,1], then IEC sRGB once",
+      "readback": "explicit synchronous host-visible staging after fence; actual flags in resident_readback when available",
+      "readback_channels_mode": "compact requested attachments",
+      "published_ownership": "immutable CPU bytes; private resident host buffer may be reused after each copy",
+      "attachment_formats": [
+        "RGBA8_UNORM",
+        "R32_SFLOAT",
+        "R32_UINT",
+        "R8_UINT"
+      ],
+      "last_passes": [
+        "visibility",
+        "shadows",
+        "lighting",
+        "display_transform",
+        "sensor_export"
+      ],
+      "last_request": {
+        "width": 160,
+        "height": 120,
+        "channels": [
+          "srgb8_rgb",
+          "forward_depth_m_f32",
+          "instance_id_u32",
+          "valid_u8"
+        ],
+        "native_attachment_mask": 15,
+        "native_output_bytes": 249600
+      },
+      "stage_execution": "visibility raster + fused fragment shadows/lighting/display/sensors",
+      "lifecycle_counts": "DLL-wide owned contexts, frames, and explicit Vulkan handles; pools own descriptor sets",
+      "path_trace": false,
+      "textures": false,
+      "texture_assets": null,
+      "physics_steps": 0
+    }
+  ],
+  "sky_max_rgb8": 1,
+  "mirror_max_rgb8": 1,
+  "red_delta_90": {
+    "mirror": 42.17466666666667,
+    "matte": 12.111999999999995
+  },
+  "sensor_sha256": {
+    "world-direction": [
+      "7af8b6db184c65a5726a6a838e9eb7d3e5eaddb1b8f6c0b6b5f86837c3f92c92",
+      "0a182a88ffcf20dcc892515a01db9af1a707814b982b9c21e1d9b3b4b203ceef",
+      "71c642b31e5890a15ef92f3cbeba34edfb6e2e9f63079ecbda13a89d426f7d8b"
+    ],
+    "ball": [
+      "3198aaef791c4144afab15da98664abaaf86bc9309e04bc63e4abb8713c15e2c",
+      "f3258db0f138c262ad8494663dcdc3f296d0b21c0a67b5a660d654eec5dc88b9",
+      "e1c512f70120c91ae9dfc4318e4867f85ba88d3a7c7223af66a40c7f739c002a"
+    ]
+  },
+  "thresholds": {
+    "sky_max": 3,
+    "mirror_max": 5,
+    "mirror_delta": 8,
+    "matte_delta": 3
+  },
+  "passed": true
+}

@@ -59,11 +59,20 @@ def cameras(frame):
     )
 
 
-def write_mesh(root, name, positions, normals, triangles):
+def write_mesh(root, name, positions, normals, triangles, *, texcoords=None):
     arrays = (np.array(positions, "<f4"), np.array(normals, "<f4"), np.array(triangles, "<u2"))
+    if texcoords is not None:
+        uv = np.asarray(texcoords,dtype="<f4")
+        if uv.shape != (len(positions),2) or not np.isfinite(uv).all():
+            raise ValueError("expected a finite UV pair per vertex")
+        arrays += (uv,)
     views, chunks = [], []
     offset = 0
     for array in arrays:
+        padding = (-offset) % array.dtype.itemsize
+        if padding:
+            chunks.append(bytes(padding))
+            offset += padding
         data = array.tobytes()
         views.append(dict(buffer=0, byteOffset=offset, byteLength=len(data)))
         chunks.append(data)
@@ -97,6 +106,9 @@ def write_mesh(root, name, positions, normals, triangles):
             dict(bufferView=2, componentType=5123, type="SCALAR", count=arrays[2].size),
         ],
     )
+    if texcoords is not None:
+        doc["meshes"][0]["primitives"][0]["attributes"]["TEXCOORD_0"] = 3
+        doc["accessors"].append(dict(bufferView=3,componentType=5126,count=len(positions),type="VEC2"))
     path = Path(root) / (name + ".gltf")
     path.write_text(json.dumps(doc, separators=(",", ":")), encoding="utf-8")
     return Mesh(name, path.resolve().as_uri())

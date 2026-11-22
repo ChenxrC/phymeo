@@ -1,8 +1,8 @@
 """Bounded, shared decoding of local authored glTF 2.0 triangle geometry.
 
 Supported: UTF-8 .gltf JSON, one scene / identity node / mesh / indexed TRIANGLES
-primitive, one embedded base64 buffer, FLOAT VEC3 POSITION and unit NORMAL, and
-unsigned byte/short/int indices. Vertex views may have aligned offsets/strides.
+primitive, one embedded base64 buffer, FLOAT VEC3 POSITION and unit NORMAL,
+optional FLOAT VEC2 TEXCOORD_0, and unsigned byte/short/int indices. Vertex views may have aligned offsets/strides.
 Coordinates stay in the declared metre frame; no axis conversion is performed.
 Materials belong to VisualScene instances, so embedded materials are rejected.
 
@@ -76,6 +76,7 @@ class TriangleMesh:
     normals: tuple[tuple[float, float, float], ...]
     triangles: tuple[tuple[int, int, int], ...]
     source_sha256: str
+    texcoords: tuple[tuple[float, float], ...] | None = None
 
     def __post_init__(self):
         for name in ("positions", "normals", "triangles"):
@@ -85,6 +86,13 @@ class TriangleMesh:
         _integer(len(self.triangles), "triangles count", 1, _MAX_TRIANGLES)
         if len(self.normals) != len(self.positions):
             raise ValueError("normals count must equal positions count")
+        if self.texcoords is not None:
+            if not isinstance(self.texcoords, tuple):
+                raise TypeError("texcoords must be an immutable tuple or None")
+            if len(self.texcoords) != len(self.positions):
+                raise ValueError("texcoords count must equal positions count")
+            for uv in self.texcoords:
+                _vector(uv, "texcoords", 2)
         for position in self.positions:
             _vector(position, "positions", 3)
         for normal in self.normals:
@@ -116,7 +124,7 @@ class TriangleMesh:
             raise ValueError("source_sha256 must be a lowercase SHA256 hex digest")
 
 
-def _local_path(uri):
+def _local_path(uri, *, suffixes=(".gltf",)):
     if uri != uri.strip():
         raise ValueError("uri must not have surrounding whitespace")
     if uri.startswith(("//", "\\\\")):
@@ -152,8 +160,10 @@ def _local_path(uri):
             raise ValueError("file uri must name an absolute local path")
     else:
         path = Path(uri)
-    if path.suffix.lower() != ".gltf":
-        raise ValueError("only local .gltf JSON is supported; GLB is unsupported")
+    if path.suffix.lower() not in suffixes:
+        if suffixes == (".gltf",):
+            raise ValueError("only local .gltf JSON is supported; GLB is unsupported")
+        raise ValueError(f"only local {', '.join(suffixes)} files are supported")
     return path
 
 
@@ -287,8 +297,8 @@ def _embedded_buffer(buffer):
     return raw
 
 
-def _views(values, raw):
-    views = _array(values, "bufferViews", 1, 3)
+def _views(values, raw, *, maximum=3):
+    views = _array(values, "bufferViews", 1, maximum)
     for index, view in enumerate(views):
         label = f"bufferViews[{index}]"
         _object(
@@ -312,14 +322,14 @@ def _views(values, raw):
     return views
 
 
-def _bounds(accessor, values, *, vector, code, label):
-    width = 3 if vector else 1
+def _bounds(accessor, values, *, width, code, label):
+    vector = width != 1
     for field, operation in (("min", min), ("max", max)):
         if field not in accessor:
             continue
         bounds = _vector(accessor[field], label + "." + field, width, container=list)
         actual = (
-            tuple(operation(value[i] for value in values) for i in range(3))
+            tuple(operation(value[i] for value in values) for i in range(width))
             if vector
             else (operation(values),)
         )
@@ -355,12 +365,13 @@ def _accessor(index, accessors, views, raw, role):
         label,
     )
     vector = role != "indices"
+    width = 2 if role == "TEXCOORD_0" else 3 if vector else 1
     component = _integer(_required(accessor, "componentType", label), label + ".componentType")
     if vector and component != 5126:
         raise ValueError(f"{label}.componentType must be FLOAT")
     if not vector and component not in (5121, 5123, 5125):
         raise ValueError(f"{label}.componentType must be an unsigned integer")
-    if accessor.get("type") != ("VEC3" if vector else "SCALAR"):
+    if accessor.get("type") != (f"VEC{width}" if vector else "SCALAR"):
         raise ValueError(f"{label}.type is unsupported")
     if accessor.get("normalized", False) is not False:
         raise ValueError(f"{label}.normalized is unsupported")
@@ -380,7 +391,7 @@ def _accessor(index, accessors, views, raw, role):
     if not vector and "byteStride" in view:
         raise ValueError(f"{label} index bufferView.byteStride is unsupported")
     code = "f" if vector else {5121: "B", 5123: "H", 5125: "I"}[component]
-    unpacker = struct.Struct("<" + ("3" if vector else "") + code)
+    unpacker = struct.Struct("<" + (str(width) if vector else "") + code)
     component_size = 4 if vector else unpacker.size
     offset = _integer(accessor.get("byteOffset", 0), label + ".byteOffset")
     start = view.get("byteOffset", 0) + offset
@@ -395,7 +406,7 @@ def _accessor(index, accessors, views, raw, role):
     values = tuple(unpacker.unpack_from(raw, start + i * stride) for i in range(count))
     if not vector:
         values = tuple(value[0] for value in values)
-    _bounds(accessor, values, vector=vector, code=code, label=label)
+    _bounds(accessor, values, width=width, code=code, label=label)
     return values, view_id
 
 
@@ -435,27 +446,28 @@ def _decode(document, raw_sha):
     )
     _integer(primitive.get("mode", 4), "primitive.mode", 4, 4)
     attributes = _object(
-        _required(primitive, "attributes", "primitive"), ("POSITION", "NORMAL"), "attributes"
+        _required(primitive, "attributes", "primitive"), ("POSITION", "NORMAL", "TEXCOORD_0"), "attributes"
     )
-    accessors = _array(_required(document, "accessors", "glTF"), "accessors", 3, 3)
-    position_id = _integer(
-        _required(attributes, "POSITION", "attributes"), "POSITION accessor", 0, 2
-    )
-    normal_id = _integer(_required(attributes, "NORMAL", "attributes"), "NORMAL accessor", 0, 2)
-    index_id = _integer(_required(primitive, "indices", "primitive"), "indices accessor", 0, 2)
-    if {position_id, normal_id, index_id} != {0, 1, 2}:
-        raise ValueError("POSITION, NORMAL and indices must use three distinct accessors")
+    roles = ("POSITION", "NORMAL", "TEXCOORD_0") if "TEXCOORD_0" in attributes else ("POSITION", "NORMAL")
+    count = len(roles) + 1
+    accessors = _array(_required(document, "accessors", "glTF"), "accessors", count, count)
+    ids = {role: _integer(_required(attributes, role, "attributes"), role + " accessor", 0, count - 1)
+           for role in roles}
+    index_id = _integer(_required(primitive, "indices", "primitive"), "indices accessor", 0, count - 1)
+    if set(ids.values()) | {index_id} != set(range(count)):
+        raise ValueError("vertex attributes and indices must use distinct accessors")
     raw = _embedded_buffer(_single(document, "buffers"))
-    views = _views(_required(document, "bufferViews", "glTF"), raw)
-    positions, position_view = _accessor(position_id, accessors, views, raw, "POSITION")
-    normals, normal_view = _accessor(normal_id, accessors, views, raw, "NORMAL")
+    views = _views(_required(document, "bufferViews", "glTF"), raw, maximum=count)
+    decoded = {role: _accessor(index, accessors, views, raw, role) for role, index in ids.items()}
     indices, index_view = _accessor(index_id, accessors, views, raw, "indices")
-    if index_view in (position_view, normal_view):
+    vertex_views = {value[1] for value in decoded.values()}
+    if index_view in vertex_views:
         raise ValueError("indices and vertex attributes must use separate bufferViews")
-    if {position_view, normal_view, index_view} != set(range(len(views))):
+    if vertex_views | {index_view} != set(range(len(views))):
         raise ValueError("unreferenced bufferViews are unsupported")
     triangles = tuple(tuple(indices[i : i + 3]) for i in range(0, len(indices), 3))
-    return TriangleMesh(positions, normals, triangles, raw_sha)
+    texcoords = decoded["TEXCOORD_0"][0] if "TEXCOORD_0" in decoded else None
+    return TriangleMesh(decoded["POSITION"][0], decoded["NORMAL"][0], triangles, raw_sha, texcoords)
 
 
 def load_mesh(mesh: Mesh) -> TriangleMesh:

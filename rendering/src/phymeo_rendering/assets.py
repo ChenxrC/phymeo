@@ -62,3 +62,39 @@ class Material:
             _validate_unit_interval(component, f"base_color[{index}]", asset)
         _validate_unit_interval(self.metallic, "metallic", asset)
         _validate_unit_interval(self.roughness, "roughness", asset)
+
+
+@dataclass(frozen=True, slots=True)
+class TextureMap:
+    """Explicit local sRGB base-color image, pinned by its original file bytes.
+
+    The declaration does not read the image or import Pillow. Sampling is repeat
+    with bilinear filtering, with (0, 0) at the top left as in glTF. This first
+    contract has no alpha blending, normal map, UV transform or sampler override.
+    """
+
+    uri: str
+    sha256: str
+
+    def __post_init__(self) -> None:
+        _validate_text(self.uri, "uri", "TextureMap")
+        if (not isinstance(self.sha256, str) or len(self.sha256) != 64
+                or any(char not in "0123456789abcdef" for char in self.sha256)):
+            raise ValueError("TextureMap.sha256 must be a lowercase SHA256 hex digest")
+
+
+@dataclass(frozen=True, slots=True)
+class TexturedMaterial(Material):
+    """The original linear base_color factor multiplied by an sRGB texture.
+
+    Metallic and roughness keep the original scalar semantics. Plain Material's
+    positional layout and behavior are unchanged. Referencing this material
+    requires TEXCOORD_0 on each bound mesh; no generated UVs are substituted.
+    """
+
+    base_color_map: TextureMap
+
+    def __post_init__(self) -> None:
+        Material.__post_init__(self)
+        if not isinstance(self.base_color_map, TextureMap):
+            raise TypeError(f"Material {self.id!r}.base_color_map must be a TextureMap")

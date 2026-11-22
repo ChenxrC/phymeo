@@ -4,7 +4,7 @@ HOST validation, coefficient construction and publication remain explicit. Empty
 or unproven output uses the chosen exact-host/reject policy, never a silent miss.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from fractions import Fraction
 from itertools import combinations
 from threading import RLock
@@ -20,6 +20,7 @@ from ..geometry.area_pressure import (
     AreaPressureStamp,
     AreaPressureSurface,
     _identity,
+    _origin_world,
     _stamp,
 )
 from ..geometry.area_pressure_intersection import (
@@ -44,6 +45,10 @@ class AreaPressureIntersectionRequest:
     rigid_mesh: RigidPressureMesh
     identity: AreaPressureIdentity
     stamp: AreaPressureStamp
+    origin_world: np.ndarray | None = field(default=None, kw_only=True)
+
+    def __post_init__(self):
+        object.__setattr__(self, "origin_world", _origin_world(self.origin_world))
 
 
 @dataclass
@@ -284,9 +289,13 @@ class TyxAreaPressureIntersector:
         finally:
             self._stats["device_seconds"] += perf_counter() - start
 
-    def intersect(self, pressure_mesh, rigid_mesh, *, identity, stamp):
+    def intersect(self, pressure_mesh, rigid_mesh, *, identity, stamp, origin_world=None):
         return self.intersect_many(
-            (AreaPressureIntersectionRequest(pressure_mesh, rigid_mesh, identity, stamp),)
+            (
+                AreaPressureIntersectionRequest(
+                    pressure_mesh, rigid_mesh, identity, stamp, origin_world=origin_world
+                ),
+            )
         )[0]
 
     def intersect_many(self, requests):
@@ -343,7 +352,10 @@ class TyxAreaPressureIntersector:
                         raise RuntimeError("invalid device clipping readback layout")
                     for index, row in enumerate(rows):
                         row.polygon, row.route = self._resolve(row, meta[index], active[index])
-                results = tuple(self._publish_query(*query) for query in prepared)
+                results = tuple(
+                    self._publish_query(*query, origin_world=request.origin_world)
+                    for query, request in zip(prepared, requests, strict=True)
+                )
                 routes = tuple(tuple(row.route for row in query[-1]) for query in prepared)
                 self._publication = (results, routes)
                 return results
@@ -422,7 +434,7 @@ class TyxAreaPressureIntersector:
         self._stats["device_polygons"] += 1
         return polygon, "device"
 
-    def _publish_query(self, pressure, rigid, identity, stamp, rows):
+    def _publish_query(self, pressure, rigid, identity, stamp, rows, *, origin_world=None):
         triangles = []
         polygons = duplicates = 0
         for row in rows:
@@ -439,7 +451,14 @@ class TyxAreaPressureIntersector:
             polygons += 1
             for fan in range(len(polygon) - 2):
                 triangles.append(
-                    _publish_triangle(cell, polygon, pressure.cell_ids[ci], rigid.face_ids[fi], fan)
+                    _publish_triangle(
+                        cell,
+                        polygon,
+                        pressure.cell_ids[ci],
+                        rigid.face_ids[fi],
+                        fan,
+                        origin_world=origin_world,
+                    )
                 )
         return AreaPressureIntersection(
             AreaPressureSurface(identity, stamp, tuple(triangles)),

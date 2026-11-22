@@ -25,6 +25,7 @@ from .area_pressure import (
     _identifier,
     _identity,
     _integer,
+    _origin_world,
     _stamp,
 )
 
@@ -311,12 +312,14 @@ class _AreaPressureGeometryInput:
     rigid: object
     identity: object
     stamp: object
+    origin_world: object
 
-    def __init__(self, pressure, rigid, identity, stamp):
+    def __init__(self, pressure, rigid, identity, stamp, *, origin_world=None):
         object.__setattr__(self, "pressure", _owned_mesh_input(pressure, pressure=True))
         object.__setattr__(self, "rigid", _owned_mesh_input(rigid, pressure=False))
         object.__setattr__(self, "identity", _identity(identity))
         object.__setattr__(self, "stamp", _stamp(stamp))
+        object.__setattr__(self, "origin_world", _origin_world(origin_world))
 
 
 class _StepMeshBuilder:
@@ -430,17 +433,28 @@ def _owns_polygon(mesh, cell_index, face, polygon):
     return mesh.cell_ids[cell_index] == min(mesh.cell_ids[other] for other, _ in owners)
 
 
-def _publish_triangle(cell, polygon, cell_id, face_id, fan_index):
+def _publish_triangle(cell, polygon, cell_id, face_id, fan_index, *, origin_world=None):
+    origin = _origin_world(origin_world)
     points = (polygon[0], polygon[fan_index + 1], polygon[fan_index + 2])
     pressure = tuple(cell.pressure(point) for point in points)
+    coordinates = points
+    if origin is not None:
+        exact_origin = tuple(exact.exact_scalar(value) for value in origin)
+        # Subtract in the source's exact arithmetic BEFORE the FP64 conversion.
+        # Subtracting already rounded world points cannot recover these edges.
+        coordinates = tuple(exact.difference(point, exact_origin) for point in points)
     encoded = json.dumps((cell_id, face_id, fan_index), ensure_ascii=True, separators=(",", ":"))
     triangle_id = "i1-" + sha256(encoded.encode("utf-8")).hexdigest()
     try:
         vertices = np.array(
-            tuple(tuple(float(value) for value in point) for point in points), dtype=np.float64
+            tuple(tuple(float(value) for value in point) for point in coordinates), dtype=np.float64
         )
         values = np.array(tuple(float(value) for value in pressure), dtype=np.float64)
         gradient = np.array(tuple(float(value) for value in cell.gradient), dtype=np.float64)
+        if origin is not None:
+            return AreaPressureTriangle.from_local(
+                triangle_id, cell_id, face_id, vertices, values, gradient, origin_world=origin
+            )
         return AreaPressureTriangle(triangle_id, cell_id, face_id, vertices, values, gradient)
     except (ValueError, OverflowError, FloatingPointError) as error:
         raise AreaPressureIntersectionError(
@@ -448,15 +462,22 @@ def _publish_triangle(cell, polygon, cell_id, face_id, fan_index):
         ) from error
 
 
-def intersect_area_pressure(pressure_mesh, rigid_mesh, *, identity, stamp):
-    """Clip every finite face/cell pair atomically and preserve the asset domain."""
+def intersect_area_pressure(pressure_mesh, rigid_mesh, *, identity, stamp, origin_world=None):
+    """Clip atomically; optionally publish in a translated common-world-axis chart.
+
+    Input meshes and all public triangle vertices remain world coordinates.
+    Only exact output points are shifted before rounding. None preserves the
+    original publication representation and operation order.
+    """
     identity, stamp = _identity(identity), _stamp(stamp)
+    origin = _origin_world(origin_world)
     pressure, rigid = _meshes(pressure_mesh, rigid_mesh)
-    return _intersect_checked(pressure, rigid, identity=identity, stamp=stamp)
+    return _intersect_checked(pressure, rigid, identity=identity, stamp=stamp, origin_world=origin)
 
 
-def _intersect_checked(pressure, rigid, *, identity, stamp):
+def _intersect_checked(pressure, rigid, *, identity, stamp, origin_world=None):
     """Internal core: callers must have just constructed their owned meshes."""
+    origin = _origin_world(origin_world)
     candidates = len(pressure.cells) * len(rigid.faces)
     if candidates > MAX_CANDIDATE_PAIRS:
         _fail("resource_limit", "candidate pair capacity exceeded")
@@ -478,7 +499,14 @@ def _intersect_checked(pressure, rigid, *, identity, stamp):
             polygon_count += 1
             for fan in range(count):
                 triangles.append(
-                    _publish_triangle(cell, polygon, pressure.cell_ids[ci], rigid.face_ids[fi], fan)
+                    _publish_triangle(
+                        cell,
+                        polygon,
+                        pressure.cell_ids[ci],
+                        rigid.face_ids[fi],
+                        fan,
+                        origin_world=origin,
+                    )
                 )
     try:
         surface = AreaPressureSurface(identity, stamp, tuple(triangles))

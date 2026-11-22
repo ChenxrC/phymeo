@@ -5,7 +5,7 @@ module performs quadrature only: it neither establishes collision validity nor
 proves disjoint triangles, field continuity, or a binding to a runtime state.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from numbers import Integral, Real
 
 import numpy as np
@@ -72,6 +72,11 @@ def _array(value, shape, name):
     if array.shape != shape or not np.isfinite(array).all():
         raise ValueError(f"{name} must be finite with shape {shape}")
     return np.frombuffer(array.tobytes(order="C"), dtype=np.float64).reshape(shape)
+
+
+def _origin_world(value):
+    """Own an optional finite translation in world axes; None is the legacy path."""
+    return None if value is None else _array(value, (3,), "origin_world")
 
 
 def _same(actual, expected, name):
@@ -151,14 +156,77 @@ def _triangle_geometry(vertices, pressure, gradient):
     return area, normal, effective
 
 
+def _world_triangle_representable(vertices, normal):
+    """Check world representation without reapplying the affine pressure gate.
+
+    An origin preserves small local edge differences, not permission to publish
+    duplicate/collinear world points or reverse their actual stored winding.
+    This also checks the three world quadrature points before publication.
+    """
+    try:
+        with np.errstate(over="raise", invalid="raise", divide="raise"):
+            cross = np.cross(vertices[1] - vertices[0], vertices[2] - vertices[0])
+            length = float(np.linalg.norm(cross))
+            if not np.isfinite(vertices).all() or not np.isfinite(length) or length / 2 <= 0:
+                raise ValueError("world triangle/sample points must retain finite positive area")
+            alignment = float((cross / length) @ normal)
+            if not np.isfinite(alignment) or alignment <= 0:
+                raise ValueError("world triangle/sample representation reverses local winding")
+    except FloatingPointError as error:
+        raise ValueError("world triangle/sample representation overflowed") from error
+
+
 @dataclass(frozen=True, eq=False)
 class AreaPressureTriangle:
+    """A clipped triangle with world vertices and an optional translated chart.
+
+    ``vertices`` always means world coordinates. With an explicit origin,
+    ``local_vertices`` is the authoritative common-world-axis offset array and
+    ``vertices`` is its immutable reconstructed world view. Gradient components
+    remain in world axes: this chart translates, never rotates. Use from_local
+    to avoid independently rounded world coordinates becoming the local input.
+    """
+
     triangle_id: str
     compliant_cell_id: str
     rigid_face_id: str
     vertices: np.ndarray
     vertex_pressure: np.ndarray
     pressure_gradient: np.ndarray
+    origin_world: np.ndarray | None = field(default=None, kw_only=True)
+    local_vertices: np.ndarray | None = field(default=None, kw_only=True)
+
+    @classmethod
+    def from_local(
+        cls,
+        triangle_id,
+        compliant_cell_id,
+        rigid_face_id,
+        local_vertices,
+        vertex_pressure,
+        pressure_gradient,
+        *,
+        origin_world,
+    ):
+        local = _array(local_vertices, (3, 3), "local_vertices")
+        origin = _origin_world(origin_world)
+        if origin is None:
+            raise ValueError("from_local requires an explicit origin_world")
+        try:
+            with np.errstate(over="raise", invalid="raise"):
+                vertices = local + origin
+        except FloatingPointError as error:
+            raise ValueError("world triangle representation overflowed") from error
+        return cls(
+            triangle_id,
+            compliant_cell_id,
+            rigid_face_id,
+            vertices,
+            vertex_pressure,
+            pressure_gradient,
+            origin_world=origin,
+            local_vertices=local,
+        )
 
     def __post_init__(self):
         for name in ("triangle_id", "compliant_cell_id", "rigid_face_id"):
@@ -166,12 +234,31 @@ class AreaPressureTriangle:
         vertices = _array(self.vertices, (3, 3), "vertices")
         pressure = _array(self.vertex_pressure, (3,), "vertex_pressure")
         gradient = _array(self.pressure_gradient, (3,), "pressure_gradient")
+        origin = _origin_world(self.origin_world)
+        local = None
+        if (origin is None) != (self.local_vertices is None):
+            raise ValueError("origin_world and local_vertices must be supplied together")
         if np.any(pressure < 0):
             raise ValueError("clipped vertex pressures must be nonnegative")
-        _triangle_geometry(vertices, pressure, gradient)
+        if origin is None:
+            _triangle_geometry(vertices, pressure, gradient)
+        else:
+            local = _array(self.local_vertices, (3, 3), "local_vertices")
+            _, normal, _ = _triangle_geometry(local, pressure, gradient)
+            try:
+                with np.errstate(over="raise", invalid="raise"):
+                    world = _array(local + origin, (3, 3), "reconstructed world vertices")
+            except FloatingPointError as error:
+                raise ValueError("world triangle representation overflowed") from error
+            if vertices.tobytes() != world.tobytes():
+                raise ValueError("world vertices differ from local_vertices plus origin_world")
+            _world_triangle_representable(world, normal)
+            vertices = world
         object.__setattr__(self, "vertices", vertices)
         object.__setattr__(self, "vertex_pressure", pressure)
         object.__setattr__(self, "pressure_gradient", gradient)
+        object.__setattr__(self, "origin_world", origin)
+        object.__setattr__(self, "local_vertices", local)
 
 
 @dataclass(frozen=True, eq=False)
@@ -196,6 +283,8 @@ class AreaPressureSurface:
                 triangle.vertices,
                 triangle.vertex_pressure,
                 triangle.pressure_gradient,
+                origin_world=triangle.origin_world,
+                local_vertices=triangle.local_vertices,
             )
             if item.triangle_id in seen:
                 raise ValueError("duplicate triangle_id")
@@ -347,11 +436,22 @@ def quadrature_area_pressure(surface):
     try:
         with np.errstate(over="raise", invalid="raise", divide="raise"):
             for index, triangle in enumerate(surface.triangles):
+                coordinates = (
+                    triangle.vertices
+                    if triangle.local_vertices is None
+                    else triangle.local_vertices
+                )
                 area, normal, effective = _triangle_geometry(
-                    triangle.vertices, triangle.vertex_pressure, triangle.pressure_gradient
+                    coordinates, triangle.vertex_pressure, triangle.pressure_gradient
                 )
                 section = slice(3 * index, 3 * index + 3)
-                points[section] = barycentric @ triangle.vertices
+                sample_points = barycentric @ coordinates
+                if triangle.origin_world is not None:
+                    # Keep local edge/pressure precision through quadrature;
+                    # only the final published integration points are world.
+                    sample_points = sample_points + triangle.origin_world
+                    _world_triangle_representable(sample_points, normal)
+                points[section] = sample_points
                 normals[section] = normal
                 areas[section] = area / 3
                 pressure[section] = barycentric @ triangle.vertex_pressure

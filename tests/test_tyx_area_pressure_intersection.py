@@ -402,3 +402,32 @@ def test_impossible_device_metadata_cannot_be_hidden_by_exact_fallback(mode, mon
                     _run(intersector, meshes)
             assert intersector.last_result is accepted
             assert intersector.stats["fallback_pairs"] == fallback_before
+
+
+@pytest.mark.parametrize("mode", MODES)
+def test_per_query_publication_origin_keeps_world_quadrature(mode):
+    from phymeo.backends.tyx_area_pressure_intersection import AreaPressureIntersectionRequest
+
+    pressure, rigid, domain, *_ = _case("horizontal")
+    meshes = _meshes(pressure, rigid, domain)
+    origins = (np.array([1.5, -2.0, 0.125]), np.array([-0.25, 3.0, 1.0]))
+    requests = tuple(
+        AreaPressureIntersectionRequest(*meshes, _identity(), _stamp(), origin_world=origin)
+        for origin in origins
+    )
+    expected = _reference(meshes)
+    with TyxAreaPressureIntersector(mode=mode, capacity=8, fallback="reject") as intersector:
+        left, right = intersector.intersect_many(requests)
+        for result, origin in zip((left, right), origins, strict=True):
+            assert result.surface.triangles
+            for item in result.surface.triangles:
+                np.testing.assert_array_equal(item.origin_world, origin)
+            q = quadrature_area_pressure(result.surface)
+            base = quadrature_area_pressure(expected.surface)
+            np.testing.assert_allclose(q.points, base.points, rtol=0, atol=1e-14)
+            np.testing.assert_array_equal(q.dA, base.dA)
+            np.testing.assert_array_equal(q.pressure, base.pressure)
+        with pytest.raises(ValueError, match="origin_world"):
+            intersector.intersect(
+                *meshes, identity=_identity(), stamp=_stamp(), origin_world=[np.nan, 0, 0]
+            )

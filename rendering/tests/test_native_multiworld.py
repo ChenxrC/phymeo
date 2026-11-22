@@ -187,4 +187,17 @@ class TextureTransferAccounting(unittest.TestCase):
         self.assertIsNone(runner.transfer_report({'device':data})['host_to_device_bytes'])
 
 
+class EnvironmentTransferAccounting(unittest.TestCase):
+    def test_environment_image_and_sh_ubo_are_counted_once_including_dummy(self):
+        data=dict(resident_captures=1,resident_geometry_upload_bytes=100,
+            resident_transform_upload_bytes=128,resident_parameter_upload_bytes=416,
+            resident_profile={'tlas_upload_bytes':48},resident_environment_abi_version=1,
+            resident_environment_info={'image_upload_bytes':24,'parameter_upload_bytes':160})
+        report=runner.transfer_report({'device':data})
+        self.assertEqual(report['host_to_device_bytes'],876)
+        self.assertEqual(report['upload_components']['environment_image_upload_bytes'],24)
+        self.assertEqual(report['upload_components']['environment_parameter_upload_bytes'],160)
+        data['resident_environment_info']=None
+        self.assertIsNone(runner.transfer_report({'device':data})['host_to_device_bytes'])
+
 if __name__=='__main__': unittest.main()

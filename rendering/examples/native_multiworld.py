@@ -127,6 +127,10 @@ def transfer_report(diagnostics):
     texture_expected=data.get('resident_texture_abi_version') is not None
     texture_image=texture['image_upload_bytes'] if texture is not None else (None if texture_expected else 0)
     texture_metadata=texture['metadata_upload_bytes'] if texture is not None else (None if texture_expected else 0)
+    environment=data.get('resident_environment_info')
+    environment_expected=data.get('resident_environment_abi_version') is not None
+    environment_image=environment['image_upload_bytes'] if environment is not None else (None if environment_expected else 0)
+    environment_parameters=environment['parameter_upload_bytes'] if environment is not None else (None if environment_expected else 0)
     # These GPU buffer layouts are the resident ABI1 shader layouts. The native
     # byte counter remains authoritative; report any decomposition disagreement.
     sizes={'resident_vertex_count':('vertex_buffer_bytes',32),
@@ -144,6 +148,8 @@ def transfer_report(diagnostics):
     camera_bytes=captures*272 if uniforms is not None else None
     setup_bytes=uniforms-camera_bytes if uniforms is not None else None
     components=dict(static_geometry=static,
+        environment_image_upload_bytes=environment_image,environment_parameter_upload_bytes=environment_parameters,
+        environment_scope='actual cube image and SH/config UBO writes including dummy cube; separate from camera/studio uniforms',
         texture_image_upload_bytes=texture_image,texture_metadata_upload_bytes=texture_metadata,
         texture_scope='actual image+UV/slot metadata writes including default white sentinel; absent extension has no texture buffers',
         gpu_instance_forward_and_inverse_bytes=data.get('resident_transform_upload_bytes'),
@@ -159,7 +165,7 @@ def transfer_report(diagnostics):
         fence_wait_wall_ns=telemetry['fence_wait_wall_ns'] if telemetry else None,
         fence_wait_calls=telemetry['fence_wait_calls'] if telemetry else None,
         fence_wait_scope='native host fence wait wall time, upload+capture, not GPU kernel time',
-        host_to_device_bytes=known+tlas+texture_image+texture_metadata if all(x is not None for x in (known,tlas,texture_image,texture_metadata)) else None,
+        host_to_device_bytes=known+tlas+texture_image+texture_metadata+environment_image+environment_parameters if all(x is not None for x in (known,tlas,texture_image,texture_metadata,environment_image,environment_parameters)) else None,
         known_upload_subtotal_bytes=known,upload_components=components,
         host_to_device_source='native static copies plus mapped transform/UBO/TLAS writes; input bytes, not hardware PCIe traffic; unavailable if optional TLAS counter absent',
         device_to_host_bytes=telemetry['readback_bytes'] if telemetry else captures*320*240*13,

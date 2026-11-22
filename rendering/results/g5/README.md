@@ -95,3 +95,18 @@ C:/Python311/python.exe -m pip download --index-url https://pypi.org/simple `
 最终安装先保留无 NumPy、SAPIEN、Pillow 的 base 证明，再在**同一个新建源外 env**从确切 wheel 路径用 --no-index --find-links 安装 [ibl,textures]。共享环境 HOST、相同 SHA 的真实图片解码及六面输出需在此环境中执行并记录实际包路径、版本和文件 SHA；环境声明、颜色方向和材质都沿源内已固定输入，不临时换图。真实 native 与参考 PT 环境拍摄留在整套设备 smoke，不能以 HOST 转换成功代替实际图像验收。之后可在此环境增加 [sapien]；它不会要求另一个 NumPy 版本。
 
 当前仅完成 extra 元数据与独立安装范围声明。源码外安装、图片准备和设备验证仍待最终候选 wheel 冻结后执行。
+
+## 可复用源码外 feature 驱动
+
+在前面的 g5_reproduce.py 命令添加 --feature-smoke，即启用同一新建 env 的如下序列；不添加时保留原 F0 路径。此开关不能与 --base-only 同用，可以和 --run-path 组合限定明确执行的设备路径。
+
+1. 基础安装与默认 Panda 证明先执行，确保没有 NumPy、Pillow 或 SAPIEN。
+2. 从同一个准确 wheel 安装 [ibl,textures]，仅使用已保存的本地 wheelhouse。执行原 test_environment.py 的六项 HOST；从原 texture_calibration.py 生成相同16块 UV 板，实际加载PNG和FLOAT VEC2 UV；从原 reference_hdri_probe.py 生成同一SHA的RGBE并准备六面。此阶段明确拒绝已装SAPIEN，不能以参考依赖掩盖原生准备依赖。
+3. 从 installed package 中的 C++、.inc、完整 shader（包含 sky.vert、sky.frag 和 .glsl）构建原生库；执行原 F0、sealed UV图和 native_ibl_calibration.py。各项记录实际DLL SHA和原门槛结果。
+4. 同一 env 再从相同 wheel 安装 [sapien]，执行参考 raster/PT F0、两条参考 UV 图和原 reference_hdri_probe.py。不同用例的相机与采样协议保持原样；每条结果单独记录，任一失败不会被其它通过项覆盖。
+
+新 g5_feature_smoke.py 将七份必要的独立脚本/测试逐字节复制至源外 feature-fixture，manifest绑定全部SHA；运行前后均核验。它不复制产品实现，所有 phymeo_rendering 模块必须位于该 env 的安装目录。原接受脚本通过同一个 Python -I 启动，只有这份已绑定的 examples 目录进入sys.path。Windows USERPROFILE、AppData、系统PATH和Vulkan layer路径保留；TEMP、TMP、TMPDIR使用此新运行自己的temporary目录，避免破坏系统加载器或依赖原checkout的临时文件。
+
+每个用例保留原输出与原协议，额外生成 *.installed.json，记录before/after包路径、实际第三方版本/路径、输入manifest、DLL、结果和全部输出SHA。父 report.json 的 features 字段区分 passed、failed、not_run；未构建/未满足前置项不能计为通过。固定fixture明确使用参考cuda:0；请求其它设备时明确拒绝该UV协议，不偷偷改变封存脚本。
+
+本轮新驱动与五项 HOST 负控仍为文本准备，未安装、构建或执行最终 wheel。G5 已完成的旧元数据 HOST 为12通过、1个未提供实际wheel的节点跳过；HDRI参考源内独立首次设备校准通过不等于源码外交付已通过。

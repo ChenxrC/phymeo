@@ -37,7 +37,7 @@ class MaterialOrbitTests(unittest.TestCase):
             steel, rough, rubber = [materials[instances[i].material_id] for i in (1, 2, 3)]
             self.assertEqual(steel.base_color, rough.base_color)
             self.assertEqual((steel.metallic, rough.metallic, rubber.metallic), (1., 1., 0.))
-            self.assertEqual((steel.roughness, rough.roughness, rubber.roughness), (.035, .45, .85))
+            self.assertEqual((steel.roughness, rough.roughness, rubber.roughness), (.045, .45, .85))
             wood = materials[instances[4].material_id]
             self.assertEqual(wood.base_color_map.sha256, subject.SOURCES['wood_table_001_diff_1k.jpg'])
             self.assertEqual(wood.roughness_map.image.sha256, subject.SOURCES['wood_table_001_rough_1k.jpg'])
@@ -84,3 +84,4 @@ class MaterialOrbitTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+

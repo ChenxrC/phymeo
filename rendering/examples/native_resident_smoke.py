@@ -184,6 +184,83 @@ def borrowed_host_lifetime(library, device_index, scene):
     return result
 
 
+def compact_planes(library, device_index, scene):
+    """All 15 masks equal legacy planes, including odd extents and VALID-only.
+
+    Uses the C boundary deliberately: invalid masks/extents must be rejected
+    before a submit, independently of Python's own input validation.
+    """
+    class ReadbackInfo(ct.Structure):
+        _fields_ = [(name, ct.c_uint32) for name in (
+            "readback_abi_version", "memory_type_index", "memory_property_flags",
+            "persistent_mapped", "last_channel_mask")] + [("reserved", ct.c_uint32 * 3)] + [
+            (name, ct.c_uint64) for name in ("capacity_bytes", "copied_bytes", "map_calls", "unmap_calls")]
+
+    decoded = {mesh.id: load_mesh(mesh) for mesh in scene.meshes}
+    device = ResidentDevice(library, library.parent, device_index, True)
+    result = {"extents": []}
+    try:
+        device.upload(*pack_scene(scene, decoded))
+        function = getattr(device._lib, "pr_resident_render_planes", None)
+        require(function is not None, "compact resident ABI missing")
+        legacy = device._lib.pr_resident_render
+        function.argtypes = legacy.argtypes[:6] + [ct.c_uint32] + legacy.argtypes[6:]
+        function.restype = ct.c_int
+        # A separate callable prevents this independent ABI-layout probe from
+        # replacing the Python adapter's ctypes prototype on the shared CDLL.
+        query = ct.CFUNCTYPE(ct.c_int, ct.c_void_p, ct.POINTER(ReadbackInfo))(
+            ("pr_resident_readback_info", device._lib))
+        require(ct.sizeof(ReadbackInfo) == 64, "readback info ABI size")
+        frame = _frame()
+        matrices = _instance_matrices(scene, frame)
+        triangles = sum(len(decoded[item.mesh_id].triangles) for item in scene.instances)
+        expected_copied = 0
+        for width, height in ((319, 241), (1, 1), (319, 241)):
+            camera = replace(_request(frame).camera, width=width, height=height,
+                             cx_px=width / 2, cy_px=height / 2)
+            params = _parameters(scene, CaptureRequest(camera, RenderPath.RASTER, tuple(Channel)), triangles, 1.0)
+            params.counts[3] = len(scene.instances)
+            pixels = width * height
+            whole = device.render(matrices, params, width, height)
+            blocks = (whole[:4*pixels], whole[4*pixels:8*pixels],
+                      whole[8*pixels:12*pixels], whole[12*pixels:])
+            expected_copied += 13*pixels
+            for mask in range(1, 16):
+                params.counts[2] = int(bool(mask & 1))
+                expected = b"".join(block for bit, block in enumerate(blocks) if mask & (1 << bit))
+                target = (ct.c_uint8 * len(expected))()
+                code = function(device._handle, matrices, len(scene.instances), ct.byref(params),
+                                width, height, mask, target, len(target))
+                require(code == 0, device._error())
+                require(bytes(target) == expected, f"compact plane mismatch at {width}x{height}, mask {mask}")
+                expected_copied += len(expected)
+            info = ReadbackInfo()
+            require(query(device._handle, ct.byref(info)) == 0, device._error())
+            require(info.persistent_mapped == 1 and info.capacity_bytes == 13*pixels, "mapped capacity")
+            require(info.memory_property_flags & 6 == 6, "readback must remain HOST_VISIBLE and COHERENT")
+            require(info.copied_bytes == expected_copied, "readback byte counter")
+            result["extents"].append({"width": width, "height": height, "masks_checked": 15,
+                "memory_type_index": info.memory_type_index, "memory_property_flags": info.memory_property_flags,
+                "map_calls": info.map_calls, "unmap_calls": info.unmap_calls,
+                "copied_bytes": info.copied_bytes})
+        require(info.map_calls == 3 and info.unmap_calls == 2, "mapping must follow target lifetime")
+        before = device.info()["resident_captures"]
+        params.counts[2] = 1
+        for mask, byte_count in ((0, 0), (16, 4*pixels), (1, 4*pixels-1), (1, 4*pixels+1)):
+            target = (ct.c_uint8 * max(1, byte_count))()
+            code = function(device._handle, matrices, len(scene.instances), ct.byref(params),
+                            width, height, mask, target, byte_count)
+            require(code != 0, f"invalid compact request accepted: {mask}, {byte_count}")
+        target = (ct.c_uint8 * pixels)()
+        require(function(device._handle, matrices, len(scene.instances), ct.byref(params), width, height,
+                         8, target, pixels) != 0, "RGB-request flag disagrees with compact mask")
+        require(device.info()["resident_captures"] == before and device.info()["resident_poisoned"] == 0,
+                "input rejection submitted a capture or poisoned the session")
+        result["invalid_requests_rejected_before_submit"] = 5
+    finally:
+        result["closed"] = _close_clean(device)
+    return result
+
 def full_panda(backend, directory):
     from _panda_scene import build_scene, cameras
     from phymeo_rendering.adapters.panda_replay import PandaReplaySource
@@ -234,6 +311,7 @@ def main():
     parser.add_argument("--device-index", type=int, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--full-panda", action="store_true")
+    parser.add_argument("--compact", action="store_true", help="Check all compact plane masks and readback lifetime")
     args = parser.parse_args()
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=False)
@@ -250,6 +328,8 @@ def main():
         report["moving_shadow"] = moving_shadow(backend, scene)
         report["empty"] = empty_capture(backend)
         report["host_pointer_lifetime"] = borrowed_host_lifetime(library, args.device_index, scene)
+        if args.compact:
+            report["compact"] = compact_planes(library, args.device_index, scene)
         if args.full_panda:
             report["full_panda"] = full_panda(backend, output / "geometry")
         report["status"] = "passed"

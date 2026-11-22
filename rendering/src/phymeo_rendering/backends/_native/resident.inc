@@ -474,7 +474,15 @@ void resident_target(Context& c, ResidentState& state, uint32_t width, uint32_t 
     uint64_t errors_before = c.errors.load();
     auto frame = std::make_unique<FrameResources>(c);
     c.make_buffer(frame->uniform, sizeof(PrParams), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
-    c.make_buffer(frame->readback, static_cast<size_t>(width)*height*13, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    frame->readback_capacity=static_cast<size_t>(width)*height*13;
+    c.make_buffer(frame->readback,frame->readback_capacity,VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                  VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                  VK_MEMORY_PROPERTY_HOST_CACHED_BIT);
+    void* readback_mapping=nullptr;
+    check(vkMapMemory(c.device,frame->readback.memory,0,VK_WHOLE_SIZE,0,&readback_mapping),
+          "resident persistent readback map");
+    frame->readback_mapping=readback_mapping; // own a mapping only after VK_SUCCESS
+    ++c.readback_info.map_calls;
     std::array<VkImageView, 5> views{};
     for (uint32_t i = 0; i < 5; ++i) {
         c.make_image(frame->images[i], width, height, FORMATS[i], i == 4);
@@ -537,12 +545,19 @@ void resident_target(Context& c, ResidentState& state, uint32_t width, uint32_t 
 }
 
 void validate_resident_params(const Context& c, const PrParams& params,
-                              uint32_t width, uint32_t height, uint8_t* output, size_t output_bytes) {
+                              uint32_t width, uint32_t height, uint8_t* output, size_t output_bytes,
+                              uint32_t channel_mask, bool compact) {
     require(width && height && width <= c.properties.max_width && height <= c.properties.max_height,
             "resident capture extent exceeds device capability");
     require(static_cast<uint64_t>(width)*height <= 4096ull*4096ull, "resident pixel budget exceeded");
-    require(output && output_bytes == static_cast<size_t>(width)*height*13,
+    require(channel_mask!=0 && (channel_mask & ~15u)==0,"resident invalid output channel mask");
+    const size_t plane_bytes[]{4,4,4,1};
+    size_t bytes_per_pixel=0;
+    for (uint32_t i=0; i<4; ++i) if (channel_mask & (1u<<i)) bytes_per_pixel+=plane_bytes[i];
+    require(output && output_bytes==static_cast<size_t>(width)*height*bytes_per_pixel,
             "resident output byte extent mismatch");
+    require(!compact || params.counts[2]==((channel_mask & 1u) ? 1u : 0u),
+            "resident output mask disagrees with RGB request");
     require(params.counts[0] <= 4 && params.counts[1] == c.resident_properties.instanced_triangles &&
             params.counts[2] <= 1 && params.counts[3] == c.resident_properties.instance_count,
             "resident uniform scene counts mismatch");
@@ -568,11 +583,12 @@ void validate_resident_params(const Context& c, const PrParams& params,
 }
 
 void resident_render(Context& c, const float* matrices, uint32_t instance_count, const PrParams& params,
-                     uint32_t width, uint32_t height, uint8_t* output, size_t output_bytes) {
+                     uint32_t width, uint32_t height, uint8_t* output, size_t output_bytes,
+                     uint32_t channel_mask=15u, bool compact=false) {
     const auto prepare_begin=HostClock::now();
     require(c.resident && c.resident_state && !c.poisoned,
             "resident scene is not loaded or context failed; open an explicit new session");
-    validate_resident_params(c, params, width, height, output, output_bytes);
+    validate_resident_params(c, params, width, height, output, output_bytes, channel_mask, compact);
     auto& state = *c.resident_state;
     auto transforms = resident_transforms(state, matrices, instance_count);
     auto tlas = resident_tlas(state, transforms);
@@ -580,6 +596,8 @@ void resident_render(Context& c, const float* matrices, uint32_t instance_count,
     try {
     resident_target(c, state, width, height);
     auto& frame = *state.target;
+    require(frame.readback_mapping && output_bytes<=frame.readback_capacity,
+            "resident readback target capacity mismatch");
     auto& info = c.resident_properties;
     uint64_t errors_before = c.errors.load();
     if (instance_count) {
@@ -656,6 +674,9 @@ void resident_render(Context& c, const float* matrices, uint32_t instance_count,
     const size_t pixels = static_cast<size_t>(width)*height;
     offset = 0;
     for (uint32_t i = 0; i < 4; ++i) {
+        if (!(channel_mask & (1u<<i))) continue;
+        // All preceding formats are four bytes; VALID (one byte) is last.
+        // Thus odd width/height and VALID-only still satisfy copy alignment.
         VkBufferImageCopy copy{};
         copy.bufferOffset = offset;
         copy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -702,11 +723,12 @@ void resident_render(Context& c, const float* matrices, uint32_t instance_count,
             }
         }
     }
-    void* mapped{};
-    check(vkMapMemory(c.device, frame.readback.memory, 0, output_bytes, 0, &mapped), "resident map output");
-    std::memcpy(output, mapped, output_bytes);
+    // The HOST_COHERENT mapping lives with the target. Fence completion and the
+    // transfer->HOST barrier make writes visible without invalidate operations.
+    std::memcpy(output, frame.readback_mapping, output_bytes);
     c.telemetry.readback_bytes += output_bytes;
-    vkUnmapMemory(c.device, frame.readback.memory);
+    c.readback_info.copied_bytes += output_bytes;
+    c.readback_info.last_channel_mask=channel_mask;
     auto& profile=c.profile;
     ++profile.captures;
     profile.host_prepare_ns+=elapsed_ns(prepare_begin,upload_begin);

@@ -1,0 +1,194 @@
+{
+  "source_anchors_sha256": "4ee4139add8df55cb21ec79b7c5db43267fb0f745bc29d5cd2eabcf491904a86",
+  "physical_anchors": [
+    {
+      "name": "base",
+      "owner_expected": 103,
+      "owner_observed": 103,
+      "expected": {
+        "uv": [
+          394.11721918911394,
+          608.7473698596658
+        ],
+        "pixel": [
+          394,
+          608
+        ],
+        "depth_m": 1.6405894508926524
+      },
+      "observed_centroid": [
+        394.0,
+        608.7857142857143
+      ],
+      "error_px": 0.12333139626842882,
+      "marker_pixels": 14,
+      "observed_depth_m": 1.6405879259109497
+    },
+    {
+      "name": "wrist",
+      "owner_expected": 151,
+      "owner_observed": 151,
+      "expected": {
+        "uv": [
+          582.0103169698931,
+          348.0087149431336
+        ],
+        "pixel": [
+          582,
+          348
+        ],
+        "depth_m": 1.2924852133142
+      },
+      "observed_centroid": [
+        582.0,
+        348.0
+      ],
+      "error_px": 0.013505187951196816,
+      "marker_pixels": 24,
+      "observed_depth_m": 1.2924854755401611
+    },
+    {
+      "name": "finger",
+      "owner_expected": 158,
+      "owner_observed": 158,
+      "expected": {
+        "uv": [
+          617.691357347685,
+          363.98458280598055
+        ],
+        "pixel": [
+          617,
+          363
+        ],
+        "depth_m": 1.3604210518811364
+      },
+      "observed_centroid": [
+        617.7,
+        364.0
+      ],
+      "error_px": 0.017674425322272726,
+      "marker_pixels": 20,
+      "observed_depth_m": 1.3604204654693604
+    },
+    {
+      "name": "base",
+      "owner_expected": 103,
+      "owner_observed": 103,
+      "expected": {
+        "uv": [
+          394.11721918911394,
+          608.7473698596658
+        ],
+        "pixel": [
+          394,
+          608
+        ],
+        "depth_m": 1.6405894508926524
+      },
+      "observed_centroid": [
+        394.0,
+        608.7857142857143
+      ],
+      "error_px": 0.12333139626842882,
+      "marker_pixels": 14,
+      "observed_depth_m": 1.6405879259109497
+    },
+    {
+      "name": "wrist",
+      "owner_expected": 151,
+      "owner_observed": 151,
+      "expected": {
+        "uv": [
+          631.6054386111749,
+          300.3082217036684
+        ],
+        "pixel": [
+          631,
+          300
+        ],
+        "depth_m": 1.215646103653727
+      },
+      "observed_centroid": [
+        631.5,
+        300.2083333333333
+      ],
+      "error_px": 0.1452411348574873,
+      "marker_pixels": 24,
+      "observed_depth_m": 1.215646505355835
+    },
+    {
+      "name": "finger",
+      "owner_expected": 158,
+      "owner_observed": 158,
+      "expected": {
+        "uv": [
+          655.7042663474499,
+          321.641193482802
+        ],
+        "pixel": [
+          655,
+          321
+        ],
+        "depth_m": 1.2740712284354012
+      },
+      "observed_centroid": [
+        655.5909090909091,
+        321.59090909090907
+      ],
+      "error_px": 0.12400962736213463,
+      "marker_pixels": 22,
+      "observed_depth_m": 1.2740709781646729
+    }
+  ],
+  "compare_to_archived_sapien_raster": [
+    {
+      "pose": 479,
+      "camera": "fixed",
+      "pixels": 691200,
+      "mismatched_id_pixels": 2,
+      "interior_pixels": 257893,
+      "interior_owner_disagreements": 0,
+      "max_matching_interior_depth_error_m": 1.2516975402832031e-05,
+      "p99_matching_interior_depth_error_m": 7.152557373046875e-07,
+      "cube_pixels": 2477,
+      "robot_pixels": 89759
+    },
+    {
+      "pose": 479,
+      "camera": "wrist",
+      "pixels": 307200,
+      "mismatched_id_pixels": 0,
+      "interior_pixels": 290302,
+      "interior_owner_disagreements": 0,
+      "max_matching_interior_depth_error_m": 3.3676624298095703e-06,
+      "p99_matching_interior_depth_error_m": 9.5367431640625e-07,
+      "cube_pixels": 21039,
+      "robot_pixels": 108830
+    },
+    {
+      "pose": 2159,
+      "camera": "fixed",
+      "pixels": 691200,
+      "mismatched_id_pixels": 4,
+      "interior_pixels": 265598,
+      "interior_owner_disagreements": 0,
+      "max_matching_interior_depth_error_m": 1.2516975402832031e-05,
+      "p99_matching_interior_depth_error_m": 7.152557373046875e-07,
+      "cube_pixels": 2669,
+      "robot_pixels": 96712
+    },
+    {
+      "pose": 2159,
+      "camera": "wrist",
+      "pixels": 307200,
+      "mismatched_id_pixels": 0,
+      "interior_pixels": 290945,
+      "interior_owner_disagreements": 0,
+      "max_matching_interior_depth_error_m": 4.813075065612793e-06,
+      "p99_matching_interior_depth_error_m": 2.384185791015625e-07,
+      "cube_pixels": 19573,
+      "robot_pixels": 107339
+    }
+  ],
+  "capture_receipt": "resident-capture.json"
+}

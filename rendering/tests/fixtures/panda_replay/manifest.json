@@ -1,0 +1,34 @@
+{
+  "schema": "phymeo-panda-archive-manifest-v1",
+  "archive_sha256": "d74e42dd2d3f7735e197b0a845e602217b243a8513c73b7ab09c02995ccb666b",
+  "archive_relative_path": "artifacts/p65-panda-rotated-offset-20261104-01/phy-results/test_rotated_offset_box_window0/rotated-grip.json",
+  "archive_record_count": 3600,
+  "excerpt_sha256": "cf9f073747d8d5e76a2b9905a27765a9b80db753e65e2a3270bd964b42ea2d98",
+  "model_sha256": "2b5bd00abb4ba68e91d532d2d778da64d1c942a9b22aa7acd58dd12a713971fd",
+  "records": [
+    {
+      "raw_record_sha256": "6f876be1d5e49c3565858f0640e8fc8258103658aff3efe48c2108cf6ef76309",
+      "source_index": 479
+    },
+    {
+      "raw_record_sha256": "362c71ba0aefce004b2dde6161c53e264f4519e65ccd5cdea75ae68503aaf7b8",
+      "source_index": 2159
+    }
+  ],
+  "base_pose": {
+    "orientation_xyzw": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "position_m": [
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "base_pose_source": "fixed-base load_panda() defaults in archived experiment; not an archived live state identity",
+  "live_physics_identity": null,
+  "state_phase": "post-step q/cube/xyzw/t; forces and pad_points_before_m belong to previous step input geometry"
+}

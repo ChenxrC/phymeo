@@ -17,8 +17,10 @@ from ._sapien_studio import SapienStudio
 class SapienConfig:
     """Reference settings, independent of the public exposure request.
 
-    PT is RGB-only, with fresh accumulation, no denoiser and no user-settable
-    random seed. Its shipped primary-ray clipping requires conservative frame
+    PT is RGB-only with fresh accumulation. The official sampling mode uses
+    SAPIEN's shipped sequence. The shifted-halton mode explicitly selects a
+    locally derived shader pack with user-seeded path and primary samples.
+    The shipped primary-ray clipping requires conservative frame
     admission (all scene vertices strictly inside the requested clip slab).
     """
 
@@ -29,6 +31,7 @@ class SapienConfig:
     seed: int | None = None
     denoiser: str = "none"
     studio: SapienStudio | None = None
+    sampling_mode: str = "official"
 
     def __post_init__(self):
         if not isinstance(self.path, RenderPath):
@@ -44,10 +47,18 @@ class SapienConfig:
                 raise TypeError(f"{name} must be an integer, not bool")
             if not minimum <= value <= 2**31 - 1:
                 raise ValueError(f"{name} is outside the signed 32-bit shader range")
+        if self.sampling_mode not in ("official", "shifted-halton"):
+            raise ValueError("unknown reference sampling mode")
         if self.seed is not None:
             if isinstance(self.seed, bool) or not isinstance(self.seed, int):
                 raise TypeError("seed must be an integer or None")
-            raise UnsupportedRequestError("SAPIEN 3.0.3 has no public user seed control")
+            if self.sampling_mode == "official":
+                raise UnsupportedRequestError("the official SAPIEN 3.0.3 shader has a fixed seed")
+        if self.sampling_mode == "shifted-halton":
+            if self.path is not RenderPath.PATH_TRACE:
+                raise UnsupportedRequestError("shifted Halton samples require path tracing")
+            if self.seed is None or not 0 <= self.seed <= 2**32-1:
+                raise ValueError("shifted Halton sampling requires an explicit uint32 seed")
         if not isinstance(self.denoiser, str):
             raise TypeError("denoiser must be a string")
         if self.denoiser != "none":

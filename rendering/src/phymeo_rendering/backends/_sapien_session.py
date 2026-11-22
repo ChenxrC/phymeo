@@ -13,6 +13,7 @@ from math import isfinite
 from pathlib import Path
 from struct import pack, unpack
 from threading import RLock
+from tempfile import TemporaryDirectory
 import sys
 
 from ..outputs import Capture, Channel, ImagePlane
@@ -58,6 +59,7 @@ class SapienSession:
         self.ids = {}
         self.closed = False
         self._studio = None
+        self._sampling_temp = None
         self.diagnostics = {}
         self._lifecycle = {
             "studio_temporary_files_exist": False,
@@ -81,6 +83,14 @@ class SapienSession:
         )
         self.rgb_target = "Lighting" if config.path is RenderPath.RASTER else "HdrColor"
         try:
+            official_hash = _shader_hash(self.shader_directory)
+            if config.sampling_mode == "shifted-halton":
+                from ._sapien_sampling import make_seeded_pack
+
+                self._sampling_temp = TemporaryDirectory(prefix="phymeo-rt-sampling-")
+                self.shader_directory = make_seeded_pack(
+                    self.shader_directory, Path(self._sampling_temp.name) / "rt", config.seed
+                )
             # Decode using the same bounded loader as the native backend before
             # uploading. SAPIEN's independent URI/asset loader is never used.
             from ..mesh_data import load_mesh
@@ -183,6 +193,7 @@ class SapienSession:
                 "shader_pack": self.shader,
                 "shader_directory": str(self.shader_directory),
                 "shader_sha256": _shader_hash(self.shader_directory),
+                "official_shader_sha256": official_hash,
                 "linear_rgb_target": self.rgb_target,
                 "display": "exposure=1; clamp linear [0,1]; standard sRGB OETF; half-up UNORM8",
                 "ambient_linear_rgb": [0.0, 0.0, 0.0],
@@ -191,9 +202,9 @@ class SapienSession:
                 "samples_per_pixel": config.samples_per_pixel if self.shader == "rt" else 1,
                 "max_bounces": config.max_bounces if self.shader == "rt" else None,
                 "denoiser": "none",
-                "seed": None,
-                "seed_support": "not-user-configurable",
-                "seed_note": "rt shader uses fixed magic plus pixel/spp/frameCount; no cross-device bitwise claim",
+                "seed": config.seed,
+                "seed_support": "not-user-configurable" if self._sampling_temp is None else "seeded-local-shader",
+                "seed_note": "sampling_pattern specifies the actual shader and device scope",
                 "sampling_pattern": self._sampling_pattern(),
                 "accumulation": "fresh camera per exposure; no temporal history",
                 "supported_channels": (
@@ -224,6 +235,14 @@ class SapienSession:
         # Describe the actual installed pack. Do not advertise this sequence
         # for a different shader merely because its package version matches.
         source = (self.shader_directory / "camera.rgen").read_text(encoding="utf-8")
+        if self.config.sampling_mode == "shifted-halton":
+            return {
+                "mode": "shifted-halton", "seed": self.config.seed,
+                "primary_pixel_sequence": "per-pixel seed-dependent 2D shift modulo one of Halton bases 2 and 3",
+                "path_rng": "TEA(pixel index + width*height*spp*frameCount, seed)",
+                "frame_count_policy": "fresh camera per exposure",
+                "arbitrary_seed_supported": True, "cross_device_bitwise_guarantee": False,
+            }
         if (
             "uint magic = 0x9e3779b9;" not in source
             or "halton2d(frameCount * spp + i, 2, 3)" not in source
@@ -489,6 +508,8 @@ class SapienSession:
             self.ids.clear()
             self.scene = None
             self.system = None
+            if self._sampling_temp is not None:
+                self._sampling_temp.cleanup()
             if self._studio is not None:
                 pending_error = sys.exception()
                 try:

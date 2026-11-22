@@ -119,6 +119,8 @@ bool occluded(vec3 worldOrigin, vec3 worldDirection, float tMax) {
     return false;
 }
 
+#include "resident_environment.glsl"
+#define PR_RESIDENT_DIRECTIONAL_ENVIRONMENT
 #include "resident_studio.glsl"
 
 vec3 encodeSRGB(vec3 linearColor) {
@@ -170,7 +172,7 @@ void main() {
             color += (diffuse+specular)*u.lightColors[i].rgb*nl;
         }
     }
-    if (u.counts.z != 0u && studio.environment.w != 0.0) {
+    if (u.counts.z != 0u && (studio.environment.w != 0.0 || residentEnvironmentEnabled())) {
         vec3 N = normalize(worldNormal);
         vec3 V = normalize(u.camera.xyz-worldPosition);
         if (dot(N,V) < 0.0) N = -N;

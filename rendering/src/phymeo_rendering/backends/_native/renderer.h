@@ -190,3 +190,34 @@ PR_API int pr_resident_set_textures(void* context,
     const uint8_t* rgba, size_t rgba_bytes, const PrResidentUV* uv, uint32_t uv_count,
     const uint32_t* instance_slots, uint32_t instance_count);
 PR_API int pr_resident_texture_info(void* context, PrResidentTextureInfo* output);
+
+// Optional directional environment extension v1, independent of ABI2/resident1.
+// Level-major RGBA32F linear radiance: six Vulkan faces +X,-X,+Y,-Y,+Z,-Z
+// per mip, each top row first. Full power-of-two chain to 1x1; RGB in [0,100],
+// alpha=1. World ray XYZ samples cube XZY. SH remains WORLD XYZ, real standard
+// orthonormal basis (no negative phase), already Lambert-convolved / pi:
+// [1,y,z,x,xy,yz,3z*z-1,xz,x*x-y*y] with their normalized SH constants.
+struct PrResidentEnvironment {
+    uint32_t side, mip_levels, reserved[2];
+    float diffuse_sh[9][4]; // signed finite RGB coefficients; w=0
+};
+struct PrResidentEnvironmentInfo {
+    uint32_t environment_abi_version, supported, shader_compatible, max_side, max_mip_levels;
+    uint32_t side, mip_levels, loaded, format, cube_layers, sh_coefficients, axis_transform, diffuse_basis;
+    uint32_t reserved[3];
+    uint64_t max_rgba_bytes, source_rgba_bytes, image_upload_bytes, parameter_upload_bytes;
+    uint64_t upload_calls, rgb_captures_with_environment, sky_draws, reserved64;
+};
+static_assert(sizeof(PrResidentEnvironment)==160, "environment input ABI");
+static_assert(sizeof(PrResidentEnvironmentInfo)==128, "environment info ABI");
+static_assert(offsetof(PrResidentEnvironmentInfo,max_rgba_bytes)==64, "environment info alignment");
+PR_API uint32_t pr_resident_environment_abi_version();
+// Exactly once after geometry and before any capture. The SPIR-V main stages
+// must be compatible; explicit sky vertex/fragment bytes avoid implicit file I/O.
+// All caller memory is copied/consumed synchronously; no pointer survives return.
+// A map replaces the uniform studio environment, retaining rectangle lights.
+// Upload counters INCLUDE default black cube/UBO, independent of older counters.
+PR_API int pr_resident_set_environment(void* context, const PrResidentEnvironment* environment,
+    const float* rgba, size_t rgba_bytes, const uint32_t* sky_vert, size_t sky_vert_bytes,
+    const uint32_t* sky_frag, size_t sky_frag_bytes);
+PR_API int pr_resident_environment_info(void* context, PrResidentEnvironmentInfo* output);

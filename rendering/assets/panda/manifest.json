@@ -1,0 +1,7151 @@
+{
+  "coordinate_frame": "authored URDF link local",
+  "instances": [
+    {
+      "id": 100,
+      "material_id": "panda_visual_link0_00_material",
+      "mesh_id": "panda_visual_link0_00",
+      "node_id": "panda_link0",
+      "orientation_xyzw": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "position_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 101,
+      "material_id": "panda_visual_link0_01_material",
+      "mesh_id": "panda_visual_link0_01",
+      "node_id": "panda_link0",
+      "orientation_xyzw": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "position_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 102,
+      "material_id": "panda_visual_link0_02_material",
+      "mesh_id": "panda_visual_link0_02",
+      "node_id": "panda_link0",
+      "orientation_xyzw": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "position_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 103,
+      "material_id": "panda_visual_link0_03_material",
+      "mesh_id": "panda_visual_link0_03",
+      "node_id": "panda_link0",
+      "orientation_xyzw": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "position_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 104,
+      "material_id": "panda_visual_link0_04_material",
+      "mesh_id": "panda_visual_link0_04",
+      "node_id": "panda_link0",
+      "orientation_xyzw": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "position_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 105,
+      "material_id": "panda_visual_link0_05_material",
+      "mesh_id": "panda_visual_link0_05",
+      "node_id": "panda_link0",
+      "orientation_xyzw": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "position_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 106,
+      "material_id": "panda_visual_link0_06_material",
+      "mesh_id": "panda_visual_link0_06",
+      "node_id": "panda_link0",
+      "orientation_xyzw": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "position_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 107,
+      "material_id": "panda_visual_link0_07_material",
+      "mesh_id": "panda_visual_link0_07",
+      "node_id": "panda_link0",
+      "orientation_xyzw": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "position_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 108,
+      "material_id": "panda_visual_link0_08_material",
+      "mesh_id": "panda_visual_link0_08",
+      "node_id": "panda_link0",
+      "orientation_xyzw": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "position_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 109,
+      "material_id": "panda_visual_link0_09_material",
+      "mesh_id": "panda_visual_link0_09",
+      "node_id": "panda_link0",
+      "orientation_xyzw": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "position_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 110,
+      "material_id": "panda_visual_link0_10_material",
+      "mesh_id": "panda_visual_link0_10",
+      "node_id": "panda_link0",
+      "orientation_xyzw": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "position_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 111,
+      "material_id": "panda_visual_link0_11_material",
+      "mesh_id": "panda_visual_link0_11",
+      "node_id": "panda_link0",
+      "orientation_xyzw": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "position_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 112,
+      "material_id": "panda_visual_link1_00_material",
+      "mesh_id": "panda_visual_link1_00",
+      "node_id": "panda_link1",
+      "orientation_xyzw": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "position_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 113,
+      "material_id": "panda_visual_link2_00_material",
+      "mesh_id": "panda_visual_link2_00",
+      "node_id": "panda_link2",
+      "orientation_xyzw": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "position_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 114,
+      "material_id": "panda_visual_link3_00_material",
+      "mesh_id": "panda_visual_link3_00",
+      "node_id": "panda_link3",
+      "orientation_xyzw": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "position_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 115,
+      "material_id": "panda_visual_link3_01_material",
+      "mesh_id": "panda_visual_link3_01",
+      "node_id": "panda_link3",
+      "orientation_xyzw": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "position_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 116,
+      "material_id": "panda_visual_link3_02_material",
+      "mesh_id": "panda_visual_link3_02",
+      "node_id": "panda_link3",
+      "orientation_xyzw": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "position_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 117,
+      "material_id": "panda_visual_link3_03_material",
+      "mesh_id": "panda_visual_link3_03",
+      "node_id": "panda_link3",
+      "orientation_xyzw": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "position_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 118,
+      "material_id": "panda_visual_link4_00_material",
+      "mesh_id": "panda_visual_link4_00",
+      "node_id": "panda_link4",
+      "orientation_xyzw": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "position_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 119,
+      "material_id": "panda_visual_link4_01_material",
+      "mesh_id": "panda_visual_link4_01",
+      "node_id": "panda_link4",
+      "orientation_xyzw": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "position_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 120,
+      "material_id": "panda_visual_link4_02_material",
+      "mesh_id": "panda_visual_link4_02",
+      "node_id": "panda_link4",
+      "orientation_xyzw": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "position_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 121,
+      "material_id": "panda_visual_link4_03_material",
+      "mesh_id": "panda_visual_link4_03",
+      "node_id": "panda_link4",
+      "orientation_xyzw": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "position_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 122,
+      "material_id": "panda_visual_link5_00_material",
+      "mesh_id": "panda_visual_link5_00",
+      "node_id": "panda_link5",
+      "orientation_xyzw": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "position_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 123,
+      "material_id": "panda_visual_link5_01_material",
+      "mesh_id": "panda_visual_link5_01",
+      "node_id": "panda_link5",
+      "orientation_xyzw": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "position_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 124,
+      "material_id": "panda_visual_link5_02_material",
+      "mesh_id": "panda_visual_link5_02",
+      "node_id": "panda_link5",
+      "orientation_xyzw": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "position_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 125,
+      "material_id": "panda_visual_link6_00_material",
+      "mesh_id": "panda_visual_link6_00",
+      "node_id": "panda_link6",
+      "orientation_xyzw": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "position_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 126,
+      "material_id": "panda_visual_link6_01_material",
+      "mesh_id": "panda_visual_link6_01",
+      "node_id": "panda_link6",
+      "orientation_xyzw": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "position_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 127,
+      "material_id": "panda_visual_link6_02_material",
+      "mesh_id": "panda_visual_link6_02",
+      "node_id": "panda_link6",
+      "orientation_xyzw": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "position_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 128,
+      "material_id": "panda_visual_link6_03_material",
+      "mesh_id": "panda_visual_link6_03",
+      "node_id": "panda_link6",
+      "orientation_xyzw": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "position_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 129,
+      "material_id": "panda_visual_link6_04_material",
+      "mesh_id": "panda_visual_link6_04",
+      "node_id": "panda_link6",
+      "orientation_xyzw": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "position_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 130,
+      "material_id": "panda_visual_link6_05_material",
+      "mesh_id": "panda_visual_link6_05",
+      "node_id": "panda_link6",
+      "orientation_xyzw": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "position_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 131,
+      "material_id": "panda_visual_link6_06_material",
+      "mesh_id": "panda_visual_link6_06",
+      "node_id": "panda_link6",
+      "orientation_xyzw": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "position_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 132,
+      "material_id": "panda_visual_link6_07_material",
+      "mesh_id": "panda_visual_link6_07",
+      "node_id": "panda_link6",
+      "orientation_xyzw": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "position_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 133,
+      "material_id": "panda_visual_link6_08_material",
+      "mesh_id": "panda_visual_link6_08",
+      "node_id": "panda_link6",
+      "orientation_xyzw": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "position_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 134,
+      "material_id": "panda_visual_link6_09_material",
+      "mesh_id": "panda_visual_link6_09",
+      "node_id": "panda_link6",
+      "orientation_xyzw": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "position_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 135,
+      "material_id": "panda_visual_link6_10_material",
+      "mesh_id": "panda_visual_link6_10",
+      "node_id": "panda_link6",
+      "orientation_xyzw": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "position_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 136,
+      "material_id": "panda_visual_link6_11_material",
+      "mesh_id": "panda_visual_link6_11",
+      "node_id": "panda_link6",
+      "orientation_xyzw": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "position_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 137,
+      "material_id": "panda_visual_link6_12_material",
+      "mesh_id": "panda_visual_link6_12",
+      "node_id": "panda_link6",
+      "orientation_xyzw": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "position_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 138,
+      "material_id": "panda_visual_link6_13_material",
+      "mesh_id": "panda_visual_link6_13",
+      "node_id": "panda_link6",
+      "orientation_xyzw": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "position_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 139,
+      "material_id": "panda_visual_link6_14_material",
+      "mesh_id": "panda_visual_link6_14",
+      "node_id": "panda_link6",
+      "orientation_xyzw": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "position_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 140,
+      "material_id": "panda_visual_link6_15_material",
+      "mesh_id": "panda_visual_link6_15",
+      "node_id": "panda_link6",
+      "orientation_xyzw": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "position_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 141,
+      "material_id": "panda_visual_link6_16_material",
+      "mesh_id": "panda_visual_link6_16",
+      "node_id": "panda_link6",
+      "orientation_xyzw": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "position_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 142,
+      "material_id": "panda_visual_link7_00_material",
+      "mesh_id": "panda_visual_link7_00",
+      "node_id": "panda_link7",
+      "orientation_xyzw": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "position_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 143,
+      "material_id": "panda_visual_link7_01_material",
+      "mesh_id": "panda_visual_link7_01",
+      "node_id": "panda_link7",
+      "orientation_xyzw": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "position_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 144,
+      "material_id": "panda_visual_link7_02_material",
+      "mesh_id": "panda_visual_link7_02",
+      "node_id": "panda_link7",
+      "orientation_xyzw": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "position_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 145,
+      "material_id": "panda_visual_link7_03_material",
+      "mesh_id": "panda_visual_link7_03",
+      "node_id": "panda_link7",
+      "orientation_xyzw": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "position_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 146,
+      "material_id": "panda_visual_link7_04_material",
+      "mesh_id": "panda_visual_link7_04",
+      "node_id": "panda_link7",
+      "orientation_xyzw": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "position_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 147,
+      "material_id": "panda_visual_link7_05_material",
+      "mesh_id": "panda_visual_link7_05",
+      "node_id": "panda_link7",
+      "orientation_xyzw": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "position_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 148,
+      "material_id": "panda_visual_link7_06_material",
+      "mesh_id": "panda_visual_link7_06",
+      "node_id": "panda_link7",
+      "orientation_xyzw": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "position_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 149,
+      "material_id": "panda_visual_link7_07_material",
+      "mesh_id": "panda_visual_link7_07",
+      "node_id": "panda_link7",
+      "orientation_xyzw": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "position_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 150,
+      "material_id": "panda_visual_hand_00_material",
+      "mesh_id": "panda_visual_hand_00",
+      "node_id": "panda_hand",
+      "orientation_xyzw": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "position_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 151,
+      "material_id": "panda_visual_hand_01_material",
+      "mesh_id": "panda_visual_hand_01",
+      "node_id": "panda_hand",
+      "orientation_xyzw": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "position_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 152,
+      "material_id": "panda_visual_hand_02_material",
+      "mesh_id": "panda_visual_hand_02",
+      "node_id": "panda_hand",
+      "orientation_xyzw": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "position_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 153,
+      "material_id": "panda_visual_hand_03_material",
+      "mesh_id": "panda_visual_hand_03",
+      "node_id": "panda_hand",
+      "orientation_xyzw": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "position_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 154,
+      "material_id": "panda_visual_hand_04_material",
+      "mesh_id": "panda_visual_hand_04",
+      "node_id": "panda_hand",
+      "orientation_xyzw": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "position_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 155,
+      "material_id": "panda_visual_finger_00_material",
+      "mesh_id": "panda_visual_finger_00",
+      "node_id": "panda_leftfinger",
+      "orientation_xyzw": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "position_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 156,
+      "material_id": "panda_visual_finger_01_material",
+      "mesh_id": "panda_visual_finger_01",
+      "node_id": "panda_leftfinger",
+      "orientation_xyzw": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "position_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 157,
+      "material_id": "panda_visual_finger_00_material",
+      "mesh_id": "panda_visual_finger_00",
+      "node_id": "panda_rightfinger",
+      "orientation_xyzw": [
+        0.0,
+        0.0,
+        1.0,
+        0.0
+      ],
+      "position_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 158,
+      "material_id": "panda_visual_finger_01_material",
+      "mesh_id": "panda_visual_finger_01",
+      "node_id": "panda_rightfinger",
+      "orientation_xyzw": [
+        0.0,
+        0.0,
+        1.0,
+        0.0
+      ],
+      "position_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    }
+  ],
+  "licenses": [
+    {
+      "file": "LICENSE",
+      "sha256": "a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9",
+      "url": "https://raw.githubusercontent.com/frankarobotics/franka_ros/30e598aa6fb703cc80a203481e6427f397337b4c/LICENSE"
+    },
+    {
+      "file": "NOTICE",
+      "sha256": "d8ded0c268405e7847c281faa15042d381fbf7d308ec91d9941fbd943a6e1053",
+      "url": "https://raw.githubusercontent.com/frankarobotics/franka_ros/30e598aa6fb703cc80a203481e6427f397337b4c/NOTICE"
+    }
+  ],
+  "materials": [
+    {
+      "base_color": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "id": "panda_visual_link0_00_material",
+      "metallic": 0.0,
+      "roughness": 1.0,
+      "source_file": "link0.dae",
+      "source_material": "Part__Feature017_001-material",
+      "source_phong": {
+        "ambient": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "diffuse": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "emission": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "index_of_refraction": 1.0,
+        "shininess": 0.0,
+        "specular": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "transparency": 1.0,
+        "transparent": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "base_color": [
+        0.9019608,
+        0.9215686,
+        0.9294118
+      ],
+      "id": "panda_visual_link0_01_material",
+      "metallic": 0.0,
+      "roughness": 1.0,
+      "source_file": "link0.dae",
+      "source_material": "Part__Feature022_001-material",
+      "source_phong": {
+        "ambient": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "diffuse": [
+          0.9019608,
+          0.9215686,
+          0.9294118,
+          1.0
+        ],
+        "emission": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "index_of_refraction": 1.0,
+        "shininess": 0.0,
+        "specular": [
+          0.25,
+          0.25,
+          0.25,
+          1.0
+        ],
+        "transparency": 1.0,
+        "transparent": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "base_color": [
+        0.2509804,
+        0.2509804,
+        0.2509804
+      ],
+      "id": "panda_visual_link0_02_material",
+      "metallic": 0.0,
+      "roughness": 1.0,
+      "source_file": "link0.dae",
+      "source_material": "Part__Feature023_001-material",
+      "source_phong": {
+        "ambient": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "diffuse": [
+          0.2509804,
+          0.2509804,
+          0.2509804,
+          1.0
+        ],
+        "emission": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "index_of_refraction": 1.0,
+        "shininess": 0.0,
+        "specular": [
+          0.25,
+          0.25,
+          0.25,
+          1.0
+        ],
+        "transparency": 1.0,
+        "transparent": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "base_color": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "id": "panda_visual_link0_03_material",
+      "metallic": 0.0,
+      "roughness": 1.0,
+      "source_file": "link0.dae",
+      "source_material": "Part__Feature019_001-material",
+      "source_phong": {
+        "ambient": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "diffuse": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "emission": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "index_of_refraction": 1.0,
+        "shininess": 0.0,
+        "specular": [
+          0.25,
+          0.25,
+          0.25,
+          1.0
+        ],
+        "transparency": 1.0,
+        "transparent": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "base_color": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "id": "panda_visual_link0_04_material",
+      "metallic": 0.0,
+      "roughness": 1.0,
+      "source_file": "link0.dae",
+      "source_material": "Part__Feature018_001-material",
+      "source_phong": {
+        "ambient": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "diffuse": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "emission": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "index_of_refraction": 1.0,
+        "shininess": 0.0,
+        "specular": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "transparency": 1.0,
+        "transparent": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "base_color": [
+        0.9019608,
+        0.9215686,
+        0.9294118
+      ],
+      "id": "panda_visual_link0_05_material",
+      "metallic": 0.0,
+      "roughness": 1.0,
+      "source_file": "link0.dae",
+      "source_material": "Face636_001-material",
+      "source_phong": {
+        "ambient": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "diffuse": [
+          0.9019608,
+          0.9215686,
+          0.9294118,
+          1.0
+        ],
+        "emission": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "index_of_refraction": 1.0,
+        "shininess": 0.0,
+        "specular": [
+          0.25,
+          0.25,
+          0.25,
+          1.0
+        ],
+        "transparency": 1.0,
+        "transparent": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "base_color": [
+        0.2509804,
+        0.2509804,
+        0.2509804
+      ],
+      "id": "panda_visual_link0_06_material",
+      "metallic": 0.0,
+      "roughness": 1.0,
+      "source_file": "link0.dae",
+      "source_material": "Shell001_001-material",
+      "source_phong": {
+        "ambient": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "diffuse": [
+          0.2509804,
+          0.2509804,
+          0.2509804,
+          1.0
+        ],
+        "emission": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "index_of_refraction": 1.0,
+        "shininess": 0.0,
+        "specular": [
+          0.25,
+          0.25,
+          0.25,
+          1.0
+        ],
+        "transparency": 1.0,
+        "transparent": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "base_color": [
+        0.9019608,
+        0.9215686,
+        0.9294118
+      ],
+      "id": "panda_visual_link0_07_material",
+      "metallic": 0.0,
+      "roughness": 1.0,
+      "source_file": "link0.dae",
+      "source_material": "Shell002_001-material",
+      "source_phong": {
+        "ambient": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "diffuse": [
+          0.9019608,
+          0.9215686,
+          0.9294118,
+          1.0
+        ],
+        "emission": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "index_of_refraction": 1.0,
+        "shininess": 0.0,
+        "specular": [
+          0.25,
+          0.25,
+          0.25,
+          1.0
+        ],
+        "transparency": 1.0,
+        "transparent": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "base_color": [
+        0.2509804,
+        0.2509804,
+        0.2509804
+      ],
+      "id": "panda_visual_link0_08_material",
+      "metallic": 0.0,
+      "roughness": 1.0,
+      "source_file": "link0.dae",
+      "source_material": "Shell_001-material",
+      "source_phong": {
+        "ambient": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "diffuse": [
+          0.2509804,
+          0.2509804,
+          0.2509804,
+          1.0
+        ],
+        "emission": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "index_of_refraction": 1.0,
+        "shininess": 0.0,
+        "specular": [
+          0.25,
+          0.25,
+          0.25,
+          1.0
+        ],
+        "transparency": 1.0,
+        "transparent": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "base_color": [
+        0.9019608,
+        0.9215686,
+        0.9294118
+      ],
+      "id": "panda_visual_link0_09_material",
+      "metallic": 0.0,
+      "roughness": 1.0,
+      "source_file": "link0.dae",
+      "source_material": "Shell003_001-material",
+      "source_phong": {
+        "ambient": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "diffuse": [
+          0.9019608,
+          0.9215686,
+          0.9294118,
+          1.0
+        ],
+        "emission": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "index_of_refraction": 1.0,
+        "shininess": 0.0,
+        "specular": [
+          0.25,
+          0.25,
+          0.25,
+          1.0
+        ],
+        "transparency": 1.0,
+        "transparent": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "base_color": [
+        0.2509804,
+        0.2509804,
+        0.2509804
+      ],
+      "id": "panda_visual_link0_10_material",
+      "metallic": 0.0,
+      "roughness": 1.0,
+      "source_file": "link0.dae",
+      "source_material": "Shell009_001-material",
+      "source_phong": {
+        "ambient": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "diffuse": [
+          0.2509804,
+          0.2509804,
+          0.2509804,
+          1.0
+        ],
+        "emission": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "index_of_refraction": 1.0,
+        "shininess": 0.0,
+        "specular": [
+          0.25,
+          0.25,
+          0.25,
+          1.0
+        ],
+        "transparency": 1.0,
+        "transparent": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "base_color": [
+        0.9019608,
+        0.9215686,
+        0.9294118
+      ],
+      "id": "panda_visual_link0_11_material",
+      "metallic": 0.0,
+      "roughness": 1.0,
+      "source_file": "link0.dae",
+      "source_material": "Shell010_001-material",
+      "source_phong": {
+        "ambient": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "diffuse": [
+          0.9019608,
+          0.9215686,
+          0.9294118,
+          1.0
+        ],
+        "emission": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "index_of_refraction": 1.0,
+        "shininess": 0.0,
+        "specular": [
+          0.25,
+          0.25,
+          0.25,
+          1.0
+        ],
+        "transparency": 1.0,
+        "transparent": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "base_color": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "id": "panda_visual_link1_00_material",
+      "metallic": 0.0,
+      "roughness": 1.0,
+      "source_file": "link1.dae",
+      "source_material": "Part__Feature_001-material",
+      "source_phong": {
+        "ambient": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "diffuse": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "emission": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "index_of_refraction": 1.0,
+        "shininess": 0.0,
+        "specular": [
+          0.125,
+          0.125,
+          0.125,
+          1.0
+        ],
+        "transparency": 1.0,
+        "transparent": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "base_color": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "id": "panda_visual_link2_00_material",
+      "metallic": 0.0,
+      "roughness": 1.0,
+      "source_file": "link2.dae",
+      "source_material": "Part__Feature024-material",
+      "source_phong": {
+        "ambient": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "diffuse": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "emission": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "index_of_refraction": 1.0,
+        "shininess": 0.0,
+        "specular": [
+          0.25,
+          0.25,
+          0.25,
+          1.0
+        ],
+        "transparency": 1.0,
+        "transparent": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "base_color": [
+        0.2509804,
+        0.2509804,
+        0.2509804
+      ],
+      "id": "panda_visual_link3_00_material",
+      "metallic": 0.0,
+      "roughness": 1.0,
+      "source_file": "link3.dae",
+      "source_material": "Part__Feature_001_001_001_002-material",
+      "source_phong": {
+        "ambient": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "diffuse": [
+          0.2509804,
+          0.2509804,
+          0.2509804,
+          1.0
+        ],
+        "emission": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "index_of_refraction": 1.0,
+        "shininess": 0.0,
+        "specular": [
+          0.015625,
+          0.015625,
+          0.015625,
+          1.0
+        ],
+        "transparency": 1.0,
+        "transparent": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "base_color": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "id": "panda_visual_link3_01_material",
+      "metallic": 0.0,
+      "roughness": 1.0,
+      "source_file": "link3.dae",
+      "source_material": "Part__Feature001_010_001_002-material",
+      "source_phong": {
+        "ambient": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "diffuse": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "emission": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "index_of_refraction": 1.0,
+        "shininess": 0.0,
+        "specular": [
+          0.015625,
+          0.015625,
+          0.015625,
+          1.0
+        ],
+        "transparency": 1.0,
+        "transparent": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "base_color": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "id": "panda_visual_link3_02_material",
+      "metallic": 0.0,
+      "roughness": 1.0,
+      "source_file": "link3.dae",
+      "source_material": "Part__Feature002_007_001_002-material",
+      "source_phong": {
+        "ambient": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "diffuse": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "emission": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "index_of_refraction": 1.0,
+        "shininess": 0.0,
+        "specular": [
+          0.015625,
+          0.015625,
+          0.015625,
+          1.0
+        ],
+        "transparency": 1.0,
+        "transparent": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "base_color": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "id": "panda_visual_link3_03_material",
+      "metallic": 0.0,
+      "roughness": 1.0,
+      "source_file": "link3.dae",
+      "source_material": "Part__Feature003_004_001_002-material",
+      "source_phong": {
+        "ambient": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "diffuse": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "emission": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "index_of_refraction": 1.0,
+        "shininess": 0.0,
+        "specular": [
+          0.015625,
+          0.015625,
+          0.015625,
+          1.0
+        ],
+        "transparency": 1.0,
+        "transparent": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "base_color": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "id": "panda_visual_link4_00_material",
+      "metallic": 0.0,
+      "roughness": 1.0,
+      "source_file": "link4.dae",
+      "source_material": "Part__Feature_002_003_001-material",
+      "source_phong": {
+        "ambient": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "diffuse": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "emission": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "index_of_refraction": 1.0,
+        "shininess": 0.0,
+        "specular": [
+          0.015625,
+          0.015625,
+          0.015625,
+          1.0
+        ],
+        "transparency": 1.0,
+        "transparent": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "base_color": [
+        0.2509804,
+        0.2509804,
+        0.2509804
+      ],
+      "id": "panda_visual_link4_01_material",
+      "metallic": 0.0,
+      "roughness": 1.0,
+      "source_file": "link4.dae",
+      "source_material": "Part__Feature002_001_003_001-material",
+      "source_phong": {
+        "ambient": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "diffuse": [
+          0.2509804,
+          0.2509804,
+          0.2509804,
+          1.0
+        ],
+        "emission": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "index_of_refraction": 1.0,
+        "shininess": 0.0,
+        "specular": [
+          0.015625,
+          0.015625,
+          0.015625,
+          1.0
+        ],
+        "transparency": 1.0,
+        "transparent": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "base_color": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "id": "panda_visual_link4_02_material",
+      "metallic": 0.0,
+      "roughness": 1.0,
+      "source_file": "link4.dae",
+      "source_material": "Part__Feature003_001_003_001-material",
+      "source_phong": {
+        "ambient": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "diffuse": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "emission": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "index_of_refraction": 1.0,
+        "shininess": 0.0,
+        "specular": [
+          0.015625,
+          0.015625,
+          0.015625,
+          1.0
+        ],
+        "transparency": 1.0,
+        "transparent": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "base_color": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "id": "panda_visual_link4_03_material",
+      "metallic": 0.0,
+      "roughness": 1.0,
+      "source_file": "link4.dae",
+      "source_material": "Part__Feature001_001_003_001-material",
+      "source_phong": {
+        "ambient": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "diffuse": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "emission": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "index_of_refraction": 1.0,
+        "shininess": 0.0,
+        "specular": [
+          0.015625,
+          0.015625,
+          0.015625,
+          1.0
+        ],
+        "transparency": 1.0,
+        "transparent": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "base_color": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "id": "panda_visual_link5_00_material",
+      "metallic": 0.0,
+      "roughness": 1.0,
+      "source_file": "link5.dae",
+      "source_material": "Part__Feature_002_004_003-material",
+      "source_phong": {
+        "ambient": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "diffuse": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "emission": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "index_of_refraction": 1.0,
+        "shininess": 0.0,
+        "specular": [
+          0.03125,
+          0.03125,
+          0.03125,
+          1.0
+        ],
+        "transparency": 1.0,
+        "transparent": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "base_color": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "id": "panda_visual_link5_01_material",
+      "metallic": 0.0,
+      "roughness": 1.0,
+      "source_file": "link5.dae",
+      "source_material": "Shell_001_001_003-material",
+      "source_phong": {
+        "ambient": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "diffuse": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "emission": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "index_of_refraction": 1.0,
+        "shininess": 0.0,
+        "specular": [
+          0.03125,
+          0.03125,
+          0.03125,
+          1.0
+        ],
+        "transparency": 1.0,
+        "transparent": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "base_color": [
+        0.25,
+        0.25,
+        0.25
+      ],
+      "id": "panda_visual_link5_02_material",
+      "metallic": 0.0,
+      "roughness": 1.0,
+      "source_file": "link5.dae",
+      "source_material": "Shell001_001_001_003-material",
+      "source_phong": {
+        "ambient": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "diffuse": [
+          0.25,
+          0.25,
+          0.25,
+          1.0
+        ],
+        "emission": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "index_of_refraction": 1.0,
+        "shininess": 0.0,
+        "specular": [
+          0.03125,
+          0.03125,
+          0.03125,
+          1.0
+        ],
+        "transparency": 1.0,
+        "transparent": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "base_color": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "id": "panda_visual_link6_00_material",
+      "metallic": 0.0,
+      "roughness": 1.0,
+      "source_file": "link6.dae",
+      "source_material": "Shell012_002_002_001-material",
+      "source_phong": {
+        "ambient": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "diffuse": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "emission": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "index_of_refraction": 1.0,
+        "shininess": 0.0,
+        "specular": [
+          0.0078125,
+          0.0078125,
+          0.0078125,
+          1.0
+        ],
+        "transparency": 1.0,
+        "transparent": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "base_color": [
+        0.2509804,
+        0.2509804,
+        0.2509804
+      ],
+      "id": "panda_visual_link6_01_material",
+      "metallic": 0.0,
+      "roughness": 1.0,
+      "source_file": "link6.dae",
+      "source_material": "Part__Feature001_009_001_002_001-material",
+      "source_phong": {
+        "ambient": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "diffuse": [
+          0.2509804,
+          0.2509804,
+          0.2509804,
+          1.0
+        ],
+        "emission": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "index_of_refraction": 1.0,
+        "shininess": 0.0,
+        "specular": [
+          0.0078125,
+          0.0078125,
+          0.0078125,
+          1.0
+        ],
+        "transparency": 1.0,
+        "transparent": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "base_color": [
+        0.2509804,
+        0.2509804,
+        0.2509804
+      ],
+      "id": "panda_visual_link6_02_material",
+      "metallic": 0.0,
+      "roughness": 1.0,
+      "source_file": "link6.dae",
+      "source_material": "Part__Feature002_006_001_002_001-material",
+      "source_phong": {
+        "ambient": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "diffuse": [
+          0.2509804,
+          0.2509804,
+          0.2509804,
+          1.0
+        ],
+        "emission": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "index_of_refraction": 1.0,
+        "shininess": 0.0,
+        "specular": [
+          0.0078125,
+          0.0078125,
+          0.0078125,
+          1.0
+        ],
+        "transparency": 1.0,
+        "transparent": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "base_color": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "id": "panda_visual_link6_03_material",
+      "metallic": 0.0,
+      "roughness": 1.0,
+      "source_file": "link6.dae",
+      "source_material": "Face064_002_001_002_001-material",
+      "source_phong": {
+        "ambient": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "diffuse": [
+          1.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "emission": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "index_of_refraction": 1.0,
+        "shininess": 0.0,
+        "specular": [
+          0.0078125,
+          0.0078125,
+          0.0078125,
+          1.0
+        ],
+        "transparency": 1.0,
+        "transparent": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "base_color": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "id": "panda_visual_link6_04_material",
+      "metallic": 0.0,
+      "roughness": 1.0,
+      "source_file": "link6.dae",
+      "source_material": "Face065_002_001_002_001-material",
+      "source_phong": {
+        "ambient": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "diffuse": [
+          0.0,
+          1.0,
+          0.0,
+          1.0
+        ],
+        "emission": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "index_of_refraction": 1.0,
+        "shininess": 0.0,
+        "specular": [
+          0.0078125,
+          0.0078125,
+          0.0078125,
+          1.0
+        ],
+        "transparency": 1.0,
+        "transparent": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "base_color": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "id": "panda_visual_link6_05_material",
+      "metallic": 0.0,
+      "roughness": 1.0,
+      "source_file": "link6.dae",
+      "source_material": "Face374_002_001_002_001-material",
+      "source_phong": {
+        "ambient": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "diffuse": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "emission": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "index_of_refraction": 1.0,
+        "shininess": 0.0,
+        "specular": [
+          0.0078125,
+          0.0078125,
+          0.0078125,
+          1.0
+        ],
+        "transparency": 1.0,
+        "transparent": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "base_color": [
+        0.2509804,
+        0.2509804,
+        0.2509804
+      ],
+      "id": "panda_visual_link6_06_material",
+      "metallic": 0.0,
+      "roughness": 1.0,
+      "source_file": "link6.dae",
+      "source_material": "Shell_003_001_002_001-material",
+      "source_phong": {
+        "ambient": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "diffuse": [
+          0.2509804,
+          0.2509804,
+          0.2509804,
+          1.0
+        ],
+        "emission": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "index_of_refraction": 1.0,
+        "shininess": 0.0,
+        "specular": [
+          0.0078125,
+          0.0078125,
+          0.0078125,
+          1.0
+        ],
+        "transparency": 1.0,
+        "transparent": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "base_color": [
+        0.2509804,
+        0.2509804,
+        0.2509804
+      ],
+      "id": "panda_visual_link6_07_material",
+      "metallic": 0.0,
+      "roughness": 1.0,
+      "source_file": "link6.dae",
+      "source_material": "Face539_002_001_002_001-material",
+      "source_phong": {
+        "ambient": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "diffuse": [
+          0.2509804,
+          0.2509804,
+          0.2509804,
+          1.0
+        ],
+        "emission": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "index_of_refraction": 1.0,
+        "shininess": 0.0,
+        "specular": [
+          0.0078125,
+          0.0078125,
+          0.0078125,
+          1.0
+        ],
+        "transparency": 1.0,
+        "transparent": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "base_color": [
+        0.03921569,
+        0.5411765,
+        0.7803922
+      ],
+      "id": "panda_visual_link6_08_material",
+      "metallic": 0.0,
+      "roughness": 1.0,
+      "source_file": "link6.dae",
+      "source_material": "Union_001_001_002_001-material",
+      "source_phong": {
+        "ambient": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "diffuse": [
+          0.03921569,
+          0.5411765,
+          0.7803922,
+          1.0
+        ],
+        "emission": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "index_of_refraction": 1.0,
+        "shininess": 0.0,
+        "specular": [
+          0.0078125,
+          0.0078125,
+          0.0078125,
+          1.0
+        ],
+        "transparency": 1.0,
+        "transparent": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "base_color": [
+        0.03921569,
+        0.5411765,
+        0.7803922
+      ],
+      "id": "panda_visual_link6_09_material",
+      "metallic": 0.0,
+      "roughness": 1.0,
+      "source_file": "link6.dae",
+      "source_material": "Union001_001_001_002_001-material",
+      "source_phong": {
+        "ambient": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "diffuse": [
+          0.03921569,
+          0.5411765,
+          0.7803922,
+          1.0
+        ],
+        "emission": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "index_of_refraction": 1.0,
+        "shininess": 0.0,
+        "specular": [
+          0.0078125,
+          0.0078125,
+          0.0078125,
+          1.0
+        ],
+        "transparency": 1.0,
+        "transparent": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "base_color": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "id": "panda_visual_link6_10_material",
+      "metallic": 0.0,
+      "roughness": 1.0,
+      "source_file": "link6.dae",
+      "source_material": "Shell002_002_001_002_001-material",
+      "source_phong": {
+        "ambient": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "diffuse": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "emission": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "index_of_refraction": 1.0,
+        "shininess": 0.0,
+        "specular": [
+          0.0078125,
+          0.0078125,
+          0.0078125,
+          1.0
+        ],
+        "transparency": 1.0,
+        "transparent": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "base_color": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "id": "panda_visual_link6_11_material",
+      "metallic": 0.0,
+      "roughness": 1.0,
+      "source_file": "link6.dae",
+      "source_material": "Shell003_002_001_002_001-material",
+      "source_phong": {
+        "ambient": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "diffuse": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "emission": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "index_of_refraction": 1.0,
+        "shininess": 0.0,
+        "specular": [
+          0.0078125,
+          0.0078125,
+          0.0078125,
+          1.0
+        ],
+        "transparency": 1.0,
+        "transparent": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "base_color": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "id": "panda_visual_link6_12_material",
+      "metallic": 0.0,
+      "roughness": 1.0,
+      "source_file": "link6.dae",
+      "source_material": "Shell004_001_001_002_001-material",
+      "source_phong": {
+        "ambient": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "diffuse": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "emission": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "index_of_refraction": 1.0,
+        "shininess": 0.0,
+        "specular": [
+          0.0078125,
+          0.0078125,
+          0.0078125,
+          1.0
+        ],
+        "transparency": 1.0,
+        "transparent": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "base_color": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "id": "panda_visual_link6_13_material",
+      "metallic": 0.0,
+      "roughness": 1.0,
+      "source_file": "link6.dae",
+      "source_material": "Shell005_001_001_002_001-material",
+      "source_phong": {
+        "ambient": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "diffuse": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "emission": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "index_of_refraction": 1.0,
+        "shininess": 0.0,
+        "specular": [
+          0.0078125,
+          0.0078125,
+          0.0078125,
+          1.0
+        ],
+        "transparency": 1.0,
+        "transparent": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "base_color": [
+        0.25,
+        0.25,
+        0.25
+      ],
+      "id": "panda_visual_link6_14_material",
+      "metallic": 0.0,
+      "roughness": 1.0,
+      "source_file": "link6.dae",
+      "source_material": "Shell007_002_002_001-material",
+      "source_phong": {
+        "ambient": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "diffuse": [
+          0.25,
+          0.25,
+          0.25,
+          1.0
+        ],
+        "emission": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "index_of_refraction": 1.0,
+        "shininess": 0.0,
+        "specular": [
+          0.0078125,
+          0.0078125,
+          0.0078125,
+          1.0
+        ],
+        "transparency": 1.0,
+        "transparent": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "base_color": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "id": "panda_visual_link6_15_material",
+      "metallic": 0.0,
+      "roughness": 1.0,
+      "source_file": "link6.dae",
+      "source_material": "Shell011_002_002_001-material",
+      "source_phong": {
+        "ambient": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "diffuse": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "emission": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "index_of_refraction": 1.0,
+        "shininess": 0.0,
+        "specular": [
+          0.0078125,
+          0.0078125,
+          0.0078125,
+          1.0
+        ],
+        "transparency": 1.0,
+        "transparent": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "base_color": [
+        0.9019608,
+        0.9215686,
+        0.9294118
+      ],
+      "id": "panda_visual_link6_16_material",
+      "metallic": 0.0,
+      "roughness": 1.0,
+      "source_file": "link6.dae",
+      "source_material": "Shell006_003_002_001-material",
+      "source_phong": {
+        "ambient": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "diffuse": [
+          0.9019608,
+          0.9215686,
+          0.9294118,
+          1.0
+        ],
+        "emission": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "index_of_refraction": 1.0,
+        "shininess": 0.0,
+        "specular": [
+          0.03125,
+          0.03125,
+          0.03125,
+          1.0
+        ],
+        "transparency": 1.0,
+        "transparent": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "base_color": [
+        0.8980392,
+        0.9176471,
+        0.9294118
+      ],
+      "id": "panda_visual_link7_00_material",
+      "metallic": 0.0,
+      "roughness": 1.0,
+      "source_file": "link7.dae",
+      "source_material": "Part__Mirroring_004_001-material",
+      "source_phong": {
+        "ambient": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "diffuse": [
+          0.8980392,
+          0.9176471,
+          0.9294118,
+          1.0
+        ],
+        "emission": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "index_of_refraction": 1.0,
+        "shininess": 0.0,
+        "specular": [
+          0.0625,
+          0.0625,
+          0.0625,
+          1.0
+        ],
+        "transparency": 1.0,
+        "transparent": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "base_color": [
+        0.2509804,
+        0.2509804,
+        0.2509804
+      ],
+      "id": "panda_visual_link7_01_material",
+      "metallic": 0.0,
+      "roughness": 1.0,
+      "source_file": "link7.dae",
+      "source_material": "Part__Mirroring002_004_001-material",
+      "source_phong": {
+        "ambient": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "diffuse": [
+          0.2509804,
+          0.2509804,
+          0.2509804,
+          1.0
+        ],
+        "emission": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "index_of_refraction": 1.0,
+        "shininess": 0.0,
+        "specular": [
+          0.0625,
+          0.0625,
+          0.0625,
+          1.0
+        ],
+        "transparency": 1.0,
+        "transparent": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "base_color": [
+        0.2509804,
+        0.2509804,
+        0.2509804
+      ],
+      "id": "panda_visual_link7_02_material",
+      "metallic": 0.0,
+      "roughness": 1.0,
+      "source_file": "link7.dae",
+      "source_material": "Part__Mirroring003_004_001-material",
+      "source_phong": {
+        "ambient": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "diffuse": [
+          0.2509804,
+          0.2509804,
+          0.2509804,
+          1.0
+        ],
+        "emission": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "index_of_refraction": 1.0,
+        "shininess": 0.0,
+        "specular": [
+          0.0625,
+          0.0625,
+          0.0625,
+          1.0
+        ],
+        "transparency": 1.0,
+        "transparent": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "base_color": [
+        0.2509804,
+        0.2509804,
+        0.2509804
+      ],
+      "id": "panda_visual_link7_03_material",
+      "metallic": 0.0,
+      "roughness": 1.0,
+      "source_file": "link7.dae",
+      "source_material": "Part__Mirroring005_004_001-material",
+      "source_phong": {
+        "ambient": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "diffuse": [
+          0.2509804,
+          0.2509804,
+          0.2509804,
+          1.0
+        ],
+        "emission": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "index_of_refraction": 1.0,
+        "shininess": 0.0,
+        "specular": [
+          0.0625,
+          0.0625,
+          0.0625,
+          1.0
+        ],
+        "transparency": 1.0,
+        "transparent": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "base_color": [
+        0.2509804,
+        0.2509804,
+        0.2509804
+      ],
+      "id": "panda_visual_link7_04_material",
+      "metallic": 0.0,
+      "roughness": 1.0,
+      "source_file": "link7.dae",
+      "source_material": "Part__Mirroring006_004_001-material",
+      "source_phong": {
+        "ambient": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "diffuse": [
+          0.2509804,
+          0.2509804,
+          0.2509804,
+          1.0
+        ],
+        "emission": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "index_of_refraction": 1.0,
+        "shininess": 0.0,
+        "specular": [
+          0.0625,
+          0.0625,
+          0.0625,
+          1.0
+        ],
+        "transparency": 1.0,
+        "transparent": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "base_color": [
+        0.2509804,
+        0.2509804,
+        0.2509804
+      ],
+      "id": "panda_visual_link7_05_material",
+      "metallic": 0.0,
+      "roughness": 1.0,
+      "source_file": "link7.dae",
+      "source_material": "Part__Mirroring007_004_001-material",
+      "source_phong": {
+        "ambient": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "diffuse": [
+          0.2509804,
+          0.2509804,
+          0.2509804,
+          1.0
+        ],
+        "emission": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "index_of_refraction": 1.0,
+        "shininess": 0.0,
+        "specular": [
+          0.0625,
+          0.0625,
+          0.0625,
+          1.0
+        ],
+        "transparency": 1.0,
+        "transparent": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "base_color": [
+        0.2509804,
+        0.2509804,
+        0.2509804
+      ],
+      "id": "panda_visual_link7_06_material",
+      "metallic": 0.0,
+      "roughness": 1.0,
+      "source_file": "link7.dae",
+      "source_material": "Part__Mirroring001_004_002-material",
+      "source_phong": {
+        "ambient": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "diffuse": [
+          0.2509804,
+          0.2509804,
+          0.2509804,
+          1.0
+        ],
+        "emission": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "index_of_refraction": 1.0,
+        "shininess": 0.0,
+        "specular": [
+          0.03125,
+          0.03125,
+          0.03125,
+          1.0
+        ],
+        "transparency": 1.0,
+        "transparent": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "base_color": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "id": "panda_visual_link7_07_material",
+      "metallic": 0.0,
+      "roughness": 1.0,
+      "source_file": "link7.dae",
+      "source_material": "Part__Mirroring004_004_002-material",
+      "source_phong": {
+        "ambient": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "diffuse": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "emission": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "index_of_refraction": 1.0,
+        "shininess": 0.0,
+        "specular": [
+          0.0625,
+          0.0625,
+          0.0625,
+          1.0
+        ],
+        "transparency": 1.0,
+        "transparent": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "base_color": [
+        0.9019608,
+        0.9215686,
+        0.9294118
+      ],
+      "id": "panda_visual_hand_00_material",
+      "metallic": 0.0,
+      "roughness": 1.0,
+      "source_file": "hand.dae",
+      "source_material": "Part__Feature002_005_005-material",
+      "source_phong": {
+        "ambient": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "diffuse": [
+          0.9019608,
+          0.9215686,
+          0.9294118,
+          1.0
+        ],
+        "emission": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "index_of_refraction": 1.0,
+        "shininess": 0.0,
+        "specular": [
+          0.03125,
+          0.03125,
+          0.03125,
+          1.0
+        ],
+        "transparency": 1.0,
+        "transparent": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "base_color": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "id": "panda_visual_hand_01_material",
+      "metallic": 0.0,
+      "roughness": 1.0,
+      "source_file": "hand.dae",
+      "source_material": "Part__Feature005_001_005-material",
+      "source_phong": {
+        "ambient": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "diffuse": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "emission": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "index_of_refraction": 1.0,
+        "shininess": 0.0,
+        "specular": [
+          0.03125,
+          0.03125,
+          0.03125,
+          1.0
+        ],
+        "transparency": 1.0,
+        "transparent": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "base_color": [
+        0.2509804,
+        0.2509804,
+        0.2509804
+      ],
+      "id": "panda_visual_hand_02_material",
+      "metallic": 0.0,
+      "roughness": 1.0,
+      "source_file": "hand.dae",
+      "source_material": "Part__Feature_009_005-material",
+      "source_phong": {
+        "ambient": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "diffuse": [
+          0.2509804,
+          0.2509804,
+          0.2509804,
+          1.0
+        ],
+        "emission": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "index_of_refraction": 1.0,
+        "shininess": 0.0,
+        "specular": [
+          0.03125,
+          0.03125,
+          0.03125,
+          1.0
+        ],
+        "transparency": 1.0,
+        "transparent": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "base_color": [
+        0.2509804,
+        0.2509804,
+        0.2509804
+      ],
+      "id": "panda_visual_hand_03_material",
+      "metallic": 0.0,
+      "roughness": 1.0,
+      "source_file": "hand.dae",
+      "source_material": "Part__Feature001_008_005-material",
+      "source_phong": {
+        "ambient": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "diffuse": [
+          0.2509804,
+          0.2509804,
+          0.2509804,
+          1.0
+        ],
+        "emission": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "index_of_refraction": 1.0,
+        "shininess": 0.0,
+        "specular": [
+          0.015625,
+          0.015625,
+          0.015625,
+          1.0
+        ],
+        "transparency": 1.0,
+        "transparent": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "base_color": [
+        0.9019608,
+        0.9215686,
+        0.9294118
+      ],
+      "id": "panda_visual_hand_04_material",
+      "metallic": 0.0,
+      "roughness": 1.0,
+      "source_file": "hand.dae",
+      "source_material": "Part__Feature005_001_005_001-material",
+      "source_phong": {
+        "ambient": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "diffuse": [
+          0.9019608,
+          0.9215686,
+          0.9294118,
+          1.0
+        ],
+        "emission": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "index_of_refraction": 1.0,
+        "shininess": 0.0,
+        "specular": [
+          0.03125,
+          0.03125,
+          0.03125,
+          1.0
+        ],
+        "transparency": 1.0,
+        "transparent": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "base_color": [
+        0.2509804,
+        0.2509804,
+        0.2509804
+      ],
+      "id": "panda_visual_finger_00_material",
+      "metallic": 0.0,
+      "roughness": 1.0,
+      "source_file": "finger.dae",
+      "source_material": "Part__Feature_007-material",
+      "source_phong": {
+        "ambient": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "diffuse": [
+          0.2509804,
+          0.2509804,
+          0.2509804,
+          1.0
+        ],
+        "emission": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "index_of_refraction": 1.0,
+        "shininess": 0.0,
+        "specular": [
+          0.5,
+          0.5,
+          0.5,
+          1.0
+        ],
+        "transparency": 1.0,
+        "transparent": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "base_color": [
+        0.9019608,
+        0.9215686,
+        0.9294118
+      ],
+      "id": "panda_visual_finger_01_material",
+      "metallic": 0.0,
+      "roughness": 1.0,
+      "source_file": "finger.dae",
+      "source_material": "Part__Feature001_006-material",
+      "source_phong": {
+        "ambient": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "diffuse": [
+          0.9019608,
+          0.9215686,
+          0.9294118,
+          1.0
+        ],
+        "emission": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "index_of_refraction": 1.0,
+        "shininess": 0.0,
+        "specular": [
+          0.5,
+          0.5,
+          0.5,
+          1.0
+        ],
+        "transparency": 1.0,
+        "transparent": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "file": "meshes/link0-00.gltf",
+      "float32_zero_area_count": 0,
+      "id": "panda_visual_link0_00",
+      "non_surface_lines_m": [],
+      "normal_rounding_max_abs": 2.8215817238219643e-08,
+      "omitted_zero_area_triangles": [],
+      "position_rounding_max_abs_m": 3.7023925730794716e-09,
+      "quantization_surface_loss_count": 0,
+      "sha256": "7ad4cf657f19a820e392c02195f58c1d096425bdcd3efb9348f1de3cf0df2dba",
+      "source_file": "link0.dae",
+      "source_geometry": "Part__Feature017_001-mesh",
+      "source_matrix_row_major": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "source_node": "node0",
+      "source_primitive": 0,
+      "source_triangle_count": 92,
+      "source_triangle_runs": [
+        [
+          0,
+          92
+        ]
+      ],
+      "source_zero_area_count": 0,
+      "triangles": 92,
+      "vertices": 276
+    },
+    {
+      "file": "meshes/link0-01.gltf",
+      "float32_zero_area_count": 0,
+      "id": "panda_visual_link0_01",
+      "non_surface_lines_m": [],
+      "normal_rounding_max_abs": 2.9801569989551524e-08,
+      "omitted_zero_area_triangles": [],
+      "position_rounding_max_abs_m": 3.7156677179517317e-09,
+      "quantization_surface_loss_count": 0,
+      "sha256": "af5e9be2fba6bfd0c731dfa29ecbf301e23dd7ecaf9dbb19d150b1846d27f6ff",
+      "source_file": "link0.dae",
+      "source_geometry": "Part__Feature022_001-mesh",
+      "source_matrix_row_major": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "source_node": "node1",
+      "source_primitive": 0,
+      "source_triangle_count": 1371,
+      "source_triangle_runs": [
+        [
+          0,
+          1371
+        ]
+      ],
+      "source_zero_area_count": 0,
+      "triangles": 1371,
+      "vertices": 4113
+    },
+    {
+      "file": "meshes/link0-02.gltf",
+      "float32_zero_area_count": 0,
+      "id": "panda_visual_link0_02",
+      "non_surface_lines_m": [],
+      "normal_rounding_max_abs": 2.973452140064836e-08,
+      "omitted_zero_area_triangles": [],
+      "position_rounding_max_abs_m": 3.690662386812704e-09,
+      "quantization_surface_loss_count": 0,
+      "sha256": "4eacbd0fd7c5c940e0efe8e1c3557ede77ef1bc57b0f1a108564c856491a1c4b",
+      "source_file": "link0.dae",
+      "source_geometry": "Part__Feature023_001-mesh",
+      "source_matrix_row_major": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "source_node": "node2",
+      "source_primitive": 0,
+      "source_triangle_count": 416,
+      "source_triangle_runs": [
+        [
+          0,
+          416
+        ]
+      ],
+      "source_zero_area_count": 0,
+      "triangles": 416,
+      "vertices": 1248
+    },
+    {
+      "file": "meshes/link0-03.gltf",
+      "float32_zero_area_count": 5,
+      "id": "panda_visual_link0_03",
+      "non_surface_lines_m": [],
+      "normal_rounding_max_abs": 2.9798929768176663e-08,
+      "omitted_zero_area_triangles": [
+        {
+          "baked_positions_m": [
+            [
+              -0.03751641,
+              -0.06216162,
+              0.06217455
+            ],
+            [
+              -0.03748905,
+              -0.06201684,
+              0.06217122
+            ],
+            [
+              -0.03751641,
+              -0.06216162,
+              0.06217455
+            ]
+          ],
+          "float32_positions_m": [
+            [
+              -0.037516411393880844,
+              -0.06216162070631981,
+              0.06217455118894577
+            ],
+            [
+              -0.03748904913663864,
+              -0.062016841024160385,
+              0.062171220779418945
+            ],
+            [
+              -0.037516411393880844,
+              -0.06216162070631981,
+              0.06217455118894577
+            ]
+          ],
+          "float32_zero_area": true,
+          "position_rounding_max_abs_m": 1.3938808440805417e-09,
+          "reason": "exact source zero area; no triangle raster surface coverage",
+          "source_ordinal": 1658,
+          "source_positions_m": [
+            [
+              -0.03751641,
+              -0.06216162,
+              0.06217455
+            ],
+            [
+              -0.03748905,
+              -0.06201684,
+              0.06217122
+            ],
+            [
+              -0.03751641,
+              -0.06216162,
+              0.06217455
+            ]
+          ],
+          "vertex_indices": [
+            4970,
+            4971,
+            4972
+          ]
+        },
+        {
+          "baked_positions_m": [
+            [
+              -0.03755491,
+              -0.06215524,
+              0.06547456
+            ],
+            [
+              -0.03739959,
+              -0.06182599,
+              0.0654565
+            ],
+            [
+              -0.03739959,
+              -0.06182599,
+              0.0654565
+            ]
+          ],
+          "float32_positions_m": [
+            [
+              -0.03755490854382515,
+              -0.062155239284038544,
+              0.06547456234693527
+            ],
+            [
+              -0.03739959001541138,
+              -0.06182599067687988,
+              0.06545650213956833
+            ],
+            [
+              -0.03739959001541138,
+              -0.06182599067687988,
+              0.06545650213956833
+            ]
+          ],
+          "float32_zero_area": true,
+          "position_rounding_max_abs_m": 2.3469352711247282e-09,
+          "reason": "exact source zero area; no triangle raster surface coverage",
+          "source_ordinal": 1663,
+          "source_positions_m": [
+            [
+              -0.03755491,
+              -0.06215524,
+              0.06547456
+            ],
+            [
+              -0.03739959,
+              -0.06182599,
+              0.0654565
+            ],
+            [
+              -0.03739959,
+              -0.06182599,
+              0.0654565
+            ]
+          ],
+          "vertex_indices": [
+            4985,
+            4986,
+            4987
+          ]
+        },
+        {
+          "baked_positions_m": [
+            [
+              -0.03818917,
+              -0.0620526,
+              0.06265646
+            ],
+            [
+              -0.0381422,
+              -0.06170564,
+              0.06266462
+            ],
+            [
+              -0.0381422,
+              -0.06170564,
+              0.06266462
+            ]
+          ],
+          "float32_positions_m": [
+            [
+              -0.03818916901946068,
+              -0.06205260008573532,
+              0.0626564621925354
+            ],
+            [
+              -0.03814220055937767,
+              -0.06170564144849777,
+              0.06266462057828903
+            ],
+            [
+              -0.03814220055937767,
+              -0.06170564144849777,
+              0.06266462057828903
+            ]
+          ],
+          "float32_zero_area": true,
+          "position_rounding_max_abs_m": 2.1925354032337196e-09,
+          "reason": "exact source zero area; no triangle raster surface coverage",
+          "source_ordinal": 1697,
+          "source_positions_m": [
+            [
+              -0.03818917,
+              -0.0620526,
+              0.06265646
+            ],
+            [
+              -0.0381422,
+              -0.06170564,
+              0.06266462
+            ],
+            [
+              -0.0381422,
+              -0.06170564,
+              0.06266462
+            ]
+          ],
+          "vertex_indices": [
+            5087,
+            5088,
+            5089
+          ]
+        },
+        {
+          "baked_positions_m": [
+            [
+              -0.03818917,
+              -0.0620526,
+              0.06265646
+            ],
+            [
+              -0.0381422,
+              -0.06170564,
+              0.06266462
+            ],
+            [
+              -0.03818917,
+              -0.0620526,
+              0.06265646
+            ]
+          ],
+          "float32_positions_m": [
+            [
+              -0.03818916901946068,
+              -0.06205260008573532,
+              0.0626564621925354
+            ],
+            [
+              -0.03814220055937767,
+              -0.06170564144849777,
+              0.06266462057828903
+            ],
+            [
+              -0.03818916901946068,
+              -0.06205260008573532,
+              0.0626564621925354
+            ]
+          ],
+          "float32_zero_area": true,
+          "position_rounding_max_abs_m": 2.1925354032337196e-09,
+          "reason": "exact source zero area; no triangle raster surface coverage",
+          "source_ordinal": 1698,
+          "source_positions_m": [
+            [
+              -0.03818917,
+              -0.0620526,
+              0.06265646
+            ],
+            [
+              -0.0381422,
+              -0.06170564,
+              0.06266462
+            ],
+            [
+              -0.03818917,
+              -0.0620526,
+              0.06265646
+            ]
+          ],
+          "vertex_indices": [
+            5090,
+            5088,
+            5087
+          ]
+        },
+        {
+          "baked_positions_m": [
+            [
+              -0.03672212,
+              -0.06229031,
+              0.03130561
+            ],
+            [
+              -0.03665477,
+              -0.06194663,
+              0.03130155
+            ],
+            [
+              -0.03672212,
+              -0.06229031,
+              0.03130561
+            ]
+          ],
+          "float32_positions_m": [
+            [
+              -0.03672211989760399,
+              -0.062290310859680176,
+              0.03130561113357544
+            ],
+            [
+              -0.036654770374298096,
+              -0.06194663047790527,
+              0.031301550567150116
+            ],
+            [
+              -0.03672211989760399,
+              -0.062290310859680176,
+              0.03130561113357544
+            ]
+          ],
+          "float32_zero_area": true,
+          "position_rounding_max_abs_m": 1.1335754418473343e-09,
+          "reason": "exact source zero area; no triangle raster surface coverage",
+          "source_ordinal": 1747,
+          "source_positions_m": [
+            [
+              -0.03672212,
+              -0.06229031,
+              0.03130561
+            ],
+            [
+              -0.03665477,
+              -0.06194663,
+              0.03130155
+            ],
+            [
+              -0.03672212,
+              -0.06229031,
+              0.03130561
+            ]
+          ],
+          "vertex_indices": [
+            5235,
+            5236,
+            5237
+          ]
+        }
+      ],
+      "position_rounding_max_abs_m": 7.438278187832381e-09,
+      "quantization_surface_loss_count": 0,
+      "sha256": "89ada5c51cbedf72f09b6d653360c768ade8f40da2f0c14a3f2760756be9fa66",
+      "source_file": "link0.dae",
+      "source_geometry": "Part__Feature019_001-mesh",
+      "source_matrix_row_major": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "source_node": "node3",
+      "source_primitive": 0,
+      "source_triangle_count": 13185,
+      "source_triangle_runs": [
+        [
+          0,
+          1658
+        ],
+        [
+          1659,
+          1663
+        ],
+        [
+          1664,
+          1697
+        ],
+        [
+          1699,
+          1747
+        ],
+        [
+          1748,
+          13185
+        ]
+      ],
+      "source_zero_area_count": 5,
+      "triangles": 13180,
+      "vertices": 39020
+    },
+    {
+      "file": "meshes/link0-04.gltf",
+      "float32_zero_area_count": 0,
+      "id": "panda_visual_link0_04",
+      "non_surface_lines_m": [],
+      "normal_rounding_max_abs": 2.9417623781391455e-08,
+      "omitted_zero_area_triangles": [],
+      "position_rounding_max_abs_m": 3.6422920235423817e-09,
+      "quantization_surface_loss_count": 0,
+      "sha256": "98f858dfe3c1899583e89cf0ba6650402e6d575d4e249f4e8f2e85d0e88ac71a",
+      "source_file": "link0.dae",
+      "source_geometry": "Part__Feature018_001-mesh",
+      "source_matrix_row_major": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "source_node": "node4",
+      "source_primitive": 0,
+      "source_triangle_count": 124,
+      "source_triangle_runs": [
+        [
+          0,
+          124
+        ]
+      ],
+      "source_zero_area_count": 0,
+      "triangles": 124,
+      "vertices": 372
+    },
+    {
+      "file": "meshes/link0-05.gltf",
+      "float32_zero_area_count": 0,
+      "id": "panda_visual_link0_05",
+      "non_surface_lines_m": [],
+      "normal_rounding_max_abs": 2.854162550747219e-08,
+      "omitted_zero_area_triangles": [],
+      "position_rounding_max_abs_m": 1.776571272038563e-09,
+      "quantization_surface_loss_count": 0,
+      "sha256": "0e7639f860c63d9d436053810f2d1c3403e72aaa9987180e4b7bd3678b3a3da5",
+      "source_file": "link0.dae",
+      "source_geometry": "Face636_001-mesh",
+      "source_matrix_row_major": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "source_node": "node5",
+      "source_primitive": 0,
+      "source_triangle_count": 36,
+      "source_triangle_runs": [
+        [
+          0,
+          36
+        ]
+      ],
+      "source_zero_area_count": 0,
+      "triangles": 36,
+      "vertices": 108
+    },
+    {
+      "file": "meshes/link0-06.gltf",
+      "float32_zero_area_count": 0,
+      "id": "panda_visual_link0_06",
+      "non_surface_lines_m": [],
+      "normal_rounding_max_abs": 2.957179312534919e-08,
+      "omitted_zero_area_triangles": [],
+      "position_rounding_max_abs_m": 3.619689936673609e-09,
+      "quantization_surface_loss_count": 0,
+      "sha256": "e14f5305475a1ff82097fe2be085633b7b19239695f760d241c49976db83a1bb",
+      "source_file": "link0.dae",
+      "source_geometry": "Shell001_001-mesh",
+      "source_matrix_row_major": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "source_node": "node6",
+      "source_primitive": 0,
+      "source_triangle_count": 69,
+      "source_triangle_runs": [
+        [
+          0,
+          69
+        ]
+      ],
+      "source_zero_area_count": 0,
+      "triangles": 69,
+      "vertices": 207
+    },
+    {
+      "file": "meshes/link0-07.gltf",
+      "float32_zero_area_count": 0,
+      "id": "panda_visual_link0_07",
+      "non_surface_lines_m": [],
+      "normal_rounding_max_abs": 2.9726683448139113e-08,
+      "omitted_zero_area_triangles": [],
+      "position_rounding_max_abs_m": 3.7248420736712973e-09,
+      "quantization_surface_loss_count": 0,
+      "sha256": "ac32218ad246ed70950138eb84cd1840676b2737cdcca5281cd26dd091a3fd9c",
+      "source_file": "link0.dae",
+      "source_geometry": "Shell002_003-mesh",
+      "source_matrix_row_major": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "source_node": "node7",
+      "source_primitive": 0,
+      "source_triangle_count": 1020,
+      "source_triangle_runs": [
+        [
+          0,
+          1020
+        ]
+      ],
+      "source_zero_area_count": 0,
+      "triangles": 1020,
+      "vertices": 3026
+    },
+    {
+      "file": "meshes/link0-08.gltf",
+      "float32_zero_area_count": 0,
+      "id": "panda_visual_link0_08",
+      "non_surface_lines_m": [],
+      "normal_rounding_max_abs": 2.9791762834463498e-08,
+      "omitted_zero_area_triangles": [],
+      "position_rounding_max_abs_m": 3.7126350466154534e-09,
+      "quantization_surface_loss_count": 0,
+      "sha256": "87cc8ee5571b45ad34a8cd16a9564370610192ad172ebc53854fa8685a9ae46f",
+      "source_file": "link0.dae",
+      "source_geometry": "Shell_003-mesh",
+      "source_matrix_row_major": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "source_node": "node8",
+      "source_primitive": 0,
+      "source_triangle_count": 188,
+      "source_triangle_runs": [
+        [
+          0,
+          188
+        ]
+      ],
+      "source_zero_area_count": 0,
+      "triangles": 188,
+      "vertices": 564
+    },
+    {
+      "file": "meshes/link0-09.gltf",
+      "float32_zero_area_count": 0,
+      "id": "panda_visual_link0_09",
+      "non_surface_lines_m": [],
+      "normal_rounding_max_abs": 2.9794472333755095e-08,
+      "omitted_zero_area_triangles": [],
+      "position_rounding_max_abs_m": 3.7176513673076172e-09,
+      "quantization_surface_loss_count": 0,
+      "sha256": "6225975a38b9184686d78c8b099c4aea00d0558bc2f272564c231ff5821c1c70",
+      "source_file": "link0.dae",
+      "source_geometry": "Shell003_003-mesh",
+      "source_matrix_row_major": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "source_node": "node9",
+      "source_primitive": 0,
+      "source_triangle_count": 2352,
+      "source_triangle_runs": [
+        [
+          0,
+          2352
+        ]
+      ],
+      "source_zero_area_count": 0,
+      "triangles": 2352,
+      "vertices": 7056
+    },
+    {
+      "file": "meshes/link0-10.gltf",
+      "float32_zero_area_count": 0,
+      "id": "panda_visual_link0_10",
+      "non_surface_lines_m": [],
+      "normal_rounding_max_abs": 2.9749748886587213e-08,
+      "omitted_zero_area_triangles": [],
+      "position_rounding_max_abs_m": 3.7217712384185475e-09,
+      "quantization_surface_loss_count": 0,
+      "sha256": "9a9f4923e5fa93789eb37a09f48a0cc5333039139d6694de3a963150fee8674c",
+      "source_file": "link0.dae",
+      "source_geometry": "Shell009_001-mesh",
+      "source_matrix_row_major": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "source_node": "node10",
+      "source_primitive": 0,
+      "source_triangle_count": 428,
+      "source_triangle_runs": [
+        [
+          0,
+          428
+        ]
+      ],
+      "source_zero_area_count": 0,
+      "triangles": 428,
+      "vertices": 1282
+    },
+    {
+      "file": "meshes/link0-11.gltf",
+      "float32_zero_area_count": 0,
+      "id": "panda_visual_link0_11",
+      "non_surface_lines_m": [],
+      "normal_rounding_max_abs": 2.978676394427282e-08,
+      "omitted_zero_area_triangles": [],
+      "position_rounding_max_abs_m": 3.722381597404123e-09,
+      "quantization_surface_loss_count": 0,
+      "sha256": "c54cfd1264beb83570f0d81f2ac02efb0dd9af6a9b130a32190d1b39b65b54ec",
+      "source_file": "link0.dae",
+      "source_geometry": "Shell010_001-mesh",
+      "source_matrix_row_major": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "source_node": "node11",
+      "source_primitive": 0,
+      "source_triangle_count": 1202,
+      "source_triangle_runs": [
+        [
+          0,
+          1202
+        ]
+      ],
+      "source_zero_area_count": 0,
+      "triangles": 1202,
+      "vertices": 3606
+    },
+    {
+      "file": "meshes/link1-00.gltf",
+      "float32_zero_area_count": 0,
+      "id": "panda_visual_link1_00",
+      "non_surface_lines_m": [],
+      "normal_rounding_max_abs": 2.980098590121827e-08,
+      "omitted_zero_area_triangles": [],
+      "position_rounding_max_abs_m": 7.450485228766013e-09,
+      "quantization_surface_loss_count": 0,
+      "sha256": "921c590f53eb5e0b44524fd8e93df1b884af445fdae6c0fca3d041070dbefa37",
+      "source_file": "link1.dae",
+      "source_geometry": "Part__Feature_001-mesh",
+      "source_matrix_row_major": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        -0.192,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "source_node": "node0",
+      "source_primitive": 0,
+      "source_triangle_count": 12516,
+      "source_triangle_runs": [
+        [
+          0,
+          12516
+        ]
+      ],
+      "source_zero_area_count": 0,
+      "triangles": 12516,
+      "vertices": 37399
+    },
+    {
+      "file": "meshes/link2-00.gltf",
+      "float32_zero_area_count": 0,
+      "id": "panda_visual_link2_00",
+      "non_surface_lines_m": [],
+      "normal_rounding_max_abs": 2.9801880518931512e-08,
+      "omitted_zero_area_triangles": [],
+      "position_rounding_max_abs_m": 7.4420928863894176e-09,
+      "quantization_surface_loss_count": 0,
+      "sha256": "04d8a40c7e685334f142314584c0c61cb93efd71c98b06a5fccc9591a81827d8",
+      "source_file": "link2.dae",
+      "source_geometry": "Part__Feature024-mesh",
+      "source_matrix_row_major": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "source_node": "node0",
+      "source_primitive": 0,
+      "source_triangle_count": 12716,
+      "source_triangle_runs": [
+        [
+          0,
+          12716
+        ]
+      ],
+      "source_zero_area_count": 0,
+      "triangles": 12716,
+      "vertices": 38108
+    },
+    {
+      "file": "meshes/link3-00.gltf",
+      "float32_zero_area_count": 0,
+      "id": "panda_visual_link3_00",
+      "non_surface_lines_m": [],
+      "normal_rounding_max_abs": 2.9790168998289346e-08,
+      "omitted_zero_area_triangles": [],
+      "position_rounding_max_abs_m": 7.353019720879317e-09,
+      "quantization_surface_loss_count": 0,
+      "sha256": "ab6b145323cc6b5b8742eeff84d93cd0ee2483b62f8b962752f95c3914edb41b",
+      "source_file": "link3.dae",
+      "source_geometry": "Part__Feature_006-mesh",
+      "source_matrix_row_major": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        -0.121,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "source_node": "node0_001",
+      "source_primitive": 0,
+      "source_triangle_count": 1807,
+      "source_triangle_runs": [
+        [
+          0,
+          1807
+        ]
+      ],
+      "source_zero_area_count": 0,
+      "triangles": 1807,
+      "vertices": 5421
+    },
+    {
+      "file": "meshes/link3-01.gltf",
+      "float32_zero_area_count": 0,
+      "id": "panda_visual_link3_01",
+      "non_surface_lines_m": [],
+      "normal_rounding_max_abs": 2.963026068947272e-08,
+      "omitted_zero_area_triangles": [],
+      "position_rounding_max_abs_m": 3.713092805446294e-09,
+      "quantization_surface_loss_count": 0,
+      "sha256": "b3bfe5b90a0bba8694c7d17ea11f26b09c20efadebae73084246ef5401bcbfcf",
+      "source_file": "link3.dae",
+      "source_geometry": "Part__Feature001_004-mesh",
+      "source_matrix_row_major": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        -0.121,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "source_node": "node1",
+      "source_primitive": 0,
+      "source_triangle_count": 332,
+      "source_triangle_runs": [
+        [
+          0,
+          332
+        ]
+      ],
+      "source_zero_area_count": 0,
+      "triangles": 332,
+      "vertices": 996
+    },
+    {
+      "file": "meshes/link3-02.gltf",
+      "float32_zero_area_count": 0,
+      "id": "panda_visual_link3_02",
+      "non_surface_lines_m": [],
+      "normal_rounding_max_abs": 2.9794279932104928e-08,
+      "omitted_zero_area_triangles": [],
+      "position_rounding_max_abs_m": 9.272813801530777e-10,
+      "quantization_surface_loss_count": 0,
+      "sha256": "5886212f0883565660503242470c651907646bf9f8753f7b0dad7d5d5119f22d",
+      "source_file": "link3.dae",
+      "source_geometry": "Part__Feature002_004-mesh",
+      "source_matrix_row_major": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        -0.121,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "source_node": "node2",
+      "source_primitive": 0,
+      "source_triangle_count": 259,
+      "source_triangle_runs": [
+        [
+          0,
+          259
+        ]
+      ],
+      "source_zero_area_count": 0,
+      "triangles": 259,
+      "vertices": 777
+    },
+    {
+      "file": "meshes/link3-03.gltf",
+      "float32_zero_area_count": 0,
+      "id": "panda_visual_link3_03",
+      "non_surface_lines_m": [],
+      "normal_rounding_max_abs": 2.9801580092581048e-08,
+      "omitted_zero_area_triangles": [],
+      "position_rounding_max_abs_m": 7.4268341199168475e-09,
+      "quantization_surface_loss_count": 0,
+      "sha256": "e843f215b809aaf1a8f364077f869f4b8c27d05a0bab4a7ecc6cbbb758ee043a",
+      "source_file": "link3.dae",
+      "source_geometry": "Part__Feature003_003-mesh",
+      "source_matrix_row_major": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        -0.121,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "source_node": "node3",
+      "source_primitive": 0,
+      "source_triangle_count": 11835,
+      "source_triangle_runs": [
+        [
+          0,
+          11835
+        ]
+      ],
+      "source_zero_area_count": 0,
+      "triangles": 11835,
+      "vertices": 35403
+    },
+    {
+      "file": "meshes/link4-00.gltf",
+      "float32_zero_area_count": 0,
+      "id": "panda_visual_link4_00",
+      "non_surface_lines_m": [],
+      "normal_rounding_max_abs": 2.965388612441444e-08,
+      "omitted_zero_area_triangles": [],
+      "position_rounding_max_abs_m": 3.6422729554619337e-09,
+      "quantization_surface_loss_count": 0,
+      "sha256": "60ab2dd07eb71e1db9be37360bdcd939e3e91fe7287740a0afe4c6c469557f4d",
+      "source_file": "link4.dae",
+      "source_geometry": "Part__Feature_005-mesh",
+      "source_matrix_row_major": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.003,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "source_node": "node0",
+      "source_primitive": 0,
+      "source_triangle_count": 265,
+      "source_triangle_runs": [
+        [
+          0,
+          265
+        ]
+      ],
+      "source_zero_area_count": 0,
+      "triangles": 265,
+      "vertices": 795
+    },
+    {
+      "file": "meshes/link4-01.gltf",
+      "float32_zero_area_count": 1,
+      "id": "panda_visual_link4_01",
+      "non_surface_lines_m": [],
+      "normal_rounding_max_abs": 2.9792525668703718e-08,
+      "omitted_zero_area_triangles": [
+        {
+          "baked_positions_m": [
+            [
+              -0.06088382,
+              0.015420050000000001,
+              0.07065618
+            ],
+            [
+              -0.06280767,
+              0.01679907,
+              0.06478428
+            ],
+            [
+              -0.06088382,
+              0.015420050000000001,
+              0.07065618
+            ]
+          ],
+          "float32_positions_m": [
+            [
+              -0.06088382005691528,
+              0.015420050360262394,
+              0.0706561803817749
+            ],
+            [
+              -0.06280767172574997,
+              0.016799069941043854,
+              0.06478428095579147
+            ],
+            [
+              -0.06088382005691528,
+              0.015420050360262394,
+              0.0706561803817749
+            ]
+          ],
+          "float32_zero_area": true,
+          "position_rounding_max_abs_m": 1.725749973480184e-09,
+          "reason": "exact source zero area; no triangle raster surface coverage",
+          "source_ordinal": 1666,
+          "source_positions_m": [
+            [
+              -0.06088382,
+              0.01242005,
+              0.07065618
+            ],
+            [
+              -0.06280767,
+              0.01379907,
+              0.06478428
+            ],
+            [
+              -0.06088382,
+              0.01242005,
+              0.07065618
+            ]
+          ],
+          "vertex_indices": [
+            4998,
+            4999,
+            5000
+          ]
+        }
+      ],
+      "position_rounding_max_abs_m": 3.7201118435747915e-09,
+      "quantization_surface_loss_count": 0,
+      "sha256": "13605018a4093589632582471d77d4851a2a33e95bcbdbfcf88d153e00c1f31a",
+      "source_file": "link4.dae",
+      "source_geometry": "Part__Feature002_003-mesh",
+      "source_matrix_row_major": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.003,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "source_node": "node1",
+      "source_primitive": 0,
+      "source_triangle_count": 1794,
+      "source_triangle_runs": [
+        [
+          0,
+          1666
+        ],
+        [
+          1667,
+          1794
+        ]
+      ],
+      "source_zero_area_count": 1,
+      "triangles": 1793,
+      "vertices": 5382
+    },
+    {
+      "file": "meshes/link4-02.gltf",
+      "float32_zero_area_count": 0,
+      "id": "panda_visual_link4_02",
+      "non_surface_lines_m": [],
+      "normal_rounding_max_abs": 2.9802171397363963e-08,
+      "omitted_zero_area_triangles": [],
+      "position_rounding_max_abs_m": 7.442665095336309e-09,
+      "quantization_surface_loss_count": 0,
+      "sha256": "9e9b1a631046236a46f94fd6100f19de05cb78b5589aa61cb0fae1a7484ac058",
+      "source_file": "link4.dae",
+      "source_geometry": "Part__Feature003_002-mesh",
+      "source_matrix_row_major": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.003,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "source_node": "node2",
+      "source_primitive": 0,
+      "source_triangle_count": 12229,
+      "source_triangle_runs": [
+        [
+          0,
+          12229
+        ]
+      ],
+      "source_zero_area_count": 0,
+      "triangles": 12229,
+      "vertices": 36678
+    },
+    {
+      "file": "meshes/link4-03.gltf",
+      "float32_zero_area_count": 0,
+      "id": "panda_visual_link4_03",
+      "non_surface_lines_m": [],
+      "normal_rounding_max_abs": 2.9697918346727192e-08,
+      "omitted_zero_area_triangles": [],
+      "position_rounding_max_abs_m": 3.602523807044733e-09,
+      "quantization_surface_loss_count": 0,
+      "sha256": "885f16b8c4cef1411a5b5d4b874e7a2c8a4fd763e94eacae3886f82f6d43cc1c",
+      "source_file": "link4.dae",
+      "source_geometry": "Part__Feature001_003-mesh",
+      "source_matrix_row_major": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.003,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "source_node": "node3",
+      "source_primitive": 0,
+      "source_triangle_count": 333,
+      "source_triangle_runs": [
+        [
+          0,
+          333
+        ]
+      ],
+      "source_zero_area_count": 0,
+      "triangles": 333,
+      "vertices": 999
+    },
+    {
+      "file": "meshes/link5-00.gltf",
+      "float32_zero_area_count": 0,
+      "id": "panda_visual_link5_00",
+      "non_surface_lines_m": [],
+      "normal_rounding_max_abs": 2.9801012879637767e-08,
+      "omitted_zero_area_triangles": [],
+      "position_rounding_max_abs_m": 1.4892751865058784e-08,
+      "quantization_surface_loss_count": 0,
+      "sha256": "81825e91a4f8696a11114633aa5d2aeae2446270a3fbb7342f6dce923a7c2c2c",
+      "source_file": "link5.dae",
+      "source_geometry": "Part__Feature_004-mesh",
+      "source_matrix_row_major": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        -0.259,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "source_node": "node0",
+      "source_primitive": 0,
+      "source_triangle_count": 14824,
+      "source_triangle_runs": [
+        [
+          0,
+          14824
+        ]
+      ],
+      "source_zero_area_count": 0,
+      "triangles": 14824,
+      "vertices": 44356
+    },
+    {
+      "file": "meshes/link5-01.gltf",
+      "float32_zero_area_count": 0,
+      "id": "panda_visual_link5_01",
+      "non_surface_lines_m": [],
+      "normal_rounding_max_abs": 2.963818390711026e-08,
+      "omitted_zero_area_triangles": [],
+      "position_rounding_max_abs_m": 6.998825075044124e-09,
+      "quantization_surface_loss_count": 0,
+      "sha256": "0066beabb75dc405144e24e7fe60596d190fd600521ed165f79f869f709e22b0",
+      "source_file": "link5.dae",
+      "source_geometry": "Shell_005-mesh",
+      "source_matrix_row_major": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        -0.259,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "source_node": "node1",
+      "source_primitive": 0,
+      "source_triangle_count": 250,
+      "source_triangle_runs": [
+        [
+          0,
+          250
+        ]
+      ],
+      "source_zero_area_count": 0,
+      "triangles": 250,
+      "vertices": 750
+    },
+    {
+      "file": "meshes/link5-02.gltf",
+      "float32_zero_area_count": 0,
+      "id": "panda_visual_link5_02",
+      "non_surface_lines_m": [
+        [
+          [
+            -0.01658636,
+            0.107966,
+            -0.0773035
+          ],
+          [
+            -0.01650005,
+            0.1100035,
+            -0.0659332
+          ]
+        ],
+        [
+          [
+            0.01874548,
+            0.1004828,
+            -0.11551620000000001
+          ],
+          [
+            0.01874548,
+            0.1004828,
+            -0.11551620000000001
+          ]
+        ]
+      ],
+      "normal_rounding_max_abs": 2.9786655919572524e-08,
+      "omitted_zero_area_triangles": [],
+      "position_rounding_max_abs_m": 7.4399948146730566e-09,
+      "quantization_surface_loss_count": 0,
+      "sha256": "c63646632d830ea1a15dfbdbd2312e43007e221cbcdb96720675505f39089dc4",
+      "source_file": "link5.dae",
+      "source_geometry": "Shell001_004-mesh",
+      "source_matrix_row_major": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        -0.259,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "source_node": "node2",
+      "source_primitive": 0,
+      "source_triangle_count": 3253,
+      "source_triangle_runs": [
+        [
+          0,
+          3253
+        ]
+      ],
+      "source_zero_area_count": 0,
+      "triangles": 3253,
+      "vertices": 9759
+    },
+    {
+      "file": "meshes/link6-00.gltf",
+      "float32_zero_area_count": 1,
+      "id": "panda_visual_link6_00",
+      "non_surface_lines_m": [],
+      "normal_rounding_max_abs": 2.9802066370265834e-08,
+      "omitted_zero_area_triangles": [
+        {
+          "baked_positions_m": [
+            [
+              0.12915,
+              -0.05119997,
+              9.999999999940612e-09
+            ],
+            [
+              0.12915,
+              -0.05049961,
+              9.999999999940612e-09
+            ],
+            [
+              0.12915,
+              -0.05050081,
+              9.999999999940612e-09
+            ]
+          ],
+          "float32_positions_m": [
+            [
+              0.12915000319480896,
+              -0.05119996890425682,
+              9.99999993922529e-09
+            ],
+            [
+              0.12915000319480896,
+              -0.05049961060285568,
+              9.99999993922529e-09
+            ],
+            [
+              0.12915000319480896,
+              -0.05050081014633179,
+              9.99999993922529e-09
+            ]
+          ],
+          "float32_zero_area": true,
+          "position_rounding_max_abs_m": 3.1948089729283424e-09,
+          "reason": "exact source zero area; no triangle raster surface coverage",
+          "source_ordinal": 8752,
+          "source_positions_m": [
+            [
+              0.12915,
+              -0.05119997,
+              0.01480001
+            ],
+            [
+              0.12915,
+              -0.05049961,
+              0.01480001
+            ],
+            [
+              0.12915,
+              -0.05050081,
+              0.01480001
+            ]
+          ],
+          "vertex_indices": [
+            26198,
+            26199,
+            26200
+          ]
+        }
+      ],
+      "position_rounding_max_abs_m": 7.450294492450382e-09,
+      "quantization_surface_loss_count": 0,
+      "sha256": "1989002d58d674cb15d1b86a7851354d88efe40dd20f3bffdfabd87deffdf613",
+      "source_file": "link6.dae",
+      "source_geometry": "Shell012_000-mesh",
+      "source_matrix_row_major": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        -0.0148,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "source_node": "node0",
+      "source_primitive": 0,
+      "source_triangle_count": 14325,
+      "source_triangle_runs": [
+        [
+          0,
+          8752
+        ],
+        [
+          8753,
+          14325
+        ]
+      ],
+      "source_zero_area_count": 1,
+      "triangles": 14324,
+      "vertices": 42864
+    },
+    {
+      "file": "meshes/link6-01.gltf",
+      "float32_zero_area_count": 0,
+      "id": "panda_visual_link6_01",
+      "non_surface_lines_m": [
+        [
+          [
+            0.1109915,
+            0.06862062,
+            -0.024082052
+          ],
+          [
+            0.112779,
+            0.06817752,
+            -0.022154140000000003
+          ]
+        ]
+      ],
+      "normal_rounding_max_abs": 2.979664381896896e-08,
+      "omitted_zero_area_triangles": [],
+      "position_rounding_max_abs_m": 3.724193578524826e-09,
+      "quantization_surface_loss_count": 0,
+      "sha256": "0ec6601b27eb3ffcda4b49e8c5d1e018cefa7c3c99fdd90d09a9d8f9f780d7d4",
+      "source_file": "link6.dae",
+      "source_geometry": "Part__Feature001_002-mesh",
+      "source_matrix_row_major": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        -0.0148,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "source_node": "node1",
+      "source_primitive": 0,
+      "source_triangle_count": 2662,
+      "source_triangle_runs": [
+        [
+          0,
+          2662
+        ]
+      ],
+      "source_zero_area_count": 0,
+      "triangles": 2662,
+      "vertices": 7986
+    },
+    {
+      "file": "meshes/link6-02.gltf",
+      "float32_zero_area_count": 0,
+      "id": "panda_visual_link6_02",
+      "non_surface_lines_m": [],
+      "normal_rounding_max_abs": 2.9784286370571067e-08,
+      "omitted_zero_area_triangles": [],
+      "position_rounding_max_abs_m": 3.6109924356209078e-09,
+      "quantization_surface_loss_count": 0,
+      "sha256": "6b4302fbc155ddde5d8487bf8e332f92e3e93acaea662f7be959c295abd2c3fc",
+      "source_file": "link6.dae",
+      "source_geometry": "Part__Feature002_002-mesh",
+      "source_matrix_row_major": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        -0.0148,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "source_node": "node2",
+      "source_primitive": 0,
+      "source_triangle_count": 1756,
+      "source_triangle_runs": [
+        [
+          0,
+          1756
+        ]
+      ],
+      "source_zero_area_count": 0,
+      "triangles": 1756,
+      "vertices": 5268
+    },
+    {
+      "file": "meshes/link6-03.gltf",
+      "float32_zero_area_count": 0,
+      "id": "panda_visual_link6_03",
+      "non_surface_lines_m": [],
+      "normal_rounding_max_abs": 2.9273072965629865e-08,
+      "omitted_zero_area_triangles": [],
+      "position_rounding_max_abs_m": 3.368854528673637e-09,
+      "quantization_surface_loss_count": 0,
+      "sha256": "75f29db8c77712662ea384ee6168d5ef52eabc117e8cb02afd456566dba2084b",
+      "source_file": "link6.dae",
+      "source_geometry": "Face064_000-mesh",
+      "source_matrix_row_major": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        -0.0148,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "source_node": "node3",
+      "source_primitive": 0,
+      "source_triangle_count": 16,
+      "source_triangle_runs": [
+        [
+          0,
+          16
+        ]
+      ],
+      "source_zero_area_count": 0,
+      "triangles": 16,
+      "vertices": 48
+    },
+    {
+      "file": "meshes/link6-04.gltf",
+      "float32_zero_area_count": 0,
+      "id": "panda_visual_link6_04",
+      "non_surface_lines_m": [],
+      "normal_rounding_max_abs": 2.8574700938754916e-08,
+      "omitted_zero_area_triangles": [],
+      "position_rounding_max_abs_m": 3.517017357901331e-09,
+      "quantization_surface_loss_count": 0,
+      "sha256": "72b8815c0910d56429e29b7c3952484e6e7b435148ef6ce9f14fa038eb844a42",
+      "source_file": "link6.dae",
+      "source_geometry": "Face065_000-mesh",
+      "source_matrix_row_major": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        -0.0148,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "source_node": "node4",
+      "source_primitive": 0,
+      "source_triangle_count": 16,
+      "source_triangle_runs": [
+        [
+          0,
+          16
+        ]
+      ],
+      "source_zero_area_count": 0,
+      "triangles": 16,
+      "vertices": 48
+    },
+    {
+      "file": "meshes/link6-05.gltf",
+      "float32_zero_area_count": 0,
+      "id": "panda_visual_link6_05",
+      "non_surface_lines_m": [],
+      "normal_rounding_max_abs": 2.94350961382861e-08,
+      "omitted_zero_area_triangles": [],
+      "position_rounding_max_abs_m": 3.6427307142927745e-09,
+      "quantization_surface_loss_count": 0,
+      "sha256": "69bc2cabe9c623682c2bffe7b410777d0194a4fefb23b9cc60426ddf2063d409",
+      "source_file": "link6.dae",
+      "source_geometry": "Face374_000-mesh",
+      "source_matrix_row_major": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        -0.0148,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "source_node": "node5",
+      "source_primitive": 0,
+      "source_triangle_count": 134,
+      "source_triangle_runs": [
+        [
+          0,
+          134
+        ]
+      ],
+      "source_zero_area_count": 0,
+      "triangles": 134,
+      "vertices": 402
+    },
+    {
+      "file": "meshes/link6-06.gltf",
+      "float32_zero_area_count": 0,
+      "id": "panda_visual_link6_06",
+      "non_surface_lines_m": [],
+      "normal_rounding_max_abs": 2.976335311544176e-08,
+      "omitted_zero_area_triangles": [],
+      "position_rounding_max_abs_m": 3.7203979480482374e-09,
+      "quantization_surface_loss_count": 0,
+      "sha256": "811580c7f57c197b8cf5979de2a7e3d2dfc42377070aea9fbf417f976803f1d6",
+      "source_file": "link6.dae",
+      "source_geometry": "Shell_002-mesh",
+      "source_matrix_row_major": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        -0.0148,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "source_node": "node6",
+      "source_primitive": 0,
+      "source_triangle_count": 1472,
+      "source_triangle_runs": [
+        [
+          0,
+          1472
+        ]
+      ],
+      "source_zero_area_count": 0,
+      "triangles": 1472,
+      "vertices": 4416
+    },
+    {
+      "file": "meshes/link6-07.gltf",
+      "float32_zero_area_count": 0,
+      "id": "panda_visual_link6_07",
+      "non_surface_lines_m": [],
+      "normal_rounding_max_abs": 2.9656324951332635e-08,
+      "omitted_zero_area_triangles": [],
+      "position_rounding_max_abs_m": 1.8606376647745115e-09,
+      "quantization_surface_loss_count": 0,
+      "sha256": "d106366505561953e63e71837de7da39b916c814bc5f57b7d973cb6ff6bc2806",
+      "source_file": "link6.dae",
+      "source_geometry": "Face539_000-mesh",
+      "source_matrix_row_major": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        -0.0148,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "source_node": "node7",
+      "source_primitive": 0,
+      "source_triangle_count": 72,
+      "source_triangle_runs": [
+        [
+          0,
+          72
+        ]
+      ],
+      "source_zero_area_count": 0,
+      "triangles": 72,
+      "vertices": 216
+    },
+    {
+      "file": "meshes/link6-08.gltf",
+      "float32_zero_area_count": 0,
+      "id": "panda_visual_link6_08",
+      "non_surface_lines_m": [],
+      "normal_rounding_max_abs": 2.9542231105850192e-08,
+      "omitted_zero_area_triangles": [],
+      "position_rounding_max_abs_m": 3.5324096703259755e-09,
+      "quantization_surface_loss_count": 0,
+      "sha256": "bc53ec7d58c1331145f7b2a8d9f7c0a7f82e818eaa115faf11f8af04ba8fb7d4",
+      "source_file": "link6.dae",
+      "source_geometry": "Union_000-mesh",
+      "source_matrix_row_major": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        -0.0148,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "source_node": "node8",
+      "source_primitive": 0,
+      "source_triangle_count": 38,
+      "source_triangle_runs": [
+        [
+          0,
+          38
+        ]
+      ],
+      "source_zero_area_count": 0,
+      "triangles": 38,
+      "vertices": 114
+    },
+    {
+      "file": "meshes/link6-09.gltf",
+      "float32_zero_area_count": 0,
+      "id": "panda_visual_link6_09",
+      "non_surface_lines_m": [],
+      "normal_rounding_max_abs": 2.6339506020711667e-08,
+      "omitted_zero_area_triangles": [],
+      "position_rounding_max_abs_m": 3.502063750104867e-09,
+      "quantization_surface_loss_count": 0,
+      "sha256": "a96fbf61209a1f578fd1fb9fa8b9c52203555da398c865895f51032ebb65cec5",
+      "source_file": "link6.dae",
+      "source_geometry": "Union001_000-mesh",
+      "source_matrix_row_major": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        -0.0148,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "source_node": "node9",
+      "source_primitive": 0,
+      "source_triangle_count": 18,
+      "source_triangle_runs": [
+        [
+          0,
+          18
+        ]
+      ],
+      "source_zero_area_count": 0,
+      "triangles": 18,
+      "vertices": 54
+    },
+    {
+      "file": "meshes/link6-10.gltf",
+      "float32_zero_area_count": 0,
+      "id": "panda_visual_link6_10",
+      "non_surface_lines_m": [],
+      "normal_rounding_max_abs": 2.947677757436651e-08,
+      "omitted_zero_area_triangles": [],
+      "position_rounding_max_abs_m": 3.6499023386982188e-09,
+      "quantization_surface_loss_count": 0,
+      "sha256": "4560f75da067fc9585793b33a0ce55018d13612a1886673485b57c88f75cd09e",
+      "source_file": "link6.dae",
+      "source_geometry": "Shell002_002-mesh",
+      "source_matrix_row_major": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        -0.0148,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "source_node": "node10",
+      "source_primitive": 0,
+      "source_triangle_count": 52,
+      "source_triangle_runs": [
+        [
+          0,
+          52
+        ]
+      ],
+      "source_zero_area_count": 0,
+      "triangles": 52,
+      "vertices": 156
+    },
+    {
+      "file": "meshes/link6-11.gltf",
+      "float32_zero_area_count": 0,
+      "id": "panda_visual_link6_11",
+      "non_surface_lines_m": [],
+      "normal_rounding_max_abs": 2.9523222533356375e-08,
+      "omitted_zero_area_triangles": [],
+      "position_rounding_max_abs_m": 3.6936950720267703e-09,
+      "quantization_surface_loss_count": 0,
+      "sha256": "ffb540e3ebf84f38cc7718127262c606b6f4a62302cd14c4fcb3366766e15843",
+      "source_file": "link6.dae",
+      "source_geometry": "Shell003_002-mesh",
+      "source_matrix_row_major": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        -0.0148,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "source_node": "node11",
+      "source_primitive": 0,
+      "source_triangle_count": 49,
+      "source_triangle_runs": [
+        [
+          0,
+          49
+        ]
+      ],
+      "source_zero_area_count": 0,
+      "triangles": 49,
+      "vertices": 147
+    },
+    {
+      "file": "meshes/link6-12.gltf",
+      "float32_zero_area_count": 0,
+      "id": "panda_visual_link6_12",
+      "non_surface_lines_m": [],
+      "normal_rounding_max_abs": 2.9725530703572645e-08,
+      "omitted_zero_area_triangles": [],
+      "position_rounding_max_abs_m": 3.5176086488064584e-09,
+      "quantization_surface_loss_count": 0,
+      "sha256": "f2dbb9af68a83b7e516616ccb43aea4d9862140096394f2e1eb9d38f4e1b9118",
+      "source_file": "link6.dae",
+      "source_geometry": "Shell004_000-mesh",
+      "source_matrix_row_major": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        -0.0148,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "source_node": "node12",
+      "source_primitive": 0,
+      "source_triangle_count": 57,
+      "source_triangle_runs": [
+        [
+          0,
+          57
+        ]
+      ],
+      "source_zero_area_count": 0,
+      "triangles": 57,
+      "vertices": 171
+    },
+    {
+      "file": "meshes/link6-13.gltf",
+      "float32_zero_area_count": 0,
+      "id": "panda_visual_link6_13",
+      "non_surface_lines_m": [],
+      "normal_rounding_max_abs": 2.9469350182331766e-08,
+      "omitted_zero_area_triangles": [],
+      "position_rounding_max_abs_m": 3.713397978000188e-09,
+      "quantization_surface_loss_count": 0,
+      "sha256": "549d0aae7428b321d34c8283d1eeaec33585dd21c67c88c77db2b5c162d8db87",
+      "source_file": "link6.dae",
+      "source_geometry": "Shell005_000-mesh",
+      "source_matrix_row_major": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        -0.0148,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "source_node": "node13",
+      "source_primitive": 0,
+      "source_triangle_count": 49,
+      "source_triangle_runs": [
+        [
+          0,
+          49
+        ]
+      ],
+      "source_zero_area_count": 0,
+      "triangles": 49,
+      "vertices": 147
+    },
+    {
+      "file": "meshes/link6-14.gltf",
+      "float32_zero_area_count": 0,
+      "id": "panda_visual_link6_14",
+      "non_surface_lines_m": [],
+      "normal_rounding_max_abs": 2.821103861627705e-08,
+      "omitted_zero_area_triangles": [],
+      "position_rounding_max_abs_m": 3.712844851011532e-09,
+      "quantization_surface_loss_count": 0,
+      "sha256": "35b29de6a4a556d278ed76a80a8b7a464b0eee314789b7acd6f45190a12b7162",
+      "source_file": "link6.dae",
+      "source_geometry": "Shell007_000-mesh",
+      "source_matrix_row_major": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        -0.0148,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "source_node": "node15",
+      "source_primitive": 0,
+      "source_triangle_count": 41,
+      "source_triangle_runs": [
+        [
+          0,
+          41
+        ]
+      ],
+      "source_zero_area_count": 0,
+      "triangles": 41,
+      "vertices": 123
+    },
+    {
+      "file": "meshes/link6-15.gltf",
+      "float32_zero_area_count": 0,
+      "id": "panda_visual_link6_15",
+      "non_surface_lines_m": [],
+      "normal_rounding_max_abs": 2.9758544628499806e-08,
+      "omitted_zero_area_triangles": [],
+      "position_rounding_max_abs_m": 1.822805399676053e-09,
+      "quantization_surface_loss_count": 0,
+      "sha256": "fe2337382882bcef917f0b581dc981cce0fed3f8dc6f649919221a4cabfa2f36",
+      "source_file": "link6.dae",
+      "source_geometry": "Shell011_000-mesh",
+      "source_matrix_row_major": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        -0.0148,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "source_node": "node16",
+      "source_primitive": 0,
+      "source_triangle_count": 117,
+      "source_triangle_runs": [
+        [
+          0,
+          117
+        ]
+      ],
+      "source_zero_area_count": 0,
+      "triangles": 117,
+      "vertices": 351
+    },
+    {
+      "file": "meshes/link6-16.gltf",
+      "float32_zero_area_count": 0,
+      "id": "panda_visual_link6_16",
+      "non_surface_lines_m": [],
+      "normal_rounding_max_abs": 2.975202773036756e-08,
+      "omitted_zero_area_triangles": [],
+      "position_rounding_max_abs_m": 6.971549976197977e-09,
+      "quantization_surface_loss_count": 0,
+      "sha256": "2e993f1854902752c41d9f4c3cd3d94c1d6a27d89ff163d29815d13f85258eeb",
+      "source_file": "link6.dae",
+      "source_geometry": "Shell006_000-mesh",
+      "source_matrix_row_major": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "source_node": "node0_001",
+      "source_primitive": 0,
+      "source_triangle_count": 746,
+      "source_triangle_runs": [
+        [
+          0,
+          746
+        ]
+      ],
+      "source_zero_area_count": 0,
+      "triangles": 746,
+      "vertices": 2059
+    },
+    {
+      "file": "meshes/link7-00.gltf",
+      "float32_zero_area_count": 0,
+      "id": "panda_visual_link7_00",
+      "non_surface_lines_m": [],
+      "normal_rounding_max_abs": 2.9798844503048372e-08,
+      "omitted_zero_area_triangles": [],
+      "position_rounding_max_abs_m": 3.7067985486638477e-09,
+      "quantization_surface_loss_count": 0,
+      "sha256": "71c89a169824794e6be8e22434d6d8e737d278e1568b748964592f9b5a1106f6",
+      "source_file": "link7.dae",
+      "source_geometry": "Part__Mirroring_000-mesh",
+      "source_matrix_row_major": [
+        0.7071067,
+        0.7071068,
+        0.0,
+        0.0,
+        -0.7071068,
+        0.7071067,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.052,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "source_node": "node0",
+      "source_primitive": 0,
+      "source_triangle_count": 3244,
+      "source_triangle_runs": [
+        [
+          0,
+          3244
+        ]
+      ],
+      "source_zero_area_count": 0,
+      "triangles": 3244,
+      "vertices": 9586
+    },
+    {
+      "file": "meshes/link7-01.gltf",
+      "float32_zero_area_count": 0,
+      "id": "panda_visual_link7_01",
+      "non_surface_lines_m": [],
+      "normal_rounding_max_abs": 2.9788438937750072e-08,
+      "omitted_zero_area_triangles": [],
+      "position_rounding_max_abs_m": 3.6494827299060617e-09,
+      "quantization_surface_loss_count": 0,
+      "sha256": "66dfc453c95985fd5640b538e9da8827c5e738991fdbceb7434cd8b1825102bb",
+      "source_file": "link7.dae",
+      "source_geometry": "Part__Mirroring002_000-mesh",
+      "source_matrix_row_major": [
+        0.7071067,
+        0.7071068,
+        0.0,
+        0.0,
+        -0.7071068,
+        0.7071067,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.052,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "source_node": "node2",
+      "source_primitive": 0,
+      "source_triangle_count": 403,
+      "source_triangle_runs": [
+        [
+          0,
+          403
+        ]
+      ],
+      "source_zero_area_count": 0,
+      "triangles": 403,
+      "vertices": 1209
+    },
+    {
+      "file": "meshes/link7-02.gltf",
+      "float32_zero_area_count": 0,
+      "id": "panda_visual_link7_02",
+      "non_surface_lines_m": [],
+      "normal_rounding_max_abs": 2.9770638176884745e-08,
+      "omitted_zero_area_triangles": [],
+      "position_rounding_max_abs_m": 3.719768520982214e-09,
+      "quantization_surface_loss_count": 0,
+      "sha256": "bd5fa351978ef1e663c0f55832200b00b5b27bbb9b9e642d7fe8d5bdcbc66266",
+      "source_file": "link7.dae",
+      "source_geometry": "Part__Mirroring003_000-mesh",
+      "source_matrix_row_major": [
+        0.7071067,
+        0.7071068,
+        0.0,
+        0.0,
+        -0.7071068,
+        0.7071067,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.052,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "source_node": "node3",
+      "source_primitive": 0,
+      "source_triangle_count": 906,
+      "source_triangle_runs": [
+        [
+          0,
+          906
+        ]
+      ],
+      "source_zero_area_count": 0,
+      "triangles": 906,
+      "vertices": 2718
+    },
+    {
+      "file": "meshes/link7-03.gltf",
+      "float32_zero_area_count": 0,
+      "id": "panda_visual_link7_03",
+      "non_surface_lines_m": [],
+      "normal_rounding_max_abs": 2.9757376340810993e-08,
+      "omitted_zero_area_triangles": [],
+      "position_rounding_max_abs_m": 3.6147880522197084e-09,
+      "quantization_surface_loss_count": 0,
+      "sha256": "033133b2a4ca36224d16528496cec1461e3191d66805ca34a3eea644bd33870b",
+      "source_file": "link7.dae",
+      "source_geometry": "Part__Mirroring005_000-mesh",
+      "source_matrix_row_major": [
+        0.7071067,
+        0.7071068,
+        0.0,
+        0.0,
+        -0.7071068,
+        0.7071067,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.052,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "source_node": "node5",
+      "source_primitive": 0,
+      "source_triangle_count": 339,
+      "source_triangle_runs": [
+        [
+          0,
+          339
+        ]
+      ],
+      "source_zero_area_count": 0,
+      "triangles": 339,
+      "vertices": 1017
+    },
+    {
+      "file": "meshes/link7-04.gltf",
+      "float32_zero_area_count": 0,
+      "id": "panda_visual_link7_04",
+      "non_surface_lines_m": [],
+      "normal_rounding_max_abs": 2.9732287631922816e-08,
+      "omitted_zero_area_triangles": [],
+      "position_rounding_max_abs_m": 3.718242644334957e-09,
+      "quantization_surface_loss_count": 0,
+      "sha256": "f448bb5ce2e6f75ee304ad650ef1c827298f570f3b5607fcb7b0b235485f0b55",
+      "source_file": "link7.dae",
+      "source_geometry": "Part__Mirroring006_000-mesh",
+      "source_matrix_row_major": [
+        0.7071067,
+        0.7071068,
+        0.0,
+        0.0,
+        -0.7071068,
+        0.7071067,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.052,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "source_node": "node6",
+      "source_primitive": 0,
+      "source_triangle_count": 487,
+      "source_triangle_runs": [
+        [
+          0,
+          487
+        ]
+      ],
+      "source_zero_area_count": 0,
+      "triangles": 487,
+      "vertices": 1461
+    },
+    {
+      "file": "meshes/link7-05.gltf",
+      "float32_zero_area_count": 0,
+      "id": "panda_visual_link7_05",
+      "non_surface_lines_m": [],
+      "normal_rounding_max_abs": 2.9788884803316762e-08,
+      "omitted_zero_area_triangles": [],
+      "position_rounding_max_abs_m": 3.72501374190648e-09,
+      "quantization_surface_loss_count": 0,
+      "sha256": "39fd31b762b5f714909ffabe8620098bdaa130da9f6e97db5bd5a2304cb78ad7",
+      "source_file": "link7.dae",
+      "source_geometry": "Part__Mirroring007_000-mesh",
+      "source_matrix_row_major": [
+        0.7071067,
+        0.7071068,
+        0.0,
+        0.0,
+        -0.7071068,
+        0.7071067,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.052,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "source_node": "node7",
+      "source_primitive": 0,
+      "source_triangle_count": 838,
+      "source_triangle_runs": [
+        [
+          0,
+          838
+        ]
+      ],
+      "source_zero_area_count": 0,
+      "triangles": 838,
+      "vertices": 2488
+    },
+    {
+      "file": "meshes/link7-06.gltf",
+      "float32_zero_area_count": 5,
+      "id": "panda_visual_link7_06",
+      "non_surface_lines_m": [],
+      "normal_rounding_max_abs": 2.9791065614404033e-08,
+      "omitted_zero_area_triangles": [
+        {
+          "baked_positions_m": [
+            [
+              0.059105342808790005,
+              0.010954847144995998,
+              0.09327263999999999
+            ],
+            [
+              0.059105342808790005,
+              0.010954847144995998,
+              0.09327263999999999
+            ],
+            [
+              0.059105342808790005,
+              0.010954847144995998,
+              0.09327263999999999
+            ]
+          ],
+          "float32_positions_m": [
+            [
+              0.059105344116687775,
+              0.010954847559332848,
+              0.09327264130115509
+            ],
+            [
+              0.059105344116687775,
+              0.010954847559332848,
+              0.09327264130115509
+            ],
+            [
+              0.059105344116687775,
+              0.010954847559332848,
+              0.09327264130115509
+            ]
+          ],
+          "float32_zero_area": true,
+          "position_rounding_max_abs_m": 1.307897769253774e-09,
+          "reason": "exact source zero area; no triangle raster surface coverage",
+          "source_ordinal": 89,
+          "source_positions_m": [
+            [
+              0.03404754,
+              0.04954004,
+              0.04127264
+            ],
+            [
+              0.03404754,
+              0.04954004,
+              0.04127264
+            ],
+            [
+              0.03404754,
+              0.04954004,
+              0.04127264
+            ]
+          ],
+          "vertex_indices": [
+            267,
+            268,
+            269
+          ]
+        },
+        {
+          "baked_positions_m": [
+            [
+              0.059105342808790005,
+              0.010954847144995998,
+              0.09327263999999999
+            ],
+            [
+              0.059105342808790005,
+              0.010954847144995998,
+              0.09327263999999999
+            ],
+            [
+              0.059105342808790005,
+              0.010954847144995998,
+              0.09327263999999999
+            ]
+          ],
+          "float32_positions_m": [
+            [
+              0.059105344116687775,
+              0.010954847559332848,
+              0.09327264130115509
+            ],
+            [
+              0.059105344116687775,
+              0.010954847559332848,
+              0.09327264130115509
+            ],
+            [
+              0.059105344116687775,
+              0.010954847559332848,
+              0.09327264130115509
+            ]
+          ],
+          "float32_zero_area": true,
+          "position_rounding_max_abs_m": 1.307897769253774e-09,
+          "reason": "exact source zero area; no triangle raster surface coverage",
+          "source_ordinal": 90,
+          "source_positions_m": [
+            [
+              0.03404754,
+              0.04954004,
+              0.04127264
+            ],
+            [
+              0.03404754,
+              0.04954004,
+              0.04127264
+            ],
+            [
+              0.03404754,
+              0.04954004,
+              0.04127264
+            ]
+          ],
+          "vertex_indices": [
+            267,
+            270,
+            268
+          ]
+        },
+        {
+          "baked_positions_m": [
+            [
+              0.059105342808790005,
+              0.010954847144995998,
+              0.09327263999999999
+            ],
+            [
+              0.059105342808790005,
+              0.010954847144995998,
+              0.09327263999999999
+            ],
+            [
+              0.059105342808790005,
+              0.010954847144995998,
+              0.09327263999999999
+            ]
+          ],
+          "float32_positions_m": [
+            [
+              0.059105344116687775,
+              0.010954847559332848,
+              0.09327264130115509
+            ],
+            [
+              0.059105344116687775,
+              0.010954847559332848,
+              0.09327264130115509
+            ],
+            [
+              0.059105344116687775,
+              0.010954847559332848,
+              0.09327264130115509
+            ]
+          ],
+          "float32_zero_area": true,
+          "position_rounding_max_abs_m": 1.307897769253774e-09,
+          "reason": "exact source zero area; no triangle raster surface coverage",
+          "source_ordinal": 91,
+          "source_positions_m": [
+            [
+              0.03404754,
+              0.04954004,
+              0.04127264
+            ],
+            [
+              0.03404754,
+              0.04954004,
+              0.04127264
+            ],
+            [
+              0.03404754,
+              0.04954004,
+              0.04127264
+            ]
+          ],
+          "vertex_indices": [
+            267,
+            271,
+            270
+          ]
+        },
+        {
+          "baked_positions_m": [
+            [
+              0.059105342808790005,
+              0.010954847144995998,
+              0.09327263999999999
+            ],
+            [
+              0.059105342808790005,
+              0.010954847144995998,
+              0.09327263999999999
+            ],
+            [
+              0.059105342808790005,
+              0.010954847144995998,
+              0.09327263999999999
+            ]
+          ],
+          "float32_positions_m": [
+            [
+              0.059105344116687775,
+              0.010954847559332848,
+              0.09327264130115509
+            ],
+            [
+              0.059105344116687775,
+              0.010954847559332848,
+              0.09327264130115509
+            ],
+            [
+              0.059105344116687775,
+              0.010954847559332848,
+              0.09327264130115509
+            ]
+          ],
+          "float32_zero_area": true,
+          "position_rounding_max_abs_m": 1.307897769253774e-09,
+          "reason": "exact source zero area; no triangle raster surface coverage",
+          "source_ordinal": 92,
+          "source_positions_m": [
+            [
+              0.03404754,
+              0.04954004,
+              0.04127264
+            ],
+            [
+              0.03404754,
+              0.04954004,
+              0.04127264
+            ],
+            [
+              0.03404754,
+              0.04954004,
+              0.04127264
+            ]
+          ],
+          "vertex_indices": [
+            272,
+            273,
+            274
+          ]
+        },
+        {
+          "baked_positions_m": [
+            [
+              0.059105342808790005,
+              0.010954847144995998,
+              0.09327263999999999
+            ],
+            [
+              0.059105682220024006,
+              0.010954762292161996,
+              0.09327263999999999
+            ],
+            [
+              0.059105342808790005,
+              0.010954847144995998,
+              0.09327263999999999
+            ]
+          ],
+          "float32_positions_m": [
+            [
+              0.059105344116687775,
+              0.010954847559332848,
+              0.09327264130115509
+            ],
+            [
+              0.059105683118104935,
+              0.010954761877655983,
+              0.09327264130115509
+            ],
+            [
+              0.059105344116687775,
+              0.010954847559332848,
+              0.09327264130115509
+            ]
+          ],
+          "float32_zero_area": true,
+          "position_rounding_max_abs_m": 1.307897769253774e-09,
+          "reason": "exact source zero area; no triangle raster surface coverage",
+          "source_ordinal": 93,
+          "source_positions_m": [
+            [
+              0.03404754,
+              0.04954004,
+              0.04127264
+            ],
+            [
+              0.03404784,
+              0.04954022,
+              0.04127264
+            ],
+            [
+              0.03404754,
+              0.04954004,
+              0.04127264
+            ]
+          ],
+          "vertex_indices": [
+            272,
+            275,
+            273
+          ]
+        }
+      ],
+      "position_rounding_max_abs_m": 3.710613247220884e-09,
+      "quantization_surface_loss_count": 0,
+      "sha256": "5bc834c8768dd71d593ff22284bfb096a015e7ecaeef283b53a47f783d95af3f",
+      "source_file": "link7.dae",
+      "source_geometry": "Part__Mirroring001_001-mesh",
+      "source_matrix_row_major": [
+        0.7071067,
+        0.7071068,
+        0.0,
+        0.0,
+        -0.7071068,
+        0.7071067,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.052,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "source_node": "node1",
+      "source_primitive": 0,
+      "source_triangle_count": 491,
+      "source_triangle_runs": [
+        [
+          0,
+          89
+        ],
+        [
+          94,
+          491
+        ]
+      ],
+      "source_zero_area_count": 5,
+      "triangles": 486,
+      "vertices": 1467
+    },
+    {
+      "file": "meshes/link7-07.gltf",
+      "float32_zero_area_count": 0,
+      "id": "panda_visual_link7_07",
+      "non_surface_lines_m": [
+        [
+          [
+            0.030701745905872997,
+            0.073635803748189,
+            0.07912029
+          ],
+          [
+            0.030335068614310005,
+            0.073419669524912,
+            0.0784787
+          ]
+        ],
+        [
+          [
+            0.07064548878263201,
+            0.027632517642066996,
+            0.09433079999999999
+          ],
+          [
+            0.071953007042277,
+            0.02900646132019899,
+            0.09476335
+          ]
+        ],
+        [
+          [
+            0.074053771851291,
+            0.03115941030658,
+            0.0919394
+          ],
+          [
+            0.073211296523139,
+            0.030283559661331998,
+            0.09225036
+          ]
+        ]
+      ],
+      "normal_rounding_max_abs": 2.979702840022469e-08,
+      "omitted_zero_area_triangles": [],
+      "position_rounding_max_abs_m": 3.725166328183427e-09,
+      "quantization_surface_loss_count": 0,
+      "sha256": "7bf2948f5b9fdd327f52751e918a53f4e144190caf47d3dc4d894c8b49f20b7b",
+      "source_file": "link7.dae",
+      "source_geometry": "Part__Mirroring004_001-mesh",
+      "source_matrix_row_major": [
+        0.7071067,
+        0.7071068,
+        0.0,
+        0.0,
+        -0.7071068,
+        0.7071067,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.052,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "source_node": "node4",
+      "source_primitive": 0,
+      "source_triangle_count": 5374,
+      "source_triangle_runs": [
+        [
+          0,
+          5374
+        ]
+      ],
+      "source_zero_area_count": 0,
+      "triangles": 5374,
+      "vertices": 16116
+    },
+    {
+      "file": "meshes/hand-00.gltf",
+      "float32_zero_area_count": 0,
+      "id": "panda_visual_hand_00",
+      "non_surface_lines_m": [],
+      "normal_rounding_max_abs": 2.9760645059440094e-08,
+      "omitted_zero_area_triangles": [],
+      "position_rounding_max_abs_m": 1.8331909185098638e-09,
+      "quantization_surface_loss_count": 0,
+      "sha256": "dc809d9c48968bbb21edc0d882d6b8290e3833a8261728d1dc0f6ec5fba56591",
+      "source_file": "hand.dae",
+      "source_geometry": "Part__Feature002_011-mesh",
+      "source_matrix_row_major": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "source_node": "node2",
+      "source_primitive": 0,
+      "source_triangle_count": 690,
+      "source_triangle_runs": [
+        [
+          0,
+          690
+        ]
+      ],
+      "source_zero_area_count": 0,
+      "triangles": 690,
+      "vertices": 2002
+    },
+    {
+      "file": "meshes/hand-01.gltf",
+      "float32_zero_area_count": 0,
+      "id": "panda_visual_hand_01",
+      "non_surface_lines_m": [],
+      "normal_rounding_max_abs": 2.979908975131451e-08,
+      "omitted_zero_area_triangles": [],
+      "position_rounding_max_abs_m": 3.6944770853697406e-09,
+      "quantization_surface_loss_count": 0,
+      "sha256": "7b3f192a1c7b7d38a9f2fe796f436bf382e1f2a83a1d8046a29295d4ae06de95",
+      "source_file": "hand.dae",
+      "source_geometry": "Part__Feature005_005-mesh",
+      "source_matrix_row_major": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "source_node": "node5",
+      "source_primitive": 0,
+      "source_triangle_count": 3548,
+      "source_triangle_runs": [
+        [
+          0,
+          3548
+        ]
+      ],
+      "source_zero_area_count": 0,
+      "triangles": 3548,
+      "vertices": 10628
+    },
+    {
+      "file": "meshes/hand-02.gltf",
+      "float32_zero_area_count": 0,
+      "id": "panda_visual_hand_02",
+      "non_surface_lines_m": [],
+      "normal_rounding_max_abs": 2.979869784258682e-08,
+      "omitted_zero_area_triangles": [],
+      "position_rounding_max_abs_m": 3.7141418413044747e-09,
+      "quantization_surface_loss_count": 0,
+      "sha256": "77dacceed9360fd879ba2d5e38f66014b5053b7e7b21eab1029bab7186946715",
+      "source_file": "hand.dae",
+      "source_geometry": "Part__Feature_011-mesh",
+      "source_matrix_row_major": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "source_node": "node0",
+      "source_primitive": 0,
+      "source_triangle_count": 2310,
+      "source_triangle_runs": [
+        [
+          0,
+          2310
+        ]
+      ],
+      "source_zero_area_count": 0,
+      "triangles": 2310,
+      "vertices": 6918
+    },
+    {
+      "file": "meshes/hand-03.gltf",
+      "float32_zero_area_count": 0,
+      "id": "panda_visual_hand_03",
+      "non_surface_lines_m": [],
+      "normal_rounding_max_abs": 2.9783138066896697e-08,
+      "omitted_zero_area_triangles": [],
+      "position_rounding_max_abs_m": 3.7188720714009804e-09,
+      "quantization_surface_loss_count": 0,
+      "sha256": "ccba3669f0e98cba0b4bce684aa0ec6ffc6ebf2f6312055f27b796b81637231d",
+      "source_file": "hand.dae",
+      "source_geometry": "Part__Feature001_011-mesh",
+      "source_matrix_row_major": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "source_node": "node1",
+      "source_primitive": 0,
+      "source_triangle_count": 488,
+      "source_triangle_runs": [
+        [
+          0,
+          488
+        ]
+      ],
+      "source_zero_area_count": 0,
+      "triangles": 488,
+      "vertices": 1464
+    },
+    {
+      "file": "meshes/hand-04.gltf",
+      "float32_zero_area_count": 0,
+      "id": "panda_visual_hand_04",
+      "non_surface_lines_m": [],
+      "normal_rounding_max_abs": 2.7887863018882797e-08,
+      "omitted_zero_area_triangles": [],
+      "position_rounding_max_abs_m": 3.364429471131025e-09,
+      "quantization_surface_loss_count": 0,
+      "sha256": "277ba3f7d66c2f665fdfce83403c20cbd35d10f333e1c7f4003f905c20d41797",
+      "source_file": "hand.dae",
+      "source_geometry": "Part__Feature005_000-mesh",
+      "source_matrix_row_major": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "source_node": "node5_001",
+      "source_primitive": 0,
+      "source_triangle_count": 42,
+      "source_triangle_runs": [
+        [
+          0,
+          42
+        ]
+      ],
+      "source_zero_area_count": 0,
+      "triangles": 42,
+      "vertices": 126
+    },
+    {
+      "file": "meshes/finger-00.gltf",
+      "float32_zero_area_count": 0,
+      "id": "panda_visual_finger_00",
+      "non_surface_lines_m": [],
+      "normal_rounding_max_abs": 2.9789755551234975e-08,
+      "omitted_zero_area_triangles": [],
+      "position_rounding_max_abs_m": 1.8560981779325303e-09,
+      "quantization_surface_loss_count": 0,
+      "sha256": "a3a6f1759decfe877009d885dba54e33023d10e49198100308b4e33efb180696",
+      "source_file": "finger.dae",
+      "source_geometry": "Part__Feature_007-mesh",
+      "source_matrix_row_major": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "source_node": "node0",
+      "source_primitive": 0,
+      "source_triangle_count": 262,
+      "source_triangle_runs": [
+        [
+          0,
+          262
+        ]
+      ],
+      "source_zero_area_count": 0,
+      "triangles": 262,
+      "vertices": 786
+    },
+    {
+      "file": "meshes/finger-01.gltf",
+      "float32_zero_area_count": 0,
+      "id": "panda_visual_finger_01",
+      "non_surface_lines_m": [],
+      "normal_rounding_max_abs": 2.9765673814630134e-08,
+      "omitted_zero_area_triangles": [],
+      "position_rounding_max_abs_m": 1.838693620970222e-09,
+      "quantization_surface_loss_count": 0,
+      "sha256": "65e238145783e7609d5a7d966104bc4ae7f871e0b2ae249f0fdfc8f33fa51471",
+      "source_file": "finger.dae",
+      "source_geometry": "Part__Feature001_006-mesh",
+      "source_matrix_row_major": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "source_node": "node1",
+      "source_primitive": 0,
+      "source_triangle_count": 362,
+      "source_triangle_runs": [
+        [
+          0,
+          362
+        ]
+      ],
+      "source_zero_area_count": 0,
+      "triangles": 362,
+      "vertices": 1086
+    }
+  ],
+  "preparation": {
+    "degenerate_indices": "only exact source zero-area indices omitted with ordinal mapping; positive-area FLOAT32 collapse rejected",
+    "non_surface_lines": "retained in metadata and exact source; triangle backend does not draw lines",
+    "normal_encoding": "inverse transpose of exact source matrix, unit normalize, then FLOAT32",
+    "pbr_approximation": "source diffuse RGB as linear; metallic=0; roughness=sqrt(2/(shininess+2))",
+    "pbr_limitations": "Phong specular/ambient/IOR retained but not represented by current opaque Material",
+    "position_encoding": "baked float64 arithmetic then glTF FLOAT32",
+    "right_finger_visual": "panda_rightfinger uses finger.dae at local Rz(pi), per franka_hand.xacro",
+    "source_precision": "exact DAE bytes in original/*.dae.gz",
+    "surface_simplification": false,
+    "textures": "none in pinned source",
+    "uv": "none in pinned source"
+  },
+  "schema": "phymeo-panda-visuals-v1",
+  "source_commit": "30e598aa6fb703cc80a203481e6427f397337b4c",
+  "source_matrix_convention": "COLLADA row-major serialization, column-vector multiplication",
+  "source_repository": "https://github.com/frankarobotics/franka_ros",
+  "sources": [
+    {
+      "archive_file": "original/link0.dae.gz",
+      "archive_sha256": "5d5567be1f3d4ce54539c18c243d104fd05d53afa83eb151bc890b60532038a6",
+      "bytes": 1591592,
+      "file": "link0.dae",
+      "non_surface_line_segments": 0,
+      "sha256": "050fe608136d11913287eaea6906538ddc9112cdbf7337a3181d9ed03f55f619",
+      "triangles": 20483,
+      "url": "https://raw.githubusercontent.com/frankarobotics/franka_ros/30e598aa6fb703cc80a203481e6427f397337b4c/franka_description/meshes/visual/link0.dae"
+    },
+    {
+      "archive_file": "original/link1.dae.gz",
+      "archive_sha256": "699703274d226b26faa8546f2fc0224ba237ab0e4aed1b62081aba68a0ee07e6",
+      "bytes": 978473,
+      "file": "link1.dae",
+      "non_surface_line_segments": 0,
+      "sha256": "b061af1bcfb57f32719a1ffda44290619549a41b33a37a49bfebe781b20039a4",
+      "triangles": 12516,
+      "url": "https://raw.githubusercontent.com/frankarobotics/franka_ros/30e598aa6fb703cc80a203481e6427f397337b4c/franka_description/meshes/visual/link1.dae"
+    },
+    {
+      "archive_file": "original/link2.dae.gz",
+      "archive_sha256": "274270ad3bff4cd5f184e4415a03d6406a9e81199fffda04f4ac341bb61a2bf7",
+      "bytes": 998544,
+      "file": "link2.dae",
+      "non_surface_line_segments": 0,
+      "sha256": "01ec435e7aee5812eb401489a83bf1717834eb5f21f8f6233e553b2da9be00bb",
+      "triangles": 12716,
+      "url": "https://raw.githubusercontent.com/frankarobotics/franka_ros/30e598aa6fb703cc80a203481e6427f397337b4c/franka_description/meshes/visual/link2.dae"
+    },
+    {
+      "archive_file": "original/link3.dae.gz",
+      "archive_sha256": "59440d186d032e79097ad63eb34baa51d8ef5400c1be952e37ceecc704622bed",
+      "bytes": 1099883,
+      "file": "link3.dae",
+      "non_surface_line_segments": 0,
+      "sha256": "ce28221fe968ee86787d594222b24d00aa0f47bb64f53eaacbaf6172e81c29b4",
+      "triangles": 14233,
+      "url": "https://raw.githubusercontent.com/frankarobotics/franka_ros/30e598aa6fb703cc80a203481e6427f397337b4c/franka_description/meshes/visual/link3.dae"
+    },
+    {
+      "archive_file": "original/link4.dae.gz",
+      "archive_sha256": "e1d308c7f457d35fb2954b4f668e0b22ce4b29eb4ab9e88a42539a66ed1d8f8a",
+      "bytes": 1145723,
+      "file": "link4.dae",
+      "non_surface_line_segments": 0,
+      "sha256": "d3a4029d1396471ad78ea5fd06e440167cb46c3ed7ab57befb2bcdbf1360efbf",
+      "triangles": 14621,
+      "url": "https://raw.githubusercontent.com/frankarobotics/franka_ros/30e598aa6fb703cc80a203481e6427f397337b4c/franka_description/meshes/visual/link4.dae"
+    },
+    {
+      "archive_file": "original/link5.dae.gz",
+      "archive_sha256": "f2c86d78a0eb3aa88a5ceea3a3387cf5f8e47a796b789091b8d4cdf058b8ea66",
+      "bytes": 1438343,
+      "file": "link5.dae",
+      "non_surface_line_segments": 2,
+      "sha256": "07bab2ced87c546bfbc15ce8249038db0e0e582de1607b4243ebd3669dac1f21",
+      "triangles": 18327,
+      "url": "https://raw.githubusercontent.com/frankarobotics/franka_ros/30e598aa6fb703cc80a203481e6427f397337b4c/franka_description/meshes/visual/link5.dae"
+    },
+    {
+      "archive_file": "original/link6.dae.gz",
+      "archive_sha256": "724e9bfc505c6b8b24fb1d60def6430e80f3853b64bbcf395a0ad4c825776be7",
+      "bytes": 1728753,
+      "file": "link6.dae",
+      "non_surface_line_segments": 1,
+      "sha256": "4475cb620e2e7293eb0f317b5f968f6520f703a4e5d4f7b95f75249e4302fd21",
+      "triangles": 21620,
+      "url": "https://raw.githubusercontent.com/frankarobotics/franka_ros/30e598aa6fb703cc80a203481e6427f397337b4c/franka_description/meshes/visual/link6.dae"
+    },
+    {
+      "archive_file": "original/link7.dae.gz",
+      "archive_sha256": "01775a56a206455672b4b3650c119746c5cfed6301f74ab7884eb46ae1629190",
+      "bytes": 936416,
+      "file": "link7.dae",
+      "non_surface_line_segments": 3,
+      "sha256": "463227bda9eb9901637107068f59e861fcb81ac89880706d41c26d18c4b46abe",
+      "triangles": 12082,
+      "url": "https://raw.githubusercontent.com/frankarobotics/franka_ros/30e598aa6fb703cc80a203481e6427f397337b4c/franka_description/meshes/visual/link7.dae"
+    },
+    {
+      "archive_file": "original/hand.dae.gz",
+      "archive_sha256": "4794a9fd1060b8b7aac1740342f618a5a184f3b67a4631922ca23d8d4c0a876b",
+      "bytes": 549239,
+      "file": "hand.dae",
+      "non_surface_line_segments": 0,
+      "sha256": "fe5d445d509e44a9bd107ff78f0b03c49752c98e5e0a8ebafddf2b6cf5a8b380",
+      "triangles": 7078,
+      "url": "https://raw.githubusercontent.com/frankarobotics/franka_ros/30e598aa6fb703cc80a203481e6427f397337b4c/franka_description/meshes/visual/hand.dae"
+    },
+    {
+      "archive_file": "original/finger.dae.gz",
+      "archive_sha256": "c0256f483b54c8a74fa6ca2e1da38ab85a9e2be83d690d56d7697c5fa3e844d0",
+      "bytes": 51239,
+      "file": "finger.dae",
+      "non_surface_line_segments": 0,
+      "sha256": "caefea762f2d18ca9412cf6c2e64e5007ad03571181d790a8e0c828b1b2035cf",
+      "triangles": 624,
+      "url": "https://raw.githubusercontent.com/frankarobotics/franka_ros/30e598aa6fb703cc80a203481e6427f397337b4c/franka_description/meshes/visual/finger.dae"
+    }
+  ],
+  "totals": {
+    "both_fingers_triangles": 1248,
+    "instances": 59,
+    "non_surface_line_segments": 6,
+    "source_triangles_instanced": 134924,
+    "source_zero_area_triangles_instanced": 12,
+    "surface_triangles_instanced": 134912,
+    "unique_meshes": 57
+  },
+  "unit": "m",
+  "visual_placement_sources": [
+    {
+      "file": "original/franka_hand.xacro",
+      "sha256": "61bfc98d331fdcc9f340f028efff8b6ab6fbaf1db123384afb6c52d1c8ca9f17",
+      "url": "https://raw.githubusercontent.com/frankarobotics/franka_ros/30e598aa6fb703cc80a203481e6427f397337b4c/franka_description/robots/common/franka_hand.xacro"
+    },
+    {
+      "file": "original/utils.xacro",
+      "sha256": "f0124cd8ccb470b94be7c8da5e2dacf69671ec22c385013d34c9bed5409eca9b",
+      "url": "https://raw.githubusercontent.com/frankarobotics/franka_ros/30e598aa6fb703cc80a203481e6427f397337b4c/franka_description/robots/common/utils.xacro"
+    },
+    {
+      "file": "original/package.xml",
+      "sha256": "88832657e816997861731e2363477a2e02d0e3c95ffd1999c4d87cce16c0b2cc",
+      "url": "https://raw.githubusercontent.com/frankarobotics/franka_ros/30e598aa6fb703cc80a203481e6427f397337b4c/franka_description/package.xml"
+    }
+  ]
+}

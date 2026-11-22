@@ -1,0 +1,7 @@
+# Hash-bound generated resources must retain their exact bytes on every platform.
+*.json -text
+*.gltf -text
+*.gz -text
+LICENSE -text
+NOTICE -text
+original/* -text

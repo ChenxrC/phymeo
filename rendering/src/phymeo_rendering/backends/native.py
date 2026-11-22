@@ -21,6 +21,7 @@ from ..pipeline import DefaultPassPlanner, RenderPath
 from ..scene import VisualScene, compose_pose
 from . import BackendUnavailableError, UnsupportedRequestError, ValidatedRenderSession
 from ._native_resident import ResidentDevice, pack_scene
+from ._native_ray_query import RayQueryResidentDevice
 from ._native_studio import pack_studio
 from ._native_texture import pack_textures
 from ._native_environment import pack_environment
@@ -145,12 +146,13 @@ def _image_planes(raw, pixels, channels, attachment_mask):
 
 
 class _NativeDelegate:
-    def __init__(self, scene, meshes, device, exposure, *, resident=False, studio=None, textures=None, environment=None):
+    def __init__(self, scene, meshes, device, exposure, *, resident=False, studio=None, textures=None, environment=None, shadow_mode='software'):
         self.scene, self.meshes, self.device, self.exposure = scene, meshes, device, exposure
         self.resident = resident
         self.studio = deepcopy(studio)
         self.textures = deepcopy(textures)
         self.environment = deepcopy(environment)
+        self.shadow_mode = shadow_mode
         self.limits = device.info()
         self.triangles = sum(len(meshes[item.mesh_id].triangles) for item in scene.instances)
         self.last_passes = ()
@@ -221,6 +223,7 @@ class _NativeDelegate:
             max_triangles=(self.limits.get('resident_max_instanced_triangles') if self.resident
                            else self.limits['max_vertices'] // 3),
             resident=self.resident,
+            shadow_mode=self.shadow_mode,
             geometry_residency=('static indexed meshes; per-frame instance matrices' if self.resident
                                 else 'expanded world triangles per capture'),
             primary_visibility="single-sample Vulkan raster, two-sided opaque triangles",
@@ -228,9 +231,10 @@ class _NativeDelegate:
                       'direct GGX/Smith/Schlick metallic-roughness; no ambient or IBL'),
             studio=deepcopy(self.studio),
             environment=deepcopy(self.environment),
-            shadows=('native resident finite-emitter visibility via mesh BVH; see bound shader' if self.studio
+            shadows=('GPU fragment Vulkan hardware ray queries against BLAS/TLAS; primary visibility remains raster' if self.shadow_mode=='ray_query' else
+                     ('native resident finite-emitter visibility via mesh BVH; see bound shader' if self.studio
                      else ('GPU fragment hard-shadow mesh BVH rays' if self.resident
-                           else 'GPU fragment hard-shadow triangle rays')),
+                           else 'GPU fragment hard-shadow triangle rays'))),
             shadow_bias_m=1e-5,
             minimum_perceptual_roughness=0.045,
             exposure=self.exposure,
@@ -273,6 +277,9 @@ class NativeBackend:
     the original ABI2-only library contract; neither mode falls back to the other.
     studio=StudioLighting(...) is separately opt-in and requires the resident
     studio export. None retains only the declared scene lights.
+    shadow_mode='ray_query' additionally requires resident=True, the hardware
+    extension and dedicated shaders. Default 'software' retains the old path;
+    an unsupported hardware request never falls back.
     """
 
     def __init__(
@@ -285,6 +292,7 @@ class NativeBackend:
         exposure=1.0,
         resident=False,
         studio=None,
+        shadow_mode='software',
     ):
         if isinstance(device_index, bool) or not isinstance(device_index, int):
             raise TypeError("device_index must be an integer, not bool")
@@ -293,6 +301,13 @@ class NativeBackend:
         if type(resident) is not bool:
             raise TypeError('resident must be bool')
         self.resident = resident
+        if not isinstance(shadow_mode,str):
+            raise TypeError('shadow_mode must be software or ray_query')
+        if shadow_mode not in ('software','ray_query'):
+            raise ValueError('shadow_mode must be software or ray_query')
+        if shadow_mode=='ray_query' and not resident:
+            raise UnsupportedRequestError('hardware ray query shadows require resident=True')
+        self.shadow_mode = shadow_mode
         if studio is not None:
             if not isinstance(studio, StudioLighting):
                 raise TypeError('studio must be StudioLighting or None')
@@ -332,7 +347,8 @@ class NativeBackend:
         triangles = sum(len(meshes[item.mesh_id].triangles) for item in scene.instances)
         if not self.resident and triangles > 4096:
             raise UnsupportedRequestError("native raster currently supports at most 4096 triangles")
-        device_type = ResidentDevice if self.resident else NativeDevice
+        device_type = (RayQueryResidentDevice if self.shadow_mode=='ray_query' else
+                       (ResidentDevice if self.resident else NativeDevice))
         device = device_type(
             self.library_path, self.shader_directory, self.device_index, self.validation
         )
@@ -363,7 +379,7 @@ class NativeBackend:
                     studio_info['environment']['active_lighting'] = False
                     studio_info['environment']['replaced_by'] = 'directional environment map'
             return NativeRenderSession(scene, _NativeDelegate(
-                scene, meshes, device, self.exposure, resident=self.resident, studio=studio_info, textures=texture_info, environment=environment_info))
+                scene, meshes, device, self.exposure, resident=self.resident, studio=studio_info, textures=texture_info, environment=environment_info, shadow_mode=self.shadow_mode))
         except BaseException as primary:
             try:
                 device.close()

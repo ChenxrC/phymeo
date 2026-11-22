@@ -21,7 +21,7 @@ from ..outputs import Capture, Channel, ImagePlane
 from ..pipeline import RenderPath, validate_capture_request
 from ..scene import Pose, compose_pose
 from . import BackendUnavailableError, UnsupportedRequestError
-from ._sapien_pixels import encode_linear_rgb
+from ._sapien_pixels import encode_linear_image
 from ._sapien_studio import StudioResources, geometry_budget, validate_scene_slots
 
 # SAPIEN camera entities: +X forward, +Y left, +Z up. Public cameras:
@@ -329,7 +329,8 @@ class SapienSession:
                 "shader_sha256": _shader_hash(self.shader_directory),
                 "official_shader_sha256": official_hash,
                 "linear_rgb_target": self.rgb_target,
-                "display": "exposure=1; clamp linear [0,1]; standard sRGB OETF; half-up UNORM8",
+                "display": f"exposure={config.exposure:g}; clamp linear [0,1]; standard sRGB OETF; half-up UNORM8",
+                "exposure": float(config.exposure),
                 "ambient_linear_rgb": [0.0, 0.0, 0.0],
                 "shadow_map_size": 2048,
                 "readback": "blocking SAPIEN get_picture CPU download, then owned bytes",
@@ -556,7 +557,7 @@ class SapienSession:
                 linear = camera.get_picture(self.rgb_target)
                 if linear.shape != (request.camera.height, request.camera.width, 4):
                     raise ValueError("SAPIEN linear RGB readback shape mismatch")
-                planes[Channel.RGB] = encode_linear_rgb(linear[..., :3].flat)
+                planes[Channel.RGB] = encode_linear_image(linear[..., :3], exposure=self.config.exposure)
             if any(channel is not Channel.RGB for channel in request.channels):
                 position = camera.get_picture("Position")
                 segmentation = camera.get_picture("Segmentation")

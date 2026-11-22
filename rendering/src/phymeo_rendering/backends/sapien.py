@@ -6,6 +6,8 @@ real shader pipeline; a failed path is never replaced by another renderer.
 
 from copy import deepcopy
 from dataclasses import dataclass
+from math import isfinite
+from numbers import Real
 
 from ..pipeline import RenderPath
 from ..scene import VisualScene
@@ -32,8 +34,13 @@ class SapienConfig:
     denoiser: str = "none"
     studio: SapienStudio | None = None
     sampling_mode: str = "official"
+    exposure: float = 1.0
 
     def __post_init__(self):
+        if isinstance(self.exposure, bool) or not isinstance(self.exposure, Real):
+            raise TypeError("exposure must be a real number")
+        if not isfinite(self.exposure) or not 0 <= self.exposure <= 3.4028234663852886e38:
+            raise ValueError("exposure must be finite nonnegative FP32")
         if not isinstance(self.path, RenderPath):
             raise TypeError("path must be RenderPath")
         if self.device is not None:

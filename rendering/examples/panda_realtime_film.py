@@ -31,7 +31,8 @@ def fixed(frame, width, height):
                    fy_px=cam.fy_px * height / cam.height, cx_px=width / 2, cy_px=height / 2)
 
 
-def load_episode(geo, excerpt, *, workshop=False, photographic=False, local_light_scale=1.):
+def load_episode(geo, excerpt, *, workshop=False, photographic=False, local_light_scale=1.,
+                 surface_roughness=False):
     geo.mkdir(parents=True)
     original = ROOT / "tests/fixtures/panda_replay/panda.urdf"
     src = PandaReplaySource(VisualScene("geometry-input", (), (), ()), original, excerpt)
@@ -44,7 +45,7 @@ def load_episode(geo, excerpt, *, workshop=False, photographic=False, local_ligh
     elif photographic:
         from _panda_textures import textured_workshop
 
-        scene = textured_workshop(scene, geo)
+        scene = textured_workshop(scene, geo, surface_roughness=surface_roughness)
     if local_light_scale != 1.:
         scene = replace(scene, key=f"{scene.key}:lights-{local_light_scale.hex()}",
                         lights=tuple(replace(light, illuminance=tuple(
@@ -60,14 +61,24 @@ def load_episode(geo, excerpt, *, workshop=False, photographic=False, local_ligh
 
 
 def capture(args):
+    if args.surface_roughness and not args.photographic:
+        raise ValueError("the scanned roughness map requires photographic worktop UVs")
+    if args.display_transform!="clip" and args.mode=="native":
+        raise ValueError("the Neutral display transform currently requires the reference camera")
+    if args.reference_seed is not None and args.mode!="studio":
+        raise ValueError("an independent sample stream requires the path-traced camera")
     args.output.mkdir(parents=True, exist_ok=False)
     # The relative source peaks at 1072. Represent all daylight scene lights
     # in 1/8 units inside the integrator, and restore that scale at the camera.
     unit_scale = .125 if args.daylight else 1.
     scene, frames = load_episode(args.output / "geometry", args.excerpt, workshop=args.workshop,
-                                 photographic=args.photographic, local_light_scale=unit_scale)
+                                 photographic=args.photographic, local_light_scale=unit_scale,
+                                 surface_roughness=args.surface_roughness)
     is_native = args.mode == "native"
     width, height = (1280, 720) if is_native else (960, 540)
+    if args.resolution is not None:
+        height = int(args.resolution[:-1])
+        width = height*16//9
     path = RenderPath.RASTER if is_native else RenderPath.PATH_TRACE
     studio = SapienStudio(center_m=(0.18, 0, 0.42), scale_m=0.85)
     if args.daylight:
@@ -86,7 +97,10 @@ def capture(args):
     backend = (NativeBackend(library_path=args.library, resident=True, device_index=args.device_index,
                              validation=args.validation, exposure=1./unit_scale, **extra) if is_native else
                SapienBackend(SapienConfig(path=path, device=args.device, samples_per_pixel=args.samples,
-                                         studio=studio, exposure=1./unit_scale)))
+                                         studio=studio, exposure=1./unit_scale,
+                                         sampling_mode="official" if args.reference_seed is None else "shifted-halton",
+                                         seed=args.reference_seed,
+                                         display_transform=args.display_transform)))
     started = perf_counter()
     sess = backend.open_scene(scene)
     open_ms = 1000 * (perf_counter() - started)
@@ -95,7 +109,11 @@ def capture(args):
             return fixed(frame, width, height)
         from panda_movies import movie_camera
 
-        cam = movie_camera(frame, "materials-" + args.camera, index / (len(frames)-1))
+        view = args.camera
+        if view=="sequence":
+            # Edit the camera alone on the original 300-pose episode clock.
+            view = "detail" if .5<=frame.time_s<2.3 else "wide"
+        cam = movie_camera(frame, "materials-" + view, index / (len(frames)-1))
         scale = height / cam.height
         return replace(cam, width=width, height=height, fx_px=cam.fx_px*scale, fy_px=cam.fy_px*scale,
                        cx_px=width/2, cy_px=height/2)
@@ -117,7 +135,7 @@ def capture(args):
             shot = sess.capture(frame, req)
             rgb = shot.planes[0].data
             times.append((perf_counter() - start) * 1000)
-            if shot.frame_key != frame.key or shot.time_s != frame.time_s:
+            if shot.frame_key != frame.key or shot.time_s != frame.time_s or shot.camera != req.camera:
                 raise RuntimeError("camera result did not bind the requested physical state")
             if is_native:
                 buffered.append(rgb)
@@ -146,10 +164,13 @@ def capture(args):
         raise RuntimeError("incomplete reference exposures")
     ranked = sorted(times)
     receipt = dict(mode=args.mode, backend=diag, camera_setup=args.camera, workshop=args.workshop,
+                   camera_cuts_s=[.5,2.3] if args.camera=="sequence" else [],
                    shadow_traversal=args.shadow_mode if is_native else None,
                    scene_radiance_unit_scale=unit_scale, display_exposure=1./unit_scale,
                    panorama_relative_strength=args.light_strength if args.daylight else None,
                    photographic_worktop=args.photographic,
+                   scanned_linear_roughness=args.surface_roughness,
+                   display_transform=args.display_transform,
                    lighting="workshop daylight + area lights" if args.daylight else
                             "studio" if args.native_studio or not is_native else "directional",
                    source_archive=frames[0].key.world_id,
@@ -158,6 +179,10 @@ def capture(args):
                    fps=30 if args.stride == 1 else str(Fraction(30,args.stride)),
                    recorded_window_s=[0.,10.], simulated_range_s=[items[0][0].time_s,items[-1][0].time_s],
                    source_indices=[f.key.revision for f,_ in items], source_times_s=[f.time_s for f,_ in items],
+                   cameras=[dict(id=req.camera.id,position_m=req.camera.world_pose.position_m,
+                           orientation_xyzw=req.camera.world_pose.orientation_xyzw,
+                           intrinsics=[req.camera.fx_px,req.camera.fy_px,req.camera.cx_px,req.camera.cy_px],
+                           clip_m=[req.camera.near_m,req.camera.far_m]) for _,req in items],
                    open_ms=open_ms, warmup=warm, capture_ms=times, consumer_work_ms=consumer_times,
                    p50_ms=ranked[math.ceil(len(ranked)*.50)-1], p95_ms=ranked[math.ceil(len(ranked)*.95)-1],
                    max_ms=max(times), over_33_3=sum(t>33.3 for t in times), frame_sha256=hashes)
@@ -176,6 +201,10 @@ if __name__ == "__main__":
     parser.add_argument("--shadow-mode", choices=("software","ray_query"),default="software")
     parser.add_argument("--validation", action="store_true")
     parser.add_argument("--samples", type=int, default=256)
+    parser.add_argument("--reference-seed",type=int,help="explicit shifted-Halton stream for a held-out reference")
+    parser.add_argument("--surface-roughness",action="store_true",
+                        help="use the wood scan's registered linear roughness channel")
+    parser.add_argument("--display-transform",choices=("clip","pbr-neutral"),default="clip")
     parser.add_argument("--native-studio", action="store_true",
                         help="request the resident rectangular lights and uniform environment")
     surface = parser.add_mutually_exclusive_group()
@@ -183,7 +212,9 @@ if __name__ == "__main__":
                         help="add the oak, metal and rubber visual finishes to the recorded scene")
     surface.add_argument("--photographic", action="store_true",
                          help="map scanned wood onto the original surface and use steel and rubber finishes")
-    parser.add_argument("--camera", choices=("fixed","wide","detail"), default="fixed")
+    parser.add_argument("--camera", choices=("fixed","wide","detail","sequence"), default="fixed")
+    parser.add_argument("--resolution",choices=("540p","720p","1080p"),
+                        help="16:9 display raster; scale the same physical camera intrinsics")
     parser.add_argument("--daylight", action="store_true",
                         help="use the pinned workshop panorama for distant radiance and reflections")
     parser.add_argument("--light-strength", type=float, default=.5)

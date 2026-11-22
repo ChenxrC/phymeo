@@ -77,10 +77,8 @@ def _prepare_textures(source, decoded):
     by_descriptor, by_sha, by_material = {}, {}, {}
     uploads = {}
     rgb_bytes = upload_bytes = 0
-    for material in source.materials:
-        if not isinstance(material, TexturedMaterial):
-            continue
-        descriptor = material.base_color_map
+    def read(descriptor):
+        nonlocal rgb_bytes
         if descriptor not in by_descriptor:
             image = load_texture(descriptor)
             if image.source_sha256 not in by_sha:
@@ -89,37 +87,56 @@ def _prepare_textures(source, decoded):
                     raise ValueError("texture decoded RGB byte budget exceeded")
                 by_sha[image.source_sha256] = image
             by_descriptor[descriptor] = by_sha[image.source_sha256]
-        image = by_descriptor[descriptor]
-        by_material[material.id] = image
-        factor = tuple(float(value) for value in material.base_color)
-        key = (image.source_sha256, factor)
-        if key not in uploads:
-            white = factor == (1., 1., 1.)
-            size = image.width * image.height * (4 if white else 16)
-            upload_bytes += size
-            if upload_bytes > _MAX_TEXTURE_UPLOAD_BYTES:
-                raise ValueError("texture upload byte budget exceeded")
-            uploads[key] = {
-                "source_sha256": image.source_sha256,
-                "decoded_rgb8_sha256": sha256(image.rgb8).hexdigest(),
-                "width": image.width, "height": image.height, "factor": list(factor),
-                "format": "R8G8B8A8Unorm" if white else "R32G32B32A32Sfloat",
-                "srgb": white, "upload_bytes": size, "materials": [], "uris": [],
-            }
-        uploads[key]["materials"].append(material.id)
-        if descriptor.uri not in uploads[key]["uris"]:
-            uploads[key]["uris"].append(descriptor.uri)
+        return by_descriptor[descriptor]
+
+    for material in source.materials:
+        if not isinstance(material, TexturedMaterial):
+            continue
+        for role,descriptor,channel,factor in _surface_bindings(material):
+            image = read(descriptor)
+            by_material[material.id if role=="color" else (material.id,role)] = image
+            key = (role,image.source_sha256,channel,factor)
+            if key not in uploads:
+                srgb = role=="color" and factor==(1.,1.,1.)
+                fmt = ("R32Sfloat" if role=="roughness" else
+                       "R8G8B8A8Unorm" if srgb else "R32G32B32A32Sfloat")
+                size = image.width*image.height*(16 if fmt=="R32G32B32A32Sfloat" else 4)
+                upload_bytes += size
+                if upload_bytes > _MAX_TEXTURE_UPLOAD_BYTES:
+                    raise ValueError("texture upload byte budget exceeded")
+                uploads[key] = dict(role=role,channel=channel,source_sha256=image.source_sha256,
+                    decoded_rgb8_sha256=sha256(image.rgb8).hexdigest(),width=image.width,
+                    height=image.height,factor=factor,format=fmt,srgb=srgb,
+                    upload_bytes=size,materials=[],uris=[])
+            uploads[key]["materials"].append(material.id)
+            if descriptor.uri not in uploads[key]["uris"]:
+                uploads[key]["uris"].append(descriptor.uri)
     evidence = {
         "uploads": list(uploads.values()), "bindings": bindings,
         "decoded_rgb8_bytes": rgb_bytes, "upload_bytes": upload_bytes,
         "sampling": {"filter": "linear", "address": "repeat", "mipmap_levels": 1,
                      "uv_origin": "upper-left; unmodified glTF TEXCOORD_0"},
         "factor_policy": "white: sRGB8 hardware decode; nonwhite: standard EOTF times linear factor, FP32 texture; material uniform white",
-        "shader_semantics": "SAPIEN 3.0.3 default/gbuffer.frag and rt/camera.rchit replace baseColor when diffuse texture exists",
+        "shader_semantics": "SAPIEN 3.0.3 takes sampled color and roughness in place of the corresponding uniform",
         "limits": {"decoded_rgb8_bytes": _MAX_TEXTURE_RGB_BYTES,
                    "upload_bytes": _MAX_TEXTURE_UPLOAD_BYTES},
     }
     return by_material, evidence
+
+
+def _surface_bindings(material):
+    if material.base_color_map is not None:
+        yield "color",material.base_color_map,None,tuple(float(x) for x in material.base_color)
+    if material.roughness_map is not None:
+        channel=material.roughness_map
+        yield "roughness",channel.image,channel.channel,float(material.roughness)
+
+
+def _roughness_pixels(image,channel,factor,np):
+    rgb=np.frombuffer(image.rgb8,dtype=np.uint8).reshape(image.height,image.width,3)
+    # The shader samples a linear red channel. Apply the scalar once before filtering.
+    lut=(np.arange(256,dtype=np.float64)*(factor/255.)).astype(np.float32)
+    return lut[rgb[:,:,"rgb".index(channel)]][...,None],"R32Sfloat"
 
 
 def _texture_pixels(image, factor, np):
@@ -208,12 +225,18 @@ class SapienSession:
             for material in source.materials:
                 target = sapien.render.RenderMaterial()
                 target.base_color = (*material.base_color, 1.0)
-                if isinstance(material, TexturedMaterial):
-                    image = material_images[material.id]
-                    factor = tuple(float(value) for value in material.base_color)
-                    key = (image.source_sha256, factor)
+                target.metallic = float(material.metallic)
+                target.roughness = float(material.roughness)
+                bindings = _surface_bindings(material) if isinstance(material, TexturedMaterial) else ()
+                for role,descriptor,channel,factor in bindings:
+                    image = material_images[material.id if role=="color" else (material.id,role)]
+                    key = (role,image.source_sha256,channel,factor)
                     if key not in self._textures:
-                        pixels, format_name, srgb = _texture_pixels(image, factor, np)
+                        if role=="roughness":
+                            pixels,format_name = _roughness_pixels(image,channel,factor,np)
+                            srgb=False
+                        else:
+                            pixels, format_name, srgb = _texture_pixels(image, factor, np)
                         # Official 3.0.3 array constructor copies owned bytes;
                         # no SDK filename loader, rescale or vertical flip.
                         uploaded = sapien.render.RenderTexture2D(
@@ -226,7 +249,8 @@ class SapienSession:
                             raise RuntimeError("SAPIEN texture metadata disagrees with requested sampling")
                         self._textures[key] = uploaded
                         texture_evidence["actual_uploads"].append({
-                            "source_sha256": image.source_sha256, "factor": list(factor),
+                            "role": role, "channel": channel,
+                            "source_sha256": image.source_sha256, "factor": factor,
                             "width": int(uploaded.width), "height": int(uploaded.height),
                             "format": uploaded.format, "srgb": bool(uploaded.is_srgb),
                             "filter": uploaded.filter_mode, "address": uploaded.address_mode,
@@ -234,10 +258,12 @@ class SapienSession:
                             "cpu_upload_sha256": sha256(pixels.tobytes(order="C")).hexdigest(),
                             "cpu_upload_bytes": int(pixels.nbytes),
                         })
-                    target.base_color_texture = self._textures[key]
-                    target.base_color = (1., 1., 1., 1.)
-                target.metallic = float(material.metallic)
-                target.roughness = float(material.roughness)
+                    if role=="color":
+                        target.base_color_texture = self._textures[key]
+                        target.base_color = (1., 1., 1., 1.)
+                    else:
+                        target.roughness_texture = self._textures[key]
+                        target.roughness = 1.
                 target.specular = 0.5
                 materials[material.id] = target
             for instance in source.instances:

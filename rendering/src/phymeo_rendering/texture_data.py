@@ -1,4 +1,4 @@
-"""Bounded, explicitly loaded, hash-pinned sRGB color images.
+"""Bounded, explicitly loaded, hash-pinned opaque RGB images.
 
 Only local PNG/JPEG and opaque 8-bit color are admitted. Pillow is imported at
 load_texture(), never by importing the package or declaring a material. Output
@@ -31,7 +31,7 @@ def _dimensions(width, height):
 
 @dataclass(frozen=True, slots=True)
 class TextureData:
-    """Owned, top-row-first, opaque sRGB8 texels and original-file identity."""
+    """Owned, top-row-first RGB8 texels. The material supplies the transfer function."""
 
     width: int
     height: int
@@ -55,7 +55,7 @@ def load_texture(texture: TextureMap) -> TextureData:
     PNG RGB/RGBA/palette/8-bit grayscale and JPEG RGB/grayscale are supported.
     Transparency (including palette tRNS), 16-bit images, animation and CMYK are
     rejected rather than discarded. Ancillary ICC/gamma and EXIF orientation do
-    not alter the explicit sRGB/top-row contract. File I/O errors stay OS errors.
+    not alter the stored channels or top-row origin. File I/O errors stay OS errors.
     """
     if not isinstance(texture, TextureMap):
         raise TypeError("texture must be a TextureMap")

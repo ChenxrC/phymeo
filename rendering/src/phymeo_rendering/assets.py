@@ -66,7 +66,7 @@ class Material:
 
 @dataclass(frozen=True, slots=True)
 class TextureMap:
-    """Explicit local sRGB base-color image, pinned by its original file bytes.
+    """Opaque RGB image pinned by its original file bytes.
 
     The declaration does not read the image or import Pillow. Sampling is repeat
     with bilinear filtering, with (0, 0) at the top left as in glTF. This first
@@ -84,17 +84,31 @@ class TextureMap:
 
 
 @dataclass(frozen=True, slots=True)
+class TextureChannel:
+    """One linear data channel of an image, on the mesh's primary UV set."""
+
+    image: TextureMap
+    channel: str = "r"
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.image, TextureMap):
+            raise TypeError("TextureChannel.image must be a TextureMap")
+        if self.channel not in ("r", "g", "b"):
+            raise ValueError("TextureChannel.channel must be r, g or b")
+
+
+@dataclass(frozen=True, slots=True)
 class TexturedMaterial(Material):
-    """The original linear base_color factor multiplied by an sRGB texture.
+    """UV-mapped sRGB color and linear perceptual roughness, each times its factor."""
 
-    Metallic and roughness keep the original scalar semantics. Plain Material's
-    positional layout and behavior are unchanged. Referencing this material
-    requires TEXCOORD_0 on each bound mesh; no generated UVs are substituted.
-    """
-
-    base_color_map: TextureMap
+    base_color_map: TextureMap | None = None
+    roughness_map: TextureChannel | None = None
 
     def __post_init__(self) -> None:
         Material.__post_init__(self)
-        if not isinstance(self.base_color_map, TextureMap):
+        if self.base_color_map is None and self.roughness_map is None:
+            raise TypeError(f"Material {self.id!r} needs a color or roughness texture")
+        if self.base_color_map is not None and not isinstance(self.base_color_map, TextureMap):
             raise TypeError(f"Material {self.id!r}.base_color_map must be a TextureMap")
+        if self.roughness_map is not None and not isinstance(self.roughness_map, TextureChannel):
+            raise TypeError(f"Material {self.id!r}.roughness_map must be a TextureChannel")

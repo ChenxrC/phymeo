@@ -141,6 +141,7 @@ class ResidentDevice(NativeDevice):
         self._output_buffer = None
         self._output_capacity = 0
         self._texture_function = None
+        self._surface_maps_function = None
         self._texture_info_function = None
         self._texture_info = None
         self._texture_abi_version = None
@@ -203,6 +204,14 @@ class ResidentDevice(NativeDevice):
                 ct.POINTER(ct.c_uint8),ct.c_size_t,ct.POINTER(ResidentUV),ct.c_uint32,
                 ct.POINTER(ct.c_uint32),ct.c_uint32]
             self._texture_function.restype=ct.c_int
+            version=getattr(lib,'pr_resident_surface_maps_abi_version',None)
+            if version is not None:
+                version.argtypes=[]; version.restype=ct.c_uint32
+                if version()==1:
+                    self._surface_maps_function=getattr(lib,'pr_resident_set_surface_maps',None)
+            if self._surface_maps_function is not None:
+                self._surface_maps_function.argtypes=self._texture_function.argtypes
+                self._surface_maps_function.restype=ct.c_int
         if self._texture_info_function is not None:
             self._texture_info_function.argtypes=[ct.c_void_p,ct.POINTER(ResidentTextureInfo)]
             self._texture_info_function.restype=ct.c_int
@@ -327,6 +336,7 @@ class ResidentDevice(NativeDevice):
         result['resident_environment_abi_version'] = self._environment_abi_version
         result['resident_environment_info'] = dict(self._environment_info) if self._environment_info is not None else None
         result['resident_texture_available'] = self._texture_function is not None
+        result['resident_linear_roughness_available'] = self._surface_maps_function is not None
         result['resident_texture_abi_version'] = self._texture_abi_version
         result['resident_texture_info'] = dict(self._texture_info) if self._texture_info is not None else None
         result['resident_readback'] = dict(self._readback) if self._readback is not None else None
@@ -381,7 +391,10 @@ class ResidentDevice(NativeDevice):
             raise BackendUnavailableError('native resident texture ABI1 export is unavailable')
         if not isinstance(upload,TextureUpload):
             raise TypeError('texture upload must be TextureUpload')
-        if self._texture_function(self._handle,upload.records,len(upload.records),
+        setter=self._surface_maps_function if upload.uses_roughness else self._texture_function
+        if setter is None:
+            raise BackendUnavailableError('native resident linear roughness requires surface-maps ABI1')
+        if setter(self._handle,upload.records,len(upload.records),
                 upload.rgba,len(upload.rgba),upload.uv,len(upload.uv),upload.slots,len(upload.slots)):
             raise RuntimeError(self._error())
         self._textures_set=True

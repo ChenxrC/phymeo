@@ -41,6 +41,7 @@ class SapienStudioContractTest(unittest.TestCase):
             ({"panel_strength": -1.0}, ValueError, "panel_strength"),
             ({"environment_radiance": math.nan}, ValueError, "environment_radiance"),
             ({"environment_radiance": 101.0}, ValueError, "environment_radiance"),
+            ({"environment_radiance": 1e-100}, ValueError, "environment_radiance"),
         )
         for kwargs, error, field in cases:
             with self.subTest(kwargs=kwargs), self.assertRaisesRegex(error, field):
@@ -153,6 +154,94 @@ class SapienStudioDeviceTest(unittest.TestCase):
         self.assertGreater(region_mean(image, 43, 55), region_mean(baseline, 43, 55)+2.0)
         self.assertEqual(panels.diagnostics()["geometry"]["uploaded_triangles"],
                          environment_only.diagnostics()["geometry"]["uploaded_triangles"])
+
+
+    def test_real_larger_emitters_broaden_geometrically_predicted_penumbra(self):
+        from integration._g1_table import table_frames, table_scene
+        from phymeo_rendering.assets import Material
+        from phymeo_rendering.backends.sapien import SapienBackend, SapienConfig, SapienStudio
+        from phymeo_rendering.scene import Instance
+        source = table_scene()
+        floor = Instance(1, "table", "matte", "base")
+        blocker = Instance(2, "block", "black", "base", Pose((0.0, 0.0, 0.125)))
+        materials = (Material("matte", (0.4,)*3, 0.0, 1.0),
+                     Material("black", (0.0,)*3, 0.0, 1.0))
+        clear = replace(source, materials=materials, instances=(floor,), lights=())
+        blocked = replace(clear, instances=(floor, blocker))
+        frame = table_frames()[0]
+        camera = Camera("shadow", frame.key, Pose((0.0, 0.0, 1.0)), 128, 128,
+                        200.0, 200.0, 64.0, 64.0, 0.1, 5.0)
+        request = CaptureRequest(camera, RenderPath.PATH_TRACE, (Channel.RGB,))
+
+        def crosses_box(point, light):
+            low, high = 0.0, 1.0
+            for a, b, lo, hi in zip(point, light, (-0.0625, -0.0625, 0.0625),
+                                   (0.0625, 0.0625, 0.1875)):
+                d = b-a
+                if d == 0:
+                    if not lo <= a <= hi:
+                        return False
+                else:
+                    s, t = sorted(((lo-a)/d, (hi-a)/d))
+                    low, high = max(low, s), min(high, t)
+            return high > low
+
+        def key_visibility(point, size):
+            # Independent finite-ray/AABB reference. These are the declared
+            # key panel's metres, not image-derived edges or renderer output.
+            center = (-1.2, -1.4, 1.8)
+            n = tuple(-x/math.hypot(*center) for x in center)
+            axis = (0.0, -n[2], n[1])
+            def cross(a, b):
+                return (a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0])
+            def rotate(value):
+                once = cross(axis, value)
+                twice = cross(axis, once)
+                return tuple(value[i]+once[i]+twice[i]/(1+n[0]) for i in range(3))
+            # GL panel X/Y -> SAPIEN entity -Y/+Z, then shortest +X-to-n rotation.
+            bx, by = rotate((0., -1., 0.)), rotate((0., 0., 1.))
+            visible = 0
+            for i in range(9):
+                for j in range(9):
+                    x, y = (2*(i+0.5)/9-1)*0.8*size, (2*(j+0.5)/9-1)*0.55*size
+                    lamp = tuple(center[k]+x*bx[k]+y*by[k] for k in range(3))
+                    visible += not crosses_box(point, lamp)
+            return visible/81
+
+        # Fixed camera/floor geometry, masks chosen before any image is read.
+        # Both masks avoid the camera projection of the hovering 0.125 m cube.
+        inner, outer = [], []
+        for v in range(8, 48, 2):
+            for u in range(80, 120, 2):
+                point = ((u+0.5-64)/200, (64-v-0.5)/200, 0.0)
+                tiny, wide = key_visibility(point, 0.05), key_visibility(point, 1.0)
+                if tiny == 0 and 0.25 <= wide <= 0.75:
+                    inner.append((v*128+u)*3)
+                if tiny == 1 and 0.25 <= wide <= 0.75:
+                    outer.append((v*128+u)*3)
+        self.assertGreaterEqual(len(inner), 5, "analytic inner penumbra fixture")
+        self.assertGreaterEqual(len(outer), 5, "analytic outer penumbra fixture")
+        def linear(byte):
+            x = byte/255.0
+            return x/12.92 if x <= 0.04045 else ((x+0.055)/1.055)**2.4
+        def ratios(size):
+            frames = []
+            for scene in (clear, blocked):
+                backend = SapienBackend(SapienConfig(path=RenderPath.PATH_TRACE, device="cuda:0",
+                    samples_per_pixel=128, max_bounces=0,
+                    studio=SapienStudio(panel_size_scale=size, environment_radiance=0.0)))
+                session = backend.open_scene(scene)
+                try:
+                    frames.append(session.capture(frame, request).planes[0].data)
+                finally:
+                    session.close()
+            return [sum(linear(frames[1][p])/linear(frames[0][p]) for p in mask)/len(mask)
+                    for mask in (inner, outer)]
+        tiny, wide = ratios(0.05), ratios(1.0)
+        # Wider emitter lightens the analytic hard-shadow interior and darkens
+        # its formerly clear exterior. Brightness alone cannot satisfy both.
+        self.assertGreater(wide[0], tiny[0]+0.08, (len(inner), tiny, wide))
+        self.assertLess(wide[1], tiny[1]-0.08, (len(outer), tiny, wide))
 
 
 if __name__ == "__main__":

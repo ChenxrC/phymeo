@@ -13,12 +13,14 @@ from math import isfinite
 from pathlib import Path
 from struct import pack, unpack
 from threading import RLock
+import sys
 
 from ..outputs import Capture, Channel, ImagePlane
 from ..pipeline import RenderPath, validate_capture_request
 from ..scene import Pose, compose_pose
 from . import BackendUnavailableError, UnsupportedRequestError
 from ._sapien_pixels import encode_linear_rgb
+from ._sapien_studio import StudioResources, geometry_budget, validate_scene_slots
 
 # SAPIEN camera entities: +X forward, +Y left, +Z up. Public cameras:
 # +X right, +Y up, -Z forward. Columns in public axes are (0,0,-1),
@@ -55,8 +57,10 @@ class SapienSession:
         self.lights = []
         self.ids = {}
         self.closed = False
+        self._studio = None
         self.diagnostics = {}
         self._lifecycle = {
+            "studio_temporary_files_exist": False,
             "closed": False,
             "completed_captures": 0,
             "close_error": None,
@@ -81,7 +85,11 @@ class SapienSession:
             # uploading. SAPIEN's independent URI/asset loader is never used.
             from ..mesh_data import load_mesh
 
+            validate_scene_slots(len(source.meshes), len(source.instances))
             decoded = {mesh.id: load_mesh(mesh) for mesh in source.meshes}
+            geometry = geometry_budget(
+                tuple((len(decoded[item.mesh_id].positions), len(decoded[item.mesh_id].triangles))
+                      for item in source.instances), mesh_slots=len(source.meshes))
             self.system = sapien.render.RenderSystem(config.device)
             self.scene = sapien.Scene([self.system])
             self.system.ambient_light = (0.0, 0.0, 0.0)
@@ -136,6 +144,9 @@ class SapienSession:
                 )
                 self.scene.add_entity(entity)
                 self.lights.append(component)
+            if config.studio is not None:
+                self._studio = StudioResources(sapien, self.scene, config.studio)
+                self._lifecycle["studio_temporary_files_exist"] = self._studio.temporary_files_exist
             # Compile and execute this selected shader independently. Merely
             # importing SAPIEN or finding an RT-capable device is insufficient.
             with self._camera(1, 1) as probe:
@@ -153,6 +164,8 @@ class SapienSession:
                 if pixels.shape != (1, 1, 4) or not np.isfinite(pixels).all():
                     raise RuntimeError("SAPIEN shader probe returned invalid linear pixels")
             self.diagnostics = {
+                "geometry": geometry,
+                "studio": deepcopy(self._studio.diagnostics) if self._studio is not None else None,
                 "backend": "sapien-reference",
                 "library_version": sapien.__version__,
                 "sapien_scene_id": int(self.scene.id),
@@ -476,3 +489,15 @@ class SapienSession:
             self.ids.clear()
             self.scene = None
             self.system = None
+            if self._studio is not None:
+                pending_error = sys.exception()
+                try:
+                    self._studio.close()
+                except Exception as cleanup_error:
+                    if pending_error is not None:
+                        pending_error.add_note(f"studio source cleanup also failed: {cleanup_error}")
+                    else:
+                        self._lifecycle["close_error"] = f"{type(cleanup_error).__name__}: {cleanup_error}"
+                        raise
+                finally:
+                    self._lifecycle["studio_temporary_files_exist"] = self._studio.temporary_files_exist

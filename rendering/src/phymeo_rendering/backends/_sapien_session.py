@@ -16,6 +16,7 @@ from threading import RLock
 from tempfile import TemporaryDirectory
 import sys
 
+from ..assets import TexturedMaterial
 from ..outputs import Capture, Channel, ImagePlane
 from ..pipeline import RenderPath, validate_capture_request
 from ..scene import Pose, compose_pose
@@ -49,6 +50,103 @@ def _f32(value):
         return float("inf")
 
 
+# Separate CPU decoded and actual texture-upload budgets. A nonwhite linear
+# factor requires 16 bytes/texel, not the 4 bytes/texel of an sRGB8 upload.
+_MAX_TEXTURE_RGB_BYTES = 64 * 1024 * 1024
+_MAX_TEXTURE_UPLOAD_BYTES = 128 * 1024 * 1024
+
+
+def _prepare_textures(source, decoded):
+    """Validate bindings and decode once per descriptor, before any GPU object.
+
+    Equal file bytes at different URIs still have each descriptor checked. Once
+    verified, immutable decoded bytes share a SHA identity; upload identity also
+    includes the material's linear factor, so two uses cannot overwrite colour.
+    """
+    from ..texture_data import load_texture
+
+    materials = {material.id: material for material in source.materials}
+    bindings = []
+    for instance in source.instances:
+        if isinstance(materials[instance.material_id], TexturedMaterial):
+            mesh = decoded[instance.mesh_id]
+            if mesh.texcoords is None:
+                raise ValueError(f"textured material {instance.material_id!r} requires TEXCOORD_0 on mesh {instance.mesh_id!r}")
+            bindings.append({"instance_id": instance.id, "material_id": instance.material_id,
+                             "mesh_id": instance.mesh_id, "mesh_source_sha256": mesh.source_sha256})
+    by_descriptor, by_sha, by_material = {}, {}, {}
+    uploads = {}
+    rgb_bytes = upload_bytes = 0
+    for material in source.materials:
+        if not isinstance(material, TexturedMaterial):
+            continue
+        descriptor = material.base_color_map
+        if descriptor not in by_descriptor:
+            image = load_texture(descriptor)
+            if image.source_sha256 not in by_sha:
+                rgb_bytes += len(image.rgb8)
+                if rgb_bytes > _MAX_TEXTURE_RGB_BYTES:
+                    raise ValueError("texture decoded RGB byte budget exceeded")
+                by_sha[image.source_sha256] = image
+            by_descriptor[descriptor] = by_sha[image.source_sha256]
+        image = by_descriptor[descriptor]
+        by_material[material.id] = image
+        factor = tuple(float(value) for value in material.base_color)
+        key = (image.source_sha256, factor)
+        if key not in uploads:
+            white = factor == (1., 1., 1.)
+            size = image.width * image.height * (4 if white else 16)
+            upload_bytes += size
+            if upload_bytes > _MAX_TEXTURE_UPLOAD_BYTES:
+                raise ValueError("texture upload byte budget exceeded")
+            uploads[key] = {
+                "source_sha256": image.source_sha256,
+                "decoded_rgb8_sha256": sha256(image.rgb8).hexdigest(),
+                "width": image.width, "height": image.height, "factor": list(factor),
+                "format": "R8G8B8A8Unorm" if white else "R32G32B32A32Sfloat",
+                "srgb": white, "upload_bytes": size, "materials": [], "uris": [],
+            }
+        uploads[key]["materials"].append(material.id)
+        if descriptor.uri not in uploads[key]["uris"]:
+            uploads[key]["uris"].append(descriptor.uri)
+    evidence = {
+        "uploads": list(uploads.values()), "bindings": bindings,
+        "decoded_rgb8_bytes": rgb_bytes, "upload_bytes": upload_bytes,
+        "sampling": {"filter": "linear", "address": "repeat", "mipmap_levels": 1,
+                     "uv_origin": "upper-left; unmodified glTF TEXCOORD_0"},
+        "factor_policy": "white: sRGB8 hardware decode; nonwhite: standard EOTF times linear factor, FP32 texture; material uniform white",
+        "shader_semantics": "SAPIEN 3.0.3 default/gbuffer.frag and rt/camera.rchit replace baseColor when diffuse texture exists",
+        "limits": {"decoded_rgb8_bytes": _MAX_TEXTURE_RGB_BYTES,
+                   "upload_bytes": _MAX_TEXTURE_UPLOAD_BYTES},
+    }
+    return by_material, evidence
+
+
+def _texture_pixels(image, factor, np):
+    """Prepare actual API pixels without an extra sRGB8 quantization.
+
+    Both shipped 3.0.3 shader paths *replace* baseColor with the sampled texture.
+    A nonwhite factor therefore travels in linear texels. Bilinear filtering
+    commutes with this constant multiplication. The tiny FP64 LUT is rounded to
+    FP32 once per channel; image dimensions do not enlarge the LUT.
+    """
+    rgb = np.frombuffer(image.rgb8, dtype=np.uint8).reshape(image.height, image.width, 3)
+    if tuple(factor) == (1., 1., 1.):
+        result = np.empty((image.height, image.width, 4), dtype=np.uint8)
+        result[..., :3] = rgb
+        result[..., 3] = 255
+        return result, "R8G8B8A8Unorm", True
+    lut = np.asarray([
+        [(encoded / 12.92 if encoded <= .04045 else ((encoded + .055) / 1.055) ** 2.4) * float(value)
+         for value in factor]
+        for encoded in (index / 255. for index in range(256))
+    ], dtype=np.float32)
+    result = np.empty((image.height, image.width, 4), dtype=np.float32)
+    for channel in range(3):
+        result[..., channel] = lut[rgb[..., channel], channel]
+    result[..., 3] = 1.
+    return result, "R32G32B32A32Sfloat", False
+
 class SapienSession:
     def __init__(self, source, config, sapien, np):
         self.source, self.config, self.sapien, self.np = source, config, sapien, np
@@ -59,6 +157,7 @@ class SapienSession:
         self.ids = {}
         self.closed = False
         self._studio = None
+        self._textures = {}
         self._sampling_temp = None
         self.diagnostics = {}
         self._lifecycle = {
@@ -100,6 +199,8 @@ class SapienSession:
             geometry = geometry_budget(
                 tuple((len(decoded[item.mesh_id].positions), len(decoded[item.mesh_id].triangles))
                       for item in source.instances), mesh_slots=len(source.meshes))
+            material_images, texture_evidence = _prepare_textures(source, decoded)
+            texture_evidence["actual_uploads"] = []
             self.system = sapien.render.RenderSystem(config.device)
             self.scene = sapien.Scene([self.system])
             self.system.ambient_light = (0.0, 0.0, 0.0)
@@ -107,6 +208,34 @@ class SapienSession:
             for material in source.materials:
                 target = sapien.render.RenderMaterial()
                 target.base_color = (*material.base_color, 1.0)
+                if isinstance(material, TexturedMaterial):
+                    image = material_images[material.id]
+                    factor = tuple(float(value) for value in material.base_color)
+                    key = (image.source_sha256, factor)
+                    if key not in self._textures:
+                        pixels, format_name, srgb = _texture_pixels(image, factor, np)
+                        # Official 3.0.3 array constructor copies owned bytes;
+                        # no SDK filename loader, rescale or vertical flip.
+                        uploaded = sapien.render.RenderTexture2D(
+                            pixels, format_name, mipmap_levels=1,
+                            filter_mode="linear", address_mode="repeat", srgb=srgb,
+                        )
+                        actual = (uploaded.width, uploaded.height, uploaded.filter_mode,
+                                  uploaded.address_mode, uploaded.mipmap_levels, uploaded.is_srgb)
+                        if actual != (image.width, image.height, "linear", "repeat", 1, srgb):
+                            raise RuntimeError("SAPIEN texture metadata disagrees with requested sampling")
+                        self._textures[key] = uploaded
+                        texture_evidence["actual_uploads"].append({
+                            "source_sha256": image.source_sha256, "factor": list(factor),
+                            "width": int(uploaded.width), "height": int(uploaded.height),
+                            "format": uploaded.format, "srgb": bool(uploaded.is_srgb),
+                            "filter": uploaded.filter_mode, "address": uploaded.address_mode,
+                            "mipmap_levels": int(uploaded.mipmap_levels),
+                            "cpu_upload_sha256": sha256(pixels.tobytes(order="C")).hexdigest(),
+                            "cpu_upload_bytes": int(pixels.nbytes),
+                        })
+                    target.base_color_texture = self._textures[key]
+                    target.base_color = (1., 1., 1., 1.)
                 target.metallic = float(material.metallic)
                 target.roughness = float(material.roughness)
                 target.specular = 0.5
@@ -117,11 +246,15 @@ class SapienSession:
                 normals = np.asarray(mesh.normals, dtype=np.float32)
                 if not np.isfinite(positions).all() or not np.isfinite(normals).all():
                     raise ValueError(f"mesh {instance.mesh_id!r} is not representable in FP32")
+                texcoords = (np.zeros((len(positions), 2), dtype=np.float32)
+                             if mesh.texcoords is None else np.asarray(mesh.texcoords, dtype=np.float32))
+                if not np.isfinite(texcoords).all():
+                    raise ValueError(f"mesh {instance.mesh_id!r} TEXCOORD_0 is not representable in FP32")
                 shape = sapien.render.RenderShapeTriangleMesh(
                     positions,
                     np.asarray(mesh.triangles, dtype=np.uint32),
                     normals,
-                    np.zeros((len(positions), 2), dtype=np.float32),
+                    texcoords,
                     materials[instance.material_id],
                 )
                 shape.local_pose = self._pose(instance.local_pose)
@@ -175,6 +308,7 @@ class SapienSession:
                     raise RuntimeError("SAPIEN shader probe returned invalid linear pixels")
             self.diagnostics = {
                 "geometry": geometry,
+                "textures": texture_evidence,
                 "studio": deepcopy(self._studio.diagnostics) if self._studio is not None else None,
                 "backend": "sapien-reference",
                 "library_version": sapien.__version__,
@@ -503,6 +637,7 @@ class SapienSession:
             self._lifecycle["close_error"] = f"{type(exc).__name__}: {exc}"
             raise
         finally:
+            self._textures.clear()
             self.instances.clear()
             self.lights.clear()
             self.ids.clear()

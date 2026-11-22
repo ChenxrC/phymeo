@@ -27,7 +27,7 @@ struct ResidentState {
         target.reset();
         for (auto* buffer : {&vertices, &indices, &meshes_buffer, &instances_buffer, &nodes, &transforms}) {
             release(buffer->handle, [&](auto h) { vkDestroyBuffer(c.device, h, nullptr); });
-            release(buffer->memory, [&](auto h) { vkFreeMemory(c.device, h, nullptr); });
+            c.free_memory(buffer->memory, buffer->allocation);
         }
     }
 };
@@ -121,7 +121,13 @@ void submit_and_wait(Context& c, FrameResources& frame) {
     VkResult result = vkQueueSubmit(c.queue, 1, &submit, frame.fence);
     frame.submitted = result == VK_SUCCESS || result == VK_ERROR_DEVICE_LOST;
     if (result != VK_SUCCESS) { c.poisoned = true; check(result, "resident vkQueueSubmit"); }
+    ++c.telemetry.submissions; // only successful vkQueueSubmit calls
+    auto before = std::chrono::steady_clock::now();
     result = vkWaitForFences(c.device, 1, &frame.fence, VK_TRUE, UINT64_MAX);
+    auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(
+        std::chrono::steady_clock::now() - before).count();
+    c.telemetry.fence_wait_wall_ns += static_cast<uint64_t>(std::max<int64_t>(0, elapsed));
+    ++c.telemetry.fence_wait_calls;
     if (result != VK_SUCCESS) { c.poisoned = true; check(result, "resident vkWaitForFences"); }
     frame.submitted = false;
 }
@@ -541,6 +547,7 @@ void resident_render(Context& c, const float* matrices, uint32_t instance_count,
     void* mapped{};
     check(vkMapMemory(c.device, frame.readback.memory, 0, output_bytes, 0, &mapped), "resident map output");
     std::memcpy(output, mapped, output_bytes);
+    c.telemetry.readback_bytes += output_bytes;
     vkUnmapMemory(c.device, frame.readback.memory);
     ++c.properties.captures; ++info.captures;
     } catch (...) {

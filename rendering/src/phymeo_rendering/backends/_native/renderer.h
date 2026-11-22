@@ -105,3 +105,24 @@ PR_API int pr_resident_render(void* context, const float* world_from_mesh,
     uint32_t instance_count, const PrParams* params,
     uint32_t width, uint32_t height, uint8_t* output, size_t output_bytes);
 PR_API int pr_resident_info(void* context, PrResidentInfo* output);
+
+
+// Optional telemetry extension; it does not change resident v1 or legacy ABI2.
+// Counts cover this context's explicit VkDeviceMemory allocations only, using
+// the actual chosen memory heap/type. Driver-hidden allocations are excluded.
+// fence_wait_wall_ns is cumulative host wall time inside vkWaitForFences,
+// including the initial static upload, not GPU kernel/execution time.
+struct PrResidentTelemetry {
+    uint32_t telemetry_abi_version, device_luid_valid, device_node_mask, reserved;
+    uint8_t device_luid[8], reserved_identity[8];
+    uint64_t device_local_bytes_current, device_local_bytes_peak, device_local_bytes_allocated;
+    uint64_t host_visible_bytes_current, host_visible_bytes_peak, host_visible_bytes_allocated;
+    uint64_t readback_bytes, fence_wait_wall_ns, fence_wait_calls, submissions;
+    uint64_t allocation_count, free_count;
+};
+static_assert(sizeof(PrResidentTelemetry) == 128, "resident telemetry ABI");
+static_assert(offsetof(PrResidentTelemetry, device_local_bytes_current) == 32, "telemetry alignment");
+PR_API int pr_resident_telemetry(void* context, PrResidentTelemetry* output);
+// Optional teardown returns final counters after actual resource destruction.
+// Call either this or pr_destroy exactly once for the owned context.
+PR_API int pr_resident_destroy(void* context, PrInfo* final_info, PrResidentTelemetry* final_telemetry);

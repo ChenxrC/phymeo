@@ -5,6 +5,7 @@ A missing runtime/device after opt-in is an error, not a skip.
 """
 from dataclasses import replace
 import json
+from hashlib import sha256
 import math
 import os
 from pathlib import Path
@@ -132,6 +133,92 @@ class SapienBackendDeviceTest(unittest.TestCase):
                                                         (Channel.INSTANCE_ID,)))
         self.assertEqual(_pixel(result, Channel.INSTANCE_ID, 80, 60), 12)
 
+    def test_close_observation_is_per_session_and_counts_real_attachments(self):
+        _, first = self._open(RenderPath.RASTER)
+        _, second = self._open(RenderPath.RASTER)
+        frame = table_frames()[0]
+        request = CaptureRequest(_camera(frame), RenderPath.RASTER, (Channel.RGB,))
+        first.capture(frame, request)
+        before = first.diagnostics()
+        self.assertEqual(before["lifecycle"]["completed_captures"], 1)
+        self.assertGreater(before["lifecycle"]["attached_entities"], 0)
+        self.assertEqual(before["lifecycle"]["attached_cameras"], 0)
+        first.close()
+        closed = first.diagnostics()
+        self.assertTrue(closed["lifecycle"]["closed"])
+        self.assertEqual(closed["lifecycle"]["attached_entities_after_clear"], 0)
+        self.assertEqual(closed["lifecycle"]["attached_cameras_after_clear"], 0)
+        self.assertEqual(closed["lifecycle"]["attached_render_bodies_after_clear"], 0)
+        live = second.diagnostics()
+        self.assertFalse(live["lifecycle"]["closed"])
+        self.assertGreater(live["lifecycle"]["attached_entities"], 0)
+        second.capture(frame, request)
+        second.close()
+        # The detached old dictionary and the other session remain independent.
+        self.assertFalse(before["lifecycle"]["closed"])
+        self.assertEqual(first.diagnostics(), closed)
+    def test_pt_rejects_fp32_clip_slivers_and_large_coordinate_loss(self):
+        _, session = self._open(RenderPath.PATH_TRACE)
+        frame = table_frames()[0]
+        request = CaptureRequest(_camera(frame), RenderPath.PATH_TRACE, (Channel.RGB,))
+        # Table depth is exactly 1.125 m. This legal FP64 far plane rounds
+        # back onto that plane at the renderer's FP32 API boundary.
+        far = 1.125 + 2.0**-30
+        self.assertGreater(far, 1.125)
+        self.assertEqual(struct.unpack("<f", struct.pack("<f", far))[0], 1.125)
+        with self.assertRaisesRegex(UnsupportedRequestError, "clip"):
+            session.capture(frame, replace(request, camera=replace(request.camera, far_m=far)))
+        # Normal public values can remain finite while FP32 destroys a metre
+        # scale scene's offsets. A matched common translation must be refused,
+        # not silently collapse the scene and publish a dark picture.
+        shift = 2.0**30
+        shifted = replace(frame, nodes=tuple(
+            NodePose(n.node_id, Pose((shift, 0.0, 0.0))) if n.node_id == "base" else n
+            for n in frame.nodes))
+        huge_camera = replace(request.camera, world_pose=Pose((shift, 0.0, 1.0625)))
+        with self.assertRaisesRegex(UnsupportedRequestError, "precision"):
+            session.capture(shifted, replace(request, camera=huge_camera))
+        nonrepresentable = replace(request.camera, world_pose=Pose((1e100, 0.0, 1.0)))
+        self.assertFalse(session.supports(replace(request, camera=nonrepresentable)))
+        # Rejection must not change the legal exposure or poison the session.
+        capture = session.capture(frame, request)
+        self.assertGreater(max(capture.planes[0].data), 10)
+
+    def test_pt_replays_official_fixed_sampling_without_an_arbitrary_seed(self):
+        backend, session = self._open(RenderPath.PATH_TRACE)
+        frame, next_frame = table_frames()
+        request = CaptureRequest(_camera(frame), RenderPath.PATH_TRACE, (Channel.RGB,))
+        first = session.capture(frame, request)
+        second = session.capture(frame, request)
+        displaced = replace(next_frame, key=replace(next_frame.key, world_id="other"), nodes=tuple(
+            NodePose(n.node_id, Pose((2.0, 0.0, 0.0))) if n.node_id == "base" else n
+            for n in next_frame.nodes))
+        different = session.capture(displaced, replace(request, camera=_camera(displaced)))
+        replay = session.capture(frame, request)
+        _, independent = self._open(RenderPath.PATH_TRACE)
+        fresh = independent.capture(frame, request)
+        data = first.planes[0].data
+        for result in (second, replay, fresh):
+            self.assertEqual(result.planes[0].data, data)
+        self.assertNotEqual(different.planes[0].data, data)
+        pattern = backend.last_open_diagnostics["sampling_pattern"]
+        self.assertEqual(pattern["mode"], "official-fixed-sequence-fresh-camera")
+        self.assertEqual(pattern["magic_hex"], "0x9e3779b9")
+        self.assertFalse(pattern["arbitrary_seed_supported"])
+        evidence = {
+            "same_device_repeat_srgb8_exact": True,
+            "scope": "same installed shader/device/config and authored scene; not a cross-device guarantee",
+            "capture_sha256": [sha256(c.planes[0].data).hexdigest()
+                               for c in (first, second, replay, fresh)],
+            "diagnostics": backend.last_open_diagnostics,
+        }
+        print("SAPIEN_FIXED_SAMPLING=" + json.dumps(evidence))
+        artifact = os.environ.get("PHYMEO_SAPIEN_ARTIFACT_DIR")
+        if artifact:
+            directory = Path(artifact)
+            directory.mkdir(parents=True, exist_ok=True)
+            (directory / "reference-sampling.json").write_text(
+                json.dumps(evidence, indent=2), encoding="utf-8")
     def test_path_trace_is_real_rgb_only_and_clip_rejection_is_explicit(self):
         backend, session = self._open(RenderPath.PATH_TRACE)
         frame = table_frames()[0]
@@ -163,4 +250,7 @@ class SapienBackendDeviceTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+
 

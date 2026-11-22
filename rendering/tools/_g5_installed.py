@@ -53,10 +53,10 @@ def probe(args):
             from phymeo_rendering.panda_visuals import panda_visual_assets
             from phymeo_rendering.backends.native import NativeBackend  # noqa: F401: verify lazy import
             from phymeo_rendering.backends.sapien import SapienBackend  # noqa: F401: verify lazy import
-            if "sapien" in sys.modules or "numpy" in sys.modules:
+            if any(name in sys.modules for name in ("sapien", "numpy", "PIL")):
                 raise ValueError("base import loaded an optional backend dependency")
             distributions = {d.metadata["Name"].lower() for d in importlib.metadata.distributions()}
-            if "sapien" in distributions or "numpy" in distributions:
+            if distributions & {"sapien", "numpy", "pillow"}:
                 raise ValueError("base proof environment already contains optional backend packages")
             meshes, materials, instances = panda_visual_assets()
             package = Path(report["package_directory"])

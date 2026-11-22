@@ -88,7 +88,7 @@ def inspect_wheel(path, rendering_root=None):
     dependencies = metadata.get_all("Requires-Dist", [])
     optional = re.compile(r"([^;]+)\s*;\s*extra\s*==\s*(['\"])([^'\"]+)\2")
     allowed = {("sapien==3.0.3", "sapien"), ("numpy==1.26.4", "sapien"),
-               ("pillow==12.2.0", "textures")}
+               ("pillow==12.2.0", "textures"), ("numpy==1.26.4", "ibl")}
     observed = set()
     for row in dependencies:
         matched = optional.fullmatch(row)
@@ -96,8 +96,8 @@ def inspect_wheel(path, rendering_root=None):
         if pair not in allowed or pair in observed:
             raise ValueError("base dependencies or undeclared optional dependency in rendering wheel")
         observed.add(pair)
-    if observed != allowed or set(metadata.get_all("Provides-Extra", [])) != {"sapien", "textures"}:
-        raise ValueError("wheel must preserve the pinned reference and independent texture dependencies")
+    if observed != allowed or set(metadata.get_all("Provides-Extra", [])) != {"sapien", "textures", "ibl"}:
+        raise ValueError("wheel must preserve the pinned reference, texture and IBL dependencies")
 
     def require(name, digest=None):
         _safe_name(name)

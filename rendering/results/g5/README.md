@@ -87,3 +87,11 @@ C:/Python311/python.exe -m pip download --index-url https://pypi.org/simple `
 5. 保留错hash/缺UV/不透明度违规时无正常capture、close后的会话资源诊断；最后再拍原无纹理F0，避免把贴图扩展带来的回归漏掉。
 
 这些包外纹理步骤当前**待执行**。已有源内共享58 HOST和reference因子4 HOST绿色，只证明该源码合同及CPU准备，不代表安装包、实际GPU采样方向或公开影片已通过。生成真实wheel前不得填入设备通过结果。
+
+## IBL extra 与同一源外环境的准备
+
+方向 Radiance 环境准备选择 phymeo-rendering[ibl]，唯一依赖固定为 numpy==1.26.4，与 reference 使用相同版本。基础 wheel 仍无依赖；原生环境准备不安装 SAPIEN，PNG/JPEG 纹理解码另选 [textures]。NumPy 的官方 wheel 已在现有离线 reference wheelhouse，不新增下载。
+
+最终安装先保留无 NumPy、SAPIEN、Pillow 的 base 证明，再在**同一个新建源外 env**从确切 wheel 路径用 --no-index --find-links 安装 [ibl,textures]。共享环境 HOST、相同 SHA 的真实图片解码及六面输出需在此环境中执行并记录实际包路径、版本和文件 SHA；环境声明、颜色方向和材质都沿源内已固定输入，不临时换图。真实 native 与参考 PT 环境拍摄留在整套设备 smoke，不能以 HOST 转换成功代替实际图像验收。之后可在此环境增加 [sapien]；它不会要求另一个 NumPy 版本。
+
+当前仅完成 extra 元数据与独立安装范围声明。源码外安装、图片准备和设备验证仍待最终候选 wheel 冻结后执行。

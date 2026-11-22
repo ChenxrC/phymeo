@@ -13,6 +13,10 @@ from pathlib import Path
 import re
 
 from .mesh_data import _local_path
+from ._environment_ibl import NativeEnvironmentData, prepare_native_environment
+
+__all__ = ["RadianceEnvironment", "NativeEnvironmentData", "prepare_native_environment",
+           "load_environment", "sample_environment", "write_sapien_faces"]
 
 
 @dataclass(frozen=True, slots=True)

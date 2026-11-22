@@ -1,0 +1,3 @@
+# Independent image-decoding extra; base and plain SAPIEN do not require it.
+# Official cp311-win_amd64 wheel SHA is retained in preparation evidence.
+Pillow==12.2.0

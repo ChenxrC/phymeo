@@ -1,10 +1,10 @@
 # G5 · 源码外 wheel 复现
 
-本目录定义交付与执行口径。**当前只完成 tests-first RED 和作者实现；wheel 构建、隔离安装和设备 F0 尚待串行实测。** 不把源码树内的既有 R0 结果计为此项通过。
+本目录定义交付与执行口径。**原 G5 HOST 9 项通过，实际 wheel 节点明确跳过；官方离线依赖已准备。最终 wheel 构建、隔离安装和设备 F0 尚待串行实测。** 不把源码树内的既有 R0 结果计为此项通过。
 
 ## 交付边界
 
-`phymeo_rendering-0.1.0a0-py3-none-any.whl` 是平台无关的 Python、资产与构建源码包，不携带 DLL、SO、PYD、SPV 或本机 SDK。基础安装不依赖 SAPIEN、NumPy或物理包；参考额外依赖仍为 `sapien==3.0.3`、`numpy==1.26.4`。
+`phymeo_rendering-0.1.0a0-py3-none-any.whl` 是平台无关的 Python、资产与构建源码包，不携带 DLL、SO、PYD、SPV 或本机 SDK。基础安装不依赖 SAPIEN、NumPy或物理包；参考 extra 仍为 `sapien==3.0.3`、`numpy==1.26.4`；独立 `textures` extra 为 `Pillow==12.2.0`，只在显式加载贴图时使用。
 
 setuptools 直接将现有 `rendering/assets/panda` 映射至安装包的 `phymeo_rendering/_panda_assets`，仓库不维护重复资产。包含原 manifest、57 个 glTF、10 个无损 DAE 源归档、xacro、package.xml、LICENSE、NOTICE、来源 README。其原始 SHA 不变。`panda_visual_assets()` 安装后无需传路径，完整核验后返回稳定文件 URI；源码树入口与显式 `asset_dir` 均保留。这里只承诺正常解包安装的 wheel，不承诺 zipimport 临时资源生命周期。
 
@@ -71,3 +71,19 @@ C:/Python311/python.exe -m pip download --index-url https://pypi.org/simple `
 - validation manifest/DLL：`Validation_Layers_Windows_64/`。
 
 沿用 VS 2022 C++ 编译器和 CMake，实际版本/缓存必须留档。外部构建只引用上述 SDK，C++/.inc/CMake/shader 输入必须来自**安装后的 wheel**。当前机器 native adapter index=1、SAPIEN `cuda:0`；每次实际诊断仍保存设备名，不能把这组索引当作跨机器保证。
+
+## 纹理 extra 与源码外冒烟计划
+
+使用厂家纯色 Panda 或基础合同无需 Pillow。选择 PNG/JPEG base-color 贴图时安装 `phymeo-rendering[textures]`；参考贴图路径安装 `phymeo-rendering[sapien,textures]`。这个依赖没有挪入基础包，也没有让原生纹理依赖 SAPIEN。`TextureMap`/`TexturedMaterial` 声明和 `TriangleMesh.texcoords` 校验本身不导入 Pillow，只有 `load_texture()` 明确解码时需要它。
+
+官方 Pillow 12.2.0 cp311-win_amd64 wheel已下载至现有 `wheelhouse-official/reference/`，7,082,626 bytes，SHA256 `6e6b2a0c538fc200b38ff9eb6628228b77908c319a005815f2dde585a0664b60`。官方元数据地址为 `https://pypi.org/pypi/pillow/12.2.0/json`；精确 files.pythonhosted.org URL和实际hash在准备证据 `g5-prepare/05-pillow-official/manifest.json`。此步骤只有下载和哈希校验，没有安装。旧准备清单的20个原wheel与两次离线闭包验证仍留存；新增Pillow另列，不能把原14包参考证明改写成已经验证15包安装。
+
+最终发布前，在**最终集成提交生成的新 wheel**上执行下面计划。它补充原F0，不用源码内的影片代替：
+
+1. 在完全干净的源外 venv 仅安装基础wheel，核无Pillow/SAPIEN/NumPy，导入合同与默认Panda成功。先保留这份基础证明。
+2. 从本地 wheelhouse 对**同一准确wheel路径**安装 `[textures]`，使用 `--no-index`；若需要参考同时选择 `[sapien,textures]`。记录Pillow真实import路径/版本、完整pip freeze、官方wheel hash；模块必须来自这份源外venv，不能挂系统Pillow或源码PYTHONPATH。
+3. 复制并SHA固定当前已通过的四色PNG、相应FLOAT VEC2 glTF及独立CPU期望，不复制产品实现。通过installed `load_texture/load_mesh`核文件hash、顶行优先RGB8/UV、alpha拒绝、错hash拒绝和缺UV拒绝。
+4. 用公开相机分别对 installed native resident 与 SAPIEN raster/PT拍同一四色夹具。包含同贴图两个不同linear factor、负/超1 UV重复、双线性中点；因子检查使用预注册的线性读数/独立像素期望。保存所有原图和每条路径的实际配置、设备、纹理SHA、上传字节、真实通道和拒绝项。SAPIEN两条路径都须核因子，不能只看纹理显示出来。
+5. 保留错hash/缺UV/不透明度违规时无正常capture、close后的会话资源诊断；最后再拍原无纹理F0，避免把贴图扩展带来的回归漏掉。
+
+这些包外纹理步骤当前**待执行**。已有源内共享58 HOST和reference因子4 HOST绿色，只证明该源码合同及CPU准备，不代表安装包、实际GPU采样方向或公开影片已通过。生成真实wheel前不得填入设备通过结果。

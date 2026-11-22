@@ -86,11 +86,18 @@ def inspect_wheel(path, rendering_root=None):
     if metadata.get("Name") != "phymeo-rendering":
         raise ValueError("wrong wheel distribution")
     dependencies = metadata.get_all("Requires-Dist", [])
-    optional = re.compile(r"(?:sapien==3\.0\.3|numpy==1\.26\.4)\s*;\s*extra\s*==\s*(['\"])sapien\1")
-    if any(optional.fullmatch(row) is None for row in dependencies):
-        raise ValueError("base dependencies or undeclared optional dependency in rendering wheel")
-    if len(dependencies) != 2 or set(metadata.get_all("Provides-Extra", [])) != {"sapien"}:
-        raise ValueError("wheel must preserve the two pinned optional reference dependencies")
+    optional = re.compile(r"([^;]+)\s*;\s*extra\s*==\s*(['\"])([^'\"]+)\2")
+    allowed = {("sapien==3.0.3", "sapien"), ("numpy==1.26.4", "sapien"),
+               ("pillow==12.2.0", "textures")}
+    observed = set()
+    for row in dependencies:
+        matched = optional.fullmatch(row)
+        pair = (matched[1].strip().lower(), matched[3]) if matched else None
+        if pair not in allowed or pair in observed:
+            raise ValueError("base dependencies or undeclared optional dependency in rendering wheel")
+        observed.add(pair)
+    if observed != allowed or set(metadata.get_all("Provides-Extra", [])) != {"sapien", "textures"}:
+        raise ValueError("wheel must preserve the pinned reference and independent texture dependencies")
 
     def require(name, digest=None):
         _safe_name(name)

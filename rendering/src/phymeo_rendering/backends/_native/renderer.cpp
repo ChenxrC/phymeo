@@ -57,9 +57,14 @@ struct Allocation {
 struct Buffer { VkBuffer handle{}; VkDeviceMemory memory{}; Allocation allocation{}; };
 struct Image { VkImage handle{}; VkDeviceMemory memory{}; VkImageView view{}; Allocation allocation{}; };
 #include "resident_spirv.inc"
+#include "resident_rayquery_types.inc"
 struct ResidentState;
 struct Context {
     bool resident = false;
+    bool ray_query = false;
+    RayDispatch ray;
+    PrResidentRayQueryInfo ray_info{};
+    uint32_t ray_scratch_alignment{};
     PrResidentInfo resident_properties{};
     PrResidentTelemetry telemetry{};
     PrResidentProfile profile{};
@@ -93,6 +98,7 @@ struct Context {
         readback_info.readback_abi_version=1; readback_info.memory_type_index=UINT32_MAX;
         texture_info.texture_abi_version=1;
         environment_info.environment_abi_version=1;
+        ray_info.ray_query_abi_version=1;
     }
     ~Context() { shutdown(); --live_contexts; }
     VkResult shutdown() noexcept {
@@ -187,6 +193,11 @@ struct Context {
         VkMemoryAllocateInfo alloc{VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
         alloc.allocationSize = needed.size;
         alloc.memoryTypeIndex = memory_type(needed.memoryTypeBits, memory_flags, preferred_flags);
+        VkMemoryAllocateFlagsInfo address_flags{VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO};
+        if (usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT) {
+            require(ray_query,"device-address buffer requires explicit ray-query context");
+            address_flags.flags=VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT; alloc.pNext=&address_flags;
+        }
         acquire(value.memory, "vkAllocateMemory buffer", [&](auto* output) { return vkAllocateMemory(device, &alloc, nullptr, output); });
         account_allocation(value.allocation, alloc);
         check(vkBindBufferMemory(device, value.handle, value.memory, 0), "vkBindBufferMemory");
@@ -220,15 +231,21 @@ struct Context {
         acquire(value.view, "vkCreateImageView", [&](auto* output) { return vkCreateImageView(device, &view, nullptr, output); });
     }
     void init(uint32_t selected, bool validation, const uint32_t* vert, size_t vert_bytes,
-              const uint32_t* frag, size_t frag_bytes, bool resident_path = false) {
-        resident = resident_path;
+              const uint32_t* frag, size_t frag_bytes, bool resident_path = false, bool hardware_shadow = false) {
+        resident = resident_path; ray_query=hardware_shadow;
+        require(!ray_query || resident,"ray-query shadows require resident geometry");
+        if (ray_query) {
+            auto interface=spirv_interface(frag,frag_bytes,4);
+            require(interface.valid && interface.main && (interface.bindings&(1ull<<13)),
+                "ray-query main SPIR-V interface is unavailable; no software fallback");
+        }
         require(vert && frag && vert_bytes >= 20 && frag_bytes >= 20 &&
             vert_bytes%4 == 0 && frag_bytes%4 == 0, "invalid SPIR-V input");
         require(vert[0] == 0x07230203 && frag[0] == 0x07230203, "invalid SPIR-V magic");
         VkApplicationInfo app{VK_STRUCTURE_TYPE_APPLICATION_INFO};
         app.pApplicationName = "phymeo-native-offscreen";
         app.applicationVersion = 1; app.pEngineName = "phymeo_rendering";
-        app.engineVersion = 1; app.apiVersion = VK_API_VERSION_1_1;
+        app.engineVersion = 1; app.apiVersion = ray_query ? VK_API_VERSION_1_2 : VK_API_VERSION_1_1;
         VkInstanceCreateInfo create{VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO};
         create.pApplicationInfo = &app;
         const char* layer = "VK_LAYER_KHRONOS_validation";
@@ -265,10 +282,47 @@ struct Context {
         VkPhysicalDeviceIDProperties identity{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ID_PROPERTIES};
         VkPhysicalDeviceProperties2 description{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2};
         description.pNext = &identity;
+        VkPhysicalDeviceAccelerationStructurePropertiesKHR acceleration_limits{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_PROPERTIES_KHR};
+        if (ray_query) identity.pNext=&acceleration_limits;
         vkGetPhysicalDeviceProperties2(physical, &description);
         const auto& p = description.properties;
         VkPhysicalDeviceFeatures available_features{};
         vkGetPhysicalDeviceFeatures(physical,&available_features);
+        const std::array<const char*,3> ray_extensions{VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
+            VK_KHR_RAY_QUERY_EXTENSION_NAME,VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME};
+        VkPhysicalDeviceBufferDeviceAddressFeatures address_features{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES};
+        VkPhysicalDeviceAccelerationStructureFeaturesKHR acceleration_features{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR};
+        VkPhysicalDeviceRayQueryFeaturesKHR query_features{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR};
+        if (ray_query) {
+            require(p.apiVersion>=VK_API_VERSION_1_2,"ray-query shadows require Vulkan 1.2");
+            uint32_t extension_count=0;
+            check(vkEnumerateDeviceExtensionProperties(physical,nullptr,&extension_count,nullptr),"ray-query extension count");
+            require(extension_count<=16384,"invalid device extension count");
+            std::vector<VkExtensionProperties> extensions(extension_count);
+            check(vkEnumerateDeviceExtensionProperties(physical,nullptr,&extension_count,extensions.data()),"ray-query extensions");
+            for (const char* name:ray_extensions)
+                require(std::any_of(extensions.begin(),extensions.end(),[&](const auto& item){return std::strcmp(item.extensionName,name)==0;}),
+                    "required ray-query device extension unavailable; no software fallback");
+            VkPhysicalDeviceFeatures2 features{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2};
+            features.pNext=&address_features; address_features.pNext=&acceleration_features; acceleration_features.pNext=&query_features;
+            vkGetPhysicalDeviceFeatures2(physical,&features);
+            require(address_features.bufferDeviceAddress && acceleration_features.accelerationStructure && query_features.rayQuery,
+                "required ray-query/accelerationStructure/bufferDeviceAddress feature unavailable");
+            require(acceleration_limits.maxGeometryCount>=1 && acceleration_limits.maxPerStageDescriptorAccelerationStructures>=1 &&
+                    acceleration_limits.maxDescriptorSetAccelerationStructures>=1,"ray-query acceleration descriptor capacity unavailable");
+            VkFormatProperties vertex_format{};
+            vkGetPhysicalDeviceFormatProperties(physical,VK_FORMAT_R32G32B32_SFLOAT,&vertex_format);
+            require((vertex_format.bufferFeatures & VK_FORMAT_FEATURE_ACCELERATION_STRUCTURE_VERTEX_BUFFER_BIT_KHR)!=0,
+                "ray-query float3 vertex format unavailable");
+            ray_scratch_alignment=acceleration_limits.minAccelerationStructureScratchOffsetAlignment;
+            require(ray_scratch_alignment && !(ray_scratch_alignment&(ray_scratch_alignment-1)),"ray-query scratch alignment unavailable");
+            // Enable only the three required features, not optional query results.
+            address_features.bufferDeviceAddressCaptureReplay=VK_FALSE; address_features.bufferDeviceAddressMultiDevice=VK_FALSE;
+            acceleration_features.accelerationStructureCaptureReplay=VK_FALSE;
+            acceleration_features.accelerationStructureIndirectBuild=VK_FALSE;
+            acceleration_features.accelerationStructureHostCommands=VK_FALSE;
+            acceleration_features.descriptorBindingAccelerationStructureUpdateAfterBind=VK_FALSE;
+        }
         require(p.apiVersion >= VK_API_VERSION_1_1, "Vulkan 1.1 device is required");
         require(p.deviceType != VK_PHYSICAL_DEVICE_TYPE_CPU, "CPU Vulkan devices are not a GPU fallback");
         require(p.limits.maxColorAttachments >= 4 && p.limits.maxFragmentOutputAttachments >= 4,
@@ -340,6 +394,15 @@ struct Context {
             r.max_bvh_nodes = std::min(262144u, p.limits.maxStorageBufferRange / 48u);
             r.max_instanced_triangles = 1048576u;
             properties.max_vertices = r.max_vertices;
+            if (ray_query) {
+                ray_info.enabled=1; ray_info.max_meshes=r.max_meshes;
+                ray_info.max_instances=static_cast<uint32_t>(std::min<uint64_t>(r.max_instances,acceleration_limits.maxInstanceCount));
+                ray_info.max_triangles=static_cast<uint32_t>(std::min<uint64_t>(r.max_indices/3,acceleration_limits.maxPrimitiveCount));
+                ray_info.max_acceleration_bytes=512ull*1024*1024;
+                ray_info.build_flags=VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
+                ray_info.update_flags=VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR | VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
+                ray_info.trace_flags=6; // SPIR-V NoOpaque(2) | TerminateOnFirstHit(4)
+            }
         }
         std::memcpy(properties.device_uuid, identity.deviceUUID, 16);
         telemetry.device_luid_valid = identity.deviceLUIDValid ? 1u : 0u;
@@ -375,13 +438,28 @@ struct Context {
         // Optional support is reported false when independentBlend is absent.
         enabled_features.independentBlend=resident ? available_features.independentBlend : VK_FALSE;
         device_info.pEnabledFeatures=&enabled_features;
+        if (ray_query) {
+            device_info.pNext=&address_features;
+            device_info.enabledExtensionCount=static_cast<uint32_t>(ray_extensions.size());
+            device_info.ppEnabledExtensionNames=ray_extensions.data();
+        }
         acquire(device, "vkCreateDevice", [&](auto* output) { return vkCreateDevice(physical, &device_info, nullptr, output); });
         vkGetDeviceQueue(device, queue_family, 0, &queue);
+        if (ray_query) {
+            ray.create=reinterpret_cast<PFN_vkCreateAccelerationStructureKHR>(vkGetDeviceProcAddr(device,"vkCreateAccelerationStructureKHR"));
+            ray.destroy=reinterpret_cast<PFN_vkDestroyAccelerationStructureKHR>(vkGetDeviceProcAddr(device,"vkDestroyAccelerationStructureKHR"));
+            ray.sizes=reinterpret_cast<PFN_vkGetAccelerationStructureBuildSizesKHR>(vkGetDeviceProcAddr(device,"vkGetAccelerationStructureBuildSizesKHR"));
+            ray.build=reinterpret_cast<PFN_vkCmdBuildAccelerationStructuresKHR>(vkGetDeviceProcAddr(device,"vkCmdBuildAccelerationStructuresKHR"));
+            ray.address=reinterpret_cast<PFN_vkGetAccelerationStructureDeviceAddressKHR>(vkGetDeviceProcAddr(device,"vkGetAccelerationStructureDeviceAddressKHR"));
+            ray.buffer_address=reinterpret_cast<PFN_vkGetBufferDeviceAddress>(vkGetDeviceProcAddr(device,"vkGetBufferDeviceAddress"));
+            require(ray.create && ray.destroy && ray.sizes && ray.build && ray.address && ray.buffer_address,
+                "ray-query device entrypoints unavailable");
+        }
         VkCommandPoolCreateInfo pool{VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO};
         pool.queueFamilyIndex = queue_family; pool.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT |
             (resident ? VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT : 0u);
         acquire(command_pool, "vkCreateCommandPool", [&](auto* output) { return vkCreateCommandPool(device, &pool, nullptr, output); });
-        std::array<VkDescriptorSetLayoutBinding, 13> bindings{};
+        std::array<VkDescriptorSetLayoutBinding, 14> bindings{};
         bindings[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
         bindings[1] = {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1,
                        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
@@ -404,7 +482,8 @@ struct Context {
             bindings[11]={11,VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,1,VK_SHADER_STAGE_FRAGMENT_BIT,nullptr};
             bindings[12]={12,VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,1,VK_SHADER_STAGE_FRAGMENT_BIT,nullptr};
         }
-        layout.bindingCount = resident ? 13u : 2u; layout.pBindings = bindings.data();
+        if (ray_query) bindings[13]={13,VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR,1,VK_SHADER_STAGE_FRAGMENT_BIT,nullptr};
+        layout.bindingCount = ray_query ? 14u : (resident ? 13u : 2u); layout.pBindings = bindings.data();
         acquire(descriptor_layout, "descriptor layout", [&](auto* output) { return vkCreateDescriptorSetLayout(device, &layout, nullptr, output); });
         VkPipelineLayoutCreateInfo pipeline_info{VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO};
         pipeline_info.setLayoutCount = 1; pipeline_info.pSetLayouts = &descriptor_layout;
@@ -875,5 +954,23 @@ int pr_resident_environment_info(void* handle,PrResidentEnvironmentInfo* output)
     auto& context=*static_cast<Context*>(handle);
     if (!context.resident) { last_error="not a resident context"; return -1; }
     *output=context.environment_info;
+    return 0;
+}
+
+uint32_t pr_resident_ray_query_abi_version() { return 1; }
+void* pr_resident_create_ray_query(uint32_t selected,uint32_t validation,
+    const uint32_t* vert,size_t vert_bytes,const uint32_t* frag,size_t frag_bytes) {
+    try {
+        require(validation<=1,"invalid validation flag");
+        auto context=std::make_unique<Context>();
+        context->init(selected,validation!=0,vert,vert_bytes,frag,frag_bytes,true,true);
+        return context.release();
+    } catch (const std::exception& error) { last_error=error.what(); return nullptr; }
+}
+int pr_resident_ray_query_info(void* handle,PrResidentRayQueryInfo* output) {
+    if (!handle || !output) { last_error="null resident ray-query info"; return -1; }
+    auto& context=*static_cast<Context*>(handle);
+    if (!context.resident) { last_error="not a resident context"; return -1; }
+    *output=context.ray_info; output->poisoned=context.poisoned ? 1u : 0u;
     return 0;
 }

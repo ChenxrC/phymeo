@@ -49,6 +49,34 @@ struct ResidentEnvironment {
         c.free_memory(uniform.memory,uniform.allocation);
     }
 };
+struct AccelerationObject {
+    Context& c;
+    Buffer storage{};
+    VkAccelerationStructureKHR handle{};
+    VkDeviceAddress address{};
+    explicit AccelerationObject(Context& context):c(context) {}
+    ~AccelerationObject() {
+        release(handle,[&](auto h){c.ray.destroy(c.device,h,nullptr);});
+        release(storage.handle,[&](auto h){vkDestroyBuffer(c.device,h,nullptr);});
+        c.free_memory(storage.memory,storage.allocation);
+    }
+};
+struct ResidentAcceleration {
+    Context& c;
+    std::vector<std::unique_ptr<AccelerationObject>> bottom;
+    std::unique_ptr<AccelerationObject> top;
+    Buffer scratch{},instances{};
+    VkDeviceAddress scratch_address{},instances_address{};
+    bool built=false;
+    explicit ResidentAcceleration(Context& context):c(context) {}
+    ~ResidentAcceleration() {
+        top.reset(); bottom.clear();
+        for (auto* buffer:{&scratch,&instances}) {
+            release(buffer->handle,[&](auto h){vkDestroyBuffer(c.device,h,nullptr);});
+            c.free_memory(buffer->memory,buffer->allocation);
+        }
+    }
+};
 struct ResidentState {
     Context& c;
     Buffer vertices{}, indices{}, meshes_buffer{}, instances_buffer{}, nodes{}, transforms{}, tlas{}, studio{};
@@ -58,6 +86,7 @@ struct ResidentState {
     std::unique_ptr<FrameResources> target;
     std::unique_ptr<ResidentTextures> textures;
     std::unique_ptr<ResidentEnvironment> environment;
+    std::unique_ptr<ResidentAcceleration> acceleration;
     VkDescriptorSet descriptor_set{};
     uint32_t width{}, height{};
     explicit ResidentState(Context& context) : c(context) {}
@@ -65,6 +94,7 @@ struct ResidentState {
         target.reset();
         textures.reset();
         environment.reset();
+        acceleration.reset();
         for (auto* buffer : {&vertices, &indices, &meshes_buffer, &instances_buffer, &nodes, &transforms, &tlas, &studio}) {
             release(buffer->handle, [&](auto h) { vkDestroyBuffer(c.device, h, nullptr); });
             c.free_memory(buffer->memory, buffer->allocation);
@@ -243,6 +273,7 @@ uint64_t upload_static(Context& c, const std::vector<StaticUpload>& uploads) {
 
 #include "resident_textures.inc"
 #include "resident_environment.inc"
+#include "resident_rayquery.inc"
 
 void resident_upload(Context& c, const PrResidentVertex* vertices, uint32_t vertex_count,
                      const uint32_t* indices, uint32_t index_count,
@@ -258,6 +289,8 @@ void resident_upload(Context& c, const PrResidentVertex* vertices, uint32_t vert
             (mesh_count == 0 || meshes) && (instance_count == 0 || instances),
             "null resident static data");
     require(index_count % 3 == 0, "resident triangle index count mismatch");
+    if (c.ray_query) require(mesh_count<=c.ray_info.max_meshes && instance_count<=c.ray_info.max_instances &&
+        index_count/3<=c.ray_info.max_triangles,"ray-query scene capacity exceeded");
     require(mesh_count != 0 || (vertex_count == 0 && index_count == 0 && instance_count == 0),
             "empty resident scene has orphan data");
     for (uint32_t i = 0; i < vertex_count; ++i) {
@@ -323,7 +356,7 @@ void resident_upload(Context& c, const PrResidentVertex* vertices, uint32_t vert
     GpuResidentMesh empty_mesh{};
     GpuBvhNode empty_node{};
     uint64_t errors_before = c.errors.load();
-    const std::vector<StaticUpload> uploads{
+    std::vector<StaticUpload> uploads{
         {&state->vertices, vertex_count ? static_cast<const void*>(vertices) : &empty_vertex,
          std::max<size_t>(1, vertex_count)*sizeof(PrResidentVertex),
          VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT},
@@ -337,6 +370,9 @@ void resident_upload(Context& c, const PrResidentVertex* vertices, uint32_t vert
         {&state->nodes, nodes.empty() ? static_cast<const void*>(&empty_node) : nodes.data(),
          std::max<size_t>(1, nodes.size())*sizeof(GpuBvhNode), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT}
     };
+    if (c.ray_query)
+        for (uint32_t i=0;i<2;++i) uploads[i].usage |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
+            VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
     uint64_t bytes = 0;
     try {
     bytes = upload_static(c, uploads);
@@ -359,6 +395,7 @@ void resident_upload(Context& c, const PrResidentVertex* vertices, uint32_t vert
         black_cube.size(),VK_FORMAT_R8G8B8A8_SRGB,false);
     c.environment_info.image_upload_bytes+=black_cube.size();
     c.environment_info.parameter_upload_bytes+=sizeof(default_environment);
+    if (c.ray_query) state->acceleration=build_ray_geometry(c,*state,index_count/3);
     c.make_buffer(state->transforms, std::max<size_t>(1, instance_count)*sizeof(GpuTransform),
                   VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
     if (c.errors.load() != errors_before) {
@@ -371,8 +408,9 @@ void resident_upload(Context& c, const PrResidentVertex* vertices, uint32_t vert
     info.bvh_nodes = static_cast<uint32_t>(nodes.size());
     info.instanced_triangles = static_cast<uint32_t>(instanced_triangles);
     info.loaded = 1; ++info.upload_calls; info.geometry_upload_bytes += bytes;
-    c.profile.tlas_node_count = instance_count ? 2*instance_count-1 : 0;
-    info.shadow_node_budget = node_budget + c.profile.tlas_node_count;
+    if (c.ray_query) c.ray_info.loaded=1;
+    c.profile.tlas_node_count = !c.ray_query && instance_count ? 2*instance_count-1 : 0;
+    info.shadow_node_budget = c.ray_query ? 0 : node_budget + c.profile.tlas_node_count;
     c.resident_state = std::move(state);
 }
 
@@ -554,11 +592,11 @@ void resident_target(Context& c, ResidentState& state, uint32_t width, uint32_t 
     acquire(frame->framebuffer, "resident framebuffer", [&](auto* out) {
         return vkCreateFramebuffer(c.device, &framebuffer, nullptr, out);
     });
-    std::array<VkDescriptorPoolSize, 3> sizes{{
+    std::array<VkDescriptorPoolSize, 4> sizes{{
         {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 8}, {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 3},
-        {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,2}}};
+        {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,2},{VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR,1}}};
     VkDescriptorPoolCreateInfo pool{VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO};
-    pool.maxSets = 1; pool.poolSizeCount = 3; pool.pPoolSizes = sizes.data();
+    pool.maxSets = 1; pool.poolSizeCount = c.ray_query ? 4u : 3u; pool.pPoolSizes = sizes.data();
     acquire(frame->descriptors, "resident descriptor pool", [&](auto* out) {
         return vkCreateDescriptorPool(c.device, &pool, nullptr, out);
     });
@@ -584,7 +622,15 @@ void resident_target(Context& c, ResidentState& state, uint32_t width, uint32_t 
     }};
     VkDescriptorImageInfo image{state.textures->sampler,state.textures->image.view,VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
     VkDescriptorImageInfo environment_image{state.environment->sampler,state.environment->image.view,VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
-    std::array<VkWriteDescriptorSet, 13> writes{};
+    std::array<VkWriteDescriptorSet, 14> writes{};
+    VkWriteDescriptorSetAccelerationStructureKHR acceleration_write{VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR};
+    if (c.ray_query) {
+        acceleration_write.accelerationStructureCount=1;
+        acceleration_write.pAccelerationStructures=&state.acceleration->top->handle;
+        writes[13].sType=VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET; writes[13].pNext=&acceleration_write;
+        writes[13].dstSet=set; writes[13].dstBinding=13; writes[13].descriptorCount=1;
+        writes[13].descriptorType=VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+    }
     for (uint32_t i = 0; i < 13; ++i) {
         writes[i].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         writes[i].dstSet = set; writes[i].dstBinding = i;
@@ -595,7 +641,7 @@ void resident_target(Context& c, ResidentState& state, uint32_t width, uint32_t 
             writes[i].pImageInfo=i==9 ? &image : &environment_image;
         } else writes[i].pBufferInfo=&buffers[i];
     }
-    vkUpdateDescriptorSets(c.device, 13, writes.data(), 0, nullptr);
+    vkUpdateDescriptorSets(c.device, c.ray_query ? 14u : 13u, writes.data(), 0, nullptr);
     make_commands(c, *frame);
     if (c.profile.timestamp_supported) {
         VkQueryPoolCreateInfo query{VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO};
@@ -660,7 +706,7 @@ void resident_render(Context& c, const float* matrices, uint32_t instance_count,
     validate_resident_params(c, params, width, height, output, output_bytes, channel_mask, compact);
     auto& state = *c.resident_state;
     auto transforms = resident_transforms(state, matrices, instance_count);
-    auto tlas = resident_tlas(state, transforms);
+    auto tlas = c.ray_query ? std::vector<GpuBvhNode>{} : resident_tlas(state, transforms);
     const auto upload_begin=HostClock::now();
     try {
     resident_target(c, state, width, height);
@@ -671,8 +717,9 @@ void resident_render(Context& c, const float* matrices, uint32_t instance_count,
     uint64_t errors_before = c.errors.load();
     if (instance_count) {
         c.upload(state.transforms, transforms.data(), transforms.size()*sizeof(GpuTransform));
-        c.upload(state.tlas, tlas.data(), tlas.size()*sizeof(GpuBvhNode));
+        if (!c.ray_query) c.upload(state.tlas, tlas.data(), tlas.size()*sizeof(GpuBvhNode));
     }
+    if (c.ray_query) upload_ray_instances(c,state,transforms);
     // This static UBO is populated only before the first draw. Its lifetime is
     // the resident scene, independent of reusable target creation/resizing.
     if (!info.captures) {
@@ -693,6 +740,7 @@ void resident_render(Context& c, const float* matrices, uint32_t instance_count,
         vkCmdResetQueryPool(frame.commands,frame.timestamps,0,3);
         vkCmdWriteTimestamp(frame.commands,VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,frame.timestamps,0);
     }
+    if (c.ray_query) record_ray_update(c,state,frame.commands);
     const VkBuffer input_buffers[]{state.transforms.handle,frame.uniform.handle,state.tlas.handle,state.studio.handle};
     std::array<VkBufferMemoryBarrier, 4> inputs{};
     for (uint32_t i = 0; i < inputs.size(); ++i) {
@@ -815,6 +863,12 @@ void resident_render(Context& c, const float* matrices, uint32_t instance_count,
     if (c.environment_info.loaded && params.counts[2]) {
         ++c.environment_info.rgb_captures_with_environment;
         ++c.environment_info.sky_draws;
+    }
+    if (c.ray_query) {
+        if (state.acceleration->built) ++c.ray_info.tlas_updates;
+        else ++c.ray_info.tlas_builds;
+        state.acceleration->built=true;
+        if (params.counts[2]) ++c.ray_info.shadow_captures;
     }
     ++c.properties.captures; ++info.captures;
     } catch (...) {

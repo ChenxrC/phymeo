@@ -221,3 +221,23 @@ PR_API int pr_resident_set_environment(void* context, const PrResidentEnvironmen
     const float* rgba, size_t rgba_bytes, const uint32_t* sky_vert, size_t sky_vert_bytes,
     const uint32_t* sky_frag, size_t sky_frag_bytes);
 PR_API int pr_resident_environment_info(void* context, PrResidentEnvironmentInfo* output);
+
+// Optional ray-query shadow extension v1. Only this create enables Vulkan 1.2
+// bufferDeviceAddress + KHR acceleration_structure/ray_query. No fallback.
+// Geometry, cameras, shading, capture channels and older ABIs are unchanged.
+struct PrResidentRayQueryInfo {
+    uint32_t ray_query_abi_version, enabled, blas_count, tlas_instance_count, primitive_count;
+    uint32_t loaded, poisoned, reserved, max_meshes, max_instances, max_triangles;
+    uint32_t build_flags, update_flags, trace_flags, reserved2[2];
+    uint64_t max_acceleration_bytes, acceleration_buffer_bytes, scratch_buffer_bytes;
+    uint64_t blas_builds, tlas_builds, tlas_updates, instance_upload_bytes, shadow_captures;
+};
+static_assert(sizeof(PrResidentRayQueryInfo)==128, "ray-query info ABI");
+// primitive_count is the sum of UNIQUE BLAS triangles; resident_info still
+// reports every instanced triangle. Buffer byte counts are logical sizes, not
+// VkDeviceMemory allocations (the latter remain in existing telemetry).
+// shadow_captures counts successful RGB captures, not actual ray launches.
+PR_API uint32_t pr_resident_ray_query_abi_version();
+PR_API void* pr_resident_create_ray_query(uint32_t device_index,uint32_t validation,
+    const uint32_t* vert,size_t vert_bytes,const uint32_t* frag,size_t frag_bytes);
+PR_API int pr_resident_ray_query_info(void* context,PrResidentRayQueryInfo* output);

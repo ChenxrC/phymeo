@@ -63,12 +63,12 @@ def load_episode(geo, excerpt, *, workshop=False, photographic=False, local_ligh
 def capture(args):
     if args.surface_roughness and not args.photographic:
         raise ValueError("the scanned roughness map requires photographic worktop UVs")
-    if args.display_transform!="clip" and args.mode=="native":
-        raise ValueError("the Neutral display transform currently requires the reference camera")
     if args.reference_seed is not None and args.mode!="studio":
         raise ValueError("an independent sample stream requires the path-traced camera")
     if args.area_light_grid!=2 and (args.mode!="native" or not (args.daylight or args.native_studio)):
         raise ValueError("an explicit light-sampling grid requires native rectangular studio lights")
+    if args.tiles!=1 and args.mode!="studio":
+        raise ValueError("use tiling for the offline reference film")
     args.output.mkdir(parents=True, exist_ok=False)
     # The relative source peaks at 1072. Represent all daylight scene lights
     # in 1/8 units inside the integrator, and restore that scale at the camera.
@@ -94,6 +94,8 @@ def capture(args):
     extra = {"studio": studio} if args.native_studio or args.daylight else {}
     if args.area_light_grid!=2:
         extra["area_light_grid"]=args.area_light_grid
+    if is_native and args.display_transform!="clip":
+        extra["display_transform"]=args.display_transform
     if args.shadow_mode != "software":
         if not is_native:
             raise ValueError("shadow traversal selection requires the native raster backend")
@@ -136,7 +138,12 @@ def capture(args):
         buffered = []
         for i, (frame, req) in enumerate(items):
             start = perf_counter()
-            shot = sess.capture(frame, req)
+            if args.tiles==1:
+                shot = sess.capture(frame, req)
+            else:
+                from phymeo_rendering.tiled import capture_tiled
+
+                shot = capture_tiled(sess,frame,req,math.ceil(width/args.tiles),math.ceil(height/args.tiles))
             rgb = shot.planes[0].data
             times.append((perf_counter() - start) * 1000)
             if shot.frame_key != frame.key or shot.time_s != frame.time_s or shot.camera != req.camera:
@@ -164,7 +171,7 @@ def capture(args):
         d = diag["device"]
         if d["resident_upload_calls"] != 1 or d["resident_captures"] != len(items) + warm:
             raise RuntimeError("unexpected resident uploads or captures")
-    elif diag["lifecycle"]["completed_captures"] != len(items):
+    elif diag["lifecycle"]["completed_captures"] != len(items)*args.tiles**2:
         raise RuntimeError("incomplete reference exposures")
     ranked = sorted(times)
     receipt = dict(mode=args.mode, backend=diag, camera_setup=args.camera, workshop=args.workshop,
@@ -176,6 +183,7 @@ def capture(args):
                    photographic_worktop=args.photographic,
                    scanned_linear_roughness=args.surface_roughness,
                    display_transform=args.display_transform,
+                   tiles_per_axis=args.tiles,backend_exposures_per_image=args.tiles**2,
                    lighting="workshop daylight + area lights" if args.daylight else
                             "studio" if args.native_studio or not is_native else "directional",
                    source_archive=frames[0].key.world_id,
@@ -221,6 +229,8 @@ if __name__ == "__main__":
     parser.add_argument("--camera", choices=("fixed","wide","detail","sequence"), default="fixed")
     parser.add_argument("--resolution",choices=("540p","720p","1080p"),
                         help="16:9 display raster; scale the same physical camera intrinsics")
+    parser.add_argument("--tiles",type=int,choices=(1,2,4),default=1,
+                        help="offline square tile grid; each crop retains the source camera's pinhole rays")
     parser.add_argument("--daylight", action="store_true",
                         help="use the pinned workshop panorama for distant radiance and reflections")
     parser.add_argument("--light-strength", type=float, default=.5)

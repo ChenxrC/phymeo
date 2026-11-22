@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from ..pipeline import RenderPath
 from ..scene import VisualScene
 from . import BackendUnavailableError, UnsupportedRequestError, ValidatedRenderSession
+from ._sapien_studio import SapienStudio
 
 
 @dataclass(frozen=True, slots=True)
@@ -27,6 +28,7 @@ class SapienConfig:
     max_bounces: int = 4
     seed: int | None = None
     denoiser: str = "none"
+    studio: SapienStudio | None = None
 
     def __post_init__(self):
         if not isinstance(self.path, RenderPath):
@@ -50,6 +52,11 @@ class SapienConfig:
             raise TypeError("denoiser must be a string")
         if self.denoiser != "none":
             raise UnsupportedRequestError("this reference supports denoiser='none' only")
+        if self.studio is not None:
+            if not isinstance(self.studio, SapienStudio):
+                raise TypeError("studio must be SapienStudio or None")
+            if self.path is not RenderPath.PATH_TRACE:
+                raise UnsupportedRequestError("studio requires path_trace; no raster approximation")
 
 
 class _SapienValidatedSession(ValidatedRenderSession):

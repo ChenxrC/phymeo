@@ -63,7 +63,7 @@ def bind_retry_command(control, saved, tick):
     )
 
 
-def validate_terminal_binding(report, meta):
+def validate_terminal_binding(report, meta, *, allow_completed=False):
     state = report["final_state"]
     _require(
         report["schema"] in ("phymeo-pusht-lateral-route-v1", SCHEMA)
@@ -91,11 +91,23 @@ def validate_terminal_binding(report, meta):
         meta["controller"] == report["controller_final"]
         and meta["controller"]["tick"] == meta["source_tick"]
         and meta["controller"]["status"] == "continue"
-        and meta["controller"]["partial_route"] is not None
         and meta["active_route"] == report["active_route"]
-        and meta["active_route"]["start_tick"]
-        <= meta["source_tick"]
-        < meta["active_route"]["end_tick"]
+        and (
+            (
+                meta["controller"]["partial_route"] is not None
+                and meta["active_route"]["start_tick"]
+                <= meta["source_tick"]
+                < meta["active_route"]["end_tick"]
+            )
+            or (
+                allow_completed is True
+                and report["status"] == "route_complete"
+                and meta["controller"]["partial_route"] is None
+                and meta["source_tick"] == meta["active_route"]["end_tick"]
+                and meta["controller"]["completed_routes"]
+                == meta["active_route"]["completed_routes_before"] + 1
+            )
+        )
         and meta["goal_history"] == report["goal_history_final"]
         and meta["goal_history"]["tick"] == state["local_tick"] - 1
         and meta["target"] == report["goal"],
@@ -150,12 +162,12 @@ def _events(bound):
             yield event
 
 
-def load_source(report_path, audit_path, metadata_path):
+def load_source(report_path, audit_path, metadata_path, *, allow_completed=False):
     report_path, audit_path, metadata_path = (
         Path(p).resolve() for p in (report_path, audit_path, metadata_path)
     )
     report, audit, meta = map(_read, (report_path, audit_path, metadata_path))
-    validate_terminal_binding(report, meta)
+    validate_terminal_binding(report, meta, allow_completed=allow_completed)
     _require(
         audit["schema"]
         in ("phymeo-pusht-lateral-readback-v1", "phymeo-pusht-lateral-resume-audit-v1")
@@ -285,7 +297,7 @@ def _replay_callback(entry, row, callback, history):
     return goal.history
 
 
-def prepare_entry(source, audit, metadata, route_output):
+def prepare_entry(source, audit, metadata, route_output, *, allow_completed=False):
     from phymeo.backends.mujoco_runtime import MuJoCoInitialState
 
     from .pusht_active_entry import _restore_active_route
@@ -293,7 +305,7 @@ def prepare_entry(source, audit, metadata, route_output):
     from .pusht_lateral_route import bootstrap_driver
     from .pusht_pose_replan import _fresh_entry
 
-    latest = load_source(source, audit, metadata)
+    latest = load_source(source, audit, metadata, allow_completed=allow_completed)
     chain, seen, current = [], set(), latest
     while True:
         _require(

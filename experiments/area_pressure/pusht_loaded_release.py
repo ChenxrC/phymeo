@@ -195,7 +195,8 @@ def _controller_boundary(driver):
     )
 
 
-def _loaded_route(entry, snapshot):
+def request_loaded_route(entry, snapshot):
+    """Request a retreat with the existing planner and retain its full outcome."""
     from phymeo.control.manipulation_push_objective import propose_planar_pushes
 
     driver = entry.driver
@@ -220,6 +221,11 @@ def _loaded_route(entry, snapshot):
         )
     finally:
         driver.planner.allow_loaded_withdrawal = previous
+    return route, proposals
+
+
+def _loaded_route(entry, snapshot):
+    route, proposals = request_loaded_route(entry, snapshot)
     if route.status != "sampled_release_ready" or route.proposal is not None:
         raise ValueError(
             "loaded continuation requires an independently qualified release-only route"

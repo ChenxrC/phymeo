@@ -4,11 +4,13 @@
 
 [开发计划与 agent 分工](plans/README.md)列出七个模块的任务单、合并次序及整机验收方法。接手单个模块从分工表进入，负责集成或签收可直接阅读[上下游合并计划](plans/08-integration.md)和[最终验收规程](plans/09-acceptance.md)。
 
-这个目录是一个独立 Python 项目，发行名为 `phymeo-rendering`，导入名为 `phymeo_rendering`。当前交付包含场景和相机的数据类型、后端协议、原生管线的阶段名称。原生设备层、着色器与 SAPIEN 适配器均待实现。基础包仅依赖 Python 3.11+ 标准库。
+这个目录是一个独立 Python 项目，发行名为 `phymeo-rendering`，导入名为 `phymeo_rendering`。基础包仅依赖 Python 3.11+ 标准库，可读取程序场景、规划一次曝光，并校验后端返回的帧包。Vulkan 原生绘制和 SAPIEN 参考成像在 G3 接入。
 
 ## 七个板块
 
 G1 输入合同已接通。仓库根目录下设置 `$env:PYTHONPATH=(Resolve-Path rendering/src).Path`，运行 `python -m unittest discover -s rendering/tests -v` 可验证资产声明、场景引用、位姿组合和相机曝光。两帧使用同一张[自制标定桌](tests/fixtures/g1/README.md)，在无图形设备环境下即可检查腕部转动前后的解析投影。实际成像在后续 R0 验收。
+
+G2 把同一张标定桌的两帧交给拍摄会话。请求可以只取深度或实例 ID，也可以连同 RGB 和有效掩码一起取。`ValidatedRenderSession` 检查实际返回帧的相机、时间、通道顺序和场景实例身份。[集成测试](tests/integration/test_backend_contract.py)用两个人工像素检查读回和发布流程；真实渲染结果从 R0 开始记录。
 
 | 板块 | 开发入口 | 谁负责什么 |
 | --- | --- | --- |
@@ -28,24 +30,28 @@ G1 输入合同已接通。仓库根目录下设置 `$env:PYTHONPATH=(Resolve-Pa
 
 自研后端内部可为光栅组织「可见性 → 阴影 → 材质光照」，为路径追踪组织「加速结构准备 → 射线积分 → 累积」。显示变换只作用于颜色。深度按相机朝前方向计量，缺失值为正无穷；物体 ID 为正整数，背景为零。具体的调度、时域历史、设备帧所有权与同步都属于后续实现。
 
-## 骨架使用示例
+## 从程序场景规划一次曝光
 
-以下代码可在独立安装后运行，用来描述程序创建的一次曝光。打开场景和图像生成需要后续的具体后端。
+以下示例可以直接在基础包上运行。它读取一个程序创建的帧，打印一份原生光栅的阶段表。
 
 ```python
+from phymeo_rendering.adapters import AuthoredSceneSource
 from phymeo_rendering.cameras import Camera
 from phymeo_rendering.outputs import Channel
-from phymeo_rendering.pipeline import CaptureRequest, RenderPath
-from phymeo_rendering.scene import FrameKey, Pose, SceneFrame
+from phymeo_rendering.pipeline import CaptureRequest, DefaultPassPlanner, RenderPath
+from phymeo_rendering.scene import FrameKey, Pose, SceneFrame, VisualScene
 
 key = FrameKey("table-v1", "studio", 0, 0, 0, "authored")
 frame = SceneFrame(key, time_s=0.0, nodes=())
+source = AuthoredSceneSource(VisualScene("table-v1", (), (), ()), (frame,))
+exposure_frame = next(source.frames())
 camera = Camera(
-    id="front", frame_key=frame.key, world_pose=Pose(),
+    id="front", frame_key=exposure_frame.key, world_pose=Pose(),
     width=640, height=480, fx_px=500.0, fy_px=500.0,
     cx_px=320.0, cy_px=240.0, near_m=0.1, far_m=5.0,
 )
 request = CaptureRequest(camera, RenderPath.RASTER, (Channel.RGB, Channel.FORWARD_DEPTH))
+print([stage.value for stage in DefaultPassPlanner().plan(request)])
 ```
 
 从仓库根目录可用 `python -m pip install ./rendering` 单独安装本包。首个实现节点沿用 R0 的标定桌。先在单个世界把静态资产、一次曝光、真实图像闭合，再在同一输入上比较原生后端与参考后端。

@@ -18,9 +18,7 @@ def _key():
 
 
 def _camera(width=3, height=2):
-    return Camera(
-        "front", _key(), Pose(), width, height, 500.0, 500.0, 1.5, 1.0, 0.1, 5.0
-    )
+    return Camera("front", _key(), Pose(), width, height, 500.0, 500.0, 1.5, 1.0, 0.1, 5.0)
 
 
 def _planes():
@@ -28,8 +26,7 @@ def _planes():
     return (
         ImagePlane(
             Channel.RGB,
-            bytes((255, 0, 0, 0, 255, 0, 17, 23, 31,
-                   0, 0, 255, 255, 255, 255, 0, 0, 0)),
+            bytes((255, 0, 0, 0, 255, 0, 17, 23, 31, 0, 0, 255, 255, 255, 255, 0, 0, 0)),
         ),
         ImagePlane(Channel.FORWARD_DEPTH, pack("<6f", 0.25, 1.0, inf, 2.0, 3.0, 4.0)),
         ImagePlane(Channel.INSTANCE_ID, pack("<6I", 1, 256, 0, 2**32 - 1, 7, 8)),
@@ -130,8 +127,9 @@ class CaptureTests(unittest.TestCase):
                     _capture((plane, plane))
 
     def test_capture_rejects_each_frame_key_mismatch(self):
-        changes = dict(scene_key="other", world_id="world-b", epoch=3,
-                       revision=12, tick=8, phase="step_input")
+        changes = dict(
+            scene_key="other", world_id="world-b", epoch=3, revision=12, tick=8, phase="step_input"
+        )
         for field, value in changes.items():
             with self.subTest(field=field):
                 with self.assertRaisesRegex(ValueError, "frame_key"):

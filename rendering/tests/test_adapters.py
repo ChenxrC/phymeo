@@ -67,8 +67,7 @@ class AuthoredSceneSourceTests(unittest.TestCase):
         self.assertEqual(len(source.scene().meshes), 1)
         self.assertEqual(len(source.scene().instances), 2)
         # The adapter must not bake the visual local offset into the node pose.
-        self.assertEqual(next(source.frames()).nodes[0].world_pose.position_m,
-                         (0.0, 0.0, 0.0))
+        self.assertEqual(next(source.frames()).nodes[0].world_pose.position_m, (0.0, 0.0, 0.0))
 
     def test_finite_generator_is_consumed_once_before_publication(self):
         frames = (_frame(), _frame(revision=3, tick=4, time=0.25))
@@ -168,14 +167,19 @@ class AuthoredSceneSourceTests(unittest.TestCase):
 
     def test_quaternion_double_cover_is_same_pose_without_rewriting_input(self):
         half = math.sqrt(0.5)
-        first = _frame(nodes=(
-            NodePose("tool", Pose((0, 0, 0), (0, 0, half, half))),
-            NodePose("object", Pose()),
-        ))
-        repeated = replace(first, nodes=(
-            NodePose("tool", Pose((0, 0, 0), (0, 0, -half, -half))),
-            NodePose("object", Pose()),
-        ))
+        first = _frame(
+            nodes=(
+                NodePose("tool", Pose((0, 0, 0), (0, 0, half, half))),
+                NodePose("object", Pose()),
+            )
+        )
+        repeated = replace(
+            first,
+            nodes=(
+                NodePose("tool", Pose((0, 0, 0), (0, 0, -half, -half))),
+                NodePose("object", Pose()),
+            ),
+        )
         before = pickle.dumps((first, repeated))
         source = AuthoredSceneSource(_scene(), (first, repeated))
         self.assertEqual(pickle.dumps(tuple(source.frames())), before)
@@ -191,10 +195,13 @@ class AuthoredSceneSourceTests(unittest.TestCase):
         first = _frame()
         changed = (
             replace(first, nodes=_nodes(math.nextafter(0.0, 1.0))),
-            replace(first, nodes=(
-                NodePose("tool", Pose(orientation_xyzw=(0, 0, 1, 0))),
-                NodePose("object", Pose((0, 1, 0))),
-            )),
+            replace(
+                first,
+                nodes=(
+                    NodePose("tool", Pose(orientation_xyzw=(0, 0, 1, 0))),
+                    NodePose("object", Pose((0, 1, 0))),
+                ),
+            ),
             replace(first, nodes=(*first.nodes, NodePose("mount", Pose()))),
         )
         for candidate in changed:

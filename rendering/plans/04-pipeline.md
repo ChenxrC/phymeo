@@ -1,6 +1,6 @@
 # M4：渲染请求与原生阶段规划实施计划
 
-> **状态：** 实施计划。公开接口以当前骨架为基线，下面的实现与验收均为后续任务。
+G2 提供 `validate_capture_request` 和 `DefaultPassPlanner`。两种路径与四种通道共有 30 个非空组合，[模块测试](../tests/test_pipeline.py)逐项核对阶段及顺序。原生设备执行这些阶段在 G3 验证。
 
 **目标：** 将现有 `CaptureRequest` 转为可验证、确定性的原生阶段序列，保证显示处理不改变传感通道，并为 R0–R4 提供稳定请求入口。
 
@@ -74,10 +74,10 @@ class DefaultPassPlanner:
 **前置：** M3 相机类型、M6 Channel 枚举保持当前公开名字。可与 M1 资产读取、M5 设备探测并行。
 
 - [ ] 在 `test_pipeline.py` 定义标准曝光，使用 `FrameKey("r0-table", "world-0", 0, 1, 1, "authored")`、`Pose()`、640×480、fx=fy=500、cx=320、cy=240、near=0.1、far=5.0。
-- [ ] 先写失败测试：空 channels、同一个 Channel 两次、字符串通道、字符串 path、list channels、非 Camera 的 camera、非 CaptureRequest 入参；分别检查明确的异常类别和字段诊断。
+- [x] 先写失败测试：空 channels、同一个 Channel 两次、字符串通道、字符串 path、list channels、非 Camera 的 camera、非 CaptureRequest 入参；分别检查明确的异常类别和字段诊断。
 - [ ] 由执行负责人运行 `python -m pytest rendering/tests/test_pipeline.py -q`，确认失败来自缺少实现／拒绝，而非测试导入错误。
-- [ ] 实现 `validate_capture_request`，不增加隐式默认值、能力探测或设备初始化。
-- [ ] 重跑该文件；增加合法的四通道请求正控，确认对象字段没有被修改。
+- [x] 实现 `validate_capture_request`，不增加隐式默认值、能力探测或设备初始化。
+- [x] 重跑该文件；增加合法的四通道请求正控，确认对象字段没有被修改。
 
 最小测试形状如下，`exposure` 是同文件按照上面的确定参数构造的 Camera fixture：
 
@@ -100,11 +100,11 @@ def test_duplicate_channels_rejected(exposure):
 
 **前置：** M4.1；不等待图形设备，不能用 mock 结果声称真实图像通过。
 
-- [ ] 先写六行阶段表的精确元组断言，覆盖仅 RGB、仅深度、混合三种请求与两种路径。
-- [ ] 枚举四个 Channel 的全部 15 个非空子集，对两种 RenderPath 共 30 个组合验证：RGB 存在当且仅当包含 DISPLAY_TRANSFORM；传感通道存在当且仅当包含 SENSOR_EXPORT；每阶段至多一次。
-- [ ] 对混合请求的两种通道顺序验证相同阶段序列，且请求 channels 未被重排。
-- [ ] 实现 `DefaultPassPlanner.plan`，先调用请求校验，再按上表选择明确元组；不添加缓存、插件注册或可变全局状态。
-- [ ] 运行本文件并保留 RED/GREEN 结果，检查 PATH_TRACE 不被静默映射为 RASTER。
+- [x] 先写六行阶段表的精确元组断言，覆盖仅 RGB、仅深度、混合三种请求与两种路径。
+- [x] 枚举四个 Channel 的全部 15 个非空子集，对两种 RenderPath 共 30 个组合验证：RGB 存在当且仅当包含 DISPLAY_TRANSFORM；传感通道存在当且仅当包含 SENSOR_EXPORT；每阶段至多一次。
+- [x] 对混合请求的两种通道顺序验证相同阶段序列，且请求 channels 未被重排。
+- [x] 实现 `DefaultPassPlanner.plan`，先调用请求校验，再按上表选择明确元组；不添加缓存、插件注册或可变全局状态。
+- [x] 运行本文件并保留 RED/GREEN 结果，检查 PATH_TRACE 不被静默映射为 RASTER。
 
 ```python
 from phymeo_rendering.pipeline import NativePass
@@ -142,8 +142,8 @@ R2 的 1280×720 单相机 p95≤33.3 ms 由完整设备路径测量，不能用
 
 ## 5. 开发依赖、合并条件与交接
 
-- [ ] 基础包仍仅 Python 3.11+ 标准库；pytest／构建工具属于独立开发环境，不进入基础 runtime requirements。
+- [x] 基础包仍仅 Python 3.11+ 标准库；pytest／构建工具属于独立开发环境，不进入基础 runtime requirements。
 - [ ] 在独立安装后的环境执行 `python -m pytest rendering/tests/test_pipeline.py -q`；根项目默认 pytest 路径不包含此目录，必须显式指定。
 - [ ] M3/M6 与 M5 对校验职责、阶段语义、通道顺序无分歧；不擅自修改共享类型字段。
-- [ ] G2 在集成候选中将 M4 与 M5 命令记录器联测后合并纯规划实现，不要求原生 M5 先合入。M5 真实设备开发随后消费已冻结的 M4；模块合并与 R0／G3 设备里程碑分开标记。
+- [x] G2 在集成候选中将 M4 与 M5 命令记录器联测后合并纯规划实现，不要求原生 M5 先合入。M5 真实设备开发随后消费已冻结的 M4；模块合并与 R0／G3 设备里程碑分开标记。
 - [ ] 08 记录接口版本及安装命令，09 收集实际测试及图像证据。

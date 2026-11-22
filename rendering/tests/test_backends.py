@@ -18,7 +18,8 @@ from phymeo_rendering.scene import FrameKey, Instance, NodePose, Pose, SceneFram
 
 def fixture():
     scene = VisualScene(
-        "table", (Mesh("box", "box.obj"),),
+        "table",
+        (Mesh("box", "box.obj"),),
         (Material("paint", (0.3, 0.2, 0.1), 0.0, 0.5),),
         (Instance(7, "box", "paint", "box-node"),),
     )
@@ -36,9 +37,12 @@ def packet(frame, request, *, instance=7):
         Channel.INSTANCE_ID: struct.pack("<II", 0, instance),
         Channel.VALID: bytes((0, 1)),
     }
-    return Capture(frame.key, frame.time_s, request.camera, tuple(
-        ImagePlane(channel, values[channel]) for channel in request.channels
-    ))
+    return Capture(
+        frame.key,
+        frame.time_s,
+        request.camera,
+        tuple(ImagePlane(channel, values[channel]) for channel in request.channels),
+    )
 
 
 class Recorder:
@@ -96,8 +100,9 @@ class SessionContracts(unittest.TestCase):
 
     def test_no_path_or_channel_fallback(self):
         self.delegate.answer = False
-        request = replace(self.request, path=RenderPath.PATH_TRACE,
-                          channels=(Channel.FORWARD_DEPTH, Channel.RGB))
+        request = replace(
+            self.request, path=RenderPath.PATH_TRACE, channels=(Channel.FORWARD_DEPTH, Channel.RGB)
+        )
         self.assertFalse(self.session.supports(request))
         with self.assertRaises(backends.UnsupportedRequestError):
             self.session.capture(self.frame, request)
@@ -137,12 +142,16 @@ class SessionContracts(unittest.TestCase):
         self.assertEqual(self.delegate.requests, [])
 
     def test_each_exposure_key_component_is_checked(self):
-        changes = dict(scene_key="other", world_id="world-1", epoch=1,
-                       revision=3, tick=4, phase="step_input")
+        changes = dict(
+            scene_key="other", world_id="world-1", epoch=1, revision=3, tick=4, phase="step_input"
+        )
         for field, value in changes.items():
-            request = replace(self.request, camera=replace(
-                self.request.camera, frame_key=replace(self.frame.key, **{field: value})
-            ))
+            request = replace(
+                self.request,
+                camera=replace(
+                    self.request.camera, frame_key=replace(self.frame.key, **{field: value})
+                ),
+            )
             with self.subTest(field=field), self.assertRaisesRegex(ValueError, field):
                 self.session.capture(self.frame, request)
         self.assertEqual(self.delegate.requests, [])
@@ -163,9 +172,15 @@ class SessionContracts(unittest.TestCase):
 
     def test_extra_mount_nodes_and_replay_are_legal(self):
         for tick, epoch, time in ((8, 0, 0.5), (1, 0, 0.05), (0, 1, 0.0), (0, 1, 0.0)):
-            frame = replace(self.frame, key=replace(self.frame.key, tick=tick, epoch=epoch),
-                            time_s=time, nodes=self.frame.nodes + (NodePose("mount", Pose()),))
-            request = replace(self.request, camera=replace(self.request.camera, frame_key=frame.key))
+            frame = replace(
+                self.frame,
+                key=replace(self.frame.key, tick=tick, epoch=epoch),
+                time_s=time,
+                nodes=self.frame.nodes + (NodePose("mount", Pose()),),
+            )
+            request = replace(
+                self.request, camera=replace(self.request.camera, frame_key=frame.key)
+            )
             result = self.session.capture(frame, request)
             self.assertEqual((result.frame_key, result.time_s), (frame.key, time))
         self.assertEqual(len(self.delegate.captures), 4)
@@ -177,8 +192,9 @@ class SessionContracts(unittest.TestCase):
 
     def test_result_key_and_exact_time_are_bound_to_call(self):
         valid = packet(self.frame, self.request)
-        for field, value in dict(scene_key="other", world_id="world-1", epoch=1,
-                                 revision=3, tick=4, phase="step_input").items():
+        for field, value in dict(
+            scene_key="other", world_id="world-1", epoch=1, revision=3, tick=4, phase="step_input"
+        ).items():
             wrong_key = replace(valid.frame_key, **{field: value})
             wrong_camera = replace(valid.camera, frame_key=wrong_key)
             bad = replace(valid, frame_key=wrong_key, camera=wrong_camera)
@@ -194,9 +210,14 @@ class SessionContracts(unittest.TestCase):
     def test_result_camera_full_value_is_bound_to_request(self):
         valid = packet(self.frame, self.request)
         for field, value in (
-            ("id", "other"), ("world_pose", Pose((0, 0, 1))),
-            ("fx_px", 3.0), ("fy_px", 3.0), ("cx_px", 1.5), ("cy_px", 0.75),
-            ("near_m", 0.2), ("far_m", 6.0),
+            ("id", "other"),
+            ("world_pose", Pose((0, 0, 1))),
+            ("fx_px", 3.0),
+            ("fy_px", 3.0),
+            ("cx_px", 1.5),
+            ("cy_px", 0.75),
+            ("near_m", 0.2),
+            ("far_m", 6.0),
         ):
             bad = replace(valid, camera=replace(valid.camera, **{field: value}))
             self.delegate.make_packet = lambda frame, request, bad=bad: bad
@@ -206,7 +227,9 @@ class SessionContracts(unittest.TestCase):
     def test_result_channels_match_requested_order_exactly(self):
         valid = packet(self.frame, self.request)
         for planes in (valid.planes[:-1], valid.planes[::-1], valid.planes + (valid.planes[0],)):
-            self.delegate.make_packet = lambda frame, request, planes=planes: replace(valid, planes=planes)
+            self.delegate.make_packet = lambda frame, request, planes=planes: replace(
+                valid, planes=planes
+            )
             with self.subTest(planes=planes), self.assertRaises(ValueError):
                 self.session.capture(self.frame, self.request)
         rgb_only = replace(self.request, channels=(Channel.RGB,))
@@ -220,22 +243,29 @@ class SessionContracts(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "99"):
             self.session.capture(self.frame, request)
         self.delegate.make_packet = packet
-        self.assertEqual(self.session.capture(self.frame, request).planes[0].data,
-                         struct.pack("<II", 0, 7))
+        self.assertEqual(
+            self.session.capture(self.frame, request).planes[0].data, struct.pack("<II", 0, 7)
+        )
 
     def test_valid_background_and_maximum_scene_id_are_allowed(self):
         other = replace(self.scene, instances=(replace(self.scene.instances[0], id=2**32 - 1),))
         delegate = Recorder()
         delegate.make_packet = lambda frame, request: packet(frame, request, instance=2**32 - 1)
         session = backends.ValidatedRenderSession(other, delegate)
-        self.assertEqual(session.capture(self.frame, self.request).planes[2].data,
-                         struct.pack("<II", 0, 2**32 - 1))
+        self.assertEqual(
+            session.capture(self.frame, self.request).planes[2].data,
+            struct.pack("<II", 0, 2**32 - 1),
+        )
         session.close()
 
     def test_delegate_output_constructor_rejects_bad_layout_and_mutability(self):
         valid = packet(self.frame, self.request)
-        for data, error in ((bytearray(6), TypeError), (memoryview(bytes(6)), TypeError),
-                            (bytes(5), ValueError)):
+        for data, error in (
+            (bytearray(6), TypeError),
+            (memoryview(bytes(6)), TypeError),
+            (bytes(5), ValueError),
+        ):
+
             def make_bad(frame, request, data=data):
                 plane = ImagePlane(Channel.RGB, data)
                 return replace(valid, planes=(plane,) + valid.planes[1:])
@@ -268,7 +298,9 @@ class SessionContracts(unittest.TestCase):
             self.session.capture(self.frame, self.request)
         self.assertIs(found.exception, error)
         self.delegate.error = None
-        self.assertEqual(self.session.capture(self.frame, self.request), packet(self.frame, self.request))
+        self.assertEqual(
+            self.session.capture(self.frame, self.request), packet(self.frame, self.request)
+        )
 
     def test_prior_owned_bytes_survive_later_capture_and_close(self):
         first = self.session.capture(self.frame, self.request)
@@ -334,5 +366,3 @@ class BackendAvailability(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-
-

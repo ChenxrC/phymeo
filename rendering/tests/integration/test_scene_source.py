@@ -5,6 +5,7 @@ import struct
 import unittest
 from dataclasses import replace
 
+from phymeo_rendering.adapters import AuthoredSceneSource
 from phymeo_rendering.scene import Pose, compose_pose, validate_scene_frame
 
 from ._g1_table import ALUMINIUM_TOP, FIXTURES, table_frames, table_scene
@@ -43,7 +44,9 @@ class TableSceneTest(unittest.TestCase):
                     self.assertEqual((min(axis), max(axis)), (-extent, extent))
 
     def test_two_published_frames_share_the_same_material_samples(self):
-        scene = table_scene()
+        frames = table_frames()
+        source = AuthoredSceneSource(table_scene(), iter(frames))
+        scene = source.scene()
         self.assertEqual(
             [m.uri for m in scene.meshes],
             [
@@ -54,7 +57,8 @@ class TableSceneTest(unittest.TestCase):
         samples = [item for item in scene.instances if item.id in (11, 12, 13)]
         self.assertEqual([item.mesh_id for item in samples], ["block"] * 3)
         self.assertEqual([item.material_id for item in samples], ["aluminium", "plastic", "rubber"])
-        for frame in table_frames():
+        self.assertEqual(tuple(source.frames()), frames)
+        for frame in source.frames():
             validate_scene_frame(scene, frame)
             nodes = {node.node_id: node.world_pose for node in frame.nodes}
             block = compose_pose(nodes[samples[0].node_id], samples[0].local_pose)

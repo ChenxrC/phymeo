@@ -13,8 +13,17 @@ from phymeo_rendering.scene import FrameKey, Pose
 
 def _request(**changes):
     camera = Camera(
-        "front", FrameKey("r0-table", "world-0", 0, 1, 1, "authored"),
-        Pose(), 640, 480, 500.0, 500.0, 320.0, 240.0, 0.1, 5.0,
+        "front",
+        FrameKey("r0-table", "world-0", 0, 1, 1, "authored"),
+        Pose(),
+        640,
+        480,
+        500.0,
+        500.0,
+        320.0,
+        240.0,
+        0.1,
+        5.0,
     )
     values = dict(camera=camera, path=RenderPath.RASTER, channels=(Channel.RGB,))
     values.update(changes)
@@ -23,12 +32,18 @@ def _request(**changes):
 
 RGB, DEPTH, INSTANCE, VALID = Channel.RGB, Channel.FORWARD_DEPTH, Channel.INSTANCE_ID, Channel.VALID
 RASTER_RGB = (
-    NativePass.VISIBILITY, NativePass.SHADOWS, NativePass.LIGHTING, NativePass.DISPLAY_TRANSFORM,
+    NativePass.VISIBILITY,
+    NativePass.SHADOWS,
+    NativePass.LIGHTING,
+    NativePass.DISPLAY_TRANSFORM,
 )
 RASTER_SENSOR = (NativePass.VISIBILITY, NativePass.SENSOR_EXPORT)
 RASTER_MIXED = (
-    NativePass.VISIBILITY, NativePass.SHADOWS, NativePass.LIGHTING,
-    NativePass.DISPLAY_TRANSFORM, NativePass.SENSOR_EXPORT,
+    NativePass.VISIBILITY,
+    NativePass.SHADOWS,
+    NativePass.LIGHTING,
+    NativePass.DISPLAY_TRANSFORM,
+    NativePass.SENSOR_EXPORT,
 )
 TRACE_RGB = (NativePass.TRACE, NativePass.DISPLAY_TRANSFORM)
 TRACE_SENSOR = (NativePass.TRACE, NativePass.SENSOR_EXPORT)
@@ -71,9 +86,15 @@ class CaptureRequestTests(unittest.TestCase):
 
     def test_validator_rejects_invalid_field_types(self):
         cases = (
-            ("camera", None), ("camera", {}), ("camera", "front"),
-            ("path", "raster"), ("path", None), ("path", NativePass.TRACE),
-            ("channels", [RGB]), ("channels", iter((RGB,))), ("channels", None),
+            ("camera", None),
+            ("camera", {}),
+            ("camera", "front"),
+            ("path", "raster"),
+            ("path", None),
+            ("path", NativePass.TRACE),
+            ("channels", [RGB]),
+            ("channels", iter((RGB,))),
+            ("channels", None),
         )
         for field, value in cases:
             with self.subTest(field=field, value_type=type(value).__name__):

@@ -1,6 +1,6 @@
 # M5：真实图形后端与设备会话实施计划
 
-> **状态：** 实施计划。当前 `native.py`、`sapien.py` 仍是说明性骨架，不能据此宣称设备支持。
+G2 提供 `ValidatedRenderSession(scene, delegate)`，负责能力、帧绑定、输出与关闭检查。[会话测试](../tests/test_backends.py)使用记录器。原生和 SAPIEN 入口在 G3 实现设备接入前显式报告不可用。
 
 **目标：** 经同一个 `RenderBackend`／`RenderSession` 公共入口产生真实图像；首版由 native raster 承担快速及传感路径，由可选 SAPIEN 参考 PT 提供真实路径追踪对照，分别记录设备、失败与成本。
 
@@ -69,10 +69,10 @@ class RenderBackend(Protocol):
 ### M5.1 会话拒绝、生命周期与可选依赖
 
 - [ ] 先在 `test_backends.py` 冻结新增配置和异常 API。设备配置必须能明确指定设备，默认选择必须报告实际设备；未知参数拒绝。native 首版对 PATH_TRACE 明确 False／异常，不默许使用参考 backend。
-- [ ] 用测试替身验证两条实现的通用会话逻辑：正常 open→supports→capture→close，重复 close，关闭后使用，完整 FrameKey 单字段篡改、缺失节点、无效尺寸／请求、请求不支持。
+- [x] 用测试替身验证两条实现的通用会话逻辑：正常 open→supports→capture→close，重复 close，关闭后使用，完整 FrameKey 单字段篡改、缺失节点、无效尺寸／请求、请求不支持。
 - [ ] 测试仅基础包安装时导入 `phymeo_rendering`、`backends.native`、`backends.sapien` 均不加载 GPU runtime；显式 open 才加载依赖。屏蔽 SAPIEN 安装时 open 精确抛 BackendUnavailableError。
-- [ ] 先运行该文件取得 RED，再实现最小拒绝和生命周期逻辑；测试替身只属于测试文件，禁止以 fake production backend 通过设备验收。
-- [ ] 验证错误链包含原始原因，失败不产生合法 Capture；首帧 `Capture.planes` 中各 `ImagePlane.data` 在下一次 capture／close 后逐字不变。
+- [x] 先运行该文件取得 RED，再实现最小拒绝和生命周期逻辑；测试替身只属于测试文件，禁止以 fake production backend 通过设备验收。
+- [x] 验证错误链包含原始原因，失败不产生合法 Capture；首帧 `Capture.planes` 中各 `ImagePlane.data` 在下一次 capture／close 后逐字不变。
 
 测试中的异常与合同形式：
 

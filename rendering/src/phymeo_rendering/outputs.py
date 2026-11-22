@@ -46,9 +46,7 @@ def _visible_samples(plane: ImagePlane):
     if plane.channel is Channel.FORWARD_DEPTH:
         for index, (depth,) in enumerate(iter_unpack("<f", plane.data)):
             if not depth > 0:
-                raise ValueError(
-                    f"{plane.channel.value} pixel {index} must be positive or +inf"
-                )
+                raise ValueError(f"{plane.channel.value} pixel {index} must be positive or +inf")
             yield depth != inf
     elif plane.channel is Channel.INSTANCE_ID:
         for (identity,) in iter_unpack("<I", plane.data):

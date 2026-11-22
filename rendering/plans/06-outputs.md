@@ -1,6 +1,6 @@
 # M6 图像输出开发计划
 
-当前阶段为待开发。M6 的单元验收可以使用手写像素；设备读回和真实相机观测在 G3–G5 验收。
+G2 已接入主机帧包构造校验。[模块测试](../tests/test_outputs.py)用手写像素验证编码、所有权和背景的一致性；设备读回和真实相机观测在 G3–G5 验收。
 
 **目标：** 让每次成功拍摄交付可独立消费、拥有自身主机字节、标定和来源一致的 RGB／前向深度／实例 ID／有效掩码。
 
@@ -20,7 +20,7 @@
 | 上游协作，不直接修改 | assets.py、scene.py、cameras.py、pipeline.py、backends/：静态 ID、帧键、相机、请求与设备读回 |
 | 下游 | 查看器、编码器、训练消费端；最终真实渲染案例由 08/09 组织 |
 
-当前文件只有枚举和 frozen dataclass；类型注解及 frozen 不等于运行时验证，也不能阻止传入可变 bytearray。下述校验属于待实现工作。首版不扩展 GPU 零拷贝张量、HDR／法线／射线深度通道，不把 PNG、MP4 编码塞进 ImagePlane。
+当前 `ImagePlane` 和 `Capture` 在构造时校验不可变字节与通道合同。GPU 张量、HDR 和额外传感通道属于后续扩展；PNG、MP4 编码由消费端负责。
 
 ## 已有接口与上下游边界
 
@@ -57,9 +57,9 @@ near/far 沿前向度量。M6 不擅自裁剪深度或增加门限；设备 floa
 
 ### 1. 锁定格式与不可变所有权
 
-- [ ] 在 test_outputs.py 写四种 Channel.value、每通道尺寸和小端字节的正控；先运行确认尚缺少的校验产生预期 RED。
-- [ ] 写 bytearray／memoryview、非 Channel、非 ImagePlane 成员及可变 planes 列表的负控；Capture.planes 必须为 tuple。首版要求 data 确为 bytes；后端要显式复制，不在数据容器中隐式转换任意对象。
-- [ ] 在 outputs.py 的构造边界补最小检查：ImagePlane 检查局部类型；Capture 利用相机分辨率检查长度和唯一通道。非法类型报 TypeError，非法值／结构报 ValueError；错误指出通道与所需／实际长度。
+- [x] 在 test_outputs.py 写四种 Channel.value、每通道尺寸和小端字节的正控；先运行确认尚缺少的校验产生预期 RED。
+- [x] 写 bytearray／memoryview、非 Channel、非 ImagePlane 成员及可变 planes 列表的负控；Capture.planes 必须为 tuple。首版要求 data 确为 bytes；后端要显式复制，不在数据容器中隐式转换任意对象。
+- [x] 在 outputs.py 的构造边界补最小检查：ImagePlane 检查局部类型；Capture 利用相机分辨率检查长度和唯一通道。非法类型报 TypeError，非法值／结构报 ValueError；错误指出通道与所需／实际长度。
 - [ ] 用下列 2×2 哨兵值验证行列和分量顺序；不能只测试全零图。
 
 ~~~python
@@ -77,18 +77,18 @@ RGB 的 12 字节使用互异四像素，例如红、绿、蓝、白；ID 使用
 
 ### 2. 验证包内绑定及传感通道一致性
 
-- [ ] 写合法 Camera／FrameKey 的显式测试夹具，使用非方形 3×2 图抓宽高互换；测试 camera.frame_key 与 Capture.frame_key 不等时失败。
-- [ ] 参数化测试截短／多余字节、重复通道、空通道包、非有限或负 time_s、非法分辨率；在所属模块已有相同校验时复用错误边界，避免复制 Camera 的全部实现。
-- [ ] 写 NaN、−inf、0、负深度和掩码 2／255 的负控；补 depth／ID／VALID 背景互相矛盾的逐像素反例，明确指出出错像素。
-- [ ] 实现上述校验；合法通道子集保持可用，包括仅 RGB、仅深度和仅 ID。空请求／空结果应由 pipeline 与 M6 共同明确拒绝，不能默认为成功曝光。
-- [ ] 运行聚焦单测并保留结果；不得通过把异常像素改成 0 或 +inf 来让负控通过。
+- [x] 写合法 Camera／FrameKey 的显式测试夹具，使用非方形 3×2 图抓宽高互换；测试 camera.frame_key 与 Capture.frame_key 不等时失败。
+- [x] 参数化测试截短／多余字节、重复通道、空通道包、非有限或负 time_s、非法分辨率；在所属模块已有相同校验时复用错误边界，避免复制 Camera 的全部实现。
+- [x] 写 NaN、−inf、0、负深度和掩码 2／255 的负控；补 depth／ID／VALID 背景互相矛盾的逐像素反例，明确指出出错像素。
+- [x] 实现上述校验；合法通道子集保持可用，包括仅 RGB、仅深度和仅 ID。空请求／空结果应由 pipeline 与 M6 共同明确拒绝，不能默认为成功曝光。
+- [x] 运行聚焦单测并保留结果；不得通过把异常像素改成 0 或 +inf 来让负控通过。
 
 建议节点：test_capture_rejects_frame_mismatch、test_capture_rejects_wrong_plane_length、test_capture_rejects_duplicate_channels、test_sensor_planes_reject_inconsistent_background、test_capture_accepts_requested_channel_subsets。
 
 ### 3. 与后端交接真实输出
 
-- [ ] 给后端作者提供上述固定小图字节与完整 Capture 夹具，先用测试双验证 Capture 在下一次 capture／close 后仍可读且不变。
-- [ ] 在 08 联调中验证请求与返回的完整相机／帧／时间／通道一致；错世界、错 epoch、错 revision、错 phase 或未知实例 ID 均拒绝发布，不返回部分 Capture。
+- [x] 给后端作者提供上述固定小图字节与完整 Capture 夹具，先用测试双验证 Capture 在下一次 capture／close 后仍可读且不变。
+- [x] 在 08 联调中验证请求与返回的完整相机／帧／时间／通道一致；错世界、错 epoch、错 revision、错 phase 或未知实例 ID 均拒绝发布，不返回部分 Capture。
 - [ ] 在 R0／R3 标定台验证 sRGB 灰阶只转换一次。以无光照歧义的确定性显示变换夹具检查线性 0、0.5、1 对应 sRGB8 的 0、188、255；若后端采用其他 tone map，先记录该函数并给对应独立期望，不能把本例强加于未知 tone map。
 - [ ] 验证离轴平面深度为 −z 而不是点到相机的距离，背景统一 +inf／0／0；有效像素 ID 与清单精确一致，传感通道不进入颜色后处理。
 - [ ] 后端输出的下载、同步、文件编码费用分别记录；M6 单测本身不宣称吞吐或真实图像质量。

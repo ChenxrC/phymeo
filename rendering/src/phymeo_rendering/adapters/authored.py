@@ -23,8 +23,7 @@ def _check_repeated_frame(previous: SceneFrame, current: SceneFrame, context: st
         new_rotation = new_pose.orientation_xyzw
         if new_rotation != old_rotation and new_rotation != tuple(-x for x in old_rotation):
             raise ValueError(
-                f"{context}: repeated FrameKey has conflicting node "
-                f"{node_id!r}.orientation_xyzw"
+                f"{context}: repeated FrameKey has conflicting node {node_id!r}.orientation_xyzw"
             )
 
 

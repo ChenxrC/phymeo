@@ -52,5 +52,25 @@ foreach(program native resident resident_sky resident_rayquery)
   endforeach()
 endforeach()
 
+# Explicit denser panel integration. Primary-visibility vertex programs are shared.
+foreach(program resident resident_rayquery)
+  foreach(grid 4 8)
+    set(source "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident.frag")
+    set(shader_options --target-env vulkan1.1 -DPR_STUDIO_AREA_GRID=${grid})
+    set(shader_dependencies "${source}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident_environment.glsl"
+      "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident_studio.glsl")
+    if(program STREQUAL "resident_rayquery")
+      set(shader_options --target-env vulkan1.2 --glsl-version 460 -DPR_RESIDENT_RAY_QUERY=1 -DPR_STUDIO_AREA_GRID=${grid})
+      list(APPEND shader_dependencies "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident_rayquery.glsl")
+    endif()
+    set(output "${CMAKE_BINARY_DIR}/${program}_area${grid}.frag.spv")
+    add_custom_command(OUTPUT "${output}"
+      COMMAND "${GLSLANG_VALIDATOR}" -V ${shader_options} "${source}" -o "${output}"
+      DEPENDS ${shader_dependencies} VERBATIM)
+    list(APPEND shader_outputs "${output}")
+  endforeach()
+endforeach()
+
 add_custom_target(native_shaders ALL DEPENDS ${shader_outputs})
 add_dependencies(phymeo_native native_shaders)

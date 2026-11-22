@@ -108,7 +108,7 @@ class NativeDevice:
         shaders = []
         self.shader_sha256 = {}
         for stage in ("vert", "frag"):
-            path = self.shader_directory / f"{self._shader_prefix}.{stage}.spv"
+            path = self.shader_directory / self._shader_filename(stage)
             try:
                 data = path.read_bytes()
             except OSError as error:
@@ -148,6 +148,9 @@ class NativeDevice:
                     "native initialization and cleanup failed", [primary, cleanup]
                 )
             raise
+
+    def _shader_filename(self, stage):
+        return f'{self._shader_prefix}.{stage}.spv'
 
     def _create(self, *args):
         return self._lib.pr_create(*args)

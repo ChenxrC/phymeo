@@ -19,11 +19,11 @@ class RayQueryResidentDevice(ResidentDevice):
     """Same resident assets and captures, separately selected hardware visibility."""
     _shader_prefix='resident_rayquery'
 
-    def __init__(self,*args):
+    def __init__(self,*args,**kwargs):
         self._ray_query_info={}
         self._ray_query_info_function=None
         self._ray_query_create=None
-        super().__init__(*args)
+        super().__init__(*args,**kwargs)
 
     def _bind(self):
         super()._bind()
@@ -71,6 +71,8 @@ class RayQueryResidentDevice(ResidentDevice):
             if self._ray_query_info_function(self._handle,ct.byref(value)):
                 raise RuntimeError(self._error())
             self._remember_ray_query_info(value)
+        if result.get('resident_profile') is not None:
+            result['resident_profile']['gpu_scope'] = 'Vulkan timestamps: TLAS build/update plus raster and fragment shadows, then attachment copies; not fragment-only time'
         result['resident_ray_query_abi_version']=1
         result['resident_ray_query_info']=dict(self._ray_query_info)
         return result

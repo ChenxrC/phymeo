@@ -126,7 +126,10 @@ class ResidentReadbackInfo(ct.Structure):
 class ResidentDevice(NativeDevice):
     _shader_prefix = 'resident'
 
-    def __init__(self, *args):
+    def __init__(self, *args, area_light_grid=2):
+        if type(area_light_grid) is not int or area_light_grid not in (2, 4, 8):
+            raise ValueError('area_light_grid must be 2, 4 or 8')
+        self._area_light_grid = area_light_grid
         self._resident_info = {}
         self._telemetry = None
         self._profile = None
@@ -154,6 +157,11 @@ class ResidentDevice(NativeDevice):
         self._uploaded = False
         self._instance_count = 0
         super().__init__(*args)
+
+    def _shader_filename(self, stage):
+        if stage == 'frag' and self._area_light_grid != 2:
+            return f'{self._shader_prefix}_area{self._area_light_grid}.frag.spv'
+        return super()._shader_filename(stage)
 
     def _bind(self):
         super()._bind()

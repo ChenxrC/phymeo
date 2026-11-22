@@ -3,7 +3,13 @@
 // GGX normal samples with MIS. All shadow rays end at the sampled emitter.
 // The uniform environment is distant, unoccluded fill; indirect bounces and
 // interreflection are provided by the separate path-tracing reference.
-const int studioAreaSamples = 4;
+#ifndef PR_STUDIO_AREA_GRID
+#define PR_STUDIO_AREA_GRID 2
+#endif
+#if PR_STUDIO_AREA_GRID != 2 && PR_STUDIO_AREA_GRID != 4 && PR_STUDIO_AREA_GRID != 8
+#error Unsupported deterministic area-light grid
+#endif
+const int studioAreaSamples = PR_STUDIO_AREA_GRID * PR_STUDIO_AREA_GRID;
 const int studioBrdfSamples = 8;
 
 float studioG1(float cosine, float alpha2) {
@@ -69,7 +75,13 @@ vec3 residentStudioRadiance(vec3 P, vec3 N, vec3 V, vec3 albedo,
         vec3 emitterNormal = normalize(crossUW);
         if (dot(emitterNormal,biasP-panel.position.xyz) <= 0.0) continue;
         for (int i=0; i<studioAreaSamples; ++i) {
+#if PR_STUDIO_AREA_GRID == 2
+            // Preserve the original expression and arithmetic for default output.
             vec2 ab = vec2(i&1,i>>1)-vec2(0.5);
+#else
+            vec2 ab = 2.0 * (vec2(i % PR_STUDIO_AREA_GRID, i / PR_STUDIO_AREA_GRID) + vec2(0.5))
+                      / float(PR_STUDIO_AREA_GRID) - vec2(1.0);
+#endif
             vec3 delta = panel.position.xyz + ab.x*U + ab.y*W - biasP;
             float d2 = dot(delta,delta), dist = sqrt(d2);
             vec3 L = delta/dist;

@@ -146,13 +146,14 @@ def _image_planes(raw, pixels, channels, attachment_mask):
 
 
 class _NativeDelegate:
-    def __init__(self, scene, meshes, device, exposure, *, resident=False, studio=None, textures=None, environment=None, shadow_mode='software'):
+    def __init__(self, scene, meshes, device, exposure, *, resident=False, studio=None, textures=None, environment=None, shadow_mode='software', area_light_grid=2):
         self.scene, self.meshes, self.device, self.exposure = scene, meshes, device, exposure
         self.resident = resident
         self.studio = deepcopy(studio)
         self.textures = deepcopy(textures)
         self.environment = deepcopy(environment)
         self.shadow_mode = shadow_mode
+        self.area_light_grid = area_light_grid
         self.limits = device.info()
         self.triangles = sum(len(meshes[item.mesh_id].triangles) for item in scene.instances)
         self.last_passes = ()
@@ -224,6 +225,9 @@ class _NativeDelegate:
                            else self.limits['max_vertices'] // 3),
             resident=self.resident,
             shadow_mode=self.shadow_mode,
+            area_light_grid=self.area_light_grid,
+            area_light_samples_per_panel=self.area_light_grid**2,
+            area_light_brdf_samples_per_panel=8,
             geometry_residency=('static indexed meshes; per-frame instance matrices' if self.resident
                                 else 'expanded world triangles per capture'),
             primary_visibility="single-sample Vulkan raster, two-sided opaque triangles",
@@ -280,6 +284,9 @@ class NativeBackend:
     shadow_mode='ray_query' additionally requires resident=True, the hardware
     extension and dedicated shaders. Default 'software' retains the old path;
     an unsupported hardware request never falls back.
+    area_light_grid=4 or 8 selects a separate resident fragment shader with
+    midpoint panel integration; default 2 retains the original shader artifact.
+    BRDF samples remain eight. Missing dense artifacts never fall back.
     """
 
     def __init__(
@@ -293,6 +300,7 @@ class NativeBackend:
         resident=False,
         studio=None,
         shadow_mode='software',
+        area_light_grid=2,
     ):
         if isinstance(device_index, bool) or not isinstance(device_index, int):
             raise TypeError("device_index must be an integer, not bool")
@@ -301,6 +309,12 @@ class NativeBackend:
         if type(resident) is not bool:
             raise TypeError('resident must be bool')
         self.resident = resident
+        if type(area_light_grid) is not int:
+            raise TypeError('area_light_grid must be an integer, not bool')
+        if area_light_grid not in (2, 4, 8):
+            raise ValueError('area_light_grid must be 2, 4 or 8')
+        if area_light_grid != 2 and not resident:
+            raise UnsupportedRequestError('dense area-light quadrature requires resident=True')
         if not isinstance(shadow_mode,str):
             raise TypeError('shadow_mode must be software or ray_query')
         if shadow_mode not in ('software','ray_query'):
@@ -308,6 +322,7 @@ class NativeBackend:
         if shadow_mode=='ray_query' and not resident:
             raise UnsupportedRequestError('hardware ray query shadows require resident=True')
         self.shadow_mode = shadow_mode
+        self.area_light_grid = area_light_grid
         if studio is not None:
             if not isinstance(studio, StudioLighting):
                 raise TypeError('studio must be StudioLighting or None')
@@ -350,7 +365,8 @@ class NativeBackend:
         device_type = (RayQueryResidentDevice if self.shadow_mode=='ray_query' else
                        (ResidentDevice if self.resident else NativeDevice))
         device = device_type(
-            self.library_path, self.shader_directory, self.device_index, self.validation
+            self.library_path, self.shader_directory, self.device_index, self.validation,
+            **({'area_light_grid': self.area_light_grid} if self.area_light_grid != 2 else {})
         )
         try:
             if not self.resident and triangles * 3 > device.info()["max_vertices"]:
@@ -379,7 +395,7 @@ class NativeBackend:
                     studio_info['environment']['active_lighting'] = False
                     studio_info['environment']['replaced_by'] = 'directional environment map'
             return NativeRenderSession(scene, _NativeDelegate(
-                scene, meshes, device, self.exposure, resident=self.resident, studio=studio_info, textures=texture_info, environment=environment_info, shadow_mode=self.shadow_mode))
+                scene, meshes, device, self.exposure, resident=self.resident, studio=studio_info, textures=texture_info, environment=environment_info, shadow_mode=self.shadow_mode, area_light_grid=self.area_light_grid))
         except BaseException as primary:
             try:
                 device.close()

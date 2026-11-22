@@ -15,7 +15,7 @@ from ..outputs import Capture, Channel, ImagePlane
 from ..pipeline import DefaultPassPlanner, RenderPath
 from ..scene import VisualScene, compose_pose
 from . import UnsupportedRequestError, ValidatedRenderSession
-from ._native_device import NativeDevice, Parameters, Vertex, default_library, require_library
+from ._native_device import NativeDevice, Parameters, Vertex, default_library, require_library, validate_parameters
 
 
 def _rotation(pose):
@@ -81,6 +81,7 @@ def _parameters(scene, request, triangle_count, exposure):
         result.light_colors[index][:] = (*light.illuminance, 0.0)
     result.counts[:] = (len(scene.lights), triangle_count, int(Channel.RGB in request.channels), 0)
     result.options[:] = (exposure, 1e-5, 0.0, 0.0)
+    validate_parameters(result)
     return result
 
 
@@ -98,10 +99,16 @@ class _NativeDelegate:
 
     def supports(self, request):
         camera = request.camera
-        return (request.path is RenderPath.RASTER
+        if not (request.path is RenderPath.RASTER
                 and camera.width <= self.limits["max_width"]
                 and camera.height <= self.limits["max_height"]
-                and camera.width * camera.height <= 4096 * 4096)
+                and camera.width * camera.height <= 4096 * 4096):
+            return False
+        try:
+            _parameters(self.scene, request, self.triangles, self.exposure)
+        except (ValueError, OverflowError):
+            return False
+        return True
 
     def capture(self, frame, request):
         camera = request.camera
@@ -144,6 +151,7 @@ class _NativeDelegate:
             attachment_formats=["RGBA8_UNORM", "R32_SFLOAT", "R32_UINT", "R8_UINT"],
             last_passes=list(self.last_passes), last_request=self.last_request,
             stage_execution="visibility raster + fused fragment shadows/lighting/display/sensors",
+            lifecycle_counts="DLL-wide owned contexts, frames, and explicit Vulkan handles; pools own descriptor sets",
             path_trace=False, textures=False, physics_steps=0,
         )
 
@@ -206,7 +214,10 @@ class NativeBackend:
             if triangles * 3 > device.info()["max_vertices"]:
                 raise UnsupportedRequestError("scene exceeds native device storage-buffer capacity")
             return NativeRenderSession(scene, _NativeDelegate(scene, meshes, device, self.exposure))
-        except BaseException:
-            device.close()
+        except BaseException as primary:
+            try:
+                device.close()
+            except BaseException as cleanup:
+                raise BaseExceptionGroup("native scene open and cleanup failed", [primary, cleanup])
             raise
 

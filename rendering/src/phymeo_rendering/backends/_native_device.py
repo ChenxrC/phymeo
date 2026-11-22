@@ -2,6 +2,7 @@
 
 import ctypes as ct
 import hashlib
+import math
 import sys
 from pathlib import Path
 
@@ -31,6 +32,24 @@ class _Info(ct.Structure):
     ] + [("device_uuid", ct.c_uint8 * 16), ("device_name", ct.c_char * 256),
          ("validation_errors", ct.c_uint64), ("validation_warnings", ct.c_uint64),
          ("captures", ct.c_uint64)]
+
+
+class _Counts(ct.Structure):
+    _fields_ = [(name, ct.c_uint64) for name in
+                ("live_contexts", "live_frames", "live_resources")]
+
+
+def validate_parameters(value):
+    """Check the actual FP32 ABI values, shared by admission and submission."""
+    blocks = (value.view, value.intrinsics, value.clipping, value.camera,
+              *(row for row in value.light_directions),
+              *(row for row in value.light_colors), value.options)
+    if not all(math.isfinite(x) for block in blocks for x in block):
+        raise ValueError("native uniform FP32 conversion is nonfinite")
+    if not (value.intrinsics[0] > 0 and value.intrinsics[1] > 0
+            and value.clipping[2] > 0 and value.clipping[3] > value.clipping[2]
+            and value.options[0] >= 0 and value.options[1] > 0):
+        raise ValueError("native projection/exposure is not usable after FP32 conversion")
 
 
 def default_library():
@@ -73,7 +92,7 @@ class NativeDevice:
             self._bind()
         except (OSError, AttributeError) as error:
             raise BackendUnavailableError(f"native Vulkan library could not load: {error}") from error
-        if self._lib.pr_abi_version() != 1:
+        if self._lib.pr_abi_version() != 2:
             raise BackendUnavailableError("unsupported native Vulkan C ABI version")
         self.validation = validation
         self._handle = self._lib.pr_create(
@@ -84,8 +103,11 @@ class NativeDevice:
             raise BackendUnavailableError(self._error())
         try:
             self.info()
-        except BaseException:
-            self.close()
+        except BaseException as primary:
+            try:
+                self.close()
+            except BaseException as cleanup:
+                raise BaseExceptionGroup("native initialization and cleanup failed", [primary, cleanup])
             raise
 
     def _bind(self):
@@ -103,29 +125,58 @@ class NativeDevice:
                                   ct.POINTER(Parameters), ct.c_uint32, ct.c_uint32,
                                   ct.POINTER(ct.c_uint8), ct.c_size_t]
         lib.pr_render.restype = ct.c_int
-        lib.pr_destroy.argtypes = [ct.c_void_p]
+        lib.pr_destroy.argtypes = [ct.c_void_p, ct.POINTER(_Info)]
         lib.pr_destroy.restype = ct.c_int
+        lib.pr_counts.argtypes = [ct.POINTER(_Counts)]
+        lib.pr_counts.restype = ct.c_int
 
     def _error(self):
         text = self._lib.pr_error()
         return text.decode("utf-8", errors="replace") if text else "native Vulkan operation failed"
+
+    def _remember(self, value):
+        self._last_info = {
+            name: int(getattr(value, name)) for name, _ in _Info._fields_
+            if name not in ("device_name", "device_uuid")
+        }
+        self._last_info["device_name"] = value.device_name.decode("utf-8", errors="replace")
+        self._last_info["device_uuid"] = bytes(value.device_uuid).hex()
 
     def info(self):
         if self._handle is not None:
             value = _Info()
             if self._lib.pr_info(self._handle, ct.byref(value)):
                 raise RuntimeError(self._error())
-            self._last_info = {
-                name: int(getattr(value, name)) for name, _ in _Info._fields_
-                if name not in ("device_name", "device_uuid")
-            }
-            self._last_info["device_name"] = value.device_name.decode("utf-8", errors="replace")
-            self._last_info["device_uuid"] = bytes(value.device_uuid).hex()
-        return dict(self._last_info, closed=self._handle is None, validation_enabled=self.validation)
+            self._remember(value)
+        counts = _Counts()
+        if self._lib.pr_counts(ct.byref(counts)):
+            raise RuntimeError(self._error())
+        return dict(self._last_info, closed=self._handle is None,
+                    validation_enabled=self.validation,
+                    **{name: int(getattr(counts, name)) for name, _ in _Counts._fields_})
 
     def render(self, vertices, parameters, width, height):
         if self._handle is None:
             raise RuntimeError("native device is closed")
+        limits = self._last_info or self.info()
+        if (type(width) is not int or type(height) is not int
+                or not 0 < width <= min(limits["max_width"], 2**32-1)
+                or not 0 < height <= min(limits["max_height"], 2**32-1)
+                or width * height > 4096 * 4096):
+            raise ValueError("native capture extent or pixel budget exceeded")
+        if len(vertices) % 3 or len(vertices) > limits["max_vertices"]:
+            raise ValueError("native triangle budget exceeded")
+        validate_parameters(parameters)
+        if parameters.clipping[0] != width or parameters.clipping[1] != height:
+            raise ValueError("native clipping extent mismatch")
+        for vertex in vertices:
+            if not all(math.isfinite(x) for block in
+                       (vertex.position, vertex.normal_metallic, vertex.color_roughness)
+                       for x in block):
+                raise ValueError("native vertex FP32 conversion is nonfinite")
+            length = math.hypot(*vertex.normal_metallic[:3])
+            if not 0.999 <= length <= 1.001:
+                raise ValueError("native vertex normal must be unit length in FP32")
         output = (ct.c_uint8 * (width * height * 13))()
         if self._lib.pr_render(self._handle, vertices, len(vertices), ct.byref(parameters),
                                width, height, output, ct.sizeof(output)):
@@ -135,7 +186,11 @@ class NativeDevice:
     def close(self):
         if self._handle is None:
             return
-        self.info()
+        # Destruction cannot depend on a successful diagnostic query. The C ABI
+        # returns diagnostics after real teardown, even when it reports errors.
         handle, self._handle = self._handle, None
-        if self._lib.pr_destroy(handle):
+        final = _Info()
+        result = self._lib.pr_destroy(handle, ct.byref(final))
+        self._remember(final)
+        if result:
             raise RuntimeError(self._error())

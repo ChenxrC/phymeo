@@ -1,8 +1,11 @@
 cmake_minimum_required(VERSION 3.20)
 project(phymeo_native LANGUAGES CXX)
-find_path(VULKAN_INCLUDE_DIR vulkan/vulkan.h)
-find_library(VULKAN_LIBRARY NAMES vulkan-1 vulkan)
-find_program(GLSLANG_VALIDATOR NAMES glslangValidator)
+find_path(VULKAN_INCLUDE_DIR vulkan/vulkan.h
+  HINTS "$ENV{VULKAN_SDK}/Include" "$ENV{VULKAN_SDK}/include")
+find_library(VULKAN_LIBRARY NAMES vulkan-1 vulkan
+  HINTS "$ENV{VULKAN_SDK}/Lib" "$ENV{VULKAN_SDK}/lib")
+find_program(GLSLANG_VALIDATOR NAMES glslang glslangValidator
+  HINTS "$ENV{VULKAN_SDK}/Bin" "$ENV{VULKAN_SDK}/bin")
 if(NOT VULKAN_INCLUDE_DIR OR NOT VULKAN_LIBRARY OR NOT GLSLANG_VALIDATOR)
   message(FATAL_ERROR "Set VULKAN_INCLUDE_DIR, VULKAN_LIBRARY and GLSLANG_VALIDATOR; no SDK is downloaded")
 endif()

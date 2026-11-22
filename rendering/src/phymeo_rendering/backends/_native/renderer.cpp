@@ -15,12 +15,31 @@
 
 namespace {
 thread_local std::string last_error;
+// DLL-wide owned objects, including partially initialized contexts/frames.
+// Queues/physical devices are borrowed; descriptor sets belong to their pool.
+std::atomic<uint64_t> live_contexts{0}, live_frames{0}, live_resources{0};
 void require(bool valid, const char* message) {
     if (!valid) throw std::runtime_error(message);
 }
 void check(VkResult result, const char* operation) {
     if (result != VK_SUCCESS)
         throw std::runtime_error(std::string(operation)+" VkResult="+std::to_string(result));
+}
+template<class Handle, class Create>
+void acquire(Handle& owner, const char* operation, Create create) {
+    Handle temporary = VK_NULL_HANDLE;
+    // Single-object failure output is undefined: never transfer it to an owner.
+    check(create(&temporary), operation);
+    owner = temporary;
+    ++live_resources;
+}
+template<class Handle, class Destroy>
+void release(Handle& owner, Destroy destroy) noexcept {
+    if (owner) {
+        destroy(owner);
+        owner = VK_NULL_HANDLE;
+        --live_resources;
+    }
 }
 constexpr uint32_t MAX_VERTICES = 4096u*3u;
 constexpr std::array<VkFormat, 5> FORMATS = {
@@ -48,28 +67,27 @@ struct Context {
     std::string validation_message;
     bool poisoned = false;
 
-    ~Context() { shutdown(); }
+    Context() { ++live_contexts; }
+    ~Context() { shutdown(); --live_contexts; }
     VkResult shutdown() noexcept {
         VkResult waited = VK_SUCCESS;
         if (device) {
             waited = vkDeviceWaitIdle(device);
-            if (pipeline) vkDestroyPipeline(device, pipeline, nullptr);
-            if (pipeline_layout) vkDestroyPipelineLayout(device, pipeline_layout, nullptr);
-            if (render_pass) vkDestroyRenderPass(device, render_pass, nullptr);
-            if (vertex_shader) vkDestroyShaderModule(device, vertex_shader, nullptr);
-            if (fragment_shader) vkDestroyShaderModule(device, fragment_shader, nullptr);
-            if (descriptor_layout) vkDestroyDescriptorSetLayout(device, descriptor_layout, nullptr);
-            if (command_pool) vkDestroyCommandPool(device, command_pool, nullptr);
-            vkDestroyDevice(device, nullptr);
-            device = VK_NULL_HANDLE;
+            release(pipeline, [&](auto h) { vkDestroyPipeline(device,h,nullptr); });
+            release(pipeline_layout, [&](auto h) { vkDestroyPipelineLayout(device,h,nullptr); });
+            release(render_pass, [&](auto h) { vkDestroyRenderPass(device,h,nullptr); });
+            release(vertex_shader, [&](auto h) { vkDestroyShaderModule(device,h,nullptr); });
+            release(fragment_shader, [&](auto h) { vkDestroyShaderModule(device,h,nullptr); });
+            release(descriptor_layout, [&](auto h) { vkDestroyDescriptorSetLayout(device,h,nullptr); });
+            release(command_pool, [&](auto h) { vkDestroyCommandPool(device,h,nullptr); });
+            release(device, [&](auto h) { vkDestroyDevice(h,nullptr); });
         }
         if (messenger && instance) {
             auto destroy = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(
                 vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT"));
-            if (destroy) destroy(instance, messenger, nullptr);
-            messenger = VK_NULL_HANDLE;
+            release(messenger, [&](auto h) { destroy(instance,h,nullptr); });
         }
-        if (instance) { vkDestroyInstance(instance, nullptr); instance = VK_NULL_HANDLE; }
+        release(instance, [&](auto h) { vkDestroyInstance(h,nullptr); });
         return waited;
     }
     void info(PrInfo* output) const {
@@ -99,13 +117,13 @@ struct Context {
     void make_buffer(Buffer& value, VkDeviceSize bytes, VkBufferUsageFlags usage) {
         VkBufferCreateInfo create{VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
         create.size = bytes; create.usage = usage; create.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        check(vkCreateBuffer(device, &create, nullptr, &value.handle), "vkCreateBuffer");
+        acquire(value.handle, "vkCreateBuffer", [&](auto* output) { return vkCreateBuffer(device, &create, nullptr, output); });
         VkMemoryRequirements needed{}; vkGetBufferMemoryRequirements(device, value.handle, &needed);
         VkMemoryAllocateInfo alloc{VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
         alloc.allocationSize = needed.size;
         alloc.memoryTypeIndex = memory_type(needed.memoryTypeBits,
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-        check(vkAllocateMemory(device, &alloc, nullptr, &value.memory), "vkAllocateMemory buffer");
+        acquire(value.memory, "vkAllocateMemory buffer", [&](auto* output) { return vkAllocateMemory(device, &alloc, nullptr, output); });
         check(vkBindBufferMemory(device, value.handle, value.memory, 0), "vkBindBufferMemory");
     }
     void upload(const Buffer& buffer, const void* source, size_t bytes) {
@@ -122,18 +140,18 @@ struct Context {
         create.usage = depth ? VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT :
             (VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
         create.sharingMode = VK_SHARING_MODE_EXCLUSIVE; create.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        check(vkCreateImage(device, &create, nullptr, &value.handle), "vkCreateImage");
+        acquire(value.handle, "vkCreateImage", [&](auto* output) { return vkCreateImage(device, &create, nullptr, output); });
         VkMemoryRequirements needed{}; vkGetImageMemoryRequirements(device, value.handle, &needed);
         VkMemoryAllocateInfo alloc{VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
         alloc.allocationSize = needed.size;
         alloc.memoryTypeIndex = memory_type(needed.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-        check(vkAllocateMemory(device, &alloc, nullptr, &value.memory), "vkAllocateMemory image");
+        acquire(value.memory, "vkAllocateMemory image", [&](auto* output) { return vkAllocateMemory(device, &alloc, nullptr, output); });
         check(vkBindImageMemory(device, value.handle, value.memory, 0), "vkBindImageMemory");
         VkImageViewCreateInfo view{VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO};
         view.image = value.handle; view.viewType = VK_IMAGE_VIEW_TYPE_2D; view.format = format;
         view.subresourceRange.aspectMask = depth ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
         view.subresourceRange.levelCount = 1; view.subresourceRange.layerCount = 1;
-        check(vkCreateImageView(device, &view, nullptr, &value.view), "vkCreateImageView");
+        acquire(value.view, "vkCreateImageView", [&](auto* output) { return vkCreateImageView(device, &view, nullptr, output); });
     }
     void init(uint32_t selected, bool validation, const uint32_t* vert, size_t vert_bytes,
               const uint32_t* frag, size_t frag_bytes) {
@@ -165,12 +183,12 @@ struct Context {
             debug_info.pfnUserCallback = debug; debug_info.pUserData = this;
             create.pNext = &debug_info;
         }
-        check(vkCreateInstance(&create, nullptr, &instance), "vkCreateInstance");
+        acquire(instance, "vkCreateInstance", [&](auto* output) { return vkCreateInstance(&create, nullptr, output); });
         if (validation) {
             auto make = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(
                 vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT"));
             require(make != nullptr, "debug-utils messenger unavailable");
-            check(make(instance, &debug_info, nullptr, &messenger), "vkCreateDebugUtilsMessengerEXT");
+            acquire(messenger, "vkCreateDebugUtilsMessengerEXT", [&](auto* output) { return make(instance, &debug_info, nullptr, output); });
         }
         uint32_t count{}; check(vkEnumeratePhysicalDevices(instance, &count, nullptr), "enumerate devices");
         require(selected < count, "requested Vulkan physical device index is unavailable");
@@ -187,7 +205,7 @@ struct Context {
         require(p.limits.maxColorAttachments >= 4 && p.limits.maxFragmentOutputAttachments >= 4,
                 "four color attachments are required");
         require(p.limits.maxUniformBufferRange >= sizeof(PrParams), "uniform capacity unavailable");
-        properties.abi_version = 1; properties.device_index = selected;
+        properties.abi_version = 2; properties.device_index = selected;
         properties.api_version = p.apiVersion; properties.driver_version = p.driverVersion;
         properties.vendor_id = p.vendorID; properties.device_id = p.deviceID;
         properties.device_type = p.deviceType;
@@ -218,21 +236,21 @@ struct Context {
         queue_info.queueFamilyIndex = queue_family; queue_info.queueCount = 1; queue_info.pQueuePriorities = &priority;
         VkDeviceCreateInfo device_info{VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO};
         device_info.queueCreateInfoCount = 1; device_info.pQueueCreateInfos = &queue_info;
-        check(vkCreateDevice(physical, &device_info, nullptr, &device), "vkCreateDevice");
+        acquire(device, "vkCreateDevice", [&](auto* output) { return vkCreateDevice(physical, &device_info, nullptr, output); });
         vkGetDeviceQueue(device, queue_family, 0, &queue);
         VkCommandPoolCreateInfo pool{VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO};
         pool.queueFamilyIndex = queue_family; pool.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
-        check(vkCreateCommandPool(device, &pool, nullptr, &command_pool), "vkCreateCommandPool");
+        acquire(command_pool, "vkCreateCommandPool", [&](auto* output) { return vkCreateCommandPool(device, &pool, nullptr, output); });
         std::array<VkDescriptorSetLayoutBinding, 2> bindings{};
         bindings[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
         bindings[1] = {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1,
                        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
         VkDescriptorSetLayoutCreateInfo layout{VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO};
         layout.bindingCount = 2; layout.pBindings = bindings.data();
-        check(vkCreateDescriptorSetLayout(device, &layout, nullptr, &descriptor_layout), "descriptor layout");
+        acquire(descriptor_layout, "descriptor layout", [&](auto* output) { return vkCreateDescriptorSetLayout(device, &layout, nullptr, output); });
         VkPipelineLayoutCreateInfo pipeline_info{VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO};
         pipeline_info.setLayoutCount = 1; pipeline_info.pSetLayouts = &descriptor_layout;
-        check(vkCreatePipelineLayout(device, &pipeline_info, nullptr, &pipeline_layout), "pipeline layout");
+        acquire(pipeline_layout, "pipeline layout", [&](auto* output) { return vkCreatePipelineLayout(device, &pipeline_info, nullptr, output); });
         std::array<VkAttachmentDescription, 5> attachments{};
         std::array<VkAttachmentReference, 4> colors{};
         for (uint32_t i=0; i<5; ++i) {
@@ -259,12 +277,12 @@ struct Context {
         VkRenderPassCreateInfo pass{VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO};
         pass.attachmentCount=5; pass.pAttachments=attachments.data(); pass.subpassCount=1; pass.pSubpasses=&subpass;
         pass.dependencyCount=2; pass.pDependencies=dependencies.data();
-        check(vkCreateRenderPass(device,&pass,nullptr,&render_pass),"vkCreateRenderPass");
+        acquire(render_pass, "vkCreateRenderPass", [&](auto* output) { return vkCreateRenderPass(device,&pass,nullptr,output); });
         VkShaderModuleCreateInfo shader{VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO};
         shader.codeSize=vert_bytes; shader.pCode=vert;
-        check(vkCreateShaderModule(device,&shader,nullptr,&vertex_shader),"vertex shader");
+        acquire(vertex_shader, "vertex shader", [&](auto* output) { return vkCreateShaderModule(device,&shader,nullptr,output); });
         shader.codeSize=frag_bytes; shader.pCode=frag;
-        check(vkCreateShaderModule(device,&shader,nullptr,&fragment_shader),"fragment shader");
+        acquire(fragment_shader, "fragment shader", [&](auto* output) { return vkCreateShaderModule(device,&shader,nullptr,output); });
         std::array<VkPipelineShaderStageCreateInfo,2> stages{};
         for (auto& stage:stages) { stage.sType=VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO; stage.pName="main"; }
         stages[0].stage=VK_SHADER_STAGE_VERTEX_BIT; stages[0].module=vertex_shader;
@@ -302,7 +320,12 @@ struct Context {
         pipeline_create.pDepthStencilState=&depth_state; pipeline_create.pColorBlendState=&blending;
         pipeline_create.pDynamicState=&dynamic; pipeline_create.layout=pipeline_layout;
         pipeline_create.renderPass=render_pass;
-        check(vkCreateGraphicsPipelines(device,VK_NULL_HANDLE,1,&pipeline_create,nullptr,&pipeline),"graphics pipeline");
+        // Pipeline creation can return valid handles even on partial failure.
+        VkPipeline temporary_pipeline = VK_NULL_HANDLE;
+        VkResult pipeline_result = vkCreateGraphicsPipelines(
+            device,VK_NULL_HANDLE,1,&pipeline_create,nullptr,&temporary_pipeline);
+        if (temporary_pipeline) { pipeline=temporary_pipeline; ++live_resources; }
+        check(pipeline_result,"graphics pipeline");
         if(errors.load()) throw std::runtime_error("Vulkan validation failed during initialization: "+validation_message);
     }
 };
@@ -316,22 +339,23 @@ struct FrameResources {
     VkCommandBuffer commands{};
     VkFence fence{};
     bool submitted=false;
-    explicit FrameResources(Context& context):c(context){}
+    explicit FrameResources(Context& context):c(context){ ++live_frames; }
     ~FrameResources() {
         if(submitted) vkQueueWaitIdle(c.queue);
-        if(fence) vkDestroyFence(c.device,fence,nullptr);
-        if(commands) vkFreeCommandBuffers(c.device,c.command_pool,1,&commands);
-        if(descriptors) vkDestroyDescriptorPool(c.device,descriptors,nullptr);
-        if(framebuffer) vkDestroyFramebuffer(c.device,framebuffer,nullptr);
+        release(fence, [&](auto owned) { vkDestroyFence(c.device,owned,nullptr); });
+        release(commands, [&](auto h) { vkFreeCommandBuffers(c.device,c.command_pool,1,&h); });
+        release(descriptors, [&](auto owned) { vkDestroyDescriptorPool(c.device,owned,nullptr); });
+        release(framebuffer, [&](auto owned) { vkDestroyFramebuffer(c.device,owned,nullptr); });
         for(auto& image:images) {
-            if(image.view) vkDestroyImageView(c.device,image.view,nullptr);
-            if(image.handle) vkDestroyImage(c.device,image.handle,nullptr);
-            if(image.memory) vkFreeMemory(c.device,image.memory,nullptr);
+            release(image.view, [&](auto owned) { vkDestroyImageView(c.device,owned,nullptr); });
+            release(image.handle, [&](auto owned) { vkDestroyImage(c.device,owned,nullptr); });
+            release(image.memory, [&](auto owned) { vkFreeMemory(c.device,owned,nullptr); });
         }
         for(auto* buffer:{&vertices,&uniform,&readback}) {
-            if(buffer->handle) vkDestroyBuffer(c.device,buffer->handle,nullptr);
-            if(buffer->memory) vkFreeMemory(c.device,buffer->memory,nullptr);
+            release(buffer->handle, [&](auto owned) { vkDestroyBuffer(c.device,owned,nullptr); });
+            release(buffer->memory, [&](auto owned) { vkFreeMemory(c.device,owned,nullptr); });
         }
+        --live_frames;
     }
 };
 
@@ -361,6 +385,9 @@ void render(Context& c,const PrVertex* vertices,uint32_t vertex_count,const PrPa
         for(uint32_t k=0;k<4;++k) require(std::isfinite(v.position[k]) &&
             std::isfinite(v.normal_metallic[k]) && std::isfinite(v.color_roughness[k]),
             "vertex FP32 conversion is nonfinite");
+        double normal_length=std::hypot(static_cast<double>(v.normal_metallic[0]),
+            static_cast<double>(v.normal_metallic[1]),static_cast<double>(v.normal_metallic[2]));
+        require(normal_length>=0.999 && normal_length<=1.001,"native vertex normal must be unit length");
         require(v.ids[0]>0 && v.ids[1]==i/3,"vertex identity mismatch");
     }
     uint64_t errors_before=c.errors.load();
@@ -374,12 +401,12 @@ void render(Context& c,const PrVertex* vertices,uint32_t vertex_count,const PrPa
     for(uint32_t i=0;i<5;++i) { c.make_image(f.images[i],width,height,FORMATS[i],i==4); views[i]=f.images[i].view; }
     VkFramebufferCreateInfo fb{VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO};
     fb.renderPass=c.render_pass; fb.attachmentCount=5; fb.pAttachments=views.data(); fb.width=width; fb.height=height; fb.layers=1;
-    check(vkCreateFramebuffer(c.device,&fb,nullptr,&f.framebuffer),"vkCreateFramebuffer");
+    acquire(f.framebuffer, "vkCreateFramebuffer", [&](auto* output) { return vkCreateFramebuffer(c.device,&fb,nullptr,output); });
     std::array<VkDescriptorPoolSize,2> sizes={VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,1},
                                            VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,1}};
     VkDescriptorPoolCreateInfo pool{VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO};
     pool.maxSets=1; pool.poolSizeCount=2; pool.pPoolSizes=sizes.data();
-    check(vkCreateDescriptorPool(c.device,&pool,nullptr,&f.descriptors),"descriptor pool");
+    acquire(f.descriptors, "descriptor pool", [&](auto* output) { return vkCreateDescriptorPool(c.device,&pool,nullptr,output); });
     VkDescriptorSetAllocateInfo alloc{VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO};
     alloc.descriptorPool=f.descriptors; alloc.descriptorSetCount=1; alloc.pSetLayouts=&c.descriptor_layout;
     VkDescriptorSet set{}; check(vkAllocateDescriptorSets(c.device,&alloc,&set),"descriptor allocation");
@@ -393,7 +420,7 @@ void render(Context& c,const PrVertex* vertices,uint32_t vertex_count,const PrPa
     vkUpdateDescriptorSets(c.device,2,writes.data(),0,nullptr);
     VkCommandBufferAllocateInfo commands{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
     commands.commandPool=c.command_pool; commands.level=VK_COMMAND_BUFFER_LEVEL_PRIMARY; commands.commandBufferCount=1;
-    check(vkAllocateCommandBuffers(c.device,&commands,&f.commands),"command allocation");
+    acquire(f.commands, "command allocation", [&](auto* output) { return vkAllocateCommandBuffers(c.device,&commands,output); });
     VkCommandBufferBeginInfo begin{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO}; begin.flags=VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
     check(vkBeginCommandBuffer(f.commands,&begin),"vkBeginCommandBuffer");
     std::array<VkClearValue,5> clear{};
@@ -428,11 +455,13 @@ void render(Context& c,const PrVertex* vertices,uint32_t vertex_count,const PrPa
                          0,nullptr,1,&host,0,nullptr);
     check(vkEndCommandBuffer(f.commands),"vkEndCommandBuffer");
     VkFenceCreateInfo fence{VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};
-    check(vkCreateFence(c.device,&fence,nullptr,&f.fence),"vkCreateFence");
+    acquire(f.fence, "vkCreateFence", [&](auto* output) { return vkCreateFence(c.device,&fence,nullptr,output); });
     VkSubmitInfo submit{VK_STRUCTURE_TYPE_SUBMIT_INFO}; submit.commandBufferCount=1; submit.pCommandBuffers=&f.commands;
     VkResult submitted=vkQueueSubmit(c.queue,1,&submit,f.fence);
+    // DEVICE_LOST does not establish that no work is pending. The frame owner
+    // waits for the queue before releasing submitted resources on either path.
+    f.submitted = submitted==VK_SUCCESS || submitted==VK_ERROR_DEVICE_LOST;
     if(submitted!=VK_SUCCESS) { c.poisoned=true; check(submitted,"vkQueueSubmit"); }
-    f.submitted=true;
     VkResult completed=vkWaitForFences(c.device,1,&f.fence,VK_TRUE,UINT64_MAX);
     if(completed!=VK_SUCCESS) { c.poisoned=true; check(completed,"vkWaitForFences"); }
     f.submitted=false;
@@ -446,7 +475,7 @@ void render(Context& c,const PrVertex* vertices,uint32_t vertex_count,const PrPa
 }
 } // namespace
 
-uint32_t pr_abi_version() { return 1; }
+uint32_t pr_abi_version() { return 2; }
 const char* pr_error() { return last_error.c_str(); }
 void* pr_create(uint32_t selected,uint32_t validation,const uint32_t* vert,size_t vert_bytes,
                 const uint32_t* frag,size_t frag_bytes) {
@@ -470,10 +499,16 @@ int pr_render(void* handle,const PrVertex* vertices,uint32_t count,const PrParam
     } catch(const std::exception& error) { last_error=error.what(); return -1; }
       catch(...) { last_error="unknown native capture error"; return -1; }
 }
-int pr_destroy(void* handle) {
-    if(!handle) return 0;
+int pr_counts(PrCounts* output) {
+    if(!output) { last_error="null native counts output"; return -1; }
+    *output={live_contexts.load(),live_frames.load(),live_resources.load()};
+    return 0;
+}
+int pr_destroy(void* handle,PrInfo* final_info) {
+    if(!handle) { if(final_info) *final_info={}; return 0; }
     auto* context=static_cast<Context*>(handle);
     VkResult waited=context->shutdown();
+    if(final_info) context->info(final_info);
     uint64_t errors=context->errors.load();
     delete context;
     if(waited!=VK_SUCCESS) { last_error="vkDeviceWaitIdle during close: "+std::to_string(waited); return -1; }

@@ -132,7 +132,7 @@ class G5PackagingTests(unittest.TestCase):
         required = [p.relative_to(base).as_posix() for folder in ("_native", "_shaders")
                     for p in (base / folder).rglob("*") if p.is_file()]
         # A shared include must remain included even on a revision before it exists.
-        required += ["_native/future.inc", "_shaders/future.glsl"]
+        required += ["_native/future.inc", "_shaders/future.glsl", "_shaders/sky.vert", "_shaders/sky.frag"]
         for name in required:
             with self.subTest(source=name):
                 self.assertTrue(any(fnmatch.fnmatchcase(name, p) for p in patterns))

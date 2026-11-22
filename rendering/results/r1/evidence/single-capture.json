@@ -1,0 +1,189 @@
+{
+  "exposures": [
+    {
+      "name": "single-1-fixed",
+      "camera": {
+        "id": "fixed",
+        "frame_key": {
+          "scene_key": "panda-r1-full-v1",
+          "world_id": "archive:d74e42dd2d3f7735e197b0a845e602217b243a8513c73b7ab09c02995ccb666b",
+          "epoch": 0,
+          "revision": 479,
+          "tick": 480,
+          "phase": "accepted_endpoint"
+        },
+        "world_pose": {
+          "position_m": [
+            1.27,
+            -0.86,
+            0.79
+          ],
+          "orientation_xyzw": [
+            0.5497959255129582,
+            0.27821905511092326,
+            0.3556187161976525,
+            0.7027474129105477
+          ]
+        },
+        "width": 960,
+        "height": 720,
+        "fx_px": 1150,
+        "fy_px": 1150,
+        "cx_px": 480,
+        "cy_px": 360,
+        "near_m": 0.005,
+        "far_m": 5.0
+      },
+      "source_record": 479,
+      "time_s": 0.3,
+      "negative_controls": {
+        "world_id": "exposure frame_key world_id does not match source frame",
+        "revision": "exposure frame_key revision does not match source frame"
+      },
+      "channel_sha256": {
+        "srgb8_rgb": "b7414feca2e21540b1a34a0dfcd66c1845f1ece8b554784a71114806c86141f4"
+      }
+    },
+    {
+      "name": "single-2-fixed",
+      "camera": {
+        "id": "fixed",
+        "frame_key": {
+          "scene_key": "panda-r1-full-v1",
+          "world_id": "archive:d74e42dd2d3f7735e197b0a845e602217b243a8513c73b7ab09c02995ccb666b",
+          "epoch": 0,
+          "revision": 2159,
+          "tick": 2160,
+          "phase": "accepted_endpoint"
+        },
+        "world_pose": {
+          "position_m": [
+            1.27,
+            -0.86,
+            0.79
+          ],
+          "orientation_xyzw": [
+            0.5497959255129582,
+            0.27821905511092326,
+            0.3556187161976525,
+            0.7027474129105477
+          ]
+        },
+        "width": 960,
+        "height": 720,
+        "fx_px": 1150,
+        "fy_px": 1150,
+        "cx_px": 480,
+        "cy_px": 360,
+        "near_m": 0.005,
+        "far_m": 5.0
+      },
+      "source_record": 2159,
+      "time_s": 1.35,
+      "negative_controls": {
+        "world_id": "exposure frame_key world_id does not match source frame",
+        "revision": "exposure frame_key revision does not match source frame"
+      },
+      "channel_sha256": {
+        "srgb8_rgb": "7a34c170a9cfc4faeecb1739097fb4ae4559e486c97a83b3ac46b14ef418758a"
+      }
+    }
+  ],
+  "device": {
+    "geometry": {
+      "mesh_slots": 61,
+      "instances": 63,
+      "uploaded_vertices": 403311,
+      "uploaded_triangles": 134960,
+      "limits": {
+        "mesh_slots": 256,
+        "instances": 256,
+        "uploaded_vertices": 600000,
+        "uploaded_triangles": 200000
+      },
+      "scope": "per-instance uploaded geometry; shared per-mesh decoding guards unchanged"
+    },
+    "studio": null,
+    "backend": "sapien-reference",
+    "library_version": "3.0.3",
+    "sapien_scene_id": 1,
+    "numpy_version": "1.26.4",
+    "requested_path": "path_trace",
+    "effective_path": "path_trace",
+    "requested_device": "cuda:0",
+    "device_name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+    "device_pci": "0000:01:00.0",
+    "device_description": "cuda:0",
+    "driver_version": null,
+    "vulkan_api_version": null,
+    "physics_systems": [],
+    "physics_steps": 0,
+    "shader_pack": "rt",
+    "shader_directory": "C:\\Users\\38347\\.codex\\worktrees\\phymeo-rendering\\phymeo\\artifacts\\rendering\\g3-table\\ref-env\\Lib\\site-packages\\sapien\\vulkan_shader\\rt",
+    "shader_sha256": "4358e2244c99e37d9c8dcd3ee91a9e9d30b1af52b804aa9d7f9cc4b4f50f3d6b",
+    "linear_rgb_target": "HdrColor",
+    "display": "exposure=1; clamp linear [0,1]; standard sRGB OETF; half-up UNORM8",
+    "ambient_linear_rgb": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "shadow_map_size": 2048,
+    "readback": "blocking SAPIEN get_picture CPU download, then owned bytes",
+    "samples_per_pixel": 512,
+    "max_bounces": 4,
+    "denoiser": "none",
+    "seed": null,
+    "seed_support": "not-user-configurable",
+    "seed_note": "rt shader uses fixed magic plus pixel/spp/frameCount; no cross-device bitwise claim",
+    "sampling_pattern": {
+      "mode": "official-fixed-sequence-fresh-camera",
+      "magic_hex": "0x9e3779b9",
+      "primary_pixel_sequence": "Halton bases 2 and 3; frameCount*spp+i",
+      "path_rng": "TEA(pixel index + width*height*spp*frameCount, magic)",
+      "frame_count_policy": "first render of a newly constructed camera each exposure",
+      "arbitrary_seed_supported": false,
+      "scope": "same installed shader/device/config; repeated public bytes audited in device test",
+      "cross_device_bitwise_guarantee": false
+    },
+    "accumulation": "fresh camera per exposure; no temporal history",
+    "supported_channels": [
+      "srgb8_rgb"
+    ],
+    "pt_clip_limit": "all vertices inside near+0.002/far and range<9999m, with FP32 clearance",
+    "pt_precision_policy": "8*FP32-epsilon*transform-scale clearance; reject >=1% scene span; pragmatic admission, not a global error proof",
+    "resolution_limit": 4096,
+    "shader_probe": "selected shader executed and CPU target read back",
+    "global_config_note": "camera default mutations serialized/restored inside this adapter only",
+    "lifecycle": {
+      "studio_temporary_files_exist": false,
+      "closed": true,
+      "completed_captures": 2,
+      "close_error": null,
+      "attached_entities": 0,
+      "attached_cameras": 0,
+      "attached_render_bodies": 0,
+      "attached_lights": 0,
+      "attached_entities_before_clear": 64,
+      "attached_entities_after_clear": 0,
+      "attached_cameras_after_clear": 0,
+      "attached_render_bodies_after_clear": 0,
+      "attached_lights_after_clear": 0,
+      "scope": "this scene attachments only; no driver/cache/process-memory release claim"
+    }
+  },
+  "lights": [
+    {
+      "direction": [
+        0.6,
+        0.0,
+        -0.8
+      ],
+      "illuminance": [
+        1,
+        1,
+        1
+      ]
+    }
+  ]
+}

@@ -1,0 +1,186 @@
+{
+  "exposures": [
+    {
+      "name": "native-detail-1-wrist",
+      "camera": {
+        "id": "wrist",
+        "frame_key": {
+          "scene_key": "panda-r1-native-fingers-and-payload",
+          "world_id": "archive:d74e42dd2d3f7735e197b0a845e602217b243a8513c73b7ab09c02995ccb666b",
+          "epoch": 0,
+          "revision": 479,
+          "tick": 480,
+          "phase": "accepted_endpoint"
+        },
+        "world_pose": {
+          "position_m": [
+            0.40179261094631824,
+            4.984247825847096e-18,
+            0.5662778054329431
+          ],
+          "orientation_xyzw": [
+            0.18441048928178685,
+            -0.18441048928178683,
+            0.6826366320692524,
+            -0.6826366320692525
+          ]
+        },
+        "width": 640,
+        "height": 480,
+        "fx_px": 440,
+        "fy_px": 440,
+        "cx_px": 320,
+        "cy_px": 240,
+        "near_m": 0.005,
+        "far_m": 5.0
+      },
+      "source_record": 479,
+      "time_s": 0.3,
+      "negative_controls": {
+        "world_id": "exposure frame_key world_id does not match source frame",
+        "revision": "exposure frame_key revision does not match source frame"
+      },
+      "channel_sha256": {
+        "srgb8_rgb": "3ba29314ab3f681fd8dcd5d7e2b24250f5b2765f5a149612f32c35efb7cf96c0",
+        "forward_depth_m_f32": "3c93f14fec12eda98022972d311fc69868e882d7be09c4665da83b1d6b34688c",
+        "instance_id_u32": "bc19336022d137a4d5ad89baa2df43a137c3721887e78f787173f8ec5a4bdd6c",
+        "valid_u8": "f939bc669ff237d8f42be7c94db6fdfeae1122bed22ceaeb991383d3b0e502b1"
+      }
+    },
+    {
+      "name": "native-detail-2-wrist",
+      "camera": {
+        "id": "wrist",
+        "frame_key": {
+          "scene_key": "panda-r1-native-fingers-and-payload",
+          "world_id": "archive:d74e42dd2d3f7735e197b0a845e602217b243a8513c73b7ab09c02995ccb666b",
+          "epoch": 0,
+          "revision": 2159,
+          "tick": 2160,
+          "phase": "accepted_endpoint"
+        },
+        "world_pose": {
+          "position_m": [
+            0.47882008742073195,
+            1.654165185688442e-05,
+            0.6328098131888809
+          ],
+          "orientation_xyzw": [
+            0.1842155443630048,
+            -0.1845388052331339,
+            0.682610129092512,
+            -0.6826810926329171
+          ]
+        },
+        "width": 640,
+        "height": 480,
+        "fx_px": 440,
+        "fy_px": 440,
+        "cx_px": 320,
+        "cy_px": 240,
+        "near_m": 0.005,
+        "far_m": 5.0
+      },
+      "source_record": 2159,
+      "time_s": 1.35,
+      "negative_controls": {
+        "world_id": "exposure frame_key world_id does not match source frame",
+        "revision": "exposure frame_key revision does not match source frame"
+      },
+      "channel_sha256": {
+        "srgb8_rgb": "86abd4a5d6183d997ca5351de7258e5879b335d8378ec2b3f5b31c5b4ff02e66",
+        "forward_depth_m_f32": "a84169bf6b34b24bd62ef5925137600aff6c264b81ea790ed5cbcfcfaea4384e",
+        "instance_id_u32": "16d1ca207df8901e6914435ca74f130abefdb11b90b5a355f4c06342cfa9b167",
+        "valid_u8": "9f0635bcb6cfbf17a0e9cedff2e2ee3324dcc33e4bc3de52e2a2acf417f00db2"
+      }
+    }
+  ],
+  "device": {
+    "backend": "phymeo-native-vulkan",
+    "path": "raster",
+    "device": {
+      "abi_version": 2,
+      "device_index": 1,
+      "api_version": 4206881,
+      "driver_version": 2374090752,
+      "vendor_id": 4318,
+      "device_id": 10464,
+      "device_type": 2,
+      "max_width": 32768,
+      "max_height": 32768,
+      "max_vertices": 12288,
+      "validation_errors": 0,
+      "validation_warnings": 0,
+      "captures": 2,
+      "device_name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "device_uuid": "3b78d98198a3be57a8cb4d72fdfbfa96",
+      "closed": true,
+      "validation_enabled": true,
+      "live_contexts": 0,
+      "live_frames": 0,
+      "live_resources": 0
+    },
+    "library_path": "C:\\Users\\38347\\.codex\\worktrees\\phymeo-rendering\\phymeo\\artifacts\\rendering\\g3-table\\build-abi2\\phymeo_native.dll",
+    "library_sha256": "63b044f296b5e414a524af5e5c502afb4a9c8f91228808e3851303ada625bc8d",
+    "shader_sha256": {
+      "vert": "9595a6722905db50583a3d3518c4853463568124bade005db7ffa04f2d1f41b4",
+      "frag": "cd6f295432a75c7383357cb9d4805f72f8ea5a47f7c117adb2975ae919c90066"
+    },
+    "scene_key": "panda-r1-native-fingers-and-payload",
+    "decoded_geometry_sha256": "03b4942278ec63ac2ea5c80cf7cf6d93414b6dbdc6dc719e83ddf1ddb75002c8",
+    "triangles": 1272,
+    "light_count": 1,
+    "max_lights": 4,
+    "max_triangles": 4096,
+    "primary_visibility": "single-sample Vulkan raster, two-sided opaque triangles",
+    "lighting": "direct GGX/Smith/Schlick metallic-roughness; no ambient or IBL",
+    "shadows": "GPU fragment hard-shadow triangle rays",
+    "shadow_bias_m": 1e-05,
+    "minimum_perceptual_roughness": 0.045,
+    "exposure": 1.0,
+    "display": "clamp linear exposure to [0,1], then IEC sRGB once",
+    "readback": "explicit synchronous HOST coherent staging after fence",
+    "attachment_formats": [
+      "RGBA8_UNORM",
+      "R32_SFLOAT",
+      "R32_UINT",
+      "R8_UINT"
+    ],
+    "last_passes": [
+      "visibility",
+      "shadows",
+      "lighting",
+      "display_transform",
+      "sensor_export"
+    ],
+    "last_request": {
+      "width": 640,
+      "height": 480,
+      "channels": [
+        "srgb8_rgb",
+        "forward_depth_m_f32",
+        "instance_id_u32",
+        "valid_u8"
+      ]
+    },
+    "stage_execution": "visibility raster + fused fragment shadows/lighting/display/sensors",
+    "lifecycle_counts": "DLL-wide owned contexts, frames, and explicit Vulkan handles; pools own descriptor sets",
+    "path_trace": false,
+    "textures": false,
+    "physics_steps": 0
+  },
+  "lights": [
+    {
+      "direction": [
+        -0.5030661697803822,
+        0.6707548930405097,
+        -0.5449883505954141
+      ],
+      "illuminance": [
+        1.35,
+        1.35,
+        1.35
+      ]
+    }
+  ]
+}

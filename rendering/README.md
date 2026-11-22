@@ -6,6 +6,8 @@
 
 这个目录是一个独立 Python 项目，发行名为 `phymeo-rendering`，导入名为 `phymeo_rendering`。基础包仅依赖 Python 3.11+ 标准库，可读取程序场景、规划一次曝光，并校验后端返回的帧包。G3 已接通三条真实离屏路径。可并排查看[标定桌原图、测量结果与复现步骤](results/g3/README.md)。
 
+[Panda 抓取回放与同机位布光对照](results/r1/README.md)展示 R1 的两个归档姿态、固定及腕部相机，以及自研 Vulkan 的局部采集。
+
 ## 七个板块
 
 G1 输入合同已接通。仓库根目录下设置 `$env:PYTHONPATH=(Resolve-Path rendering/src).Path`，运行 `python -m unittest discover -s rendering/tests -v` 可验证资产声明、场景引用、位姿组合和相机曝光。两帧使用同一张[自制标定桌](tests/fixtures/g1/README.md)，在无图形设备环境下即可检查腕部转动前后的解析投影。同一份夹具也用于 R0 真机采集。

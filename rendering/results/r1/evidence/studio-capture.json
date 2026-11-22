@@ -1,0 +1,369 @@
+{
+  "exposures": [
+    {
+      "name": "studio-1-fixed",
+      "camera": {
+        "id": "fixed",
+        "frame_key": {
+          "scene_key": "panda-r1-full-v1",
+          "world_id": "archive:d74e42dd2d3f7735e197b0a845e602217b243a8513c73b7ab09c02995ccb666b",
+          "epoch": 0,
+          "revision": 479,
+          "tick": 480,
+          "phase": "accepted_endpoint"
+        },
+        "world_pose": {
+          "position_m": [
+            1.27,
+            -0.86,
+            0.79
+          ],
+          "orientation_xyzw": [
+            0.5497959255129582,
+            0.27821905511092326,
+            0.3556187161976525,
+            0.7027474129105477
+          ]
+        },
+        "width": 960,
+        "height": 720,
+        "fx_px": 1150,
+        "fy_px": 1150,
+        "cx_px": 480,
+        "cy_px": 360,
+        "near_m": 0.005,
+        "far_m": 5.0
+      },
+      "source_record": 479,
+      "time_s": 0.3,
+      "negative_controls": {
+        "world_id": "exposure frame_key world_id does not match source frame",
+        "revision": "exposure frame_key revision does not match source frame"
+      },
+      "channel_sha256": {
+        "srgb8_rgb": "867244f498085a67228412a88649e9357f6595a83db095cf49b7009002fc555e"
+      }
+    },
+    {
+      "name": "studio-1-detail",
+      "camera": {
+        "id": "detail",
+        "frame_key": {
+          "scene_key": "panda-r1-full-v1",
+          "world_id": "archive:d74e42dd2d3f7735e197b0a845e602217b243a8513c73b7ab09c02995ccb666b",
+          "epoch": 0,
+          "revision": 479,
+          "tick": 480,
+          "phase": "accepted_endpoint"
+        },
+        "world_pose": {
+          "position_m": [
+            1.27,
+            -0.86,
+            0.79
+          ],
+          "orientation_xyzw": [
+            -0.5684311383572134,
+            -0.24766524372556875,
+            -0.31338263976134,
+            -0.7192630180208707
+          ]
+        },
+        "width": 800,
+        "height": 600,
+        "fx_px": 3900,
+        "fy_px": 3900,
+        "cx_px": 400,
+        "cy_px": 300,
+        "near_m": 0.005,
+        "far_m": 5.0
+      },
+      "source_record": 479,
+      "time_s": 0.3,
+      "negative_controls": {
+        "world_id": "exposure frame_key world_id does not match source frame",
+        "revision": "exposure frame_key revision does not match source frame"
+      },
+      "channel_sha256": {
+        "srgb8_rgb": "7a6e852d352ca13484410afa819e9357e95154983cb6089be9ed62af74a3e772"
+      }
+    },
+    {
+      "name": "studio-2-fixed",
+      "camera": {
+        "id": "fixed",
+        "frame_key": {
+          "scene_key": "panda-r1-full-v1",
+          "world_id": "archive:d74e42dd2d3f7735e197b0a845e602217b243a8513c73b7ab09c02995ccb666b",
+          "epoch": 0,
+          "revision": 2159,
+          "tick": 2160,
+          "phase": "accepted_endpoint"
+        },
+        "world_pose": {
+          "position_m": [
+            1.27,
+            -0.86,
+            0.79
+          ],
+          "orientation_xyzw": [
+            0.5497959255129582,
+            0.27821905511092326,
+            0.3556187161976525,
+            0.7027474129105477
+          ]
+        },
+        "width": 960,
+        "height": 720,
+        "fx_px": 1150,
+        "fy_px": 1150,
+        "cx_px": 480,
+        "cy_px": 360,
+        "near_m": 0.005,
+        "far_m": 5.0
+      },
+      "source_record": 2159,
+      "time_s": 1.35,
+      "negative_controls": {
+        "world_id": "exposure frame_key world_id does not match source frame",
+        "revision": "exposure frame_key revision does not match source frame"
+      },
+      "channel_sha256": {
+        "srgb8_rgb": "dacfba2c3f2c72036192dd911149014db20d1aabc12dab3b21e1c54bea9a46e1"
+      }
+    },
+    {
+      "name": "studio-2-detail",
+      "camera": {
+        "id": "detail",
+        "frame_key": {
+          "scene_key": "panda-r1-full-v1",
+          "world_id": "archive:d74e42dd2d3f7735e197b0a845e602217b243a8513c73b7ab09c02995ccb666b",
+          "epoch": 0,
+          "revision": 2159,
+          "tick": 2160,
+          "phase": "accepted_endpoint"
+        },
+        "world_pose": {
+          "position_m": [
+            1.27,
+            -0.86,
+            0.79
+          ],
+          "orientation_xyzw": [
+            -0.5684311383572134,
+            -0.24766524372556875,
+            -0.31338263976134,
+            -0.7192630180208707
+          ]
+        },
+        "width": 800,
+        "height": 600,
+        "fx_px": 3900,
+        "fy_px": 3900,
+        "cx_px": 400,
+        "cy_px": 300,
+        "near_m": 0.005,
+        "far_m": 5.0
+      },
+      "source_record": 2159,
+      "time_s": 1.35,
+      "negative_controls": {
+        "world_id": "exposure frame_key world_id does not match source frame",
+        "revision": "exposure frame_key revision does not match source frame"
+      },
+      "channel_sha256": {
+        "srgb8_rgb": "266a301852659620b8560ffcaef94d273c88cc49975e014788766b0e91020d97"
+      }
+    }
+  ],
+  "device": {
+    "geometry": {
+      "mesh_slots": 61,
+      "instances": 63,
+      "uploaded_vertices": 403311,
+      "uploaded_triangles": 134960,
+      "limits": {
+        "mesh_slots": 256,
+        "instances": 256,
+        "uploaded_vertices": 600000,
+        "uploaded_triangles": 200000
+      },
+      "scope": "per-instance uploaded geometry; shared per-mesh decoding guards unchanged"
+    },
+    "studio": {
+      "preset": "neutral-area-studio-v1",
+      "center_m": [
+        0.18,
+        0,
+        0.42
+      ],
+      "scale_m": 0.85,
+      "panel_size_scale": 1.0,
+      "panel_strength": 1.0,
+      "environment_radiance": 0.125,
+      "panels": [
+        {
+          "name": "key",
+          "position_m": [
+            -0.8400000000000001,
+            -1.19,
+            1.95
+          ],
+          "emission_direction_world": [
+            0.4656903154237997,
+            0.543305367994433,
+            -0.6985354731356995
+          ],
+          "half_size_m": [
+            0.68,
+            0.4675
+          ],
+          "radiance_linear_rgb": [
+            6.0,
+            6.0,
+            6.0
+          ],
+          "public_component": "RenderParallelogramLightComponent",
+          "visible_geometry": false
+        },
+        {
+          "name": "fill",
+          "position_m": [
+            1.3699999999999999,
+            0.595,
+            1.44
+          ],
+          "emission_direction_world": [
+            -0.7098281771887514,
+            -0.3549140885943757,
+            -0.6084241518760726
+          ],
+          "half_size_m": [
+            0.5525,
+            0.68
+          ],
+          "radiance_linear_rgb": [
+            2.5,
+            2.5,
+            2.5
+          ],
+          "public_component": "RenderParallelogramLightComponent",
+          "visible_geometry": false
+        }
+      ],
+      "units": "positions and emitter half sizes in metres; colors linear relative radiance",
+      "declared_scene_lights": "retained unchanged",
+      "soft_shadow_method": "official RT samples emitter surface and traces finite shadow rays",
+      "reflection_method": "official diffuse/GGX direct area-light estimator plus traced HDR environment",
+      "support": "path_trace RGB only; no raster studio approximation",
+      "environment": {
+        "encoding": "linear-radiance-rgbe",
+        "face_count": 6,
+        "face_resolution": [
+          64,
+          64
+        ],
+        "radiance_rgb": [
+          0.125,
+          0.125,
+          0.125
+        ],
+        "source_sha256": "ab52b11ca03fa82cac04dac82f6ae4a976f7131e0433c106cafe166b950317eb",
+        "source_file_bytes": 16431,
+        "source_kind": "procedural uniform neutral HDR",
+        "encoded_radiance_rgb": [
+          0.125,
+          0.125,
+          0.125
+        ],
+        "source_quantization": "RGBE shared 8-bit mantissa; default 0.125 is exact",
+        "orientation": "uniform all directions; world-Z-up panel recipe",
+        "loader": "public RenderCubemap(px,nx,py,ny,pz,nz)",
+        "source_lifetime": "owned temporary file until scene close"
+      },
+      "attached_area_lights": 2
+    },
+    "backend": "sapien-reference",
+    "library_version": "3.0.3",
+    "sapien_scene_id": 2,
+    "numpy_version": "1.26.4",
+    "requested_path": "path_trace",
+    "effective_path": "path_trace",
+    "requested_device": "cuda:0",
+    "device_name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+    "device_pci": "0000:01:00.0",
+    "device_description": "cuda:0",
+    "driver_version": null,
+    "vulkan_api_version": null,
+    "physics_systems": [],
+    "physics_steps": 0,
+    "shader_pack": "rt",
+    "shader_directory": "C:\\Users\\38347\\.codex\\worktrees\\phymeo-rendering\\phymeo\\artifacts\\rendering\\g3-table\\ref-env\\Lib\\site-packages\\sapien\\vulkan_shader\\rt",
+    "shader_sha256": "4358e2244c99e37d9c8dcd3ee91a9e9d30b1af52b804aa9d7f9cc4b4f50f3d6b",
+    "linear_rgb_target": "HdrColor",
+    "display": "exposure=1; clamp linear [0,1]; standard sRGB OETF; half-up UNORM8",
+    "ambient_linear_rgb": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "shadow_map_size": 2048,
+    "readback": "blocking SAPIEN get_picture CPU download, then owned bytes",
+    "samples_per_pixel": 512,
+    "max_bounces": 4,
+    "denoiser": "none",
+    "seed": null,
+    "seed_support": "not-user-configurable",
+    "seed_note": "rt shader uses fixed magic plus pixel/spp/frameCount; no cross-device bitwise claim",
+    "sampling_pattern": {
+      "mode": "official-fixed-sequence-fresh-camera",
+      "magic_hex": "0x9e3779b9",
+      "primary_pixel_sequence": "Halton bases 2 and 3; frameCount*spp+i",
+      "path_rng": "TEA(pixel index + width*height*spp*frameCount, magic)",
+      "frame_count_policy": "first render of a newly constructed camera each exposure",
+      "arbitrary_seed_supported": false,
+      "scope": "same installed shader/device/config; repeated public bytes audited in device test",
+      "cross_device_bitwise_guarantee": false
+    },
+    "accumulation": "fresh camera per exposure; no temporal history",
+    "supported_channels": [
+      "srgb8_rgb"
+    ],
+    "pt_clip_limit": "all vertices inside near+0.002/far and range<9999m, with FP32 clearance",
+    "pt_precision_policy": "8*FP32-epsilon*transform-scale clearance; reject >=1% scene span; pragmatic admission, not a global error proof",
+    "resolution_limit": 4096,
+    "shader_probe": "selected shader executed and CPU target read back",
+    "global_config_note": "camera default mutations serialized/restored inside this adapter only",
+    "lifecycle": {
+      "studio_temporary_files_exist": false,
+      "closed": true,
+      "completed_captures": 4,
+      "close_error": null,
+      "attached_entities": 0,
+      "attached_cameras": 0,
+      "attached_render_bodies": 0,
+      "attached_lights": 0,
+      "attached_entities_before_clear": 66,
+      "attached_entities_after_clear": 0,
+      "attached_cameras_after_clear": 0,
+      "attached_render_bodies_after_clear": 0,
+      "attached_lights_after_clear": 0,
+      "scope": "this scene attachments only; no driver/cache/process-memory release claim"
+    }
+  },
+  "lights": [
+    {
+      "direction": [
+        0.6,
+        0.0,
+        -0.8
+      ],
+      "illuminance": [
+        1,
+        1,
+        1
+      ]
+    }
+  ]
+}

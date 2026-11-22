@@ -1,0 +1,2080 @@
+{
+  "key": "panda-r1-full-v1",
+  "meshes": [
+    {
+      "id": "panda_visual_link0_00",
+      "uri": "link0-00.gltf"
+    },
+    {
+      "id": "panda_visual_link0_01",
+      "uri": "link0-01.gltf"
+    },
+    {
+      "id": "panda_visual_link0_02",
+      "uri": "link0-02.gltf"
+    },
+    {
+      "id": "panda_visual_link0_03",
+      "uri": "link0-03.gltf"
+    },
+    {
+      "id": "panda_visual_link0_04",
+      "uri": "link0-04.gltf"
+    },
+    {
+      "id": "panda_visual_link0_05",
+      "uri": "link0-05.gltf"
+    },
+    {
+      "id": "panda_visual_link0_06",
+      "uri": "link0-06.gltf"
+    },
+    {
+      "id": "panda_visual_link0_07",
+      "uri": "link0-07.gltf"
+    },
+    {
+      "id": "panda_visual_link0_08",
+      "uri": "link0-08.gltf"
+    },
+    {
+      "id": "panda_visual_link0_09",
+      "uri": "link0-09.gltf"
+    },
+    {
+      "id": "panda_visual_link0_10",
+      "uri": "link0-10.gltf"
+    },
+    {
+      "id": "panda_visual_link0_11",
+      "uri": "link0-11.gltf"
+    },
+    {
+      "id": "panda_visual_link1_00",
+      "uri": "link1-00.gltf"
+    },
+    {
+      "id": "panda_visual_link2_00",
+      "uri": "link2-00.gltf"
+    },
+    {
+      "id": "panda_visual_link3_00",
+      "uri": "link3-00.gltf"
+    },
+    {
+      "id": "panda_visual_link3_01",
+      "uri": "link3-01.gltf"
+    },
+    {
+      "id": "panda_visual_link3_02",
+      "uri": "link3-02.gltf"
+    },
+    {
+      "id": "panda_visual_link3_03",
+      "uri": "link3-03.gltf"
+    },
+    {
+      "id": "panda_visual_link4_00",
+      "uri": "link4-00.gltf"
+    },
+    {
+      "id": "panda_visual_link4_01",
+      "uri": "link4-01.gltf"
+    },
+    {
+      "id": "panda_visual_link4_02",
+      "uri": "link4-02.gltf"
+    },
+    {
+      "id": "panda_visual_link4_03",
+      "uri": "link4-03.gltf"
+    },
+    {
+      "id": "panda_visual_link5_00",
+      "uri": "link5-00.gltf"
+    },
+    {
+      "id": "panda_visual_link5_01",
+      "uri": "link5-01.gltf"
+    },
+    {
+      "id": "panda_visual_link5_02",
+      "uri": "link5-02.gltf"
+    },
+    {
+      "id": "panda_visual_link6_00",
+      "uri": "link6-00.gltf"
+    },
+    {
+      "id": "panda_visual_link6_01",
+      "uri": "link6-01.gltf"
+    },
+    {
+      "id": "panda_visual_link6_02",
+      "uri": "link6-02.gltf"
+    },
+    {
+      "id": "panda_visual_link6_03",
+      "uri": "link6-03.gltf"
+    },
+    {
+      "id": "panda_visual_link6_04",
+      "uri": "link6-04.gltf"
+    },
+    {
+      "id": "panda_visual_link6_05",
+      "uri": "link6-05.gltf"
+    },
+    {
+      "id": "panda_visual_link6_06",
+      "uri": "link6-06.gltf"
+    },
+    {
+      "id": "panda_visual_link6_07",
+      "uri": "link6-07.gltf"
+    },
+    {
+      "id": "panda_visual_link6_08",
+      "uri": "link6-08.gltf"
+    },
+    {
+      "id": "panda_visual_link6_09",
+      "uri": "link6-09.gltf"
+    },
+    {
+      "id": "panda_visual_link6_10",
+      "uri": "link6-10.gltf"
+    },
+    {
+      "id": "panda_visual_link6_11",
+      "uri": "link6-11.gltf"
+    },
+    {
+      "id": "panda_visual_link6_12",
+      "uri": "link6-12.gltf"
+    },
+    {
+      "id": "panda_visual_link6_13",
+      "uri": "link6-13.gltf"
+    },
+    {
+      "id": "panda_visual_link6_14",
+      "uri": "link6-14.gltf"
+    },
+    {
+      "id": "panda_visual_link6_15",
+      "uri": "link6-15.gltf"
+    },
+    {
+      "id": "panda_visual_link6_16",
+      "uri": "link6-16.gltf"
+    },
+    {
+      "id": "panda_visual_link7_00",
+      "uri": "link7-00.gltf"
+    },
+    {
+      "id": "panda_visual_link7_01",
+      "uri": "link7-01.gltf"
+    },
+    {
+      "id": "panda_visual_link7_02",
+      "uri": "link7-02.gltf"
+    },
+    {
+      "id": "panda_visual_link7_03",
+      "uri": "link7-03.gltf"
+    },
+    {
+      "id": "panda_visual_link7_04",
+      "uri": "link7-04.gltf"
+    },
+    {
+      "id": "panda_visual_link7_05",
+      "uri": "link7-05.gltf"
+    },
+    {
+      "id": "panda_visual_link7_06",
+      "uri": "link7-06.gltf"
+    },
+    {
+      "id": "panda_visual_link7_07",
+      "uri": "link7-07.gltf"
+    },
+    {
+      "id": "panda_visual_hand_00",
+      "uri": "hand-00.gltf"
+    },
+    {
+      "id": "panda_visual_hand_01",
+      "uri": "hand-01.gltf"
+    },
+    {
+      "id": "panda_visual_hand_02",
+      "uri": "hand-02.gltf"
+    },
+    {
+      "id": "panda_visual_hand_03",
+      "uri": "hand-03.gltf"
+    },
+    {
+      "id": "panda_visual_hand_04",
+      "uri": "hand-04.gltf"
+    },
+    {
+      "id": "panda_visual_finger_00",
+      "uri": "finger-00.gltf"
+    },
+    {
+      "id": "panda_visual_finger_01",
+      "uri": "finger-01.gltf"
+    },
+    {
+      "id": "payload",
+      "uri": "payload.gltf"
+    },
+    {
+      "id": "tabletop",
+      "uri": "tabletop.gltf"
+    },
+    {
+      "id": "floor",
+      "uri": "floor.gltf"
+    },
+    {
+      "id": "stand",
+      "uri": "stand.gltf"
+    }
+  ],
+  "materials": [
+    {
+      "id": "panda_visual_link0_00_material",
+      "base_color": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 1.0
+    },
+    {
+      "id": "panda_visual_link0_01_material",
+      "base_color": [
+        0.9019608,
+        0.9215686,
+        0.9294118
+      ],
+      "metallic": 0.0,
+      "roughness": 1.0
+    },
+    {
+      "id": "panda_visual_link0_02_material",
+      "base_color": [
+        0.2509804,
+        0.2509804,
+        0.2509804
+      ],
+      "metallic": 0.0,
+      "roughness": 1.0
+    },
+    {
+      "id": "panda_visual_link0_03_material",
+      "base_color": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 1.0
+    },
+    {
+      "id": "panda_visual_link0_04_material",
+      "base_color": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 1.0
+    },
+    {
+      "id": "panda_visual_link0_05_material",
+      "base_color": [
+        0.9019608,
+        0.9215686,
+        0.9294118
+      ],
+      "metallic": 0.0,
+      "roughness": 1.0
+    },
+    {
+      "id": "panda_visual_link0_06_material",
+      "base_color": [
+        0.2509804,
+        0.2509804,
+        0.2509804
+      ],
+      "metallic": 0.0,
+      "roughness": 1.0
+    },
+    {
+      "id": "panda_visual_link0_07_material",
+      "base_color": [
+        0.9019608,
+        0.9215686,
+        0.9294118
+      ],
+      "metallic": 0.0,
+      "roughness": 1.0
+    },
+    {
+      "id": "panda_visual_link0_08_material",
+      "base_color": [
+        0.2509804,
+        0.2509804,
+        0.2509804
+      ],
+      "metallic": 0.0,
+      "roughness": 1.0
+    },
+    {
+      "id": "panda_visual_link0_09_material",
+      "base_color": [
+        0.9019608,
+        0.9215686,
+        0.9294118
+      ],
+      "metallic": 0.0,
+      "roughness": 1.0
+    },
+    {
+      "id": "panda_visual_link0_10_material",
+      "base_color": [
+        0.2509804,
+        0.2509804,
+        0.2509804
+      ],
+      "metallic": 0.0,
+      "roughness": 1.0
+    },
+    {
+      "id": "panda_visual_link0_11_material",
+      "base_color": [
+        0.9019608,
+        0.9215686,
+        0.9294118
+      ],
+      "metallic": 0.0,
+      "roughness": 1.0
+    },
+    {
+      "id": "panda_visual_link1_00_material",
+      "base_color": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 1.0
+    },
+    {
+      "id": "panda_visual_link2_00_material",
+      "base_color": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 1.0
+    },
+    {
+      "id": "panda_visual_link3_00_material",
+      "base_color": [
+        0.2509804,
+        0.2509804,
+        0.2509804
+      ],
+      "metallic": 0.0,
+      "roughness": 1.0
+    },
+    {
+      "id": "panda_visual_link3_01_material",
+      "base_color": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 1.0
+    },
+    {
+      "id": "panda_visual_link3_02_material",
+      "base_color": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 1.0
+    },
+    {
+      "id": "panda_visual_link3_03_material",
+      "base_color": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 1.0
+    },
+    {
+      "id": "panda_visual_link4_00_material",
+      "base_color": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 1.0
+    },
+    {
+      "id": "panda_visual_link4_01_material",
+      "base_color": [
+        0.2509804,
+        0.2509804,
+        0.2509804
+      ],
+      "metallic": 0.0,
+      "roughness": 1.0
+    },
+    {
+      "id": "panda_visual_link4_02_material",
+      "base_color": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 1.0
+    },
+    {
+      "id": "panda_visual_link4_03_material",
+      "base_color": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 1.0
+    },
+    {
+      "id": "panda_visual_link5_00_material",
+      "base_color": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 1.0
+    },
+    {
+      "id": "panda_visual_link5_01_material",
+      "base_color": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 1.0
+    },
+    {
+      "id": "panda_visual_link5_02_material",
+      "base_color": [
+        0.25,
+        0.25,
+        0.25
+      ],
+      "metallic": 0.0,
+      "roughness": 1.0
+    },
+    {
+      "id": "panda_visual_link6_00_material",
+      "base_color": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 1.0
+    },
+    {
+      "id": "panda_visual_link6_01_material",
+      "base_color": [
+        0.2509804,
+        0.2509804,
+        0.2509804
+      ],
+      "metallic": 0.0,
+      "roughness": 1.0
+    },
+    {
+      "id": "panda_visual_link6_02_material",
+      "base_color": [
+        0.2509804,
+        0.2509804,
+        0.2509804
+      ],
+      "metallic": 0.0,
+      "roughness": 1.0
+    },
+    {
+      "id": "panda_visual_link6_03_material",
+      "base_color": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "metallic": 0.0,
+      "roughness": 1.0
+    },
+    {
+      "id": "panda_visual_link6_04_material",
+      "base_color": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "metallic": 0.0,
+      "roughness": 1.0
+    },
+    {
+      "id": "panda_visual_link6_05_material",
+      "base_color": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 1.0
+    },
+    {
+      "id": "panda_visual_link6_06_material",
+      "base_color": [
+        0.2509804,
+        0.2509804,
+        0.2509804
+      ],
+      "metallic": 0.0,
+      "roughness": 1.0
+    },
+    {
+      "id": "panda_visual_link6_07_material",
+      "base_color": [
+        0.2509804,
+        0.2509804,
+        0.2509804
+      ],
+      "metallic": 0.0,
+      "roughness": 1.0
+    },
+    {
+      "id": "panda_visual_link6_08_material",
+      "base_color": [
+        0.03921569,
+        0.5411765,
+        0.7803922
+      ],
+      "metallic": 0.0,
+      "roughness": 1.0
+    },
+    {
+      "id": "panda_visual_link6_09_material",
+      "base_color": [
+        0.03921569,
+        0.5411765,
+        0.7803922
+      ],
+      "metallic": 0.0,
+      "roughness": 1.0
+    },
+    {
+      "id": "panda_visual_link6_10_material",
+      "base_color": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 1.0
+    },
+    {
+      "id": "panda_visual_link6_11_material",
+      "base_color": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 1.0
+    },
+    {
+      "id": "panda_visual_link6_12_material",
+      "base_color": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 1.0
+    },
+    {
+      "id": "panda_visual_link6_13_material",
+      "base_color": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 1.0
+    },
+    {
+      "id": "panda_visual_link6_14_material",
+      "base_color": [
+        0.25,
+        0.25,
+        0.25
+      ],
+      "metallic": 0.0,
+      "roughness": 1.0
+    },
+    {
+      "id": "panda_visual_link6_15_material",
+      "base_color": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 1.0
+    },
+    {
+      "id": "panda_visual_link6_16_material",
+      "base_color": [
+        0.9019608,
+        0.9215686,
+        0.9294118
+      ],
+      "metallic": 0.0,
+      "roughness": 1.0
+    },
+    {
+      "id": "panda_visual_link7_00_material",
+      "base_color": [
+        0.8980392,
+        0.9176471,
+        0.9294118
+      ],
+      "metallic": 0.0,
+      "roughness": 1.0
+    },
+    {
+      "id": "panda_visual_link7_01_material",
+      "base_color": [
+        0.2509804,
+        0.2509804,
+        0.2509804
+      ],
+      "metallic": 0.0,
+      "roughness": 1.0
+    },
+    {
+      "id": "panda_visual_link7_02_material",
+      "base_color": [
+        0.2509804,
+        0.2509804,
+        0.2509804
+      ],
+      "metallic": 0.0,
+      "roughness": 1.0
+    },
+    {
+      "id": "panda_visual_link7_03_material",
+      "base_color": [
+        0.2509804,
+        0.2509804,
+        0.2509804
+      ],
+      "metallic": 0.0,
+      "roughness": 1.0
+    },
+    {
+      "id": "panda_visual_link7_04_material",
+      "base_color": [
+        0.2509804,
+        0.2509804,
+        0.2509804
+      ],
+      "metallic": 0.0,
+      "roughness": 1.0
+    },
+    {
+      "id": "panda_visual_link7_05_material",
+      "base_color": [
+        0.2509804,
+        0.2509804,
+        0.2509804
+      ],
+      "metallic": 0.0,
+      "roughness": 1.0
+    },
+    {
+      "id": "panda_visual_link7_06_material",
+      "base_color": [
+        0.2509804,
+        0.2509804,
+        0.2509804
+      ],
+      "metallic": 0.0,
+      "roughness": 1.0
+    },
+    {
+      "id": "panda_visual_link7_07_material",
+      "base_color": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 1.0
+    },
+    {
+      "id": "panda_visual_hand_00_material",
+      "base_color": [
+        0.9019608,
+        0.9215686,
+        0.9294118
+      ],
+      "metallic": 0.0,
+      "roughness": 1.0
+    },
+    {
+      "id": "panda_visual_hand_01_material",
+      "base_color": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 1.0
+    },
+    {
+      "id": "panda_visual_hand_02_material",
+      "base_color": [
+        0.2509804,
+        0.2509804,
+        0.2509804
+      ],
+      "metallic": 0.0,
+      "roughness": 1.0
+    },
+    {
+      "id": "panda_visual_hand_03_material",
+      "base_color": [
+        0.2509804,
+        0.2509804,
+        0.2509804
+      ],
+      "metallic": 0.0,
+      "roughness": 1.0
+    },
+    {
+      "id": "panda_visual_hand_04_material",
+      "base_color": [
+        0.9019608,
+        0.9215686,
+        0.9294118
+      ],
+      "metallic": 0.0,
+      "roughness": 1.0
+    },
+    {
+      "id": "panda_visual_finger_00_material",
+      "base_color": [
+        0.2509804,
+        0.2509804,
+        0.2509804
+      ],
+      "metallic": 0.0,
+      "roughness": 1.0
+    },
+    {
+      "id": "panda_visual_finger_01_material",
+      "base_color": [
+        0.9019608,
+        0.9215686,
+        0.9294118
+      ],
+      "metallic": 0.0,
+      "roughness": 1.0
+    },
+    {
+      "id": "oxide-red",
+      "base_color": [
+        0.54,
+        0.032,
+        0.017
+      ],
+      "metallic": 0.0,
+      "roughness": 0.41
+    },
+    {
+      "id": "bench-grey",
+      "base_color": [
+        0.29,
+        0.32,
+        0.32
+      ],
+      "metallic": 0.18,
+      "roughness": 0.47
+    },
+    {
+      "id": "studio-ground",
+      "base_color": [
+        0.31,
+        0.32,
+        0.32
+      ],
+      "metallic": 0.0,
+      "roughness": 0.73
+    }
+  ],
+  "instances": [
+    {
+      "id": 100,
+      "mesh_id": "panda_visual_link0_00",
+      "material_id": "panda_visual_link0_00_material",
+      "node_id": "panda_link0",
+      "local_pose": {
+        "position_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "orientation_xyzw": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 101,
+      "mesh_id": "panda_visual_link0_01",
+      "material_id": "panda_visual_link0_01_material",
+      "node_id": "panda_link0",
+      "local_pose": {
+        "position_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "orientation_xyzw": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 102,
+      "mesh_id": "panda_visual_link0_02",
+      "material_id": "panda_visual_link0_02_material",
+      "node_id": "panda_link0",
+      "local_pose": {
+        "position_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "orientation_xyzw": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 103,
+      "mesh_id": "panda_visual_link0_03",
+      "material_id": "panda_visual_link0_03_material",
+      "node_id": "panda_link0",
+      "local_pose": {
+        "position_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "orientation_xyzw": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 104,
+      "mesh_id": "panda_visual_link0_04",
+      "material_id": "panda_visual_link0_04_material",
+      "node_id": "panda_link0",
+      "local_pose": {
+        "position_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "orientation_xyzw": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 105,
+      "mesh_id": "panda_visual_link0_05",
+      "material_id": "panda_visual_link0_05_material",
+      "node_id": "panda_link0",
+      "local_pose": {
+        "position_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "orientation_xyzw": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 106,
+      "mesh_id": "panda_visual_link0_06",
+      "material_id": "panda_visual_link0_06_material",
+      "node_id": "panda_link0",
+      "local_pose": {
+        "position_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "orientation_xyzw": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 107,
+      "mesh_id": "panda_visual_link0_07",
+      "material_id": "panda_visual_link0_07_material",
+      "node_id": "panda_link0",
+      "local_pose": {
+        "position_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "orientation_xyzw": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 108,
+      "mesh_id": "panda_visual_link0_08",
+      "material_id": "panda_visual_link0_08_material",
+      "node_id": "panda_link0",
+      "local_pose": {
+        "position_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "orientation_xyzw": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 109,
+      "mesh_id": "panda_visual_link0_09",
+      "material_id": "panda_visual_link0_09_material",
+      "node_id": "panda_link0",
+      "local_pose": {
+        "position_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "orientation_xyzw": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 110,
+      "mesh_id": "panda_visual_link0_10",
+      "material_id": "panda_visual_link0_10_material",
+      "node_id": "panda_link0",
+      "local_pose": {
+        "position_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "orientation_xyzw": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 111,
+      "mesh_id": "panda_visual_link0_11",
+      "material_id": "panda_visual_link0_11_material",
+      "node_id": "panda_link0",
+      "local_pose": {
+        "position_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "orientation_xyzw": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 112,
+      "mesh_id": "panda_visual_link1_00",
+      "material_id": "panda_visual_link1_00_material",
+      "node_id": "panda_link1",
+      "local_pose": {
+        "position_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "orientation_xyzw": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 113,
+      "mesh_id": "panda_visual_link2_00",
+      "material_id": "panda_visual_link2_00_material",
+      "node_id": "panda_link2",
+      "local_pose": {
+        "position_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "orientation_xyzw": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 114,
+      "mesh_id": "panda_visual_link3_00",
+      "material_id": "panda_visual_link3_00_material",
+      "node_id": "panda_link3",
+      "local_pose": {
+        "position_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "orientation_xyzw": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 115,
+      "mesh_id": "panda_visual_link3_01",
+      "material_id": "panda_visual_link3_01_material",
+      "node_id": "panda_link3",
+      "local_pose": {
+        "position_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "orientation_xyzw": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 116,
+      "mesh_id": "panda_visual_link3_02",
+      "material_id": "panda_visual_link3_02_material",
+      "node_id": "panda_link3",
+      "local_pose": {
+        "position_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "orientation_xyzw": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 117,
+      "mesh_id": "panda_visual_link3_03",
+      "material_id": "panda_visual_link3_03_material",
+      "node_id": "panda_link3",
+      "local_pose": {
+        "position_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "orientation_xyzw": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 118,
+      "mesh_id": "panda_visual_link4_00",
+      "material_id": "panda_visual_link4_00_material",
+      "node_id": "panda_link4",
+      "local_pose": {
+        "position_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "orientation_xyzw": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 119,
+      "mesh_id": "panda_visual_link4_01",
+      "material_id": "panda_visual_link4_01_material",
+      "node_id": "panda_link4",
+      "local_pose": {
+        "position_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "orientation_xyzw": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 120,
+      "mesh_id": "panda_visual_link4_02",
+      "material_id": "panda_visual_link4_02_material",
+      "node_id": "panda_link4",
+      "local_pose": {
+        "position_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "orientation_xyzw": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 121,
+      "mesh_id": "panda_visual_link4_03",
+      "material_id": "panda_visual_link4_03_material",
+      "node_id": "panda_link4",
+      "local_pose": {
+        "position_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "orientation_xyzw": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 122,
+      "mesh_id": "panda_visual_link5_00",
+      "material_id": "panda_visual_link5_00_material",
+      "node_id": "panda_link5",
+      "local_pose": {
+        "position_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "orientation_xyzw": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 123,
+      "mesh_id": "panda_visual_link5_01",
+      "material_id": "panda_visual_link5_01_material",
+      "node_id": "panda_link5",
+      "local_pose": {
+        "position_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "orientation_xyzw": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 124,
+      "mesh_id": "panda_visual_link5_02",
+      "material_id": "panda_visual_link5_02_material",
+      "node_id": "panda_link5",
+      "local_pose": {
+        "position_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "orientation_xyzw": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 125,
+      "mesh_id": "panda_visual_link6_00",
+      "material_id": "panda_visual_link6_00_material",
+      "node_id": "panda_link6",
+      "local_pose": {
+        "position_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "orientation_xyzw": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 126,
+      "mesh_id": "panda_visual_link6_01",
+      "material_id": "panda_visual_link6_01_material",
+      "node_id": "panda_link6",
+      "local_pose": {
+        "position_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "orientation_xyzw": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 127,
+      "mesh_id": "panda_visual_link6_02",
+      "material_id": "panda_visual_link6_02_material",
+      "node_id": "panda_link6",
+      "local_pose": {
+        "position_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "orientation_xyzw": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 128,
+      "mesh_id": "panda_visual_link6_03",
+      "material_id": "panda_visual_link6_03_material",
+      "node_id": "panda_link6",
+      "local_pose": {
+        "position_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "orientation_xyzw": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 129,
+      "mesh_id": "panda_visual_link6_04",
+      "material_id": "panda_visual_link6_04_material",
+      "node_id": "panda_link6",
+      "local_pose": {
+        "position_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "orientation_xyzw": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 130,
+      "mesh_id": "panda_visual_link6_05",
+      "material_id": "panda_visual_link6_05_material",
+      "node_id": "panda_link6",
+      "local_pose": {
+        "position_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "orientation_xyzw": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 131,
+      "mesh_id": "panda_visual_link6_06",
+      "material_id": "panda_visual_link6_06_material",
+      "node_id": "panda_link6",
+      "local_pose": {
+        "position_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "orientation_xyzw": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 132,
+      "mesh_id": "panda_visual_link6_07",
+      "material_id": "panda_visual_link6_07_material",
+      "node_id": "panda_link6",
+      "local_pose": {
+        "position_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "orientation_xyzw": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 133,
+      "mesh_id": "panda_visual_link6_08",
+      "material_id": "panda_visual_link6_08_material",
+      "node_id": "panda_link6",
+      "local_pose": {
+        "position_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "orientation_xyzw": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 134,
+      "mesh_id": "panda_visual_link6_09",
+      "material_id": "panda_visual_link6_09_material",
+      "node_id": "panda_link6",
+      "local_pose": {
+        "position_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "orientation_xyzw": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 135,
+      "mesh_id": "panda_visual_link6_10",
+      "material_id": "panda_visual_link6_10_material",
+      "node_id": "panda_link6",
+      "local_pose": {
+        "position_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "orientation_xyzw": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 136,
+      "mesh_id": "panda_visual_link6_11",
+      "material_id": "panda_visual_link6_11_material",
+      "node_id": "panda_link6",
+      "local_pose": {
+        "position_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "orientation_xyzw": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 137,
+      "mesh_id": "panda_visual_link6_12",
+      "material_id": "panda_visual_link6_12_material",
+      "node_id": "panda_link6",
+      "local_pose": {
+        "position_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "orientation_xyzw": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 138,
+      "mesh_id": "panda_visual_link6_13",
+      "material_id": "panda_visual_link6_13_material",
+      "node_id": "panda_link6",
+      "local_pose": {
+        "position_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "orientation_xyzw": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 139,
+      "mesh_id": "panda_visual_link6_14",
+      "material_id": "panda_visual_link6_14_material",
+      "node_id": "panda_link6",
+      "local_pose": {
+        "position_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "orientation_xyzw": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 140,
+      "mesh_id": "panda_visual_link6_15",
+      "material_id": "panda_visual_link6_15_material",
+      "node_id": "panda_link6",
+      "local_pose": {
+        "position_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "orientation_xyzw": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 141,
+      "mesh_id": "panda_visual_link6_16",
+      "material_id": "panda_visual_link6_16_material",
+      "node_id": "panda_link6",
+      "local_pose": {
+        "position_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "orientation_xyzw": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 142,
+      "mesh_id": "panda_visual_link7_00",
+      "material_id": "panda_visual_link7_00_material",
+      "node_id": "panda_link7",
+      "local_pose": {
+        "position_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "orientation_xyzw": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 143,
+      "mesh_id": "panda_visual_link7_01",
+      "material_id": "panda_visual_link7_01_material",
+      "node_id": "panda_link7",
+      "local_pose": {
+        "position_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "orientation_xyzw": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 144,
+      "mesh_id": "panda_visual_link7_02",
+      "material_id": "panda_visual_link7_02_material",
+      "node_id": "panda_link7",
+      "local_pose": {
+        "position_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "orientation_xyzw": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 145,
+      "mesh_id": "panda_visual_link7_03",
+      "material_id": "panda_visual_link7_03_material",
+      "node_id": "panda_link7",
+      "local_pose": {
+        "position_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "orientation_xyzw": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 146,
+      "mesh_id": "panda_visual_link7_04",
+      "material_id": "panda_visual_link7_04_material",
+      "node_id": "panda_link7",
+      "local_pose": {
+        "position_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "orientation_xyzw": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 147,
+      "mesh_id": "panda_visual_link7_05",
+      "material_id": "panda_visual_link7_05_material",
+      "node_id": "panda_link7",
+      "local_pose": {
+        "position_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "orientation_xyzw": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 148,
+      "mesh_id": "panda_visual_link7_06",
+      "material_id": "panda_visual_link7_06_material",
+      "node_id": "panda_link7",
+      "local_pose": {
+        "position_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "orientation_xyzw": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 149,
+      "mesh_id": "panda_visual_link7_07",
+      "material_id": "panda_visual_link7_07_material",
+      "node_id": "panda_link7",
+      "local_pose": {
+        "position_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "orientation_xyzw": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 150,
+      "mesh_id": "panda_visual_hand_00",
+      "material_id": "panda_visual_hand_00_material",
+      "node_id": "panda_hand",
+      "local_pose": {
+        "position_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "orientation_xyzw": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 151,
+      "mesh_id": "panda_visual_hand_01",
+      "material_id": "panda_visual_hand_01_material",
+      "node_id": "panda_hand",
+      "local_pose": {
+        "position_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "orientation_xyzw": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 152,
+      "mesh_id": "panda_visual_hand_02",
+      "material_id": "panda_visual_hand_02_material",
+      "node_id": "panda_hand",
+      "local_pose": {
+        "position_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "orientation_xyzw": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 153,
+      "mesh_id": "panda_visual_hand_03",
+      "material_id": "panda_visual_hand_03_material",
+      "node_id": "panda_hand",
+      "local_pose": {
+        "position_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "orientation_xyzw": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 154,
+      "mesh_id": "panda_visual_hand_04",
+      "material_id": "panda_visual_hand_04_material",
+      "node_id": "panda_hand",
+      "local_pose": {
+        "position_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "orientation_xyzw": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 155,
+      "mesh_id": "panda_visual_finger_00",
+      "material_id": "panda_visual_finger_00_material",
+      "node_id": "panda_leftfinger",
+      "local_pose": {
+        "position_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "orientation_xyzw": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 156,
+      "mesh_id": "panda_visual_finger_01",
+      "material_id": "panda_visual_finger_01_material",
+      "node_id": "panda_leftfinger",
+      "local_pose": {
+        "position_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "orientation_xyzw": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 157,
+      "mesh_id": "panda_visual_finger_00",
+      "material_id": "panda_visual_finger_00_material",
+      "node_id": "panda_rightfinger",
+      "local_pose": {
+        "position_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "orientation_xyzw": [
+          0.0,
+          0.0,
+          1.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "id": 158,
+      "mesh_id": "panda_visual_finger_01",
+      "material_id": "panda_visual_finger_01_material",
+      "node_id": "panda_rightfinger",
+      "local_pose": {
+        "position_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "orientation_xyzw": [
+          0.0,
+          0.0,
+          1.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "id": 1,
+      "mesh_id": "payload",
+      "material_id": "oxide-red",
+      "node_id": "cube",
+      "local_pose": {
+        "position_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "orientation_xyzw": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 2,
+      "mesh_id": "tabletop",
+      "material_id": "bench-grey",
+      "node_id": "table",
+      "local_pose": {
+        "position_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "orientation_xyzw": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 3,
+      "mesh_id": "floor",
+      "material_id": "studio-ground",
+      "node_id": "panda_link0",
+      "local_pose": {
+        "position_m": [
+          0.13,
+          0,
+          -0.014
+        ],
+        "orientation_xyzw": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": 4,
+      "mesh_id": "stand",
+      "material_id": "bench-grey",
+      "node_id": "table",
+      "local_pose": {
+        "position_m": [
+          0,
+          0,
+          -0.198
+        ],
+        "orientation_xyzw": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    }
+  ],
+  "lights": [
+    {
+      "direction": [
+        0.6,
+        0.0,
+        -0.8
+      ],
+      "illuminance": [
+        1,
+        1,
+        1
+      ]
+    }
+  ],
+  "panda_manifest_sha256": "d6c5f952ec5e293403d37962a5a462a70fb1359307479c87e744dfb80b4846e4",
+  "prepared_counts": {
+    "both_fingers_triangles": 1248,
+    "instances": 59,
+    "non_surface_line_segments": 6,
+    "source_triangles_instanced": 134924,
+    "source_zero_area_triangles_instanced": 12,
+    "surface_triangles_instanced": 134912,
+    "unique_meshes": 57
+  },
+  "authored_geometry_sha256": {
+    "floor.gltf": "e771fc02d88142d6c8b7fb90f255bc5114818428cdb3f8b069bdcad880a54ff8",
+    "payload.gltf": "3f11b1691ccefe53d1434f4685c019077c4ba3b1cf32ecb3e95ec1bf39142ad4",
+    "stand.gltf": "6eb906866c5c418e3be21f250d31f9b2d2de6577bc9c4122875c500587909d00",
+    "tabletop.gltf": "051573eacb6fd4e21e7f5c6d27a62c1a1d6b182894c6dcd739b552b0c437b09e"
+  }
+}

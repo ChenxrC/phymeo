@@ -1,0 +1,283 @@
+{
+  "exposures": [
+    {
+      "name": "raster-1-fixed",
+      "camera": {
+        "id": "fixed",
+        "frame_key": {
+          "scene_key": "panda-r1-raster-fill-v1",
+          "world_id": "archive:d74e42dd2d3f7735e197b0a845e602217b243a8513c73b7ab09c02995ccb666b",
+          "epoch": 0,
+          "revision": 479,
+          "tick": 480,
+          "phase": "accepted_endpoint"
+        },
+        "world_pose": {
+          "position_m": [
+            1.27,
+            -0.86,
+            0.79
+          ],
+          "orientation_xyzw": [
+            0.5497959255129582,
+            0.27821905511092326,
+            0.3556187161976525,
+            0.7027474129105477
+          ]
+        },
+        "width": 960,
+        "height": 720,
+        "fx_px": 1150,
+        "fy_px": 1150,
+        "cx_px": 480,
+        "cy_px": 360,
+        "near_m": 0.005,
+        "far_m": 5.0
+      },
+      "source_record": 479,
+      "time_s": 0.3,
+      "negative_controls": {
+        "world_id": "exposure frame_key world_id does not match source frame",
+        "revision": "exposure frame_key revision does not match source frame"
+      },
+      "channel_sha256": {
+        "srgb8_rgb": "de0c1eb4c007a8e50b23d77d2fad9b6504887e5196f5c67753134227178efe68",
+        "forward_depth_m_f32": "5137257cf5ed656a36a28bdd5d3f2a1d70af041bd0bc65893141f5cc6388f471",
+        "instance_id_u32": "d5d02ac41d648ce4727a11995e066576f93e11cc492caf7c87d42d01c156fba1",
+        "valid_u8": "c3c1de6217701aa0276eaf4e7229db261d98819706bfa438024ac22384881fb7"
+      }
+    },
+    {
+      "name": "raster-1-wrist",
+      "camera": {
+        "id": "wrist",
+        "frame_key": {
+          "scene_key": "panda-r1-raster-fill-v1",
+          "world_id": "archive:d74e42dd2d3f7735e197b0a845e602217b243a8513c73b7ab09c02995ccb666b",
+          "epoch": 0,
+          "revision": 479,
+          "tick": 480,
+          "phase": "accepted_endpoint"
+        },
+        "world_pose": {
+          "position_m": [
+            0.40179261094631824,
+            4.984247825847096e-18,
+            0.5662778054329431
+          ],
+          "orientation_xyzw": [
+            0.18441048928178685,
+            -0.18441048928178683,
+            0.6826366320692524,
+            -0.6826366320692525
+          ]
+        },
+        "width": 640,
+        "height": 480,
+        "fx_px": 440,
+        "fy_px": 440,
+        "cx_px": 320,
+        "cy_px": 240,
+        "near_m": 0.005,
+        "far_m": 5.0
+      },
+      "source_record": 479,
+      "time_s": 0.3,
+      "negative_controls": {
+        "world_id": "exposure frame_key world_id does not match source frame",
+        "revision": "exposure frame_key revision does not match source frame"
+      },
+      "channel_sha256": {
+        "srgb8_rgb": "36dbd8be91df02ff40e5994dafa641c70e4bb90437608b966e500039a84b34c3",
+        "forward_depth_m_f32": "dccf9c2fc7fcdb01528111e698d77530b4a43eaa4920b8eb1708e9a4aa53797b",
+        "instance_id_u32": "7e156e784b29b93e6544ade35a09a72a03ef792f1dcb921d13b1c259c0af9c56",
+        "valid_u8": "32dea1b8e211c0d9f8416aaf15e5e8d357e2c17afb18532eea2dd0ab38339914"
+      }
+    },
+    {
+      "name": "raster-2-fixed",
+      "camera": {
+        "id": "fixed",
+        "frame_key": {
+          "scene_key": "panda-r1-raster-fill-v1",
+          "world_id": "archive:d74e42dd2d3f7735e197b0a845e602217b243a8513c73b7ab09c02995ccb666b",
+          "epoch": 0,
+          "revision": 2159,
+          "tick": 2160,
+          "phase": "accepted_endpoint"
+        },
+        "world_pose": {
+          "position_m": [
+            1.27,
+            -0.86,
+            0.79
+          ],
+          "orientation_xyzw": [
+            0.5497959255129582,
+            0.27821905511092326,
+            0.3556187161976525,
+            0.7027474129105477
+          ]
+        },
+        "width": 960,
+        "height": 720,
+        "fx_px": 1150,
+        "fy_px": 1150,
+        "cx_px": 480,
+        "cy_px": 360,
+        "near_m": 0.005,
+        "far_m": 5.0
+      },
+      "source_record": 2159,
+      "time_s": 1.35,
+      "negative_controls": {
+        "world_id": "exposure frame_key world_id does not match source frame",
+        "revision": "exposure frame_key revision does not match source frame"
+      },
+      "channel_sha256": {
+        "srgb8_rgb": "7f1505e9b623e6ef4341c70951c82c7aa509b8550fd3210f7b977182dfcc19c7",
+        "forward_depth_m_f32": "b9495d850135ee72c2632d494fafcc7714eea4841688f9749a4126f5f19732ac",
+        "instance_id_u32": "108257448fc230b693ccbe625d6140d70d78f05789b4c46bb8bac17d536ac19b",
+        "valid_u8": "8c14552485f02be8c97c717f417902102ae145ba2c19affab5a1fec0fd8e4c16"
+      }
+    },
+    {
+      "name": "raster-2-wrist",
+      "camera": {
+        "id": "wrist",
+        "frame_key": {
+          "scene_key": "panda-r1-raster-fill-v1",
+          "world_id": "archive:d74e42dd2d3f7735e197b0a845e602217b243a8513c73b7ab09c02995ccb666b",
+          "epoch": 0,
+          "revision": 2159,
+          "tick": 2160,
+          "phase": "accepted_endpoint"
+        },
+        "world_pose": {
+          "position_m": [
+            0.47882008742073195,
+            1.654165185688442e-05,
+            0.6328098131888809
+          ],
+          "orientation_xyzw": [
+            0.1842155443630048,
+            -0.1845388052331339,
+            0.682610129092512,
+            -0.6826810926329171
+          ]
+        },
+        "width": 640,
+        "height": 480,
+        "fx_px": 440,
+        "fy_px": 440,
+        "cx_px": 320,
+        "cy_px": 240,
+        "near_m": 0.005,
+        "far_m": 5.0
+      },
+      "source_record": 2159,
+      "time_s": 1.35,
+      "negative_controls": {
+        "world_id": "exposure frame_key world_id does not match source frame",
+        "revision": "exposure frame_key revision does not match source frame"
+      },
+      "channel_sha256": {
+        "srgb8_rgb": "eb98fd27ea55ef2654d46d32405249eb78feb517e5e000e949ca6bbe9b5759d4",
+        "forward_depth_m_f32": "00846abb95d176386cb20815727ce49496ba789ccf616d00b703bbbfcfeb0cd6",
+        "instance_id_u32": "41c099d22cb07188ff0a6aaa7c3d13610c7deb213a377c3bdb1f0f801e457d8b",
+        "valid_u8": "32dea1b8e211c0d9f8416aaf15e5e8d357e2c17afb18532eea2dd0ab38339914"
+      }
+    }
+  ],
+  "device": {
+    "geometry": {
+      "mesh_slots": 61,
+      "instances": 63,
+      "uploaded_vertices": 403311,
+      "uploaded_triangles": 134960,
+      "limits": {
+        "mesh_slots": 256,
+        "instances": 256,
+        "uploaded_vertices": 600000,
+        "uploaded_triangles": 200000
+      },
+      "scope": "per-instance uploaded geometry; shared per-mesh decoding guards unchanged"
+    },
+    "studio": null,
+    "backend": "sapien-reference",
+    "library_version": "3.0.3",
+    "sapien_scene_id": 3,
+    "numpy_version": "1.26.4",
+    "requested_path": "raster",
+    "effective_path": "raster",
+    "requested_device": "cuda:0",
+    "device_name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+    "device_pci": "0000:01:00.0",
+    "device_description": "cuda:0",
+    "driver_version": null,
+    "vulkan_api_version": null,
+    "physics_systems": [],
+    "physics_steps": 0,
+    "shader_pack": "default",
+    "shader_directory": "C:\\Users\\38347\\.codex\\worktrees\\phymeo-rendering\\phymeo\\artifacts\\rendering\\g3-table\\ref-env\\Lib\\site-packages\\sapien\\vulkan_shader\\default",
+    "shader_sha256": "3dcc99e5302c9b7118b661fe129190d27dd938659245d5f004a3c817f5b7ddb9",
+    "linear_rgb_target": "Lighting",
+    "display": "exposure=1; clamp linear [0,1]; standard sRGB OETF; half-up UNORM8",
+    "ambient_linear_rgb": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "shadow_map_size": 2048,
+    "readback": "blocking SAPIEN get_picture CPU download, then owned bytes",
+    "samples_per_pixel": 1,
+    "max_bounces": null,
+    "denoiser": "none",
+    "seed": null,
+    "seed_support": "not-user-configurable",
+    "seed_note": "rt shader uses fixed magic plus pixel/spp/frameCount; no cross-device bitwise claim",
+    "sampling_pattern": null,
+    "accumulation": "fresh camera per exposure; no temporal history",
+    "supported_channels": [
+      "srgb8_rgb",
+      "forward_depth_m_f32",
+      "instance_id_u32",
+      "valid_u8"
+    ],
+    "pt_clip_limit": "all vertices inside near+0.002/far and range<9999m, with FP32 clearance",
+    "pt_precision_policy": "8*FP32-epsilon*transform-scale clearance; reject >=1% scene span; pragmatic admission, not a global error proof",
+    "resolution_limit": 4096,
+    "shader_probe": "selected shader executed and CPU target read back",
+    "global_config_note": "camera default mutations serialized/restored inside this adapter only",
+    "lifecycle": {
+      "studio_temporary_files_exist": false,
+      "closed": true,
+      "completed_captures": 4,
+      "close_error": null,
+      "attached_entities": 0,
+      "attached_cameras": 0,
+      "attached_render_bodies": 0,
+      "attached_lights": 0,
+      "attached_entities_before_clear": 64,
+      "attached_entities_after_clear": 0,
+      "attached_cameras_after_clear": 0,
+      "attached_render_bodies_after_clear": 0,
+      "attached_lights_after_clear": 0,
+      "scope": "this scene attachments only; no driver/cache/process-memory release claim"
+    }
+  },
+  "lights": [
+    {
+      "direction": [
+        -0.5030661697803822,
+        0.6707548930405097,
+        -0.5449883505954141
+      ],
+      "illuminance": [
+        1.35,
+        1.35,
+        1.35
+      ]
+    }
+  ]
+}

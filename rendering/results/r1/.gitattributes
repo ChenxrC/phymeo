@@ -1,0 +1,2 @@
+evidence/*.json -text whitespace=trailing-space,space-before-tab,cr-at-eol
+evidence/*.zip binary

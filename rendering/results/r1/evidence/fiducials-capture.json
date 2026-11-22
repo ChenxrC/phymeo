@@ -1,0 +1,189 @@
+{
+  "exposures": [
+    {
+      "name": "fiducials-1-fixed",
+      "camera": {
+        "id": "fixed",
+        "frame_key": {
+          "scene_key": "panda-r1-material-fiducials",
+          "world_id": "archive:d74e42dd2d3f7735e197b0a845e602217b243a8513c73b7ab09c02995ccb666b",
+          "epoch": 0,
+          "revision": 479,
+          "tick": 480,
+          "phase": "accepted_endpoint"
+        },
+        "world_pose": {
+          "position_m": [
+            1.27,
+            -0.86,
+            0.79
+          ],
+          "orientation_xyzw": [
+            0.5497959255129582,
+            0.27821905511092326,
+            0.3556187161976525,
+            0.7027474129105477
+          ]
+        },
+        "width": 960,
+        "height": 720,
+        "fx_px": 1150,
+        "fy_px": 1150,
+        "cx_px": 480,
+        "cy_px": 360,
+        "near_m": 0.005,
+        "far_m": 5.0
+      },
+      "source_record": 479,
+      "time_s": 0.3,
+      "negative_controls": {
+        "world_id": "exposure frame_key world_id does not match source frame",
+        "revision": "exposure frame_key revision does not match source frame"
+      },
+      "channel_sha256": {
+        "srgb8_rgb": "e6fa4375086fddd73a239bb1a02fca500bcf25220d22b31bec8f095c76b59192",
+        "forward_depth_m_f32": "6cdc50446bdfc431dfe74316910ff5ce7c1ef8c781147b8e91cfab53d55a87e1",
+        "instance_id_u32": "ac43eba25c2fc6dd642ac7310c7cfac31365ab6ad155b41b6da3ccac0d2c6636",
+        "valid_u8": "f435ef73049e0060c1cfa101b79bc2809585225b0fce28e78a442a201cf989c3"
+      }
+    },
+    {
+      "name": "fiducials-2-fixed",
+      "camera": {
+        "id": "fixed",
+        "frame_key": {
+          "scene_key": "panda-r1-material-fiducials",
+          "world_id": "archive:d74e42dd2d3f7735e197b0a845e602217b243a8513c73b7ab09c02995ccb666b",
+          "epoch": 0,
+          "revision": 2159,
+          "tick": 2160,
+          "phase": "accepted_endpoint"
+        },
+        "world_pose": {
+          "position_m": [
+            1.27,
+            -0.86,
+            0.79
+          ],
+          "orientation_xyzw": [
+            0.5497959255129582,
+            0.27821905511092326,
+            0.3556187161976525,
+            0.7027474129105477
+          ]
+        },
+        "width": 960,
+        "height": 720,
+        "fx_px": 1150,
+        "fy_px": 1150,
+        "cx_px": 480,
+        "cy_px": 360,
+        "near_m": 0.005,
+        "far_m": 5.0
+      },
+      "source_record": 2159,
+      "time_s": 1.35,
+      "negative_controls": {
+        "world_id": "exposure frame_key world_id does not match source frame",
+        "revision": "exposure frame_key revision does not match source frame"
+      },
+      "channel_sha256": {
+        "srgb8_rgb": "b31b7ac6c67cada4c711be6ec99bf546f2c3ef28d7be18ee2b2eb77894c33c75",
+        "forward_depth_m_f32": "cf31cfe056665d8690f3a3d0de5fc364de29d2c1ba10fd7f85b4c1df6a2de20d",
+        "instance_id_u32": "3592c1eab4f829212097580885a5d24c734554a54a384a2ff59b664bc81a2c45",
+        "valid_u8": "66a1e4b7f74652df9366210cf92c6069f359f089c9eeb27e4f8ab17b639ca541"
+      }
+    }
+  ],
+  "device": {
+    "geometry": {
+      "mesh_slots": 1,
+      "instances": 3,
+      "uploaded_vertices": 546,
+      "uploaded_triangles": 1080,
+      "limits": {
+        "mesh_slots": 256,
+        "instances": 256,
+        "uploaded_vertices": 600000,
+        "uploaded_triangles": 200000
+      },
+      "scope": "per-instance uploaded geometry; shared per-mesh decoding guards unchanged"
+    },
+    "studio": null,
+    "backend": "sapien-reference",
+    "library_version": "3.0.3",
+    "sapien_scene_id": 4,
+    "numpy_version": "1.26.4",
+    "requested_path": "raster",
+    "effective_path": "raster",
+    "requested_device": "cuda:0",
+    "device_name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+    "device_pci": "0000:01:00.0",
+    "device_description": "cuda:0",
+    "driver_version": null,
+    "vulkan_api_version": null,
+    "physics_systems": [],
+    "physics_steps": 0,
+    "shader_pack": "default",
+    "shader_directory": "C:\\Users\\38347\\.codex\\worktrees\\phymeo-rendering\\phymeo\\artifacts\\rendering\\g3-table\\ref-env\\Lib\\site-packages\\sapien\\vulkan_shader\\default",
+    "shader_sha256": "3dcc99e5302c9b7118b661fe129190d27dd938659245d5f004a3c817f5b7ddb9",
+    "linear_rgb_target": "Lighting",
+    "display": "exposure=1; clamp linear [0,1]; standard sRGB OETF; half-up UNORM8",
+    "ambient_linear_rgb": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "shadow_map_size": 2048,
+    "readback": "blocking SAPIEN get_picture CPU download, then owned bytes",
+    "samples_per_pixel": 1,
+    "max_bounces": null,
+    "denoiser": "none",
+    "seed": null,
+    "seed_support": "not-user-configurable",
+    "seed_note": "rt shader uses fixed magic plus pixel/spp/frameCount; no cross-device bitwise claim",
+    "sampling_pattern": null,
+    "accumulation": "fresh camera per exposure; no temporal history",
+    "supported_channels": [
+      "srgb8_rgb",
+      "forward_depth_m_f32",
+      "instance_id_u32",
+      "valid_u8"
+    ],
+    "pt_clip_limit": "all vertices inside near+0.002/far and range<9999m, with FP32 clearance",
+    "pt_precision_policy": "8*FP32-epsilon*transform-scale clearance; reject >=1% scene span; pragmatic admission, not a global error proof",
+    "resolution_limit": 4096,
+    "shader_probe": "selected shader executed and CPU target read back",
+    "global_config_note": "camera default mutations serialized/restored inside this adapter only",
+    "lifecycle": {
+      "studio_temporary_files_exist": false,
+      "closed": true,
+      "completed_captures": 2,
+      "close_error": null,
+      "attached_entities": 0,
+      "attached_cameras": 0,
+      "attached_render_bodies": 0,
+      "attached_lights": 0,
+      "attached_entities_before_clear": 4,
+      "attached_entities_after_clear": 0,
+      "attached_cameras_after_clear": 0,
+      "attached_render_bodies_after_clear": 0,
+      "attached_lights_after_clear": 0,
+      "scope": "this scene attachments only; no driver/cache/process-memory release claim"
+    }
+  },
+  "lights": [
+    {
+      "direction": [
+        0.6,
+        0.0,
+        -0.8
+      ],
+      "illuminance": [
+        1,
+        1,
+        1
+      ]
+    }
+  ]
+}

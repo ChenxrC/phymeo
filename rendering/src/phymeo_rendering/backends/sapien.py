@@ -51,6 +51,13 @@ class SapienConfig:
             raise UnsupportedRequestError("this reference supports denoiser='none' only")
 
 
+class _SapienValidatedSession(ValidatedRenderSession):
+    def diagnostics(self):
+        """Detached, per-session evidence, readable after close as well."""
+        with self._lock:
+            return self._delegate.diagnostics_snapshot()
+
+
 class SapienBackend:
     """Owns pure render scenes and exposes JSON-ready initialization evidence.
 
@@ -84,4 +91,4 @@ class SapienBackend:
         from ._sapien_session import SapienSession
         delegate = SapienSession(scene, self.config, sapien, numpy)
         self._last_open_diagnostics = delegate.diagnostics
-        return ValidatedRenderSession(scene, delegate)
+        return _SapienValidatedSession(scene, delegate)

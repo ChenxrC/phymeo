@@ -1,5 +1,8 @@
 #version 450
 #extension GL_GOOGLE_include_directive : require
+#ifdef PR_RESIDENT_RAY_QUERY
+#extension GL_EXT_ray_query : require
+#endif
 // Opaque shader: no discard, depth replacement or storage side effects.
 layout(early_fragment_tests) in;
 struct Vertex { vec4 position; vec4 normal; };
@@ -41,6 +44,7 @@ layout(location=2) out uint instanceId;
 layout(location=3) out uint valid;
 const float PI = 3.141592653589793;
 
+#ifndef PR_RESIDENT_RAY_QUERY
 // Static per-mesh threaded BVHs, rigid instance transforms per frame.
 // Every escape index increases. Traversal is bounded by the actual node count,
 // never by an arbitrary work cutoff that could silently discard an occluder.
@@ -118,6 +122,10 @@ bool occluded(vec3 worldOrigin, vec3 worldDirection, float tMax) {
     }
     return false;
 }
+
+#else
+#include "resident_rayquery.glsl"
+#endif
 
 #include "resident_environment.glsl"
 #define PR_RESIDENT_DIRECTIONAL_ENVIRONMENT

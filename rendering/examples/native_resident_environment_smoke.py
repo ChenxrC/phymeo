@@ -283,13 +283,20 @@ def rejected_lifecycle(library,index,legacy_shaders=None):
     return result
 
 def main():
+    global ResidentDevice
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--library",type=Path,required=True); parser.add_argument("--device-index",type=int,required=True)
     parser.add_argument("--output",type=Path,required=True)
     parser.add_argument("--legacy-shaders",type=Path,help="Old resident SPIR-V directory for explicit incompatibility control")
-    args=parser.parse_args(); output=args.output.resolve(); output.mkdir(parents=True,exist_ok=False)
+    parser.add_argument("--ray-query",action="store_true",help="Use the explicit hardware shadow creation path")
+    args=parser.parse_args()
+    if args.ray_query:
+        from native_resident_rayquery_smoke import RayDevice
+        ResidentDevice=RayDevice
+    output=args.output.resolve(); output.mkdir(parents=True,exist_ok=False)
     library=args.library.resolve(); report={"schema":"phymeo-native-environment-smoke-v1","status":"running","pbr":[],
         "library_sha256":hashlib.sha256(library.read_bytes()).hexdigest()}
+    report["shadow_mode"]="ray_query" if args.ray_query else "software"
     try:
         report["sky"] = sky_case(library,args.device_index)
         report["sensor_planes"] = sensor_planes_case(library,args.device_index)

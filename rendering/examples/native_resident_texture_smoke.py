@@ -230,11 +230,16 @@ def run_case(library,index,uv,*,tilt=0.0,varying=False,plain_second=False,negati
 
 
 def main():
+    global ResidentDevice
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--library",type=Path,required=True)
     parser.add_argument("--device-index",type=int,required=True)
     parser.add_argument("--output",type=Path,required=True)
+    parser.add_argument("--ray-query",action="store_true",help="Use the explicit hardware shadow creation path")
     args=parser.parse_args()
+    if args.ray_query:
+        from native_resident_rayquery_smoke import RayDevice
+        ResidentDevice=RayDevice
     output=args.output.resolve(); output.mkdir(parents=True,exist_ok=False)
     library=args.library.resolve()
     report={"schema":"phymeo-native-resident-texture-smoke-v1","status":"running","cases":[],

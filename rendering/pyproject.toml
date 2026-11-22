@@ -5,9 +5,15 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "phymeo-rendering"
 version = "0.1.0a0"
-description = "Backend-neutral scene and camera contracts for the Phymeo renderer"
+description = "Calibrated offscreen rendering for Phymeo scenes"
 requires-python = ">=3.11"
 readme = "README.md"
 
+[project.optional-dependencies]
+sapien = ["sapien==3.0.3", "numpy==1.26.4"]
+
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+"phymeo_rendering.backends" = ["_native/CMakeLists.txt", "_native/*.cpp", "_native/*.h", "_shaders/*.vert", "_shaders/*.frag"]

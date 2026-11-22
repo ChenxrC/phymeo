@@ -22,10 +22,47 @@ from ._g1_table import FIXTURES, table_frames, table_scene
 # Pixel-centre probes from the 500 px pinhole and known box heights (metres).
 # (468, 231) sees the elevated block in front of the rubber sample.
 PROBES = ((1, 1, 0, math.inf), (120, 160, 1, 1.125),
-          (195, 240, 11, 1.0), (320, 240, 12, 1.0), (445, 240, 13, 1.0),
+          (195, 240, 11, 1.0), (320, 240, 12, 1.0), (430, 240, 13, 1.0),
+          (445, 240, 21, 0.25 * 500 / (445.5 - 320)),
           (468, 231, 21, 0.875))
 SHADOW = (368, 232, 380, 248)
-CONTROL = (260, 232, 272, 248)
+CONTROL = (368, 328, 380, 344)
+
+# Independent world-space boxes from the authored fixture. This oracle does
+# not read images, the backend mesh decoder, or either implementation's shader.
+BOXES = ((11, (-.25, 0., 0.)), (12, (0., 0., 0.)), (13, (.25, 0., 0.)),
+         (21, (.3125, .03125, .125)))
+
+
+def box_distance(origin, direction, center):
+    entry, leave = 0., math.inf
+    for o, d, c in zip(origin, direction, center):
+        if d == 0.:
+            if abs(o - c) > .0625:
+                return math.inf
+        else:
+            ends = ((c - .0625 - o) / d, (c + .0625 - o) / d)
+            entry, leave = max(entry, min(ends)), min(leave, max(ends))
+    return entry if entry <= leave else math.inf
+
+
+def verify_oracle(test):
+    for u, v, ident, depth in PROBES:
+        ray = ((u + .5 - 320) / 500, (240 - v - .5) / 500, -1.)
+        hits = [(box_distance((0., 0., 1.0625), ray, c), i) for i, c in BOXES]
+        if abs(ray[0] * 1.125) <= .75 and abs(ray[1] * 1.125) <= .5:
+            hits.append((1.125, 1))
+        distance, first = min(hits)
+        test.assertEqual(first if math.isfinite(distance) else 0, ident)
+        test.assertAlmostEqual(distance, depth)
+    for region_box, shadowed in ((CONTROL, False), (SHADOW, True)):
+        l, t, r, b = region_box
+        for u in range(l, r):
+            for v in range(t, b):
+                ground = ((u + .5 - 320) * 1.125 / 500, (240 - v - .5) * 1.125 / 500, -.0625)
+                for toward_light, expected in (((0., 0., 1.), False), ((-.6, 0., .8), shadowed)):
+                    test.assertEqual(any(math.isfinite(box_distance(ground, toward_light, c))
+                                         for _, c in BOXES), expected)
 
 
 def write_png(path, width, height, rgb):
@@ -65,6 +102,7 @@ def snapshot(scene, frame):
 
 
 def exercise_table(test, factory, label, path, *, sensors):
+    verify_oracle(test)
     folder = Path(os.environ["PHYMEO_R0_OUTPUT"]) / label
     folder.mkdir(parents=True, exist_ok=False)
     reference_scene = table_scene()
@@ -109,6 +147,8 @@ def exercise_table(test, factory, label, path, *, sensors):
                   "planes": {}, "probes": []}
         if label == "native-raster":
             sample["device"] = session.diagnostics()
+            test.assertTrue(sample["device"]["device"]["validation_enabled"])
+            test.assertEqual(sample["device"]["device"]["validation_errors"], 0)
         else:
             sample["device"] = backend.last_open_diagnostics
         for plane in capture.planes:

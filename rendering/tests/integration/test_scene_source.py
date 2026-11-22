@@ -9,9 +9,13 @@ from phymeo_rendering.adapters import AuthoredSceneSource
 from phymeo_rendering.scene import Pose, compose_pose, validate_scene_frame
 
 from ._g1_table import ALUMINIUM_TOP, FIXTURES, table_frames, table_scene
+from ._r0_table import verify_oracle
 
 
 class TableSceneTest(unittest.TestCase):
+    def test_table_measurement_regions_and_probe_occlusion(self):
+        verify_oracle(self)
+
     def test_pinned_geometry_and_metre_bounds(self):
         fixtures = (
             (

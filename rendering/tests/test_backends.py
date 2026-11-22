@@ -1,12 +1,12 @@
 """Public checked-session contract using a test-only recording delegate."""
 
-import builtins
-import importlib
 import math
 import struct
+import subprocess
+import sys
 import unittest
 from dataclasses import replace
-from unittest.mock import patch
+from pathlib import Path
 
 from phymeo_rendering import backends
 from phymeo_rendering.assets import Material, Mesh
@@ -343,25 +343,17 @@ class BackendAvailability(unittest.TestCase):
             with self.assertRaises(TypeError):
                 backends.ValidatedRenderSession(scene, broken)
 
-    def test_unimplemented_backends_fail_without_importing_device_libraries(self):
-        original_import = builtins.__import__
-        imported = []
-
-        def guard(name, *args, **kwargs):
-            imported.append(name)
-            if name.split(".")[0] in {"sapien", "vulkan", "mujoco", "torch", "phymeo"}:
-                raise AssertionError(f"unexpected runtime import: {name}")
-            return original_import(name, *args, **kwargs)
-
-        scene, _, _ = fixture()
-        with patch("builtins.__import__", side_effect=guard):
-            native = importlib.import_module("phymeo_rendering.backends.native")
-            reference = importlib.import_module("phymeo_rendering.backends.sapien")
-            for factory in (native.NativeBackend, reference.SapienBackend):
-                backend = factory()
-                with self.assertRaisesRegex(backends.BackendUnavailableError, "not implemented"):
-                    backend.open_scene(scene)
-        self.assertFalse(any(name in {"sapien", "vulkan", "mujoco"} for name in imported))
+    def test_importing_backend_entry_points_and_configuring_them_needs_no_device(self):
+        code = """
+import sys
+sys.path.insert(0, sys.argv[1])
+from phymeo_rendering.backends.native import NativeBackend
+from phymeo_rendering.backends.sapien import SapienBackend
+assert callable(NativeBackend().open_scene) and callable(SapienBackend().open_scene)
+assert {'sapien', 'vulkan', 'mujoco', 'numpy', 'torch', 'phymeo'}.isdisjoint(sys.modules)
+"""
+        subprocess.run([sys.executable, "-I", "-S", "-B", "-c", code,
+                        str(Path(backends.__file__).resolve().parents[2])], check=True)
 
 
 if __name__ == "__main__":

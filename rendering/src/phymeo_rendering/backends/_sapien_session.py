@@ -5,6 +5,7 @@ src/sapien_renderer/camera_component.cpp synchronous CPU getImage; shipped
 vulkan_shader/default/composite0.frag and rt/camera.rgen buffer semantics.
 No viewer, actor builder, PhysX system, physics step, or CUDA interop is used.
 """
+
 from contextlib import contextmanager
 from copy import deepcopy
 from hashlib import sha256
@@ -18,7 +19,6 @@ from ..pipeline import RenderPath, validate_capture_request
 from ..scene import Pose, compose_pose
 from . import BackendUnavailableError, UnsupportedRequestError
 from ._sapien_pixels import encode_linear_rgb
-
 
 # SAPIEN camera entities: +X forward, +Y left, +Z up. Public cameras:
 # +X right, +Y up, -Z forward. Columns in public axes are (0,0,-1),
@@ -57,9 +57,13 @@ class SapienSession:
         self.closed = False
         self.diagnostics = {}
         self._lifecycle = {
-            "closed": False, "completed_captures": 0, "close_error": None,
-            "attached_entities": None, "attached_cameras": None,
-            "attached_render_bodies": None, "attached_lights": None,
+            "closed": False,
+            "completed_captures": 0,
+            "close_error": None,
+            "attached_entities": None,
+            "attached_cameras": None,
+            "attached_render_bodies": None,
+            "attached_lights": None,
             "attached_entities_before_clear": None,
             "attached_entities_after_clear": None,
             "attached_cameras_after_clear": None,
@@ -68,12 +72,15 @@ class SapienSession:
             "scope": "this scene attachments only; no driver/cache/process-memory release claim",
         }
         self.shader = "default" if config.path is RenderPath.RASTER else "rt"
-        self.shader_directory = Path(sapien.__file__).resolve().parent / "vulkan_shader" / self.shader
+        self.shader_directory = (
+            Path(sapien.__file__).resolve().parent / "vulkan_shader" / self.shader
+        )
         self.rgb_target = "Lighting" if config.path is RenderPath.RASTER else "HdrColor"
         try:
             # Decode using the same bounded loader as the native backend before
             # uploading. SAPIEN's independent URI/asset loader is never used.
             from ..mesh_data import load_mesh
+
             decoded = {mesh.id: load_mesh(mesh) for mesh in source.meshes}
             self.system = sapien.render.RenderSystem(config.device)
             self.scene = sapien.Scene([self.system])
@@ -93,8 +100,12 @@ class SapienSession:
                 if not np.isfinite(positions).all() or not np.isfinite(normals).all():
                     raise ValueError(f"mesh {instance.mesh_id!r} is not representable in FP32")
                 shape = sapien.render.RenderShapeTriangleMesh(
-                    positions, np.asarray(mesh.triangles, dtype=np.uint32), normals,
-                    np.zeros((len(positions), 2), dtype=np.float32), materials[instance.material_id])
+                    positions,
+                    np.asarray(mesh.triangles, dtype=np.uint32),
+                    normals,
+                    np.zeros((len(positions), 2), dtype=np.float32),
+                    materials[instance.material_id],
+                )
                 shape.local_pose = self._pose(instance.local_pose)
                 body = sapien.render.RenderBodyComponent()
                 body.attach(shape)
@@ -120,8 +131,9 @@ class SapienSession:
                 component.shadow_half_size = 10.0
                 component.shadow_near = -10.0
                 component.shadow_far = 10.0
-                entity.pose = sapien.Pose((0.0, 0.0, 0.0),
-                    sapien.math.shortest_rotation((1.0, 0.0, 0.0), light.direction))
+                entity.pose = sapien.Pose(
+                    (0.0, 0.0, 0.0), sapien.math.shortest_rotation((1.0, 0.0, 0.0), light.direction)
+                )
                 self.scene.add_entity(entity)
                 self.lights.append(component)
             # Compile and execute this selected shader independently. Merely
@@ -134,33 +146,48 @@ class SapienSession:
                 if config.path is RenderPath.RASTER:
                     required.update(("Position", "Segmentation"))
                 if not required.issubset(names):
-                    raise RuntimeError(f"SAPIEN shader lacks targets {sorted(required - set(names))}")
+                    raise RuntimeError(
+                        f"SAPIEN shader lacks targets {sorted(required - set(names))}"
+                    )
                 pixels = probe.get_picture(self.rgb_target)
                 if pixels.shape != (1, 1, 4) or not np.isfinite(pixels).all():
                     raise RuntimeError("SAPIEN shader probe returned invalid linear pixels")
             self.diagnostics = {
-                "backend": "sapien-reference", "library_version": sapien.__version__,
+                "backend": "sapien-reference",
+                "library_version": sapien.__version__,
                 "sapien_scene_id": int(self.scene.id),
-                "numpy_version": np.__version__, "requested_path": config.path.value,
-                "effective_path": config.path.value, "requested_device": config.device,
-                "device_name": self.system.device.name, "device_pci": self.system.device.pci_string,
+                "numpy_version": np.__version__,
+                "requested_path": config.path.value,
+                "effective_path": config.path.value,
+                "requested_device": config.device,
+                "device_name": self.system.device.name,
+                "device_pci": self.system.device.pci_string,
                 "device_description": str(self.system.device),
-                "driver_version": None, "vulkan_api_version": None,
-                "physics_systems": [], "physics_steps": 0,
-                "shader_pack": self.shader, "shader_directory": str(self.shader_directory),
+                "driver_version": None,
+                "vulkan_api_version": None,
+                "physics_systems": [],
+                "physics_steps": 0,
+                "shader_pack": self.shader,
+                "shader_directory": str(self.shader_directory),
                 "shader_sha256": _shader_hash(self.shader_directory),
                 "linear_rgb_target": self.rgb_target,
                 "display": "exposure=1; clamp linear [0,1]; standard sRGB OETF; half-up UNORM8",
-                "ambient_linear_rgb": [0.0, 0.0, 0.0], "shadow_map_size": 2048,
+                "ambient_linear_rgb": [0.0, 0.0, 0.0],
+                "shadow_map_size": 2048,
                 "readback": "blocking SAPIEN get_picture CPU download, then owned bytes",
                 "samples_per_pixel": config.samples_per_pixel if self.shader == "rt" else 1,
                 "max_bounces": config.max_bounces if self.shader == "rt" else None,
-                "denoiser": "none", "seed": None, "seed_support": "not-user-configurable",
+                "denoiser": "none",
+                "seed": None,
+                "seed_support": "not-user-configurable",
                 "seed_note": "rt shader uses fixed magic plus pixel/spp/frameCount; no cross-device bitwise claim",
                 "sampling_pattern": self._sampling_pattern(),
                 "accumulation": "fresh camera per exposure; no temporal history",
-                "supported_channels": ([Channel.RGB.value] if self.shader == "rt"
-                                       else [channel.value for channel in Channel]),
+                "supported_channels": (
+                    [Channel.RGB.value]
+                    if self.shader == "rt"
+                    else [channel.value for channel in Channel]
+                ),
                 "pt_clip_limit": "all vertices inside near+0.002/far and range<9999m, with FP32 clearance",
                 "pt_precision_policy": "8*FP32-epsilon*transform-scale clearance; reject >=1% scene span; pragmatic admission, not a global error proof",
                 "resolution_limit": 4096,
@@ -175,7 +202,8 @@ class SapienSession:
             if isinstance(exc, (ValueError, TypeError, UnsupportedRequestError)):
                 raise
             raise BackendUnavailableError(
-                f"SAPIEN {self.shader} reference initialization failed: {exc}") from exc
+                f"SAPIEN {self.shader} reference initialization failed: {exc}"
+            ) from exc
 
     def _sampling_pattern(self):
         if self.shader != "rt":
@@ -183,10 +211,14 @@ class SapienSession:
         # Describe the actual installed pack. Do not advertise this sequence
         # for a different shader merely because its package version matches.
         source = (self.shader_directory / "camera.rgen").read_text(encoding="utf-8")
-        if ("uint magic = 0x9e3779b9;" not in source
-                or "halton2d(frameCount * spp + i, 2, 3)" not in source
-                or "gl_LaunchSizeEXT.x * gl_LaunchSizeEXT.y * spp * frameCount" not in source):
-            raise BackendUnavailableError("installed RT shader lacks the audited fixed sampling pattern")
+        if (
+            "uint magic = 0x9e3779b9;" not in source
+            or "halton2d(frameCount * spp + i, 2, 3)" not in source
+            or "gl_LaunchSizeEXT.x * gl_LaunchSizeEXT.y * spp * frameCount" not in source
+        ):
+            raise BackendUnavailableError(
+                "installed RT shader lacks the audited fixed sampling pattern"
+            )
         return {
             "mode": "official-fixed-sequence-fresh-camera",
             "magic_hex": "0x9e3779b9",
@@ -215,8 +247,15 @@ class SapienSession:
         camera = render.RenderCameraComponent(width, height, str(self.shader_directory))
         entity.add_component(camera)
         if public is not None:
-            camera.set_perspective_parameters(public.near_m, public.far_m, public.fx_px,
-                                             public.fy_px, public.cx_px, public.cy_px, 0.0)
+            camera.set_perspective_parameters(
+                public.near_m,
+                public.far_m,
+                public.fx_px,
+                public.fy_px,
+                public.cx_px,
+                public.cy_px,
+                0.0,
+            )
             entity.pose = self._pose(compose_pose(public.world_pose, _ENTITY_CAMERA_IN_PUBLIC))
         if self.shader == "rt":
             camera.set_property("spp", self.config.samples_per_pixel)
@@ -251,10 +290,16 @@ class SapienSession:
             return False
         if not all(isfinite(_f32(value)) for value in camera.world_pose.position_m):
             return False
-        converted = tuple(_f32(getattr(camera, name)) for name in
-                          ("fx_px", "fy_px", "cx_px", "cy_px", "near_m", "far_m"))
-        return (all(isfinite(x) for x in converted) and converted[0] > 0 and converted[1] > 0
-                and 0 < converted[4] < converted[5])
+        converted = tuple(
+            _f32(getattr(camera, name))
+            for name in ("fx_px", "fy_px", "cx_px", "cy_px", "near_m", "far_m")
+        )
+        return (
+            all(isfinite(x) for x in converted)
+            and converted[0] > 0
+            and converted[1] > 0
+            and 0 < converted[4] < converted[5]
+        )
 
     def _world_vertices(self, frame):
         np = self.np
@@ -263,15 +308,21 @@ class SapienSession:
         poses = []
         transform_scale = 1.0
         for instance, entity, vertices in self.instances:
-            transform_scale = max(transform_scale,
+            transform_scale = max(
+                transform_scale,
                 *(abs(float(value)) for value in nodes[instance.node_id].position_m),
                 *(abs(float(value)) for value in instance.local_pose.position_m),
-                float(np.abs(vertices).max()))
+                float(np.abs(vertices).max()),
+            )
             pose = compose_pose(nodes[instance.node_id], instance.local_pose)
             x, y, z, w = pose.orientation_xyzw
-            rotation = np.array(((1-2*(y*y+z*z), 2*(x*y-z*w), 2*(x*z+y*w)),
-                                 (2*(x*y+z*w), 1-2*(x*x+z*z), 2*(y*z-x*w)),
-                                 (2*(x*z-y*w), 2*(y*z+x*w), 1-2*(x*x+y*y))))
+            rotation = np.array(
+                (
+                    (1 - 2 * (y * y + z * z), 2 * (x * y - z * w), 2 * (x * z + y * w)),
+                    (2 * (x * y + z * w), 1 - 2 * (x * x + z * z), 2 * (y * z - x * w)),
+                    (2 * (x * z - y * w), 2 * (y * z + x * w), 1 - 2 * (x * x + y * y)),
+                )
+            )
             points.append(vertices @ rotation.T + np.asarray(pose.position_m))
             poses.append((entity, self._pose(nodes[instance.node_id])))
         return (np.concatenate(points) if points else np.empty((0, 3))), poses, transform_scale
@@ -282,11 +333,14 @@ class SapienSession:
         np = self.np
         pose = compose_pose(Pose(), camera.world_pose)
         x, y, z, w = pose.orientation_xyzw
-        forward = np.array((-2*(x*z+y*w), -2*(y*z-x*w), -(1-2*(x*x+y*y))))
+        forward = np.array((-2 * (x * z + y * w), -2 * (y * z - x * w), -(1 - 2 * (x * x + y * y))))
         delta = points - np.asarray(pose.position_m)
         depths = delta @ forward
-        scale = max(transform_scale, float(np.abs(points).max()),
-                    *(abs(float(value)) for value in pose.position_m))
+        scale = max(
+            transform_scale,
+            float(np.abs(points).max()),
+            *(abs(float(value)) for value in pose.position_m),
+        )
         # A small, conservative guard for this FP32 reference adapter, not an
         # all-domain floating-point proof. Include the separate source/local
         # translations so large cancelling transforms cannot hide their scale.
@@ -294,17 +348,22 @@ class SapienSession:
         span = float(np.ptp(points, axis=0).max())
         if not isfinite(clearance) or clearance >= 0.01 * span:
             raise UnsupportedRequestError(
-                "SAPIEN PT FP32 precision is too coarse for this scene span")
+                "SAPIEN PT FP32 precision is too coarse for this scene span"
+            )
         # The upstream shader starts at near with tMin=.001 and does not
         # enforce far. Keep all vertices, including those outside the view,
         # away from both boundaries with the practical FP32 clearance above.
-        if (not np.isfinite(delta).all() or np.any(depths <= max(camera.near_m, _f32(camera.near_m)) + 0.002 + clearance)
-                or np.any(depths >= min(camera.far_m, _f32(camera.far_m)) - clearance)
-                or np.any(np.linalg.norm(delta, axis=1) >= 9999.0 - clearance)):
+        if (
+            not np.isfinite(delta).all()
+            or np.any(depths <= max(camera.near_m, _f32(camera.near_m)) + 0.002 + clearance)
+            or np.any(depths >= min(camera.far_m, _f32(camera.far_m)) - clearance)
+            or np.any(np.linalg.norm(delta, axis=1) >= 9999.0 - clearance)
+        ):
             raise UnsupportedRequestError(
                 "SAPIEN PT clip admission requires every scene vertex strictly inside "
                 "near+0.002m/far with FP32 clearance and within 9999m; "
-                "shipped shader is not general clipping")
+                "shipped shader is not general clipping"
+            )
 
     def capture(self, frame, request):
         if not self.supports(request):
@@ -359,8 +418,12 @@ class SapienSession:
                 planes[Channel.INSTANCE_ID] = public_ids.tobytes(order="C")
                 planes[Channel.FORWARD_DEPTH] = depth.tobytes(order="C")
                 planes[Channel.VALID] = valid.astype("u1").tobytes(order="C")
-            result = Capture(frame.key, frame.time_s, request.camera,
-                           tuple(ImagePlane(channel, planes[channel]) for channel in request.channels))
+            result = Capture(
+                frame.key,
+                frame.time_s,
+                request.camera,
+                tuple(ImagePlane(channel, planes[channel]) for channel in request.channels),
+            )
         self._lifecycle["completed_captures"] += 1
         return result
 
@@ -388,16 +451,22 @@ class SapienSession:
         try:
             if self.scene is not None:
                 self._lifecycle.update(self._attachment_counts())
-                self._lifecycle["attached_entities_before_clear"] = self._lifecycle["attached_entities"]
+                self._lifecycle["attached_entities_before_clear"] = self._lifecycle[
+                    "attached_entities"
+                ]
                 self.scene.clear()
                 # Observe the same real Scene/System before dropping Python
                 # handles. These are not guessed zeros from an empty list owned
                 # by this adapter, and they say nothing about driver caches.
                 counts = self._attachment_counts()
                 self._lifecycle.update(counts)
-                self._lifecycle.update({f"{key}_after_clear": value for key, value in counts.items()})
+                self._lifecycle.update(
+                    {f"{key}_after_clear": value for key, value in counts.items()}
+                )
                 if any(counts.values()):
-                    raise RuntimeError("SAPIEN scene clear left attached render entities/components")
+                    raise RuntimeError(
+                        "SAPIEN scene clear left attached render entities/components"
+                    )
         except Exception as exc:
             self._lifecycle["close_error"] = f"{type(exc).__name__}: {exc}"
             raise

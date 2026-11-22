@@ -104,12 +104,24 @@ class NativeFP32Admission(unittest.TestCase):
         key = FrameKey("table", "world", 0, 0, 0, "authored")
         for changes in (
             dict(near_m=1.0, far_m=1.0 + 1e-8),
-            dict(fx_px=1e100), dict(fx_px=1e-100), dict(near_m=1e-100),
+            dict(fx_px=1e100),
+            dict(fx_px=1e-100),
+            dict(near_m=1e-100),
             dict(world_pose=Pose((1e100, 0, 0))),
         ):
-            values = dict(id="front", frame_key=key, world_pose=Pose(), width=16, height=16,
-                          fx_px=10.0, fy_px=10.0, cx_px=8.0, cy_px=8.0,
-                          near_m=0.1, far_m=5.0)
+            values = dict(
+                id="front",
+                frame_key=key,
+                world_pose=Pose(),
+                width=16,
+                height=16,
+                fx_px=10.0,
+                fy_px=10.0,
+                cx_px=8.0,
+                cy_px=8.0,
+                near_m=0.1,
+                far_m=5.0,
+            )
             values.update(changes)
             request = CaptureRequest(Camera(**values), RenderPath.RASTER, (Channel.RGB,))
             with self.subTest(changes=changes):

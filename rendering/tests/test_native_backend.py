@@ -26,7 +26,8 @@ class NativeConfiguration(unittest.TestCase):
 
     def test_missing_explicit_library_is_not_a_fallback(self):
         scene = VisualScene(
-            "native", (Mesh("mesh", "absent.obj"),),
+            "native",
+            (Mesh("mesh", "absent.obj"),),
             (Material("paint", (0.2, 0.3, 0.4), 0.0, 0.5),),
             (Instance(1, "mesh", "paint", "node"),),
         )

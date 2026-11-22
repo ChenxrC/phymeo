@@ -352,8 +352,18 @@ from phymeo_rendering.backends.sapien import SapienBackend
 assert callable(NativeBackend().open_scene) and callable(SapienBackend().open_scene)
 assert {'sapien', 'vulkan', 'mujoco', 'numpy', 'torch', 'phymeo'}.isdisjoint(sys.modules)
 """
-        subprocess.run([sys.executable, "-I", "-S", "-B", "-c", code,
-                        str(Path(backends.__file__).resolve().parents[2])], check=True)
+        subprocess.run(
+            [
+                sys.executable,
+                "-I",
+                "-S",
+                "-B",
+                "-c",
+                code,
+                str(Path(backends.__file__).resolve().parents[2]),
+            ],
+            check=True,
+        )
 
 
 if __name__ == "__main__":

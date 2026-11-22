@@ -99,15 +99,20 @@ class TriangleMesh:
             a, b, c = (self.positions[index] for index in triangle)
             u = tuple(y - x for x, y in zip(a, b, strict=True))
             v = tuple(y - x for x, y in zip(a, c, strict=True))
-            cross = (u[1] * v[2] - u[2] * v[1],
-                     u[2] * v[0] - u[0] * v[2],
-                     u[0] * v[1] - u[1] * v[0])
+            cross = (
+                u[1] * v[2] - u[2] * v[1],
+                u[2] * v[0] - u[0] * v[2],
+                u[0] * v[1] - u[1] * v[0],
+            )
             area_twice = math.hypot(*cross)
             if not math.isfinite(area_twice) or area_twice == 0:
                 raise ValueError("triangle is degenerate or not representable")
         digest = self.source_sha256
-        if (not isinstance(digest, str) or len(digest) != 64
-                or any(char not in "0123456789abcdef" for char in digest)):
+        if (
+            not isinstance(digest, str)
+            or len(digest) != 64
+            or any(char not in "0123456789abcdef" for char in digest)
+        ):
             raise ValueError("source_sha256 must be a lowercase SHA256 hex digest")
 
 
@@ -116,8 +121,13 @@ def _local_path(uri):
         raise ValueError("uri must not have surrounding whitespace")
     if uri.startswith(("//", "\\\\")):
         raise ValueError("uri must name a local file, not a network share")
-    windows_drive = (len(uri) >= 3 and uri[0].isascii() and uri[0].isalpha()
-                     and uri[1] == ":" and uri[2] in "/\\")
+    windows_drive = (
+        len(uri) >= 3
+        and uri[0].isascii()
+        and uri[0].isalpha()
+        and uri[1] == ":"
+        and uri[2] in "/\\"
+    )
     parsed = urlsplit(uri) if not windows_drive else None
     if parsed is not None and parsed.scheme:
         if parsed.scheme != "file" or parsed.netloc.lower() not in ("", "localhost"):
@@ -127,7 +137,9 @@ def _local_path(uri):
         for index, char in enumerate(parsed.path):
             if char == "%" and (
                 index + 2 >= len(parsed.path)
-                or any(c not in "0123456789abcdefABCDEF" for c in parsed.path[index + 1:index + 3])
+                or any(
+                    c not in "0123456789abcdefABCDEF" for c in parsed.path[index + 1 : index + 3]
+                )
             ):
                 raise ValueError("file uri contains invalid percent encoding")
         decoded = unquote(parsed.path, encoding="utf-8", errors="strict")
@@ -259,8 +271,9 @@ def _identity_node(node):
 
 def _embedded_buffer(buffer):
     _object(buffer, ("byteLength", "uri", "name", "extras"), "buffer")
-    length = _integer(_required(buffer, "byteLength", "buffer"),
-                      "buffer.byteLength", 1, _MAX_BUFFER_BYTES)
+    length = _integer(
+        _required(buffer, "byteLength", "buffer"), "buffer.byteLength", 1, _MAX_BUFFER_BYTES
+    )
     uri = _required(buffer, "uri", "buffer")
     prefixes = ("data:application/octet-stream;base64,", "data:application/gltf-buffer;base64,")
     if not isinstance(uri, str) or not uri.startswith(prefixes):
@@ -278,7 +291,11 @@ def _views(values, raw):
     views = _array(values, "bufferViews", 1, 3)
     for index, view in enumerate(views):
         label = f"bufferViews[{index}]"
-        _object(view, ("buffer", "byteOffset", "byteLength", "byteStride", "target", "name", "extras"), label)
+        _object(
+            view,
+            ("buffer", "byteOffset", "byteLength", "byteStride", "target", "name", "extras"),
+            label,
+        )
         _integer(_required(view, "buffer", label), label + ".buffer", 0, 0)
         start = _integer(view.get("byteOffset", 0), label + ".byteOffset", 0, len(raw))
         size = _integer(_required(view, "byteLength", label), label + ".byteLength", 1, len(raw))
@@ -301,10 +318,15 @@ def _bounds(accessor, values, *, vector, code, label):
         if field not in accessor:
             continue
         bounds = _vector(accessor[field], label + "." + field, width, container=list)
-        actual = tuple(operation(value[i] for value in values) for i in range(3)) if vector else (operation(values),)
+        actual = (
+            tuple(operation(value[i] for value in values) for i in range(3))
+            if vector
+            else (operation(values),)
+        )
         if vector:
-            declared = tuple(struct.unpack("<f", struct.pack("<f", float(value)))[0]
-                             for value in bounds)
+            declared = tuple(
+                struct.unpack("<f", struct.pack("<f", float(value)))[0] for value in bounds
+            )
             if not all(math.isfinite(value) for value in declared):
                 raise ValueError(f"{label}.{field} is outside FLOAT range")
         else:
@@ -316,7 +338,22 @@ def _bounds(accessor, values, *, vector, code, label):
 
 def _accessor(index, accessors, views, raw, role):
     label = f"accessors[{index}] ({role})"
-    accessor = _object(accessors[index], ("bufferView", "byteOffset", "componentType", "count", "type", "normalized", "min", "max", "name", "extras"), label)
+    accessor = _object(
+        accessors[index],
+        (
+            "bufferView",
+            "byteOffset",
+            "componentType",
+            "count",
+            "type",
+            "normalized",
+            "min",
+            "max",
+            "name",
+            "extras",
+        ),
+        label,
+    )
     vector = role != "indices"
     component = _integer(_required(accessor, "componentType", label), label + ".componentType")
     if vector and component != 5126:
@@ -333,7 +370,9 @@ def _accessor(index, accessors, views, raw, role):
         raise ValueError(f"{label}.count must be a multiple of 3")
     if role == "POSITION" and ("min" not in accessor or "max" not in accessor):
         raise ValueError(f"{label} requires POSITION min and max")
-    view_id = _integer(_required(accessor, "bufferView", label), label + ".bufferView", 0, len(views) - 1)
+    view_id = _integer(
+        _required(accessor, "bufferView", label), label + ".bufferView", 0, len(views) - 1
+    )
     view = views[view_id]
     expected_target = 34962 if vector else 34963
     if view.get("target", expected_target) != expected_target:
@@ -361,8 +400,26 @@ def _accessor(index, accessors, views, raw, role):
 
 
 def _decode(document, raw_sha):
-    _object(document, ("asset", "scene", "scenes", "nodes", "meshes", "buffers", "bufferViews", "accessors", "extras"), "glTF")
-    asset = _object(_required(document, "asset", "glTF"), ("version", "minVersion", "generator", "copyright", "extras"), "asset")
+    _object(
+        document,
+        (
+            "asset",
+            "scene",
+            "scenes",
+            "nodes",
+            "meshes",
+            "buffers",
+            "bufferViews",
+            "accessors",
+            "extras",
+        ),
+        "glTF",
+    )
+    asset = _object(
+        _required(document, "asset", "glTF"),
+        ("version", "minVersion", "generator", "copyright", "extras"),
+        "asset",
+    )
     if asset.get("version") != "2.0" or asset.get("minVersion", "2.0") != "2.0":
         raise ValueError("asset.version/minVersion must be glTF 2.0")
     _integer(document.get("scene", 0), "scene", 0, 0)
@@ -371,11 +428,19 @@ def _decode(document, raw_sha):
     _integer(roots[0], "scene.nodes[0]", 0, 0)
     _identity_node(_single(document, "nodes"))
     mesh = _object(_single(document, "meshes"), ("primitives", "name", "extras"), "mesh")
-    primitive = _object(_array(_required(mesh, "primitives", "mesh"), "primitives", 1, 1)[0], ("attributes", "indices", "mode", "extras"), "primitive")
+    primitive = _object(
+        _array(_required(mesh, "primitives", "mesh"), "primitives", 1, 1)[0],
+        ("attributes", "indices", "mode", "extras"),
+        "primitive",
+    )
     _integer(primitive.get("mode", 4), "primitive.mode", 4, 4)
-    attributes = _object(_required(primitive, "attributes", "primitive"), ("POSITION", "NORMAL"), "attributes")
+    attributes = _object(
+        _required(primitive, "attributes", "primitive"), ("POSITION", "NORMAL"), "attributes"
+    )
     accessors = _array(_required(document, "accessors", "glTF"), "accessors", 3, 3)
-    position_id = _integer(_required(attributes, "POSITION", "attributes"), "POSITION accessor", 0, 2)
+    position_id = _integer(
+        _required(attributes, "POSITION", "attributes"), "POSITION accessor", 0, 2
+    )
     normal_id = _integer(_required(attributes, "NORMAL", "attributes"), "NORMAL accessor", 0, 2)
     index_id = _integer(_required(primitive, "indices", "primitive"), "indices accessor", 0, 2)
     if {position_id, normal_id, index_id} != {0, 1, 2}:
@@ -389,7 +454,7 @@ def _decode(document, raw_sha):
         raise ValueError("indices and vertex attributes must use separate bufferViews")
     if {position_view, normal_view, index_view} != set(range(len(views))):
         raise ValueError("unreferenced bufferViews are unsupported")
-    triangles = tuple(tuple(indices[i:i + 3]) for i in range(0, len(indices), 3))
+    triangles = tuple(tuple(indices[i : i + 3]) for i in range(0, len(indices), 3))
     return TriangleMesh(positions, normals, triangles, raw_sha)
 
 
@@ -406,9 +471,11 @@ def load_mesh(mesh: Mesh) -> TriangleMesh:
         raw = _file_bytes(_local_path(mesh.uri))
         _check_json_budget(raw)
         document = json.loads(
-            raw.decode("utf-8"), object_pairs_hook=_json_object,
+            raw.decode("utf-8"),
+            object_pairs_hook=_json_object,
             parse_int=lambda value: _json_number(value, integer=True),
-            parse_float=_json_number, parse_constant=_reject_constant,
+            parse_float=_json_number,
+            parse_constant=_reject_constant,
         )
         return _decode(document, hashlib.sha256(raw).hexdigest())
     except (ValueError, TypeError, OverflowError, struct.error) as error:

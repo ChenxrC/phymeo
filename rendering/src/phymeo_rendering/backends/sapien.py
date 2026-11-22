@@ -3,8 +3,9 @@
 Importing this module never imports SAPIEN or NumPy. Each session selects one
 real shader pipeline; a failed path is never replaced by another renderer.
 """
-from dataclasses import dataclass
+
 from copy import deepcopy
+from dataclasses import dataclass
 
 from ..pipeline import RenderPath
 from ..scene import VisualScene
@@ -82,13 +83,19 @@ class SapienBackend:
         self._last_open_diagnostics = None
         try:
             import sapien
-            import numpy
         except (ImportError, OSError) as exc:
-            raise BackendUnavailableError("SAPIEN 3.0.3 reference dependencies unavailable") from exc
+            raise BackendUnavailableError(
+                "SAPIEN 3.0.3 reference dependencies unavailable"
+            ) from exc
         if sapien.__version__ != "3.0.3":
             raise BackendUnavailableError(
-                f"reference requires SAPIEN 3.0.3, found {sapien.__version__!r}")
+                f"reference requires SAPIEN 3.0.3, found {sapien.__version__!r}"
+            )
+        # A successful import of the supported wheel already loads its NumPy dependency.
+        import numpy
+
         from ._sapien_session import SapienSession
+
         delegate = SapienSession(scene, self.config, sapien, numpy)
         self._last_open_diagnostics = delegate.diagnostics
         return _SapienValidatedSession(scene, delegate)

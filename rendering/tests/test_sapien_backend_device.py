@@ -3,22 +3,22 @@
 Set PHYMEO_SAPIEN_DEVICE=1 to opt in.
 A missing runtime/device after opt-in is an error, not a skip.
 """
-from dataclasses import replace
+
 import json
-from hashlib import sha256
 import math
 import os
-from pathlib import Path
 import struct
 import unittest
+from dataclasses import replace
+from hashlib import sha256
+from pathlib import Path
 
+from integration._g1_table import CAMERA_MOUNT, table_frames, table_scene
 from phymeo_rendering.backends import SessionClosedError, UnsupportedRequestError
 from phymeo_rendering.cameras import Camera
 from phymeo_rendering.outputs import Channel
 from phymeo_rendering.pipeline import CaptureRequest, RenderPath
 from phymeo_rendering.scene import NodePose, Pose, compose_pose
-from integration._g1_table import CAMERA_MOUNT, table_frames, table_scene
-
 
 ENABLED = os.environ.get("PHYMEO_SAPIEN_DEVICE") == "1"
 
@@ -28,8 +28,7 @@ def _camera(frame, *, wrist=False):
     if wrist:
         node = next(n for n in frame.nodes if n.node_id == "wrist")
         pose = compose_pose(node.world_pose, CAMERA_MOUNT)
-    return Camera("g3-reference", frame.key, pose, 160, 120,
-                  125.0, 125.0, 80.0, 60.0, 0.1, 5.0)
+    return Camera("g3-reference", frame.key, pose, 160, 120, 125.0, 125.0, 80.0, 60.0, 0.1, 5.0)
 
 
 def _pixel(capture, channel, u, v):
@@ -46,8 +45,9 @@ def _pixel(capture, channel, u, v):
 class SapienApiSmokeTest(unittest.TestCase):
     def test_real_pure_render_paths(self):
         """Can be run before the adapter exists; actual shipped shader compile/readback."""
-        import sapien
         import numpy as np
+        import sapien
+
         self.assertEqual(sapien.__version__, "3.0.3")
         records = []
         for shader, target in (("default", "Lighting"), ("rt", "HdrColor")):
@@ -55,7 +55,9 @@ class SapienApiSmokeTest(unittest.TestCase):
                 system = sapien.render.RenderSystem("cuda:0")
                 scene = sapien.Scene([system])
                 entity = sapien.Entity()
-                camera = sapien.render.RenderCameraComponent(16, 12, str(Path(sapien.__file__).parent / "vulkan_shader" / shader))
+                camera = sapien.render.RenderCameraComponent(
+                    16, 12, str(Path(sapien.__file__).parent / "vulkan_shader" / shader)
+                )
                 entity.add_component(camera)
                 previous = sapien.render.get_ray_tracing_denoiser()
                 try:
@@ -74,8 +76,14 @@ class SapienApiSmokeTest(unittest.TestCase):
                     pixels = camera.get_picture(target)
                     self.assertEqual(pixels.shape, (12, 16, 4))
                     self.assertTrue(np.isfinite(pixels).all())
-                    records.append({"shader": shader, "device": system.device.name,
-                                    "pci": system.device.pci_string, "targets": names})
+                    records.append(
+                        {
+                            "shader": shader,
+                            "device": system.device.name,
+                            "pci": system.device.pci_string,
+                            "targets": names,
+                        }
+                    )
                 finally:
                     scene.clear()
         print("SAPIEN_REAL_SMOKE=" + json.dumps(records))
@@ -85,6 +93,7 @@ class SapienApiSmokeTest(unittest.TestCase):
 class SapienBackendDeviceTest(unittest.TestCase):
     def _open(self, path):
         from phymeo_rendering.backends.sapien import SapienBackend, SapienConfig
+
         backend = SapienBackend(SapienConfig(path=path, device="cuda:0"))
         session = backend.open_scene(table_scene())
         self.addCleanup(session.close)
@@ -105,9 +114,13 @@ class SapienBackendDeviceTest(unittest.TestCase):
         self.assertTrue(math.isinf(_pixel(capture, Channel.FORWARD_DEPTH, 0, 0)))
         self.assertEqual(_pixel(capture, Channel.VALID, 0, 0), 0)
         original = tuple(p.data for p in capture.planes)
-        moved = replace(second, nodes=tuple(
-            NodePose(n.node_id, Pose((2.0, 0.0, 0.0))) if n.node_id == "base" else n
-            for n in second.nodes))
+        moved = replace(
+            second,
+            nodes=tuple(
+                NodePose(n.node_id, Pose((2.0, 0.0, 0.0))) if n.node_id == "base" else n
+                for n in second.nodes
+            ),
+        )
         other = session.capture(moved, replace(request, camera=_camera(moved)))
         self.assertEqual(_pixel(other, Channel.INSTANCE_ID, 80, 60), 0)
         replay = session.capture(first, request)
@@ -122,15 +135,20 @@ class SapienBackendDeviceTest(unittest.TestCase):
         _, session = self._open(RenderPath.RASTER)
         first, second = table_frames()
         for frame, expected_pixel in ((first, (49, 60)), (second, (80, 13))):
-            request = CaptureRequest(_camera(frame, wrist=True), RenderPath.RASTER,
-                                     (Channel.INSTANCE_ID, Channel.FORWARD_DEPTH))
+            request = CaptureRequest(
+                _camera(frame, wrist=True),
+                RenderPath.RASTER,
+                (Channel.INSTANCE_ID, Channel.FORWARD_DEPTH),
+            )
             capture = session.capture(frame, request)
             self.assertEqual(_pixel(capture, Channel.INSTANCE_ID, *expected_pixel), 11)
-            self.assertAlmostEqual(_pixel(capture, Channel.FORWARD_DEPTH, *expected_pixel),
-                                   1.0, delta=2e-5)
+            self.assertAlmostEqual(
+                _pixel(capture, Channel.FORWARD_DEPTH, *expected_pixel), 1.0, delta=2e-5
+            )
         foreign = replace(first, key=replace(first.key, world_id="another-world", epoch=4))
-        result = session.capture(foreign, CaptureRequest(_camera(foreign), RenderPath.RASTER,
-                                                        (Channel.INSTANCE_ID,)))
+        result = session.capture(
+            foreign, CaptureRequest(_camera(foreign), RenderPath.RASTER, (Channel.INSTANCE_ID,))
+        )
         self.assertEqual(_pixel(result, Channel.INSTANCE_ID, 80, 60), 12)
 
     def test_close_observation_is_per_session_and_counts_real_attachments(self):
@@ -157,6 +175,7 @@ class SapienBackendDeviceTest(unittest.TestCase):
         # The detached old dictionary and the other session remain independent.
         self.assertFalse(before["lifecycle"]["closed"])
         self.assertEqual(first.diagnostics(), closed)
+
     def test_pt_rejects_fp32_clip_slivers_and_large_coordinate_loss(self):
         _, session = self._open(RenderPath.PATH_TRACE)
         frame = table_frames()[0]
@@ -172,9 +191,13 @@ class SapienBackendDeviceTest(unittest.TestCase):
         # scale scene's offsets. A matched common translation must be refused,
         # not silently collapse the scene and publish a dark picture.
         shift = 2.0**30
-        shifted = replace(frame, nodes=tuple(
-            NodePose(n.node_id, Pose((shift, 0.0, 0.0))) if n.node_id == "base" else n
-            for n in frame.nodes))
+        shifted = replace(
+            frame,
+            nodes=tuple(
+                NodePose(n.node_id, Pose((shift, 0.0, 0.0))) if n.node_id == "base" else n
+                for n in frame.nodes
+            ),
+        )
         huge_camera = replace(request.camera, world_pose=Pose((shift, 0.0, 1.0625)))
         with self.assertRaisesRegex(UnsupportedRequestError, "precision"):
             session.capture(shifted, replace(request, camera=huge_camera))
@@ -190,9 +213,14 @@ class SapienBackendDeviceTest(unittest.TestCase):
         request = CaptureRequest(_camera(frame), RenderPath.PATH_TRACE, (Channel.RGB,))
         first = session.capture(frame, request)
         second = session.capture(frame, request)
-        displaced = replace(next_frame, key=replace(next_frame.key, world_id="other"), nodes=tuple(
-            NodePose(n.node_id, Pose((2.0, 0.0, 0.0))) if n.node_id == "base" else n
-            for n in next_frame.nodes))
+        displaced = replace(
+            next_frame,
+            key=replace(next_frame.key, world_id="other"),
+            nodes=tuple(
+                NodePose(n.node_id, Pose((2.0, 0.0, 0.0))) if n.node_id == "base" else n
+                for n in next_frame.nodes
+            ),
+        )
         different = session.capture(displaced, replace(request, camera=_camera(displaced)))
         replay = session.capture(frame, request)
         _, independent = self._open(RenderPath.PATH_TRACE)
@@ -208,8 +236,9 @@ class SapienBackendDeviceTest(unittest.TestCase):
         evidence = {
             "same_device_repeat_srgb8_exact": True,
             "scope": "same installed shader/device/config and authored scene; not a cross-device guarantee",
-            "capture_sha256": [sha256(c.planes[0].data).hexdigest()
-                               for c in (first, second, replay, fresh)],
+            "capture_sha256": [
+                sha256(c.planes[0].data).hexdigest() for c in (first, second, replay, fresh)
+            ],
             "diagnostics": backend.last_open_diagnostics,
         }
         print("SAPIEN_FIXED_SAMPLING=" + json.dumps(evidence))
@@ -218,7 +247,9 @@ class SapienBackendDeviceTest(unittest.TestCase):
             directory = Path(artifact)
             directory.mkdir(parents=True, exist_ok=True)
             (directory / "reference-sampling.json").write_text(
-                json.dumps(evidence, indent=2), encoding="utf-8")
+                json.dumps(evidence, indent=2), encoding="utf-8"
+            )
+
     def test_path_trace_is_real_rgb_only_and_clip_rejection_is_explicit(self):
         backend, session = self._open(RenderPath.PATH_TRACE)
         frame = table_frames()[0]
@@ -243,14 +274,12 @@ class SapienBackendDeviceTest(unittest.TestCase):
             directory = Path(artifact)
             directory.mkdir(parents=True, exist_ok=True)
             (directory / "reference-pt.ppm").write_bytes(
-                b"P6\n160 120\n255\n" + capture.planes[0].data)
+                b"P6\n160 120\n255\n" + capture.planes[0].data
+            )
             (directory / "reference-info.json").write_text(
-                json.dumps(backend.last_open_diagnostics, indent=2), encoding="utf-8")
+                json.dumps(backend.last_open_diagnostics, indent=2), encoding="utf-8"
+            )
 
 
 if __name__ == "__main__":
     unittest.main()
-
-
-
-

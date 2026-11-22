@@ -12,8 +12,23 @@ readme = "README.md"
 [project.optional-dependencies]
 sapien = ["sapien==3.0.3", "numpy==1.26.4"]
 
-[tool.setuptools.packages.find]
-where = ["src"]
+[tool.setuptools]
+# The fourth entry is a data-only namespace. Map the existing, pinned asset
+# directory directly into the wheel rather than maintaining a second copy.
+packages = ["phymeo_rendering", "phymeo_rendering.adapters", "phymeo_rendering.backends", "phymeo_rendering._panda_assets"]
+include-package-data = false
+
+[tool.setuptools.package-dir]
+"" = "src"
+"phymeo_rendering._panda_assets" = "assets/panda"
 
 [tool.setuptools.package-data]
-"phymeo_rendering.backends" = ["_native/CMakeLists.txt", "_native/*.cpp", "_native/*.h", "_shaders/*.vert", "_shaders/*.frag"]
+"phymeo_rendering.backends" = [
+    "_native/CMakeLists.txt", "_native/*.cmake", "_native/*.cpp",
+    "_native/*.h", "_native/*.hpp", "_native/*.inc", "_shaders/*",
+]
+"phymeo_rendering._panda_assets" = ["*", "meshes/*.gltf", "original/*"]
+
+[tool.setuptools.exclude-package-data]
+# This wheel carries platform-independent build INPUTS, never a local build.
+"*" = ["*.dll", "*.pyd", "*.so", "*.dylib", "*.spv", "*.exe", "*.lib", "*.a", "*.o", "*.obj"]

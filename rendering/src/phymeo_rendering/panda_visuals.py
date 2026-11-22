@@ -3,8 +3,8 @@
 panda_visual_assets(asset_dir) returns immutable (meshes, materials, instances).
 It verifies the exact published manifest, all prepared meshes, source archives
 and license notices before returning any resource. The optional directory
-defaults to this checkout's rendering/assets/panda; installed consumers should
-provide their packaged directory explicitly.
+defaults to the wheel's package-local resources, or rendering/assets/panda in a
+source checkout. Explicit overrides retain the same pinned integrity checks.
 
 Mesh positions already include each COLLADA visual-scene matrix in the authored
 URDF link's metre frame. Instances attach to panda_link0..7, panda_hand and both
@@ -48,6 +48,20 @@ def _resource(root: Path, relative: str) -> Path:
     return resolved
 
 
+def _default_asset_dir() -> Path:
+    """Resolve stable filesystem resources without extraction or SDK imports.
+
+    pip installs the data namespace beside this module. The explicit source
+    fallback only applies to the src/ layout; a damaged installed bundle never
+    falls back to a repository or a cache discovered elsewhere on the machine.
+    """
+    package = Path(__file__).resolve().parent
+    installed = package / "_panda_assets"
+    if installed.exists() or package.parent.name != "src":
+        return installed
+    return package.parent.parent / "assets" / "panda"
+
+
 def panda_visual_assets(asset_dir=None) -> tuple[tuple[Mesh, ...], tuple[Material, ...], tuple[Instance, ...]]:
     """Load the fixed manufacturer's prepared visual set, or reject corruption.
 
@@ -58,7 +72,7 @@ def panda_visual_assets(asset_dir=None) -> tuple[tuple[Mesh, ...], tuple[Materia
     the current triangle-only mesh contract.
     """
     if asset_dir is None:
-        asset_dir = Path(__file__).resolve().parents[2] / "assets" / "panda"
+        asset_dir = _default_asset_dir()
     root = Path(asset_dir).resolve()
     manifest = json.loads(_verified(root / "manifest.json", _MANIFEST_SHA256, _MAX_MANIFEST))
     for row in manifest["licenses"] + manifest["visual_placement_sources"]:

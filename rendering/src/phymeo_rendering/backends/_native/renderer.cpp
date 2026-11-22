@@ -4,6 +4,7 @@
 #include <array>
 #include <atomic>
 #include <cmath>
+#include <chrono>
 #include <cstdio>
 #include <cstring>
 #include <functional>
@@ -47,12 +48,14 @@ constexpr uint32_t MAX_VERTICES = 4096u*3u;
 constexpr std::array<VkFormat, 5> FORMATS = {
     VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R32_SFLOAT,
     VK_FORMAT_R32_UINT, VK_FORMAT_R8_UINT, VK_FORMAT_D32_SFLOAT};
-struct Buffer { VkBuffer handle{}; VkDeviceMemory memory{}; };
-struct Image { VkImage handle{}; VkDeviceMemory memory{}; VkImageView view{}; };
+struct Allocation { VkDeviceSize bytes{}; bool local_heap{}, host_visible{}; };
+struct Buffer { VkBuffer handle{}; VkDeviceMemory memory{}; Allocation allocation{}; };
+struct Image { VkImage handle{}; VkDeviceMemory memory{}; VkImageView view{}; Allocation allocation{}; };
 struct ResidentState;
 struct Context {
     bool resident = false;
     PrResidentInfo resident_properties{};
+    PrResidentTelemetry telemetry{};
     std::shared_ptr<ResidentState> resident_state;
     VkInstance instance{};
     VkDebugUtilsMessengerEXT messenger{};
@@ -73,7 +76,7 @@ struct Context {
     std::string validation_message;
     bool poisoned = false;
 
-    Context() { ++live_contexts; }
+    Context() { ++live_contexts; telemetry.telemetry_abi_version = 1; }
     ~Context() { shutdown(); --live_contexts; }
     VkResult shutdown() noexcept {
         VkResult waited = VK_SUCCESS;
@@ -121,6 +124,34 @@ struct Context {
                 (memory_properties.memoryTypes[i].propertyFlags & wanted) == wanted) return i;
         throw std::runtime_error("required Vulkan memory type unavailable");
     }
+    void account_allocation(Allocation& owner, const VkMemoryAllocateInfo& allocation) {
+        owner.bytes = allocation.allocationSize;
+        const auto& type = memory_properties.memoryTypes[allocation.memoryTypeIndex];
+        owner.local_heap = (memory_properties.memoryHeaps[type.heapIndex].flags &
+                            VK_MEMORY_HEAP_DEVICE_LOCAL_BIT) != 0;
+        owner.host_visible = (type.propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) != 0;
+        ++telemetry.allocation_count;
+        if (owner.local_heap) {
+            telemetry.device_local_bytes_current += owner.bytes;
+            telemetry.device_local_bytes_allocated += owner.bytes;
+            telemetry.device_local_bytes_peak = std::max(
+                telemetry.device_local_bytes_peak, telemetry.device_local_bytes_current);
+        }
+        if (owner.host_visible) {
+            telemetry.host_visible_bytes_current += owner.bytes;
+            telemetry.host_visible_bytes_allocated += owner.bytes;
+            telemetry.host_visible_bytes_peak = std::max(
+                telemetry.host_visible_bytes_peak, telemetry.host_visible_bytes_current);
+        }
+    }
+    void free_memory(VkDeviceMemory& memory, Allocation& allocation) noexcept {
+        if (!memory) return;
+        release(memory, [&](auto h) { vkFreeMemory(device, h, nullptr); });
+        if (allocation.local_heap) telemetry.device_local_bytes_current -= allocation.bytes;
+        if (allocation.host_visible) telemetry.host_visible_bytes_current -= allocation.bytes;
+        ++telemetry.free_count;
+        allocation = {};
+    }
     void make_buffer(Buffer& value, VkDeviceSize bytes, VkBufferUsageFlags usage,
                      VkMemoryPropertyFlags memory_flags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
                                                           VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) {
@@ -132,6 +163,7 @@ struct Context {
         alloc.allocationSize = needed.size;
         alloc.memoryTypeIndex = memory_type(needed.memoryTypeBits, memory_flags);
         acquire(value.memory, "vkAllocateMemory buffer", [&](auto* output) { return vkAllocateMemory(device, &alloc, nullptr, output); });
+        account_allocation(value.allocation, alloc);
         check(vkBindBufferMemory(device, value.handle, value.memory, 0), "vkBindBufferMemory");
     }
     void upload(const Buffer& buffer, const void* source, size_t bytes) {
@@ -154,6 +186,7 @@ struct Context {
         alloc.allocationSize = needed.size;
         alloc.memoryTypeIndex = memory_type(needed.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
         acquire(value.memory, "vkAllocateMemory image", [&](auto* output) { return vkAllocateMemory(device, &alloc, nullptr, output); });
+        account_allocation(value.allocation, alloc);
         check(vkBindImageMemory(device, value.handle, value.memory, 0), "vkBindImageMemory");
         VkImageViewCreateInfo view{VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO};
         view.image = value.handle; view.viewType = VK_IMAGE_VIEW_TYPE_2D; view.format = format;
@@ -239,6 +272,9 @@ struct Context {
             properties.max_vertices = r.max_vertices;
         }
         std::memcpy(properties.device_uuid, identity.deviceUUID, 16);
+        telemetry.device_luid_valid = identity.deviceLUIDValid ? 1u : 0u;
+        telemetry.device_node_mask = identity.deviceNodeMask;
+        if (identity.deviceLUIDValid) std::memcpy(telemetry.device_luid, identity.deviceLUID, 8);
         std::memcpy(properties.device_name, p.deviceName, sizeof(properties.device_name));
         for (size_t i=0; i<FORMATS.size(); ++i) {
             VkFormatProperties format{}; vkGetPhysicalDeviceFormatProperties(physical, FORMATS[i], &format);
@@ -383,11 +419,11 @@ struct FrameResources {
         for(auto& image:images) {
             release(image.view, [&](auto owned) { vkDestroyImageView(c.device,owned,nullptr); });
             release(image.handle, [&](auto owned) { vkDestroyImage(c.device,owned,nullptr); });
-            release(image.memory, [&](auto owned) { vkFreeMemory(c.device,owned,nullptr); });
+            c.free_memory(image.memory, image.allocation);
         }
         for(auto* buffer:{&vertices,&uniform,&readback}) {
             release(buffer->handle, [&](auto owned) { vkDestroyBuffer(c.device,owned,nullptr); });
-            release(buffer->memory, [&](auto owned) { vkFreeMemory(c.device,owned,nullptr); });
+            c.free_memory(buffer->memory, buffer->allocation);
         }
         --live_frames;
     }
@@ -595,5 +631,34 @@ int pr_resident_info(void* handle, PrResidentInfo* output) {
     if (!context.resident) { last_error = "context does not use resident rendering"; return -1; }
     *output = context.resident_properties;
     output->poisoned = context.poisoned ? 1u : 0u;
+    return 0;
+}
+
+
+int pr_resident_telemetry(void* handle, PrResidentTelemetry* output) {
+    if (!handle || !output) { last_error = "null resident telemetry argument"; return -1; }
+    auto& context = *static_cast<Context*>(handle);
+    if (!context.resident) { last_error = "context does not use resident rendering"; return -1; }
+    *output = context.telemetry;
+    return 0;
+}
+int pr_resident_destroy(void* handle, PrInfo* final_info, PrResidentTelemetry* final_telemetry) {
+    if (!handle) {
+        if (final_info) *final_info = {};
+        if (final_telemetry) { *final_telemetry = {}; final_telemetry->telemetry_abi_version = 1; }
+        return 0;
+    }
+    auto* context = static_cast<Context*>(handle);
+    if (!context->resident) { last_error = "context does not use resident rendering"; return -1; }
+    VkResult waited = context->shutdown();
+    if (final_info) context->info(final_info);
+    if (final_telemetry) *final_telemetry = context->telemetry;
+    uint64_t errors = context->errors.load();
+    delete context;
+    if (waited != VK_SUCCESS) {
+        last_error = "resident vkDeviceWaitIdle during close: "+std::to_string(waited);
+        return -1;
+    }
+    if (errors) { last_error = "Vulkan validation reported errors before resident close completed"; return -1; }
     return 0;
 }

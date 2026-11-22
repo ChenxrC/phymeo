@@ -63,3 +63,11 @@
 两种求交下共有 239 帧的完整 RGB 字节相同。在全部 276,480,000 个像素采样中，63 个有差异，最大单通道差 18；两个画面局部都平滑的像素差最多 1 个码值。独立路径追踪的 300 次采集 p95 为 1214.24 ms，H.264 解码后最差单帧平均绝对误差为 1.833 个 RGB8 码值。[整帧差异](daylight-shadow-difference.json) · [参考采集](daylight-reference-camera.json) · [参考片解码核对](workshop-daylight-reference.decoded.json)
 
 在固定强曝光的独立高光标定中，SAPIEN 相机可选择 Khronos PBR Neutral。相同线性 HDR 下，球体中央 40×40 采样的 1600 个全白像素均恢复了层次，映射后的通道范围为 216–254。两个显示模式读回的原始 HDR 相同，光栅相机的深度、ID 和掩码相同。[硬截断](neutral-control-clip.png) · [Neutral](neutral-control-mapped.png) · [四次曝光原始记录](reference-neutral-calibration.json)
+
+## 先看材质，再看半影
+
+打开[同帧擦拭比较](../compare.html)，暂停后拖动分界线。左右取自一张带同一时间戳的拼接视频帧，可以观察实时近似和路径追踪在夹指间接照明、钢柱反光及桌面阴影上的差异。视频 0 秒对应第一条被采样的物理状态 0.033125 秒，最后一帧对应物理 10 秒。[原始拼接影片](daylight-comparison-atlas.mp4) · [解码核对](daylight-comparison-atlas.decoded.json)
+
+木面现在可以同时使用同一次扫描的彩色图和线性粗糙度图。在 16 块不同 UV、含双线性插值和两种粗糙度因子的色板中，每块核对内部 7×7 个像素。自研、SAPIEN 光栅、SAPIEN 光追与相应独立常量材质的最大单通道差分别为 1、0、0 RGB8；光栅几何传感均完全一致。[标定图](roughness-chart-native.png) · [自研读数](roughness-chart-native.json) · [参考光栅](roughness-chart-sapien-raster.json) · [参考光追](roughness-chart-sapien-pt.json) · [真实抓取近景](daylight-gripper-1080.png)
+
+有限矩形灯部分遮挡时，固定相位 0 的 2×2、4×4、8×8 灯面样本相对独立积分的平均误差分别为 8.135%、3.900%、1.933%。三种密度使用相同参考峰值归一化。4×4 的最大误差、最大相邻亮度跳变和半影宽度仍超出预设门槛；8×8 在三个位置均通过，计算耗时增加。这个标定只检验矩形灯的直接光积分。它没有测量间接反弹质量。[2×2](area-light-grid-2.png) · [4×4](area-light-grid-4.png) · [8×8](area-light-grid-8.png) · [完整门槛、积分、传感样本与时间](area-light-grid-results.json)

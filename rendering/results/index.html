@@ -21,7 +21,7 @@
   .meta a{margin-left:14px}#error{color:#ffd9a8}
   @media(max-width:760px){main{grid-template-columns:1fr}header{margin-bottom:16px}nav{order:2}header a{font-size:.85em}}
 </style>
-<header><h1>Phymeo 渲染回放</h1><a href="../architecture.html">引擎架构</a></header>
+<header><h1>Phymeo 渲染回放</h1><div><a href="compare.html">同帧擦拭比较</a> · <a href="engine-capabilities.md">引擎能力</a> · <a href="../architecture.html">架构图</a></div></header>
 <main>
   <section aria-label="当前影片">
     <video id="film" controls playsinline preload="metadata" poster="r2/daylight-reference-4096.png">
@@ -38,7 +38,7 @@
   const panda = [[0,"从头播放"],[1.2,"搬运方块"],[1.9,"放回台面"],[2.25,"开爪回程"]];
   const movies = [
     {id:"daylight-reference", title:"车间日光下的抓放 · 光追", description:"SAPIEN 路径追踪 · 每像素 1024 样本", file:"r2/workshop-daylight-reference.mp4", poster:"r2/daylight-reference-1024.png", group:"panda", shots:panda,
-     caption:"先看红方块离开台面时下方的阴影，再看白色外壳、拉丝色钢柱和木桌如何反射窗光。切到下一个自研版本，可以停在同一姿态比较。", detail:"10 秒 · 960 × 540 · 同一段物理抓放"},
+     caption:"先看红方块离开台面时下方的阴影，再看白色外壳、钢柱和木桌如何反射窗光。切到下一个自研版本，可以停在同一姿态比较。", detail:"10 秒 · 960 × 540 · 同一段物理抓放"},
     {id:"daylight", title:"车间日光下的抓放", description:"自研 Vulkan · 720p", file:"r2/workshop-daylight-native.mp4", poster:"r2/daylight-native.png", group:"panda", shots:panda,
      caption:"先看前 2.25 秒。两指夹住红方块、抬起、放到目标处，随后空手返回。木纹来自实拍扫描，车间全景同时提供背景、环境光和钢柱上的反射。", detail:"10 秒 · 原速 · 300 次公开相机读回"},
     {id:"lighting",title:"同一动作，两种布光",description:"自研 Vulkan · 同步分屏",file:"r2/lighting-in-motion.mp4",poster:"r2/native-studio.png",group:"panda",shots:panda,

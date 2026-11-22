@@ -1,0 +1,744 @@
+{
+  "backend": "sapien-pt",
+  "role": "roughness",
+  "passed": true,
+  "cells": [
+    {
+      "uv": [
+        0.25,
+        0.25
+      ],
+      "factor": 0.85,
+      "mean_rgb_actual": [
+        41.816326530612244,
+        41.816326530612244,
+        41.816326530612244
+      ],
+      "mean_rgb_oracle": [
+        41.816326530612244,
+        41.816326530612244,
+        41.816326530612244
+      ],
+      "max_absolute_rgb8": 0
+    },
+    {
+      "uv": [
+        0.75,
+        0.25
+      ],
+      "factor": 0.85,
+      "mean_rgb_actual": [
+        93.0,
+        93.0,
+        93.0
+      ],
+      "mean_rgb_oracle": [
+        93.0,
+        93.0,
+        93.0
+      ],
+      "max_absolute_rgb8": 0
+    },
+    {
+      "uv": [
+        0.25,
+        0.75
+      ],
+      "factor": 0.85,
+      "mean_rgb_actual": [
+        92.3061224489796,
+        92.3061224489796,
+        92.3061224489796
+      ],
+      "mean_rgb_oracle": [
+        92.3061224489796,
+        92.3061224489796,
+        92.3061224489796
+      ],
+      "max_absolute_rgb8": 0
+    },
+    {
+      "uv": [
+        0.75,
+        0.75
+      ],
+      "factor": 0.85,
+      "mean_rgb_actual": [
+        121.48979591836735,
+        121.48979591836735,
+        121.48979591836735
+      ],
+      "mean_rgb_oracle": [
+        121.48979591836735,
+        121.48979591836735,
+        121.48979591836735
+      ],
+      "max_absolute_rgb8": 0
+    },
+    {
+      "uv": [
+        0.5,
+        0.25
+      ],
+      "factor": 0.85,
+      "mean_rgb_actual": [
+        136.42857142857142,
+        136.42857142857142,
+        136.42857142857142
+      ],
+      "mean_rgb_oracle": [
+        136.42857142857142,
+        136.42857142857142,
+        136.42857142857142
+      ],
+      "max_absolute_rgb8": 0
+    },
+    {
+      "uv": [
+        -0.25,
+        1.25
+      ],
+      "factor": 0.85,
+      "mean_rgb_actual": [
+        89.0,
+        89.0,
+        89.0
+      ],
+      "mean_rgb_oracle": [
+        89.0,
+        89.0,
+        89.0
+      ],
+      "max_absolute_rgb8": 0
+    },
+    {
+      "uv": [
+        1.0,
+        0.5
+      ],
+      "factor": 0.85,
+      "mean_rgb_actual": [
+        136.18367346938774,
+        136.18367346938774,
+        136.18367346938774
+      ],
+      "mean_rgb_oracle": [
+        136.18367346938774,
+        136.18367346938774,
+        136.18367346938774
+      ],
+      "max_absolute_rgb8": 0
+    },
+    {
+      "uv": [
+        -0.08,
+        -0.17
+      ],
+      "factor": 0.85,
+      "mean_rgb_actual": [
+        134.81632653061226,
+        134.81632653061226,
+        134.81632653061226
+      ],
+      "mean_rgb_oracle": [
+        134.81632653061226,
+        134.81632653061226,
+        134.81632653061226
+      ],
+      "max_absolute_rgb8": 0
+    },
+    {
+      "uv": [
+        0.25,
+        0.25
+      ],
+      "factor": 0.58,
+      "mean_rgb_actual": [
+        29.979591836734695,
+        29.979591836734695,
+        29.979591836734695
+      ],
+      "mean_rgb_oracle": [
+        29.979591836734695,
+        29.979591836734695,
+        29.979591836734695
+      ],
+      "max_absolute_rgb8": 0
+    },
+    {
+      "uv": [
+        0.75,
+        0.25
+      ],
+      "factor": 0.58,
+      "mean_rgb_actual": [
+        137.28571428571428,
+        137.28571428571428,
+        137.28571428571428
+      ],
+      "mean_rgb_oracle": [
+        137.28571428571428,
+        137.28571428571428,
+        137.28571428571428
+      ],
+      "max_absolute_rgb8": 0
+    },
+    {
+      "uv": [
+        0.25,
+        0.75
+      ],
+      "factor": 0.58,
+      "mean_rgb_actual": [
+        52.89795918367347,
+        52.89795918367347,
+        52.89795918367347
+      ],
+      "mean_rgb_oracle": [
+        52.89795918367347,
+        52.89795918367347,
+        52.89795918367347
+      ],
+      "max_absolute_rgb8": 0
+    },
+    {
+      "uv": [
+        0.75,
+        0.75
+      ],
+      "factor": 0.58,
+      "mean_rgb_actual": [
+        135.0,
+        135.0,
+        135.0
+      ],
+      "mean_rgb_oracle": [
+        135.0,
+        135.0,
+        135.0
+      ],
+      "max_absolute_rgb8": 0
+    },
+    {
+      "uv": [
+        0.5,
+        0.25
+      ],
+      "factor": 0.58,
+      "mean_rgb_actual": [
+        109.71428571428571,
+        109.71428571428571,
+        109.71428571428571
+      ],
+      "mean_rgb_oracle": [
+        109.71428571428571,
+        109.71428571428571,
+        109.71428571428571
+      ],
+      "max_absolute_rgb8": 0
+    },
+    {
+      "uv": [
+        -0.25,
+        1.25
+      ],
+      "factor": 0.58,
+      "mean_rgb_actual": [
+        131.0,
+        131.0,
+        131.0
+      ],
+      "mean_rgb_oracle": [
+        131.0,
+        131.0,
+        131.0
+      ],
+      "max_absolute_rgb8": 0
+    },
+    {
+      "uv": [
+        1.0,
+        0.5
+      ],
+      "factor": 0.58,
+      "mean_rgb_actual": [
+        105.44897959183673,
+        105.44897959183673,
+        105.44897959183673
+      ],
+      "mean_rgb_oracle": [
+        105.44897959183673,
+        105.44897959183673,
+        105.44897959183673
+      ],
+      "max_absolute_rgb8": 0
+    },
+    {
+      "uv": [
+        -0.08,
+        -0.17
+      ],
+      "factor": 0.58,
+      "mean_rgb_actual": [
+        118.55102040816327,
+        118.55102040816327,
+        118.55102040816327
+      ],
+      "mean_rgb_oracle": [
+        118.55102040816327,
+        118.55102040816327,
+        118.55102040816327
+      ],
+      "max_absolute_rgb8": 0
+    }
+  ],
+  "max_absolute_rgb8": 0,
+  "sample_count": 784,
+  "oracle_color_span": 107.30612244897958,
+  "sensor_differences": {},
+  "limits": {
+    "max_rgb8": 3,
+    "min_span": 40
+  },
+  "diagnostics": [
+    {
+      "geometry": {
+        "mesh_slots": 16,
+        "instances": 16,
+        "uploaded_vertices": 64,
+        "uploaded_triangles": 32,
+        "limits": {
+          "mesh_slots": 256,
+          "instances": 256,
+          "uploaded_vertices": 600000,
+          "uploaded_triangles": 200000
+        },
+        "scope": "per-instance uploaded geometry; shared per-mesh decoding guards unchanged"
+      },
+      "textures": {
+        "uploads": [
+          {
+            "role": "roughness",
+            "channel": "g",
+            "source_sha256": "e888b685941becf19f89244859907bfd83ea0385c3e27171372931795b1703bc",
+            "decoded_rgb8_sha256": "079e8e0772593007fb62b6cf4e9ac55e802ac78afa757b904ad25bdb66ed894f",
+            "width": 2,
+            "height": 2,
+            "factor": 0.85,
+            "format": "R32Sfloat",
+            "srgb": false,
+            "upload_bytes": 16,
+            "materials": [
+              "swatch-1",
+              "swatch-2",
+              "swatch-3",
+              "swatch-4",
+              "swatch-5",
+              "swatch-6",
+              "swatch-7",
+              "swatch-8"
+            ],
+            "uris": [
+              "file:///C:/Users/38347/.codex/worktrees/phymeo-rendering/phymeo/artifacts/rendering/overnight-1123/rough-chart-sapien-pt/geometry/chips.png"
+            ]
+          },
+          {
+            "role": "color",
+            "channel": null,
+            "source_sha256": "af9cb484e25836824f7bf5adede1e0ce33aea0abaae1e8978b5ec30e99ca27f1",
+            "decoded_rgb8_sha256": "8688d249e9d047b4fc2fb89ce05afe9ec89252ffccdd969de6eef260dd7ffb21",
+            "width": 2,
+            "height": 2,
+            "factor": [
+              0.4,
+              0.4,
+              0.4
+            ],
+            "format": "R32G32B32A32Sfloat",
+            "srgb": false,
+            "upload_bytes": 64,
+            "materials": [
+              "swatch-9",
+              "swatch-10",
+              "swatch-11",
+              "swatch-12",
+              "swatch-13",
+              "swatch-14",
+              "swatch-15",
+              "swatch-16"
+            ],
+            "uris": [
+              "file:///C:/Users/38347/.codex/worktrees/phymeo-rendering/phymeo/artifacts/rendering/overnight-1123/rough-chart-sapien-pt/geometry/white-color.png"
+            ]
+          },
+          {
+            "role": "roughness",
+            "channel": "g",
+            "source_sha256": "e888b685941becf19f89244859907bfd83ea0385c3e27171372931795b1703bc",
+            "decoded_rgb8_sha256": "079e8e0772593007fb62b6cf4e9ac55e802ac78afa757b904ad25bdb66ed894f",
+            "width": 2,
+            "height": 2,
+            "factor": 0.58,
+            "format": "R32Sfloat",
+            "srgb": false,
+            "upload_bytes": 16,
+            "materials": [
+              "swatch-9",
+              "swatch-10",
+              "swatch-11",
+              "swatch-12",
+              "swatch-13",
+              "swatch-14",
+              "swatch-15",
+              "swatch-16"
+            ],
+            "uris": [
+              "file:///C:/Users/38347/.codex/worktrees/phymeo-rendering/phymeo/artifacts/rendering/overnight-1123/rough-chart-sapien-pt/geometry/chips.png"
+            ]
+          }
+        ],
+        "bindings": [
+          {
+            "instance_id": 1,
+            "material_id": "swatch-1",
+            "mesh_id": "plate-1",
+            "mesh_source_sha256": "4d7ab11ac9bcb128a8410b56951e3be9a4f51ab2e48f920e7b527ffe00240fbc"
+          },
+          {
+            "instance_id": 2,
+            "material_id": "swatch-2",
+            "mesh_id": "plate-2",
+            "mesh_source_sha256": "99001af9dc9027440ef3e75746ba2546449bb678d345358a0c192ce27ebff15e"
+          },
+          {
+            "instance_id": 3,
+            "material_id": "swatch-3",
+            "mesh_id": "plate-3",
+            "mesh_source_sha256": "b6df05d0df9402814ae6153e463285b58e52404eccb74bddb423a4c4157047ce"
+          },
+          {
+            "instance_id": 4,
+            "material_id": "swatch-4",
+            "mesh_id": "plate-4",
+            "mesh_source_sha256": "d19ed98059d47312c402f0e7a62540fcccf9b039516c0e9bc261cad23def7e9f"
+          },
+          {
+            "instance_id": 5,
+            "material_id": "swatch-5",
+            "mesh_id": "plate-5",
+            "mesh_source_sha256": "24b051e9539e679fd822317abbce109fbc7578bc3310147dc08c149c03f8e94e"
+          },
+          {
+            "instance_id": 6,
+            "material_id": "swatch-6",
+            "mesh_id": "plate-6",
+            "mesh_source_sha256": "0713020515791cfa78243693ca7e8b38ac45722a8a5e1ce47bd940384c20dcef"
+          },
+          {
+            "instance_id": 7,
+            "material_id": "swatch-7",
+            "mesh_id": "plate-7",
+            "mesh_source_sha256": "02e34048a9acb66f355fa31fd58c1cbedd5b6dc5e279064c9f9e45678a8f89d3"
+          },
+          {
+            "instance_id": 8,
+            "material_id": "swatch-8",
+            "mesh_id": "plate-8",
+            "mesh_source_sha256": "e6177aef4f9a3d5fadd39e876641bd18c8cd00736ad26190c1223e874b186304"
+          },
+          {
+            "instance_id": 9,
+            "material_id": "swatch-9",
+            "mesh_id": "plate-9",
+            "mesh_source_sha256": "037e9d0cc63a1475f989e1db1bbf8069987f885dbd9313c58243d6188f7f95f1"
+          },
+          {
+            "instance_id": 10,
+            "material_id": "swatch-10",
+            "mesh_id": "plate-10",
+            "mesh_source_sha256": "c13e09c701d7d18b8f9f13b0aacff58738a8f2e1175ef1271df5bb7a902c453c"
+          },
+          {
+            "instance_id": 11,
+            "material_id": "swatch-11",
+            "mesh_id": "plate-11",
+            "mesh_source_sha256": "681b3418ed8147b5704908ff0bb9a0de249977a9c963cec18e6a9a15360395ad"
+          },
+          {
+            "instance_id": 12,
+            "material_id": "swatch-12",
+            "mesh_id": "plate-12",
+            "mesh_source_sha256": "e3c247e35527405cc7b98d26ddddcfe1f4bda4ae824570f01ba9cd8f2d8ae911"
+          },
+          {
+            "instance_id": 13,
+            "material_id": "swatch-13",
+            "mesh_id": "plate-13",
+            "mesh_source_sha256": "0e2529c05e4c104e9c2c9147a46d7e84b60fad546fa2189d9485757ae11992ab"
+          },
+          {
+            "instance_id": 14,
+            "material_id": "swatch-14",
+            "mesh_id": "plate-14",
+            "mesh_source_sha256": "86eeea270dc953d1a5dbf1038b944f6bbe359dc4b86a158eb559ed1f9918fc98"
+          },
+          {
+            "instance_id": 15,
+            "material_id": "swatch-15",
+            "mesh_id": "plate-15",
+            "mesh_source_sha256": "bdc6c18c5a89cf9949eeb64197358cbe68ab7e107f6944e80aaa53c1471f5051"
+          },
+          {
+            "instance_id": 16,
+            "material_id": "swatch-16",
+            "mesh_id": "plate-16",
+            "mesh_source_sha256": "d4a768e71230372a08faf03797a9c5425cd737a5f62ad56b922f60ca599454ca"
+          }
+        ],
+        "decoded_rgb8_bytes": 24,
+        "upload_bytes": 96,
+        "sampling": {
+          "filter": "linear",
+          "address": "repeat",
+          "mipmap_levels": 1,
+          "uv_origin": "upper-left; unmodified glTF TEXCOORD_0"
+        },
+        "factor_policy": "white: sRGB8 hardware decode; nonwhite: standard EOTF times linear factor, FP32 texture; material uniform white",
+        "shader_semantics": "SAPIEN 3.0.3 takes sampled color and roughness in place of the corresponding uniform",
+        "limits": {
+          "decoded_rgb8_bytes": 67108864,
+          "upload_bytes": 134217728
+        },
+        "actual_uploads": [
+          {
+            "role": "roughness",
+            "channel": "g",
+            "source_sha256": "e888b685941becf19f89244859907bfd83ea0385c3e27171372931795b1703bc",
+            "factor": 0.85,
+            "width": 2,
+            "height": 2,
+            "format": "R32Sfloat",
+            "srgb": false,
+            "filter": "linear",
+            "address": "repeat",
+            "mipmap_levels": 1,
+            "cpu_upload_sha256": "e0d1b65d2fef555ea6e105c1bc343609d901b91daff8e6e477327306ea84bf87",
+            "cpu_upload_bytes": 16
+          },
+          {
+            "role": "color",
+            "channel": null,
+            "source_sha256": "af9cb484e25836824f7bf5adede1e0ce33aea0abaae1e8978b5ec30e99ca27f1",
+            "factor": [
+              0.4,
+              0.4,
+              0.4
+            ],
+            "width": 2,
+            "height": 2,
+            "format": "R32G32B32A32Sfloat",
+            "srgb": false,
+            "filter": "linear",
+            "address": "repeat",
+            "mipmap_levels": 1,
+            "cpu_upload_sha256": "a3fac463ace72b18e7cdc4355b6ee88175697d70bc62cef8b429c01b609f50e6",
+            "cpu_upload_bytes": 64
+          },
+          {
+            "role": "roughness",
+            "channel": "g",
+            "source_sha256": "e888b685941becf19f89244859907bfd83ea0385c3e27171372931795b1703bc",
+            "factor": 0.58,
+            "width": 2,
+            "height": 2,
+            "format": "R32Sfloat",
+            "srgb": false,
+            "filter": "linear",
+            "address": "repeat",
+            "mipmap_levels": 1,
+            "cpu_upload_sha256": "bd63bbe3e92e31bece037b7f7fb7044939aeaeeae7639cb917611824c29844d3",
+            "cpu_upload_bytes": 16
+          }
+        ]
+      },
+      "studio": null,
+      "backend": "sapien-reference",
+      "library_version": "3.0.3",
+      "sapien_scene_id": 1,
+      "numpy_version": "1.26.4",
+      "requested_path": "path_trace",
+      "effective_path": "path_trace",
+      "requested_device": "cuda:0",
+      "device_name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "device_pci": "0000:01:00.0",
+      "device_description": "cuda:0",
+      "driver_version": null,
+      "vulkan_api_version": null,
+      "physics_systems": [],
+      "physics_steps": 0,
+      "shader_pack": "rt",
+      "shader_directory": "C:\\Users\\38347\\.codex\\worktrees\\phymeo-rendering\\phymeo\\artifacts\\rendering\\g3-table\\ref-env\\Lib\\site-packages\\sapien\\vulkan_shader\\rt",
+      "shader_sha256": "4358e2244c99e37d9c8dcd3ee91a9e9d30b1af52b804aa9d7f9cc4b4f50f3d6b",
+      "official_shader_sha256": "4358e2244c99e37d9c8dcd3ee91a9e9d30b1af52b804aa9d7f9cc4b4f50f3d6b",
+      "linear_rgb_target": "HdrColor",
+      "display": "exposure=1; clamp linear [0,1]; standard sRGB OETF; half-up UNORM8",
+      "display_transform": "clip",
+      "display_transform_source": null,
+      "exposure": 1.0,
+      "ambient_linear_rgb": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "shadow_map_size": 2048,
+      "readback": "blocking SAPIEN get_picture CPU download, then owned bytes",
+      "samples_per_pixel": 128,
+      "max_bounces": 4,
+      "denoiser": "none",
+      "seed": null,
+      "seed_support": "not-user-configurable",
+      "seed_note": "sampling_pattern specifies the actual shader and device scope",
+      "sampling_pattern": {
+        "mode": "official-fixed-sequence-fresh-camera",
+        "magic_hex": "0x9e3779b9",
+        "primary_pixel_sequence": "Halton bases 2 and 3; frameCount*spp+i",
+        "path_rng": "TEA(pixel index + width*height*spp*frameCount, magic)",
+        "frame_count_policy": "first render of a newly constructed camera each exposure",
+        "arbitrary_seed_supported": false,
+        "scope": "same installed shader/device/config; repeated public bytes audited in device test",
+        "cross_device_bitwise_guarantee": false
+      },
+      "accumulation": "fresh camera per exposure; no temporal history",
+      "supported_channels": [
+        "srgb8_rgb"
+      ],
+      "pt_clip_limit": "all vertices inside near+0.002/far and range<9999m, with FP32 clearance",
+      "pt_precision_policy": "8*FP32-epsilon*transform-scale clearance; reject >=1% scene span; pragmatic admission, not a global error proof",
+      "resolution_limit": 4096,
+      "shader_probe": "selected shader executed and CPU target read back",
+      "global_config_note": "camera default mutations serialized/restored inside this adapter only",
+      "lifecycle": {
+        "studio_temporary_files_exist": false,
+        "closed": true,
+        "completed_captures": 1,
+        "close_error": null,
+        "attached_entities": 0,
+        "attached_cameras": 0,
+        "attached_render_bodies": 0,
+        "attached_lights": 0,
+        "attached_entities_before_clear": 17,
+        "attached_entities_after_clear": 0,
+        "attached_cameras_after_clear": 0,
+        "attached_render_bodies_after_clear": 0,
+        "attached_lights_after_clear": 0,
+        "scope": "this scene attachments only; no driver/cache/process-memory release claim"
+      }
+    },
+    {
+      "geometry": {
+        "mesh_slots": 16,
+        "instances": 16,
+        "uploaded_vertices": 64,
+        "uploaded_triangles": 32,
+        "limits": {
+          "mesh_slots": 256,
+          "instances": 256,
+          "uploaded_vertices": 600000,
+          "uploaded_triangles": 200000
+        },
+        "scope": "per-instance uploaded geometry; shared per-mesh decoding guards unchanged"
+      },
+      "textures": {
+        "uploads": [],
+        "bindings": [],
+        "decoded_rgb8_bytes": 0,
+        "upload_bytes": 0,
+        "sampling": {
+          "filter": "linear",
+          "address": "repeat",
+          "mipmap_levels": 1,
+          "uv_origin": "upper-left; unmodified glTF TEXCOORD_0"
+        },
+        "factor_policy": "white: sRGB8 hardware decode; nonwhite: standard EOTF times linear factor, FP32 texture; material uniform white",
+        "shader_semantics": "SAPIEN 3.0.3 takes sampled color and roughness in place of the corresponding uniform",
+        "limits": {
+          "decoded_rgb8_bytes": 67108864,
+          "upload_bytes": 134217728
+        },
+        "actual_uploads": []
+      },
+      "studio": null,
+      "backend": "sapien-reference",
+      "library_version": "3.0.3",
+      "sapien_scene_id": 2,
+      "numpy_version": "1.26.4",
+      "requested_path": "path_trace",
+      "effective_path": "path_trace",
+      "requested_device": "cuda:0",
+      "device_name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "device_pci": "0000:01:00.0",
+      "device_description": "cuda:0",
+      "driver_version": null,
+      "vulkan_api_version": null,
+      "physics_systems": [],
+      "physics_steps": 0,
+      "shader_pack": "rt",
+      "shader_directory": "C:\\Users\\38347\\.codex\\worktrees\\phymeo-rendering\\phymeo\\artifacts\\rendering\\g3-table\\ref-env\\Lib\\site-packages\\sapien\\vulkan_shader\\rt",
+      "shader_sha256": "4358e2244c99e37d9c8dcd3ee91a9e9d30b1af52b804aa9d7f9cc4b4f50f3d6b",
+      "official_shader_sha256": "4358e2244c99e37d9c8dcd3ee91a9e9d30b1af52b804aa9d7f9cc4b4f50f3d6b",
+      "linear_rgb_target": "HdrColor",
+      "display": "exposure=1; clamp linear [0,1]; standard sRGB OETF; half-up UNORM8",
+      "display_transform": "clip",
+      "display_transform_source": null,
+      "exposure": 1.0,
+      "ambient_linear_rgb": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "shadow_map_size": 2048,
+      "readback": "blocking SAPIEN get_picture CPU download, then owned bytes",
+      "samples_per_pixel": 128,
+      "max_bounces": 4,
+      "denoiser": "none",
+      "seed": null,
+      "seed_support": "not-user-configurable",
+      "seed_note": "sampling_pattern specifies the actual shader and device scope",
+      "sampling_pattern": {
+        "mode": "official-fixed-sequence-fresh-camera",
+        "magic_hex": "0x9e3779b9",
+        "primary_pixel_sequence": "Halton bases 2 and 3; frameCount*spp+i",
+        "path_rng": "TEA(pixel index + width*height*spp*frameCount, magic)",
+        "frame_count_policy": "first render of a newly constructed camera each exposure",
+        "arbitrary_seed_supported": false,
+        "scope": "same installed shader/device/config; repeated public bytes audited in device test",
+        "cross_device_bitwise_guarantee": false
+      },
+      "accumulation": "fresh camera per exposure; no temporal history",
+      "supported_channels": [
+        "srgb8_rgb"
+      ],
+      "pt_clip_limit": "all vertices inside near+0.002/far and range<9999m, with FP32 clearance",
+      "pt_precision_policy": "8*FP32-epsilon*transform-scale clearance; reject >=1% scene span; pragmatic admission, not a global error proof",
+      "resolution_limit": 4096,
+      "shader_probe": "selected shader executed and CPU target read back",
+      "global_config_note": "camera default mutations serialized/restored inside this adapter only",
+      "lifecycle": {
+        "studio_temporary_files_exist": false,
+        "closed": true,
+        "completed_captures": 1,
+        "close_error": null,
+        "attached_entities": 0,
+        "attached_cameras": 0,
+        "attached_render_bodies": 0,
+        "attached_lights": 0,
+        "attached_entities_before_clear": 17,
+        "attached_entities_after_clear": 0,
+        "attached_cameras_after_clear": 0,
+        "attached_render_bodies_after_clear": 0,
+        "attached_lights_after_clear": 0,
+        "scope": "this scene attachments only; no driver/cache/process-memory release claim"
+      }
+    }
+  ]
+}

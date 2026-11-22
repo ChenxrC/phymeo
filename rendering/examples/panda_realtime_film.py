@@ -67,6 +67,8 @@ def capture(args):
         raise ValueError("the Neutral display transform currently requires the reference camera")
     if args.reference_seed is not None and args.mode!="studio":
         raise ValueError("an independent sample stream requires the path-traced camera")
+    if args.area_light_grid!=2 and (args.mode!="native" or not (args.daylight or args.native_studio)):
+        raise ValueError("an explicit light-sampling grid requires native rectangular studio lights")
     args.output.mkdir(parents=True, exist_ok=False)
     # The relative source peaks at 1072. Represent all daylight scene lights
     # in 1/8 units inside the integrator, and restore that scale at the camera.
@@ -90,6 +92,8 @@ def capture(args):
             strength=unit_scale*args.light_strength, yaw_degrees=args.light_yaw, face_size=args.cube_size)
         studio = replace(studio, environment_map=environment, panel_strength=unit_scale)
     extra = {"studio": studio} if args.native_studio or args.daylight else {}
+    if args.area_light_grid!=2:
+        extra["area_light_grid"]=args.area_light_grid
     if args.shadow_mode != "software":
         if not is_native:
             raise ValueError("shadow traversal selection requires the native raster backend")
@@ -166,6 +170,7 @@ def capture(args):
     receipt = dict(mode=args.mode, backend=diag, camera_setup=args.camera, workshop=args.workshop,
                    camera_cuts_s=[.5,2.3] if args.camera=="sequence" else [],
                    shadow_traversal=args.shadow_mode if is_native else None,
+                   area_light_grid=args.area_light_grid if is_native and extra.get("studio") else None,
                    scene_radiance_unit_scale=unit_scale, display_exposure=1./unit_scale,
                    panorama_relative_strength=args.light_strength if args.daylight else None,
                    photographic_worktop=args.photographic,
@@ -199,6 +204,7 @@ if __name__ == "__main__":
     parser.add_argument("--device-index", type=int, default=1)
     parser.add_argument("--device", default="cuda:0")
     parser.add_argument("--shadow-mode", choices=("software","ray_query"),default="software")
+    parser.add_argument("--area-light-grid",type=int,choices=(2,4,8),default=2)
     parser.add_argument("--validation", action="store_true")
     parser.add_argument("--samples", type=int, default=256)
     parser.add_argument("--reference-seed",type=int,help="explicit shifted-Halton stream for a held-out reference")

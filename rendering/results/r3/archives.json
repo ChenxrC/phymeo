@@ -1,0 +1,14 @@
+[
+  {
+    "archive": "native.zip",
+    "sha256": "ad58c2625bc305cd3e90e7771b50d45d2c351948dd71ecd996c1868e51544ae6",
+    "files": 79,
+    "bytes": 395220
+  },
+  {
+    "archive": "sapien.zip",
+    "sha256": "9b56ca78ff9b30ae1419bc5e08b8e3b1fdf23ad2811f5f481441b702301494e4",
+    "files": 79,
+    "bytes": 395126
+  }
+]

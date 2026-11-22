@@ -15,7 +15,7 @@ static_assert(sizeof(GpuTransform) == 128, "resident transform shader layout");
 
 struct ResidentState {
     Context& c;
-    Buffer vertices{}, indices{}, meshes_buffer{}, instances_buffer{}, nodes{}, transforms{};
+    Buffer vertices{}, indices{}, meshes_buffer{}, instances_buffer{}, nodes{}, transforms{}, tlas{}, studio{};
     std::vector<GpuResidentMesh> meshes;
     std::vector<PrResidentInstance> instances;
     std::vector<std::array<float, 6>> bounds;
@@ -25,7 +25,7 @@ struct ResidentState {
     explicit ResidentState(Context& context) : c(context) {}
     ~ResidentState() {
         target.reset();
-        for (auto* buffer : {&vertices, &indices, &meshes_buffer, &instances_buffer, &nodes, &transforms}) {
+        for (auto* buffer : {&vertices, &indices, &meshes_buffer, &instances_buffer, &nodes, &transforms, &tlas, &studio}) {
             release(buffer->handle, [&](auto h) { vkDestroyBuffer(c.device, h, nullptr); });
             c.free_memory(buffer->memory, buffer->allocation);
         }
@@ -115,12 +115,20 @@ struct StaticUpload {
     VkBufferUsageFlags usage;
 };
 
-void submit_and_wait(Context& c, FrameResources& frame) {
+using HostClock = std::chrono::steady_clock;
+uint64_t elapsed_ns(HostClock::time_point begin, HostClock::time_point end = HostClock::now()) {
+    return static_cast<uint64_t>(std::max<int64_t>(0,
+        std::chrono::duration_cast<std::chrono::nanoseconds>(end-begin).count()));
+}
+struct SubmitTiming { uint64_t submit, wait; };
+SubmitTiming submit_and_wait(Context& c, FrameResources& frame) {
+    auto submitted_at = HostClock::now();
     VkSubmitInfo submit{VK_STRUCTURE_TYPE_SUBMIT_INFO};
     submit.commandBufferCount = 1; submit.pCommandBuffers = &frame.commands;
     VkResult result = vkQueueSubmit(c.queue, 1, &submit, frame.fence);
     frame.submitted = result == VK_SUCCESS || result == VK_ERROR_DEVICE_LOST;
     if (result != VK_SUCCESS) { c.poisoned = true; check(result, "resident vkQueueSubmit"); }
+    uint64_t submit_ns = elapsed_ns(submitted_at);
     ++c.telemetry.submissions; // only successful vkQueueSubmit calls
     auto before = std::chrono::steady_clock::now();
     result = vkWaitForFences(c.device, 1, &frame.fence, VK_TRUE, UINT64_MAX);
@@ -130,6 +138,7 @@ void submit_and_wait(Context& c, FrameResources& frame) {
     ++c.telemetry.fence_wait_calls;
     if (result != VK_SUCCESS) { c.poisoned = true; check(result, "resident vkWaitForFences"); }
     frame.submitted = false;
+    return {submit_ns, static_cast<uint64_t>(std::max<int64_t>(0, elapsed))};
 }
 
 void make_commands(Context& c, FrameResources& frame) {
@@ -288,6 +297,9 @@ void resident_upload(Context& c, const PrResidentVertex* vertices, uint32_t vert
     uint64_t bytes = 0;
     try {
     bytes = upload_static(c, uploads);
+    c.make_buffer(state->tlas, std::max<size_t>(1, instance_count ? 2ull*instance_count-1 : 0)*sizeof(GpuBvhNode),
+                  VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    c.make_buffer(state->studio, sizeof(PrStudio), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
     c.make_buffer(state->transforms, std::max<size_t>(1, instance_count)*sizeof(GpuTransform),
                   VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
     if (c.errors.load() != errors_before) {
@@ -300,7 +312,8 @@ void resident_upload(Context& c, const PrResidentVertex* vertices, uint32_t vert
     info.bvh_nodes = static_cast<uint32_t>(nodes.size());
     info.instanced_triangles = static_cast<uint32_t>(instanced_triangles);
     info.loaded = 1; ++info.upload_calls; info.geometry_upload_bytes += bytes;
-    info.shadow_node_budget = node_budget;
+    c.profile.tlas_node_count = instance_count ? 2*instance_count-1 : 0;
+    info.shadow_node_budget = node_budget + c.profile.tlas_node_count;
     c.resident_state = std::move(state);
 }
 
@@ -369,6 +382,92 @@ std::vector<GpuTransform> resident_transforms(const ResidentState& state, const 
 
 
 
+// A small balanced top-level tree over the *current* instance boxes. Leaves
+// retain upload-order instance indices. No triangle is dropped or simplified.
+// Boxes include both forward raster and the inverse-matrix shadow geometry.
+std::vector<GpuBvhNode> resident_tlas(const ResidentState& state,
+                                    const std::vector<GpuTransform>& transforms) {
+    std::vector<TriangleBounds> boxes(transforms.size());
+    for (uint32_t slot = 0; slot < transforms.size(); ++slot) {
+        auto& box = boxes[slot]; box.source = slot;
+        const auto& transform = transforms[slot];
+        const auto& bounds = state.bounds[state.instances[slot].mesh_index];
+        // Invert the actual rounded inverse used by the shadow shader. This
+        // also encloses its represented surface when inverse(round(M)) != M.
+        const float* local = transform.local;
+        double columns[3][3]{};
+        for (uint32_t col=0; col<3; ++col)
+            for (uint32_t row=0; row<3; ++row) columns[col][row] = local[4*col+row];
+        double determinant = columns[0][0]*(columns[1][1]*columns[2][2]-columns[2][1]*columns[1][2]) -
+            columns[1][0]*(columns[0][1]*columns[2][2]-columns[2][1]*columns[0][2]) +
+            columns[2][0]*(columns[0][1]*columns[1][2]-columns[1][1]*columns[0][2]);
+        require(std::isfinite(determinant) && determinant > 0, "resident shadow inverse is singular");
+        double inverse[3][3]{}, translation[3]{};
+        for (uint32_t row=0; row<3; ++row) {
+            const auto& a = columns[(row+1)%3]; const auto& b = columns[(row+2)%3];
+            const double cross[3]{a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]};
+            for (uint32_t col=0; col<3; ++col) {
+                inverse[row][col] = cross[col]/determinant;
+                translation[row] -= inverse[row][col]*local[12+col];
+            }
+        }
+        for (uint32_t row=0; row<3; ++row) {
+            double low = std::numeric_limits<double>::infinity(), high = -low, magnitude = 0;
+            for (uint32_t corner=0; corner<8; ++corner) {
+                double a = transform.world[12+row], b = translation[row];
+                double scale_a = std::abs(a), scale_b = std::abs(b);
+                for (uint32_t col=0; col<3; ++col) {
+                    double point = bounds[col+((corner & (1u<<col)) ? 3u : 0u)];
+                    double term_a = static_cast<double>(transform.world[4*col+row])*point;
+                    double term_b = inverse[row][col]*point;
+                    a += term_a; b += term_b;
+                    scale_a += std::abs(term_a); scale_b += std::abs(term_b);
+                }
+                low = std::min({low,a,b}); high = std::max({high,a,b});
+                magnitude = std::max({magnitude,scale_a,scale_b});
+            }
+            // Culling-only outward padding for finite FP32 affine evaluation.
+            // It never moves vertices, changes t, or produces a shadow hit.
+            double padding = 32.0*std::numeric_limits<float>::epsilon()*magnitude;
+            box.low[row] = std::nextafter(static_cast<float>(low-padding), -std::numeric_limits<float>::infinity());
+            box.high[row] = std::nextafter(static_cast<float>(high+padding), std::numeric_limits<float>::infinity());
+            require(std::isfinite(box.low[row]) && std::isfinite(box.high[row]), "resident TLAS bounds overflow");
+            box.center[row] = static_cast<float>((static_cast<double>(box.low[row])+box.high[row])*0.5);
+        }
+    }
+    std::vector<GpuBvhNode> output;
+    if (boxes.empty()) return output;
+    output.reserve(2*boxes.size()-1);
+    std::function<void(uint32_t,uint32_t)> build;
+    build = [&](uint32_t begin, uint32_t end) {
+        uint32_t index = static_cast<uint32_t>(output.size());
+        output.emplace_back(); GpuBvhNode node{};
+        auto center_low = boxes[begin].center, center_high = center_low;
+        for (uint32_t k=0; k<3; ++k) { node.minimum[k]=boxes[begin].low[k]; node.maximum[k]=boxes[begin].high[k]; }
+        for (uint32_t i=begin+1; i<end; ++i) for (uint32_t k=0; k<3; ++k) {
+            node.minimum[k]=std::min(node.minimum[k],boxes[i].low[k]);
+            node.maximum[k]=std::max(node.maximum[k],boxes[i].high[k]);
+            center_low[k]=std::min(center_low[k],boxes[i].center[k]);
+            center_high[k]=std::max(center_high[k],boxes[i].center[k]);
+        }
+        if (end-begin == 1) { node.data[0]=boxes[begin].source; node.data[1]=1; }
+        else {
+            uint32_t axis=0;
+            for (uint32_t k=1; k<3; ++k)
+                if (static_cast<double>(center_high[k])-center_low[k] >
+                    static_cast<double>(center_high[axis])-center_low[axis]) axis=k;
+            uint32_t middle=begin+(end-begin)/2;
+            std::nth_element(boxes.begin()+begin,boxes.begin()+middle,boxes.begin()+end,
+                [axis](const auto& a,const auto& b) { return a.center[axis]<b.center[axis] ||
+                    (a.center[axis]==b.center[axis] && a.source<b.source); });
+            build(begin,middle); build(middle,end);
+        }
+        node.data[2]=static_cast<uint32_t>(output.size()); output[index]=node;
+    };
+    build(0,static_cast<uint32_t>(boxes.size()));
+    return output;
+}
+
 void resident_target(Context& c, ResidentState& state, uint32_t width, uint32_t height) {
     if (state.target && state.width == width && state.height == height) return;
     const auto& info = c.resident_properties;
@@ -389,7 +488,7 @@ void resident_target(Context& c, ResidentState& state, uint32_t width, uint32_t 
         return vkCreateFramebuffer(c.device, &framebuffer, nullptr, out);
     });
     std::array<VkDescriptorPoolSize, 2> sizes{{
-        {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 6}, {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1}}};
+        {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 7}, {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2}}};
     VkDescriptorPoolCreateInfo pool{VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO};
     pool.maxSets = 1; pool.poolSizeCount = 2; pool.pPoolSizes = sizes.data();
     acquire(frame->descriptors, "resident descriptor pool", [&](auto* out) {
@@ -400,25 +499,34 @@ void resident_target(Context& c, ResidentState& state, uint32_t width, uint32_t 
     allocate.descriptorSetCount = 1; allocate.pSetLayouts = &c.descriptor_layout;
     VkDescriptorSet set{};
     check(vkAllocateDescriptorSets(c.device, &allocate, &set), "resident descriptor allocation");
-    std::array<VkDescriptorBufferInfo, 7> buffers{{
+    std::array<VkDescriptorBufferInfo, 9> buffers{{
         {state.vertices.handle, 0, std::max<size_t>(1, info.vertex_count)*sizeof(PrResidentVertex)},
         {frame->uniform.handle, 0, sizeof(PrParams)},
         {state.transforms.handle, 0, std::max<size_t>(1, info.instance_count)*sizeof(GpuTransform)},
         {state.instances_buffer.handle, 0, std::max<size_t>(1, info.instance_count)*sizeof(PrResidentInstance)},
         {state.nodes.handle, 0, std::max<size_t>(1, info.bvh_nodes)*sizeof(GpuBvhNode)},
         {state.indices.handle, 0, std::max<size_t>(1, info.index_count)*sizeof(uint32_t)},
-        {state.meshes_buffer.handle, 0, std::max<size_t>(1, info.mesh_count)*sizeof(GpuResidentMesh)}
+        {state.meshes_buffer.handle, 0, std::max<size_t>(1, info.mesh_count)*sizeof(GpuResidentMesh)},
+        {state.studio.handle, 0, sizeof(PrStudio)},
+        {state.tlas.handle, 0, std::max<size_t>(1, c.profile.tlas_node_count)*sizeof(GpuBvhNode)}
     }};
-    std::array<VkWriteDescriptorSet, 7> writes{};
-    for (uint32_t i = 0; i < 7; ++i) {
+    std::array<VkWriteDescriptorSet, 9> writes{};
+    for (uint32_t i = 0; i < 9; ++i) {
         writes[i].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         writes[i].dstSet = set; writes[i].dstBinding = i;
         writes[i].descriptorCount = 1;
-        writes[i].descriptorType = i == 1 ? VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER : VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        writes[i].descriptorType = (i == 1 || i == 7) ? VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER : VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
         writes[i].pBufferInfo = &buffers[i];
     }
-    vkUpdateDescriptorSets(c.device, 7, writes.data(), 0, nullptr);
+    vkUpdateDescriptorSets(c.device, 9, writes.data(), 0, nullptr);
     make_commands(c, *frame);
+    if (c.profile.timestamp_supported) {
+        VkQueryPoolCreateInfo query{VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO};
+        query.queryType=VK_QUERY_TYPE_TIMESTAMP; query.queryCount=3;
+        acquire(frame->timestamps,"resident timestamp query pool",[&](auto* out) {
+            return vkCreateQueryPool(c.device,&query,nullptr,out);
+        });
+    }
     if (c.errors.load() != errors_before) {
         c.poisoned = true;
         throw std::runtime_error("Vulkan validation failed creating resident targets: "+c.validation_message);
@@ -461,42 +569,65 @@ void validate_resident_params(const Context& c, const PrParams& params,
 
 void resident_render(Context& c, const float* matrices, uint32_t instance_count, const PrParams& params,
                      uint32_t width, uint32_t height, uint8_t* output, size_t output_bytes) {
+    const auto prepare_begin=HostClock::now();
     require(c.resident && c.resident_state && !c.poisoned,
             "resident scene is not loaded or context failed; open an explicit new session");
     validate_resident_params(c, params, width, height, output, output_bytes);
     auto& state = *c.resident_state;
     auto transforms = resident_transforms(state, matrices, instance_count);
+    auto tlas = resident_tlas(state, transforms);
+    const auto upload_begin=HostClock::now();
     try {
     resident_target(c, state, width, height);
     auto& frame = *state.target;
     auto& info = c.resident_properties;
     uint64_t errors_before = c.errors.load();
-    if (instance_count)
+    if (instance_count) {
         c.upload(state.transforms, transforms.data(), transforms.size()*sizeof(GpuTransform));
+        c.upload(state.tlas, tlas.data(), tlas.size()*sizeof(GpuBvhNode));
+    }
+    // This static UBO is populated only before the first draw. Its lifetime is
+    // the resident scene, independent of reusable target creation/resizing.
+    if (!info.captures) {
+        c.upload(state.studio, &c.studio, sizeof(c.studio));
+        info.parameter_upload_bytes += sizeof(c.studio);
+    }
     info.transform_upload_bytes += transforms.size()*sizeof(GpuTransform);
     info.host_transform_input_bytes += static_cast<uint64_t>(instance_count)*64;
     c.upload(frame.uniform, &params, sizeof(params));
     info.parameter_upload_bytes += sizeof(params);
+    const auto record_begin=HostClock::now();
     check(vkResetFences(c.device, 1, &frame.fence), "resident reset fence");
     check(vkResetCommandBuffer(frame.commands, 0), "resident reset command");
     VkCommandBufferBeginInfo begin{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
     begin.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
     check(vkBeginCommandBuffer(frame.commands, &begin), "resident begin frame");
-    std::array<VkBufferMemoryBarrier, 2> inputs{};
-    for (uint32_t i = 0; i < 2; ++i) {
+    if (frame.timestamps) {
+        vkCmdResetQueryPool(frame.commands,frame.timestamps,0,3);
+        vkCmdWriteTimestamp(frame.commands,VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,frame.timestamps,0);
+    }
+    const VkBuffer input_buffers[]{state.transforms.handle,frame.uniform.handle,state.tlas.handle,state.studio.handle};
+    std::array<VkBufferMemoryBarrier, 4> inputs{};
+    for (uint32_t i = 0; i < inputs.size(); ++i) {
         auto& barrier = inputs[i];
         barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
         barrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
-        barrier.dstAccessMask = i == 0 ? VK_ACCESS_SHADER_READ_BIT : VK_ACCESS_UNIFORM_READ_BIT;
+        barrier.dstAccessMask = (i == 1 || i == 3) ? VK_ACCESS_UNIFORM_READ_BIT : VK_ACCESS_SHADER_READ_BIT;
         barrier.srcQueueFamilyIndex = barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        barrier.buffer = i == 0 ? state.transforms.handle : frame.uniform.handle;
-        barrier.size = VK_WHOLE_SIZE;
+        barrier.buffer = input_buffers[i]; barrier.size = VK_WHOLE_SIZE;
     }
     vkCmdPipelineBarrier(frame.commands, VK_PIPELINE_STAGE_HOST_BIT,
         VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
-        0, nullptr, 2, inputs.data(), 0, nullptr);
+        0, nullptr, static_cast<uint32_t>(inputs.size()), inputs.data(), 0, nullptr);
     std::array<VkClearValue, 5> clear{};
     clear[0].color.float32[3] = 1;
+    if (c.studio.environment[3] != 0 && params.counts[2] != 0) {
+        for (uint32_t k=0; k<3; ++k) {
+            double linear=std::clamp(static_cast<double>(c.studio.environment[k])*params.options[0],0.0,1.0);
+            clear[0].color.float32[k]=static_cast<float>(linear<=0.0031308 ? 12.92*linear :
+                1.055*std::pow(linear,1.0/2.4)-0.055);
+        }
+    }
     clear[1].color.float32[0] = std::numeric_limits<float>::infinity();
     clear[4].depthStencil.depth = 1;
     VkRenderPassBeginInfo pass{VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO};
@@ -519,6 +650,8 @@ void resident_render(Context& c, const float* matrices, uint32_t instance_count,
                          static_cast<int32_t>(mesh.first_vertex), slot);
     }
     vkCmdEndRenderPass(frame.commands);
+    if (frame.timestamps)
+        vkCmdWriteTimestamp(frame.commands,VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,frame.timestamps,1);
     const size_t bytes_per_pixel[]{4,4,4,1};
     const size_t pixels = static_cast<size_t>(width)*height;
     offset = 0;
@@ -538,17 +671,50 @@ void resident_render(Context& c, const float* matrices, uint32_t instance_count,
     host.buffer = frame.readback.handle; host.size = VK_WHOLE_SIZE;
     vkCmdPipelineBarrier(frame.commands, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_HOST_BIT,
                          0, 0, nullptr, 1, &host, 0, nullptr);
+    if (frame.timestamps)
+        vkCmdWriteTimestamp(frame.commands,VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,frame.timestamps,2);
     check(vkEndCommandBuffer(frame.commands), "resident end frame");
-    submit_and_wait(c, frame);
+    const uint64_t record_ns=elapsed_ns(record_begin);
+    const auto timing=submit_and_wait(c, frame);
+    const auto readback_begin=HostClock::now();
     if (c.errors.load() != errors_before) {
         c.poisoned = true;
         throw std::runtime_error("Vulkan validation failed during resident capture: "+c.validation_message);
+    }
+    uint64_t gpu_render=0,gpu_copy=0,gpu_total=0,timestamp_samples=0;
+    if (frame.timestamps) {
+        uint64_t ticks[3]{};
+        check(vkGetQueryPoolResults(c.device,frame.timestamps,0,3,sizeof(ticks),ticks,sizeof(uint64_t),
+            VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT),"resident timestamp read");
+        uint32_t bits=c.profile.timestamp_valid_bits;
+        uint64_t mask=bits==64 ? UINT64_MAX : ((1ull<<bits)-1);
+        double period=c.profile.timestamp_period_ns;
+        // A possible multiple counter wrap cannot be reconstructed honestly.
+        // Keep the capture, omit that sample instead of reporting a false time.
+        double wrap_ns=std::ldexp(period,static_cast<int>(bits));
+        if (static_cast<double>(timing.submit)+timing.wait < wrap_ns) {
+            double render_ns=static_cast<double>((ticks[1]-ticks[0])&mask)*period;
+            double copy_ns=static_cast<double>((ticks[2]-ticks[1])&mask)*period;
+            double total_ns=static_cast<double>((ticks[2]-ticks[0])&mask)*period;
+            if (std::isfinite(total_ns) && total_ns < static_cast<double>(UINT64_MAX)) {
+                gpu_render=static_cast<uint64_t>(render_ns); gpu_copy=static_cast<uint64_t>(copy_ns);
+                gpu_total=static_cast<uint64_t>(total_ns); timestamp_samples=1;
+            }
+        }
     }
     void* mapped{};
     check(vkMapMemory(c.device, frame.readback.memory, 0, output_bytes, 0, &mapped), "resident map output");
     std::memcpy(output, mapped, output_bytes);
     c.telemetry.readback_bytes += output_bytes;
     vkUnmapMemory(c.device, frame.readback.memory);
+    auto& profile=c.profile;
+    ++profile.captures;
+    profile.host_prepare_ns+=elapsed_ns(prepare_begin,upload_begin);
+    profile.host_upload_ns+=elapsed_ns(upload_begin,record_begin);
+    profile.host_record_ns+=record_ns; profile.host_submit_ns+=timing.submit;
+    profile.host_wait_ns+=timing.wait; profile.host_readback_ns+=elapsed_ns(readback_begin);
+    profile.gpu_render_ns+=gpu_render; profile.gpu_copy_ns+=gpu_copy; profile.gpu_total_ns+=gpu_total;
+    profile.timestamp_samples+=timestamp_samples; profile.tlas_upload_bytes+=tlas.size()*sizeof(GpuBvhNode);
     ++c.properties.captures; ++info.captures;
     } catch (...) {
         c.poisoned = true; // a failed GPU operation cannot publish or be silently retried

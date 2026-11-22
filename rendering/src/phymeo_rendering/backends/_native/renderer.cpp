@@ -56,6 +56,8 @@ struct Context {
     bool resident = false;
     PrResidentInfo resident_properties{};
     PrResidentTelemetry telemetry{};
+    PrResidentProfile profile{};
+    PrStudio studio{};
     std::shared_ptr<ResidentState> resident_state;
     VkInstance instance{};
     VkDebugUtilsMessengerEXT messenger{};
@@ -76,7 +78,7 @@ struct Context {
     std::string validation_message;
     bool poisoned = false;
 
-    Context() { ++live_contexts; telemetry.telemetry_abi_version = 1; }
+    Context() { ++live_contexts; telemetry.telemetry_abi_version = 1; profile.profile_abi_version = 1; }
     ~Context() { shutdown(); --live_contexts; }
     VkResult shutdown() noexcept {
         VkResult waited = VK_SUCCESS;
@@ -258,9 +260,11 @@ struct Context {
         properties.max_vertices = std::min(MAX_VERTICES,
             static_cast<uint32_t>(p.limits.maxStorageBufferRange/sizeof(PrVertex)));
         if (resident) {
-            require(p.limits.maxPerStageDescriptorStorageBuffers >= 6 &&
-                    p.limits.maxDescriptorSetStorageBuffers >= 6,
-                    "resident rendering requires six fragment storage buffers");
+            require(p.limits.maxPerStageDescriptorStorageBuffers >= 7 &&
+                    p.limits.maxDescriptorSetStorageBuffers >= 7,
+                    "resident rendering requires seven fragment storage buffers");
+            require(p.limits.maxPerStageDescriptorUniformBuffers >= 2 &&
+                    p.limits.maxDescriptorSetUniformBuffers >= 2, "resident studio uniform capacity unavailable");
             auto& r = resident_properties;
             r.resident_abi_version = 1;
             r.max_vertices = std::min(1048576u, p.limits.maxStorageBufferRange / 32u);
@@ -290,6 +294,11 @@ struct Context {
         for (uint32_t i=0; i<count; ++i) if (queues[i].queueCount &&
             (queues[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)) { queue_family=i; break; }
         require(queue_family < count, "graphics queue unavailable");
+        if (resident) {
+            profile.timestamp_valid_bits = queues[queue_family].timestampValidBits;
+            profile.timestamp_supported = profile.timestamp_valid_bits != 0 ? 1u : 0u;
+            profile.timestamp_period_ns = profile.timestamp_supported ? p.limits.timestampPeriod : 0.0;
+        }
         float priority = 1.0f;
         VkDeviceQueueCreateInfo queue_info{VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO};
         queue_info.queueFamilyIndex = queue_family; queue_info.queueCount = 1; queue_info.pQueuePriorities = &priority;
@@ -301,7 +310,7 @@ struct Context {
         pool.queueFamilyIndex = queue_family; pool.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT |
             (resident ? VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT : 0u);
         acquire(command_pool, "vkCreateCommandPool", [&](auto* output) { return vkCreateCommandPool(device, &pool, nullptr, output); });
-        std::array<VkDescriptorSetLayoutBinding, 7> bindings{};
+        std::array<VkDescriptorSetLayoutBinding, 9> bindings{};
         bindings[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
         bindings[1] = {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1,
                        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
@@ -313,7 +322,11 @@ struct Context {
                 bindings[i] = {i, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, stages, nullptr};
             }
         }
-        layout.bindingCount = resident ? 7u : 2u; layout.pBindings = bindings.data();
+        if (resident) {
+            bindings[7] = {7, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
+            bindings[8] = {8, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
+        }
+        layout.bindingCount = resident ? 9u : 2u; layout.pBindings = bindings.data();
         acquire(descriptor_layout, "descriptor layout", [&](auto* output) { return vkCreateDescriptorSetLayout(device, &layout, nullptr, output); });
         VkPipelineLayoutCreateInfo pipeline_info{VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO};
         pipeline_info.setLayoutCount = 1; pipeline_info.pSetLayouts = &descriptor_layout;
@@ -406,6 +419,7 @@ struct FrameResources {
     std::array<Image,5> images{};
     VkFramebuffer framebuffer{};
     VkDescriptorPool descriptors{};
+    VkQueryPool timestamps{};
     VkCommandBuffer commands{};
     VkFence fence{};
     bool submitted=false;
@@ -415,6 +429,7 @@ struct FrameResources {
         release(fence, [&](auto owned) { vkDestroyFence(c.device,owned,nullptr); });
         release(commands, [&](auto h) { vkFreeCommandBuffers(c.device,c.command_pool,1,&h); });
         release(descriptors, [&](auto owned) { vkDestroyDescriptorPool(c.device,owned,nullptr); });
+        release(timestamps, [&](auto owned) { vkDestroyQueryPool(c.device,owned,nullptr); });
         release(framebuffer, [&](auto owned) { vkDestroyFramebuffer(c.device,owned,nullptr); });
         for(auto& image:images) {
             release(image.view, [&](auto owned) { vkDestroyImageView(c.device,owned,nullptr); });
@@ -660,5 +675,54 @@ int pr_resident_destroy(void* handle, PrInfo* final_info, PrResidentTelemetry* f
         return -1;
     }
     if (errors) { last_error = "Vulkan validation reported errors before resident close completed"; return -1; }
+    return 0;
+}
+
+int pr_resident_set_studio(void* handle, const PrStudio* value) {
+    try {
+        last_error.clear(); require(handle && value,"null resident studio argument");
+        auto& context=*static_cast<Context*>(handle);
+        require(context.resident && !context.poisoned && context.properties.captures==0,
+                "resident studio is immutable after first capture");
+        auto finite4=[](const float* data) {
+            for (uint32_t k=0; k<4; ++k) require(std::isfinite(data[k]),"nonfinite resident studio input");
+        };
+        finite4(value->environment);
+        for (const auto& panel:value->panels)
+            for (const float* block:{panel.position,panel.half_u,panel.half_v,panel.radiance}) finite4(block);
+        require(value->environment[3]==0 || value->environment[3]==1,"resident studio enabled flag must be zero or one");
+        for (uint32_t k=0; k<3; ++k) require(value->environment[k]>=0,"negative studio environment");
+        if (value->environment[3]==0) {
+            for (float component:value->environment) require(component==0,"disabled resident studio has nonzero inputs");
+            for (const auto& panel:value->panels)
+                for (const float* block:{panel.position,panel.half_u,panel.half_v,panel.radiance})
+                    for (uint32_t k=0; k<4; ++k) require(block[k]==0,"disabled resident studio has nonzero inputs");
+        }
+        for (const auto& panel:value->panels) {
+            require(panel.position[3]==0 && panel.half_u[3]==0 && panel.half_v[3]==0 && panel.radiance[3]==0,
+                    "resident studio padding must be zero");
+            double uu=0,vv=0,uv=0;
+            for (uint32_t k=0; k<3; ++k) {
+                require(panel.radiance[k]>=0,"negative studio panel radiance");
+                uu+=static_cast<double>(panel.half_u[k])*panel.half_u[k];
+                vv+=static_cast<double>(panel.half_v[k])*panel.half_v[k];
+                uv+=static_cast<double>(panel.half_u[k])*panel.half_v[k];
+            }
+            if (panel.radiance[0]!=0 || panel.radiance[1]!=0 || panel.radiance[2]!=0) {
+                require(uu>0 && vv>0 && std::isfinite(static_cast<float>(uu*vv)) &&
+                        static_cast<float>(uu*vv)>0,"resident studio emitting rectangle is degenerate");
+                require(std::abs(uv)<=1e-5*std::sqrt(uu*vv),"resident studio half axes must be orthogonal");
+            }
+        }
+        context.studio=*value;
+        return 0;
+    } catch (const std::exception& e) { last_error=e.what(); return -1; }
+      catch (...) { last_error="unknown resident studio error"; return -1; }
+}
+int pr_resident_profile(void* handle, PrResidentProfile* output) {
+    if (!handle || !output) { last_error="null resident profile argument"; return -1; }
+    auto& context=*static_cast<Context*>(handle);
+    if (!context.resident) { last_error="context does not use resident rendering"; return -1; }
+    *output=context.profile;
     return 0;
 }

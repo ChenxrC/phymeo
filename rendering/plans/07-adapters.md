@@ -39,6 +39,8 @@ class SceneSource(Protocol):
 
 Phymeo 适配器先确定所支持的一个真实公开快照／保存 schema，再实施转换。没有 world、epoch、revision、tick、phase 和来源模型绑定的输入应拒绝，而不是从视频帧号、文件顺序或节点数量猜补。具体 API 与 source owner 对齐后写入该适配器文档和测试，不把私有 active bank／scratch 指针作为长期公共输入。
 
+R1 另定义一种离线归档输入。对具名的 `panda-box-control-v1`，以源归档摘要建立独立世界，epoch 为 0，revision 是零基原始记录索引，tick 是对应的一基物理步号，时间须与记录的步长一致。模型摘要、关节顺序、原始行摘要和记录相位共同绑定。该身份只在归档内有效，实际运行时的发布身份保留为空。源端点的 q、方块位姿用于画面；同一记录中的力和指垫输入见证属于该步入步几何。[两帧摘录与提取方法](../tests/fixtures/panda_replay/README.md)
+
 静态视觉清单负责 body/link 名称到 node_id、网格／材质及 visual 局部位姿映射。适配器输出 body/link 的世界位姿；实例世界变换由下游按 node_world × instance.local_pose 合成。避免在适配器预乘 visual 偏移后，下游再次乘一次。
 
 ## 坐标、时序与只读规则

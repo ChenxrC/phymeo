@@ -164,6 +164,17 @@ def transfer_report(diagnostics):
         wait_source='native synchronous fence completion per capture; separate profile excludes initial static upload',
         native_counters={k:v for k,v in data.items() if k.startswith('resident_')})
 
+def _capture_pair(source,world,session,batch,batches):
+    ordinal,epoch=source_slot(batch,batches,source.record_count,reset_at=batches//2 if world==0 else None)
+    frame=source.frame(world,ordinal,epoch)
+    result=[]
+    for camera in source.cameras(world,frame):
+        request=CaptureRequest(camera,RenderPath.RASTER,CHANNELS)
+        if not session.supports(request): raise ValueError(f'unsupported R4 view {world}/{camera.id}')
+        result.append(session.capture(frame,request))
+    return ordinal,epoch,result
+
+
 def _luid(diagnostics):
     return (diagnostics['device'].get('resident_telemetry') or {}).get('device_luid_hex')
 

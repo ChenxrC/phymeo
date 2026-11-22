@@ -41,6 +41,35 @@ class MultiworldSchedule(unittest.TestCase):
         with self.assertRaises(ValueError): runner.source_slot(0,300,221,reset_at=0)
 
 
+class CapturePairEntry(unittest.TestCase):
+    def test_real_source_schedule_reaches_both_public_camera_captures(self):
+        from types import SimpleNamespace
+        from phymeo_rendering.scene import SceneFrame
+        calls=[]; prototype=capture().camera
+        def frame(world,index,epoch):
+            calls.append(('frame',world,index,epoch))
+            key=FrameKey('scene',str(world),epoch,index,index,'accepted_endpoint')
+            return SceneFrame(key,index*.01,())
+        def cameras(world,frame):
+            return tuple(replace(prototype,id=name,frame_key=frame.key) for name in ('front','reverse'))
+        source=SimpleNamespace(record_count=221,frame=frame,cameras=cameras)
+        owner=SimpleNamespace(supports=lambda request: True,
+            capture=lambda frame,request: calls.append(('capture',request.camera.id,request.channels)) or request.camera.id)
+        ordinal,epoch,views=runner._capture_pair(source,0,owner,150,300)
+        self.assertEqual((ordinal,epoch,views),(0,1,['front','reverse']))
+        self.assertEqual(calls[0],('frame',0,0,1))
+        self.assertEqual([row[2] for row in calls[1:]],[runner.CHANNELS,runner.CHANNELS])
+
+    def test_unsupported_camera_never_submits_that_view(self):
+        from types import SimpleNamespace
+        from unittest.mock import Mock
+        owner=SimpleNamespace(supports=lambda request:False,capture=Mock())
+        source=SimpleNamespace(record_count=221,frame=lambda *args:None,
+            cameras=lambda *args:(capture().camera,))
+        with self.assertRaisesRegex(ValueError,'unsupported R4 view'):
+            runner._capture_pair(source,1,owner,0,300)
+        owner.capture.assert_not_called()
+
 class MultiworldComparison(unittest.TestCase):
     def test_exact_id_valid_and_common_hit_depth(self):
         report=runner.compare_capture(capture(),capture(depth=1.001))

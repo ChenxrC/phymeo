@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="description" content="Phymeo 独立渲染框架：七个模块、只读物理边界，以及原生可控 pass 与可选高层后端两条路线。离线架构说明，不执行渲染或物理。">
+  <title>Phymeo Rendering · 独立渲染架构</title>
+  <!--
+  Layout adapted from the architecture-diagram-generator template.
+  MIT License
+  Copyright (c) 2025 Cocoon AI
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in all
+  copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  SOFTWARE.
+  -->
+  <style>
+    :root{--bg:#071018;--panel:#0c1823;--line:#263746;--text:#edf5f7;--muted:#a6b9c5;--cyan:#70dcdf;--green:#90ddba;--amber:#edc17a;--violet:#c5b4ef;--rose:#f3b2ad}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--text);font-family:"Segoe UI","Microsoft YaHei","PingFang SC",sans-serif;line-height:1.7}
+    a{color:var(--cyan);text-decoration-thickness:1px;text-underline-offset:4px}a:hover{color:#fff}a:focus-visible,summary:focus-visible{outline:2px solid var(--cyan);outline-offset:5px}
+    code,.mono{font-family:Consolas,"Cascadia Mono",monospace}code{font-size:.9em;overflow-wrap:anywhere}.wrap{max-width:1450px;margin:0 auto;padding:30px 40px 28px}
+    .topline{display:flex;justify-content:space-between;align-items:center;gap:20px;border-bottom:1px solid var(--line);padding-bottom:17px}.brand{font:600 13px Consolas,monospace;letter-spacing:.13em;color:var(--muted)}nav{display:flex;gap:22px;font-size:13px}
+    header{padding:42px 0 27px}.eyebrow{margin:0 0 12px;font-size:12px;letter-spacing:.17em;color:var(--cyan);font-weight:700}.header-row{display:flex;justify-content:space-between;gap:32px;align-items:flex-start}h1{font-size:clamp(30px,4vw,49px);line-height:1.2;letter-spacing:-.03em;margin:0 0 17px;font-weight:650}.intro{max-width:770px;color:var(--muted);margin:0;font-size:16px}.intro strong{color:var(--text);font-weight:500}.status{flex-shrink:0;max-width:260px;padding:16px 18px;background:#142329;border:1px solid #36514f;border-radius:10px;font-size:13px}.status strong{display:block;color:var(--green);margin-bottom:4px}.status span{color:var(--muted)}
+    .boundary{display:flex;align-items:flex-start;gap:16px;margin:4px 0 24px;border-left:3px solid var(--rose);padding:12px 16px;background:#221d25;font-size:13px}.boundary strong{color:var(--rose);white-space:nowrap}.boundary p{margin:0;color:#d9c9d1}.boundary code{color:#fff}
+    figure{margin:0;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--panel)}.figure-top{display:flex;justify-content:space-between;gap:18px;align-items:center;padding:20px 24px 0}.figure-top h2{margin:0;font-size:17px;font-weight:600}.legend{display:flex;gap:18px;flex-wrap:wrap;color:var(--muted);font-size:12px}.legend span{display:flex;align-items:center;gap:7px}.line-key{display:inline-block;width:22px;height:0;border-top:2px solid var(--cyan)}.line-key.future{border-color:var(--amber);border-top-style:dashed}
+    svg{width:100%;height:auto;display:block;font-family:"Segoe UI","Microsoft YaHei","PingFang SC",sans-serif}.desktop{padding:0 12px}.mobile{display:none}.node{fill:#101f2c;stroke:#365264;stroke-width:1.5}.node-cyan{fill:#102a31;stroke:#5eaeb7}.node-violet{fill:#211f34;stroke:#8e80af}.node-green{fill:#102c29;stroke:#6dba99}.node-future{fill:#28251e;stroke:#b39461;stroke-dasharray:7 5}.node-reference{fill:#1b2430;stroke:#7d8d9b;stroke-dasharray:7 5}.head{fill:#edf5f7;font-size:19px;font-weight:600}.file{fill:#91dae1;font-size:15px;font-family:Consolas,monospace}.body{fill:#b6c8d1;font-size:15px}.small{fill:#a6b9c5;font-size:13px}.caption{fill:#b0c8d4;font-size:13px;font-weight:600;letter-spacing:.06em}.amber{fill:#edc17a}.green{fill:#90ddba}.flow{fill:none;stroke:#7eb7c8;stroke-width:1.7;marker-end:url(#arrow)}.flow-future{fill:none;stroke:#bca57c;stroke-width:1.7;stroke-dasharray:6 5;marker-end:url(#arrow-future)}
+    figcaption{padding:15px 24px;border-top:1px solid var(--line);color:var(--muted);font-size:13px}.key{display:inline-block;margin:0 6px 4px 0;padding:3px 8px;border:1px solid #40505e;border-radius:5px;color:#e2edf1;background:#111e2b}
+    .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:24px 0 32px}.card{padding:22px;background:#0d1b25;border:1px solid var(--line);border-radius:10px}.card h3{font-size:16px;margin:0 0 10px;display:flex;gap:10px;align-items:center}.card p{margin:0;font-size:14px;color:var(--muted)}.num{font:12px Consolas,monospace;color:var(--cyan)}
+    .modules{display:grid;grid-template-columns:260px 1fr;gap:35px;border-top:1px solid var(--line);padding-top:28px}.modules h2{font-size:22px;line-height:1.4;margin:0 0 12px}.modules p{font-size:13px;color:var(--muted);margin:0}.module-list{margin:0}.module-list div{display:grid;grid-template-columns:160px 1fr;gap:18px;padding:10px 0;border-bottom:1px solid #20313f}.module-list dt{font:14px Consolas,monospace;color:var(--cyan)}.module-list dd{font-size:13px;color:#bbccd5;margin:0}.note{margin-top:22px;padding:16px 20px;border:1px dashed #6a5b42;border-radius:8px;font-size:13px;color:#ccbc9f}.note strong{color:var(--amber)}footer{display:flex;justify-content:space-between;gap:20px;color:#829aa9;font-size:12px;margin-top:30px;padding-top:18px;border-top:1px solid var(--line)}footer p{margin:0}
+    @media(max-width:900px){.wrap{padding:24px}.header-row{display:block}.status{margin-top:22px;max-width:none}.cards{grid-template-columns:1fr}.modules{grid-template-columns:1fr;gap:18px}.legend{font-size:11px}}
+    @media(max-width:650px){.wrap{padding:18px 16px}.topline{align-items:flex-start;gap:12px}.brand{font-size:11px;letter-spacing:.04em}nav{font-size:12px;gap:12px}header{padding:30px 0 22px}.intro{font-size:14px}.boundary{display:block}.boundary strong{display:block;margin-bottom:5px}.figure-top{display:block;padding:18px 18px 8px}.legend{margin-top:10px}.desktop{display:none}.mobile{display:block}.module-list div{grid-template-columns:1fr;gap:5px;padding:13px 0}.cards{margin:18px 0 25px;gap:12px}.card{padding:18px}figcaption{padding:16px;font-size:12px}footer{display:block}footer p+p{margin-top:9px}}
+    @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+    @media print{body{print-color-adjust:exact;-webkit-print-color-adjust:exact}.wrap{padding:0}.desktop{display:block}.mobile{display:none}nav{display:none}.cards,.modules{break-inside:avoid}figure{break-inside:avoid}a{color:inherit}}
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <div class="topline"><span class="brand">PHYMEO / RENDERING</span><nav aria-label="相邻文档"><a href="README.md">框架说明</a><a href="../docs/rendering/roadmap.html">可视路线图 ↗</a></nav></div>
+    <header>
+      <p class="eyebrow">独立开发框架 · ARCHITECTURE</p>
+      <div class="header-row"><div><h1>同一场景，两条渲染路线。</h1><p class="intro">外观资产加载一次，动态帧按需提交。<strong>原生路线掌握 pass 与资源命令；可选高层后端消费共同契约。</strong>物理状态只读，图像与相机观测各自可追溯。</p></div><aside class="status" aria-label="实现状态"><strong>当前：契约与空实现</strong><span>零渲染 SDK · 零物理步进<br>虚线表示后续实现目标，非运行成绩。</span></aside></div>
+    </header>
+    <div class="boundary"><strong>物理边界</strong><p>静止场景、封存轨迹或 Phymeo 已接受状态，只经 <code>adapters/</code> 读入。渲染框架不求解接触、不修改状态、不重跑已有运动；显示接触力时，另绑定它所属的入步时相。</p></div>
+    <figure aria-labelledby="diagram-heading">
+      <div class="figure-top"><h2 id="diagram-heading">加载一次 → 每帧提交 → 后端执行 → 结果消费</h2><div class="legend"><span><i class="line-key" aria-hidden="true"></i>契约数据流</span><span><i class="line-key future" aria-hidden="true"></i>规划中的执行路线</span></div></div>
+      <svg class="desktop" viewBox="0 0 1360 800" role="img" aria-labelledby="desktop-title desktop-desc">
+        <title id="desktop-title">Phymeo 独立渲染框架的七模块数据流</title>
+        <desc id="desktop-desc">适配器读取静态场景或既有状态，建立资产表和场景帧。场景帧及绑定同帧的曝光相机进入管线，管线经后端合同选择原生可控 pass 路线或 SAPIEN 高层参考路线，最后输出 RGB、深度、ID 和帧元数据。原生 RHI 与参考后端尚未实现。</desc>
+        <defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="#7eb7c8"/></marker><marker id="arrow-future" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="#bca57c"/></marker><pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse"><path d="M32 0 H0 V32" fill="none" stroke="#1b2c39" stroke-width=".6"/></pattern></defs>
+        <rect x="20" y="25" width="1320" height="750" rx="12" fill="url(#grid)"/>
+        <g aria-hidden="true"><path class="flow" d="M270 157 H325"/><path class="flow" d="M152 205 V300"/><path class="flow" d="M270 360 H298 V189 H325"/><path class="flow" d="M605 160 H675"/><path class="flow" d="M605 360 H642 V190 H675"/><path class="flow" d="M827 220 V280"/><path class="flow-future" d="M827 380 V440"/><path class="flow-future" d="M675 330 H640 V665 H675"/><path class="flow-future" d="M980 500 H1010 V330 H1045"/><path class="flow-future" d="M980 665 H1028 V390 H1045"/></g>
+        <text x="35" y="69" class="caption">01 / 读取与复用</text><text x="325" y="69" class="caption">02 / 组装同一帧</text><text x="675" y="69" class="caption">03 / 选择执行路线</text><text x="1045" y="69" class="caption">04 / 输出与消费</text>
+        <rect class="node" x="35" y="100" width="235" height="105" rx="8"/><text class="head" x="53" y="131">只读适配</text><text class="file" x="53" y="157">adapters/</text><text class="body" x="53" y="184">静止场景 · 轨迹 · Phymeo</text>
+        <text class="small" x="167" y="260">建表</text><rect class="node node-violet" x="35" y="300" width="235" height="120" rx="8"/><text class="head" x="53" y="332">外观资产 · 加载一次</text><text class="file" x="53" y="359">assets.py</text><text class="body" x="53" y="386">Mesh / 基础不透明材质</text><text class="small" x="53" y="405">纹理属于未来扩展</text>
+        <rect class="node node-cyan" x="325" y="100" width="280" height="120" rx="8"/><text class="head" x="344" y="132">静态场景 + 动态帧</text><text class="file" x="344" y="159">scene.py</text><text class="body" x="344" y="186">静态实例 / 方向光随场景打开</text><text class="small" x="344" y="206">每帧只更新节点位姿与来源键</text>
+        <rect class="node node-cyan" x="325" y="300" width="280" height="120" rx="8"/><text class="head" x="344" y="332">相机标定与曝光位姿</text><text class="file" x="344" y="359">cameras.py</text><text class="body" x="344" y="386">内外参 / 分辨率 / frame_key</text><text class="small" x="344" y="406">明确轴向、深度定义与裁剪面</text>
+        <rect class="node node-green" x="675" y="100" width="305" height="120" rx="8"/><text class="head" x="694" y="132">采集请求与 pass 计划</text><text class="file" x="694" y="159">pipeline.py</text><text class="body" x="694" y="186">CaptureRequest / 路径 / 通道</text><text class="small" x="694" y="206">原生 pass 仍是规划接口</text>
+        <rect class="node" x="675" y="280" width="305" height="100" rx="8"/><text class="head" x="694" y="312">后端合同与能力声明</text><text class="file" x="694" y="339">backends/</text><text class="small" x="694" y="361">open_scene → supports / capture / close</text>
+        <text class="small amber" x="842" y="416">原生执行目标</text><rect class="node node-future" x="675" y="440" width="305" height="120" rx="8"/><text class="head" x="694" y="471">原生路线 · 规划</text><text class="body" x="694" y="499">自有 pass → 原生 RHI</text><text class="body" x="694" y="524">资源 / 命令 / 同步 / 读回</text><text class="small amber" x="694" y="545">光栅与路径追踪按阶段实现</text>
+        <rect class="node node-reference" x="675" y="610" width="305" height="120" rx="8"/><text class="head" x="694" y="641">SAPIEN · 可选参考后端</text><text class="body" x="694" y="669">高层场景 / 相机 / 输出协议</text><text class="small" x="694" y="694">其内部 pass 与设备管理归它自身</text><text class="small" x="694" y="714">不作为自研 Vulkan RHI</text>
+        <rect class="node node-green" x="1045" y="280" width="270" height="150" rx="8"/><text class="head" x="1064" y="313">帧结果与消费</text><text class="file" x="1064" y="340">outputs.py</text><text class="body" x="1064" y="367">RGB · 米制深度 · 整型 ID</text><text class="small" x="1064" y="392">Channel 定义 / 图像 / 来源</text><text class="small green" x="1064" y="414">离屏图像 · 回放 · 观测接口</text>
+        <rect x="35" y="485" width="570" height="245" rx="10" fill="#0b1720" stroke="#304552"/>
+        <text class="head" x="57" y="519">独立工程边界</text><text x="57" y="552" class="file">rendering/</text><text x="57" y="580" class="body">└ src/phymeo_rendering/</text><text x="57" y="619" class="body">七个模块共用数据契约，不依赖物理求解循环。</text><text x="57" y="649" class="body">外观材质与摩擦、刚度等物理材料分开命名。</text><text x="57" y="692" class="small">此图描述目标调用关系；当前不生成图像，未安装 SDK。</text>
+      </svg>
+      <svg class="mobile" viewBox="0 0 360 1370" role="img" aria-labelledby="mobile-title mobile-desc">
+        <title id="mobile-title">移动端纵向渲染架构图</title><desc id="mobile-desc">从只读适配器开始，资产、静态实例与方向光随场景打开，节点位姿与曝光相机按帧绑定。管线经后端合同分为原生可控 pass 与 SAPIEN 高层参考两条未来路线，再汇入统一帧输出。整个框架没有物理步进。</desc>
+        <defs><marker id="mobile-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#7eb7c8"/></marker></defs>
+        <g fill="none" stroke="#7eb7c8" stroke-width="1.7" marker-end="url(#mobile-arrow)"><path d="M180 140 V180"/><path d="M180 285 V325"/><path d="M180 535 V580"/><path d="M180 690 V735"/><path stroke-dasharray="6 5" d="M180 835 V870 H93 V900"/><path stroke-dasharray="6 5" d="M180 870 H267 V900"/><path stroke-dasharray="6 5" d="M93 1090 V1130 H180 V1170"/><path stroke-dasharray="6 5" d="M267 1090 V1130 H180"/></g>
+        <text x="22" y="30" class="caption">独立工程 rendering/</text><rect class="node" x="22" y="50" width="316" height="90" rx="8"/><text x="40" y="80" class="head">adapters/ · 只读来源</text><text x="40" y="109" class="body">静止场景 / 已存轨迹 / Phymeo</text><text x="40" y="130" class="small">仅消费状态，不推进物理</text>
+        <rect class="node node-violet" x="22" y="180" width="316" height="105" rx="8"/><text x="40" y="212" class="head">assets.py · 加载一次</text><text x="40" y="240" class="body">Mesh、基础不透明材质与身份</text><text x="40" y="265" class="small">静态表复用；纹理留作扩展</text>
+        <rect class="node node-cyan" x="22" y="325" width="316" height="210" rx="8"/><text x="40" y="358" class="head">scene.py · 场景与帧</text><text x="40" y="393" class="body">静态实例 + 方向光随场景打开</text><text x="40" y="419" class="body">每帧只更新节点位姿</text><path d="M40 439 H320" stroke="#365264"/><text x="40" y="470" class="file">cameras.py</text><text x="40" y="496" class="body">标定 / 曝光位姿 / 裁剪</text><text x="40" y="519" class="small">曝光相机携带同一个 frame_key</text>
+        <rect class="node node-green" x="22" y="580" width="316" height="110" rx="8"/><text x="40" y="613" class="head">pipeline.py · 计划</text><text x="40" y="641" class="body">CaptureRequest / 路径 / 通道</text><text x="40" y="667" class="small">原生光栅与路径追踪均属规划</text>
+        <rect class="node" x="22" y="735" width="316" height="100" rx="8"/><text x="40" y="768" class="head">backends/ · 后端合同</text><text x="40" y="796" class="body">open_scene → supports</text><text x="40" y="820" class="small">capture / close；尚无具体实现</text>
+        <rect class="node node-future" x="22" y="900" width="142" height="190" rx="8"/><text x="35" y="930" class="body amber">原生路线</text><text x="35" y="956" class="small amber">未来实现</text><text x="35" y="991" class="body">自有 pass</text><text x="35" y="1017" class="body">原生 RHI</text><text x="35" y="1045" class="small">资源 / 命令</text><text x="35" y="1067" class="small">同步 / 读回</text>
+        <rect class="node node-reference" x="196" y="900" width="142" height="190" rx="8"/><text x="209" y="930" class="body">SAPIEN</text><text x="209" y="956" class="small">可选参考后端</text><text x="209" y="991" class="body">高层协议</text><text x="209" y="1017" class="small">内部 pass 与</text><text x="209" y="1039" class="small">设备由其管理</text><text x="209" y="1067" class="small">不是自研 RHI</text>
+        <rect class="node node-green" x="22" y="1170" width="316" height="135" rx="8"/><text x="40" y="1203" class="head">outputs.py · 帧结果</text><text x="40" y="1232" class="body">RGB / 米制深度 / 整型 ID</text><text x="40" y="1258" class="small">Channel 定义、图像与帧来源</text><text x="40" y="1285" class="small green">离屏写图 / 回放 / 观测消费</text>
+        <text x="22" y="1343" class="small">包：rendering/src/phymeo_rendering/</text>
+      </svg>
+      <figcaption><span class="key mono">scene_key</span><span class="key mono">world_id</span><span class="key mono">epoch</span><span class="key mono">revision</span><span class="key mono">tick</span><span class="key mono">phase</span> FrameKey 的字段；不是视频帧号。静态适配器需明确来源语义，已有运动沿用原时间，不另造物理时钟。</figcaption>
+    </figure>
+    <section class="cards" aria-label="三项架构约束">
+      <article class="card"><h3><span class="num">01</span>资产复用，动态状态分离</h3><p>Mesh、基础不透明材质、实例清单和方向光组成静态场景，交给 open_scene。SceneFrame 只提交节点位姿与来源；场景清单改变须更换 scene_key。</p></article>
+      <article class="card"><h3><span class="num">02</span>控制能力按路线声明</h3><p>原生路线目标是显式规划 pass、资源与命令。高层后端只承诺它能提供的模式和输出，不声称暴露同一套底层控制。</p></article>
+      <article class="card"><h3><span class="num">03</span>输出继承来源与标定</h3><p>outputs.py 定义 Channel；pipeline.py 的 CaptureRequest 选择通道。曝光相机与结果均绑定 frame_key。纹理、GPU 设备互通及真实图像生成仍待扩展。</p></article>
+    </section>
+    <section class="modules" aria-labelledby="modules-heading"><div><h2 id="modules-heading">七个模块，一条清楚的边界。</h2><p>独立根目录 <code>rendering/</code><br>独立包 <code>src/phymeo_rendering</code><br>模块职责固定；后端实现按能力逐步落地。</p></div><dl class="module-list"><div><dt>assets.py</dt><dd>Mesh 与基础不透明 Material 声明；纹理是未来扩展。</dd></div><div><dt>scene.py</dt><dd>VisualScene 包含资产、静态实例清单和方向光；SceneFrame 只更新节点位姿，FrameKey 含 scene_key。</dd></div><div><dt>cameras.py</dt><dd>相机标定与曝光位姿，携带 frame_key；坐标、单位和裁剪面显式声明。</dd></div><div><dt>pipeline.py</dt><dd>CaptureRequest 选择相机、RenderPath 和通道；PassPlanner 声明原生 pass 计划，尚无具体执行。</dd></div><div><dt>backends/</dt><dd>open_scene → supports / capture / close 合同，尚无具体后端；原生 RHI 与高层参考适配是两条未来路线。</dd></div><div><dt>outputs.py</dt><dd>Channel、ImagePlane、Capture 声明；RGB、深度、ID 的通道身份与结果帧来源。</dd></div><div><dt>adapters/</dt><dd>静止场景、轨迹、Phymeo 读入；只读物理边界，不引入步进。</dd></div></dl></section>
+    <aside class="note"><strong>如何阅读本页：</strong>实线表示契约之间的数据关系，不代表已完成 GPU 渲染。两条虚线后端路线是实现目标；当前交付为框架与空实现，未安装 SDK，未运行已有运动。当前独立工程边界以本页及相邻框架说明为准；路线图用于阶段目标与视觉参考。</aside>
+    <footer><p>Phymeo Rendering · 2026-11-22 · 独立框架设计</p><p>单 HTML / 内嵌 SVG / 无脚本与外部资源 · 模板 MIT 许可保留于源码</p></footer>
+  </main>
+</body>
+</html>

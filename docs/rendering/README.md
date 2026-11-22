@@ -1,5 +1,7 @@
 # Phymeo 渲染模块开发路线
 
+独立开发入口现位于仓库根目录 [rendering/](../../rendering/README.md)。[引擎架构图](../../rendering/architecture.html)对应当前代码骨架。下文保留首轮技术调研；其中建议的包路径以本入口为准，SAPIEN 定位为可选参考后端。
+
 2026-11-22 · 分支 `codex/rendering` · 基线 `codex/exp@761eb304`。打开[可视路线图](roadmap.html)查看 Phymeo 已有画面、桌面操作的美术目标和分阶段验收。本次交付是调研与设计。图中的机械臂效果意向由 ImageGen 生成，实际后端画面在 R0 开始产出。
 
 ## 选型
@@ -19,7 +21,7 @@
 - [八世界回放](../../scripts/render_manipulation_gallery.py)已从保存的 CUDA 状态读取 q，并用 MuJoCo 做 FK 和离屏成像。脚本向空场景加入几何类型、尺寸、位姿与 RGBA。图册中已有这种途径的真实样帧。后续第一组实验从封存轨迹读帧，物理步数为零。
 - [Panda 资产说明](../../src/phymeo/builders/panda_assets/SOURCES.md)明确记录移除了视觉网格和纹理。[URDF 物理导入器](../../src/phymeo/builders/urdf.py)忽略 visual。新增独立视觉清单，绑定模型、link/body、visual 局部变换、网格、比例、材质、许可和哈希。可从与已用 `franka_ros` 相同提交解析原外观引用，逐项核许可、尺度、关节轴和贴图完整性。R0 用自有程序几何独立验光照。R1 缺件时在展示模式列出缺件，诊断模式才显式显示碰撞代理。
 - [异构工作区](../../src/phymeo/backends/mujoco_heterogeneous_io.py)区分已接受的积分终点位姿与该步输入接触；[深度相机](../../src/phymeo/sensors/depth_camera.py)已有针孔、像素中心、轴向与射线深度及稳定碰撞键。沿用这些作为帧契约和几何测量基准；RGB、可见深度与分割由视觉网格计算，碰撞网格的射线结果单列。仅在两者使用相同几何时直接比深度。
-- 包的 NumPy 基础安装和仿真进程可独立运行；建议在 `src/phymeo/rendering/` 设置可选后端，在 `examples/` 设置同帧回放入口，在 `tests/rendering/` 保存无设备合同测试和可选设备测试。这里列的是拟建入口。
+- 渲染框架现位于仓库根目录的独立项目 [rendering/](../../rendering/README.md)。物理包与渲染包可分别安装；渲染包的输入适配、原生后端与参考后端均在该项目内开发。
 
 ## 每一帧如何生成
 

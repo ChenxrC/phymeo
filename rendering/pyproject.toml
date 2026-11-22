@@ -1,0 +1,13 @@
+[build-system]
+requires = ["setuptools>=77,<83"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "phymeo-rendering"
+version = "0.1.0a0"
+description = "Backend-neutral scene and camera contracts for the Phymeo renderer"
+requires-python = ">=3.11"
+readme = "README.md"
+
+[tool.setuptools.packages.find]
+where = ["src"]

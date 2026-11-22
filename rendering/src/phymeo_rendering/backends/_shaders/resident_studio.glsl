@@ -45,7 +45,15 @@ vec3 residentStudioRadiance(vec3 P, vec3 N, vec3 V, vec3 albedo,
     float a2 = alpha*alpha;
     float gv = studioG1(nv,a2);
     vec3 diffuse = (1.0-metal)*albedo;
-    vec3 result = studio.environment.rgb*diffuse*(1.0-f0);
+    vec3 diffuseEnvironment = studio.environment.rgb;
+    vec3 specularEnvironment = studio.environment.rgb;
+#ifdef PR_RESIDENT_DIRECTIONAL_ENVIRONMENT
+    if (residentEnvironmentEnabled()) {
+        diffuseEnvironment = residentEnvironmentDiffuse(N);
+        specularEnvironment = residentEnvironmentSpecular(reflect(-V,N),roughness);
+    }
+#endif
+    vec3 result = diffuseEnvironment*diffuse*(1.0-f0);
     vec3 biasP = P + N*u.options.y;
     vec3 axis = abs(N.z) < 0.9 ? vec3(0,0,1) : vec3(0,1,0);
     vec3 T = normalize(cross(axis,N));
@@ -83,7 +91,7 @@ vec3 residentStudioRadiance(vec3 P, vec3 N, vec3 V, vec3 albedo,
         if (nl<=0.0) continue;
         vec3 F = f0+(1.0-f0)*pow(1.0-clamp(dot(V,H),0.0,1.0),5.0);
         vec3 response = F*(studioG1(nl,a2)/float(studioBrdfSamples));
-        result += response*studio.environment.rgb;
+        result += response*specularEnvironment;
         float pdfGGX = studioD(clamp(dot(N,H),0.0,1.0),a2)*gv/(4.0*nv);
         for (int j=0; j<2; ++j) {
             StudioPanel panel = studio.panels[j];

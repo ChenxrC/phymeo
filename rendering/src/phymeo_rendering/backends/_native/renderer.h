@@ -241,3 +241,17 @@ PR_API uint32_t pr_resident_ray_query_abi_version();
 PR_API void* pr_resident_create_ray_query(uint32_t device_index,uint32_t validation,
     const uint32_t* vert,size_t vert_bytes,const uint32_t* frag,size_t frag_bytes);
 PR_API int pr_resident_ray_query_info(void* context,PrResidentRayQueryInfo* output);
+
+// Optional opaque surface-map extension v1. Same upload layout as textures.
+// Only this entry accepts record.reserved=1: A is linear UNORM roughness,
+// multiplied into the material's perceptual roughness in every lighting path.
+// Flag 0 still requires A=255. RGB remains sRGB; output opacity is always one.
+// The old set_textures entry continues to require flag 0 and opaque A=255.
+PR_API uint32_t pr_resident_surface_maps_abi_version();
+// 1=declared compatible fragment (named uint32 SpecId57 default1), 0=old SPV,
+// -1=invalid/nonresident context. The setter repeats this check atomically.
+PR_API int pr_resident_surface_maps_shader_compatible(void* context);
+PR_API int pr_resident_set_surface_maps(void* context,
+    const PrResidentTexture* textures,uint32_t texture_count,
+    const uint8_t* rgba,size_t rgba_bytes,const PrResidentUV* uv,uint32_t uv_count,
+    const uint32_t* instance_slots,uint32_t instance_count);

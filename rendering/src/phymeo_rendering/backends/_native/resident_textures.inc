@@ -74,9 +74,11 @@ std::unique_ptr<ResidentTextures> upload_texture_resource(Context& c,uint32_t wi
 
 void resident_set_textures(Context& c,const PrResidentTexture* textures,uint32_t texture_count,
     const uint8_t* rgba,size_t rgba_bytes,const PrResidentUV* uv,uint32_t uv_count,
-    const uint32_t* instance_slots,uint32_t instance_count) {
+    const uint32_t* instance_slots,uint32_t instance_count,bool surface_maps=false) {
     require(c.resident && c.resident_state && !c.poisoned,"resident geometry must precede texture upload");
     auto& info=c.texture_info; auto& state=*c.resident_state;
+    require(!surface_maps || c.surface_maps_compatible,
+        "resident fragment SPIR-V lacks named surface-map ABI marker");
     require(c.properties.captures==0 && info.loaded==0,"resident textures are immutable after upload or capture");
     require(texture_count>0 && texture_count<=info.max_textures && textures,"resident texture count exceeds capacity");
     require(rgba && rgba_bytes>0 && rgba_bytes<=info.max_array_bytes,"resident source texture bytes exceed capacity");
@@ -88,7 +90,10 @@ void resident_set_textures(Context& c,const PrResidentTexture* textures,uint32_t
         const auto& record=textures[i];
         require(record.width>0 && record.height>0 && record.width<=info.max_width && record.height<=info.max_height,
                 "resident texture dimensions exceed capacity; no resizing is performed");
-        require(record.reserved==0 && record.first_byte==source_bytes,"resident texture source ranges must be tightly packed");
+        if (surface_maps) require(record.reserved<=1 && record.first_byte==source_bytes,
+            "resident surface-map flags unsupported or source ranges not tightly packed");
+        else require(record.reserved==0 && record.first_byte==source_bytes,
+            "resident texture source ranges must be tightly packed");
         source_bytes+=4ull*record.width*record.height;
         require(source_bytes<=rgba_bytes,"resident texture source range out of bounds");
         width=std::max(width,record.width); height=std::max(height,record.height);
@@ -97,7 +102,14 @@ void resident_set_textures(Context& c,const PrResidentTexture* textures,uint32_t
     width+=2; height+=2;
     const uint64_t padded_bytes=4ull*width*height*texture_count;
     require(padded_bytes<=info.max_array_bytes,"resident padded texture array exceeds capacity");
-    for (size_t i=3; i<rgba_bytes; i+=4) require(rgba[i]==255,"resident base-color textures must be opaque");
+    for (uint32_t texture=0;texture<texture_count;++texture) {
+        const auto& record=textures[texture];
+        if (record.reserved==0) {
+            const size_t end=record.first_byte+static_cast<size_t>(record.width)*record.height*4;
+            for (size_t i=record.first_byte+3;i<end;i+=4)
+                require(rgba[i]==255,"resident base-color textures must be opaque");
+        }
+    }
     for (uint32_t i=0; i<uv_count; ++i)
         require(std::isfinite(uv[i].u) && std::isfinite(uv[i].v),"resident texture UV must be finite FP32");
     uint32_t bound=0;

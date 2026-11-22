@@ -61,6 +61,7 @@ struct Image { VkImage handle{}; VkDeviceMemory memory{}; VkImageView view{}; Al
 struct ResidentState;
 struct Context {
     bool resident = false;
+    bool surface_maps_compatible = false;
     bool ray_query = false;
     RayDispatch ray;
     PrResidentRayQueryInfo ray_info{};
@@ -233,6 +234,7 @@ struct Context {
     void init(uint32_t selected, bool validation, const uint32_t* vert, size_t vert_bytes,
               const uint32_t* frag, size_t frag_bytes, bool resident_path = false, bool hardware_shadow = false) {
         resident = resident_path; ray_query=hardware_shadow;
+        surface_maps_compatible=resident && surface_maps_shader_marker(frag,frag_bytes);
         require(!ray_query || resident,"ray-query shadows require resident geometry");
         if (ray_query) {
             auto interface=spirv_interface(frag,frag_bytes,4);
@@ -973,4 +975,22 @@ int pr_resident_ray_query_info(void* handle,PrResidentRayQueryInfo* output) {
     if (!context.resident) { last_error="not a resident context"; return -1; }
     *output=context.ray_info; output->poisoned=context.poisoned ? 1u : 0u;
     return 0;
+}
+
+uint32_t pr_resident_surface_maps_abi_version() { return 1; }
+int pr_resident_surface_maps_shader_compatible(void* handle) {
+    if (!handle) { last_error="null resident surface-map context"; return -1; }
+    const auto& context=*static_cast<Context*>(handle);
+    if (!context.resident) { last_error="not a resident context"; return -1; }
+    return context.surface_maps_compatible ? 1 : 0;
+}
+int pr_resident_set_surface_maps(void* handle,const PrResidentTexture* textures,uint32_t texture_count,
+    const uint8_t* rgba,size_t rgba_bytes,const PrResidentUV* uv,uint32_t uv_count,
+    const uint32_t* instance_slots,uint32_t instance_count) {
+    try {
+        require(handle,"null resident surface-map context");
+        resident_set_textures(*static_cast<Context*>(handle),textures,texture_count,rgba,rgba_bytes,
+            uv,uv_count,instance_slots,instance_count,true);
+        return 0;
+    } catch (const std::exception& error) { last_error=error.what(); return -1; }
 }

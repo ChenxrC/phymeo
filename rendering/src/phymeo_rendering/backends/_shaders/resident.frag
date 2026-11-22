@@ -43,6 +43,9 @@ layout(location=1) out float forwardDepth;
 layout(location=2) out uint instanceId;
 layout(location=3) out uint valid;
 const float PI = 3.141592653589793;
+// Declared opaque surface-map ABI; C++ verifies this named uint/default before
+// admitting alpha data. No pipeline supplies a specialization override.
+layout(constant_id=57) const uint PR_SURFACE_MAPS_ABI=1u;
 
 #ifndef PR_RESIDENT_RAY_QUERY
 // Static per-mesh threaded BVHs, rigid instance transforms per frame.
@@ -142,6 +145,7 @@ void main() {
     valid = 1u;
     vec3 color = vec3(0.0);
     vec3 albedo=baseColor;
+    float surfaceRoughness=metalRough.y;
     if (u.counts.z!=0u && textureSlot!=0xffffffffu) {
         uint dimensions=4u+u.counts.w+2u*textureSlot;
         vec2 sourceSize=vec2(textureData.words[dimensions],textureData.words[dimensions+1u]);
@@ -150,8 +154,11 @@ void main() {
         // frac supports negative UV; layer isolation prevents material bleed.
         // R8G8B8A8_SRGB decodes texels BEFORE hardware bilinear filtering.
         vec2 coordinate=(fract(meshUV)*sourceSize+vec2(1.0))/arraySize;
-        vec3 texel=textureLod(baseColorTextures,vec3(coordinate,float(textureSlot)),0.0).rgb;
-        albedo*=texel; // factor and sampled texture meet in the linear domain
+        vec4 texel=textureLod(baseColorTextures,vec3(coordinate,float(textureSlot)),0.0);
+        albedo*=texel.rgb; // sRGB texels and factor meet in the linear domain
+        // Alpha in an sRGB Vulkan format is LINEAR UNORM. It is a material
+        // multiplier only: no blending, discard, depth or validity change.
+        if (PR_SURFACE_MAPS_ABI==1u) surfaceRoughness*=texel.a;
     }
     if (u.counts.z != 0u) {
         vec3 N = normalize(worldNormal);
@@ -160,7 +167,7 @@ void main() {
         float nv = max(dot(N,V), 1e-5);
         float metallic = metalRough.x;
         // Explicit finite GGX lobe: perceptual roughness minimum 0.045.
-        float alpha = max(metalRough.y*metalRough.y, 0.045*0.045);
+        float alpha = max(surfaceRoughness*surfaceRoughness, 0.045*0.045);
         float a2 = alpha*alpha;
         vec3 f0 = mix(vec3(0.04), albedo, metallic);
         for (uint i=0u; i<u.counts.x; ++i) {
@@ -184,7 +191,7 @@ void main() {
         vec3 N = normalize(worldNormal);
         vec3 V = normalize(u.camera.xyz-worldPosition);
         if (dot(N,V) < 0.0) N = -N;
-        color += residentStudioRadiance(worldPosition,N,V,albedo,metalRough.x,metalRough.y);
+        color += residentStudioRadiance(worldPosition,N,V,albedo,metalRough.x,surfaceRoughness);
     }
     rgb = vec4(encodeSRGB(color*u.options.x), 1.0);
 }

@@ -2,8 +2,8 @@
 
 The native graphics implementation is independently built from _native/ and
 _shaders/. No runtime, compiler or device is imported at module import time.
-No path tracing, textures or software fallback is provided. Uniform environment
-and rectangular studio emitters require the explicit resident studio extension.
+No path tracing or software fallback is provided. Textures, uniform environment
+and rectangular studio emitters require their explicit resident extensions.
 """
 
 import ctypes as ct
@@ -14,6 +14,7 @@ import math
 from numbers import Real
 from pathlib import Path
 
+from ..assets import TexturedMaterial
 from ..outputs import Capture, Channel, ImagePlane
 from ..studio import StudioLighting
 from ..pipeline import DefaultPassPlanner, RenderPath
@@ -21,6 +22,7 @@ from ..scene import VisualScene, compose_pose
 from . import UnsupportedRequestError, ValidatedRenderSession
 from ._native_resident import ResidentDevice, pack_scene
 from ._native_studio import pack_studio
+from ._native_texture import pack_textures
 from ._native_device import (
     NativeDevice,
     Parameters,
@@ -142,10 +144,11 @@ def _image_planes(raw, pixels, channels, attachment_mask):
 
 
 class _NativeDelegate:
-    def __init__(self, scene, meshes, device, exposure, *, resident=False, studio=None):
+    def __init__(self, scene, meshes, device, exposure, *, resident=False, studio=None, textures=None):
         self.scene, self.meshes, self.device, self.exposure = scene, meshes, device, exposure
         self.resident = resident
         self.studio = deepcopy(studio)
+        self.textures = deepcopy(textures)
         self.limits = device.info()
         self.triangles = sum(len(meshes[item.mesh_id].triangles) for item in scene.instances)
         self.last_passes = ()
@@ -239,7 +242,8 @@ class _NativeDelegate:
             stage_execution="visibility raster + fused fragment shadows/lighting/display/sensors",
             lifecycle_counts="DLL-wide owned contexts, frames, and explicit Vulkan handles; pools own descriptor sets",
             path_trace=False,
-            textures=False,
+            textures=self.textures is not None,
+            texture_assets=deepcopy(self.textures),
             physics_steps=0,
         )
 
@@ -311,6 +315,8 @@ class NativeBackend:
     def open_scene(self, scene: VisualScene) -> NativeRenderSession:
         if not isinstance(scene, VisualScene):
             raise TypeError("scene must be VisualScene")
+        if not self.resident and any(isinstance(m,TexturedMaterial) for m in scene.materials):
+            raise UnsupportedRequestError('native base-color textures require resident=True; no legacy approximation')
         require_library(self.library_path)
         if len(scene.lights) > 4:
             raise UnsupportedRequestError(
@@ -332,12 +338,18 @@ class NativeBackend:
                 raise UnsupportedRequestError("scene exceeds native device storage-buffer capacity")
             if self.resident:
                 device.upload(*pack_scene(scene, meshes, device.info()))
+            texture_info = None
+            if self.resident:
+                textures = pack_textures(scene,meshes,device.info())
+                if textures is not None:
+                    device.set_textures(textures)
+                    texture_info = textures.diagnostics
             studio_info = None
             if self.studio is not None:
                 payload, studio_info = pack_studio(self.studio)
                 device.set_studio(payload)
             return NativeRenderSession(scene, _NativeDelegate(
-                scene, meshes, device, self.exposure, resident=self.resident, studio=studio_info))
+                scene, meshes, device, self.exposure, resident=self.resident, studio=studio_info, textures=texture_info))
         except BaseException as primary:
             try:
                 device.close()

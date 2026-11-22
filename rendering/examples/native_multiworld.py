@@ -113,7 +113,7 @@ def timing_report(seconds, *, worlds, phase_wall_seconds=None):
         timing_source='time.perf_counter around frame/camera preparation, supports and all synchronous public captures; CPU bytes returned',
         submission='serial public capture calls; one persistent session per world',
         peak_device_memory_bytes=None,peak_device_memory_reason='backend exposes resource counts, not peak allocated VRAM telemetry',
-        gpu_wait_seconds=None,gpu_wait_reason='no GPU execution timestamps; cumulative native host fence waits are reported separately',
+        gpu_wait_seconds=None,gpu_wait_reason='GPU wait is not measured separately; see transfer counters for host fence waits and optional Vulkan GPU execution timestamps',
         gpu_parallelism_measured=False)
 
 

@@ -211,6 +211,20 @@ def _waypoints(asset, q0, lower_by, lift, travel, opening, closed):
     return np.asarray(times), np.asarray(knots)
 
 
+def _motion_clock(original, duration_s, steps_per_second):
+    """Stretch the authored control schedule; the integrator keeps its original dt."""
+    if isinstance(duration_s, (bool, np.bool_)) or not isinstance(duration_s, Real):
+        raise ValueError("motion duration must be a real number of seconds")
+    if not np.isfinite(duration_s) or duration_s < original[-1]:
+        raise ValueError("motion duration must cover the original control schedule")
+    steps = duration_s * steps_per_second
+    if not np.isfinite(steps) or not np.isclose(steps, round(steps), atol=1e-8, rtol=0):
+        raise ValueError("motion duration must end on a physical step")
+    scale = duration_s / original[-1]
+    times = original * scale
+    return times, (0.95 * scale, times[4])
+
+
 def _command_at(times, knots, t):
     segment = min(np.searchsorted(times[1:], t, side="right"), len(times) - 2)
     duration = times[segment + 1] - times[segment]
@@ -219,6 +233,17 @@ def _command_at(times, knots, t):
     ds = 30 * u**2 * (1 - u) ** 2 / duration
     dq = knots[segment + 1] - knots[segment]
     return knots[segment] + s * dq, ds * dq
+
+
+def _open_return(times, knots, finish_s, steps_per_second):
+    """Append a quintic open-hand return to the initial joint target."""
+    if (isinstance(finish_s, (bool, np.bool_)) or not isinstance(finish_s, Real)
+            or not np.isfinite(finish_s) or finish_s <= times[-1]):
+        raise ValueError("return time must follow the final release waypoint")
+    steps = finish_s * steps_per_second
+    if not np.isfinite(steps) or not np.isclose(steps, round(steps), atol=1e-8, rtol=0):
+        raise ValueError("return time must end on a physical step")
+    return np.append(times, finish_s), np.vstack((knots, knots[0]))
 
 
 def _servo_effort(arm, qcmd, vcmd, inertia, bias, limit):
@@ -242,6 +267,8 @@ def run_panda_cube(
     initial_xy_offset_m=(0.0, 0.0),
     initial_yaw_rad=0.0,
     grip_above_com_m=0.012,
+    motion_duration_s=2.25,
+    return_finish_s=None,
 ):
     """Pick, translate and release under gravity. No actuator reads or sets the cube pose.
 
@@ -257,6 +284,11 @@ def run_panda_cube(
     initial_xy_offset_m moves the uniform payload COM relative to the gripper in
     world X/Y. grip_above_com_m sets the face-center grasp height. closed_width_m
     commands the jaws. Their actual force follows from contact and actuator effort.
+    motion_duration_s may extend the original 2.25 s control schedule on the
+    physical timestep grid. Only the waypoint timing and carry observation
+    window scale; mass, control gains, contact law and timestep are unchanged.
+    A later return_finish_s appends an open-hand return to the initial joint
+    target. The payload remains a free body throughout this additional motion.
     """
     from ..builders.panda import PANDA_URDF, load_panda
 
@@ -345,6 +377,9 @@ def run_panda_cube(
     if descent <= 0:
         raise ValueError("the requested grip height must be below the open starting pads")
     times, knots = _waypoints(asset, initial_q, descent, lift, travel, opened, closed)
+    times, carry_window = _motion_clock(times, motion_duration_s, steps_per_second)
+    if return_finish_s is not None:
+        times, knots = _open_return(times, knots, return_finish_s, steps_per_second)
     lower, upper = np.asarray(asset.lower), np.asarray(asset.upper)
     effort_limit = np.asarray(asset.effort_limit)
     dt = 1.0 / steps_per_second
@@ -512,7 +547,12 @@ def run_panda_cube(
                 table_law,
             )
         except ValueError as exc:
-            raise RuntimeError(str(exc)) from exc
+            raise RuntimeError(
+                f"{exc} at physical step {step}, t={t:.6f} s; "
+                f"COM={cube.position[0].tolist()}, v={cube.velocity[0].tolist()}, "
+                f"plate center={table_center.tolist()}, half extents={table_half.tolist()}, "
+                f"finger loads (N)={pads.normal_loads.reshape(2, 4).sum(axis=1).tolist()}"
+            ) from exc
         if record:
             table_points = cube.position[0] + corners
         force = pads.body_force + table_f.sum(axis=0) + structural_wrench[:3]
@@ -539,7 +579,7 @@ def run_panda_cube(
         if abs(elapsed - times[4]) <= 0.5 * dt:
             carry_clearance = float(clearance)
             carry_displacement = float(cube.position[0, 0] - initial_center[0])
-        if 0.95 <= elapsed <= 1.35:
+        if carry_window[0] <= elapsed <= carry_window[1]:
             min_carry_bilateral = min(min_carry_bilateral, float(min(finger_n)))
             peak_carry_table = max(peak_carry_table, float(table_n.sum()))
         if elapsed > times[-1] - 0.05:

@@ -1,0 +1,41 @@
+{
+  "success": true,
+  "carried_during_transfer": true,
+  "released_on_target": true,
+  "first_unresolved_structure": null,
+  "steps": 16000,
+  "simulated_seconds": 10.0,
+  "initial_payload_position_m": [
+    0.30989056659294145,
+    -0.0009999999999997858,
+    0.4276320523028393
+  ],
+  "carry_clearance_m": 0.054782610315873836,
+  "min_carry_bilateral_normal_N": 5.405273743269479,
+  "peak_carry_table_N": 0.0,
+  "final_target_error_m": 0.0005500736618466571,
+  "peak_bilateral_normal_N": 10.502207671983129,
+  "final_table_force_N": 1.1771999999999998,
+  "release_pad_force_N": 0.0,
+  "max_joint_limit_violation": 0.0,
+  "max_cube_momentum_residual_Ns": 3.33130711057195e-18,
+  "schedule": "return",
+  "archive_sha256": "c58e3447cd6d95c52715c07f038318203eaa3892f486317226c8b93350cad0f9",
+  "excerpt_sha256": "58073ab38acab8f5057061fa487117aa0284f81b097a4f5bb0473f890515f118",
+  "manifest_sha256": "2c98f9020f6becf9942e1a2df8dc8eb40ceb51d71d3916c8665ef117b8dfb10e",
+  "physical_dt_s": 0.000625,
+  "controller_knot_times_s": [
+    0.0,
+    0.32,
+    0.55,
+    0.92,
+    1.35,
+    1.72,
+    1.95,
+    2.25,
+    10.0
+  ],
+  "sampled_frames": 300,
+  "first_endpoint_s": 0.033125,
+  "last_endpoint_s": 10.0
+}

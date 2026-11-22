@@ -46,15 +46,20 @@ def _float32_code_boundaries():
     return np.frombuffer(struct.pack("<255I",*boundaries),dtype="<f4")
 
 
-def encode_linear_image(values, *, exposure=1.0):
-    """Encode an H×W×3 readback using the same quantizer as encode_linear_rgb."""
+def encode_linear_image(values, *, exposure=1.0, display_transform="clip"):
+    """Encode an H×W×3 readback; clip preserves the original quantizer exactly."""
     import numpy as np
 
+    if display_transform not in ("clip", "pbr-neutral"):
+        raise ValueError("display_transform must be clip or pbr-neutral")
     image = np.asarray(values)
     if image.ndim != 3 or image.shape[-1] != 3:
         raise ValueError("linear RGB image must have three channels")
     if not np.isfinite(image).all():
         raise ValueError("linear RGB readback must be finite")
+    if display_transform == "pbr-neutral":
+        from ._sapien_neutral import encode_neutral
+        return encode_neutral(image, exposure)
     if image.dtype != np.float32:
         return encode_linear_rgb(np.clip(image.astype(np.float64) * exposure, 0., 1.).flat)
     boundaries = _float32_code_boundaries()

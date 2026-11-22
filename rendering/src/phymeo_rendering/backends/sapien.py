@@ -24,6 +24,8 @@ class SapienConfig:
     locally derived shader pack with user-seeded path and primary samples.
     The shipped primary-ray clipping requires conservative frame
     admission (all scene vertices strictly inside the requested clip slab).
+    display_transform is a reference-only SDR display choice after exposure;
+    clip retains the original bytes, while pbr-neutral compresses HDR highlights.
     """
 
     path: RenderPath = RenderPath.RASTER
@@ -35,8 +37,13 @@ class SapienConfig:
     studio: SapienStudio | None = None
     sampling_mode: str = "official"
     exposure: float = 1.0
+    display_transform: str = "clip"
 
     def __post_init__(self):
+        if not isinstance(self.display_transform, str):
+            raise TypeError("display_transform must be a string")
+        if self.display_transform not in ("clip", "pbr-neutral"):
+            raise ValueError("display_transform must be clip or pbr-neutral")
         if isinstance(self.exposure, bool) or not isinstance(self.exposure, Real):
             raise TypeError("exposure must be a real number")
         if not isfinite(self.exposure) or not 0 <= self.exposure <= 3.4028234663852886e38:

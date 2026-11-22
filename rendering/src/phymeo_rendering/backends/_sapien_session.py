@@ -329,7 +329,12 @@ class SapienSession:
                 "shader_sha256": _shader_hash(self.shader_directory),
                 "official_shader_sha256": official_hash,
                 "linear_rgb_target": self.rgb_target,
-                "display": f"exposure={config.exposure:g}; clamp linear [0,1]; standard sRGB OETF; half-up UNORM8",
+                "display": (f"exposure={config.exposure:g}; clamp linear [0,1]; standard sRGB OETF; half-up UNORM8"
+                            if config.display_transform == "clip" else
+                            f"exposure={config.exposure:g}; nonnegative linear Rec.709; Khronos PBR Neutral; standard sRGB OETF; half-up UNORM8"),
+                "display_transform": config.display_transform,
+                "display_transform_source": (None if config.display_transform == "clip" else
+                    "https://github.com/KhronosGroup/ToneMapping/blob/b5a2eed5ddf6c2227090449399de9c7affb9e4c9/PBR_Neutral/pbrNeutral.glsl"),
                 "exposure": float(config.exposure),
                 "ambient_linear_rgb": [0.0, 0.0, 0.0],
                 "shadow_map_size": 2048,
@@ -557,7 +562,8 @@ class SapienSession:
                 linear = camera.get_picture(self.rgb_target)
                 if linear.shape != (request.camera.height, request.camera.width, 4):
                     raise ValueError("SAPIEN linear RGB readback shape mismatch")
-                planes[Channel.RGB] = encode_linear_image(linear[..., :3], exposure=self.config.exposure)
+                planes[Channel.RGB] = encode_linear_image(linear[..., :3], exposure=self.config.exposure,
+                                                          display_transform=self.config.display_transform)
             if any(channel is not Channel.RGB for channel in request.channels):
                 position = camera.get_picture("Position")
                 segmentation = camera.get_picture("Segmentation")

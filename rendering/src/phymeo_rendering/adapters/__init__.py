@@ -4,6 +4,9 @@ from collections.abc import Iterator
 from typing import Protocol
 
 from ..scene import SceneFrame, VisualScene
+from .authored import AuthoredSceneSource
+
+__all__ = ["SceneSource", "AuthoredSceneSource"]
 
 
 class SceneSource(Protocol):

@@ -4,6 +4,7 @@ import math
 
 from . import BackendUnavailableError, UnsupportedRequestError
 from ._native_studio import NativeStudio
+from ._native_texture import ResidentTexture, ResidentUV, ResidentTextureInfo, TextureUpload
 from ._native_device import NativeDevice, Parameters, _Info, validate_parameters
 
 
@@ -137,6 +138,11 @@ class ResidentDevice(NativeDevice):
         self._readback = None
         self._output_buffer = None
         self._output_capacity = 0
+        self._texture_function = None
+        self._texture_info_function = None
+        self._texture_info = None
+        self._texture_abi_version = None
+        self._textures_set = False
         self._uploaded = False
         self._instance_count = 0
         super().__init__(*args)
@@ -159,6 +165,23 @@ class ResidentDevice(NativeDevice):
         lib.pr_resident_render.restype = ct.c_int
         lib.pr_resident_info.argtypes = [ct.c_void_p, ct.POINTER(ResidentInfo)]
         lib.pr_resident_info.restype = ct.c_int
+        if tuple(map(ct.sizeof,(ResidentTexture,ResidentUV,ResidentTextureInfo))) != (16,8,128):
+            raise BackendUnavailableError('resident texture structure layout mismatch')
+        texture_version=getattr(lib,'pr_resident_texture_abi_version',None)
+        if texture_version is not None:
+            texture_version.argtypes=[]; texture_version.restype=ct.c_uint32
+            self._texture_abi_version=int(texture_version())
+        if self._texture_abi_version==1:
+            self._texture_function=getattr(lib,'pr_resident_set_textures',None)
+            self._texture_info_function=getattr(lib,'pr_resident_texture_info',None)
+        if self._texture_function is not None:
+            self._texture_function.argtypes=[ct.c_void_p,ct.POINTER(ResidentTexture),ct.c_uint32,
+                ct.POINTER(ct.c_uint8),ct.c_size_t,ct.POINTER(ResidentUV),ct.c_uint32,
+                ct.POINTER(ct.c_uint32),ct.c_uint32]
+            self._texture_function.restype=ct.c_int
+        if self._texture_info_function is not None:
+            self._texture_info_function.argtypes=[ct.c_void_p,ct.POINTER(ResidentTextureInfo)]
+            self._texture_info_function.restype=ct.c_int
         if ct.sizeof(ResidentTelemetry) != 128:
             raise BackendUnavailableError('resident telemetry structure layout mismatch')
         # Optional, independently versioned extension. Its absence does not
@@ -217,6 +240,14 @@ class ResidentDevice(NativeDevice):
         self._profile['gpu_scope'] = 'Vulkan timestamps: raster plus fragment work, then attachment copies; no per-light kernel claim'
         self._profile['snapshot'] = 'last live query, retained after close; final ownership is checked by telemetry'
 
+    def _remember_texture_info(self, value):
+        if value.texture_abi_version!=1:
+            raise RuntimeError('unsupported resident texture ABI')
+        self._texture_info={name:int(getattr(value,name)) for name,_ in ResidentTextureInfo._fields_
+                            if name not in ('reserved','reserved64')}
+        self._texture_info['capture_scope']='successful RGB captures with bound texture instances, not visible textured pixel count'
+        self._texture_info['upload_scope']='cumulative actual texture image and metadata GPU writes, including default white sentinel; excluded from geometry_upload_bytes'
+        self._texture_info['snapshot']='last live query, not final allocation state; teardown verified by allocation telemetry'
     def _remember_readback(self, value):
         if value.readback_abi_version != 1:
             raise RuntimeError('unsupported resident readback ABI')
@@ -249,8 +280,16 @@ class ResidentDevice(NativeDevice):
                 if self._readback_function(self._handle, ct.byref(readback)):
                     raise RuntimeError(self._error())
                 self._remember_readback(readback)
+            if self._texture_info_function is not None:
+                texture=ResidentTextureInfo()
+                if self._texture_info_function(self._handle,ct.byref(texture)):
+                    raise RuntimeError(self._error())
+                self._remember_texture_info(texture)
         result.update(self._resident_info)
         result['resident_render_planes_available'] = self._render_planes_function is not None
+        result['resident_texture_available'] = self._texture_function is not None
+        result['resident_texture_abi_version'] = self._texture_abi_version
+        result['resident_texture_info'] = dict(self._texture_info) if self._texture_info is not None else None
         result['resident_readback'] = dict(self._readback) if self._readback is not None else None
         result['resident_profile'] = dict(self._profile) if self._profile is not None else None
         result['resident_telemetry'] = dict(self._telemetry) if self._telemetry is not None else None
@@ -268,6 +307,20 @@ class ResidentDevice(NativeDevice):
         self._uploaded = True
         self._instance_count = len(instances)
         self.info()
+
+    def set_textures(self, upload):
+        if self._handle is None or not self._uploaded:
+            raise RuntimeError('resident textures require an open uploaded scene')
+        if self._has_captured or self._textures_set:
+            raise RuntimeError('resident textures may be set once before the first capture')
+        if self._texture_function is None:
+            raise BackendUnavailableError('native resident texture ABI1 export is unavailable')
+        if not isinstance(upload,TextureUpload):
+            raise TypeError('texture upload must be TextureUpload')
+        if self._texture_function(self._handle,upload.records,len(upload.records),
+                upload.rgba,len(upload.rgba),upload.uv,len(upload.uv),upload.slots,len(upload.slots)):
+            raise RuntimeError(self._error())
+        self._textures_set=True
 
     def set_studio(self, value):
         if self._handle is None:

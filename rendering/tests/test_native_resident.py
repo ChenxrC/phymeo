@@ -201,4 +201,23 @@ class ResidentTelemetry(unittest.TestCase):
         self.assertTrue(owner._telemetry['final_after_destroy'])
 
 
+class ResidentProfileContract(unittest.TestCase):
+    def test_optional_profile_layout_and_times_keep_their_real_scope(self):
+        from phymeo_rendering.backends._native_resident import ResidentProfile, ResidentDevice
+        value=ResidentProfile(); value.profile_abi_version=1; value.timestamp_supported=1
+        value.timestamp_valid_bits=64; value.timestamp_period_ns=1.
+        value.captures=3; value.tlas_upload_bytes=432; value.gpu_render_ns=1000
+        value.timestamp_samples=3
+        owner=ResidentDevice.__new__(ResidentDevice); owner._remember_profile(value)
+        self.assertEqual(ct.sizeof(value),128)
+        self.assertEqual(owner._profile['tlas_upload_bytes'],432)
+        self.assertEqual(owner._profile['gpu_render_ns'],1000)
+        self.assertIn('excludes initial static',owner._profile['scope'])
+    def test_unknown_profile_version_rejected(self):
+        from phymeo_rendering.backends._native_resident import ResidentProfile, ResidentDevice
+        owner=ResidentDevice.__new__(ResidentDevice); value=ResidentProfile()
+        value.profile_abi_version=99
+        with self.assertRaisesRegex(RuntimeError,'profile ABI'): owner._remember_profile(value)
+
+
 if __name__ == '__main__': unittest.main()

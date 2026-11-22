@@ -15,6 +15,8 @@ FILES = (
     "tools/_g5_installed.py",
     "examples/reference_neutral_calibration.py", "examples/native_resident_smoke.py",
     "tests/fixtures/g1/table.gltf", "tests/fixtures/g1/block.gltf",
+    "tests/test_native_display_device.py", "tests/test_reference_neutral.py",
+    "tests/test_native_ray_query_device.py",
 )
 
 
@@ -120,7 +122,7 @@ class G5ExtendedFeatureTests(unittest.TestCase):
         self.assertEqual(set(plan), {"host", "uv-native", "uv-sapien-raster", "uv-sapien-pt",
                                     "ibl-native", "ibl-sapien", "roughness-native",
                                     "roughness-sapien-raster", "roughness-sapien-pt",
-                                    "neutral-sapien", "ray-query-native"})
+                                    "neutral-sapien", "ray-query-native", "neutral-native"})
         self.assertTrue(all(row["status"] == "required" for row in plan.values()))
         selected = module.plan_features(("native-raster",))
         self.assertEqual(selected["ray-query-native"]["status"], "required")
@@ -227,6 +229,83 @@ class G5ExtendedFeatureTests(unittest.TestCase):
         script, result, argv = module.protocol_command("neutral-sapien", "capture", sapien_device="cuda:0")
         self.assertEqual((script, result), ("reference_neutral_calibration.py", "summary.json"))
         self.assertEqual(argv, ["--output", "capture", "--device", "cuda:0"])
+
+
+class G5NativeNeutralTests(unittest.TestCase):
+    def test_native_neutral_is_required_bound_to_new_library_and_explicitly_skippable(self):
+        module = features()
+        self.assertEqual(module.plan_features(("native-raster",))["neutral-native"], {"status": "required"})
+        skipped = module.plan_features(("native-raster",), skip_features=("neutral-native:older declared candidate",))
+        self.assertEqual(skipped["neutral-native"], {"status": "not_verified", "explicit_skip": True,
+                                                   "reason": "older declared candidate"})
+        command = module.feature_command("python", "launcher", "neutral-native", bundle="bundle", output="out",
+            source_root="source", library="new-build.dll", device_index=1)
+        self.assertEqual(command[1], "-I")
+        self.assertEqual(command[command.index("--library")+1], "new-build.dll")
+        self.assertNotIn("--sapien-device", command)
+
+    def test_original_public_suite_and_oracle_are_exact_optional_fixture_members(self):
+        module = features()
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary); rendering = root/"source"/"rendering"
+            members = ("tests/test_native_display_device.py", "tests/test_reference_neutral.py",
+                       "tests/test_native_ray_query_device.py")
+            for relative in FILES:
+                path = rendering/relative; path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(("# original "+relative).encode())
+            full = module.copy_feature_bundle(rendering, root/"full")
+            for relative in members:
+                self.assertEqual(full["files"][relative], hashlib.sha256((rendering/relative).read_bytes()).hexdigest())
+            subset = module.copy_feature_bundle(rendering, root/"subset", enabled=("host",))
+            self.assertTrue(set(members).isdisjoint(subset["files"]))
+            (root/"full"/members[0]).write_bytes(b"# altered original assertion")
+            with self.assertRaisesRegex(ValueError, "digest|SHA"):
+                module.verify_feature_bundle(root/"full")
+
+    def test_new_native_build_requires_all_twelve_bound_spirv_files(self):
+        module = features()
+        names = tuple(f"{program}.{stage}.spv" for program in
+                      ("native", "resident", "resident_sky", "resident_rayquery") for stage in ("vert", "frag"))
+        names += tuple(f"{program}_area{grid}.frag.spv" for program in
+                       ("resident", "resident_rayquery") for grid in (4, 8))
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary); source = root/"source"; source.mkdir()
+            build = root/"installed-build"; build.mkdir(); library = build/"new.dll"
+            library.write_bytes(b"new installed library")
+            for name in names:
+                (build/name).write_bytes(bytes.fromhex("03022307")+name.encode())
+            receipt = module.native_display_build_binding(library, source)
+            self.assertEqual(receipt["library"]["sha256"], hashlib.sha256(library.read_bytes()).hexdigest())
+            self.assertEqual(set(receipt["shaders"]), set(names))
+            for name in names:
+                self.assertEqual(receipt["shaders"][name], hashlib.sha256((build/name).read_bytes()).hexdigest())
+            (build/names[-1]).unlink()
+            with self.assertRaisesRegex(ValueError, "shader|SPIR"):
+                module.native_display_build_binding(library, source)
+            with self.assertRaisesRegex(ValueError, "outside|external"):
+                module.native_display_build_binding(library, root)
+
+    def test_saved_public_neutral_proof_rejects_skip_missing_grid_or_no_recovered_highlight(self):
+        import copy
+        module = features()
+        proof = {"schema": "phymeo-g5-public-native-neutral-v1", "status": "passed",
+                 "tests_run": 2, "tests_skipped": 0, "highlight_recovered": True,
+                 "sensors_unchanged": True,
+                 "captures": [{"scene": scene, "shadow_mode": mode, "area_light_grid": grid,
+                               "display_transform": transform, "display_transform_abi": 1 if transform == "pbr-neutral" else None}
+                              for scene in ("display-empty", "gray-display")
+                              for mode in ("software", "ray_query") for grid in (2, 4, 8)
+                              for transform in ("clip", "pbr-neutral")]}
+        module.validate_feature_result("neutral-native", proof)
+        variants = []
+        for key, value in (("tests_skipped", 1), ("tests_run", 1), ("highlight_recovered", False),
+                           ("sensors_unchanged", False), ("captures", proof["captures"][:-1])):
+            bad = copy.deepcopy(proof); bad[key] = value; variants.append(bad)
+        bad = copy.deepcopy(proof); bad["captures"][-1]["display_transform_abi"] = None; variants.append(bad)
+        bad = copy.deepcopy(proof); bad["captures"][-1] = bad["captures"][0]; variants.append(bad)
+        for bad in variants:
+            with self.subTest(value=bad), self.assertRaises(ValueError):
+                module.validate_feature_result("neutral-native", bad)
 
 if __name__ == "__main__":
     unittest.main()

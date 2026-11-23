@@ -136,8 +136,11 @@ bool occluded(vec3 worldOrigin, vec3 worldDirection, float tMax) {
 #include "resident_environment.glsl"
 #define PR_RESIDENT_DIRECTIONAL_ENVIRONMENT
 #include "resident_studio.glsl"
-#ifdef PR_RESIDENT_REFLECTION
+#if defined(PR_RESIDENT_REFLECTION) || defined(PR_RESIDENT_INDIRECT)
 #include "resident_reflection.glsl"
+#endif
+#ifdef PR_RESIDENT_INDIRECT
+#include "resident_indirect.glsl"
 #endif
 
 #include "resident_display.glsl"
@@ -172,7 +175,7 @@ void main() {
     }
     vec3 Ng = normalize(worldNormal);
     vec3 V = normalize(u.camera.xyz-worldPosition);
-#ifdef PR_RESIDENT_REFLECTION
+#if defined(PR_RESIDENT_REFLECTION) || defined(PR_RESIDENT_INDIRECT)
     // Evaluate derivatives uniformly, before material/view/receiver branches.
     // This is the rasterized triangle face, independent of smooth vertex Ns.
     vec3 reflectionFace=cross(dFdx(worldPosition),dFdy(worldPosition));
@@ -195,18 +198,33 @@ void main() {
     vec3 N = Ng;
     bool shadingFacesView = true;
 #endif
-#ifdef PR_RESIDENT_REFLECTION
+#if defined(PR_RESIDENT_REFLECTION) || defined(PR_RESIDENT_INDIRECT)
     if(u.counts.z!=0u && shadingFacesView)
         color+=reflectionDirect(worldPosition,N,Ng,V,albedo,metalRough.x,surfaceRoughness);
     bool reflected=false;vec3 reflectedRadiance=vec3(0.0);
-    // Eligibility uses the original uploaded factor, never the image-multiplied
-    // roughness. The latter still governs the unchanged local BRDF.
     Instance receiver=scene.instances[ids.y];
+#ifdef PR_RESIDENT_REFLECTION
     if(u.counts.z!=0u && shadingFacesView && reflectionFaceValid &&
        receiver.material.x>=.99 && receiver.colorRoughness.w<=.10)
         reflected=residentNearReflection(worldPosition,N,reflectionFace,V,reflectedRadiance);
-    if(u.counts.z!=0u && shadingFacesView && (reflected || studio.environment.w!=0.0 || residentEnvironmentEnabled()))
-        color+=residentStudioRadiance(worldPosition,N,Ng,V,albedo,metalRough.x,surfaceRoughness,reflected,reflectedRadiance);
+#endif
+    bool indirectActive=false;vec3 diffuseIncoming=vec3(0.0);
+#ifdef PR_RESIDENT_INDIRECT
+    indirectActive=u.counts.z!=0u && shadingFacesView;
+    vec3 f0=mix(vec3(.04),albedo,receiver.material.x);
+    vec3 rho=max(vec3(0.0),(1.0-receiver.material.x)*albedo*(1.0-f0));
+    if(indirectActive&&reflectionFaceValid&&any(greaterThan(rho,vec3(0.0))))
+        diffuseIncoming=residentDiffuseIncoming(worldPosition,N,reflectionFace);
+#endif
+    if(u.counts.z!=0u && shadingFacesView && (reflected||indirectActive||studio.environment.w!=0.0||residentEnvironmentEnabled()))
+        color+=residentStudioRadiance(worldPosition,N,Ng,V,albedo,metalRough.x,surfaceRoughness
+#ifdef PR_RESIDENT_REFLECTION
+            ,reflected,reflectedRadiance
+#endif
+#ifdef PR_RESIDENT_INDIRECT
+            ,indirectActive,diffuseIncoming
+#endif
+        );
 #else
     if (u.counts.z != 0u && shadingFacesView) {
         float nv = max(dot(N,V), 1e-5);

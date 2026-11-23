@@ -70,6 +70,7 @@ struct Context {
     PrResidentMsaaInfo msaa_info{};
     PrResidentNormalInfo normal_info{};
     PrResidentReflectionInfo reflection_info{};
+    PrResidentIndirectInfo indirect_info{};
     std::shared_ptr<MsaaState> msaa_state;
     uint32_t display_transform = 0;
     bool ray_query = false;
@@ -109,6 +110,7 @@ struct Context {
         readback_info.readback_abi_version=1; readback_info.memory_type_index=UINT32_MAX;
         texture_info.texture_abi_version=1;
         normal_info.normal_abi_version=1;
+        indirect_info.indirect_abi_version=1;indirect_info.samples_per_pixel=16;indirect_info.max_bounces=1;
         reflection_info.reflection_abi_version=1; reflection_info.max_bounces=1;
         reflection_info.metallic_min=.99f; reflection_info.roughness_max=.10f;
         environment_info.environment_abi_version=1;
@@ -262,6 +264,9 @@ struct Context {
         reflection_info.shader_compatible=resident && named_shader_marker(frag,frag_bytes,64,"PR_REFLECTION_ABI");
         require(!reflection_info.shader_compatible || ray_query,"reflection shader requires explicit hardware ray-query context");
         reflection_info.supported=reflection_info.shader_compatible && ray_query;
+        indirect_info.shader_compatible=resident && named_shader_marker(frag,frag_bytes,65,"PR_INDIRECT_ABI");
+        require(!indirect_info.shader_compatible || ray_query,"diffuse indirect requires explicit hardware ray-query context");
+        indirect_info.supported=indirect_info.shader_compatible && ray_query;
         surface_maps_compatible=resident && surface_maps_shader_marker(frag,frag_bytes);
         display_compatible=resident && display_shader_marker(frag,frag_bytes);
         msaa_info.shader_compatible=resident && named_shader_marker(frag,frag_bytes,59,"PR_MSAA_COLOR_ABI");
@@ -1127,4 +1132,25 @@ int pr_resident_set_reflection(void* handle,uint32_t mode) {
         // Zero receivers is a valid explicit capability-enabled scene.
         info.receiver_count=receivers;info.enabled=1;++info.set_calls;return 0;
     } catch(const std::exception& error) { last_error=error.what();return -1; }
+}
+
+uint32_t pr_resident_indirect_abi_version() { return 1; }
+int pr_resident_indirect_info(void* handle,PrResidentIndirectInfo* output) {
+    if(!handle||!output){last_error="null resident indirect info";return -1;}
+    auto& c=*static_cast<Context*>(handle);
+    if(!c.resident){last_error="indirect info requires resident context";return -1;}
+    *output=c.indirect_info;return 0;
+}
+int pr_resident_set_indirect(void* handle,uint32_t mode,uint32_t seed) {
+    try {
+        require(handle,"null indirect context");auto& c=*static_cast<Context*>(handle);auto& info=c.indirect_info;
+        require(mode==1,"unsupported indirect mode");
+        require(c.resident&&c.ray_query&&c.resident_state&&!c.poisoned,"indirect requires loaded hardware ray-query scene");
+        require(info.supported&&info.shader_compatible,"indirect shader ABI unavailable; no fallback");
+        require(!info.enabled&&!c.properties.captures,"indirect configuration is immutable after enable/capture");
+        uint32_t receivers=0;
+        for(const auto& instance:c.resident_state->instances)
+            if(instance.material[0]<1.f && (instance.color_roughness[0]>0.f||instance.color_roughness[1]>0.f||instance.color_roughness[2]>0.f)) ++receivers;
+        info.receiver_count=receivers;info.seed=seed;info.enabled=1;++info.set_calls;return 0;
+    }catch(const std::exception& error){last_error=error.what();return -1;}
 }

@@ -29,6 +29,7 @@ from ._native_display import configure_display
 from ._native_msaa import configure_msaa
 from ._native_normal import pack_normal_maps, configure_normal_maps
 from ._native_reflection import reflection_declaration, configure_reflection
+from ._native_indirect import indirect_declaration, configure_indirect
 from ._native_device import (
     NativeDevice,
     Parameters,
@@ -150,7 +151,7 @@ def _image_planes(raw, pixels, channels, attachment_mask):
 
 
 class _NativeDelegate:
-    def __init__(self, scene, meshes, device, exposure, *, resident=False, studio=None, textures=None, environment=None, shadow_mode='software', area_light_grid=2, display_info=None, msaa_info=None, normal_info=None, reflection_info=None):
+    def __init__(self, scene, meshes, device, exposure, *, resident=False, studio=None, textures=None, environment=None, shadow_mode='software', area_light_grid=2, display_info=None, msaa_info=None, normal_info=None, reflection_info=None, indirect_info=None):
         self.scene, self.meshes, self.device, self.exposure = scene, meshes, device, exposure
         self.display_info = display_info or {'display_transform':'clip', 'display_transform_abi':None}
         self.resident = resident
@@ -159,6 +160,7 @@ class _NativeDelegate:
         self.textures = deepcopy(textures)
         self.normal_info = deepcopy(normal_info)
         self.reflection_info = deepcopy(reflection_info)
+        self.indirect_info = deepcopy(indirect_info)
         self.environment = deepcopy(environment)
         self.shadow_mode = shadow_mode
         self.area_light_grid = area_light_grid
@@ -269,6 +271,7 @@ class _NativeDelegate:
             texture_assets=deepcopy(self.textures),
             normal_maps=deepcopy(self.normal_info),
             reflection=deepcopy(self.reflection_info),
+            indirect=deepcopy(self.indirect_info),
             physics_steps=0,
         )
 
@@ -305,6 +308,10 @@ class NativeBackend:
     separate shader ABI. Only uploaded metallic>=.99 / roughness factor<=.10
     surfaces emit ideal mirror rays; zero receivers is legal. Hits use terminal
     lighting, misses keep the environment. No rough reflection or recursion.
+    indirect_mode='diffuse_bounce' replaces diffuse IBL with sixteen stratified
+    cosine samples of terminal nearest-hit light / raw environment. uint32 seed
+    is stable at pixel XY, with no frame accumulation. Requires hardware resident
+    shaders; may combine with single_bounce specular. Default none needs no ABI.
     display_transform='pbr-neutral' requires a declared resident display ABI;
     default 'clip' preserves the previous output and never probes that extension.
     """
@@ -324,6 +331,8 @@ class NativeBackend:
         display_transform='clip',
         msaa_samples=1,
         reflection_mode='environment',
+        indirect_mode='none',
+        indirect_seed=0,
     ):
         if isinstance(device_index, bool) or not isinstance(device_index, int):
             raise TypeError("device_index must be an integer, not bool")
@@ -365,6 +374,13 @@ class NativeBackend:
         if reflection_mode=='single_bounce' and (not resident or shadow_mode!='ray_query'):
             raise UnsupportedRequestError('single_bounce reflection requires resident=True and shadow_mode=ray_query')
         self.reflection_mode=reflection_mode
+        if not isinstance(indirect_mode,str):raise TypeError('indirect_mode must be none or diffuse_bounce')
+        if indirect_mode not in ('none','diffuse_bounce'):raise ValueError('indirect_mode must be none or diffuse_bounce')
+        if type(indirect_seed) is not int:raise TypeError('indirect_seed must be a uint32 integer, not bool')
+        if not 0<=indirect_seed<=2**32-1:raise ValueError('indirect_seed outside uint32')
+        if indirect_mode!='none' and (not resident or shadow_mode!='ray_query'):
+            raise UnsupportedRequestError('diffuse_bounce requires resident=True and shadow_mode=ray_query')
+        self.indirect_mode,self.indirect_seed=indirect_mode,indirect_seed
         self.shadow_mode = shadow_mode
         self.area_light_grid = area_light_grid
         if studio is not None:
@@ -395,6 +411,7 @@ class NativeBackend:
         if not self.resident and any(isinstance(m,TexturedMaterial) for m in scene.materials):
             raise UnsupportedRequestError('native base-color textures require resident=True; no legacy approximation')
         reflection = reflection_declaration(scene,self.reflection_mode)
+        indirect=indirect_declaration(self.indirect_mode,self.indirect_seed)
         require_library(self.library_path)
         if len(scene.lights) > 4:
             raise UnsupportedRequestError(
@@ -416,7 +433,8 @@ class NativeBackend:
             self.library_path, self.shader_directory, self.device_index, self.validation,
             **({'area_light_grid': self.area_light_grid} if self.area_light_grid != 2 else {}),
             **({'normal_maps': True} if has_normal_maps else {}),
-            **({'reflection': True} if self.reflection_mode=='single_bounce' else {})
+            **({'reflection': True} if self.reflection_mode=='single_bounce' else {}),
+            **({'indirect': True} if self.indirect_mode!='none' else {})
         )
         try:
             display_info = configure_display(device, self.display_transform)
@@ -447,9 +465,10 @@ class NativeBackend:
                     studio_info['environment']['replaced_by'] = 'directional environment map'
             normal_info = configure_normal_maps(device, pack_normal_maps(scene, meshes, device.info())) if self.resident else None
             reflection_info=configure_reflection(device,reflection)
+            indirect_info=configure_indirect(device,indirect)
             msaa_info = configure_msaa(device, self.msaa_samples)
             return NativeRenderSession(scene, _NativeDelegate(
-                scene, meshes, device, self.exposure, resident=self.resident, studio=studio_info, textures=texture_info, environment=environment_info, shadow_mode=self.shadow_mode, area_light_grid=self.area_light_grid, display_info=display_info, msaa_info=msaa_info, normal_info=normal_info, reflection_info=reflection_info))
+                scene, meshes, device, self.exposure, resident=self.resident, studio=studio_info, textures=texture_info, environment=environment_info, shadow_mode=self.shadow_mode, area_light_grid=self.area_light_grid, display_info=display_info, msaa_info=msaa_info, normal_info=normal_info, reflection_info=reflection_info, indirect_info=indirect_info))
         except BaseException as primary:
             try:
                 device.close()

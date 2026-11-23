@@ -1,6 +1,8 @@
 // One closest triangle, then terminal direct/environment shading; no recursion.
 // Query semantics: KhronosGroup/GLSL extensions/ext/GLSL_EXT_ray_query.txt.
+#ifdef PR_RESIDENT_REFLECTION
 layout(constant_id=64) const uint PR_REFLECTION_ABI=1u;
+#endif
 
 vec3 reflectionDirect(vec3 P,vec3 N,vec3 Ng,vec3 V,vec3 albedo,float metallic,float roughness) {
     vec3 color=vec3(0.0);
@@ -62,12 +64,9 @@ vec3 reflectionHitNormal(vec3 N,uint slot,vec2 uv,vec3 e1,vec3 e2,vec2 t1,vec2 t
     return normalFinite(result)&&result2>1e-20?result*inversesqrt(result2):N;
 }
 #endif
-bool residentNearReflection(vec3 P,vec3 N,vec3 Ng,vec3 V,out vec3 radiance) {
+bool residentTraceTerminal(vec3 P,vec3 Ng,vec3 direction,out vec3 radiance) {
     radiance=vec3(0.0);
-    vec3 direction=normalize(reflect(-V,N));
-    // Perturbed normals may reflect below the actual surface. Do not trace an
-    // inward ray or change the original geometric shadow-bias normal.
-    if(dot(direction,Ng)<=0.0 || u.counts.w==0u || PR_REFLECTION_ABI!=1u) return false;
+    if(u.counts.w==0u) return false;
     rayQueryEXT query;
     rayQueryInitializeEXT(query,sceneAcceleration,gl_RayFlagsNoOpaqueEXT,0xffu,
         P+Ng*u.options.y,u.options.y,direction,3.402823466e38);
@@ -124,3 +123,11 @@ bool residentNearReflection(vec3 P,vec3 N,vec3 Ng,vec3 V,out vec3 radiance) {
     }
     return true;
 }
+
+#ifdef PR_RESIDENT_REFLECTION
+bool residentNearReflection(vec3 P,vec3 N,vec3 Ng,vec3 V,out vec3 radiance) {
+    vec3 direction=normalize(reflect(-V,N));radiance=vec3(0.0);
+    if(dot(direction,Ng)<=0.0||PR_REFLECTION_ABI!=1u)return false;
+    return residentTraceTerminal(P,Ng,direction,radiance);
+}
+#endif

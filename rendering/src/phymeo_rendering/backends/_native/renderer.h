@@ -314,3 +314,16 @@ static_assert(sizeof(PrResidentReflectionInfo)==64,"reflection info ABI");
 PR_API uint32_t pr_resident_reflection_abi_version();
 PR_API int pr_resident_reflection_info(void* context,PrResidentReflectionInfo* output);
 PR_API int pr_resident_set_reflection(void* context,uint32_t mode);
+
+// Fixed sixteen stratified cosine samples for one diffuse bounce. uint32 seed
+// is retained in context; only explicit indirect shaders interpret uploaded
+// resident counts.y as that seed (caller triangle-count validation is unchanged).
+struct PrResidentIndirectInfo {
+    uint32_t indirect_abi_version,supported,shader_compatible,enabled;
+    uint32_t samples_per_pixel,seed,max_bounces,set_calls,receiver_count,reserved[3];
+    uint64_t captures,rgb_captures;
+};
+static_assert(sizeof(PrResidentIndirectInfo)==64,"indirect info ABI");
+PR_API uint32_t pr_resident_indirect_abi_version();
+PR_API int pr_resident_indirect_info(void* context,PrResidentIndirectInfo* output);
+PR_API int pr_resident_set_indirect(void* context,uint32_t mode,uint32_t seed);

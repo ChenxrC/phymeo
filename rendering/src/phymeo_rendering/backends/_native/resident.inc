@@ -733,6 +733,8 @@ void resident_render(Context& c, const float* matrices, uint32_t instance_count,
             "resident scene is not loaded or context failed; open an explicit new session");
     require(!c.reflection_info.shader_compatible || c.reflection_info.enabled,
             "reflection shader requires successful explicit setup before capture");
+    require(!c.indirect_info.shader_compatible||c.indirect_info.enabled,
+            "indirect shader requires successful explicit setup before capture");
     validate_resident_params(c, params, width, height, output, output_bytes, channel_mask, compact);
     auto& state = *c.resident_state;
     const bool msaa_color=c.msaa_info.requested_samples==4 && params.counts[2]!=0;
@@ -764,6 +766,9 @@ void resident_render(Context& c, const float* matrices, uint32_t instance_count,
     PrParams submitted=params;
     // Reserved caller words never opt into a display change; only the checked setter does.
     submitted.options[2]=static_cast<float>(c.display_transform);
+    // Resident shaders do not use the legacy triangle-count word. The caller
+    // still supplies/validates it; only explicit indirect variants read a seed.
+    if(c.indirect_info.enabled) submitted.counts[1]=c.indirect_info.seed;
     c.upload(frame.uniform, &submitted, sizeof(submitted));
     info.parameter_upload_bytes += sizeof(params);
     const auto record_begin=HostClock::now();
@@ -901,6 +906,7 @@ void resident_render(Context& c, const float* matrices, uint32_t instance_count,
     profile.host_wait_ns+=timing.wait; profile.host_readback_ns+=elapsed_ns(readback_begin);
     profile.gpu_render_ns+=gpu_render; profile.gpu_copy_ns+=gpu_copy; profile.gpu_total_ns+=gpu_total;
     profile.timestamp_samples+=timestamp_samples; profile.tlas_upload_bytes+=tlas.size()*sizeof(GpuBvhNode);
+    if(c.indirect_info.enabled){++c.indirect_info.captures;if(params.counts[2])++c.indirect_info.rgb_captures;}
     if (c.reflection_info.enabled) { ++c.reflection_info.captures; if(params.counts[2]) ++c.reflection_info.rgb_captures; }
     if (c.normal_info.loaded && params.counts[2]) ++c.normal_info.rgb_captures_with_normals;
     if (c.texture_info.loaded && params.counts[2]) ++c.texture_info.rgb_captures_with_textures;

@@ -1,8 +1,9 @@
 // Finite one-sided parallelograms. Geometry, BRDF and radiance are in world
 // metres and linear RGB. Direct lighting uses deterministic area and visible
 // GGX normal samples with MIS. All shadow rays end at the sampled emitter.
-// The uniform environment is distant, unoccluded fill; indirect bounces and
-// interreflection are provided by the separate path-tracing reference.
+// By default the environment is distant, unoccluded fill. Optional resident
+// specular/diffuse one-bounce variants replace their environment lobes using
+// nonrecursive terminal lighting; the separate reference supports path tracing.
 #ifndef PR_STUDIO_AREA_GRID
 #define PR_STUDIO_AREA_GRID 2
 #endif
@@ -48,6 +49,9 @@ vec3 residentStudioRadiance(vec3 P, vec3 N, vec3 Ng, vec3 V, vec3 albedo,
 #ifdef PR_RESIDENT_REFLECTION
                             ,bool overrideSpecular,vec3 reflectedRadiance
 #endif
+#ifdef PR_RESIDENT_INDIRECT
+                            ,bool overrideDiffuse,vec3 diffuseIncoming
+#endif
                             ) {
     vec3 f0 = mix(vec3(0.04), albedo, metal);
     float nv = max(dot(N,V),1e-5);
@@ -65,6 +69,9 @@ vec3 residentStudioRadiance(vec3 P, vec3 N, vec3 Ng, vec3 V, vec3 albedo,
 #endif
 #ifdef PR_RESIDENT_REFLECTION
     if(overrideSpecular) specularEnvironment=reflectedRadiance;
+#endif
+#ifdef PR_RESIDENT_INDIRECT
+    if(overrideDiffuse) diffuseEnvironment=diffuseIncoming;
 #endif
     vec3 result = diffuseEnvironment*diffuse*(1.0-f0);
     vec3 biasP = P + Ng*u.options.y;
@@ -134,9 +141,16 @@ vec3 residentStudioRadiance(vec3 P, vec3 N, vec3 Ng, vec3 V, vec3 albedo,
     return result;
 }
 
-#ifdef PR_RESIDENT_REFLECTION
-// Terminal-hit overload: intentionally cannot call the near-reflection query.
+#if defined(PR_RESIDENT_REFLECTION) || defined(PR_RESIDENT_INDIRECT)
+// Terminal hit: both optional lobe overrides disabled, no recursive query.
 vec3 residentStudioRadiance(vec3 P,vec3 N,vec3 Ng,vec3 V,vec3 albedo,float metal,float roughness) {
-    return residentStudioRadiance(P,N,Ng,V,albedo,metal,roughness,false,vec3(0.0));
+    return residentStudioRadiance(P,N,Ng,V,albedo,metal,roughness
+#ifdef PR_RESIDENT_REFLECTION
+        ,false,vec3(0.0)
+#endif
+#ifdef PR_RESIDENT_INDIRECT
+        ,false,vec3(0.0)
+#endif
+    );
 }
 #endif

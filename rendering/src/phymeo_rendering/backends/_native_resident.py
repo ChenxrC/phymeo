@@ -126,7 +126,7 @@ class ResidentReadbackInfo(ct.Structure):
 class ResidentDevice(NativeDevice):
     _shader_prefix = 'resident'
 
-    def __init__(self, *args, area_light_grid=2, normal_maps=False, reflection=False, indirect=False, progressive=False, spatial=False, settling=False):
+    def __init__(self, *args, area_light_grid=2, secondary_area_light_grid=None, normal_maps=False, reflection=False, indirect=False, progressive=False, spatial=False, settling=False):
         if type(area_light_grid) is not int or area_light_grid not in (2, 4, 8):
             raise ValueError('area_light_grid must be 2, 4 or 8')
         if type(normal_maps) is not bool:
@@ -145,6 +145,10 @@ class ResidentDevice(NativeDevice):
         self._reflection_requested=reflection
         self._normal_maps_requested = normal_maps
         self._area_light_grid = area_light_grid
+        from ._native_secondary import secondary_grid
+        self._secondary_area_light_grid = secondary_grid(area_light_grid, secondary_area_light_grid, resident=True,
+            shadow_mode='ray_query' if self._shader_prefix=='resident_rayquery' else 'software')
+        self._secondary_budget_marker = None
         self._resident_info = {}
         self._telemetry = None
         self._profile = None
@@ -179,7 +183,13 @@ class ResidentDevice(NativeDevice):
         if stage=='frag' and getattr(self,'_indirect_requested',False):prefix+='_indirect'
         if stage=='frag' and getattr(self,'_progressive_requested',False):prefix+='_progressive'
         grid=f'_area{self._area_light_grid}' if stage=='frag' and self._area_light_grid!=2 else ''
-        return f'{prefix}{grid}.{stage}.spv'
+        secondary = '_secondary2' if stage=='frag' and getattr(self, '_secondary_area_light_grid', self._area_light_grid)!=self._area_light_grid else ''
+        return f'{prefix}{grid}{secondary}.{stage}.spv'
+
+    def _validate_shader(self, stage, data):
+        if stage=='frag' and self._secondary_area_light_grid!=self._area_light_grid:
+            from ._native_secondary import validate_secondary_shader
+            self._secondary_budget_marker = validate_secondary_shader(data)
 
     def _spatial_guide_filename(self):
         prefix = 'resident_rayquery' + ('_normal' if self._normal_maps_requested else '')
@@ -434,6 +444,7 @@ class ResidentDevice(NativeDevice):
                     raise RuntimeError(self._error())
                 self._remember_environment_info(environment)
         result.update(self._resident_info)
+        result['resident_secondary_light_budget'] = dict(self._secondary_budget_marker) if self._secondary_budget_marker is not None else None
         result['resident_render_planes_available'] = self._render_planes_function is not None
         result['resident_environment_available'] = self._environment_function is not None and (self._environment_info is None or bool(self._environment_info['supported'] and self._environment_info['shader_compatible']))
         result['resident_environment_abi_version'] = self._environment_abi_version

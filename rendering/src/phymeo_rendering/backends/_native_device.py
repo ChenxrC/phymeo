@@ -115,6 +115,7 @@ class NativeDevice:
                 raise BackendUnavailableError(f"native SPIR-V file unavailable: {path}") from error
             if len(data) < 20 or len(data) % 4 or data[:4] != b"\x03\x02\x23\x07":
                 raise BackendUnavailableError(f"invalid SPIR-V file: {path}")
+            self._validate_shader(stage, data)
             shaders.append((ct.c_uint32 * (len(data) // 4)).from_buffer_copy(data))
             self.shader_sha256[stage] = hashlib.sha256(data).hexdigest()
         self.library_sha256 = hashlib.sha256(self.library_path.read_bytes()).hexdigest()
@@ -148,6 +149,10 @@ class NativeDevice:
                     "native initialization and cleanup failed", [primary, cleanup]
                 )
             raise
+
+    def _validate_shader(self, stage, data):
+        # Optional subclasses inspect actual bytes before DLL/device creation.
+        pass
 
     def _shader_filename(self, stage):
         return f'{self._shader_prefix}.{stage}.spv'

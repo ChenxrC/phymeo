@@ -215,7 +215,7 @@ def _environment_sampling_diagnostics(device_info, indirect, progressive):
 
 
 class _NativeDelegate:
-    def __init__(self, scene, meshes, device, exposure, *, resident=False, studio=None, textures=None, environment=None, shadow_mode='software', area_light_grid=2, display_info=None, msaa_info=None, normal_info=None, reflection_info=None, indirect_info=None, progressive_history=None, spatial_info=None):
+    def __init__(self, scene, meshes, device, exposure, *, resident=False, studio=None, textures=None, environment=None, shadow_mode='software', area_light_grid=2, secondary_area_light_grid=None, display_info=None, msaa_info=None, normal_info=None, reflection_info=None, indirect_info=None, progressive_history=None, spatial_info=None):
         self.scene, self.meshes, self.device, self.exposure = scene, meshes, device, exposure
         self.display_info = display_info or {'display_transform':'clip', 'display_transform_abi':None}
         self.resident = resident
@@ -230,8 +230,11 @@ class _NativeDelegate:
         self._progressive_pending_publication = None
         self.effective_lights = scene.lights
         self.environment = deepcopy(environment)
+        from ._native_secondary import secondary_grid
+        secondary_area_light_grid = secondary_grid(area_light_grid, secondary_area_light_grid, resident=resident, shadow_mode=shadow_mode)
         self.shadow_mode = shadow_mode
         self.area_light_grid = area_light_grid
+        self.secondary_area_light_grid = area_light_grid if secondary_area_light_grid is None else secondary_area_light_grid
         self.limits = device.info()
         self.triangles = sum(len(meshes[item.mesh_id].triangles) for item in scene.instances)
         self.last_passes = ()
@@ -379,6 +382,15 @@ class _NativeDelegate:
             shadow_mode=self.shadow_mode,
             area_light_grid=self.area_light_grid,
             area_light_samples_per_panel=self.area_light_grid**2,
+            secondary_area_light_grid=self.secondary_area_light_grid,
+            secondary_area_light_samples_per_panel=self.secondary_area_light_grid**2,
+            area_light_budget=dict(primary_grid=self.area_light_grid,secondary_grid=self.secondary_area_light_grid,
+                primary_scope='camera-visible surfaces and direct guide',
+                secondary_scope='diffuse first/terminal hits and near-reflection terminal hits',
+                primary_samples_per_panel=self.area_light_grid**2,secondary_samples_per_panel=self.secondary_area_light_grid**2,
+                brdf_samples_per_panel=8,compiled_contract=device_info.get('resident_secondary_light_budget'),
+                fragment_sha256=self.device.shader_sha256.get('frag'),
+                scope='per-panel proposal budgets, not measured ray counts or a universal quality guarantee'),
             area_light_brdf_samples_per_panel=8,
             geometry_residency=('static indexed meshes; per-frame instance matrices' if self.resident
                                 else 'expanded world triangles per capture'),
@@ -558,6 +570,10 @@ class NativeBackend:
     an unsupported hardware request never falls back.
     area_light_grid=4 or 8 selects a separate resident fragment shader with
     midpoint panel integration; default 2 retains the original shader artifact.
+    secondary_area_light_grid=None inherits it. Explicit equality uses the same
+    original artifact; the sole split option is 8/2 with resident ray_query.
+    That option keeps visible/direct-guide integration at 8 and terminal hits at
+    2, retaining eight GGX proposals and matched MIS normalization per panel.
     BRDF samples remain eight. Missing dense artifacts never fall back.
     reflection_mode='single_bounce' requires resident hardware ray query and a
     separate shader ABI. Only uploaded metallic>=.99 / roughness factor<=.10
@@ -609,6 +625,7 @@ class NativeBackend:
         studio=None,
         shadow_mode='software',
         area_light_grid=2,
+        secondary_area_light_grid=None,
         display_transform='clip',
         msaa_samples=1,
         reflection_mode='environment',
@@ -684,8 +701,11 @@ class NativeBackend:
         self.spatial_filter = spatial_filter
         self.progressive = progressive
         self.indirect_bounces = indirect_bounces
+        from ._native_secondary import secondary_grid
+        secondary_area_light_grid = secondary_grid(area_light_grid, secondary_area_light_grid, resident=resident, shadow_mode=shadow_mode)
         self.shadow_mode = shadow_mode
         self.area_light_grid = area_light_grid
+        self.secondary_area_light_grid = area_light_grid if secondary_area_light_grid is None else secondary_area_light_grid
         if studio is not None:
             if not isinstance(studio, StudioLighting):
                 raise TypeError('studio must be StudioLighting or None')
@@ -735,6 +755,7 @@ class NativeBackend:
         device = device_type(
             self.library_path, self.shader_directory, self.device_index, self.validation,
             **({'area_light_grid': self.area_light_grid} if self.area_light_grid != 2 else {}),
+            **({'secondary_area_light_grid': self.secondary_area_light_grid} if self.secondary_area_light_grid != self.area_light_grid else {}),
             **({'normal_maps': True} if has_normal_maps else {}),
             **({'reflection': True} if self.reflection_mode=='single_bounce' else {}),
             **({'indirect': True} if self.indirect_mode!='none' else {}),
@@ -781,7 +802,7 @@ class NativeBackend:
 
                 indirect_info['seed_scope'] = 'seed + capture-local pixel + 0-based batch; state changes reset batch zero'
             return NativeRenderSession(scene, _NativeDelegate(
-                scene, meshes, device, self.exposure, resident=self.resident, studio=studio_info, textures=texture_info, environment=environment_info, shadow_mode=self.shadow_mode, area_light_grid=self.area_light_grid, display_info=display_info, msaa_info=msaa_info, normal_info=normal_info, reflection_info=reflection_info, indirect_info=indirect_info, progressive_history=progressive_history, spatial_info=spatial_info))
+                scene, meshes, device, self.exposure, resident=self.resident, studio=studio_info, textures=texture_info, environment=environment_info, shadow_mode=self.shadow_mode, area_light_grid=self.area_light_grid, secondary_area_light_grid=self.secondary_area_light_grid, display_info=display_info, msaa_info=msaa_info, normal_info=normal_info, reflection_info=reflection_info, indirect_info=indirect_info, progressive_history=progressive_history, spatial_info=spatial_info))
         except BaseException as primary:
             try:
                 device.close()

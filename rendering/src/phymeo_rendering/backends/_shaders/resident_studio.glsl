@@ -13,6 +13,19 @@
 const int studioAreaSamples = PR_STUDIO_AREA_GRID * PR_STUDIO_AREA_GRID;
 const int studioBrdfSamples = 8;
 
+#ifdef PR_STUDIO_SECONDARY_GRID
+#if PR_STUDIO_AREA_GRID != 8 || PR_STUDIO_SECONDARY_GRID != 2
+#error Only primary 8 / secondary 2 split quadrature is supported
+#endif
+// Kept in the actual loaded SPIR-V and checked before any device allocation.
+layout(constant_id=73) const uint PR_SECONDARY_LIGHT_BUDGET=0x0802u;
+#define PR_STUDIO_FUNCTION residentStudioRadianceBudget
+#else
+#define PR_STUDIO_FUNCTION residentStudioRadiance
+// Default/equal budgets preprocess to the original implementation and calls.
+#define residentStudioRadianceSecondary residentStudioRadiance
+#endif
+
 float studioG1(float cosine, float alpha2) {
     return 2.0 * cosine / (cosine + sqrt(alpha2 + (1.0-alpha2)*cosine*cosine));
 }
@@ -44,7 +57,7 @@ vec3 studioVisibleNormal(vec3 eye, float alpha, int i) {
     return normalize(vec3(alpha*h.xy, max(0.0,h.z)));
 }
 
-vec3 residentStudioRadiance(vec3 P, vec3 N, vec3 Ng, vec3 V, vec3 albedo,
+vec3 PR_STUDIO_FUNCTION(vec3 P, vec3 N, vec3 Ng, vec3 V, vec3 albedo,
                             float metal, float roughness
 #ifdef PR_RESIDENT_REFLECTION
                             ,bool overrideSpecular,vec3 reflectedRadiance
@@ -52,7 +65,13 @@ vec3 residentStudioRadiance(vec3 P, vec3 N, vec3 Ng, vec3 V, vec3 albedo,
 #ifdef PR_RESIDENT_INDIRECT
                             ,bool overrideDiffuse,vec3 diffuseIncoming
 #endif
+#ifdef PR_STUDIO_SECONDARY_GRID
+                            ,int areaGrid
+#endif
                             ) {
+#ifdef PR_STUDIO_SECONDARY_GRID
+    int studioAreaSamples=areaGrid*areaGrid;
+#endif
     vec3 f0 = mix(vec3(0.04), albedo, metal);
     float nv = max(dot(N,V),1e-5);
     float alpha = max(roughness*roughness, 0.045*0.045);
@@ -89,7 +108,11 @@ vec3 residentStudioRadiance(vec3 P, vec3 N, vec3 Ng, vec3 V, vec3 albedo,
         vec3 emitterNormal = normalize(crossUW);
         if (dot(emitterNormal,biasP-panel.position.xyz) <= 0.0) continue;
         for (int i=0; i<studioAreaSamples; ++i) {
-#if PR_STUDIO_AREA_GRID == 2
+#ifdef PR_STUDIO_SECONDARY_GRID
+            vec2 ab;
+            if(areaGrid==2) ab=vec2(i&1,i>>1)-vec2(0.5);
+            else ab=2.0*(vec2(i%areaGrid,i/areaGrid)+vec2(0.5))/float(areaGrid)-vec2(1.0);
+#elif PR_STUDIO_AREA_GRID == 2
             // Preserve the original expression and arithmetic for default output.
             vec2 ab = vec2(i&1,i>>1)-vec2(0.5);
 #else
@@ -140,6 +163,59 @@ vec3 residentStudioRadiance(vec3 P, vec3 N, vec3 Ng, vec3 V, vec3 albedo,
     }
     return result;
 }
+
+#ifdef PR_STUDIO_SECONDARY_GRID
+// Both entry points instantiate the SAME integrator. Samples and MIS use the
+// selected grid inside that routine; GGX stays eight and shadows remain finite.
+vec3 residentStudioRadiance(vec3 P,vec3 N,vec3 Ng,vec3 V,vec3 albedo,float metal,float roughness
+#ifdef PR_RESIDENT_REFLECTION
+    ,bool overrideSpecular,vec3 reflectedRadiance
+#endif
+#ifdef PR_RESIDENT_INDIRECT
+    ,bool overrideDiffuse,vec3 diffuseIncoming
+#endif
+) {
+    if(PR_SECONDARY_LIGHT_BUDGET!=0x0802u)return vec3(0.0);
+    return residentStudioRadianceBudget(P,N,Ng,V,albedo,metal,roughness
+#ifdef PR_RESIDENT_REFLECTION
+        ,overrideSpecular,reflectedRadiance
+#endif
+#ifdef PR_RESIDENT_INDIRECT
+        ,overrideDiffuse,diffuseIncoming
+#endif
+        ,PR_STUDIO_AREA_GRID);
+}
+vec3 residentStudioRadianceSecondary(vec3 P,vec3 N,vec3 Ng,vec3 V,vec3 albedo,float metal,float roughness
+#ifdef PR_RESIDENT_REFLECTION
+    ,bool overrideSpecular,vec3 reflectedRadiance
+#endif
+#ifdef PR_RESIDENT_INDIRECT
+    ,bool overrideDiffuse,vec3 diffuseIncoming
+#endif
+) {
+    if(PR_SECONDARY_LIGHT_BUDGET!=0x0802u)return vec3(0.0);
+    return residentStudioRadianceBudget(P,N,Ng,V,albedo,metal,roughness
+#ifdef PR_RESIDENT_REFLECTION
+        ,overrideSpecular,reflectedRadiance
+#endif
+#ifdef PR_RESIDENT_INDIRECT
+        ,overrideDiffuse,diffuseIncoming
+#endif
+        ,PR_STUDIO_SECONDARY_GRID);
+}
+#if defined(PR_RESIDENT_REFLECTION) || defined(PR_RESIDENT_INDIRECT)
+vec3 residentStudioRadianceSecondary(vec3 P,vec3 N,vec3 Ng,vec3 V,vec3 albedo,float metal,float roughness) {
+    return residentStudioRadianceSecondary(P,N,Ng,V,albedo,metal,roughness
+#ifdef PR_RESIDENT_REFLECTION
+        ,false,vec3(0.0)
+#endif
+#ifdef PR_RESIDENT_INDIRECT
+        ,false,vec3(0.0)
+#endif
+    );
+}
+#endif
+#endif
 
 #if defined(PR_RESIDENT_REFLECTION) || defined(PR_RESIDENT_INDIRECT)
 // Terminal hit: both optional lobe overrides disabled, no recursive query.

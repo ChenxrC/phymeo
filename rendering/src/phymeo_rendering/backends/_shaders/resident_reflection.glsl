@@ -130,7 +130,7 @@ bool residentTraceTerminal(vec3 P,vec3 Ng,vec3 direction,out vec3 radiance) {
 #endif
         radiance=reflectionDirect(hitP,hitN,faceN,hitV,albedo,metal,roughness);
         if(studio.environment.w!=0.0 || residentEnvironmentEnabled())
-            radiance+=residentStudioRadiance(hitP,hitN,faceN,hitV,albedo,metal,roughness);
+            radiance+=residentStudioRadianceSecondary(hitP,hitN,faceN,hitV,albedo,metal,roughness);
     }
     return true;
 }

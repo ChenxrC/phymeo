@@ -204,7 +204,7 @@ vec3 progressiveFirstHit(vec3 P,vec3 faceN,vec3 direction,uint key) {
     radiance=reflectionDirect(hit.P,hit.N,hit.Ng,hit.V,hit.albedo,hit.metal,hit.roughness);
     // Replace this first hit's diffuse IBL with one continuation, retaining its
     // local direct lighting and specular environment. Terminal hit never recurses.
-    radiance+=residentStudioRadiance(hit.P,hit.N,hit.Ng,hit.V,hit.albedo,hit.metal,hit.roughness
+    radiance+=residentStudioRadianceSecondary(hit.P,hit.N,hit.Ng,hit.V,hit.albedo,hit.metal,hit.roughness
 #ifdef PR_RESIDENT_REFLECTION
         ,false,vec3(0.0)
 #endif

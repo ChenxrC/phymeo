@@ -248,5 +248,53 @@ add_custom_command(OUTPUT "${output}"
   DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident_settling.comp"
     "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident_display.glsl" VERBATIM)
 list(APPEND shader_outputs "${output}")
+# Explicit split primary/secondary budget; old artifacts and compute/guide
+# selections remain unchanged. Twelve fragments cover the existing HW modes.
+foreach(normal plain normal)
+  set(prefix resident_rayquery)
+  set(normal_options "")
+  if(normal STREQUAL "normal")
+    set(prefix resident_rayquery_normal)
+    set(normal_options -DPR_RESIDENT_NORMAL_MAPS=1)
+  endif()
+  foreach(mode direct reflection indirect reflection_indirect indirect_progressive reflection_indirect_progressive)
+    set(mode_options "")
+    set(mode_suffix "")
+    if(NOT mode STREQUAL "direct")
+      set(mode_suffix "_${mode}")
+    endif()
+    if(mode MATCHES "reflection")
+      list(APPEND mode_options -DPR_RESIDENT_REFLECTION=1)
+    endif()
+    if(mode MATCHES "indirect")
+      list(APPEND mode_options -DPR_RESIDENT_INDIRECT=1)
+    endif()
+    if(mode MATCHES "progressive")
+      list(APPEND mode_options -DPR_RESIDENT_PROGRESSIVE=1)
+    endif()
+    set(output "${CMAKE_BINARY_DIR}/${prefix}${mode_suffix}_area8_secondary2.frag.spv")
+    add_custom_command(OUTPUT "${output}"
+      COMMAND "${GLSLANG_VALIDATOR}" -V --target-env vulkan1.2 --glsl-version 460
+        -DPR_RESIDENT_RAY_QUERY=1 -DPR_STUDIO_AREA_GRID=8 -DPR_STUDIO_SECONDARY_GRID=2
+        ${normal_options} ${mode_options} "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident.frag" -o "${output}"
+      DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident.frag"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident_indirect.glsl"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident_reflection.glsl"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident_normal.glsl"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident_environment.glsl"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident_studio.glsl"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident_rayquery.glsl"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident_display.glsl"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident_msaa.glsl" VERBATIM)
+    list(APPEND shader_outputs "${output}")
+  endforeach()
+endforeach()
+# A build must not silently succeed with only the DLL and no shader dependencies.
+list(LENGTH shader_outputs shader_count)
+if(shader_count LESS 12)
+  message(FATAL_ERROR "Native shader output list is incomplete")
+endif()
+file(GENERATE OUTPUT "${CMAKE_BINARY_DIR}/native_shader_manifest.txt"
+  CONTENT "$<JOIN:${shader_outputs},\n>\n")
 add_custom_target(native_shaders ALL DEPENDS ${shader_outputs})
 add_dependencies(phymeo_native native_shaders)

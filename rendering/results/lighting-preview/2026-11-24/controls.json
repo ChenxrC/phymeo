@@ -1,0 +1,772 @@
+{
+  "schema": "phymeo-panda-lighting-controls-v1",
+  "source_sha256": {
+    "edge-new/summary.json": "6287e36a19a8cfe9ad71600e5c96e4c91681569fefabb30e16ad61c3800e682a",
+    "secondary-motion-01/summary.json": "fad4b483152fe849446f61329bfb08b681fa2adf5f579576f2943e5a63bb59a8",
+    "matched-external/summary.json": "975afffc3cdbc84f05255e8a84663b3233aa6ce2b648356ae02fe1bc0f3b75ba",
+    "panda-split-quality/summary.json": "9a9744159d2c69dd83239ca0cf37e48ac09881aea24cf8f61da182ebd53e434e"
+  },
+  "studies": {
+    "unlimited_edge_rescue": {
+      "status": "actual_readbacks_bound",
+      "detail": {
+        "registered_pixels": 69,
+        "valid_results": 69,
+        "incoming_scope": "RGB actual per-pixel 16-proposal incoming before rescue filter; A oct-Ns bits0..19 and real-result-valid bit20; zero A unselected",
+        "device_counts": {
+          "selected_pixels": 24647,
+          "fragment_invocations": 24647,
+          "traced_invocations": 24647,
+          "reconstructed_rescue_pixels": 24647,
+          "filtered_neighbors": 140129,
+          "missing_rescue": 0,
+          "budget_exhausted": 0,
+          "max_invocations": 262144,
+          "invalid": 0,
+          "extra_primary_proposals": 394352
+        }
+      },
+      "paired_roi": {
+        "pixels": 69,
+        "candidate": [
+          {
+            "pixels": 69,
+            "rmse": 0.0075088425189361015,
+            "signed_rgb": [
+              -0.001713943595473785,
+              -0.0006546979545049843,
+              -0.0006546979545049843
+            ],
+            "signed_luminance": -0.0008798935777749512,
+            "maximum_absolute_error": 0.019601512169821533,
+            "space": "inverse-sRGB of published RGB8 (display-linear), not scene radiance"
+          },
+          {
+            "pixels": 69,
+            "rmse": 0.007671916944491914,
+            "signed_rgb": [
+              -0.0010294814861946272,
+              2.927619593374626E-05,
+              2.927619593374626E-05
+            ],
+            "signed_luminance": -0.00019581568728674594,
+            "maximum_absolute_error": 0.019601512169821533,
+            "space": "inverse-sRGB of published RGB8 (display-linear), not scene radiance"
+          }
+        ],
+        "original_fullrate16_guided": [
+          {
+            "pixels": 69,
+            "rmse": 0.007561580975175904,
+            "signed_rgb": [
+              -0.0016587184703048565,
+              -0.0005957756599736535,
+              -0.0005957756599736535
+            ],
+            "signed_luminance": -0.0008217573014500673,
+            "maximum_absolute_error": 0.019601512169821533,
+            "space": "inverse-sRGB of published RGB8 (display-linear), not scene radiance"
+          },
+          {
+            "pixels": 69,
+            "rmse": 0.007714118898338654,
+            "signed_rgb": [
+              -0.0009742563610256987,
+              8.819849046507705E-05,
+              8.819849046507705E-05
+            ],
+            "signed_luminance": -0.00013767941096186188,
+            "maximum_absolute_error": 0.019601512169821533,
+            "space": "inverse-sRGB of published RGB8 (display-linear), not scene radiance"
+          }
+        ]
+      },
+      "reference_disagreement": {
+        "pixels": 69,
+        "rmse": 0.0036717074552390858,
+        "signed_rgb": [
+          0.0006844621092791578,
+          0.0006839741504387305,
+          0.0006839741504387305
+        ],
+        "signed_luminance": 0.0006840778904882054,
+        "maximum_absolute_error": 0.008024568191642378,
+        "space": "inverse-sRGB of published RGB8 (display-linear), not scene radiance"
+      },
+      "exposures": {
+        "14": {
+          "key": {
+            "scene_key": "panda-guided-motion-v1",
+            "world_id": "guided-motion",
+            "epoch": 0,
+            "revision": 14,
+            "tick": 14,
+            "phase": "authored"
+          },
+          "time": 1.1666666666666667,
+          "sensors": {
+            "forward_depth_m_f32": "1aa85e6fd423b7b23168cd5c826fb38e3a59775c17f76961074a92c61bdb434a",
+            "instance_id_u32": "4ad92622b43c64c03dea0dddc65e8c490c7fa0053c8188891583a72cd36c9613",
+            "valid_u8": "ac4bc5f02adbd7f3591a8896c786c108c5066b2d9e0d90f3093c30aae40eb2d8"
+          },
+          "rgb_sha256": "999750e319bf3bfe07ea1baf0f2d98d3d76ebf9805da7341aa17ce23cb551535",
+          "png_sha256": "0505133b9afe20a292d9d4a602ea12125ba063751775e9111b2cf9f4b7ee361f",
+          "capture_ms": 33.07060000952333
+        },
+        "15": {
+          "key": {
+            "scene_key": "panda-guided-motion-v1",
+            "world_id": "guided-motion",
+            "epoch": 0,
+            "revision": 15,
+            "tick": 15,
+            "phase": "authored"
+          },
+          "time": 1.25,
+          "sensors": {
+            "forward_depth_m_f32": "786edc46ee0f1bef0111293edb0b0eda51efa693915c6ce24c9a09be70e1c5c7",
+            "instance_id_u32": "b8e5c983b6c05e3baf9f403f27c9ebda4ae4a7cc55baa1d3f20cb23b97f2176a",
+            "valid_u8": "80f8378aae8979a3b23589e81ee981b0148a09ac49283a20b68e6d52e45b367a"
+          },
+          "rgb_sha256": "27a32a1c66bed0f7a0f2684eb9e37c789a4d326a8d874e6393e98edc8a51c69d",
+          "png_sha256": "770c4a067cafa956ab80a85c0071e778d1d66f93abb92af0fbc85594590c9d1a",
+          "capture_ms": 23.780299990903586
+        }
+      }
+    },
+    "offscreen_secondary_motion": {
+      "status": "complete",
+      "captures": 136,
+      "sufficient_signal": true,
+      "measured_stale_first_four": false,
+      "cleanup": true,
+      "per_frame": {
+        "1": {
+          "outcome": "no_registered_stale_signal",
+          "measured_stale_indirect": false,
+          "signal": 0.0990263318642679,
+          "signal_se": 0.0020539187449923513,
+          "reference_closed": [
+            0.0026787972798807402,
+            0.0026787972798807402,
+            0.0026787972798807402
+          ],
+          "reference_open": [
+            0.10208158777015797,
+            0.003055255905890064,
+            0.003055255905890064
+          ],
+          "reference_group_difference": {
+            "closed": [
+              0.0001134019577619938,
+              0.0001134019577619938,
+              0.0001134019577619938
+            ],
+            "open": [
+              0.0054021792884668685,
+              0.00015492481329104635,
+              0.00015492481329104635
+            ]
+          },
+          "history_mean": [
+            0.11460217816966178,
+            0.003379531930875146,
+            0.003379531930875146
+          ],
+          "current_mean": [
+            0.11460217816966178,
+            0.003379531930875146,
+            0.003379531930875146
+          ],
+          "sufficient_signal": true,
+          "incremental_old_fraction": 0.0,
+          "incremental_old_fraction_se": 0.0,
+          "per_seed_old_fraction_history": [
+            -0.07994296997397601,
+            -0.17201549744743536
+          ],
+          "per_seed_old_fraction_current": [
+            -0.07994296997397601,
+            -0.17201549744743536
+          ],
+          "per_seed_incremental_old_fraction": [
+            0.0,
+            0.0
+          ],
+          "reference_projection_se": 0.021303118862891653,
+          "history_seed_mean_rmse": 0.007701622981516166,
+          "current_seed_mean_rmse": 0.007701622981516166
+        },
+        "2": {
+          "outcome": "no_registered_stale_signal",
+          "measured_stale_indirect": false,
+          "signal": 0.0990263318642679,
+          "signal_se": 0.0020539187449923513,
+          "reference_closed": [
+            0.0026787972798807402,
+            0.0026787972798807402,
+            0.0026787972798807402
+          ],
+          "reference_open": [
+            0.10208158777015797,
+            0.003055255905890064,
+            0.003055255905890064
+          ],
+          "reference_group_difference": {
+            "closed": [
+              0.0001134019577619938,
+              0.0001134019577619938,
+              0.0001134019577619938
+            ],
+            "open": [
+              0.0054021792884668685,
+              0.00015492481329104635,
+              0.00015492481329104635
+            ]
+          },
+          "history_mean": [
+            0.106535381060894,
+            0.003123406715985766,
+            0.003123406715985766
+          ],
+          "current_mean": [
+            0.10746569046204968,
+            0.0031420718381696133,
+            0.0031420718381696133
+          ],
+          "sufficient_signal": true,
+          "incremental_old_fraction": 0.00936014053355212,
+          "incremental_old_fraction_se": 0.0025818857510896843,
+          "per_seed_old_fraction_history": [
+            -0.01085952251342523,
+            -0.07875932417895758
+          ],
+          "per_seed_old_fraction_current": [
+            -0.017637777295887665,
+            -0.09070135046359938
+          ],
+          "per_seed_incremental_old_fraction": [
+            0.006778254782462436,
+            0.011942026284641805
+          ],
+          "reference_projection_se": 0.021303118862891653,
+          "history_seed_mean_rmse": 0.0032277235899347157,
+          "current_seed_mean_rmse": 0.003751178086290153
+        },
+        "3": {
+          "outcome": "no_registered_stale_signal",
+          "measured_stale_indirect": false,
+          "signal": 0.0990263318642679,
+          "signal_se": 0.0020539187449923513,
+          "reference_closed": [
+            0.0026787972798807402,
+            0.0026787972798807402,
+            0.0026787972798807402
+          ],
+          "reference_open": [
+            0.10208158777015797,
+            0.003055255905890064,
+            0.003055255905890064
+          ],
+          "reference_group_difference": {
+            "closed": [
+              0.0001134019577619938,
+              0.0001134019577619938,
+              0.0001134019577619938
+            ],
+            "open": [
+              0.0054021792884668685,
+              0.00015492481329104635,
+              0.00015492481329104635
+            ]
+          },
+          "history_mean": [
+            0.09852008273810497,
+            0.002920445455799836,
+            0.002920445455799836
+          ],
+          "current_mean": [
+            0.09857811670553929,
+            0.002925837576469803,
+            0.002925837576469803
+          ],
+          "sufficient_signal": true,
+          "incremental_old_fraction": 0.0005842204569069774,
+          "incremental_old_fraction_se": 0.0014023064784965363,
+          "per_seed_old_fraction_history": [
+            0.13265386198207463,
+            -0.06097732387465469
+          ],
+          "per_seed_old_fraction_current": [
+            0.1334719480036642,
+            -0.0629638508100582
+          ],
+          "per_seed_incremental_old_fraction": [
+            -0.0008180860215895591,
+            0.001986526935403514
+          ],
+          "reference_projection_se": 0.021303118862891653,
+          "history_seed_mean_rmse": 0.005928249197482786,
+          "current_seed_mean_rmse": 0.005992208033759919
+        },
+        "4": {
+          "outcome": "no_registered_stale_signal",
+          "measured_stale_indirect": false,
+          "signal": 0.0990263318642679,
+          "signal_se": 0.0020539187449923513,
+          "reference_closed": [
+            0.0026787972798807402,
+            0.0026787972798807402,
+            0.0026787972798807402
+          ],
+          "reference_open": [
+            0.10208158777015797,
+            0.003055255905890064,
+            0.003055255905890064
+          ],
+          "reference_group_difference": {
+            "closed": [
+              0.0001134019577619938,
+              0.0001134019577619938,
+              0.0001134019577619938
+            ],
+            "open": [
+              0.0054021792884668685,
+              0.00015492481329104635,
+              0.00015492481329104635
+            ]
+          },
+          "history_mean": [
+            0.10556153375000576,
+            0.003152450074423996,
+            0.003152450074423996
+          ],
+          "current_mean": [
+            0.10677698929066537,
+            0.003201349847927304,
+            0.003201349847927304
+          ],
+          "sufficient_signal": true,
+          "incremental_old_fraction": 0.012230954941099492,
+          "incremental_old_fraction_se": 0.0011187050206472036,
+          "per_seed_old_fraction_history": [
+            0.08587662604658068,
+            -0.1559064975935154
+          ],
+          "per_seed_old_fraction_current": [
+            0.07252696608483399,
+            -0.1670187475139677
+          ],
+          "per_seed_incremental_old_fraction": [
+            0.013349659961746696,
+            0.011112249920452288
+          ],
+          "reference_projection_se": 0.021303118862891653,
+          "history_seed_mean_rmse": 0.007227421865183294,
+          "current_seed_mean_rmse": 0.007393978041561886
+        },
+        "5": {
+          "outcome": "no_registered_stale_signal",
+          "measured_stale_indirect": false,
+          "signal": 0.0990263318642679,
+          "signal_se": 0.0020539187449923513,
+          "reference_closed": [
+            0.0026787972798807402,
+            0.0026787972798807402,
+            0.0026787972798807402
+          ],
+          "reference_open": [
+            0.10208158777015797,
+            0.003055255905890064,
+            0.003055255905890064
+          ],
+          "reference_group_difference": {
+            "closed": [
+              0.0001134019577619938,
+              0.0001134019577619938,
+              0.0001134019577619938
+            ],
+            "open": [
+              0.0054021792884668685,
+              0.00015492481329104635,
+              0.00015492481329104635
+            ]
+          },
+          "history_mean": [
+            0.09827259243684239,
+            0.00290363982873032,
+            0.00290363982873032
+          ],
+          "current_mean": [
+            0.0981360963141924,
+            0.002895093341635402,
+            0.002895093341635402
+          ],
+          "sufficient_signal": true,
+          "incremental_old_fraction": -0.0013737737070032147,
+          "incremental_old_fraction_se": 0.01604658351194647,
+          "per_seed_old_fraction_history": [
+            0.19875835541587641,
+            -0.1220998547337746
+          ],
+          "per_seed_old_fraction_current": [
+            0.2161787126348261,
+            -0.13677266453871786
+          ],
+          "per_seed_incremental_old_fraction": [
+            -0.01742035721894969,
+            0.01467280980494326
+          ],
+          "reference_projection_se": 0.021303118862891653,
+          "history_seed_mean_rmse": 0.009473344953793556,
+          "current_seed_mean_rmse": 0.01038907599302975
+        },
+        "6": {
+          "outcome": "no_registered_stale_signal",
+          "measured_stale_indirect": false,
+          "signal": 0.0990263318642679,
+          "signal_se": 0.0020539187449923513,
+          "reference_closed": [
+            0.0026787972798807402,
+            0.0026787972798807402,
+            0.0026787972798807402
+          ],
+          "reference_open": [
+            0.10208158777015797,
+            0.003055255905890064,
+            0.003055255905890064
+          ],
+          "reference_group_difference": {
+            "closed": [
+              0.0001134019577619938,
+              0.0001134019577619938,
+              0.0001134019577619938
+            ],
+            "open": [
+              0.0054021792884668685,
+              0.00015492481329104635,
+              0.00015492481329104635
+            ]
+          },
+          "history_mean": [
+            0.08973759602849896,
+            0.0026713709202681457,
+            0.0026713709202681457
+          ],
+          "current_mean": [
+            0.09040203613585618,
+            0.0026860753220034894,
+            0.0026860753220034894
+          ],
+          "sufficient_signal": true,
+          "incremental_old_fraction": 0.006685249162030137,
+          "incremental_old_fraction_se": 0.009250674929020422,
+          "per_seed_old_fraction_history": [
+            0.0623083520014892,
+            0.1861061082219386
+          ],
+          "per_seed_old_fraction_current": [
+            0.04637242791043864,
+            0.18867153398892889
+          ],
+          "per_seed_incremental_old_fraction": [
+            0.01593592409105056,
+            -0.002565425766990287
+          ],
+          "reference_projection_se": 0.021303118862891653,
+          "history_seed_mean_rmse": 0.007970349247314183,
+          "current_seed_mean_rmse": 0.007890374859397148
+        },
+        "7": {
+          "outcome": "no_registered_stale_signal",
+          "measured_stale_indirect": false,
+          "signal": 0.0990263318642679,
+          "signal_se": 0.0020539187449923513,
+          "reference_closed": [
+            0.0026787972798807402,
+            0.0026787972798807402,
+            0.0026787972798807402
+          ],
+          "reference_open": [
+            0.10208158777015797,
+            0.003055255905890064,
+            0.003055255905890064
+          ],
+          "reference_group_difference": {
+            "closed": [
+              0.0001134019577619938,
+              0.0001134019577619938,
+              0.0001134019577619938
+            ],
+            "open": [
+              0.0054021792884668685,
+              0.00015492481329104635,
+              0.00015492481329104635
+            ]
+          },
+          "history_mean": [
+            0.11052794078022998,
+            0.0032660471190411045,
+            0.0032660471190411045
+          ],
+          "current_mean": [
+            0.11283402517074137,
+            0.003334413824063631,
+            0.003334413824063631
+          ],
+          "sufficient_signal": true,
+          "incremental_old_fraction": 0.023203936745989213,
+          "incremental_old_fraction_se": 0.0032926100507528855,
+          "per_seed_old_fraction_history": [
+            -0.12056595537389767,
+            -0.049403262945185496
+          ],
+          "per_seed_old_fraction_current": [
+            -0.14706250217063976,
+            -0.06931458964042182
+          ],
+          "per_seed_incremental_old_fraction": [
+            0.0264965467967421,
+            0.019911326695236327
+          ],
+          "reference_projection_se": 0.021303118862891653,
+          "history_seed_mean_rmse": 0.005290882962910729,
+          "current_seed_mean_rmse": 0.006601787110773587
+        },
+        "8": {
+          "outcome": "no_registered_stale_signal",
+          "measured_stale_indirect": false,
+          "signal": 0.0990263318642679,
+          "signal_se": 0.0020539187449923513,
+          "reference_closed": [
+            0.0026787972798807402,
+            0.0026787972798807402,
+            0.0026787972798807402
+          ],
+          "reference_open": [
+            0.10208158777015797,
+            0.003055255905890064,
+            0.003055255905890064
+          ],
+          "reference_group_difference": {
+            "closed": [
+              0.0001134019577619938,
+              0.0001134019577619938,
+              0.0001134019577619938
+            ],
+            "open": [
+              0.0054021792884668685,
+              0.00015492481329104635,
+              0.00015492481329104635
+            ]
+          },
+          "history_mean": [
+            0.11445964720587654,
+            0.0034043260175167234,
+            0.0034043260175167234
+          ],
+          "current_mean": [
+            0.11559033193407231,
+            0.003449340686756841,
+            0.003449340686756841
+          ],
+          "sufficient_signal": true,
+          "incremental_old_fraction": 0.011377882236462425,
+          "incremental_old_fraction_se": 0.0022022193422089466,
+          "per_seed_old_fraction_history": [
+            -0.11634848343675358,
+            -0.1327460989880524
+          ],
+          "per_seed_old_fraction_current": [
+            -0.12552414633100706,
+            -0.14632620056672377
+          ],
+          "per_seed_incremental_old_fraction": [
+            0.009175662894253478,
+            0.013580101578671372
+          ],
+          "reference_projection_se": 0.021303118862891653,
+          "history_seed_mean_rmse": 0.007167681766680778,
+          "current_seed_mean_rmse": 0.007828838196791277
+        }
+      }
+    },
+    "matched_external": {
+      "status": "complete",
+      "protocol": {
+        "schema": "phymeo-preview-matched-reference-v1",
+        "pose": 60,
+        "scene_index": 0,
+        "normal_map": false,
+        "extent": [
+          1280,
+          720
+        ],
+        "exposure": 8.0,
+        "display_transform": "pbr-neutral",
+        "native_batches": 64,
+        "native_primary_spp": 1024,
+        "pt_spp": 1024,
+        "pt_max_bounces": 4,
+        "pt_seed": 1,
+        "pt_sampling_mode": "shifted-halton",
+        "pt_tile": [
+          320,
+          180
+        ],
+        "pt_sampling_scope": "same pinhole rays via principal-point crop; tile-local stochastic sequence, not full-dispatch byte equivalence",
+        "material_scope": "actual scenes[0] from panda_render_performance.bind_scene; both retain scanned base/roughness, metallic payload, all original lights/HDR",
+        "comparison_scope": "SAPIEN global transport/BRDF and native one-hop+single-bounce specular differ; not ground truth or per-pixel correctness acceptance",
+        "native_near_scope": "one current compact finite-range exposure, no temporal history",
+        "native_full_scope": "64 progressive batches of 16 main paths, full-distance one-hop diffuse, native one-bounce specular",
+        "denoiser": "none",
+        "performance_claim": false,
+        "physics_steps": 0,
+        "roi_ids": {
+          "white-shell": [
+            150,
+            151,
+            154
+          ],
+          "fingers": [
+            156,
+            158
+          ],
+          "rubber": [
+            2
+          ]
+        }
+      },
+      "comparison": {
+        "input_sha256": "4850e9a1d54378274f15f5a1930f839124af19be586381620af8ffb76a475ade",
+        "native_sensors_equal": {
+          "FORWARD_DEPTH": true,
+          "INSTANCE_ID": true,
+          "VALID": true
+        },
+        "reference_is_ground_truth": false,
+        "crops": {
+          "white-shell": {
+            "box": [
+              457,
+              110,
+              795,
+              355
+            ],
+            "identity_ids": [
+              150,
+              151,
+              154
+            ],
+            "visible_pixels": 52276,
+            "files": {
+              "near": {
+                "file": "white-shell-near.png",
+                "sha256": "12656a1be6693dfc5232ef4c4660e3aae946d0c0c85498881495a22811b3ef6f"
+              },
+              "full": {
+                "file": "white-shell-full.png",
+                "sha256": "974acad3fdbbfd5a3e22fe18bb3bc1573577bd46cfa8fc7fd26d5c05fc964abf"
+              },
+              "sapien": {
+                "file": "white-shell-sapien.png",
+                "sha256": "1ce2e9c11690f4edddecea98e8449f507eeb5255868f74933e4de9fcd500aaf0"
+              }
+            }
+          },
+          "fingers": {
+            "box": [
+              527,
+              294,
+              739,
+              436
+            ],
+            "identity_ids": [
+              156,
+              158
+            ],
+            "visible_pixels": 6103,
+            "files": {
+              "near": {
+                "file": "fingers-near.png",
+                "sha256": "9f2e94284bc4d875f754e71e12db5e566c881bf1bcc6d8f3c6376b9b915e2c55"
+              },
+              "full": {
+                "file": "fingers-full.png",
+                "sha256": "194df66ded47cc47c6201087f6f347ae3497a30c112c6926dc62ed7e7a31300f"
+              },
+              "sapien": {
+                "file": "fingers-sapien.png",
+                "sha256": "739ee510b2fedf1d43a991dbb3b59dc10d39031c3d54d0c50a40eed1eecb4029"
+              }
+            }
+          },
+          "rubber": {
+            "box": [
+              359,
+              400,
+              796,
+              555
+            ],
+            "identity_ids": [
+              2
+            ],
+            "visible_pixels": 30781,
+            "files": {
+              "near": {
+                "file": "rubber-near.png",
+                "sha256": "f48b0bc1cf7c28333c1f5d0f01d599e122558e925927db50db72c3a6aeec2c36"
+              },
+              "full": {
+                "file": "rubber-full.png",
+                "sha256": "063ea3134a77dc3020b2464af353c21442a916263a9fb7cf4de426001ba68b2d"
+              },
+              "sapien": {
+                "file": "rubber-sapien.png",
+                "sha256": "afe3a425ba86dc99d54f120269c4220ccdc0b5ccb9999638730a4ef254753ba3"
+              }
+            }
+          }
+        },
+        "sapien_raster_id_disagreement_pixels": 10,
+        "sapien_geometry_scope": "separate raster companion; all boundary/ID differences retained, not PT coverage oracle"
+      }
+    },
+    "secondary_light_grid": {
+      "status": "complete",
+      "timing": {
+        "0": {
+          "rgb_mean_ms": {
+            "full": 917.7755874995152,
+            "split": 313.3858947931003
+          },
+          "gpu_render_mean_ms": {
+            "full": 907.244913,
+            "split": 303.54745966666667
+          },
+          "split_over_full": 0.34146244360990463,
+          "passed": true,
+          "scope": "RGB-only public capture wall; 3 static poses x 16 batches x 2 seeds; upload/readback-debug/PNG excluded"
+        },
+        "1": {
+          "rgb_mean_ms": {
+            "full": 776.7107875000269,
+            "split": 292.3535135457011
+          },
+          "gpu_render_mean_ms": {
+            "full": 766.879221,
+            "split": 281.90769566666665
+          },
+          "split_over_full": 0.3763994504140848,
+          "passed": true,
+          "scope": "RGB-only public capture wall; 3 static poses x 16 batches x 2 seeds; upload/readback-debug/PNG excluded"
+        }
+      },
+      "cost_passed": true,
+      "screen_p99_passed": false,
+      "photometric_proxy_passed": false,
+      "registered_penumbra_gate_verified": false,
+      "full_plan_accepted": false
+    }
+  }
+}

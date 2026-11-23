@@ -106,6 +106,8 @@ class PublicDeviceAcceptance(unittest.TestCase):
                 Path(os.environ['PHYMEO_NATIVE_MSAA_LIBRARY']),Path(temporary)/'run',
                 shaders=Path(os.environ['PHYMEO_NATIVE_MSAA_SHADERS']) if os.environ.get('PHYMEO_NATIVE_MSAA_SHADERS') else None,
                 device_index=int(os.environ.get('PHYMEO_NATIVE_DEVICE_INDEX','1')),validation=True)
+            self.assertEqual(report['status'],'passed')
+            self.assertTrue(report['diagnostic_contract'])
             self.assertTrue(report['acceptance']['edge_mae_25_percent'])
             self.assertTrue(report['acceptance']['motion_error_20_percent'])
             self.assertTrue(report['acceptance']['linear_resolve'])
@@ -117,5 +119,6 @@ class PublicDeviceAcceptance(unittest.TestCase):
 
 if __name__=='__main__':
     unittest.main()
+
 
 

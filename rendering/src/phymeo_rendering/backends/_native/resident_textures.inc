@@ -1,10 +1,11 @@
 // Texture-only resources and cold-start packing, included in the private
 // native namespace. Existing geometry_upload_bytes keeps its five-buffer scope.
 std::unique_ptr<ResidentTextures> upload_texture_resource(Context& c,uint32_t width,uint32_t height,
-    uint32_t layers,const std::vector<uint8_t>& rgba,const std::vector<uint32_t>& words) {
+    uint32_t layers,const std::vector<uint8_t>& rgba,const std::vector<uint32_t>& words,
+    VkFormat format=VK_FORMAT_R8G8B8A8_SRGB) {
     auto texture=std::make_unique<ResidentTextures>(c);
     VkImageCreateInfo create{VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO};
-    create.imageType=VK_IMAGE_TYPE_2D; create.format=VK_FORMAT_R8G8B8A8_SRGB;
+    create.imageType=VK_IMAGE_TYPE_2D; create.format=format;
     create.extent={width,height,1}; create.mipLevels=1; create.arrayLayers=layers;
     create.samples=VK_SAMPLE_COUNT_1_BIT; create.tiling=VK_IMAGE_TILING_OPTIMAL;
     create.usage=VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
@@ -19,7 +20,7 @@ std::unique_ptr<ResidentTextures> upload_texture_resource(Context& c,uint32_t wi
     check(vkBindImageMemory(c.device,texture->image.handle,texture->image.memory,0),"resident bind texture memory");
     VkImageViewCreateInfo view{VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO};
     view.image=texture->image.handle; view.viewType=VK_IMAGE_VIEW_TYPE_2D_ARRAY;
-    view.format=VK_FORMAT_R8G8B8A8_SRGB;
+    view.format=format;
     view.subresourceRange={VK_IMAGE_ASPECT_COLOR_BIT,0,1,0,layers};
     acquire(texture->image.view,"resident texture view",[&](auto* out){return vkCreateImageView(c.device,&view,nullptr,out);});
     VkSamplerCreateInfo sampler{VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO};

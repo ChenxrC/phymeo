@@ -43,7 +43,7 @@ vec3 studioVisibleNormal(vec3 eye, float alpha, int i) {
     return normalize(vec3(alpha*h.xy, max(0.0,h.z)));
 }
 
-vec3 residentStudioRadiance(vec3 P, vec3 N, vec3 V, vec3 albedo,
+vec3 residentStudioRadiance(vec3 P, vec3 N, vec3 Ng, vec3 V, vec3 albedo,
                             float metal, float roughness) {
     vec3 f0 = mix(vec3(0.04), albedo, metal);
     float nv = max(dot(N,V),1e-5);
@@ -60,7 +60,7 @@ vec3 residentStudioRadiance(vec3 P, vec3 N, vec3 V, vec3 albedo,
     }
 #endif
     vec3 result = diffuseEnvironment*diffuse*(1.0-f0);
-    vec3 biasP = P + N*u.options.y;
+    vec3 biasP = P + Ng*u.options.y;
     vec3 axis = abs(N.z) < 0.9 ? vec3(0,0,1) : vec3(0,1,0);
     vec3 T = normalize(cross(axis,N));
     mat3 basis = mat3(T,cross(N,T),N);

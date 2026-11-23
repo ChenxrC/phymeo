@@ -24,6 +24,10 @@ layout(location=4) flat out uvec2 ids;
 layout(location=5) out vec2 meshUV;
 layout(location=6) flat out uint textureSlot;
 layout(set=0,binding=10,std430) readonly buffer TextureMetadata { uint words[]; } textureData;
+#ifdef PR_RESIDENT_NORMAL_MAPS
+layout(constant_id=63) const uint PR_NORMAL_VERTEX_ABI=1u;
+layout(set=0,binding=15,std430) readonly buffer NormalMetadata { uint words[]; } normalData;
+#endif
 void main() {
     uint slot = uint(gl_InstanceIndex);
     Instance instance = scene.instances[slot];
@@ -44,6 +48,12 @@ void main() {
     ids = uvec2(instance.binding.y, slot);
     textureSlot=textureData.words[4u+slot];
     meshUV=vec2(0.0);
+#ifdef PR_RESIDENT_NORMAL_MAPS
+    if (PR_NORMAL_VERTEX_ABI==1u && normalData.words[4u+slot]!=0xffffffffu) {
+        uint address=normalData.words[3]+2u*uint(gl_VertexIndex);
+        meshUV=uintBitsToFloat(uvec2(normalData.words[address],normalData.words[address+1u]));
+    }
+#endif
     if (textureSlot!=0xffffffffu) {
         uint address=textureData.words[3]+2u*uint(gl_VertexIndex);
         meshUV=uintBitsToFloat(uvec2(textureData.words[address],textureData.words[address+1u]));

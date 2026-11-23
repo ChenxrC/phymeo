@@ -126,9 +126,12 @@ class ResidentReadbackInfo(ct.Structure):
 class ResidentDevice(NativeDevice):
     _shader_prefix = 'resident'
 
-    def __init__(self, *args, area_light_grid=2):
+    def __init__(self, *args, area_light_grid=2, normal_maps=False):
         if type(area_light_grid) is not int or area_light_grid not in (2, 4, 8):
             raise ValueError('area_light_grid must be 2, 4 or 8')
+        if type(normal_maps) is not bool:
+            raise TypeError('normal_maps must be bool')
+        self._normal_maps_requested = normal_maps
         self._area_light_grid = area_light_grid
         self._resident_info = {}
         self._telemetry = None
@@ -159,15 +162,22 @@ class ResidentDevice(NativeDevice):
         super().__init__(*args)
 
     def _shader_filename(self, stage):
-        if stage == 'frag' and self._area_light_grid != 2:
-            return f'{self._shader_prefix}_area{self._area_light_grid}.frag.spv'
-        return super()._shader_filename(stage)
+        prefix=self._shader_prefix+('_normal' if getattr(self,'_normal_maps_requested',False) else '')
+        grid=f'_area{self._area_light_grid}' if stage=='frag' and self._area_light_grid!=2 else ''
+        return f'{prefix}{grid}.{stage}.spv'
 
     def _bind(self):
         super()._bind()
         if tuple(map(ct.sizeof, (ResidentVertex, ResidentMesh, ResidentInstance, ResidentInfo))) != (32,16,48,128):
             raise BackendUnavailableError('resident C ABI structure layout mismatch')
         lib = self._lib
+        if self._normal_maps_requested:
+            version=getattr(lib,'pr_resident_normal_maps_abi_version',None)
+            if version is None:
+                raise BackendUnavailableError('native resident normal-map ABI is unavailable')
+            version.argtypes=[]; version.restype=ct.c_uint32
+            if version()!=1:
+                raise BackendUnavailableError('native resident normal-map ABI is unsupported')
         lib.pr_resident_abi_version.argtypes = []
         lib.pr_resident_abi_version.restype = ct.c_uint32
         lib.pr_resident_create.argtypes = lib.pr_create.argtypes
@@ -347,6 +357,12 @@ class ResidentDevice(NativeDevice):
         result['resident_linear_roughness_available'] = self._surface_maps_function is not None
         result['resident_texture_abi_version'] = self._texture_abi_version
         result['resident_texture_info'] = dict(self._texture_info) if self._texture_info is not None else None
+        if getattr(self,'_normal_info_function',None) is not None and self._handle:
+            from ._native_normal import ResidentNormalInfo, normal_info
+            value=ResidentNormalInfo()
+            if self._normal_info_function(self._handle,ct.byref(value)): raise RuntimeError(self._error())
+            self._normal_info=normal_info(value)
+        result['resident_normal_info']=dict(self._normal_info) if getattr(self,'_normal_info',None) is not None else None
         result['resident_readback'] = dict(self._readback) if self._readback is not None else None
         result['resident_profile'] = dict(self._profile) if self._profile is not None else None
         result['resident_telemetry'] = dict(self._telemetry) if self._telemetry is not None else None

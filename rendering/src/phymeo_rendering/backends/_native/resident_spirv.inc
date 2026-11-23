@@ -41,8 +41,8 @@ SpirvInterface spirv_interface(const uint32_t* code,size_t bytes,uint32_t model)
 // general proof of arbitrary shader behavior. No pipeline overrides these SpecIds.
 // Validate stage, exact OpName, SpecId, uint32 type and literal default before
 // accepting an optional shader semantic. Old main fragments fail closed.
-bool named_shader_marker(const uint32_t* code,size_t bytes,uint32_t spec_id,const char* marker_name) {
-    const auto interface=spirv_interface(code,bytes,4);
+bool named_shader_marker(const uint32_t* code,size_t bytes,uint32_t spec_id,const char* marker_name,uint32_t stage=4) {
+    const auto interface=spirv_interface(code,bytes,stage);
     if (!interface.valid || !interface.main) return false;
     const size_t words=bytes/4;
     uint32_t marker=0,type=0;

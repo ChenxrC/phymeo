@@ -1,0 +1,583 @@
+{
+  "mode": "native",
+  "backend": {
+    "backend": "phymeo-native-vulkan",
+    "path": "raster",
+    "device": {
+      "abi_version": 2,
+      "device_index": 1,
+      "api_version": 4206881,
+      "driver_version": 2374090752,
+      "vendor_id": 4318,
+      "device_id": 10464,
+      "device_type": 2,
+      "max_width": 32768,
+      "max_height": 32768,
+      "max_vertices": 1048576,
+      "validation_errors": 0,
+      "validation_warnings": 0,
+      "captures": 1,
+      "device_name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "device_uuid": "3b78d98198a3be57a8cb4d72fdfbfa96",
+      "closed": true,
+      "validation_enabled": true,
+      "live_contexts": 0,
+      "live_frames": 0,
+      "live_resources": 0,
+      "resident_abi_version": 1,
+      "resident_max_vertices": 1048576,
+      "resident_max_indices": 1572864,
+      "resident_max_meshes": 1024,
+      "resident_max_instances": 1024,
+      "resident_max_bvh_nodes": 262144,
+      "resident_max_instanced_triangles": 1048576,
+      "resident_vertex_count": 401439,
+      "resident_index_count": 403008,
+      "resident_mesh_count": 61,
+      "resident_instance_count": 63,
+      "resident_bvh_nodes": 43149,
+      "resident_instanced_triangles": 134960,
+      "resident_loaded": 1,
+      "resident_poisoned": 0,
+      "resident_reserved": 0,
+      "resident_upload_calls": 1,
+      "resident_geometry_upload_bytes": 16534208,
+      "resident_transform_upload_bytes": 8064,
+      "resident_parameter_upload_bytes": 416,
+      "resident_captures": 1,
+      "resident_shadow_node_budget": 0,
+      "resident_target_rebuilds": 1,
+      "resident_host_transform_input_bytes": 4032,
+      "resident_render_planes_available": true,
+      "resident_environment_available": true,
+      "resident_environment_abi_version": 1,
+      "resident_environment_info": {
+        "environment_abi_version": 1,
+        "supported": 1,
+        "shader_compatible": 1,
+        "max_side": 1024,
+        "max_mip_levels": 11,
+        "side": 256,
+        "mip_levels": 9,
+        "loaded": 1,
+        "format": 109,
+        "cube_layers": 6,
+        "sh_coefficients": 9,
+        "axis_transform": 1,
+        "diffuse_basis": 1,
+        "max_rgba_bytes": 134217728,
+        "source_rgba_bytes": 8388576,
+        "image_upload_bytes": 8388600,
+        "parameter_upload_bytes": 320,
+        "upload_calls": 1,
+        "rgb_captures_with_environment": 1,
+        "sky_draws": 1,
+        "capture_scope": "successful RGB captures with an uploaded directional environment; sky draw count is not foreground pixel count",
+        "snapshot": "last live query; final GPU allocations are reported by teardown telemetry"
+      },
+      "resident_texture_available": true,
+      "resident_linear_roughness_available": true,
+      "resident_texture_abi_version": 1,
+      "resident_texture_info": {
+        "texture_abi_version": 1,
+        "max_textures": 64,
+        "max_width": 2048,
+        "max_height": 2048,
+        "max_layers": 64,
+        "texture_count": 1,
+        "array_width": 1026,
+        "array_height": 1026,
+        "array_layers": 1,
+        "uv_count": 401439,
+        "bound_instances": 1,
+        "loaded": 1,
+        "sampler_filter": 1,
+        "mip_levels": 1,
+        "format": 43,
+        "max_array_bytes": 134217728,
+        "source_rgba_bytes": 4194304,
+        "padded_rgba_bytes": 4210704,
+        "metadata_upload_bytes": 3212056,
+        "upload_calls": 1,
+        "image_upload_bytes": 4210708,
+        "rgb_captures_with_textures": 1,
+        "capture_scope": "successful RGB captures with bound texture instances, not visible textured pixel count",
+        "upload_scope": "cumulative actual texture image and metadata GPU writes, including default white sentinel; excluded from geometry_upload_bytes",
+        "snapshot": "last live query, not final allocation state; teardown verified by allocation telemetry"
+      },
+      "resident_readback": {
+        "readback_abi_version": 1,
+        "memory_type_index": 3,
+        "memory_property_flags": 14,
+        "persistent_mapped": 1,
+        "last_channel_mask": 1,
+        "capacity_bytes": 26956800,
+        "copied_bytes": 8294400,
+        "map_calls": 1,
+        "unmap_calls": 0,
+        "host_visible": true,
+        "host_coherent": true,
+        "host_cached": true,
+        "device_local": false,
+        "snapshot": "last live query, not final mapping state; teardown verified by allocation telemetry",
+        "capacity_scope": "logical Vulkan readback buffer capacity, not total VkDeviceMemory allocation size"
+      },
+      "resident_profile": {
+        "profile_abi_version": 1,
+        "timestamp_supported": 1,
+        "timestamp_valid_bits": 64,
+        "tlas_node_count": 0,
+        "timestamp_period_ns": 1.0,
+        "captures": 1,
+        "host_prepare_ns": 14700,
+        "host_upload_ns": 5660400,
+        "host_record_ns": 1452100,
+        "host_submit_ns": 138100,
+        "host_wait_ns": 59997600,
+        "host_readback_ns": 641100,
+        "gpu_render_ns": 59089824,
+        "gpu_copy_ns": 769248,
+        "gpu_total_ns": 59859072,
+        "tlas_upload_bytes": 0,
+        "timestamp_samples": 1,
+        "scope": "cumulative successful captures including warmup; excludes initial static geometry upload",
+        "gpu_scope": "Vulkan timestamps: TLAS build/update plus raster and fragment shadows, then attachment copies; not fragment-only time",
+        "snapshot": "last live query, retained after close; final ownership is checked by telemetry"
+      },
+      "resident_telemetry": {
+        "telemetry_abi_version": 1,
+        "device_luid_valid": 1,
+        "device_node_mask": 1,
+        "device_local_bytes_current": 0,
+        "device_local_bytes_peak": 80423984,
+        "device_local_bytes_allocated": 80428032,
+        "host_visible_bytes_current": 0,
+        "host_visible_bytes_peak": 26975472,
+        "host_visible_bytes_allocated": 59321364,
+        "readback_bytes": 8294400,
+        "fence_wait_wall_ns": 76581200,
+        "fence_wait_calls": 7,
+        "submissions": 7,
+        "allocation_count": 92,
+        "free_count": 92,
+        "device_luid_hex": "ef22010000000000",
+        "final_after_destroy": true,
+        "allocation_scope": "this context explicit VkDeviceMemory allocations; not driver total VRAM",
+        "wait_scope": "host wall time blocked in fence waits, including upload; not GPU kernel time"
+      },
+      "resident_studio_available": true,
+      "resident_ray_query_abi_version": 1,
+      "resident_ray_query_info": {
+        "ray_query_abi_version": 1,
+        "enabled": 1,
+        "blas_count": 61,
+        "tlas_instance_count": 63,
+        "primitive_count": 134336,
+        "loaded": 1,
+        "poisoned": 0,
+        "max_meshes": 1024,
+        "max_instances": 1024,
+        "max_triangles": 524288,
+        "build_flags": 4,
+        "update_flags": 5,
+        "trace_flags": 6,
+        "max_acceleration_bytes": 536870912,
+        "acceleration_buffer_bytes": 9559936,
+        "scratch_buffer_bytes": 315519,
+        "blas_builds": 61,
+        "tlas_builds": 1,
+        "tlas_updates": 0,
+        "instance_upload_bytes": 4032,
+        "shadow_captures": 1,
+        "capture_scope": "successful RGB-requested captures, not ray count or visible shadow pixel count",
+        "buffer_scope": "logical AS and scratch buffer bytes; actual VkDeviceMemory allocation telemetry is separate",
+        "update_scope": "each capture builds or updates TLAS, including two cameras at the same frame key",
+        "upload_scope": "additional VkAccelerationStructureInstanceKHR records, 64 bytes per instance per capture; not the ordinary forward/inverse matrix buffer",
+        "snapshot": "last live query, retained after close; final allocation teardown is reported by resident telemetry"
+      }
+    },
+    "library_path": "C:\\Users\\38347\\AppData\\Local\\Temp\\phymeo-g5-5fdf4ec3-20261123-02\\runtime\\native-build\\phymeo_native.dll",
+    "library_sha256": "171ea912cfeb2b9304464514405f5a5603d810fd73627f929038032f336cbc21",
+    "shader_sha256": {
+      "vert": "b1069d14f062dcf3b441d1c44286068b92754557dbe8ce8327e9407cd7c0ec82",
+      "frag": "2310c4971e18d8909079bd3fe80b48f07e583896039f05c7f4fdd9eb1d9e0877",
+      "environment_sky_vert": "d9bbb44453660efa44c1f5f6c2861102b62f6b23b400400fac7d7f3faa02b798",
+      "environment_sky_frag": "460ba70c274ce9adda99c506e5b2c2ae80d9534f986e6aab3aa62c61f3b5d8d7"
+    },
+    "scene_key": "panda-r1-full-v1:photographic-workshop-v1:scanned-roughness:lights-0x1.0000000000000p-3",
+    "decoded_geometry_sha256": "8882b67fbdaf1f3cd5732ee366f4e4da7ac895f55c7ae4ca5917329d6519d1fe",
+    "triangles": 134960,
+    "light_count": 1,
+    "max_lights": 4,
+    "max_triangles": 1048576,
+    "resident": true,
+    "shadow_mode": "ray_query",
+    "area_light_grid": 8,
+    "area_light_samples_per_panel": 64,
+    "area_light_brdf_samples_per_panel": 8,
+    "geometry_residency": "static indexed meshes; per-frame instance matrices",
+    "primary_visibility": "single-sample Vulkan raster, two-sided opaque triangles",
+    "lighting": "native GGX/Smith/Schlick plus explicit resident studio shader",
+    "studio": {
+      "preset": "neutral-area-studio-v1",
+      "center_m": [
+        0.18,
+        0,
+        0.42
+      ],
+      "scale_m": 0.85,
+      "panel_size_scale": 1.0,
+      "panel_strength": 0.125,
+      "panels": [
+        {
+          "name": "key",
+          "position_m": [
+            -0.8399999737739563,
+            -1.190000057220459,
+            1.9500000476837158
+          ],
+          "half_u_world_m": [
+            -0.36944764852523804,
+            0.5430523157119751,
+            0.17607559263706207
+          ],
+          "half_v_world_m": [
+            0.32656532526016235,
+            0.12105196714401245,
+            0.3118617534637451
+          ],
+          "emission_direction_world": [
+            0.4656903154237997,
+            0.543305367994433,
+            -0.6985354731356995
+          ],
+          "half_size_m": [
+            0.68,
+            0.4675
+          ],
+          "radiance_linear_rgb": [
+            0.75,
+            0.75,
+            0.75
+          ],
+          "visible_geometry": false
+        },
+        {
+          "name": "fill",
+          "position_m": [
+            1.3700000047683716,
+            0.5950000286102295,
+            1.440000057220459
+          ],
+          "half_u_world_m": [
+            0.19609002768993378,
+            0.3126589357852936,
+            -0.4111560881137848
+          ],
+          "half_v_world_m": [
+            0.41372841596603394,
+            -0.506038248538971,
+            -0.1874941736459732
+          ],
+          "emission_direction_world": [
+            -0.7098281771887514,
+            -0.3549140885943757,
+            -0.6084241518760726
+          ],
+          "half_size_m": [
+            0.5525,
+            0.68
+          ],
+          "radiance_linear_rgb": [
+            0.3125,
+            0.3125,
+            0.3125
+          ],
+          "visible_geometry": false
+        }
+      ],
+      "basis_sources": [
+        {
+          "url": "https://github.com/haosulab/SAPIEN/blob/8360d517770f24f00bacef7d906ddf1380b8967c/src/sapien_renderer/light_component.cpp",
+          "fact": "internalUpdate composes entity global pose with POSE_GL_TO_ROS before setting the renderer light transform"
+        },
+        {
+          "url": "https://github.com/haosulab/sapien-vulkan-2/blob/62e2511930e43db9fc7d384a49da4f374b35f701/src/scene/light.cpp",
+          "fact": "centered rectangle half width along GL +X, half height along GL +Y at shape angle pi/2"
+        },
+        {
+          "reference": "installed SAPIEN 3.0.3 public headers and shipped rt shader",
+          "pose_header_sha256": "122446114db45d1ad78e47394a31e86cb6c01efc07f1a30bcf657d81f64dce0e",
+          "rt_shading_sha256": "4f7421b369f75e14fa22dc623b770f346800b8c05470fc5d682ccb4f2d52efc4",
+          "fact": "GL_TO_ROS quaternion wxyz=(-.5,-.5,.5,.5); RT shader uses cross(edge0,edge1) dotted with point-to-light"
+        }
+      ],
+      "basis": "entity shortest_rotation(+X to direction); halfU=R*(0,width,0), halfV=R*(0,0,height); U cross V emits",
+      "rectangle_equivalence": "same authored pi/2 rectangle; first GL edge reflected for emission-oriented normal",
+      "arithmetic_scope": "FP64 host basis packed to FP32; not bitwise equivalence to SAPIEN FP32 quaternion/trigonometric evaluation",
+      "environment": {
+        "source_requested_radiance": 0.125,
+        "radiance_linear_rgb": [
+          0.125,
+          0.125,
+          0.125
+        ],
+        "enabled": true,
+        "quantization": "same RGBE shared 8-bit mantissa decode as reference uniform HDR",
+        "source_hdr_sha256": "ab52b11ca03fa82cac04dac82f6ae4a976f7131e0433c106cafe166b950317eb",
+        "active_lighting": false,
+        "replaced_by": "directional environment map"
+      },
+      "declared_scene_lights": "retained unchanged",
+      "units": "metres; relative linear radiance, not calibrated photometric lux",
+      "evaluation": "native resident studio shader; distinct estimator from SAPIEN reference path tracing",
+      "payload_bytes": 144,
+      "payload_sha256": "d3b41f9d4df43c478c073da5906b3abc2b9e2548fcf997536643050fe70c3dfa"
+    },
+    "environment": {
+      "source_sha256": "a125ada38fc602025326f29b68df09531bb16f899f1973b03d9ac5ac98142548",
+      "input_size": [
+        1024,
+        512
+      ],
+      "strength": 0.0625,
+      "yaw_degrees": 25.0,
+      "peak_linear_radiance": 67.0,
+      "prefilter_roughness": "mip/(levels-1)",
+      "ggx_directions_per_texel": 128,
+      "gloss": "split-sum radiance prefilter, V=N, normalized positive N.L",
+      "orientation": "world Z up; Vulkan sampler ray.xzy; positive yaw turns +X toward +Y",
+      "diffuse": "world XYZ real SH9; exact texel solid-angle projection; irradiance divided by pi",
+      "rgba_sha256": "23145ed654a52e262a3f8bf4a67bb697dd7096537693e8e24f5b2d3fdd1f12f3",
+      "diffuse_sh_sha256": "9ae5d3d3181f2590dd1002b947cde397e1508d5d99147bed636c2e49e8f77b76",
+      "side": 256,
+      "mip_levels": 9,
+      "rgba_bytes": 8388576,
+      "diffuse_sh_bytes": 144,
+      "native_axis_transform": "world xyz -> sampler xzy; SH basis remains world xyz",
+      "native_face_order": [
+        "+X",
+        "-X",
+        "+Y",
+        "-Y",
+        "+Z",
+        "-Z"
+      ],
+      "native_layout": "level-major, then six faces, top-row-first RGBA32F little endian",
+      "native_roughness": "perceptual roughness r -> mip LOD r*(levels-1); no second prefilter",
+      "native_diffuse": "shared normalized real SH9 coefficients already include Lambert convolution / pi",
+      "native_environment_precedence": "map replaces uniform scalar environment; rectangular panels and scene lights remain"
+    },
+    "shadows": "GPU fragment Vulkan hardware ray queries against BLAS/TLAS; primary visibility remains raster",
+    "shadow_bias_m": 1e-05,
+    "minimum_perceptual_roughness": 0.045,
+    "exposure": 8.0,
+    "display": "nonnegative linear exposure, Khronos PBR Neutral, then IEC sRGB once",
+    "display_transform": "pbr-neutral",
+    "display_transform_abi": 1,
+    "display_transform_source": "https://github.com/KhronosGroup/ToneMapping/blob/b5a2eed5ddf6c2227090449399de9c7affb9e4c9/PBR_Neutral/pbrNeutral.glsl",
+    "readback": "explicit synchronous host-visible staging after fence; actual flags in resident_readback when available",
+    "readback_channels_mode": "compact requested attachments",
+    "published_ownership": "immutable CPU bytes; private resident host buffer may be reused after each copy",
+    "attachment_formats": [
+      "RGBA8_UNORM",
+      "R32_SFLOAT",
+      "R32_UINT",
+      "R8_UINT"
+    ],
+    "last_passes": [
+      "visibility",
+      "shadows",
+      "lighting",
+      "display_transform"
+    ],
+    "last_request": {
+      "width": 1920,
+      "height": 1080,
+      "channels": [
+        "srgb8_rgb"
+      ],
+      "native_attachment_mask": 1,
+      "native_output_bytes": 8294400
+    },
+    "stage_execution": "visibility raster + fused fragment shadows/lighting/display/sensors",
+    "lifecycle_counts": "DLL-wide owned contexts, frames, and explicit Vulkan handles; pools own descriptor sets",
+    "path_trace": false,
+    "textures": true,
+    "texture_assets": {
+      "textures": [
+        {
+          "uri": "file:///C:/Users/38347/AppData/Local/Temp/phymeo-portable-panda-20261123-02/kit/examples/materials/wood_table_001_diff_1k.jpg",
+          "source_sha256": "460dd08d240f4a1f02982415048c3c5c200f385db212da18dc7e2df68bf4d0be",
+          "width": 1024,
+          "height": 1024,
+          "first_byte": 0,
+          "rgb8_sha256": "bce2d660b1735b3b00d2872d1b9ba297e16148b570259931ab640d47ec624084",
+          "roughness": {
+            "uri": "file:///C:/Users/38347/AppData/Local/Temp/phymeo-portable-panda-20261123-02/kit/examples/materials/wood_table_001_rough_1k.jpg",
+            "source_sha256": "a2ca9ae89dfe7b8e2e5e92f0aa43467845417de8a50205b5852ef0d57c7624f9",
+            "channel": "r",
+            "transfer": "linear"
+          }
+        }
+      ],
+      "source_rgba_bytes": 4194304,
+      "padded_array_bytes": 4210704,
+      "array_width": 1026,
+      "array_height": 1026,
+      "array_layers": 1,
+      "uv_count": 401439,
+      "instance_slots": [
+        4294967295,
+        4294967295,
+        4294967295,
+        4294967295,
+        4294967295,
+        4294967295,
+        4294967295,
+        4294967295,
+        4294967295,
+        4294967295,
+        4294967295,
+        4294967295,
+        4294967295,
+        4294967295,
+        4294967295,
+        4294967295,
+        4294967295,
+        4294967295,
+        4294967295,
+        4294967295,
+        4294967295,
+        4294967295,
+        4294967295,
+        4294967295,
+        4294967295,
+        4294967295,
+        4294967295,
+        4294967295,
+        4294967295,
+        4294967295,
+        4294967295,
+        4294967295,
+        4294967295,
+        4294967295,
+        4294967295,
+        4294967295,
+        4294967295,
+        4294967295,
+        4294967295,
+        4294967295,
+        4294967295,
+        4294967295,
+        4294967295,
+        4294967295,
+        4294967295,
+        4294967295,
+        4294967295,
+        4294967295,
+        4294967295,
+        4294967295,
+        4294967295,
+        4294967295,
+        4294967295,
+        4294967295,
+        4294967295,
+        4294967295,
+        4294967295,
+        4294967295,
+        4294967295,
+        4294967295,
+        4294967295,
+        0,
+        4294967295
+      ],
+      "uv_fp32_sha256": "1d3611fb4b7838724876dbde8a172d9e4bf1c512503a080f77c50b49c672e06d",
+      "image_encoding": "top-row-first sRGB8 color, linear UNORM roughness or constant one in A",
+      "material_factor": "linear base_color multiplied after sRGB texel decode in native shader",
+      "sampler": "bilinear repeat, mip level 0, one wrap guard texel on each side; no resizing",
+      "admission": "native limits and device-reported lower limits; no alternate renderer"
+    },
+    "physics_steps": 0
+  },
+  "camera_setup": "sequence",
+  "workshop": false,
+  "camera_cuts_s": [
+    0.5,
+    2.3
+  ],
+  "shadow_traversal": "ray_query",
+  "area_light_grid": 8,
+  "scene_radiance_unit_scale": 0.125,
+  "display_exposure": 8.0,
+  "panorama_relative_strength": 0.5,
+  "photographic_worktop": true,
+  "scanned_linear_roughness": true,
+  "display_transform": "pbr-neutral",
+  "tiles_per_axis": 1,
+  "backend_exposures_per_image": 1,
+  "lighting": "workshop daylight + area lights",
+  "source_archive": "archive:c58e3447cd6d95c52715c07f038318203eaa3892f486317226c8b93350cad0f9",
+  "source_excerpt_sha256": "58073ab38acab8f5057061fa487117aa0284f81b097a4f5bb0473f890515f118",
+  "frames": 1,
+  "size": [
+    1920,
+    1080
+  ],
+  "fps": 30,
+  "recorded_window_s": [
+    0.0,
+    10.0
+  ],
+  "simulated_range_s": [
+    2.033125,
+    2.033125
+  ],
+  "source_indices": [
+    3252
+  ],
+  "source_times_s": [
+    2.033125
+  ],
+  "cameras": [
+    {
+      "id": "materials-detail",
+      "position_m": [
+        1.1869696841706596,
+        -0.961080482093338,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5741992865608299,
+        -0.2081876328605703,
+        -0.2698924440767884,
+        -0.744386430200876
+      ],
+      "intrinsics": [
+        4218.75,
+        4218.75,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    }
+  ],
+  "open_ms": 9662.970700010192,
+  "warmup": 0,
+  "capture_ms": [
+    82.41870003985241
+  ],
+  "consumer_work_ms": [
+    49.928000022191554
+  ],
+  "p50_ms": 82.41870003985241,
+  "p95_ms": 82.41870003985241,
+  "max_ms": 82.41870003985241,
+  "over_33_3": 1,
+  "frame_sha256": [
+    "b3c161c9481557e910462ba799895a6e9c0711230f035081e4146d6434ab31cb"
+  ]
+}

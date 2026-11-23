@@ -14,6 +14,24 @@
 
 此前候选 `82ca3a0b` 在首次 wheel 检查中因 Panda 资产目录的 Git 控制文件报错。修复后的检查器只允许资产根目录两份明确列出的 Git 控制文件在 wheel 中缺席，继续核验资产清单及其列出的 72 份资源，共 73 份文件。下方保留开发阶段的命令、故障与测试记录。
 
+## 用便携示例重现 Panda 夹爪画面
+
+取上面的 wheel 和[便携示例 ZIP](portable-panda-example-02.zip)放在同一个空目录。示例含记录的姿态、相机、台面材质与照明。Panda 的外观网格由已安装的 wheel 提供。在 Windows 上准备 Python 3.11、CMake、C++17 编译器与 Vulkan SDK，再从该目录运行 PowerShell。离线使用时，给 pip 安装命令加上 `--no-index --find-links 依赖目录`，依赖版本见[完整报告](installed-report.json)。
+
+```powershell
+py -3.11 -m venv .venv
+$py = (Resolve-Path .venv/Scripts/python.exe).Path
+$wheelUri = [Uri]::new((Resolve-Path phymeo_rendering-0.1.0a0-py3-none-any.whl).Path).AbsoluteUri
+& $py -I -m pip install "phymeo-rendering[ibl,textures] @ $wheelUri"
+$nativeSrc = & $py -I -c "from pathlib import Path; import phymeo_rendering as p; print(Path(p.__file__).parent / 'backends' / '_native')"
+cmake -S $nativeSrc -B native-build
+cmake --build native-build --config Release
+Expand-Archive -LiteralPath portable-panda-example-02.zip -DestinationPath panda-example
+& $py -I -B panda-example/replay.py native --library native-build/phymeo_native.dll --device-index 1 --frame 60 --resolution 1080p --camera sequence --shadow-mode ray_query --area-light-grid 8 --cube-size 256 --output frame60-out
+```
+
+设备索引 1 是本次安装环境里的 RTX 4060 Laptop，换机时选择本机支持 Vulkan ray query 的独显索引。新图写入 `frame60-out/frames/`。本次另外开启 Vulkan 验证层，在物理时刻 2.033125 秒、原始轨迹索引 3252 重拍一张 1920×1080 图。6,220,800 个 RGB 通道值与原主片对应源帧全部相同。便携包此轮实拍一帧，随包说明也给出了完整 300 帧的播放与采集参数。[打开实拍夹爪](portable-external-02/frame60.png) · [逐像素比较](portable-external-02/binding.json) · [包与运行记录](portable-verification-02.json)
+
 ## 交付边界
 
 `phymeo_rendering-0.1.0a0-py3-none-any.whl` 是平台无关的 Python、资产与构建源码包，不携带 DLL、SO、PYD、SPV 或本机 SDK。基础安装不依赖 SAPIEN、NumPy或物理包；参考 extra 仍为 `sapien==3.0.3`、`numpy==1.26.4`；独立 `textures` extra 为 `Pillow==12.2.0`，只在显式加载贴图时使用。

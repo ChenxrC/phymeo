@@ -1,0 +1,125 @@
+{
+  "schema": "phymeo-portable-panda-capture-v1",
+  "status": "complete",
+  "bundle_manifest_sha256": "27bbfd5e017a0f4bcadf3868208cab8ee435cabd4ac30d0d57c999924be77684",
+  "files": {
+    "README.md": {
+      "bytes": 4370,
+      "sha256": "54ab8ef9ea29218d0eb7c4493dc01d95076e158c40744e9d6c744cb41109888d",
+      "source_relative": "examples/portable_panda/README.md"
+    },
+    "examples/_panda_motion.py": {
+      "bytes": 12161,
+      "sha256": "f430b5e5d35ffe4f82c4d1df9e129afe489031602b66190444abc7fed456da67",
+      "source_relative": "examples/_panda_motion.py"
+    },
+    "examples/_panda_scene.py": {
+      "bytes": 7085,
+      "sha256": "e781b754a72a47fd8cc1f3efeef7d03fd7d30e4634236d34a752c051a94196a6",
+      "source_relative": "examples/_panda_scene.py"
+    },
+    "examples/_panda_textures.py": {
+      "bytes": 2220,
+      "sha256": "95539eadbeb10b6c9b921d117113eb5c3cb8a28e7343b94977c352ee2f783e5f",
+      "source_relative": "examples/_panda_textures.py"
+    },
+    "examples/materials/NOTICE.md": {
+      "bytes": 1738,
+      "sha256": "5f5e06c50f199c223dd1588946f66899ec30a4d07909407d6ab0108d0e4912a0",
+      "source_relative": "examples/materials/NOTICE.md"
+    },
+    "examples/materials/university_workshop_1k.hdr": {
+      "bytes": 1702577,
+      "sha256": "a125ada38fc602025326f29b68df09531bb16f899f1973b03d9ac5ac98142548",
+      "source_relative": "examples/materials/university_workshop_1k.hdr"
+    },
+    "examples/materials/wood_table_001_diff_1k.jpg": {
+      "bytes": 215573,
+      "sha256": "460dd08d240f4a1f02982415048c3c5c200f385db212da18dc7e2df68bf4d0be",
+      "source_relative": "examples/materials/wood_table_001_diff_1k.jpg"
+    },
+    "examples/materials/wood_table_001_rough_1k.jpg": {
+      "bytes": 237261,
+      "sha256": "a2ca9ae89dfe7b8e2e5e92f0aa43467845417de8a50205b5852ef0d57c7624f9",
+      "source_relative": "examples/materials/wood_table_001_rough_1k.jpg"
+    },
+    "examples/panda_movies.py": {
+      "bytes": 11510,
+      "sha256": "4d297bc4b6dbfc41bb27c7651f6b2de7929a0b62aa1e97211c050b96bf2107aa",
+      "source_relative": "examples/panda_movies.py"
+    },
+    "examples/panda_realtime_film.py": {
+      "bytes": 14356,
+      "sha256": "294b9a8f1fd53d1f95d9d5dff45e930be77931540f74dd9d2cd48f8c0ae974c4",
+      "source_relative": "examples/panda_realtime_film.py"
+    },
+    "licenses/CC0-1.0.txt": {
+      "bytes": 7048,
+      "sha256": "a2010f343487d3f7618affe54f789f5487602331c0a8d03f49e9a7c547cf0499",
+      "source_relative": "examples/portable_panda/CC0-1.0.txt"
+    },
+    "replay.py": {
+      "bytes": 14933,
+      "sha256": "d0bc6d2554fdb336a82c1404cb4336e4a922266350dffd6256f8eafed13cf77e",
+      "source_relative": "examples/portable_panda_replay.py"
+    },
+    "tests/fixtures/panda_film/SOURCES.md": {
+      "bytes": 1216,
+      "sha256": "dddba29bdd3f95b5c27d130d1606d9a2e29d7a9b87f1f9eb1cf3bc494759f25d",
+      "source_relative": "tests/fixtures/panda_film/SOURCES.md"
+    },
+    "tests/fixtures/panda_film/manifest.json": {
+      "bytes": 33334,
+      "sha256": "2c98f9020f6becf9942e1a2df8dc8eb40ceb51d71d3916c8665ef117b8dfb10e",
+      "source_relative": "tests/fixtures/panda_film/manifest.json"
+    },
+    "tests/fixtures/panda_film/recording.json": {
+      "bytes": 1205,
+      "sha256": "33cec03417a0f6d3b622cb9b01c76a16df3257de6bc3c07d9820e18d91827cfe",
+      "source_relative": "tests/fixtures/panda_film/recording.json"
+    },
+    "tests/fixtures/panda_film/trace.json": {
+      "bytes": 933201,
+      "sha256": "58073ab38acab8f5057061fa487117aa0284f81b097a4f5bb0473f890515f118",
+      "source_relative": "tests/fixtures/panda_film/trace.json"
+    },
+    "tests/fixtures/panda_replay/LICENSE": {
+      "bytes": 10173,
+      "sha256": "a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9",
+      "source_relative": "tests/fixtures/panda_replay/LICENSE"
+    },
+    "tests/fixtures/panda_replay/NOTICE": {
+      "bytes": 570,
+      "sha256": "d8ded0c268405e7847c281faa15042d381fbf7d308ec91d9941fbd943a6e1053",
+      "source_relative": "tests/fixtures/panda_replay/NOTICE"
+    },
+    "tests/fixtures/panda_replay/SOURCES.md": {
+      "bytes": 5000,
+      "sha256": "f456f3f9addeb33ca33cf0bc11acd5c1a9506a89a640cc24bbee8c77e874d394",
+      "source_relative": "tests/fixtures/panda_replay/SOURCES.md"
+    },
+    "tests/fixtures/panda_replay/panda.urdf": {
+      "bytes": 17170,
+      "sha256": "2b5bd00abb4ba68e91d532d2d778da64d1c942a9b22aa7acd58dd12a713971fd",
+      "source_relative": "tests/fixtures/panda_replay/panda.urdf"
+    }
+  },
+  "installed_engine": {
+    "distribution": "phymeo-rendering",
+    "version": "0.1.0a0",
+    "module_path": "C:\\Users\\38347\\AppData\\Local\\Temp\\phymeo-g5-5fdf4ec3-20261123-02\\runtime\\env\\Lib\\site-packages\\phymeo_rendering",
+    "init_sha256": "a8d0dc81b7c896fa6abb80e25a026d7155acf1d99f29feb712a8558ed9d9d23e",
+    "installed_record_sha256": "704748745c288b248f68f355eced149ce3c6335de30a675ffcf3056f4c1ffee8",
+    "panda_manifest_sha256": "d6c5f952ec5e293403d37962a5a462a70fb1359307479c87e744dfb80b4846e4",
+    "meshes": 57,
+    "materials": 57,
+    "instances": 59,
+    "asset_directory": "C:\\Users\\38347\\AppData\\Local\\Temp\\phymeo-g5-5fdf4ec3-20261123-02\\runtime\\env\\Lib\\site-packages\\phymeo_rendering\\_panda_assets",
+    "verification_scope": "public Panda loader verifies all robot resources; RECORD digest identifies installed metadata, not a wheel signature"
+  },
+  "relocation": "film.build_scene(asset_dir=None); original camera and capture functions",
+  "physics_steps_requested": 0,
+  "mode": "native",
+  "requested_source_frame": 60,
+  "capture_sha256": "78566bd24b2fc2dc28d779653d2ad199bf1266f59a24599d12d25ed2e0146763"
+}

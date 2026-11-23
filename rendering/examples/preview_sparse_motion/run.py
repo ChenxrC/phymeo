@@ -85,7 +85,15 @@ def profile_delta(before,after):
 
 def profile_name(policy):
     name=(adapter.kind(policy)+"-t{tile}-p{paths_per_anchor}-g{area_light_grid}-k{neighbor_candidates}").format(**policy)+f"-r{policy.get('reconstruction_revision',1)}"
-    return name if policy.get("estimator","radiance")=="radiance" else name+"-"+policy["estimator"]
+    if policy.get("estimator","radiance")!="radiance":
+        name+="-"+policy["estimator"]
+    local=policy.get("local_diffuse")
+    if local is not None:
+        metres=local.get("radius_m")
+        require(type(metres) in (int,float) and 0.001<=metres<=10 and local.get("marker")==96,
+                "unknown local diffuse transport")
+        name+=f"-local-{round(metres*1000)}mm"
+    return name
 
 
 def check_actual(actual,policy,expected_captures):
@@ -142,6 +150,12 @@ def load_runtime(args):
     module=adapter.load_runtime(args.runtime)
     prepared,manifest=module.activate(args.prepared)
     adapter.require_kind(manifest["contract"],getattr(args,"candidate_backend","sparse"))
+    if "local_diffuse" in manifest["contract"]:
+        profile_name(manifest["contract"])
+        folder=prepared/"build"
+        binaries=[folder/"phymeo_native.dll",*sorted(folder.glob("*.spv"))]
+        require(manifest.get("compiled_sha256")=={p.name:digest(p) for p in binaries},
+                "local diffuse compiled stages differ from their build")
     # Runtime import dependencies are frozen before any renderer/device call.
     args.runtime_dependencies=module.motion_adapter_dependencies
     return module,prepared,manifest

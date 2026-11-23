@@ -39,6 +39,15 @@ def compact_info():
 
 
 class CompactDeliveryContracts(unittest.TestCase):
+    def test_finite_range_diffuse_has_a_distinct_measured_profile(self):
+        fixed=policy()
+        original=run.profile_name(fixed)
+        fixed["local_diffuse"]={"radius_m":.12,"marker":96}
+        self.assertEqual(run.profile_name(fixed),original+"-local-120mm")
+        fixed["local_diffuse"]["radius_m"]=float("nan")
+        with self.assertRaises(ValueError):
+            run.profile_name(fixed)
+
     def test_candidate_only_presentation_never_invents_a_paired_baseline(self):
         self.assertEqual(run.jobs(("rgb",),1,candidate_only=True),[("sparse","rgb")])
         self.assertEqual(run.jobs(("rgb","all"),2,candidate_only=True),[("sparse","all"),("sparse","rgb")])

@@ -1,6 +1,6 @@
 """Shared same-model one-hop reference; candidate is never used as an oracle.
 
-Captures independent seed1/2,64 true full-rate batches =1024 proposals per pixel.
+Captures an independent stream of full-rate batches, each with 16 proposals per pixel.
 The private package is activated only as transport for the unchanged baseline DLL.
 """
 import argparse
@@ -16,6 +16,8 @@ import run
 def main():
     ap=argparse.ArgumentParser(description=__doc__);run.common(ap)
     ap.add_argument("--seed",type=int,choices=(1,2),default=1)
+    ap.add_argument("--batches",type=int,choices=(64,512,4096),default=64,
+                    help="fixed reference refinement levels; simulator limit is 4096 batches")
     ap.add_argument("--save-linear",action="store_true")
     args=ap.parse_args()
     run.require(args.camera=="detail" and args.studio_look=="recorded",
@@ -30,8 +32,8 @@ def main():
     from phymeo_rendering.outputs import Channel
     source=run.source_binding(args,prepared,manifest)
     args.output.mkdir(parents=True,exist_ok=False)
-    report=dict(schema=run.REFERENCE_SCHEMA,status="preparing",source=source,seed=args.seed,batches=64,
-        primary_proposals_per_pixel=1024,records=[],reference_model="unchanged full-rate one diffuse bounce; final unfiltered GPU mean display",
+    report=dict(schema=run.REFERENCE_SCHEMA,status="preparing",source=source,seed=args.seed,batches=args.batches,
+        primary_proposals_per_pixel=16*args.batches,records=[],reference_model="unchanged full-rate one diffuse bounce; final unfiltered GPU mean display",
         sparse_candidate_captured=False)
     run.save(args.output/"summary.json",report)
     owner=None;problem=None
@@ -50,11 +52,11 @@ def main():
                 frame,request=inputs[index];request=replace(request,channels=tuple(Channel))
                 owner.reset_accumulation();times=[]
                 before=owner.diagnostics()["device"]["resident_profile"].copy()
-                for batch in range(64):
+                for batch in range(args.batches):
                     start=perf_counter();shot=owner.capture(frame,request);times.append(1000*(perf_counter()-start))
                     run.base.verify_capture(shot,frame,request)
                 diag=owner.diagnostics()
-                run.require(diag["progressive"]["batches"]==64 and diag["progressive"]["primary_samples_per_pixel"]==1024
+                run.require(diag["progressive"]["batches"]==args.batches and diag["progressive"]["primary_samples_per_pixel"]==16*args.batches
                     and diag["indirect"]["seed"]==args.seed and diag["indirect"]["bounces"]==1
                     and not diag["spatial_filter"]["last_capture_filtered"],"reference actual sampling/display differs")
                 planes={p.channel:p.data for p in shot.planes}
@@ -66,12 +68,12 @@ def main():
                     valid=np.frombuffer(planes[Channel.VALID],"u1").reshape(height,width))
                 start=perf_counter();raw=owner.read_linear_mean();read_ms=1000*(perf_counter()-start)
                 run.require(raw["format"]=="RGBA32F_LE" and raw["space"]=="scene-linear-before-exposure"
-                    and raw["batches"]==64 and np.isfinite(np.frombuffer(raw["data"],"<f4")).all(),"reference linear packet invalid")
+                    and raw["batches"]==args.batches and np.isfinite(np.frombuffer(raw["data"],"<f4")).all(),"reference linear packet invalid")
                 if args.save_linear:(args.output/f"pose-{index:04d}.rgba32f").write_bytes(raw["data"])
                 record=dict(pose_index=index,frame_key=asdict(frame.key),time_s=frame.time_s,
                     state_sha256=sha256(run.canonical(asdict(frame))).hexdigest(),
                     camera_sha256=sha256(run.canonical(asdict(request.camera))).hexdigest(),
-                    capture_ms=times,profile=run.base.profile_delta(before,diag["device"]["resident_profile"],64),
+                    capture_ms=times,profile=run.base.profile_delta(before,diag["device"]["resident_profile"],args.batches),
                     png=png.name,png_sha256=run.digest(png),rgb_sha256=sha256(planes[Channel.RGB]).hexdigest(),
                     sensors={c.value:sha256(v).hexdigest() for c,v in planes.items() if c!=Channel.RGB},
                     geometry_file=geo.name,geometry_sha256=run.digest(geo),

@@ -185,5 +185,18 @@ class ProgressivePandaStudyTests(unittest.TestCase):
             self.study.compare_legacy(a,b)
 
 
+    def test_actual_light_receipt_accepts_declared_tuples_and_checks_submitted_fp32(self):
+        from phymeo_rendering.scene import DirectionalLight
+        light=DirectionalLight((2**-.5,0.,-2**-.5),(3.,3.,3.))
+        diagnostic=dict(effective_directional_lights=[dict(direction=light.direction,illuminance=light.illuminance)],
+            last_request=dict(effective_directional_lights=[dict(
+                direction=[.7071067690849304,0.,-.7071067690849304],illuminance=[3.,3.,3.])]))
+        self.assertTrue(self.study._light_binding(diagnostic,(light,)))
+        bad=deepcopy(diagnostic)
+        bad["last_request"]["effective_directional_lights"][0]["illuminance"][0]=2.
+        with self.assertRaises(ValueError):
+            self.study._light_binding(bad,(light,))
+
 if __name__=="__main__":
     unittest.main()
+

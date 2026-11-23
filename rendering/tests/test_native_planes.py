@@ -24,6 +24,25 @@ def parameters(mask=1):
 
 
 class CompactPublication(unittest.TestCase):
+    def test_owned_publication_reports_native_rgba_bytes_with_the_actual_mask(self):
+        from phymeo_rendering.outputs import ImagePlane
+        scene, mesh = fixture()
+        device = Recorder()
+        device.info = lambda: dict(max_width=4096, max_height=4096, max_vertices=2000000,
+            resident_max_instanced_triangles=1048576, resident_render_planes_available=True)
+        device.render_image_planes = lambda matrices, params, w, h, channels: (
+            ImagePlane(Channel.VALID, bytes(w*h)), ImagePlane(Channel.RGB, bytes(w*h*3)))
+        with patch('phymeo_rendering.backends.native.require_library'), \
+             patch('phymeo_rendering.mesh_data.load_mesh',return_value=mesh), \
+             patch('phymeo_rendering.backends.native.ResidentDevice',return_value=device):
+            owner = NativeBackend(resident=True).open_scene(scene)
+            value = frame()
+            camera = Camera('camera',value.key,Pose(),3,1,2.,2.,1.5,.5,.1,5.)
+            result = owner.capture(value,CaptureRequest(camera,RenderPath.RASTER,(Channel.VALID,Channel.RGB)))
+            self.assertEqual(sum(len(p.data) for p in result.planes), 12)
+            self.assertEqual(owner.diagnostics()['last_request']['native_output_bytes'], 15)
+            owner.close()
+
     def test_all_fifteen_combinations_and_request_order_have_exact_content(self):
         scene,mesh=fixture()
         for mask in range(1,16):
@@ -56,7 +75,7 @@ class CompactPublication(unittest.TestCase):
 
     def test_sensor_only_does_not_allocate_rgb_conversion(self):
         from phymeo_rendering.backends.native import _image_planes
-        with patch('phymeo_rendering.backends.native.bytearray',side_effect=AssertionError('unrequested RGB allocation'),create=True):
+        with patch('phymeo_rendering.backends._native_pixels.bytearray',side_effect=AssertionError('unrequested RGB allocation'),create=True):
             planes=_image_planes(struct.pack('<f',1.)*3,3,(Channel.FORWARD_DEPTH,),2)
             self.assertEqual(len(planes[0].data),12)
 
@@ -94,6 +113,19 @@ class CompactBoundary(unittest.TestCase):
         self.assertIs(buffer,owner._output_buffer)
         self.assertEqual(first,b'\1'*12); self.assertEqual(second,b'\2'*3)
         self.assertEqual(calls,[(1,12),(8,3)])
+
+    def test_owned_planes_copy_only_final_slices_and_survive_reuse(self):
+        owner, calls = self.owner()
+        matrices = (ct.c_float * 0)()
+        channels = tuple(reversed(tuple(Channel)))
+        with patch.object(ct, 'string_at', side_effect=AssertionError('intermediate packed byte string')):
+            first = owner.render_image_planes(matrices, parameters(15), 3, 1, channels)
+            second = owner.render_image_planes(matrices, parameters(8), 3, 1, (Channel.VALID,))
+        self.assertEqual(tuple(p.channel for p in first), channels)
+        self.assertEqual([p.data for p in first], [b'\1'*3, b'\1'*12, b'\1'*12, b'\1'*9])
+        self.assertEqual(second[0].data, b'\2'*3)
+        self.assertTrue(all(type(p.data) is bytes for p in first + second))
+        self.assertEqual(calls, [(15, 39), (8, 3)])
 
     def test_mask_projection_and_missing_symbol_fail_before_native_submission(self):
         owner,calls=self.owner(); matrices=(ct.c_float*0)()

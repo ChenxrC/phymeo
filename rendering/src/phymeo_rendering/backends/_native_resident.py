@@ -8,6 +8,8 @@ from ._native_studio import NativeStudio
 from ._native_texture import ResidentTexture, ResidentUV, ResidentTextureInfo, TextureUpload
 from ._native_environment import ResidentEnvironment, ResidentEnvironmentInfo, EnvironmentUpload
 from ._native_device import NativeDevice, Parameters, _Info, validate_parameters
+from ._native_pixels import _image_planes
+from ..outputs import Channel
 
 
 class ResidentVertex(ct.Structure):
@@ -564,6 +566,16 @@ class ResidentDevice(NativeDevice):
 
     def render_planes(self, matrices, parameters, width, height, channel_mask):
         """Explicit optional compact ABI; never pretend an old DLL supports it."""
+        self._require_compact_mask(parameters, channel_mask)
+        return self._capture_bytes(matrices,parameters,width,height,channel_mask)
+
+    def render_image_planes(self, matrices, parameters, width, height, channels):
+        """Finish the capture and own each requested plane before returning."""
+        mask = sum(1 << bit for bit, channel in enumerate(Channel) if channel in channels)
+        self._require_compact_mask(parameters, mask)
+        return self._capture_bytes(matrices,parameters,width,height,mask,image_channels=channels)
+
+    def _require_compact_mask(self, parameters, channel_mask):
         if type(channel_mask) is not int:
             raise TypeError('resident channel mask must be int, not bool')
         if not 0 < channel_mask <= 15:
@@ -572,9 +584,8 @@ class ResidentDevice(NativeDevice):
             raise BackendUnavailableError('native compact readback export is unavailable')
         if parameters.counts[2] != bool(channel_mask&1):
             raise ValueError('resident RGB uniform disagrees with channel mask')
-        return self._capture_bytes(matrices,parameters,width,height,channel_mask)
 
-    def _capture_bytes(self, matrices, parameters, width, height, channel_mask):
+    def _capture_bytes(self, matrices, parameters, width, height, channel_mask, *, image_channels=None):
         if self._handle is None or not self._uploaded:
             raise RuntimeError('resident device is closed or has no uploaded scene')
         limits=self._last_info
@@ -603,6 +614,11 @@ class ResidentDevice(NativeDevice):
                 ct.byref(parameters),width,height,channel_mask,output,size)
         if result: raise RuntimeError(self._error())
         self._has_captured=True
+        if image_channels is not None:
+            # The owning session keeps its lock until publication. No view of
+            # this reusable ctypes array is allowed to escape the decoder.
+            view = memoryview(output).cast("B")[:size]
+            return _image_planes(view, width*height, image_channels, mask)
         # This is the single ownership copy from reusable private storage.
         # Only this call's compact length is copied, never the old capacity.
         return ct.string_at(output,size)

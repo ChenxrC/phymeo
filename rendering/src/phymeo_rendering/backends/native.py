@@ -15,12 +15,13 @@ from numbers import Real
 from pathlib import Path
 
 from ..assets import TexturedMaterial
-from ..outputs import Capture, Channel, ImagePlane
+from ..outputs import Capture, Channel
 from ..studio import StudioLighting
 from ..pipeline import DefaultPassPlanner, RenderPath
 from ..scene import VisualScene, DirectionalLight, compose_pose
 from . import BackendUnavailableError, UnsupportedRequestError, ValidatedRenderSession
 from ._native_resident import ResidentDevice, pack_scene
+from ._native_pixels import _image_planes
 from ._native_ray_query import RayQueryResidentDevice
 from ._native_studio import pack_studio
 from ._native_texture import pack_textures
@@ -141,24 +142,6 @@ def _parameters(scene, request, triangle_count, exposure, *, lights=None):
     result.options[:] = (exposure, 1e-5, 0.0, 0.0)
     validate_parameters(result)
     return result
-
-
-def _image_planes(raw, pixels, channels, attachment_mask):
-    """Decode only requested tightly packed attachments into immutable planes."""
-    requested=set(channels); values={}; offset=0
-    for bit,(channel,width) in enumerate(zip(Channel,(4,4,4,1),strict=True)):
-        if not attachment_mask&(1<<bit): continue
-        length=pixels*width
-        if channel in requested:
-            if channel is Channel.RGB:
-                rgb=bytearray(memoryview(raw)[offset:offset+length])
-                del rgb[3::4]
-                values[channel]=bytes(rgb)
-            else: values[channel]=raw[offset:offset+length]
-        offset+=length
-    if offset!=len(raw) or set(values)!=requested:
-        raise ValueError('native attachment packing does not match requested channels')
-    return tuple(ImagePlane(channel,values[channel]) for channel in channels)
 
 
 def _environment_sampling_diagnostics(device_info, indirect, progressive):
@@ -285,11 +268,20 @@ class _NativeDelegate:
         attachment_mask=15
         if self.resident and self.limits.get('resident_render_planes_available',False):
             attachment_mask=sum(1<<index for index,channel in enumerate(Channel) if channel in request.channels)
-            raw=self.device.render_planes(vertices,parameters,camera.width,camera.height,attachment_mask)
+            if hasattr(self.device, 'render_image_planes'):
+                planes=self.device.render_image_planes(vertices,parameters,camera.width,camera.height,request.channels)
+                native_bytes=sum(len(plane.data) for plane in planes)
+                if Channel.RGB in request.channels:
+                    native_bytes+=camera.width*camera.height  # The native color attachment is RGBA8.
+            else:
+                raw=self.device.render_planes(vertices,parameters,camera.width,camera.height,attachment_mask)
+                planes=_image_planes(raw,camera.width*camera.height,request.channels,attachment_mask)
+                native_bytes=len(raw)
         else:
             raw=self.device.render(vertices,parameters,camera.width,camera.height)
-        result=Capture(frame.key,frame.time_s,camera,
-            _image_planes(raw,camera.width*camera.height,request.channels,attachment_mask))
+            planes=_image_planes(raw,camera.width*camera.height,request.channels,attachment_mask)
+            native_bytes=len(raw)
+        result=Capture(frame.key,frame.time_s,camera,planes)
         self.last_passes = tuple(stage.value for stage in plan)
         if self.spatial_info is not None and Channel.RGB in request.channels:
             n = 1 if progressive_reasons else self.progressive_history.batches + 1
@@ -304,7 +296,7 @@ class _NativeDelegate:
             height=camera.height,
             channels=[channel.value for channel in request.channels],
             native_attachment_mask=attachment_mask,
-            native_output_bytes=len(raw),
+            native_output_bytes=native_bytes,
             effective_directional_lights=[dict(direction=list(direction[:3]),illuminance=list(color[:3])) for direction,color in effective_lights],
         )
         return result

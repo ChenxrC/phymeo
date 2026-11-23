@@ -70,7 +70,8 @@ class TextureMap:
 
     The declaration does not read the image or import Pillow. Sampling is repeat
     with bilinear filtering, with (0, 0) at the top left as in glTF. This first
-    contract has no alpha blending, normal map, UV transform or sampler override.
+    contract has no alpha blending, UV transform or sampler override. Color maps
+    use sRGB; normal and roughness maps interpret the stored bytes as linear data.
     """
 
     uri: str
@@ -99,15 +100,23 @@ class TextureChannel:
 
 @dataclass(frozen=True, slots=True)
 class TexturedMaterial(Material):
-    """UV-mapped sRGB color and linear perceptual roughness, each times its factor."""
+    """UV maps: sRGB color, linear roughness and linear tangent-space normals.
+
+    normal_map uses glTF +Y, normalize(2*c-1), with fixed strength one. It changes
+    shading only. Backends must explicitly support it; unsupported inputs fail.
+    The optional field is last to preserve existing positional construction.
+    """
 
     base_color_map: TextureMap | None = None
     roughness_map: TextureChannel | None = None
+    normal_map: TextureMap | None = None
 
     def __post_init__(self) -> None:
         Material.__post_init__(self)
-        if self.base_color_map is None and self.roughness_map is None:
-            raise TypeError(f"Material {self.id!r} needs a color or roughness texture")
+        if self.normal_map is not None and not isinstance(self.normal_map, TextureMap):
+            raise TypeError(f"Material {self.id!r}.normal_map must be a TextureMap")
+        if self.base_color_map is None and self.roughness_map is None and self.normal_map is None:
+            raise TypeError(f"Material {self.id!r} needs a color, roughness or normal texture")
         if self.base_color_map is not None and not isinstance(self.base_color_map, TextureMap):
             raise TypeError(f"Material {self.id!r}.base_color_map must be a TextureMap")
         if self.roughness_map is not None and not isinstance(self.roughness_map, TextureChannel):

@@ -48,7 +48,8 @@ class GuidedMotionStudyTests(unittest.TestCase):
             self.assertEqual(instance.node_id,"blocker")
             mesh=load_mesh(next(m for m in scene.meshes if m.id==instance.mesh_id))
             positions=np.asarray(mesh.positions)
-            np.testing.assert_allclose(np.ptp(positions,axis=0),(.004,.060,.180),rtol=0,atol=1e-15)
+            expected=2*np.asarray((.002,.030,.090),dtype="<f4").astype(np.float64)
+            np.testing.assert_array_equal(np.ptp(positions,axis=0),expected)
             self.assertEqual((camera.width,camera.height),(1280,960))
             self.assertEqual((camera.fx_px,camera.fy_px,camera.near_m,camera.far_m),(1550.,1550.,.01,3.))
             self.assertEqual([n for n in frame.nodes if n.node_id!="blocker"],
@@ -125,7 +126,7 @@ class GuidedMotionStudyTests(unittest.TestCase):
         def diag(batch,mode="guided",count=16):
             return dict(spatial_filter=dict(mode=mode,scope="first-rgb-batch-only",
                 last_capture_filtered=mode=="guided" and batch==1,filtered_captures=count,
-                guide_source="same-draw-current-direct-lighting"))
+                guide_source="same-exposure-gpu-direct-pass"))
         for batch in (1,2,4):
             self.assertTrue(self.study.verify_filter(diag(batch),mode="guided",batch=batch,filtered_count=16))
         for field,value in (("last_capture_filtered",False),("filtered_captures",15),("scope","every-batch")):

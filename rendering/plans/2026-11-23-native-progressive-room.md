@@ -15,3 +15,5 @@
 原生后端显式开启 `progressive=True`，从 `indirect_bounces=1` 或 `2` 选择光路长度。每个会话持有自己的线性历史，单独记录主样本数、失效原因、显式分配和读回耗时。移动后的首批重新采样。以同一像素位置跨状态直接混合颜色会产生旧影，真正的运动重投影另需前后帧对应、揭露处理与光照验证。[渲染路线](2026-11-23-native-vulkan-quality.md) · [带几何验证的时空降噪研究](https://research.nvidia.com/labs/rtr/publication/schied2017spatiotemporal/)
 
 封闭室使用离线 SDK 参考，公开的 SAPIEN 适配器对相机后方顶点有保守准入条件。三路分别负责原生后端、独立室内标定、Panda 与运动反例。编译、测试、实拍、离线数值和查看器验收共用一个串行执行槽。报告给出总采样量、单批和累计时间、读回成本及显存峰值，静态收敛与运动首帧的质量分开说明。
+
+本批各项结果见[四组实拍对照](../results/progressive-room/index.html)与[独立参考、原始采集和实测开销](../results/progressive-room/README.md)。

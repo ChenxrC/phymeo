@@ -1,0 +1,45 @@
+{
+  "name": "board",
+  "status": "complete",
+  "same_owner_change": true,
+  "reason": "transforms",
+  "comparisons": {
+    "1": {
+      "fresh_identical": true,
+      "old_frame_rejected": true,
+      "rgb_changed": true,
+      "geometry_changed": true,
+      "actual_sha256": {
+        "srgb8_rgb": "23688f134414dfa8701e84f6fef498adc90a3ef3b69e5976f411e22243c9be4d",
+        "forward_depth_m_f32": "6fde25baa19bbd999e1eca819eede0b8a1c620283756050f2b9d6884a9e68504",
+        "instance_id_u32": "56f655a06f12575c26064edafca85dedd24984729bc1e189fd52d84e2abbc946",
+        "valid_u8": "f8f1804394e1b32566ac1d228eff1b2e854720a43a1b06c489af7099accfdb6a"
+      },
+      "linear_mean_identical": true,
+      "actual_stale_negative_rejected": true
+    },
+    "4": {
+      "fresh_identical": true,
+      "old_frame_rejected": true,
+      "rgb_changed": true,
+      "geometry_changed": true,
+      "actual_sha256": {
+        "srgb8_rgb": "a092d255579fec32ba121472c8635c78cb314e9f0f70868bb1ffabe31d966ea7",
+        "forward_depth_m_f32": "6fde25baa19bbd999e1eca819eede0b8a1c620283756050f2b9d6884a9e68504",
+        "instance_id_u32": "56f655a06f12575c26064edafca85dedd24984729bc1e189fd52d84e2abbc946",
+        "valid_u8": "f8f1804394e1b32566ac1d228eff1b2e854720a43a1b06c489af7099accfdb6a"
+      },
+      "linear_mean_identical": true,
+      "actual_stale_negative_rejected": true
+    }
+  },
+  "changed_owner": {
+    "file": "restart-board/changed-owner.json",
+    "sha256": "734b2a71ec0d05337a025679743712734a9202a87c3e695092c271408d6b5334"
+  },
+  "fresh_owner": {
+    "file": "restart-board/fresh-owner.json",
+    "sha256": "28f021c78ce2d4a08f8ef5ed2778e67e101081384ac54476128bff55f7fab3bc"
+  },
+  "semantics": "fresh owner is only a replay reference; the tested mutation happened after four accumulated batches in the original owner"
+}

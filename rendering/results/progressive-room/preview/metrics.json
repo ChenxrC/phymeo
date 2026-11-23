@@ -1,0 +1,64 @@
+{
+  "passed": true,
+  "receivers": {
+    "156": {
+      "pixels": 2058,
+      "raw_rmse": 0.012536829198230983,
+      "preview_rmse": 0.004342314155106125,
+      "rmse_ratio": 0.34636462589111844,
+      "target_mean": [
+        0.03936538700126582,
+        0.001195197890918119,
+        0.001195197890918119
+      ],
+      "max_mean_bias": 0.0004980811424756132,
+      "bias_limit": 0.003936538700126582,
+      "passed": true
+    },
+    "158": {
+      "pixels": 2062,
+      "raw_rmse": 0.012071293805334435,
+      "preview_rmse": 0.003918596774258665,
+      "rmse_ratio": 0.324621108346066,
+      "target_mean": [
+        0.03921177124588323,
+        0.0011907625756491604,
+        0.0011907625756491604
+      ],
+      "max_mean_bias": 6.523813210731729e-05,
+      "bias_limit": 0.003921177124588323,
+      "passed": true
+    }
+  },
+  "edges": {
+    "pixels": 19587,
+    "raw_rmse": 0.00812712964477747,
+    "preview_rmse": 0.004849135484632827,
+    "rmse_ratio": 0.5966602843291547,
+    "target_mean": [
+      0.19215084391919582,
+      0.10023071157171785,
+      0.10023071157171785
+    ],
+    "max_mean_bias": 0.000412151788840432
+  },
+  "edge_ratio_limit": 1.05,
+  "max_display_error_codes": 1,
+  "filter_cpu_wall_s": 1.4039903999655508,
+  "source_sha256": {
+    "C:\\Users\\38347\\.codex\\worktrees\\render-g5-package\\phymeo\\artifacts\\rendering\\progressive-panda-study\\capture-01\\seed-0\\batch-0001.npz": "1c6a1c684563c0bd89df99c111e8ba07eff03864ccede04a8be7a4452e3b5aeb",
+    "C:\\Users\\38347\\.codex\\worktrees\\render-g5-package\\phymeo\\artifacts\\rendering\\progressive-panda-study\\capture-01\\seed-1\\batch-0064.npz": "76adbbe7b1a86559259776b6f6740b3e4eda9e122f158c96f50799f2197728ec",
+    "rendering\\results\\diffuse-bounce\\red\\none.png": "167da458213af5c8bc4cb5163156fd94f7bcc852a26de309aaad2441dcfc955e",
+    "rendering\\results\\diffuse-bounce\\reference.npz": "2c5daed50132d053e5e26aca603516810cffe4b640ebe99c01cf93e424491051"
+  },
+  "scope": "One-frame offline reconstruction with separate current direct-light guide. No temporal history. Held-out 1024-spp target is a finite reference.",
+  "kernel": [
+    1,
+    4,
+    6,
+    4,
+    1
+  ],
+  "depth_relative_limit": 0.003,
+  "guide_code_limit": 2
+}

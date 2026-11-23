@@ -1,0 +1,12 @@
+{
+  "schema": "phymeo-calibration-zip-verification-v1",
+  "status": "verified-all-expanded-streams",
+  "archive": "calibration.zip",
+  "sha256": "f37eb19fa5981a6661cb51a4844862407bc6b4cb64a7996e6cfd8566f635c7b9",
+  "archive_bytes": 11752952,
+  "source_bytes": 27178367.0,
+  "files": 484,
+  "verified_expanded_streams": 484,
+  "manifest_sha256": "590ac5ec59c904ef677c868cdb11e1780861391363aad672bb1f86a501923581",
+  "method": "Every original file SHA256 and length compared against independently reopened ZIP decompression stream; all entries accounted for"
+}

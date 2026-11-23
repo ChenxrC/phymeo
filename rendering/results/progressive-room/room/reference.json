@@ -1,0 +1,2861 @@
+{
+  "schema": "phymeo-closed-room-sdk-reference-v1",
+  "status": "captured-reference",
+  "physics_steps": 0,
+  "registration": {
+    "extent": [
+      96,
+      96
+    ],
+    "eye": [
+      0.0,
+      -0.8,
+      1.0
+    ],
+    "focal_px": 75.0,
+    "near": 0.01,
+    "far": 10.0,
+    "rois": {
+      "bright": [
+        14,
+        44,
+        34,
+        64
+      ],
+      "shadow": [
+        72,
+        44,
+        84,
+        64
+      ],
+      "red": [
+        22,
+        71,
+        32,
+        79
+      ]
+    },
+    "geometry": [
+      {
+        "id": 1,
+        "name": "floor",
+        "origin": [
+          -1.0,
+          -1.0,
+          0.0
+        ],
+        "u": [
+          2.0,
+          0.0,
+          0.0
+        ],
+        "v": [
+          0.0,
+          2.0,
+          0.0
+        ],
+        "normal": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "albedo": [
+          0.45,
+          0.45,
+          0.45
+        ]
+      },
+      {
+        "id": 2,
+        "name": "ceiling",
+        "origin": [
+          -1.0,
+          1.0,
+          2.0
+        ],
+        "u": [
+          2.0,
+          0.0,
+          0.0
+        ],
+        "v": [
+          0.0,
+          -2.0,
+          0.0
+        ],
+        "normal": [
+          0.0,
+          0.0,
+          -1.0
+        ],
+        "albedo": [
+          0.55,
+          0.55,
+          0.55
+        ]
+      },
+      {
+        "id": 3,
+        "name": "left",
+        "origin": [
+          -1.0,
+          -1.0,
+          0.0
+        ],
+        "u": [
+          0.0,
+          2.0,
+          0.0
+        ],
+        "v": [
+          0.0,
+          0.0,
+          2.0
+        ],
+        "normal": [
+          1.0,
+          0.0,
+          0.0
+        ],
+        "albedo": [
+          0.5,
+          0.55,
+          0.6
+        ]
+      },
+      {
+        "id": 4,
+        "name": "right",
+        "origin": [
+          1.0,
+          1.0,
+          0.0
+        ],
+        "u": [
+          0.0,
+          -2.0,
+          0.0
+        ],
+        "v": [
+          0.0,
+          0.0,
+          2.0
+        ],
+        "normal": [
+          -1.0,
+          0.0,
+          0.0
+        ],
+        "albedo": [
+          0.6,
+          0.55,
+          0.45
+        ]
+      },
+      {
+        "id": 5,
+        "name": "back",
+        "origin": [
+          -1.0,
+          1.0,
+          0.0
+        ],
+        "u": [
+          2.0,
+          0.0,
+          0.0
+        ],
+        "v": [
+          0.0,
+          0.0,
+          2.0
+        ],
+        "normal": [
+          0.0,
+          -1.0,
+          0.0
+        ],
+        "albedo": [
+          0.6,
+          0.6,
+          0.6
+        ]
+      },
+      {
+        "id": 6,
+        "name": "front",
+        "origin": [
+          1.0,
+          -1.0,
+          0.0
+        ],
+        "u": [
+          -2.0,
+          0.0,
+          0.0
+        ],
+        "v": [
+          0.0,
+          0.0,
+          2.0
+        ],
+        "normal": [
+          0.0,
+          1.0,
+          -0.0
+        ],
+        "albedo": [
+          0.6,
+          0.6,
+          0.6
+        ]
+      },
+      {
+        "id": 7,
+        "name": "red",
+        "origin": [
+          -0.7,
+          0.99,
+          0.15
+        ],
+        "u": [
+          0.4,
+          0.0,
+          0.0
+        ],
+        "v": [
+          0.0,
+          0.0,
+          0.4
+        ],
+        "normal": [
+          0.0,
+          -1.0,
+          0.0
+        ],
+        "albedo": [
+          0.8,
+          0.02,
+          0.02
+        ]
+      },
+      {
+        "id": 8,
+        "name": "baffle",
+        "origin": [
+          0.0,
+          0.2,
+          0.4
+        ],
+        "u": [
+          0.2,
+          0.0,
+          0.0
+        ],
+        "v": [
+          0.0,
+          0.0,
+          0.9
+        ],
+        "normal": [
+          0.0,
+          -1.0,
+          0.0
+        ],
+        "albedo": [
+          0.12,
+          0.12,
+          0.12
+        ]
+      }
+    ],
+    "panels": [
+      {
+        "name": "key",
+        "center": [
+          -0.42,
+          -0.48999999999999994,
+          1.38
+        ],
+        "direction": [
+          0.4656903154237997,
+          0.543305367994433,
+          -0.6985354731356995
+        ],
+        "half_u": [
+          -0.15212550303844122,
+          0.22360977790472714,
+          0.07250171412249362
+        ],
+        "half_v": [
+          0.13446807857862217,
+          0.04984492845921437,
+          0.12841366340958152
+        ],
+        "half_size": [
+          0.27999999999999997,
+          0.1925
+        ],
+        "radiance": 1.2000000000000002
+      },
+      {
+        "name": "fill",
+        "center": [
+          0.48999999999999994,
+          0.24499999999999997,
+          1.17
+        ],
+        "direction": [
+          -0.7098281771887514,
+          -0.3549140885943757,
+          -0.6084241518760726
+        ],
+        "half_u": [
+          0.08074295515522045,
+          0.1287419191439813,
+          -0.16929956718174627
+        ],
+        "half_v": [
+          0.1703587625253003,
+          -0.2083686980698416,
+          -0.07720348240544272
+        ],
+        "half_size": [
+          0.22749999999999998,
+          0.27999999999999997
+        ],
+        "radiance": 0.5
+      }
+    ],
+    "pt_seeds": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "pt_depths": [
+      0,
+      1,
+      2,
+      6
+    ],
+    "pt_spp": 512,
+    "native_seeds": [
+      0,
+      1
+    ],
+    "native_batches": [
+      1,
+      4,
+      16
+    ],
+    "native_bounces": [
+      1,
+      2
+    ],
+    "native_samples_per_batch": 16,
+    "energy_aggregation": "mean of two independent groups, explicitly 32/128/512 total samples; each individual group is 16/64/256 and its MSE is reported separately",
+    "native_area_light_grid": 8,
+    "environment_radiance": 0.0,
+    "exposure": 1.0,
+    "display_transform": "clip",
+    "msaa_samples": 1,
+    "reference_uses_public_pt_admission": false,
+    "reference_scope": "independent actual SAPIEN SDK scene; the public PT adapter still rejects interior cameras",
+    "native_material": "opaque metal0 roughness1: existing dielectric GGX/Fresnel model retained, not mathematically pure Lambert",
+    "reference_material": "SDK opaque metal0 roughness1 specular0; no free correction factor to match native",
+    "fixed_energy_bias_limit": 0.35,
+    "noise_ratio_4_limit": 0.8,
+    "noise_ratio_16_limit": 0.55,
+    "pt_second_order_min_fraction_of_deep": 0.02,
+    "native_second_order_min_fraction_of_deep": 0.01,
+    "energy_order_tolerance_fraction": 0.02,
+    "deep_reference": "finite maxDepth6, not infinite-bounce convergence",
+    "lighting_scope": "two invisible finite parallelogram emitters completely inside six opaque walls; no wall removed for lighting",
+    "seed_scope": "independent base seeds; 1/4/16 progressive batches have equal budgets across base-seed groups; no temporal motion",
+    "statistics_scope": "seed-pair difference estimates stochastic noise; distance to PT also contains material/quadrature/truncation bias"
+  },
+  "script_sha256": "33472cbae4b228abc46ecb4f4b1e9a1b1032980b211feeff98855882341c8d80",
+  "sdk_version": "3.0.3",
+  "sdk_file": "C:\\Users\\38347\\.codex\\worktrees\\phymeo-rendering\\phymeo\\artifacts\\rendering\\g3-table\\ref-env\\Lib\\site-packages\\sapien\\__init__.py",
+  "device_requested": "cuda:0",
+  "interface": "direct public SAPIEN SDK rendering components, NOT public Phymeo PT session",
+  "captures": [
+    {
+      "label": "pt-depth0-seed0",
+      "depth": 0,
+      "seed": 0,
+      "spp": 512,
+      "wall_ms": 605.4083000053652,
+      "hdr_file": "pt-depth0-seed0.hdr-rgba-f32.raw",
+      "hdr_sha256": "26bb7527eb5315cbf1c6d3058cadfd55d4fa8bc3b937b0118db6dbbce65283c6",
+      "png_sha256": "7b00cf6178c761f9f1f875af798022edb82886f4d1a81a24449b84479fe2fe2b",
+      "roi_proof": {
+        "bright": {
+          "passed": true,
+          "expected_instance": 5,
+          "observed_instances": [
+            5
+          ],
+          "forward_depth_min": 1.799999713897705,
+          "forward_depth_max": 1.8000001907348633,
+          "expected_forward_depth": 1.8
+        },
+        "shadow": {
+          "passed": true,
+          "expected_instance": 5,
+          "observed_instances": [
+            5
+          ],
+          "forward_depth_min": 1.7999998331069946,
+          "forward_depth_max": 1.8000001907348633,
+          "expected_forward_depth": 1.8
+        },
+        "red": {
+          "passed": true,
+          "expected_instance": 7,
+          "observed_instances": [
+            7
+          ],
+          "forward_depth_min": 1.7899999618530273,
+          "forward_depth_max": 1.7900002002716064,
+          "expected_forward_depth": 1.79
+        }
+      },
+      "roi_luminance": {
+        "bright": 0.016338707853120287,
+        "shadow": 0.0038468842364040513,
+        "red": 0.004198290302549795,
+        "white": 0.011654273996851698
+      },
+      "shader_sha256": {
+        "camera.rahit": "d8ea7b3f25ad85d35ccd3f8e6b19dafaa550cc1611534ebe1ab4830e09da4316",
+        "camera.rchit": "ac50141873cc48aa528e80b8d6ae9cc829007065d3501386ac1e674e54d2b8d4",
+        "camera.rgen": "2d4990f7ceade1b8630d75090fa2d1deb54a0ed6878565ea55f2e92cb1539291",
+        "camera.rmiss": "2e994c1f0ab1c1a3757985b0f3778e31a53b8c0adf36d144348c1b0ed3ff4cd5",
+        "geometry.glsl": "15940bb8da1d218b559224aeec677e0389b4209bf2db91b51984593cea394e13",
+        "ggx.glsl": "5ab041456425c4f367d8b6ee1656c2d78f11efc47258a90b99a391fe3ad16510",
+        "grain.glsl": "c07a4dc390bc061b17c1ffdbf3396bd3922df18bbf452020e49adb0253d9e013",
+        "light.glsl": "052f49a733587f1ad3bd0ec7644e0c6c55338486bf130aa3689677cf3bcf949a",
+        "point.glsl": "9820444b5e2650b1ceb42890512f01dd2a49243f96a64c3870fa540728cce8ee",
+        "point.rchit": "10adad9e441e8aa35db02ac0d55148fccc82059a820013f4ef80c2bcca05700b",
+        "point.rint": "61bcbc125898a8bcef739be93fee16092f9849c3b2ad5447d9895a3541dab2e8",
+        "point_aabb.comp": "91f08e018b77020f2e3f50afc2f6100f8d26876f987e1b0c0b7bdd6e7cfc79e5",
+        "postprocessing.comp": "2c83ed1c320dfc28252cb19acbb01bcaaef0a4ad7b272335e5b500456815cb9a",
+        "push_constant.glsl": "29b0c0322fc97010e12deca44f451b1cfa479a60b0b6f8d3d146e1f66f75b3a9",
+        "random.glsl": "c048741df1f9c8d58237d95a48ce7df8aef7cd4a9bf506229aab58fda21b5e1e",
+        "ray.glsl": "d8e0531e2724cfa6488cad550f3f3dd9f6ee443ccd02a998db02d2a1c6d21fa4",
+        "scene_set.glsl": "9dee6cdb24ffaa25109d6fd1513ce6f255e07decb2262a2addd411050c4c540e",
+        "shading.glsl": "4f7421b369f75e14fa22dc623b770f346800b8c05470fc5d682ccb4f2d52efc4",
+        "shadow.rmiss": "655fd75401ea3aec9620615f9714ca6e4f29301d8c8263e92d610dca64cd4c5b"
+      },
+      "camera_entity_position": [
+        0.0,
+        -0.800000011920929,
+        1.0
+      ],
+      "camera_entity_quaternion_wxyz": [
+        0.7071067690849304,
+        0.0,
+        0.0,
+        0.7071067690849304
+      ],
+      "sampling": "same validated local shifted-halton derivative; distinct explicit seed, fresh camera and no history",
+      "attachments": {
+        "entities": 11,
+        "cameras": 1,
+        "bodies": 8,
+        "lights": 2
+      }
+    },
+    {
+      "label": "pt-depth1-seed0",
+      "depth": 1,
+      "seed": 0,
+      "spp": 512,
+      "wall_ms": 65.5234000296332,
+      "hdr_file": "pt-depth1-seed0.hdr-rgba-f32.raw",
+      "hdr_sha256": "ca1b7c34a94c2a6204485208d39080586689843dd36065b6fd4168717623e67c",
+      "png_sha256": "377fad15ae3d679c293e73c7aebbb45812c7d8a08b85446d2cd3275751df5bee",
+      "roi_proof": {
+        "bright": {
+          "passed": true,
+          "expected_instance": 5,
+          "observed_instances": [
+            5
+          ],
+          "forward_depth_min": 1.799999713897705,
+          "forward_depth_max": 1.8000001907348633,
+          "expected_forward_depth": 1.8
+        },
+        "shadow": {
+          "passed": true,
+          "expected_instance": 5,
+          "observed_instances": [
+            5
+          ],
+          "forward_depth_min": 1.7999998331069946,
+          "forward_depth_max": 1.8000001907348633,
+          "expected_forward_depth": 1.8
+        },
+        "red": {
+          "passed": true,
+          "expected_instance": 7,
+          "observed_instances": [
+            7
+          ],
+          "forward_depth_min": 1.7899999618530273,
+          "forward_depth_max": 1.7900002002716064,
+          "expected_forward_depth": 1.79
+        }
+      },
+      "roi_luminance": {
+        "bright": 0.021848596921609717,
+        "shadow": 0.008745775882576516,
+        "red": 0.006020418322383048,
+        "white": 0.016935039031972264
+      },
+      "shader_sha256": {
+        "camera.rahit": "d8ea7b3f25ad85d35ccd3f8e6b19dafaa550cc1611534ebe1ab4830e09da4316",
+        "camera.rchit": "ac50141873cc48aa528e80b8d6ae9cc829007065d3501386ac1e674e54d2b8d4",
+        "camera.rgen": "2d4990f7ceade1b8630d75090fa2d1deb54a0ed6878565ea55f2e92cb1539291",
+        "camera.rmiss": "2e994c1f0ab1c1a3757985b0f3778e31a53b8c0adf36d144348c1b0ed3ff4cd5",
+        "geometry.glsl": "15940bb8da1d218b559224aeec677e0389b4209bf2db91b51984593cea394e13",
+        "ggx.glsl": "5ab041456425c4f367d8b6ee1656c2d78f11efc47258a90b99a391fe3ad16510",
+        "grain.glsl": "c07a4dc390bc061b17c1ffdbf3396bd3922df18bbf452020e49adb0253d9e013",
+        "light.glsl": "052f49a733587f1ad3bd0ec7644e0c6c55338486bf130aa3689677cf3bcf949a",
+        "point.glsl": "9820444b5e2650b1ceb42890512f01dd2a49243f96a64c3870fa540728cce8ee",
+        "point.rchit": "10adad9e441e8aa35db02ac0d55148fccc82059a820013f4ef80c2bcca05700b",
+        "point.rint": "61bcbc125898a8bcef739be93fee16092f9849c3b2ad5447d9895a3541dab2e8",
+        "point_aabb.comp": "91f08e018b77020f2e3f50afc2f6100f8d26876f987e1b0c0b7bdd6e7cfc79e5",
+        "postprocessing.comp": "2c83ed1c320dfc28252cb19acbb01bcaaef0a4ad7b272335e5b500456815cb9a",
+        "push_constant.glsl": "29b0c0322fc97010e12deca44f451b1cfa479a60b0b6f8d3d146e1f66f75b3a9",
+        "random.glsl": "c048741df1f9c8d58237d95a48ce7df8aef7cd4a9bf506229aab58fda21b5e1e",
+        "ray.glsl": "d8e0531e2724cfa6488cad550f3f3dd9f6ee443ccd02a998db02d2a1c6d21fa4",
+        "scene_set.glsl": "9dee6cdb24ffaa25109d6fd1513ce6f255e07decb2262a2addd411050c4c540e",
+        "shading.glsl": "4f7421b369f75e14fa22dc623b770f346800b8c05470fc5d682ccb4f2d52efc4",
+        "shadow.rmiss": "655fd75401ea3aec9620615f9714ca6e4f29301d8c8263e92d610dca64cd4c5b"
+      },
+      "camera_entity_position": [
+        0.0,
+        -0.800000011920929,
+        1.0
+      ],
+      "camera_entity_quaternion_wxyz": [
+        0.7071067690849304,
+        0.0,
+        0.0,
+        0.7071067690849304
+      ],
+      "sampling": "same validated local shifted-halton derivative; distinct explicit seed, fresh camera and no history",
+      "attachments": {
+        "entities": 11,
+        "cameras": 1,
+        "bodies": 8,
+        "lights": 2
+      }
+    },
+    {
+      "label": "pt-depth2-seed0",
+      "depth": 2,
+      "seed": 0,
+      "spp": 512,
+      "wall_ms": 96.2629999849014,
+      "hdr_file": "pt-depth2-seed0.hdr-rgba-f32.raw",
+      "hdr_sha256": "845a42d95f727edb524b171fd9d4c7af9493d9e5412cdc6da13988525c514883",
+      "png_sha256": "0cdbdb0c7856c44cdf7b1e285a0eb9477f31caaea104e7091eb8e8fd914b9923",
+      "roi_proof": {
+        "bright": {
+          "passed": true,
+          "expected_instance": 5,
+          "observed_instances": [
+            5
+          ],
+          "forward_depth_min": 1.799999713897705,
+          "forward_depth_max": 1.8000001907348633,
+          "expected_forward_depth": 1.8
+        },
+        "shadow": {
+          "passed": true,
+          "expected_instance": 5,
+          "observed_instances": [
+            5
+          ],
+          "forward_depth_min": 1.7999998331069946,
+          "forward_depth_max": 1.8000001907348633,
+          "expected_forward_depth": 1.8
+        },
+        "red": {
+          "passed": true,
+          "expected_instance": 7,
+          "observed_instances": [
+            7
+          ],
+          "forward_depth_min": 1.7899999618530273,
+          "forward_depth_max": 1.7900002002716064,
+          "expected_forward_depth": 1.79
+        }
+      },
+      "roi_luminance": {
+        "bright": 0.02469418226857856,
+        "shadow": 0.011466925088337158,
+        "red": 0.006899636035564763,
+        "white": 0.01973396082598803
+      },
+      "shader_sha256": {
+        "camera.rahit": "d8ea7b3f25ad85d35ccd3f8e6b19dafaa550cc1611534ebe1ab4830e09da4316",
+        "camera.rchit": "ac50141873cc48aa528e80b8d6ae9cc829007065d3501386ac1e674e54d2b8d4",
+        "camera.rgen": "2d4990f7ceade1b8630d75090fa2d1deb54a0ed6878565ea55f2e92cb1539291",
+        "camera.rmiss": "2e994c1f0ab1c1a3757985b0f3778e31a53b8c0adf36d144348c1b0ed3ff4cd5",
+        "geometry.glsl": "15940bb8da1d218b559224aeec677e0389b4209bf2db91b51984593cea394e13",
+        "ggx.glsl": "5ab041456425c4f367d8b6ee1656c2d78f11efc47258a90b99a391fe3ad16510",
+        "grain.glsl": "c07a4dc390bc061b17c1ffdbf3396bd3922df18bbf452020e49adb0253d9e013",
+        "light.glsl": "052f49a733587f1ad3bd0ec7644e0c6c55338486bf130aa3689677cf3bcf949a",
+        "point.glsl": "9820444b5e2650b1ceb42890512f01dd2a49243f96a64c3870fa540728cce8ee",
+        "point.rchit": "10adad9e441e8aa35db02ac0d55148fccc82059a820013f4ef80c2bcca05700b",
+        "point.rint": "61bcbc125898a8bcef739be93fee16092f9849c3b2ad5447d9895a3541dab2e8",
+        "point_aabb.comp": "91f08e018b77020f2e3f50afc2f6100f8d26876f987e1b0c0b7bdd6e7cfc79e5",
+        "postprocessing.comp": "2c83ed1c320dfc28252cb19acbb01bcaaef0a4ad7b272335e5b500456815cb9a",
+        "push_constant.glsl": "29b0c0322fc97010e12deca44f451b1cfa479a60b0b6f8d3d146e1f66f75b3a9",
+        "random.glsl": "c048741df1f9c8d58237d95a48ce7df8aef7cd4a9bf506229aab58fda21b5e1e",
+        "ray.glsl": "d8e0531e2724cfa6488cad550f3f3dd9f6ee443ccd02a998db02d2a1c6d21fa4",
+        "scene_set.glsl": "9dee6cdb24ffaa25109d6fd1513ce6f255e07decb2262a2addd411050c4c540e",
+        "shading.glsl": "4f7421b369f75e14fa22dc623b770f346800b8c05470fc5d682ccb4f2d52efc4",
+        "shadow.rmiss": "655fd75401ea3aec9620615f9714ca6e4f29301d8c8263e92d610dca64cd4c5b"
+      },
+      "camera_entity_position": [
+        0.0,
+        -0.800000011920929,
+        1.0
+      ],
+      "camera_entity_quaternion_wxyz": [
+        0.7071067690849304,
+        0.0,
+        0.0,
+        0.7071067690849304
+      ],
+      "sampling": "same validated local shifted-halton derivative; distinct explicit seed, fresh camera and no history",
+      "attachments": {
+        "entities": 11,
+        "cameras": 1,
+        "bodies": 8,
+        "lights": 2
+      }
+    },
+    {
+      "label": "pt-depth6-seed0",
+      "depth": 6,
+      "seed": 0,
+      "spp": 512,
+      "wall_ms": 209.12280003540218,
+      "hdr_file": "pt-depth6-seed0.hdr-rgba-f32.raw",
+      "hdr_sha256": "575ec7331128c8b11ba31854899a0ae0ade0ce90e1591d3c3a682ef1733252ec",
+      "png_sha256": "f22dd9ec7d579249a7135b85fd1f4549edbe3ce3fec1fd001c3b15cbaa60eaf1",
+      "roi_proof": {
+        "bright": {
+          "passed": true,
+          "expected_instance": 5,
+          "observed_instances": [
+            5
+          ],
+          "forward_depth_min": 1.799999713897705,
+          "forward_depth_max": 1.8000001907348633,
+          "expected_forward_depth": 1.8
+        },
+        "shadow": {
+          "passed": true,
+          "expected_instance": 5,
+          "observed_instances": [
+            5
+          ],
+          "forward_depth_min": 1.7999998331069946,
+          "forward_depth_max": 1.8000001907348633,
+          "expected_forward_depth": 1.8
+        },
+        "red": {
+          "passed": true,
+          "expected_instance": 7,
+          "observed_instances": [
+            7
+          ],
+          "forward_depth_min": 1.7899999618530273,
+          "forward_depth_max": 1.7900002002716064,
+          "expected_forward_depth": 1.79
+        }
+      },
+      "roi_luminance": {
+        "bright": 0.02756672597317863,
+        "shadow": 0.014409993391163492,
+        "red": 0.0077836675623548235,
+        "white": 0.022632951254922953
+      },
+      "shader_sha256": {
+        "camera.rahit": "d8ea7b3f25ad85d35ccd3f8e6b19dafaa550cc1611534ebe1ab4830e09da4316",
+        "camera.rchit": "ac50141873cc48aa528e80b8d6ae9cc829007065d3501386ac1e674e54d2b8d4",
+        "camera.rgen": "2d4990f7ceade1b8630d75090fa2d1deb54a0ed6878565ea55f2e92cb1539291",
+        "camera.rmiss": "2e994c1f0ab1c1a3757985b0f3778e31a53b8c0adf36d144348c1b0ed3ff4cd5",
+        "geometry.glsl": "15940bb8da1d218b559224aeec677e0389b4209bf2db91b51984593cea394e13",
+        "ggx.glsl": "5ab041456425c4f367d8b6ee1656c2d78f11efc47258a90b99a391fe3ad16510",
+        "grain.glsl": "c07a4dc390bc061b17c1ffdbf3396bd3922df18bbf452020e49adb0253d9e013",
+        "light.glsl": "052f49a733587f1ad3bd0ec7644e0c6c55338486bf130aa3689677cf3bcf949a",
+        "point.glsl": "9820444b5e2650b1ceb42890512f01dd2a49243f96a64c3870fa540728cce8ee",
+        "point.rchit": "10adad9e441e8aa35db02ac0d55148fccc82059a820013f4ef80c2bcca05700b",
+        "point.rint": "61bcbc125898a8bcef739be93fee16092f9849c3b2ad5447d9895a3541dab2e8",
+        "point_aabb.comp": "91f08e018b77020f2e3f50afc2f6100f8d26876f987e1b0c0b7bdd6e7cfc79e5",
+        "postprocessing.comp": "2c83ed1c320dfc28252cb19acbb01bcaaef0a4ad7b272335e5b500456815cb9a",
+        "push_constant.glsl": "29b0c0322fc97010e12deca44f451b1cfa479a60b0b6f8d3d146e1f66f75b3a9",
+        "random.glsl": "c048741df1f9c8d58237d95a48ce7df8aef7cd4a9bf506229aab58fda21b5e1e",
+        "ray.glsl": "d8e0531e2724cfa6488cad550f3f3dd9f6ee443ccd02a998db02d2a1c6d21fa4",
+        "scene_set.glsl": "9dee6cdb24ffaa25109d6fd1513ce6f255e07decb2262a2addd411050c4c540e",
+        "shading.glsl": "4f7421b369f75e14fa22dc623b770f346800b8c05470fc5d682ccb4f2d52efc4",
+        "shadow.rmiss": "655fd75401ea3aec9620615f9714ca6e4f29301d8c8263e92d610dca64cd4c5b"
+      },
+      "camera_entity_position": [
+        0.0,
+        -0.800000011920929,
+        1.0
+      ],
+      "camera_entity_quaternion_wxyz": [
+        0.7071067690849304,
+        0.0,
+        0.0,
+        0.7071067690849304
+      ],
+      "sampling": "same validated local shifted-halton derivative; distinct explicit seed, fresh camera and no history",
+      "attachments": {
+        "entities": 11,
+        "cameras": 1,
+        "bodies": 8,
+        "lights": 2
+      }
+    },
+    {
+      "label": "pt-depth0-seed1",
+      "depth": 0,
+      "seed": 1,
+      "spp": 512,
+      "wall_ms": 451.9008999923244,
+      "hdr_file": "pt-depth0-seed1.hdr-rgba-f32.raw",
+      "hdr_sha256": "4ddfcc030b8cd4d63763b920b4ac144dd0f84ce56a99cb19b7c5a3b361c4a432",
+      "png_sha256": "a5d2dc7caaf08d52888a43662cfa9b6e4ea5c5c4a927e8c220dec5376009efe5",
+      "roi_proof": {
+        "bright": {
+          "passed": true,
+          "expected_instance": 5,
+          "observed_instances": [
+            5
+          ],
+          "forward_depth_min": 1.7999998331069946,
+          "forward_depth_max": 1.8000001907348633,
+          "expected_forward_depth": 1.8
+        },
+        "shadow": {
+          "passed": true,
+          "expected_instance": 5,
+          "observed_instances": [
+            5
+          ],
+          "forward_depth_min": 1.7999998331069946,
+          "forward_depth_max": 1.8000001907348633,
+          "expected_forward_depth": 1.8
+        },
+        "red": {
+          "passed": true,
+          "expected_instance": 7,
+          "observed_instances": [
+            7
+          ],
+          "forward_depth_min": 1.7899999618530273,
+          "forward_depth_max": 1.7900002002716064,
+          "expected_forward_depth": 1.79
+        }
+      },
+      "roi_luminance": {
+        "bright": 0.016324955699629152,
+        "shadow": 0.003858777043238321,
+        "red": 0.004197992500869222,
+        "white": 0.011650138703482587
+      },
+      "shader_sha256": {
+        "camera.rahit": "d8ea7b3f25ad85d35ccd3f8e6b19dafaa550cc1611534ebe1ab4830e09da4316",
+        "camera.rchit": "ac50141873cc48aa528e80b8d6ae9cc829007065d3501386ac1e674e54d2b8d4",
+        "camera.rgen": "0510e00f31b7b23399d250a6a4b1266a20142216dd2f818475acfd60c7a09fce",
+        "camera.rmiss": "2e994c1f0ab1c1a3757985b0f3778e31a53b8c0adf36d144348c1b0ed3ff4cd5",
+        "geometry.glsl": "15940bb8da1d218b559224aeec677e0389b4209bf2db91b51984593cea394e13",
+        "ggx.glsl": "5ab041456425c4f367d8b6ee1656c2d78f11efc47258a90b99a391fe3ad16510",
+        "grain.glsl": "c07a4dc390bc061b17c1ffdbf3396bd3922df18bbf452020e49adb0253d9e013",
+        "light.glsl": "052f49a733587f1ad3bd0ec7644e0c6c55338486bf130aa3689677cf3bcf949a",
+        "point.glsl": "9820444b5e2650b1ceb42890512f01dd2a49243f96a64c3870fa540728cce8ee",
+        "point.rchit": "10adad9e441e8aa35db02ac0d55148fccc82059a820013f4ef80c2bcca05700b",
+        "point.rint": "61bcbc125898a8bcef739be93fee16092f9849c3b2ad5447d9895a3541dab2e8",
+        "point_aabb.comp": "91f08e018b77020f2e3f50afc2f6100f8d26876f987e1b0c0b7bdd6e7cfc79e5",
+        "postprocessing.comp": "2c83ed1c320dfc28252cb19acbb01bcaaef0a4ad7b272335e5b500456815cb9a",
+        "push_constant.glsl": "29b0c0322fc97010e12deca44f451b1cfa479a60b0b6f8d3d146e1f66f75b3a9",
+        "random.glsl": "c048741df1f9c8d58237d95a48ce7df8aef7cd4a9bf506229aab58fda21b5e1e",
+        "ray.glsl": "d8e0531e2724cfa6488cad550f3f3dd9f6ee443ccd02a998db02d2a1c6d21fa4",
+        "scene_set.glsl": "9dee6cdb24ffaa25109d6fd1513ce6f255e07decb2262a2addd411050c4c540e",
+        "shading.glsl": "4f7421b369f75e14fa22dc623b770f346800b8c05470fc5d682ccb4f2d52efc4",
+        "shadow.rmiss": "655fd75401ea3aec9620615f9714ca6e4f29301d8c8263e92d610dca64cd4c5b"
+      },
+      "camera_entity_position": [
+        0.0,
+        -0.800000011920929,
+        1.0
+      ],
+      "camera_entity_quaternion_wxyz": [
+        0.7071067690849304,
+        0.0,
+        0.0,
+        0.7071067690849304
+      ],
+      "sampling": "same validated local shifted-halton derivative; distinct explicit seed, fresh camera and no history",
+      "attachments": {
+        "entities": 11,
+        "cameras": 1,
+        "bodies": 8,
+        "lights": 2
+      }
+    },
+    {
+      "label": "pt-depth1-seed1",
+      "depth": 1,
+      "seed": 1,
+      "spp": 512,
+      "wall_ms": 66.71609997283667,
+      "hdr_file": "pt-depth1-seed1.hdr-rgba-f32.raw",
+      "hdr_sha256": "4f8c7aabee5aaefaf4e9e3a9c62e3910fa3ed75bdfa61100fcc33e6a30fde010",
+      "png_sha256": "951029b21ce1a201309aedde2e8d334f2c118369c8a8720c1433ff07f03e0444",
+      "roi_proof": {
+        "bright": {
+          "passed": true,
+          "expected_instance": 5,
+          "observed_instances": [
+            5
+          ],
+          "forward_depth_min": 1.7999998331069946,
+          "forward_depth_max": 1.8000001907348633,
+          "expected_forward_depth": 1.8
+        },
+        "shadow": {
+          "passed": true,
+          "expected_instance": 5,
+          "observed_instances": [
+            5
+          ],
+          "forward_depth_min": 1.7999998331069946,
+          "forward_depth_max": 1.8000001907348633,
+          "expected_forward_depth": 1.8
+        },
+        "red": {
+          "passed": true,
+          "expected_instance": 7,
+          "observed_instances": [
+            7
+          ],
+          "forward_depth_min": 1.7899999618530273,
+          "forward_depth_max": 1.7900002002716064,
+          "expected_forward_depth": 1.79
+        }
+      },
+      "roi_luminance": {
+        "bright": 0.0218440150587121,
+        "shadow": 0.008768462708167111,
+        "red": 0.006018174828570773,
+        "white": 0.016940682927257728
+      },
+      "shader_sha256": {
+        "camera.rahit": "d8ea7b3f25ad85d35ccd3f8e6b19dafaa550cc1611534ebe1ab4830e09da4316",
+        "camera.rchit": "ac50141873cc48aa528e80b8d6ae9cc829007065d3501386ac1e674e54d2b8d4",
+        "camera.rgen": "0510e00f31b7b23399d250a6a4b1266a20142216dd2f818475acfd60c7a09fce",
+        "camera.rmiss": "2e994c1f0ab1c1a3757985b0f3778e31a53b8c0adf36d144348c1b0ed3ff4cd5",
+        "geometry.glsl": "15940bb8da1d218b559224aeec677e0389b4209bf2db91b51984593cea394e13",
+        "ggx.glsl": "5ab041456425c4f367d8b6ee1656c2d78f11efc47258a90b99a391fe3ad16510",
+        "grain.glsl": "c07a4dc390bc061b17c1ffdbf3396bd3922df18bbf452020e49adb0253d9e013",
+        "light.glsl": "052f49a733587f1ad3bd0ec7644e0c6c55338486bf130aa3689677cf3bcf949a",
+        "point.glsl": "9820444b5e2650b1ceb42890512f01dd2a49243f96a64c3870fa540728cce8ee",
+        "point.rchit": "10adad9e441e8aa35db02ac0d55148fccc82059a820013f4ef80c2bcca05700b",
+        "point.rint": "61bcbc125898a8bcef739be93fee16092f9849c3b2ad5447d9895a3541dab2e8",
+        "point_aabb.comp": "91f08e018b77020f2e3f50afc2f6100f8d26876f987e1b0c0b7bdd6e7cfc79e5",
+        "postprocessing.comp": "2c83ed1c320dfc28252cb19acbb01bcaaef0a4ad7b272335e5b500456815cb9a",
+        "push_constant.glsl": "29b0c0322fc97010e12deca44f451b1cfa479a60b0b6f8d3d146e1f66f75b3a9",
+        "random.glsl": "c048741df1f9c8d58237d95a48ce7df8aef7cd4a9bf506229aab58fda21b5e1e",
+        "ray.glsl": "d8e0531e2724cfa6488cad550f3f3dd9f6ee443ccd02a998db02d2a1c6d21fa4",
+        "scene_set.glsl": "9dee6cdb24ffaa25109d6fd1513ce6f255e07decb2262a2addd411050c4c540e",
+        "shading.glsl": "4f7421b369f75e14fa22dc623b770f346800b8c05470fc5d682ccb4f2d52efc4",
+        "shadow.rmiss": "655fd75401ea3aec9620615f9714ca6e4f29301d8c8263e92d610dca64cd4c5b"
+      },
+      "camera_entity_position": [
+        0.0,
+        -0.800000011920929,
+        1.0
+      ],
+      "camera_entity_quaternion_wxyz": [
+        0.7071067690849304,
+        0.0,
+        0.0,
+        0.7071067690849304
+      ],
+      "sampling": "same validated local shifted-halton derivative; distinct explicit seed, fresh camera and no history",
+      "attachments": {
+        "entities": 11,
+        "cameras": 1,
+        "bodies": 8,
+        "lights": 2
+      }
+    },
+    {
+      "label": "pt-depth2-seed1",
+      "depth": 2,
+      "seed": 1,
+      "spp": 512,
+      "wall_ms": 97.19070000573993,
+      "hdr_file": "pt-depth2-seed1.hdr-rgba-f32.raw",
+      "hdr_sha256": "8bcf8ba14aba1c8d5b634535e2be5655fc673f03c0bc7b7fd159e4cc6794e372",
+      "png_sha256": "da10b1cfa3ca19502c2705fec3f6725240bf79fb59ed1ea75c9eb34967c4a7f8",
+      "roi_proof": {
+        "bright": {
+          "passed": true,
+          "expected_instance": 5,
+          "observed_instances": [
+            5
+          ],
+          "forward_depth_min": 1.7999998331069946,
+          "forward_depth_max": 1.8000001907348633,
+          "expected_forward_depth": 1.8
+        },
+        "shadow": {
+          "passed": true,
+          "expected_instance": 5,
+          "observed_instances": [
+            5
+          ],
+          "forward_depth_min": 1.7999998331069946,
+          "forward_depth_max": 1.8000001907348633,
+          "expected_forward_depth": 1.8
+        },
+        "red": {
+          "passed": true,
+          "expected_instance": 7,
+          "observed_instances": [
+            7
+          ],
+          "forward_depth_min": 1.7899999618530273,
+          "forward_depth_max": 1.7900002002716064,
+          "expected_forward_depth": 1.79
+        }
+      },
+      "roi_luminance": {
+        "bright": 0.024712455008476974,
+        "shadow": 0.011497074691643938,
+        "red": 0.006896775189316395,
+        "white": 0.019756687389664584
+      },
+      "shader_sha256": {
+        "camera.rahit": "d8ea7b3f25ad85d35ccd3f8e6b19dafaa550cc1611534ebe1ab4830e09da4316",
+        "camera.rchit": "ac50141873cc48aa528e80b8d6ae9cc829007065d3501386ac1e674e54d2b8d4",
+        "camera.rgen": "0510e00f31b7b23399d250a6a4b1266a20142216dd2f818475acfd60c7a09fce",
+        "camera.rmiss": "2e994c1f0ab1c1a3757985b0f3778e31a53b8c0adf36d144348c1b0ed3ff4cd5",
+        "geometry.glsl": "15940bb8da1d218b559224aeec677e0389b4209bf2db91b51984593cea394e13",
+        "ggx.glsl": "5ab041456425c4f367d8b6ee1656c2d78f11efc47258a90b99a391fe3ad16510",
+        "grain.glsl": "c07a4dc390bc061b17c1ffdbf3396bd3922df18bbf452020e49adb0253d9e013",
+        "light.glsl": "052f49a733587f1ad3bd0ec7644e0c6c55338486bf130aa3689677cf3bcf949a",
+        "point.glsl": "9820444b5e2650b1ceb42890512f01dd2a49243f96a64c3870fa540728cce8ee",
+        "point.rchit": "10adad9e441e8aa35db02ac0d55148fccc82059a820013f4ef80c2bcca05700b",
+        "point.rint": "61bcbc125898a8bcef739be93fee16092f9849c3b2ad5447d9895a3541dab2e8",
+        "point_aabb.comp": "91f08e018b77020f2e3f50afc2f6100f8d26876f987e1b0c0b7bdd6e7cfc79e5",
+        "postprocessing.comp": "2c83ed1c320dfc28252cb19acbb01bcaaef0a4ad7b272335e5b500456815cb9a",
+        "push_constant.glsl": "29b0c0322fc97010e12deca44f451b1cfa479a60b0b6f8d3d146e1f66f75b3a9",
+        "random.glsl": "c048741df1f9c8d58237d95a48ce7df8aef7cd4a9bf506229aab58fda21b5e1e",
+        "ray.glsl": "d8e0531e2724cfa6488cad550f3f3dd9f6ee443ccd02a998db02d2a1c6d21fa4",
+        "scene_set.glsl": "9dee6cdb24ffaa25109d6fd1513ce6f255e07decb2262a2addd411050c4c540e",
+        "shading.glsl": "4f7421b369f75e14fa22dc623b770f346800b8c05470fc5d682ccb4f2d52efc4",
+        "shadow.rmiss": "655fd75401ea3aec9620615f9714ca6e4f29301d8c8263e92d610dca64cd4c5b"
+      },
+      "camera_entity_position": [
+        0.0,
+        -0.800000011920929,
+        1.0
+      ],
+      "camera_entity_quaternion_wxyz": [
+        0.7071067690849304,
+        0.0,
+        0.0,
+        0.7071067690849304
+      ],
+      "sampling": "same validated local shifted-halton derivative; distinct explicit seed, fresh camera and no history",
+      "attachments": {
+        "entities": 11,
+        "cameras": 1,
+        "bodies": 8,
+        "lights": 2
+      }
+    },
+    {
+      "label": "pt-depth6-seed1",
+      "depth": 6,
+      "seed": 1,
+      "spp": 512,
+      "wall_ms": 208.7782000307925,
+      "hdr_file": "pt-depth6-seed1.hdr-rgba-f32.raw",
+      "hdr_sha256": "1bc5b75427b95bf08512fed013b71d31f0d3a956f8d56db426cab002e5aac7c8",
+      "png_sha256": "7f5f9e7f62af67ffd75a02e188b6a0e2d73c21f91e8b993b765e9d9e31f8ce34",
+      "roi_proof": {
+        "bright": {
+          "passed": true,
+          "expected_instance": 5,
+          "observed_instances": [
+            5
+          ],
+          "forward_depth_min": 1.7999998331069946,
+          "forward_depth_max": 1.8000001907348633,
+          "expected_forward_depth": 1.8
+        },
+        "shadow": {
+          "passed": true,
+          "expected_instance": 5,
+          "observed_instances": [
+            5
+          ],
+          "forward_depth_min": 1.7999998331069946,
+          "forward_depth_max": 1.8000001907348633,
+          "expected_forward_depth": 1.8
+        },
+        "red": {
+          "passed": true,
+          "expected_instance": 7,
+          "observed_instances": [
+            7
+          ],
+          "forward_depth_min": 1.7899999618530273,
+          "forward_depth_max": 1.7900002002716064,
+          "expected_forward_depth": 1.79
+        }
+      },
+      "roi_luminance": {
+        "bright": 0.02761680719570257,
+        "shadow": 0.014394395322346439,
+        "red": 0.007784451189029934,
+        "white": 0.022658402743194018
+      },
+      "shader_sha256": {
+        "camera.rahit": "d8ea7b3f25ad85d35ccd3f8e6b19dafaa550cc1611534ebe1ab4830e09da4316",
+        "camera.rchit": "ac50141873cc48aa528e80b8d6ae9cc829007065d3501386ac1e674e54d2b8d4",
+        "camera.rgen": "0510e00f31b7b23399d250a6a4b1266a20142216dd2f818475acfd60c7a09fce",
+        "camera.rmiss": "2e994c1f0ab1c1a3757985b0f3778e31a53b8c0adf36d144348c1b0ed3ff4cd5",
+        "geometry.glsl": "15940bb8da1d218b559224aeec677e0389b4209bf2db91b51984593cea394e13",
+        "ggx.glsl": "5ab041456425c4f367d8b6ee1656c2d78f11efc47258a90b99a391fe3ad16510",
+        "grain.glsl": "c07a4dc390bc061b17c1ffdbf3396bd3922df18bbf452020e49adb0253d9e013",
+        "light.glsl": "052f49a733587f1ad3bd0ec7644e0c6c55338486bf130aa3689677cf3bcf949a",
+        "point.glsl": "9820444b5e2650b1ceb42890512f01dd2a49243f96a64c3870fa540728cce8ee",
+        "point.rchit": "10adad9e441e8aa35db02ac0d55148fccc82059a820013f4ef80c2bcca05700b",
+        "point.rint": "61bcbc125898a8bcef739be93fee16092f9849c3b2ad5447d9895a3541dab2e8",
+        "point_aabb.comp": "91f08e018b77020f2e3f50afc2f6100f8d26876f987e1b0c0b7bdd6e7cfc79e5",
+        "postprocessing.comp": "2c83ed1c320dfc28252cb19acbb01bcaaef0a4ad7b272335e5b500456815cb9a",
+        "push_constant.glsl": "29b0c0322fc97010e12deca44f451b1cfa479a60b0b6f8d3d146e1f66f75b3a9",
+        "random.glsl": "c048741df1f9c8d58237d95a48ce7df8aef7cd4a9bf506229aab58fda21b5e1e",
+        "ray.glsl": "d8e0531e2724cfa6488cad550f3f3dd9f6ee443ccd02a998db02d2a1c6d21fa4",
+        "scene_set.glsl": "9dee6cdb24ffaa25109d6fd1513ce6f255e07decb2262a2addd411050c4c540e",
+        "shading.glsl": "4f7421b369f75e14fa22dc623b770f346800b8c05470fc5d682ccb4f2d52efc4",
+        "shadow.rmiss": "655fd75401ea3aec9620615f9714ca6e4f29301d8c8263e92d610dca64cd4c5b"
+      },
+      "camera_entity_position": [
+        0.0,
+        -0.800000011920929,
+        1.0
+      ],
+      "camera_entity_quaternion_wxyz": [
+        0.7071067690849304,
+        0.0,
+        0.0,
+        0.7071067690849304
+      ],
+      "sampling": "same validated local shifted-halton derivative; distinct explicit seed, fresh camera and no history",
+      "attachments": {
+        "entities": 11,
+        "cameras": 1,
+        "bodies": 8,
+        "lights": 2
+      }
+    },
+    {
+      "label": "pt-depth0-seed2",
+      "depth": 0,
+      "seed": 2,
+      "spp": 512,
+      "wall_ms": 440.93829998746514,
+      "hdr_file": "pt-depth0-seed2.hdr-rgba-f32.raw",
+      "hdr_sha256": "1da1df304730cc4d1627a30144b429dccce973ba3598793b03c66117eefb6e15",
+      "png_sha256": "bb08ca2998090748b01c3b4d848d0b9fb300cb35597d6d00b0e4a950850f7b77",
+      "roi_proof": {
+        "bright": {
+          "passed": true,
+          "expected_instance": 5,
+          "observed_instances": [
+            5
+          ],
+          "forward_depth_min": 1.799999713897705,
+          "forward_depth_max": 1.8000001907348633,
+          "expected_forward_depth": 1.8
+        },
+        "shadow": {
+          "passed": true,
+          "expected_instance": 5,
+          "observed_instances": [
+            5
+          ],
+          "forward_depth_min": 1.7999998331069946,
+          "forward_depth_max": 1.8000001907348633,
+          "expected_forward_depth": 1.8
+        },
+        "red": {
+          "passed": true,
+          "expected_instance": 7,
+          "observed_instances": [
+            7
+          ],
+          "forward_depth_min": 1.7899997234344482,
+          "forward_depth_max": 1.7900002002716064,
+          "expected_forward_depth": 1.79
+        }
+      },
+      "roi_luminance": {
+        "bright": 0.01634101775606815,
+        "shadow": 0.003861733611562328,
+        "red": 0.0041969668228155205,
+        "white": 0.011661286201878465
+      },
+      "shader_sha256": {
+        "camera.rahit": "d8ea7b3f25ad85d35ccd3f8e6b19dafaa550cc1611534ebe1ab4830e09da4316",
+        "camera.rchit": "ac50141873cc48aa528e80b8d6ae9cc829007065d3501386ac1e674e54d2b8d4",
+        "camera.rgen": "d629fbac50f7d6a9da5ce0541e61128b4df4e30e24ed5dad77b3296c14c66a73",
+        "camera.rmiss": "2e994c1f0ab1c1a3757985b0f3778e31a53b8c0adf36d144348c1b0ed3ff4cd5",
+        "geometry.glsl": "15940bb8da1d218b559224aeec677e0389b4209bf2db91b51984593cea394e13",
+        "ggx.glsl": "5ab041456425c4f367d8b6ee1656c2d78f11efc47258a90b99a391fe3ad16510",
+        "grain.glsl": "c07a4dc390bc061b17c1ffdbf3396bd3922df18bbf452020e49adb0253d9e013",
+        "light.glsl": "052f49a733587f1ad3bd0ec7644e0c6c55338486bf130aa3689677cf3bcf949a",
+        "point.glsl": "9820444b5e2650b1ceb42890512f01dd2a49243f96a64c3870fa540728cce8ee",
+        "point.rchit": "10adad9e441e8aa35db02ac0d55148fccc82059a820013f4ef80c2bcca05700b",
+        "point.rint": "61bcbc125898a8bcef739be93fee16092f9849c3b2ad5447d9895a3541dab2e8",
+        "point_aabb.comp": "91f08e018b77020f2e3f50afc2f6100f8d26876f987e1b0c0b7bdd6e7cfc79e5",
+        "postprocessing.comp": "2c83ed1c320dfc28252cb19acbb01bcaaef0a4ad7b272335e5b500456815cb9a",
+        "push_constant.glsl": "29b0c0322fc97010e12deca44f451b1cfa479a60b0b6f8d3d146e1f66f75b3a9",
+        "random.glsl": "c048741df1f9c8d58237d95a48ce7df8aef7cd4a9bf506229aab58fda21b5e1e",
+        "ray.glsl": "d8e0531e2724cfa6488cad550f3f3dd9f6ee443ccd02a998db02d2a1c6d21fa4",
+        "scene_set.glsl": "9dee6cdb24ffaa25109d6fd1513ce6f255e07decb2262a2addd411050c4c540e",
+        "shading.glsl": "4f7421b369f75e14fa22dc623b770f346800b8c05470fc5d682ccb4f2d52efc4",
+        "shadow.rmiss": "655fd75401ea3aec9620615f9714ca6e4f29301d8c8263e92d610dca64cd4c5b"
+      },
+      "camera_entity_position": [
+        0.0,
+        -0.800000011920929,
+        1.0
+      ],
+      "camera_entity_quaternion_wxyz": [
+        0.7071067690849304,
+        0.0,
+        0.0,
+        0.7071067690849304
+      ],
+      "sampling": "same validated local shifted-halton derivative; distinct explicit seed, fresh camera and no history",
+      "attachments": {
+        "entities": 11,
+        "cameras": 1,
+        "bodies": 8,
+        "lights": 2
+      }
+    },
+    {
+      "label": "pt-depth1-seed2",
+      "depth": 1,
+      "seed": 2,
+      "spp": 512,
+      "wall_ms": 68.25780001236126,
+      "hdr_file": "pt-depth1-seed2.hdr-rgba-f32.raw",
+      "hdr_sha256": "adb056f23baefab58c70a7bbbc5edf1969c8539e2f4f9e3ee9a8460fb5be44a8",
+      "png_sha256": "7232a6bddbb4e59a566a481c68a359fb3a9107bda11ab55400381826875ef50d",
+      "roi_proof": {
+        "bright": {
+          "passed": true,
+          "expected_instance": 5,
+          "observed_instances": [
+            5
+          ],
+          "forward_depth_min": 1.799999713897705,
+          "forward_depth_max": 1.8000001907348633,
+          "expected_forward_depth": 1.8
+        },
+        "shadow": {
+          "passed": true,
+          "expected_instance": 5,
+          "observed_instances": [
+            5
+          ],
+          "forward_depth_min": 1.7999998331069946,
+          "forward_depth_max": 1.8000001907348633,
+          "expected_forward_depth": 1.8
+        },
+        "red": {
+          "passed": true,
+          "expected_instance": 7,
+          "observed_instances": [
+            7
+          ],
+          "forward_depth_min": 1.7899997234344482,
+          "forward_depth_max": 1.7900002002716064,
+          "expected_forward_depth": 1.79
+        }
+      },
+      "roi_luminance": {
+        "bright": 0.021835133872168136,
+        "shadow": 0.008775481863501482,
+        "red": 0.006022665792257176,
+        "white": 0.01693776436891814
+      },
+      "shader_sha256": {
+        "camera.rahit": "d8ea7b3f25ad85d35ccd3f8e6b19dafaa550cc1611534ebe1ab4830e09da4316",
+        "camera.rchit": "ac50141873cc48aa528e80b8d6ae9cc829007065d3501386ac1e674e54d2b8d4",
+        "camera.rgen": "d629fbac50f7d6a9da5ce0541e61128b4df4e30e24ed5dad77b3296c14c66a73",
+        "camera.rmiss": "2e994c1f0ab1c1a3757985b0f3778e31a53b8c0adf36d144348c1b0ed3ff4cd5",
+        "geometry.glsl": "15940bb8da1d218b559224aeec677e0389b4209bf2db91b51984593cea394e13",
+        "ggx.glsl": "5ab041456425c4f367d8b6ee1656c2d78f11efc47258a90b99a391fe3ad16510",
+        "grain.glsl": "c07a4dc390bc061b17c1ffdbf3396bd3922df18bbf452020e49adb0253d9e013",
+        "light.glsl": "052f49a733587f1ad3bd0ec7644e0c6c55338486bf130aa3689677cf3bcf949a",
+        "point.glsl": "9820444b5e2650b1ceb42890512f01dd2a49243f96a64c3870fa540728cce8ee",
+        "point.rchit": "10adad9e441e8aa35db02ac0d55148fccc82059a820013f4ef80c2bcca05700b",
+        "point.rint": "61bcbc125898a8bcef739be93fee16092f9849c3b2ad5447d9895a3541dab2e8",
+        "point_aabb.comp": "91f08e018b77020f2e3f50afc2f6100f8d26876f987e1b0c0b7bdd6e7cfc79e5",
+        "postprocessing.comp": "2c83ed1c320dfc28252cb19acbb01bcaaef0a4ad7b272335e5b500456815cb9a",
+        "push_constant.glsl": "29b0c0322fc97010e12deca44f451b1cfa479a60b0b6f8d3d146e1f66f75b3a9",
+        "random.glsl": "c048741df1f9c8d58237d95a48ce7df8aef7cd4a9bf506229aab58fda21b5e1e",
+        "ray.glsl": "d8e0531e2724cfa6488cad550f3f3dd9f6ee443ccd02a998db02d2a1c6d21fa4",
+        "scene_set.glsl": "9dee6cdb24ffaa25109d6fd1513ce6f255e07decb2262a2addd411050c4c540e",
+        "shading.glsl": "4f7421b369f75e14fa22dc623b770f346800b8c05470fc5d682ccb4f2d52efc4",
+        "shadow.rmiss": "655fd75401ea3aec9620615f9714ca6e4f29301d8c8263e92d610dca64cd4c5b"
+      },
+      "camera_entity_position": [
+        0.0,
+        -0.800000011920929,
+        1.0
+      ],
+      "camera_entity_quaternion_wxyz": [
+        0.7071067690849304,
+        0.0,
+        0.0,
+        0.7071067690849304
+      ],
+      "sampling": "same validated local shifted-halton derivative; distinct explicit seed, fresh camera and no history",
+      "attachments": {
+        "entities": 11,
+        "cameras": 1,
+        "bodies": 8,
+        "lights": 2
+      }
+    },
+    {
+      "label": "pt-depth2-seed2",
+      "depth": 2,
+      "seed": 2,
+      "spp": 512,
+      "wall_ms": 99.14429998025298,
+      "hdr_file": "pt-depth2-seed2.hdr-rgba-f32.raw",
+      "hdr_sha256": "ab71c5bc78137d2a712ab6b11454663d0179dba967dbf15d87117bb196cd34f2",
+      "png_sha256": "c654cb7ea2c33bda6180565e6190c038e2ba7de46bd0e117592ec2300af9385a",
+      "roi_proof": {
+        "bright": {
+          "passed": true,
+          "expected_instance": 5,
+          "observed_instances": [
+            5
+          ],
+          "forward_depth_min": 1.799999713897705,
+          "forward_depth_max": 1.8000001907348633,
+          "expected_forward_depth": 1.8
+        },
+        "shadow": {
+          "passed": true,
+          "expected_instance": 5,
+          "observed_instances": [
+            5
+          ],
+          "forward_depth_min": 1.7999998331069946,
+          "forward_depth_max": 1.8000001907348633,
+          "expected_forward_depth": 1.8
+        },
+        "red": {
+          "passed": true,
+          "expected_instance": 7,
+          "observed_instances": [
+            7
+          ],
+          "forward_depth_min": 1.7899997234344482,
+          "forward_depth_max": 1.7900002002716064,
+          "expected_forward_depth": 1.79
+        }
+      },
+      "roi_luminance": {
+        "bright": 0.024703083647619,
+        "shadow": 0.011447660429403962,
+        "red": 0.006902830951828365,
+        "white": 0.019732299940788362
+      },
+      "shader_sha256": {
+        "camera.rahit": "d8ea7b3f25ad85d35ccd3f8e6b19dafaa550cc1611534ebe1ab4830e09da4316",
+        "camera.rchit": "ac50141873cc48aa528e80b8d6ae9cc829007065d3501386ac1e674e54d2b8d4",
+        "camera.rgen": "d629fbac50f7d6a9da5ce0541e61128b4df4e30e24ed5dad77b3296c14c66a73",
+        "camera.rmiss": "2e994c1f0ab1c1a3757985b0f3778e31a53b8c0adf36d144348c1b0ed3ff4cd5",
+        "geometry.glsl": "15940bb8da1d218b559224aeec677e0389b4209bf2db91b51984593cea394e13",
+        "ggx.glsl": "5ab041456425c4f367d8b6ee1656c2d78f11efc47258a90b99a391fe3ad16510",
+        "grain.glsl": "c07a4dc390bc061b17c1ffdbf3396bd3922df18bbf452020e49adb0253d9e013",
+        "light.glsl": "052f49a733587f1ad3bd0ec7644e0c6c55338486bf130aa3689677cf3bcf949a",
+        "point.glsl": "9820444b5e2650b1ceb42890512f01dd2a49243f96a64c3870fa540728cce8ee",
+        "point.rchit": "10adad9e441e8aa35db02ac0d55148fccc82059a820013f4ef80c2bcca05700b",
+        "point.rint": "61bcbc125898a8bcef739be93fee16092f9849c3b2ad5447d9895a3541dab2e8",
+        "point_aabb.comp": "91f08e018b77020f2e3f50afc2f6100f8d26876f987e1b0c0b7bdd6e7cfc79e5",
+        "postprocessing.comp": "2c83ed1c320dfc28252cb19acbb01bcaaef0a4ad7b272335e5b500456815cb9a",
+        "push_constant.glsl": "29b0c0322fc97010e12deca44f451b1cfa479a60b0b6f8d3d146e1f66f75b3a9",
+        "random.glsl": "c048741df1f9c8d58237d95a48ce7df8aef7cd4a9bf506229aab58fda21b5e1e",
+        "ray.glsl": "d8e0531e2724cfa6488cad550f3f3dd9f6ee443ccd02a998db02d2a1c6d21fa4",
+        "scene_set.glsl": "9dee6cdb24ffaa25109d6fd1513ce6f255e07decb2262a2addd411050c4c540e",
+        "shading.glsl": "4f7421b369f75e14fa22dc623b770f346800b8c05470fc5d682ccb4f2d52efc4",
+        "shadow.rmiss": "655fd75401ea3aec9620615f9714ca6e4f29301d8c8263e92d610dca64cd4c5b"
+      },
+      "camera_entity_position": [
+        0.0,
+        -0.800000011920929,
+        1.0
+      ],
+      "camera_entity_quaternion_wxyz": [
+        0.7071067690849304,
+        0.0,
+        0.0,
+        0.7071067690849304
+      ],
+      "sampling": "same validated local shifted-halton derivative; distinct explicit seed, fresh camera and no history",
+      "attachments": {
+        "entities": 11,
+        "cameras": 1,
+        "bodies": 8,
+        "lights": 2
+      }
+    },
+    {
+      "label": "pt-depth6-seed2",
+      "depth": 6,
+      "seed": 2,
+      "spp": 512,
+      "wall_ms": 208.60760001232848,
+      "hdr_file": "pt-depth6-seed2.hdr-rgba-f32.raw",
+      "hdr_sha256": "2719091287189b6ff4e34edae6d4c0613ac18c39270cb2726ee8920ada8771ca",
+      "png_sha256": "66e010f699e787e53557a8ea90e99e303aa6b106fa59d0ea750186f419c02c5d",
+      "roi_proof": {
+        "bright": {
+          "passed": true,
+          "expected_instance": 5,
+          "observed_instances": [
+            5
+          ],
+          "forward_depth_min": 1.799999713897705,
+          "forward_depth_max": 1.8000001907348633,
+          "expected_forward_depth": 1.8
+        },
+        "shadow": {
+          "passed": true,
+          "expected_instance": 5,
+          "observed_instances": [
+            5
+          ],
+          "forward_depth_min": 1.7999998331069946,
+          "forward_depth_max": 1.8000001907348633,
+          "expected_forward_depth": 1.8
+        },
+        "red": {
+          "passed": true,
+          "expected_instance": 7,
+          "observed_instances": [
+            7
+          ],
+          "forward_depth_min": 1.7899997234344482,
+          "forward_depth_max": 1.7900002002716064,
+          "expected_forward_depth": 1.79
+        }
+      },
+      "roi_luminance": {
+        "bright": 0.027596019218971018,
+        "shadow": 0.0143825597817963,
+        "red": 0.007788560582947831,
+        "white": 0.0226409719300305
+      },
+      "shader_sha256": {
+        "camera.rahit": "d8ea7b3f25ad85d35ccd3f8e6b19dafaa550cc1611534ebe1ab4830e09da4316",
+        "camera.rchit": "ac50141873cc48aa528e80b8d6ae9cc829007065d3501386ac1e674e54d2b8d4",
+        "camera.rgen": "d629fbac50f7d6a9da5ce0541e61128b4df4e30e24ed5dad77b3296c14c66a73",
+        "camera.rmiss": "2e994c1f0ab1c1a3757985b0f3778e31a53b8c0adf36d144348c1b0ed3ff4cd5",
+        "geometry.glsl": "15940bb8da1d218b559224aeec677e0389b4209bf2db91b51984593cea394e13",
+        "ggx.glsl": "5ab041456425c4f367d8b6ee1656c2d78f11efc47258a90b99a391fe3ad16510",
+        "grain.glsl": "c07a4dc390bc061b17c1ffdbf3396bd3922df18bbf452020e49adb0253d9e013",
+        "light.glsl": "052f49a733587f1ad3bd0ec7644e0c6c55338486bf130aa3689677cf3bcf949a",
+        "point.glsl": "9820444b5e2650b1ceb42890512f01dd2a49243f96a64c3870fa540728cce8ee",
+        "point.rchit": "10adad9e441e8aa35db02ac0d55148fccc82059a820013f4ef80c2bcca05700b",
+        "point.rint": "61bcbc125898a8bcef739be93fee16092f9849c3b2ad5447d9895a3541dab2e8",
+        "point_aabb.comp": "91f08e018b77020f2e3f50afc2f6100f8d26876f987e1b0c0b7bdd6e7cfc79e5",
+        "postprocessing.comp": "2c83ed1c320dfc28252cb19acbb01bcaaef0a4ad7b272335e5b500456815cb9a",
+        "push_constant.glsl": "29b0c0322fc97010e12deca44f451b1cfa479a60b0b6f8d3d146e1f66f75b3a9",
+        "random.glsl": "c048741df1f9c8d58237d95a48ce7df8aef7cd4a9bf506229aab58fda21b5e1e",
+        "ray.glsl": "d8e0531e2724cfa6488cad550f3f3dd9f6ee443ccd02a998db02d2a1c6d21fa4",
+        "scene_set.glsl": "9dee6cdb24ffaa25109d6fd1513ce6f255e07decb2262a2addd411050c4c540e",
+        "shading.glsl": "4f7421b369f75e14fa22dc623b770f346800b8c05470fc5d682ccb4f2d52efc4",
+        "shadow.rmiss": "655fd75401ea3aec9620615f9714ca6e4f29301d8c8263e92d610dca64cd4c5b"
+      },
+      "camera_entity_position": [
+        0.0,
+        -0.800000011920929,
+        1.0
+      ],
+      "camera_entity_quaternion_wxyz": [
+        0.7071067690849304,
+        0.0,
+        0.0,
+        0.7071067690849304
+      ],
+      "sampling": "same validated local shifted-halton derivative; distinct explicit seed, fresh camera and no history",
+      "attachments": {
+        "entities": 11,
+        "cameras": 1,
+        "bodies": 8,
+        "lights": 2
+      }
+    },
+    {
+      "label": "pt-depth0-seed3",
+      "depth": 0,
+      "seed": 3,
+      "spp": 512,
+      "wall_ms": 448.7137999967672,
+      "hdr_file": "pt-depth0-seed3.hdr-rgba-f32.raw",
+      "hdr_sha256": "86002cd60c1fc2628a2c5de433f4f71c024693104bb1adb1e2fbc933f5672048",
+      "png_sha256": "9388ecc5b67dfbb1d4983a193fde16b4bc115ea390b658c65115dfa906f51588",
+      "roi_proof": {
+        "bright": {
+          "passed": true,
+          "expected_instance": 5,
+          "observed_instances": [
+            5
+          ],
+          "forward_depth_min": 1.799999713897705,
+          "forward_depth_max": 1.8000001907348633,
+          "expected_forward_depth": 1.8
+        },
+        "shadow": {
+          "passed": true,
+          "expected_instance": 5,
+          "observed_instances": [
+            5
+          ],
+          "forward_depth_min": 1.7999998331069946,
+          "forward_depth_max": 1.8000001907348633,
+          "expected_forward_depth": 1.8
+        },
+        "red": {
+          "passed": true,
+          "expected_instance": 7,
+          "observed_instances": [
+            7
+          ],
+          "forward_depth_min": 1.7899999618530273,
+          "forward_depth_max": 1.7900002002716064,
+          "expected_forward_depth": 1.79
+        }
+      },
+      "roi_luminance": {
+        "bright": 0.016334015058676248,
+        "shadow": 0.0038574662455897,
+        "red": 0.004196646199416574,
+        "white": 0.011655309253768792
+      },
+      "shader_sha256": {
+        "camera.rahit": "d8ea7b3f25ad85d35ccd3f8e6b19dafaa550cc1611534ebe1ab4830e09da4316",
+        "camera.rchit": "ac50141873cc48aa528e80b8d6ae9cc829007065d3501386ac1e674e54d2b8d4",
+        "camera.rgen": "7908456b4b8841711cc7b47eec1ce8fe649e23c8439b385be674d0c573e581e0",
+        "camera.rmiss": "2e994c1f0ab1c1a3757985b0f3778e31a53b8c0adf36d144348c1b0ed3ff4cd5",
+        "geometry.glsl": "15940bb8da1d218b559224aeec677e0389b4209bf2db91b51984593cea394e13",
+        "ggx.glsl": "5ab041456425c4f367d8b6ee1656c2d78f11efc47258a90b99a391fe3ad16510",
+        "grain.glsl": "c07a4dc390bc061b17c1ffdbf3396bd3922df18bbf452020e49adb0253d9e013",
+        "light.glsl": "052f49a733587f1ad3bd0ec7644e0c6c55338486bf130aa3689677cf3bcf949a",
+        "point.glsl": "9820444b5e2650b1ceb42890512f01dd2a49243f96a64c3870fa540728cce8ee",
+        "point.rchit": "10adad9e441e8aa35db02ac0d55148fccc82059a820013f4ef80c2bcca05700b",
+        "point.rint": "61bcbc125898a8bcef739be93fee16092f9849c3b2ad5447d9895a3541dab2e8",
+        "point_aabb.comp": "91f08e018b77020f2e3f50afc2f6100f8d26876f987e1b0c0b7bdd6e7cfc79e5",
+        "postprocessing.comp": "2c83ed1c320dfc28252cb19acbb01bcaaef0a4ad7b272335e5b500456815cb9a",
+        "push_constant.glsl": "29b0c0322fc97010e12deca44f451b1cfa479a60b0b6f8d3d146e1f66f75b3a9",
+        "random.glsl": "c048741df1f9c8d58237d95a48ce7df8aef7cd4a9bf506229aab58fda21b5e1e",
+        "ray.glsl": "d8e0531e2724cfa6488cad550f3f3dd9f6ee443ccd02a998db02d2a1c6d21fa4",
+        "scene_set.glsl": "9dee6cdb24ffaa25109d6fd1513ce6f255e07decb2262a2addd411050c4c540e",
+        "shading.glsl": "4f7421b369f75e14fa22dc623b770f346800b8c05470fc5d682ccb4f2d52efc4",
+        "shadow.rmiss": "655fd75401ea3aec9620615f9714ca6e4f29301d8c8263e92d610dca64cd4c5b"
+      },
+      "camera_entity_position": [
+        0.0,
+        -0.800000011920929,
+        1.0
+      ],
+      "camera_entity_quaternion_wxyz": [
+        0.7071067690849304,
+        0.0,
+        0.0,
+        0.7071067690849304
+      ],
+      "sampling": "same validated local shifted-halton derivative; distinct explicit seed, fresh camera and no history",
+      "attachments": {
+        "entities": 11,
+        "cameras": 1,
+        "bodies": 8,
+        "lights": 2
+      }
+    },
+    {
+      "label": "pt-depth1-seed3",
+      "depth": 1,
+      "seed": 3,
+      "spp": 512,
+      "wall_ms": 65.65190001856536,
+      "hdr_file": "pt-depth1-seed3.hdr-rgba-f32.raw",
+      "hdr_sha256": "059bae1c13b5c1efc3fffc0e7196d48c50da45c026c8eae1e7d2dfdc568dc109",
+      "png_sha256": "89a8d248db4fb3a8624fcdfad017398919b115521dd32e7e5aea375dc915853b",
+      "roi_proof": {
+        "bright": {
+          "passed": true,
+          "expected_instance": 5,
+          "observed_instances": [
+            5
+          ],
+          "forward_depth_min": 1.799999713897705,
+          "forward_depth_max": 1.8000001907348633,
+          "expected_forward_depth": 1.8
+        },
+        "shadow": {
+          "passed": true,
+          "expected_instance": 5,
+          "observed_instances": [
+            5
+          ],
+          "forward_depth_min": 1.7999998331069946,
+          "forward_depth_max": 1.8000001907348633,
+          "expected_forward_depth": 1.8
+        },
+        "red": {
+          "passed": true,
+          "expected_instance": 7,
+          "observed_instances": [
+            7
+          ],
+          "forward_depth_min": 1.7899999618530273,
+          "forward_depth_max": 1.7900002002716064,
+          "expected_forward_depth": 1.79
+        }
+      },
+      "roi_luminance": {
+        "bright": 0.021820531659402884,
+        "shadow": 0.008760286527424275,
+        "red": 0.006014603298613657,
+        "white": 0.016922939734910904
+      },
+      "shader_sha256": {
+        "camera.rahit": "d8ea7b3f25ad85d35ccd3f8e6b19dafaa550cc1611534ebe1ab4830e09da4316",
+        "camera.rchit": "ac50141873cc48aa528e80b8d6ae9cc829007065d3501386ac1e674e54d2b8d4",
+        "camera.rgen": "7908456b4b8841711cc7b47eec1ce8fe649e23c8439b385be674d0c573e581e0",
+        "camera.rmiss": "2e994c1f0ab1c1a3757985b0f3778e31a53b8c0adf36d144348c1b0ed3ff4cd5",
+        "geometry.glsl": "15940bb8da1d218b559224aeec677e0389b4209bf2db91b51984593cea394e13",
+        "ggx.glsl": "5ab041456425c4f367d8b6ee1656c2d78f11efc47258a90b99a391fe3ad16510",
+        "grain.glsl": "c07a4dc390bc061b17c1ffdbf3396bd3922df18bbf452020e49adb0253d9e013",
+        "light.glsl": "052f49a733587f1ad3bd0ec7644e0c6c55338486bf130aa3689677cf3bcf949a",
+        "point.glsl": "9820444b5e2650b1ceb42890512f01dd2a49243f96a64c3870fa540728cce8ee",
+        "point.rchit": "10adad9e441e8aa35db02ac0d55148fccc82059a820013f4ef80c2bcca05700b",
+        "point.rint": "61bcbc125898a8bcef739be93fee16092f9849c3b2ad5447d9895a3541dab2e8",
+        "point_aabb.comp": "91f08e018b77020f2e3f50afc2f6100f8d26876f987e1b0c0b7bdd6e7cfc79e5",
+        "postprocessing.comp": "2c83ed1c320dfc28252cb19acbb01bcaaef0a4ad7b272335e5b500456815cb9a",
+        "push_constant.glsl": "29b0c0322fc97010e12deca44f451b1cfa479a60b0b6f8d3d146e1f66f75b3a9",
+        "random.glsl": "c048741df1f9c8d58237d95a48ce7df8aef7cd4a9bf506229aab58fda21b5e1e",
+        "ray.glsl": "d8e0531e2724cfa6488cad550f3f3dd9f6ee443ccd02a998db02d2a1c6d21fa4",
+        "scene_set.glsl": "9dee6cdb24ffaa25109d6fd1513ce6f255e07decb2262a2addd411050c4c540e",
+        "shading.glsl": "4f7421b369f75e14fa22dc623b770f346800b8c05470fc5d682ccb4f2d52efc4",
+        "shadow.rmiss": "655fd75401ea3aec9620615f9714ca6e4f29301d8c8263e92d610dca64cd4c5b"
+      },
+      "camera_entity_position": [
+        0.0,
+        -0.800000011920929,
+        1.0
+      ],
+      "camera_entity_quaternion_wxyz": [
+        0.7071067690849304,
+        0.0,
+        0.0,
+        0.7071067690849304
+      ],
+      "sampling": "same validated local shifted-halton derivative; distinct explicit seed, fresh camera and no history",
+      "attachments": {
+        "entities": 11,
+        "cameras": 1,
+        "bodies": 8,
+        "lights": 2
+      }
+    },
+    {
+      "label": "pt-depth2-seed3",
+      "depth": 2,
+      "seed": 3,
+      "spp": 512,
+      "wall_ms": 93.47280004294589,
+      "hdr_file": "pt-depth2-seed3.hdr-rgba-f32.raw",
+      "hdr_sha256": "7a590d5c4dc6a457d0af8082624a9bd6806b4bccb4a37f0fe25da368fcb22bcb",
+      "png_sha256": "956ee10e2f116d8700dc9a5ccc1ed007fdab2689066962c0fffb5d574a808e09",
+      "roi_proof": {
+        "bright": {
+          "passed": true,
+          "expected_instance": 5,
+          "observed_instances": [
+            5
+          ],
+          "forward_depth_min": 1.799999713897705,
+          "forward_depth_max": 1.8000001907348633,
+          "expected_forward_depth": 1.8
+        },
+        "shadow": {
+          "passed": true,
+          "expected_instance": 5,
+          "observed_instances": [
+            5
+          ],
+          "forward_depth_min": 1.7999998331069946,
+          "forward_depth_max": 1.8000001907348633,
+          "expected_forward_depth": 1.8
+        },
+        "red": {
+          "passed": true,
+          "expected_instance": 7,
+          "observed_instances": [
+            7
+          ],
+          "forward_depth_min": 1.7899999618530273,
+          "forward_depth_max": 1.7900002002716064,
+          "expected_forward_depth": 1.79
+        }
+      },
+      "roi_luminance": {
+        "bright": 0.02470160424389876,
+        "shadow": 0.011462774821744922,
+        "red": 0.006893068522245012,
+        "white": 0.019737043210591075
+      },
+      "shader_sha256": {
+        "camera.rahit": "d8ea7b3f25ad85d35ccd3f8e6b19dafaa550cc1611534ebe1ab4830e09da4316",
+        "camera.rchit": "ac50141873cc48aa528e80b8d6ae9cc829007065d3501386ac1e674e54d2b8d4",
+        "camera.rgen": "7908456b4b8841711cc7b47eec1ce8fe649e23c8439b385be674d0c573e581e0",
+        "camera.rmiss": "2e994c1f0ab1c1a3757985b0f3778e31a53b8c0adf36d144348c1b0ed3ff4cd5",
+        "geometry.glsl": "15940bb8da1d218b559224aeec677e0389b4209bf2db91b51984593cea394e13",
+        "ggx.glsl": "5ab041456425c4f367d8b6ee1656c2d78f11efc47258a90b99a391fe3ad16510",
+        "grain.glsl": "c07a4dc390bc061b17c1ffdbf3396bd3922df18bbf452020e49adb0253d9e013",
+        "light.glsl": "052f49a733587f1ad3bd0ec7644e0c6c55338486bf130aa3689677cf3bcf949a",
+        "point.glsl": "9820444b5e2650b1ceb42890512f01dd2a49243f96a64c3870fa540728cce8ee",
+        "point.rchit": "10adad9e441e8aa35db02ac0d55148fccc82059a820013f4ef80c2bcca05700b",
+        "point.rint": "61bcbc125898a8bcef739be93fee16092f9849c3b2ad5447d9895a3541dab2e8",
+        "point_aabb.comp": "91f08e018b77020f2e3f50afc2f6100f8d26876f987e1b0c0b7bdd6e7cfc79e5",
+        "postprocessing.comp": "2c83ed1c320dfc28252cb19acbb01bcaaef0a4ad7b272335e5b500456815cb9a",
+        "push_constant.glsl": "29b0c0322fc97010e12deca44f451b1cfa479a60b0b6f8d3d146e1f66f75b3a9",
+        "random.glsl": "c048741df1f9c8d58237d95a48ce7df8aef7cd4a9bf506229aab58fda21b5e1e",
+        "ray.glsl": "d8e0531e2724cfa6488cad550f3f3dd9f6ee443ccd02a998db02d2a1c6d21fa4",
+        "scene_set.glsl": "9dee6cdb24ffaa25109d6fd1513ce6f255e07decb2262a2addd411050c4c540e",
+        "shading.glsl": "4f7421b369f75e14fa22dc623b770f346800b8c05470fc5d682ccb4f2d52efc4",
+        "shadow.rmiss": "655fd75401ea3aec9620615f9714ca6e4f29301d8c8263e92d610dca64cd4c5b"
+      },
+      "camera_entity_position": [
+        0.0,
+        -0.800000011920929,
+        1.0
+      ],
+      "camera_entity_quaternion_wxyz": [
+        0.7071067690849304,
+        0.0,
+        0.0,
+        0.7071067690849304
+      ],
+      "sampling": "same validated local shifted-halton derivative; distinct explicit seed, fresh camera and no history",
+      "attachments": {
+        "entities": 11,
+        "cameras": 1,
+        "bodies": 8,
+        "lights": 2
+      }
+    },
+    {
+      "label": "pt-depth6-seed3",
+      "depth": 6,
+      "seed": 3,
+      "spp": 512,
+      "wall_ms": 207.39359996514395,
+      "hdr_file": "pt-depth6-seed3.hdr-rgba-f32.raw",
+      "hdr_sha256": "625dc09185e562cae7bfa07c0a49ad9863403c96880cd92e31e54283f7ef425f",
+      "png_sha256": "6bdec4e54ea1175677b41b8013ce8f6a7422a55a9735000611ee06e7cc5b09b8",
+      "roi_proof": {
+        "bright": {
+          "passed": true,
+          "expected_instance": 5,
+          "observed_instances": [
+            5
+          ],
+          "forward_depth_min": 1.799999713897705,
+          "forward_depth_max": 1.8000001907348633,
+          "expected_forward_depth": 1.8
+        },
+        "shadow": {
+          "passed": true,
+          "expected_instance": 5,
+          "observed_instances": [
+            5
+          ],
+          "forward_depth_min": 1.7999998331069946,
+          "forward_depth_max": 1.8000001907348633,
+          "expected_forward_depth": 1.8
+        },
+        "red": {
+          "passed": true,
+          "expected_instance": 7,
+          "observed_instances": [
+            7
+          ],
+          "forward_depth_min": 1.7899999618530273,
+          "forward_depth_max": 1.7900002002716064,
+          "expected_forward_depth": 1.79
+        }
+      },
+      "roi_luminance": {
+        "bright": 0.027598522325478495,
+        "shadow": 0.014369889077278009,
+        "red": 0.007792549392148502,
+        "white": 0.02263778485740331
+      },
+      "shader_sha256": {
+        "camera.rahit": "d8ea7b3f25ad85d35ccd3f8e6b19dafaa550cc1611534ebe1ab4830e09da4316",
+        "camera.rchit": "ac50141873cc48aa528e80b8d6ae9cc829007065d3501386ac1e674e54d2b8d4",
+        "camera.rgen": "7908456b4b8841711cc7b47eec1ce8fe649e23c8439b385be674d0c573e581e0",
+        "camera.rmiss": "2e994c1f0ab1c1a3757985b0f3778e31a53b8c0adf36d144348c1b0ed3ff4cd5",
+        "geometry.glsl": "15940bb8da1d218b559224aeec677e0389b4209bf2db91b51984593cea394e13",
+        "ggx.glsl": "5ab041456425c4f367d8b6ee1656c2d78f11efc47258a90b99a391fe3ad16510",
+        "grain.glsl": "c07a4dc390bc061b17c1ffdbf3396bd3922df18bbf452020e49adb0253d9e013",
+        "light.glsl": "052f49a733587f1ad3bd0ec7644e0c6c55338486bf130aa3689677cf3bcf949a",
+        "point.glsl": "9820444b5e2650b1ceb42890512f01dd2a49243f96a64c3870fa540728cce8ee",
+        "point.rchit": "10adad9e441e8aa35db02ac0d55148fccc82059a820013f4ef80c2bcca05700b",
+        "point.rint": "61bcbc125898a8bcef739be93fee16092f9849c3b2ad5447d9895a3541dab2e8",
+        "point_aabb.comp": "91f08e018b77020f2e3f50afc2f6100f8d26876f987e1b0c0b7bdd6e7cfc79e5",
+        "postprocessing.comp": "2c83ed1c320dfc28252cb19acbb01bcaaef0a4ad7b272335e5b500456815cb9a",
+        "push_constant.glsl": "29b0c0322fc97010e12deca44f451b1cfa479a60b0b6f8d3d146e1f66f75b3a9",
+        "random.glsl": "c048741df1f9c8d58237d95a48ce7df8aef7cd4a9bf506229aab58fda21b5e1e",
+        "ray.glsl": "d8e0531e2724cfa6488cad550f3f3dd9f6ee443ccd02a998db02d2a1c6d21fa4",
+        "scene_set.glsl": "9dee6cdb24ffaa25109d6fd1513ce6f255e07decb2262a2addd411050c4c540e",
+        "shading.glsl": "4f7421b369f75e14fa22dc623b770f346800b8c05470fc5d682ccb4f2d52efc4",
+        "shadow.rmiss": "655fd75401ea3aec9620615f9714ca6e4f29301d8c8263e92d610dca64cd4c5b"
+      },
+      "camera_entity_position": [
+        0.0,
+        -0.800000011920929,
+        1.0
+      ],
+      "camera_entity_quaternion_wxyz": [
+        0.7071067690849304,
+        0.0,
+        0.0,
+        0.7071067690849304
+      ],
+      "sampling": "same validated local shifted-halton derivative; distinct explicit seed, fresh camera and no history",
+      "attachments": {
+        "entities": 11,
+        "cameras": 1,
+        "bodies": 8,
+        "lights": 2
+      }
+    }
+  ],
+  "geometry": [
+    {
+      "id": 1,
+      "name": "floor",
+      "vertices_f32": [
+        [
+          -1.0,
+          -1.0,
+          0.0
+        ],
+        [
+          1.0,
+          -1.0,
+          0.0
+        ],
+        [
+          1.0,
+          1.0,
+          0.0
+        ],
+        [
+          -1.0,
+          1.0,
+          0.0
+        ]
+      ],
+      "triangles": [
+        [
+          0,
+          1,
+          2
+        ],
+        [
+          0,
+          2,
+          3
+        ]
+      ],
+      "normals_f32": [
+        [
+          0.0,
+          0.0,
+          1.0
+        ],
+        [
+          0.0,
+          0.0,
+          1.0
+        ],
+        [
+          0.0,
+          0.0,
+          1.0
+        ],
+        [
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "vertex_sha256": "1f1d9c112b773a22e8643ecc1bec5eeec896f5f421c617448309de603c87db1a",
+      "index_sha256": "fe78c65211dd0b56a97024fb61111e686ef1fe054aa132ba58e2891ac496f1ee",
+      "material": {
+        "base_color": [
+          0.44999998807907104,
+          0.44999998807907104,
+          0.44999998807907104,
+          1.0
+        ],
+        "metallic": 0.0,
+        "roughness": 1.0,
+        "specular": 0.0
+      }
+    },
+    {
+      "id": 2,
+      "name": "ceiling",
+      "vertices_f32": [
+        [
+          -1.0,
+          1.0,
+          2.0
+        ],
+        [
+          1.0,
+          1.0,
+          2.0
+        ],
+        [
+          1.0,
+          -1.0,
+          2.0
+        ],
+        [
+          -1.0,
+          -1.0,
+          2.0
+        ]
+      ],
+      "triangles": [
+        [
+          0,
+          1,
+          2
+        ],
+        [
+          0,
+          2,
+          3
+        ]
+      ],
+      "normals_f32": [
+        [
+          0.0,
+          0.0,
+          -1.0
+        ],
+        [
+          0.0,
+          0.0,
+          -1.0
+        ],
+        [
+          0.0,
+          0.0,
+          -1.0
+        ],
+        [
+          0.0,
+          0.0,
+          -1.0
+        ]
+      ],
+      "vertex_sha256": "102986449f4fc202e7d41f4bdfbe9b8a5a46c96254eefe3f8afaef8c71231f42",
+      "index_sha256": "fe78c65211dd0b56a97024fb61111e686ef1fe054aa132ba58e2891ac496f1ee",
+      "material": {
+        "base_color": [
+          0.550000011920929,
+          0.550000011920929,
+          0.550000011920929,
+          1.0
+        ],
+        "metallic": 0.0,
+        "roughness": 1.0,
+        "specular": 0.0
+      }
+    },
+    {
+      "id": 3,
+      "name": "left",
+      "vertices_f32": [
+        [
+          -1.0,
+          -1.0,
+          0.0
+        ],
+        [
+          -1.0,
+          1.0,
+          0.0
+        ],
+        [
+          -1.0,
+          1.0,
+          2.0
+        ],
+        [
+          -1.0,
+          -1.0,
+          2.0
+        ]
+      ],
+      "triangles": [
+        [
+          0,
+          1,
+          2
+        ],
+        [
+          0,
+          2,
+          3
+        ]
+      ],
+      "normals_f32": [
+        [
+          1.0,
+          0.0,
+          0.0
+        ],
+        [
+          1.0,
+          0.0,
+          0.0
+        ],
+        [
+          1.0,
+          0.0,
+          0.0
+        ],
+        [
+          1.0,
+          0.0,
+          0.0
+        ]
+      ],
+      "vertex_sha256": "5ebc59c86f0feccb37105a53ad5b66a83349bd38f40716e878167c6714ad5522",
+      "index_sha256": "fe78c65211dd0b56a97024fb61111e686ef1fe054aa132ba58e2891ac496f1ee",
+      "material": {
+        "base_color": [
+          0.5,
+          0.550000011920929,
+          0.6000000238418579,
+          1.0
+        ],
+        "metallic": 0.0,
+        "roughness": 1.0,
+        "specular": 0.0
+      }
+    },
+    {
+      "id": 4,
+      "name": "right",
+      "vertices_f32": [
+        [
+          1.0,
+          1.0,
+          0.0
+        ],
+        [
+          1.0,
+          -1.0,
+          0.0
+        ],
+        [
+          1.0,
+          -1.0,
+          2.0
+        ],
+        [
+          1.0,
+          1.0,
+          2.0
+        ]
+      ],
+      "triangles": [
+        [
+          0,
+          1,
+          2
+        ],
+        [
+          0,
+          2,
+          3
+        ]
+      ],
+      "normals_f32": [
+        [
+          -1.0,
+          0.0,
+          0.0
+        ],
+        [
+          -1.0,
+          0.0,
+          0.0
+        ],
+        [
+          -1.0,
+          0.0,
+          0.0
+        ],
+        [
+          -1.0,
+          0.0,
+          0.0
+        ]
+      ],
+      "vertex_sha256": "4204a1db063f9a749e5c955f43608e4640d11a2842d5575633d82d363179b693",
+      "index_sha256": "fe78c65211dd0b56a97024fb61111e686ef1fe054aa132ba58e2891ac496f1ee",
+      "material": {
+        "base_color": [
+          0.6000000238418579,
+          0.550000011920929,
+          0.44999998807907104,
+          1.0
+        ],
+        "metallic": 0.0,
+        "roughness": 1.0,
+        "specular": 0.0
+      }
+    },
+    {
+      "id": 5,
+      "name": "back",
+      "vertices_f32": [
+        [
+          -1.0,
+          1.0,
+          0.0
+        ],
+        [
+          1.0,
+          1.0,
+          0.0
+        ],
+        [
+          1.0,
+          1.0,
+          2.0
+        ],
+        [
+          -1.0,
+          1.0,
+          2.0
+        ]
+      ],
+      "triangles": [
+        [
+          0,
+          1,
+          2
+        ],
+        [
+          0,
+          2,
+          3
+        ]
+      ],
+      "normals_f32": [
+        [
+          0.0,
+          -1.0,
+          0.0
+        ],
+        [
+          0.0,
+          -1.0,
+          0.0
+        ],
+        [
+          0.0,
+          -1.0,
+          0.0
+        ],
+        [
+          0.0,
+          -1.0,
+          0.0
+        ]
+      ],
+      "vertex_sha256": "ab013588b8ef697494405d329dc0271d961e29445a609ab9f6f700e86a6f7d8c",
+      "index_sha256": "fe78c65211dd0b56a97024fb61111e686ef1fe054aa132ba58e2891ac496f1ee",
+      "material": {
+        "base_color": [
+          0.6000000238418579,
+          0.6000000238418579,
+          0.6000000238418579,
+          1.0
+        ],
+        "metallic": 0.0,
+        "roughness": 1.0,
+        "specular": 0.0
+      }
+    },
+    {
+      "id": 6,
+      "name": "front",
+      "vertices_f32": [
+        [
+          1.0,
+          -1.0,
+          0.0
+        ],
+        [
+          -1.0,
+          -1.0,
+          0.0
+        ],
+        [
+          -1.0,
+          -1.0,
+          2.0
+        ],
+        [
+          1.0,
+          -1.0,
+          2.0
+        ]
+      ],
+      "triangles": [
+        [
+          0,
+          1,
+          2
+        ],
+        [
+          0,
+          2,
+          3
+        ]
+      ],
+      "normals_f32": [
+        [
+          0.0,
+          1.0,
+          -0.0
+        ],
+        [
+          0.0,
+          1.0,
+          -0.0
+        ],
+        [
+          0.0,
+          1.0,
+          -0.0
+        ],
+        [
+          0.0,
+          1.0,
+          -0.0
+        ]
+      ],
+      "vertex_sha256": "7a5568cdbc469c771672bff243a6c7ffecc498656adc67a6094dbea130cacd2e",
+      "index_sha256": "fe78c65211dd0b56a97024fb61111e686ef1fe054aa132ba58e2891ac496f1ee",
+      "material": {
+        "base_color": [
+          0.6000000238418579,
+          0.6000000238418579,
+          0.6000000238418579,
+          1.0
+        ],
+        "metallic": 0.0,
+        "roughness": 1.0,
+        "specular": 0.0
+      }
+    },
+    {
+      "id": 7,
+      "name": "red",
+      "vertices_f32": [
+        [
+          -0.699999988079071,
+          0.9900000095367432,
+          0.15000000596046448
+        ],
+        [
+          -0.30000001192092896,
+          0.9900000095367432,
+          0.15000000596046448
+        ],
+        [
+          -0.30000001192092896,
+          0.9900000095367432,
+          0.550000011920929
+        ],
+        [
+          -0.699999988079071,
+          0.9900000095367432,
+          0.550000011920929
+        ]
+      ],
+      "triangles": [
+        [
+          0,
+          1,
+          2
+        ],
+        [
+          0,
+          2,
+          3
+        ]
+      ],
+      "normals_f32": [
+        [
+          0.0,
+          -1.0,
+          0.0
+        ],
+        [
+          0.0,
+          -1.0,
+          0.0
+        ],
+        [
+          0.0,
+          -1.0,
+          0.0
+        ],
+        [
+          0.0,
+          -1.0,
+          0.0
+        ]
+      ],
+      "vertex_sha256": "e21cbce466dc27d30f69d6c3c12210cd470b8fcefdf734c2885e249b9c4cdf7f",
+      "index_sha256": "fe78c65211dd0b56a97024fb61111e686ef1fe054aa132ba58e2891ac496f1ee",
+      "material": {
+        "base_color": [
+          0.800000011920929,
+          0.019999999552965164,
+          0.019999999552965164,
+          1.0
+        ],
+        "metallic": 0.0,
+        "roughness": 1.0,
+        "specular": 0.0
+      }
+    },
+    {
+      "id": 8,
+      "name": "baffle",
+      "vertices_f32": [
+        [
+          0.0,
+          0.20000000298023224,
+          0.4000000059604645
+        ],
+        [
+          0.20000000298023224,
+          0.20000000298023224,
+          0.4000000059604645
+        ],
+        [
+          0.20000000298023224,
+          0.20000000298023224,
+          1.2999999523162842
+        ],
+        [
+          0.0,
+          0.20000000298023224,
+          1.2999999523162842
+        ]
+      ],
+      "triangles": [
+        [
+          0,
+          1,
+          2
+        ],
+        [
+          0,
+          2,
+          3
+        ]
+      ],
+      "normals_f32": [
+        [
+          0.0,
+          -1.0,
+          0.0
+        ],
+        [
+          0.0,
+          -1.0,
+          0.0
+        ],
+        [
+          0.0,
+          -1.0,
+          0.0
+        ],
+        [
+          0.0,
+          -1.0,
+          0.0
+        ]
+      ],
+      "vertex_sha256": "3092cf54b614ef7e995cc98812ddf099b7957b3e687a810566afce377821f292",
+      "index_sha256": "fe78c65211dd0b56a97024fb61111e686ef1fe054aa132ba58e2891ac496f1ee",
+      "material": {
+        "base_color": [
+          0.11999999731779099,
+          0.11999999731779099,
+          0.11999999731779099,
+          1.0
+        ],
+        "metallic": 0.0,
+        "roughness": 1.0,
+        "specular": 0.0
+      }
+    }
+  ],
+  "actual_lights": [
+    {
+      "name": "key",
+      "position": [
+        -0.41999998688697815,
+        -0.49000000953674316,
+        1.3799999952316284
+      ],
+      "quaternion_wxyz": [
+        0.8560637831687927,
+        -0.0,
+        0.4079926908016205,
+        0.3173276484012604
+      ],
+      "half_width": 0.2800000011920929,
+      "half_height": 0.19249999523162842,
+      "angle": 1.5707963705062866,
+      "color": [
+        1.2000000476837158,
+        1.2000000476837158,
+        1.2000000476837158
+      ],
+      "declared": {
+        "name": "key",
+        "center": [
+          -0.42,
+          -0.48999999999999994,
+          1.38
+        ],
+        "direction": [
+          0.4656903154237997,
+          0.543305367994433,
+          -0.6985354731356995
+        ],
+        "half_u": [
+          -0.15212550303844122,
+          0.22360977790472714,
+          0.07250171412249362
+        ],
+        "half_v": [
+          0.13446807857862217,
+          0.04984492845921437,
+          0.12841366340958152
+        ],
+        "half_size": [
+          0.27999999999999997,
+          0.1925
+        ],
+        "radiance": 1.2000000000000002
+      }
+    },
+    {
+      "name": "fill",
+      "position": [
+        0.49000000953674316,
+        0.24500000476837158,
+        1.1699999570846558
+      ],
+      "quaternion_wxyz": [
+        0.3809014558792114,
+        0.0,
+        0.7986634969711304,
+        -0.46588706970214844
+      ],
+      "half_width": 0.22750000655651093,
+      "half_height": 0.2800000011920929,
+      "angle": 1.5707963705062866,
+      "color": [
+        0.5,
+        0.5,
+        0.5
+      ],
+      "declared": {
+        "name": "fill",
+        "center": [
+          0.48999999999999994,
+          0.24499999999999997,
+          1.17
+        ],
+        "direction": [
+          -0.7098281771887514,
+          -0.3549140885943757,
+          -0.6084241518760726
+        ],
+        "half_u": [
+          0.08074295515522045,
+          0.1287419191439813,
+          -0.16929956718174627
+        ],
+        "half_v": [
+          0.1703587625253003,
+          -0.2083686980698416,
+          -0.07720348240544272
+        ],
+        "half_size": [
+          0.22749999999999998,
+          0.27999999999999997
+        ],
+        "radiance": 0.5
+      }
+    }
+  ],
+  "attachments": {
+    "entities": 10,
+    "cameras": 0,
+    "bodies": 8,
+    "lights": 2
+  },
+  "device": "cuda:0",
+  "source_clipping_proof": {
+    "camera_inside": true,
+    "primary_center_depth_range": [
+      1.0,
+      1.8
+    ],
+    "behind_camera_vertices": 12,
+    "public_adapter_not_used": "all-vertices clip slab would reject these real rear-wall vertices; SDK rays are directly observed below"
+  },
+  "official_shader_sha256": {
+    "camera.rahit": "d8ea7b3f25ad85d35ccd3f8e6b19dafaa550cc1611534ebe1ab4830e09da4316",
+    "camera.rchit": "ac50141873cc48aa528e80b8d6ae9cc829007065d3501386ac1e674e54d2b8d4",
+    "camera.rgen": "6cf3673d38d8af834189670a2c4f2f8884cba7d61479fd432fb508ab0ae71d17",
+    "camera.rmiss": "2e994c1f0ab1c1a3757985b0f3778e31a53b8c0adf36d144348c1b0ed3ff4cd5",
+    "geometry.glsl": "15940bb8da1d218b559224aeec677e0389b4209bf2db91b51984593cea394e13",
+    "ggx.glsl": "5ab041456425c4f367d8b6ee1656c2d78f11efc47258a90b99a391fe3ad16510",
+    "grain.glsl": "c07a4dc390bc061b17c1ffdbf3396bd3922df18bbf452020e49adb0253d9e013",
+    "light.glsl": "052f49a733587f1ad3bd0ec7644e0c6c55338486bf130aa3689677cf3bcf949a",
+    "point.glsl": "9820444b5e2650b1ceb42890512f01dd2a49243f96a64c3870fa540728cce8ee",
+    "point.rchit": "10adad9e441e8aa35db02ac0d55148fccc82059a820013f4ef80c2bcca05700b",
+    "point.rint": "61bcbc125898a8bcef739be93fee16092f9849c3b2ad5447d9895a3541dab2e8",
+    "point_aabb.comp": "91f08e018b77020f2e3f50afc2f6100f8d26876f987e1b0c0b7bdd6e7cfc79e5",
+    "postprocessing.comp": "2c83ed1c320dfc28252cb19acbb01bcaaef0a4ad7b272335e5b500456815cb9a",
+    "push_constant.glsl": "29b0c0322fc97010e12deca44f451b1cfa479a60b0b6f8d3d146e1f66f75b3a9",
+    "random.glsl": "c048741df1f9c8d58237d95a48ce7df8aef7cd4a9bf506229aab58fda21b5e1e",
+    "ray.glsl": "d8e0531e2724cfa6488cad550f3f3dd9f6ee443ccd02a998db02d2a1c6d21fa4",
+    "scene_set.glsl": "9dee6cdb24ffaa25109d6fd1513ce6f255e07decb2262a2addd411050c4c540e",
+    "shading.glsl": "4f7421b369f75e14fa22dc623b770f346800b8c05470fc5d682ccb4f2d52efc4",
+    "shadow.rmiss": "655fd75401ea3aec9620615f9714ca6e4f29301d8c8263e92d610dca64cd4c5b"
+  },
+  "energy": {
+    "0": {
+      "bright": 0.016334674091873457,
+      "shadow": 0.0038562152841986005,
+      "red": 0.004197473956412778,
+      "white": 0.011655252038995385,
+      "bright_minus_shadow": 0.012478458807674857
+    },
+    "1": {
+      "bright": 0.021837069377973205,
+      "shadow": 0.008762501745417345,
+      "red": 0.0060189655604561635,
+      "white": 0.01693410651576476,
+      "bright_minus_shadow": 0.01307456763255586
+    },
+    "2": {
+      "bright": 0.024702831292143325,
+      "shadow": 0.011468608757782495,
+      "red": 0.006898077674738634,
+      "white": 0.019739997841758013,
+      "bright_minus_shadow": 0.01323422253436083
+    },
+    "6": {
+      "bright": 0.027594518678332677,
+      "shadow": 0.01438920939314606,
+      "red": 0.007787307181620273,
+      "white": 0.022642527696387693,
+      "bright_minus_shadow": 0.013205309285186618
+    }
+  },
+  "seed_statistics": {
+    "0": {
+      "bright": {
+        "values": [
+          0.016338707853120287,
+          0.016324955699629152,
+          0.01634101775606815,
+          0.016334015058676248
+        ],
+        "sample_sd": 7.103866969959204e-06,
+        "standard_error": 3.551933484979602e-06
+      },
+      "shadow": {
+        "values": [
+          0.0038468842364040513,
+          0.003858777043238321,
+          0.003861733611562328,
+          0.0038574662455897
+        ],
+        "sample_sd": 6.4716794218357784e-06,
+        "standard_error": 3.2358397109178892e-06
+      },
+      "red": {
+        "values": [
+          0.004198290302549795,
+          0.004197992500869222,
+          0.0041969668228155205,
+          0.004196646199416574
+        ],
+        "sample_sd": 7.911332586788883e-07,
+        "standard_error": 3.9556662933944415e-07
+      },
+      "white": {
+        "values": [
+          0.011654273996851698,
+          0.011650138703482587,
+          0.011661286201878465,
+          0.011655309253768792
+        ],
+        "sample_sd": 4.601346242536156e-06,
+        "standard_error": 2.300673121268078e-06
+      }
+    },
+    "1": {
+      "bright": {
+        "values": [
+          0.021848596921609717,
+          0.0218440150587121,
+          0.021835133872168136,
+          0.021820531659402884
+        ],
+        "sample_sd": 1.2360812560277471e-05,
+        "standard_error": 6.180406280138736e-06
+      },
+      "shadow": {
+        "values": [
+          0.008745775882576516,
+          0.008768462708167111,
+          0.008775481863501482,
+          0.008760286527424275
+        ],
+        "sample_sd": 1.2762944029615346e-05,
+        "standard_error": 6.381472014807673e-06
+      },
+      "red": {
+        "values": [
+          0.006020418322383048,
+          0.006018174828570773,
+          0.006022665792257176,
+          0.006014603298613657
+        ],
+        "sample_sd": 3.4378684236306567e-06,
+        "standard_error": 1.7189342118153284e-06
+      },
+      "white": {
+        "values": [
+          0.016935039031972264,
+          0.016940682927257728,
+          0.01693776436891814,
+          0.016922939734910904
+        ],
+        "sample_sd": 7.79306655371345e-06,
+        "standard_error": 3.896533276856725e-06
+      }
+    },
+    "2": {
+      "bright": {
+        "values": [
+          0.02469418226857856,
+          0.024712455008476974,
+          0.024703083647619,
+          0.02470160424389876
+        ],
+        "sample_sd": 7.505350433190501e-06,
+        "standard_error": 3.7526752165952507e-06
+      },
+      "shadow": {
+        "values": [
+          0.011466925088337158,
+          0.011497074691643938,
+          0.011447660429403962,
+          0.011462774821744922
+        ],
+        "sample_sd": 2.070435867919707e-05,
+        "standard_error": 1.0352179339598536e-05
+      },
+      "red": {
+        "values": [
+          0.006899636035564763,
+          0.006896775189316395,
+          0.006902830951828365,
+          0.006893068522245012
+        ],
+        "sample_sd": 4.1557273144293e-06,
+        "standard_error": 2.07786365721465e-06
+      },
+      "white": {
+        "values": [
+          0.01973396082598803,
+          0.019756687389664584,
+          0.019732299940788362,
+          0.019737043210591075
+        ],
+        "sample_sd": 1.1298585359886728e-05,
+        "standard_error": 5.649292679943364e-06
+      }
+    },
+    "6": {
+      "bright": {
+        "values": [
+          0.02756672597317863,
+          0.02761680719570257,
+          0.027596019218971018,
+          0.027598522325478495
+        ],
+        "sample_sd": 2.071628408606138e-05,
+        "standard_error": 1.035814204303069e-05
+      },
+      "shadow": {
+        "values": [
+          0.014409993391163492,
+          0.014394395322346439,
+          0.0143825597817963,
+          0.014369889077278009
+        ],
+        "sample_sd": 1.7091521988050832e-05,
+        "standard_error": 8.545760994025416e-06
+      },
+      "red": {
+        "values": [
+          0.0077836675623548235,
+          0.007784451189029934,
+          0.007788560582947831,
+          0.007792549392148502
+        ],
+        "sample_sd": 4.101028658914221e-06,
+        "standard_error": 2.0505143294571105e-06
+      },
+      "white": {
+        "values": [
+          0.022632951254922953,
+          0.022658402743194018,
+          0.0226409719300305,
+          0.02263778485740331
+        ],
+        "sample_sd": 1.1085129270341838e-05,
+        "standard_error": 5.542564635170919e-06
+      }
+    }
+  },
+  "errors_to_depth6": {
+    "0": {
+      "bright": {
+        "mean": 0.016334674096433445,
+        "reference_mean": 0.027579794159779947,
+        "relative_mean_bias": -0.4077303839977689,
+        "mse": 0.00012650853283187297,
+        "rmse": 0.011247601203451026,
+        "nrmse": 0.4069577154811617,
+        "luminance": 0.016334674091873457,
+        "reference_luminance": 0.027594518678332677,
+        "luminance_relative_bias": -0.4080464210198561
+      },
+      "shadow": {
+        "mean": 0.0038562152821719387,
+        "reference_mean": 0.01422515632908067,
+        "relative_mean_bias": -0.7289157888346979,
+        "mse": 0.00010783066731107073,
+        "rmse": 0.010384154626693053,
+        "nrmse": 0.7293504091558536,
+        "luminance": 0.0038562152841986005,
+        "reference_luminance": 0.01438920939314606,
+        "luminance_relative_bias": -0.7320064515820159
+      },
+      "red": {
+        "mean": 0.006324625975897409,
+        "reference_mean": 0.011735035113573152,
+        "relative_mean_bias": -0.461047545688029,
+        "mse": 7.985466808630797e-05,
+        "rmse": 0.008936143915935328,
+        "nrmse": 0.46094301232631824,
+        "luminance": 0.004197473956412778,
+        "reference_luminance": 0.007787307181620273,
+        "luminance_relative_bias": -0.46098518287300605
+      },
+      "white": {
+        "mean": 0.011655252041085381,
+        "reference_mean": 0.022571804973267717,
+        "relative_mean_bias": -0.4836366850196982,
+        "mse": 0.00011950433326157213,
+        "rmse": 0.010931803751512013,
+        "nrmse": 0.4646844184121993,
+        "luminance": 0.011655252038995385,
+        "reference_luminance": 0.022642527696387693,
+        "luminance_relative_bias": -0.48524951828347235
+      }
+    },
+    "1": {
+      "bright": {
+        "mean": 0.02184086221541899,
+        "reference_mean": 0.027579794159779947,
+        "relative_mean_bias": -0.2080846546973194,
+        "mse": 3.296331595228945e-05,
+        "rmse": 0.0057413688221790325,
+        "nrmse": 0.20773267982615318,
+        "luminance": 0.021837069377973205,
+        "reference_luminance": 0.027594518678332677,
+        "luminance_relative_bias": -0.20864467206236298
+      },
+      "shadow": {
+        "mean": 0.008703300113524569,
+        "reference_mean": 0.01422515632908067,
+        "relative_mean_bias": -0.3881754328609872,
+        "mse": 3.062878018739392e-05,
+        "rmse": 0.00553432743767424,
+        "nrmse": 0.3887137784614856,
+        "luminance": 0.008762501745417345,
+        "reference_luminance": 0.01438920939314606,
+        "luminance_relative_bias": -0.3910366090307127
+      },
+      "red": {
+        "mean": 0.009067895360446224,
+        "reference_mean": 0.011735035113573152,
+        "relative_mean_bias": -0.22728008287269807,
+        "mse": 1.9470048567321577e-05,
+        "rmse": 0.0044124877979799075,
+        "nrmse": 0.22760437125761046,
+        "luminance": 0.0060189655604561635,
+        "reference_luminance": 0.007787307181620273,
+        "luminance_relative_bias": -0.2270799879755325
+      },
+      "white": {
+        "mean": 0.016914276427208583,
+        "reference_mean": 0.022571804973267717,
+        "relative_mean_bias": -0.2506458190986263,
+        "mse": 3.208786504045362e-05,
+        "rmse": 0.005664615171435181,
+        "nrmse": 0.24078902862697307,
+        "luminance": 0.01693410651576476,
+        "reference_luminance": 0.022642527696387693,
+        "luminance_relative_bias": -0.25211059724279955
+      }
+    },
+    "2": {
+      "bright": {
+        "mean": 0.024704497574130072,
+        "reference_mean": 0.027579794159779947,
+        "relative_mean_bias": -0.1042537362313953,
+        "mse": 8.293646309807065e-06,
+        "rmse": 0.0028798691480355606,
+        "nrmse": 0.10419865962260814,
+        "luminance": 0.024702831292143325,
+        "reference_luminance": 0.027594518678332677,
+        "luminance_relative_bias": -0.10479209367257114
+      },
+      "shadow": {
+        "mean": 0.011367963434572125,
+        "reference_mean": 0.01422515632908067,
+        "relative_mean_bias": -0.200854938139945,
+        "mse": 8.236830443715249e-06,
+        "rmse": 0.0028699878821547746,
+        "nrmse": 0.20157893553907308,
+        "luminance": 0.011468608757782495,
+        "reference_luminance": 0.01438920939314606,
+        "luminance_relative_bias": -0.2029715848568247
+      },
+      "red": {
+        "mean": 0.010393706300904644,
+        "reference_mean": 0.011735035113573152,
+        "relative_mean_bias": -0.11430121850398899,
+        "mse": 4.938553109657679e-06,
+        "rmse": 0.0022222855598814655,
+        "nrmse": 0.11462964449289814,
+        "luminance": 0.006898077674738634,
+        "reference_luminance": 0.007787307181620273,
+        "luminance_relative_bias": -0.11418960189221929
+      },
+      "white": {
+        "mean": 0.01970329727179584,
+        "reference_mean": 0.022571804973267717,
+        "relative_mean_bias": -0.12708366499130722,
+        "mse": 8.272340360022633e-06,
+        "rmse": 0.002876167651584767,
+        "nrmse": 0.12225889915447773,
+        "luminance": 0.019739997841758013,
+        "reference_luminance": 0.022642527696387693,
+        "luminance_relative_bias": -0.1281893034889713
+      }
+    }
+  },
+  "depth6_minus_depth2": {
+    "bright": 0.0028916873861893544,
+    "shadow": 0.002920600635363565,
+    "red": 0.0008892295068816385,
+    "white": 0.002902529854629683
+  },
+  "distinct_seed_frames": {
+    "0": 4,
+    "1": 4,
+    "2": 4,
+    "6": 4
+  },
+  "cleanup": {
+    "entities": 0,
+    "cameras": 0,
+    "bodies": 0,
+    "lights": 0
+  },
+  "elapsed_wall_s": 4.930015699996147
+}

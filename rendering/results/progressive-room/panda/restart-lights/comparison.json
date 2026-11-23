@@ -1,0 +1,45 @@
+{
+  "name": "lights",
+  "status": "complete",
+  "same_owner_change": true,
+  "reason": "lights",
+  "comparisons": {
+    "1": {
+      "fresh_identical": true,
+      "old_frame_rejected": true,
+      "rgb_changed": true,
+      "geometry_changed": false,
+      "actual_sha256": {
+        "srgb8_rgb": "5f81b60e2ac6c80b970d40cba2ec4125c5dd56a92f48dd774f02eeb8f91d4120",
+        "forward_depth_m_f32": "5c7eec2aee8eacd9e4eba882b9bbe2b7ea66891c6edad56b679c1471d8d61c81",
+        "instance_id_u32": "ee20d29a78562d1996a97f06a91e1bb36cdf34f4c925df5a4dc8edd7100e6641",
+        "valid_u8": "f6b1266da5f008506ef9117269e5d3c8a24a998e19002f1ba4d645199ce85fc1"
+      },
+      "linear_mean_identical": true,
+      "actual_stale_negative_rejected": true
+    },
+    "4": {
+      "fresh_identical": true,
+      "old_frame_rejected": true,
+      "rgb_changed": true,
+      "geometry_changed": false,
+      "actual_sha256": {
+        "srgb8_rgb": "83c1a09b8a21ca8547650c72bd4f46cb049dbd6ab857e3843116b59ee3c747ff",
+        "forward_depth_m_f32": "5c7eec2aee8eacd9e4eba882b9bbe2b7ea66891c6edad56b679c1471d8d61c81",
+        "instance_id_u32": "ee20d29a78562d1996a97f06a91e1bb36cdf34f4c925df5a4dc8edd7100e6641",
+        "valid_u8": "f6b1266da5f008506ef9117269e5d3c8a24a998e19002f1ba4d645199ce85fc1"
+      },
+      "linear_mean_identical": true,
+      "actual_stale_negative_rejected": true
+    }
+  },
+  "changed_owner": {
+    "file": "restart-lights/changed-owner.json",
+    "sha256": "4745bccee9d3b0a75374891881edae0c29622d178ccc516942e5af873545f1ed"
+  },
+  "fresh_owner": {
+    "file": "restart-lights/fresh-owner.json",
+    "sha256": "f05f9c2f12e02216955e14030570662d8b4e3cbad26c0d88d25cb6f3ed10e995"
+  },
+  "semantics": "fresh owner is only a replay reference; the tested mutation happened after four accumulated batches in the original owner"
+}

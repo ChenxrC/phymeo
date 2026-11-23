@@ -1,0 +1,182 @@
+{
+  "capture_ms": 55.62410003039986,
+  "frame": {
+    "key": {
+      "scene_key": "panda-diffuse-study-red-v1",
+      "world_id": "red",
+      "epoch": 0,
+      "revision": 0,
+      "tick": 0,
+      "phase": "authored"
+    },
+    "time_s": 0.0,
+    "nodes": [
+      {
+        "node_id": "panda_hand",
+        "world_pose": {
+          "position_m": [
+            0.0,
+            0.0,
+            0.18
+          ],
+          "orientation_xyzw": [
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      {
+        "node_id": "panda_leftfinger",
+        "world_pose": {
+          "position_m": [
+            0.0,
+            -0.035,
+            0.1216
+          ],
+          "orientation_xyzw": [
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      {
+        "node_id": "panda_rightfinger",
+        "world_pose": {
+          "position_m": [
+            0.0,
+            0.035,
+            0.1216
+          ],
+          "orientation_xyzw": [
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      {
+        "node_id": "board",
+        "world_pose": {
+          "position_m": [
+            0.0,
+            0.0,
+            0.037
+          ],
+          "orientation_xyzw": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        }
+      },
+      {
+        "node_id": "blocker",
+        "world_pose": {
+          "position_m": [
+            0.0,
+            0.0,
+            -0.2
+          ],
+          "orientation_xyzw": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        }
+      }
+    ]
+  },
+  "camera": {
+    "id": "fixed-gripper-camera",
+    "frame_key": {
+      "scene_key": "panda-diffuse-study-red-v1",
+      "world_id": "red",
+      "epoch": 0,
+      "revision": 0,
+      "tick": 0,
+      "phase": "authored"
+    },
+    "world_pose": {
+      "position_m": [
+        0.42,
+        0.0,
+        0.24
+      ],
+      "orientation_xyzw": [
+        -0.40732775592937565,
+        -0.4073277559293753,
+        -0.5780000858559963,
+        -0.5780000858559963
+      ]
+    },
+    "width": 1280,
+    "height": 960,
+    "fx_px": 1550.0,
+    "fy_px": 1550.0,
+    "cx_px": 640.0,
+    "cy_px": 480.0,
+    "near_m": 0.01,
+    "far_m": 3.0
+  },
+  "progressive": null,
+  "indirect": {
+    "mode": "diffuse_bounce",
+    "seed": 0,
+    "samples_per_pixel": 16,
+    "bounces": 1,
+    "estimator": "rho_d * sum(Li)/16; 4x4 stratified cosine hemisphere with hashed 23-bit open-interval jitter",
+    "diffuse_coefficient": "rho_d=(1-metallic)*albedo*(1-F0); F0=mix(.04,albedo,metallic)",
+    "environment_policy": "replace the original diffuse IBL/SH term, never add a second copy",
+    "miss_policy": "original HDR level0 radiance along sample direction, or uniform environment; zero if absent",
+    "terminal_lighting": "nearest current real TLAS triangle, original direct + studio + environment; no recursive indirect/reflection",
+    "seed_scope": "uint32 seed + capture-local integer pixel XY + sample index; no frame/time/epoch key, no accumulation",
+    "geometry_policy": "shading-normal cosine distribution clipped by oriented true face; inward/degenerate sample=0, denominator stays16",
+    "combination": "independent primary specular/diffuse lobes may share terminal shading; no additional bounce",
+    "limitations": "16 noisy samples; no denoiser, temporal history, multiple diffuse bounces or raw-HDR output attachment"
+  },
+  "effective_directional_lights": [
+    {
+      "direction": [
+        0.7071067811865475,
+        0.0,
+        -0.7071067811865475
+      ],
+      "illuminance": [
+        3.0,
+        3.0,
+        3.0
+      ]
+    }
+  ],
+  "submitted_directional_lights": [
+    {
+      "direction": [
+        0.7071067690849304,
+        0.0,
+        -0.7071067690849304
+      ],
+      "illuminance": [
+        3.0,
+        3.0,
+        3.0
+      ]
+    }
+  ],
+  "plane_sha256": {
+    "srgb8_rgb": "533d53f43cdcc20938981af2f092d8312509afa753a558c241199de0fbbd649d",
+    "forward_depth_m_f32": "5c7eec2aee8eacd9e4eba882b9bbe2b7ea66891c6edad56b679c1471d8d61c81",
+    "instance_id_u32": "ee20d29a78562d1996a97f06a91e1bb36cdf34f4c925df5a4dc8edd7100e6641",
+    "valid_u8": "f6b1266da5f008506ef9117269e5d3c8a24a998e19002f1ba4d645199ce85fc1"
+  },
+  "png": "legacy.png",
+  "png_sha256": "db801163bd9c7d1632a3f4001a0dfe1f36fc48b6165e97961732479903887289",
+  "data": "legacy.npz",
+  "data_sha256": "446207db4c6d1a435c00db7b20e597dda36e1b405b620db8ea96383835a14a8f"
+}

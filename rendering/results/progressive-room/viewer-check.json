@@ -1,0 +1,29 @@
+{
+  "browser": "Edg/154.0.4258.37",
+  "title": "夹爪暗面为什么有颗粒？ · Phymeo",
+  "comparisons": 18,
+  "originals": [
+    "panda/seed-0/batch-0004.png",
+    "panda/seed-0/batch-0016.png",
+    "panda/seed-0/batch-0064.png",
+    "room/native-depth2-seed0-batch16.png",
+    "room/pt-depth2-seed0.png",
+    "room/pt-depth6-seed0.png",
+    "panda/restart-camera/changed-b0001.png",
+    "panda/restart-camera/fresh-b0001.png",
+    "panda/restart-camera/fresh-b0004.png",
+    "panda/restart-lights/changed-b0001.png",
+    "panda/restart-lights/fresh-b0001.png",
+    "panda/restart-lights/fresh-b0004.png",
+    "panda/restart-blocker/changed-b0001.png",
+    "panda/restart-blocker/fresh-b0001.png",
+    "panda/restart-blocker/fresh-b0004.png",
+    "panda/restart-board/changed-b0001.png",
+    "panda/restart-board/fresh-b0001.png",
+    "panda/restart-board/fresh-b0004.png"
+  ],
+  "preview": [
+    1540,
+    384
+  ]
+}

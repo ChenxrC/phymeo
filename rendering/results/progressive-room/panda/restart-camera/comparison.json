@@ -1,0 +1,45 @@
+{
+  "name": "camera",
+  "status": "complete",
+  "same_owner_change": true,
+  "reason": "camera",
+  "comparisons": {
+    "1": {
+      "fresh_identical": true,
+      "old_frame_rejected": true,
+      "rgb_changed": true,
+      "geometry_changed": true,
+      "actual_sha256": {
+        "srgb8_rgb": "aa1a8ddbf169ecfec0cb8c4ba2a3b86086af53de72c3275a38778ec7996652c5",
+        "forward_depth_m_f32": "6120570649f37b66214299937ceb5bf99a58ee90a105824fffaa97c9543cb35d",
+        "instance_id_u32": "7d2772d3c4bca35c53ef1313758140069b818462eea2c2b6e12a570383b28f2b",
+        "valid_u8": "d44c6a0ba99e70e257a5b3e79840838ea35ff0b9fc9e53c04ab3589ad8424cdb"
+      },
+      "linear_mean_identical": true,
+      "actual_stale_negative_rejected": true
+    },
+    "4": {
+      "fresh_identical": true,
+      "old_frame_rejected": true,
+      "rgb_changed": true,
+      "geometry_changed": true,
+      "actual_sha256": {
+        "srgb8_rgb": "dcbbe7e7932083d12e27e7c6f18907db6cb687a884c063da900cbb457355d166",
+        "forward_depth_m_f32": "6120570649f37b66214299937ceb5bf99a58ee90a105824fffaa97c9543cb35d",
+        "instance_id_u32": "7d2772d3c4bca35c53ef1313758140069b818462eea2c2b6e12a570383b28f2b",
+        "valid_u8": "d44c6a0ba99e70e257a5b3e79840838ea35ff0b9fc9e53c04ab3589ad8424cdb"
+      },
+      "linear_mean_identical": true,
+      "actual_stale_negative_rejected": true
+    }
+  },
+  "changed_owner": {
+    "file": "restart-camera/changed-owner.json",
+    "sha256": "992789bcd95eac46964de8dd3404a43362290bfce210e1c8d78899ba1a2a0b52"
+  },
+  "fresh_owner": {
+    "file": "restart-camera/fresh-owner.json",
+    "sha256": "977e020f5e61f05974a33d052276677acb217c8962388c02f76de71438a58a69"
+  },
+  "semantics": "fresh owner is only a replay reference; the tested mutation happened after four accumulated batches in the original owner"
+}

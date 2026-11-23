@@ -1,0 +1,229 @@
+{
+  "schema": "phymeo-closed-room-author-validation-v1",
+  "status": "passed-frozen-calibration",
+  "created_utc": "2026-11-23T07:46:29.5371068Z",
+  "author_commit": "7ce6394a",
+  "tests_first_commit": "d4b26329",
+  "native_source_commit": "8df552545675e3c892b8c1148bed2c5b686b602d",
+  "library_sha256": "7637990e728c314cbfe9f153662a655c251281ce65f410d10176d9b0f3ac9f65",
+  "host_methods": 11,
+  "reference_captures": 16,
+  "native_captures": 65,
+  "native_wall_s": 3.0944814999820665,
+  "reference_wall_s": 4.930015699996147,
+  "acceptance": {
+    "primary_identity": true,
+    "sensor_bytes": true,
+    "hdr_budget": true,
+    "order_energy": true,
+    "variance_reduction": true,
+    "matched_depth_energy_bias": true,
+    "cleanup": true
+  },
+  "variance": {
+    "1": {
+      "white": {
+        "passed": true,
+        "rmse_ratio_4": 0.49752332007019323,
+        "rmse_ratio_16": 0.2566085808477841,
+        "variance_ratio_4": 0.24752945401366794,
+        "variance_ratio_16": 0.06584796376471375,
+        "noise_by_batches": {
+          "1": 0.0005825149588488085,
+          "4": 0.0002898147763170112,
+          "16": 0.00014947833691279812
+        },
+        "note": "difference of two independent equal-budget seed means divided by sqrt(2); constant bias cancels"
+      },
+      "regions": {
+        "bright": {
+          "passed": true,
+          "rmse_ratio_4": 0.49908388605615067,
+          "rmse_ratio_16": 0.26488499672936017,
+          "variance_ratio_4": 0.24908472532090878,
+          "variance_ratio_16": 0.07016406149231315,
+          "noise_by_batches": {
+            "1": 0.0005957757386648661,
+            "4": 0.00029734207087083505,
+            "16": 0.0001578120545876752
+          },
+          "note": "difference of two independent equal-budget seed means divided by sqrt(2); constant bias cancels"
+        },
+        "shadow": {
+          "passed": true,
+          "rmse_ratio_4": 0.49456302001424085,
+          "rmse_ratio_16": 0.24020350819852973,
+          "variance_ratio_4": 0.2445925807656064,
+          "variance_ratio_16": 0.05769772535088114,
+          "noise_by_batches": {
+            "1": 0.0005597159292452731,
+            "4": 0.0002768148003176194,
+            "16": 0.00013444572979931464
+          },
+          "note": "difference of two independent equal-budget seed means divided by sqrt(2); constant bias cancels"
+        },
+        "red": {
+          "passed": true,
+          "rmse_ratio_4": 0.45578261200055675,
+          "rmse_ratio_16": 0.20028137074170183,
+          "variance_ratio_4": 0.20773778940205007,
+          "variance_ratio_16": 0.04011262746617501,
+          "noise_by_batches": {
+            "1": 0.00046812805680789617,
+            "4": 0.00021336462848264794,
+            "16": 9.375732890013471E-05
+          },
+          "note": "difference of two independent equal-budget seed means divided by sqrt(2); constant bias cancels"
+        }
+      }
+    },
+    "2": {
+      "white": {
+        "passed": true,
+        "rmse_ratio_4": 0.5005237292935472,
+        "rmse_ratio_16": 0.26060900300951195,
+        "variance_ratio_4": 0.2505240035859201,
+        "variance_ratio_16": 0.06791705244961181,
+        "noise_by_batches": {
+          "1": 0.0007224846114109445,
+          "4": 0.00036162069206060516,
+          "16": 0.00018828599426952089
+        },
+        "note": "difference of two independent equal-budget seed means divided by sqrt(2); constant bias cancels"
+      },
+      "regions": {
+        "bright": {
+          "passed": true,
+          "rmse_ratio_4": 0.501280439010805,
+          "rmse_ratio_16": 0.26111293367166644,
+          "variance_ratio_4": 0.2512820785348654,
+          "variance_ratio_16": 0.06817996413062408,
+          "noise_by_batches": {
+            "1": 0.0007435286294993849,
+            "4": 0.0003727163578125538,
+            "16": 0.00019414494171745794
+          },
+          "note": "difference of two independent equal-budget seed means divided by sqrt(2); constant bias cancels"
+        },
+        "shadow": {
+          "passed": true,
+          "rmse_ratio_4": 0.499038731510116,
+          "rmse_ratio_16": 0.25961944928284436,
+          "variance_ratio_4": 0.24903965554722565,
+          "variance_ratio_16": 0.0674022584459274,
+          "noise_by_batches": {
+            "1": 0.0006859781326395223,
+            "4": 0.0003423296571561053,
+            "16": 0.00017809326501594673
+          },
+          "note": "difference of two independent equal-budget seed means divided by sqrt(2); constant bias cancels"
+        },
+        "red": {
+          "passed": true,
+          "rmse_ratio_4": 0.49288616285106146,
+          "rmse_ratio_16": 0.211718518197232,
+          "variance_ratio_4": 0.2429367695300431,
+          "variance_ratio_16": 0.04482473094763166,
+          "noise_by_batches": {
+            "1": 0.0005258816926390957,
+            "4": 0.00025919980959850515,
+            "16": 0.00011133889271260154
+          },
+          "note": "difference of two independent equal-budget seed means divided by sqrt(2); constant bias cancels"
+        }
+      }
+    }
+  },
+  "order": {
+    "passed": true,
+    "pt_monotone_with_registered_tolerance": true,
+    "pt_second_increment_over_deep": 0.12392129375382824,
+    "native_second_increment_over_deep": 0.10981817991269875,
+    "deep_minus_second": 0.0029025298546296804,
+    "deep_minus_second_fraction": 0.1281893034889713
+  },
+  "native_energy": {
+    "depth1-batch1": {
+      "bright": 0.021134426640355027,
+      "shadow": 0.00841074368875629,
+      "red": 0.006002465287036613,
+      "white": 0.0163630455335055,
+      "bright_minus_shadow": 0.012723682951598737
+    },
+    "depth1-batch4": {
+      "bright": 0.021131069344676564,
+      "shadow": 0.00839125478489014,
+      "red": 0.0060208613431101555,
+      "white": 0.016353638884756654,
+      "bright_minus_shadow": 0.012739814559786424
+    },
+    "depth1-batch16": {
+      "bright": 0.02112566426286427,
+      "shadow": 0.008374433948309746,
+      "red": 0.006019220361971675,
+      "white": 0.016343952894906325,
+      "bright_minus_shadow": 0.012751230314554525
+    },
+    "depth2-batch1": {
+      "bright": 0.023677385723165235,
+      "shadow": 0.010805532452170348,
+      "red": 0.00678624736770529,
+      "white": 0.01885044074654215,
+      "bright_minus_shadow": 0.012871853270994887
+    },
+    "depth2-batch4": {
+      "bright": 0.02366940563585004,
+      "shadow": 0.010808243109707643,
+      "red": 0.006806317852560387,
+      "white": 0.01884646968854664,
+      "bright_minus_shadow": 0.012861162526142398
+    },
+    "depth2-batch16": {
+      "bright": 0.02366416264503635,
+      "shadow": 0.010774433125330055,
+      "red": 0.006804665055816658,
+      "white": 0.018830514075146493,
+      "bright_minus_shadow": 0.012889729519706294
+    }
+  },
+  "reference_energy": {
+    "0": {
+      "bright": 0.016334674091873457,
+      "shadow": 0.0038562152841986005,
+      "red": 0.004197473956412778,
+      "white": 0.011655252038995385
+    },
+    "1": {
+      "bright": 0.021837069377973205,
+      "shadow": 0.008762501745417345,
+      "red": 0.0060189655604561635,
+      "white": 0.01693410651576476
+    },
+    "2": {
+      "bright": 0.024702831292143325,
+      "shadow": 0.011468608757782495,
+      "red": 0.006898077674738634,
+      "white": 0.019739997841758013
+    },
+    "6": {
+      "bright": 0.027594518678332677,
+      "shadow": 0.01438920939314606,
+      "red": 0.007787307181620273,
+      "white": 0.022642527696387693
+    }
+  },
+  "native_summary_sha256": "322870441407b57e7d3a2ebbff0e3bad1b1e514c970c478c43be6c9cd66ab38d",
+  "reference_summary_sha256": "2b9025a74039008ebaf2a441de092482185718b296a43304a5af2162700b950a",
+  "comparison_sha256": "ebd47c3c0c14db91a1cd590ad48179c109b8f2715d571cb802c02830a8b52d21",
+  "notes": [
+    "96x96 frozen six-wall room and two finite internal SDK/native area lights; no parameter tuning or repeat GPU runs.",
+    "Native measurements use synchronized GPU scene-linear RGBA32F mean before exposure; direct-only RGB8 control is explicitly excluded from raw-linear acceptance.",
+    "Native budgets are 16/64/256 primary paths per independent group; energy uses two-group means totaling 32/128/512. Equal-budget individual-group errors are separately saved.",
+    "SAPIEN uses four explicit shifted seeds at 512 spp for each depth 0/1/2/6. The direct SDK reference does not claim the public PT adapter admits interior rooms.",
+    "Native dielectric GGX/Fresnel and SDK specular-zero material differ. No fitted scale or bias correction was applied.",
+    "Difference-of-independent-group noise removes constant bias; lower noise does not prove smaller bias or converged transport.",
+    "PT depth6 exceeds PT depth2 white luminance by 12.81893 percent of depth6. Depth6 is a finite deeper reference, not an infinite-path truth.",
+    "Five native owners closed with current device/host allocations zero and alloc/free balanced; all native center geometry channels remained byte-identical.",
+    "Project execution slot released to C after successful native run and empty process guard; subsequent archive creation uses file IO only."
+  ]
+}

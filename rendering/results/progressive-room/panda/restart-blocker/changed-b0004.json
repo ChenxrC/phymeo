@@ -1,0 +1,250 @@
+{
+  "capture_ms": 54.57619996741414,
+  "frame": {
+    "key": {
+      "scene_key": "panda-diffuse-study-red-v1",
+      "world_id": "red",
+      "epoch": 0,
+      "revision": 1,
+      "tick": 1,
+      "phase": "authored"
+    },
+    "time_s": 0.1,
+    "nodes": [
+      {
+        "node_id": "panda_hand",
+        "world_pose": {
+          "position_m": [
+            0.0,
+            0.0,
+            0.18
+          ],
+          "orientation_xyzw": [
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      {
+        "node_id": "panda_leftfinger",
+        "world_pose": {
+          "position_m": [
+            0.0,
+            -0.035,
+            0.1216
+          ],
+          "orientation_xyzw": [
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      {
+        "node_id": "panda_rightfinger",
+        "world_pose": {
+          "position_m": [
+            0.0,
+            0.035,
+            0.1216
+          ],
+          "orientation_xyzw": [
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      {
+        "node_id": "board",
+        "world_pose": {
+          "position_m": [
+            0.0,
+            0.0,
+            0.037
+          ],
+          "orientation_xyzw": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        }
+      },
+      {
+        "node_id": "blocker",
+        "world_pose": {
+          "position_m": [
+            0.0,
+            0.0,
+            0.055
+          ],
+          "orientation_xyzw": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        }
+      }
+    ]
+  },
+  "camera": {
+    "id": "fixed-gripper-camera",
+    "frame_key": {
+      "scene_key": "panda-diffuse-study-red-v1",
+      "world_id": "red",
+      "epoch": 0,
+      "revision": 1,
+      "tick": 1,
+      "phase": "authored"
+    },
+    "world_pose": {
+      "position_m": [
+        0.42,
+        0.0,
+        0.24
+      ],
+      "orientation_xyzw": [
+        -0.40732775592937565,
+        -0.4073277559293753,
+        -0.5780000858559963,
+        -0.5780000858559963
+      ]
+    },
+    "width": 1280,
+    "height": 960,
+    "fx_px": 1550.0,
+    "fy_px": 1550.0,
+    "cx_px": 640.0,
+    "cy_px": 480.0,
+    "near_m": 0.01,
+    "far_m": 3.0
+  },
+  "progressive": {
+    "enabled": true,
+    "bounces": 1,
+    "batches": 4,
+    "batch_index": 3,
+    "primary_samples_per_pixel": 64,
+    "samples_per_batch": 16,
+    "max_batches": 4096,
+    "reset_count": 2,
+    "last_reset_reasons": [
+      "transforms"
+    ],
+    "accumulation_space": "scene-linear-before-exposure",
+    "storage": "GPU RGBA32F mean",
+    "sequence": "seed + capture-local pixel + 0-based batch; 16 primary paths, at most one continuation each",
+    "scene_scope": "one immutable scene/session; camera, transforms, effective directional lights, world, epoch and extent are checked",
+    "non_rgb": "does not advance or replace RGB history"
+  },
+  "indirect": {
+    "mode": "diffuse_bounce",
+    "seed": 0,
+    "samples_per_pixel": 16,
+    "bounces": 1,
+    "estimator": "rho_d * sum(Li)/16; 4x4 stratified cosine hemisphere with hashed 23-bit open-interval jitter",
+    "diffuse_coefficient": "rho_d=(1-metallic)*albedo*(1-F0); F0=mix(.04,albedo,metallic)",
+    "environment_policy": "replace the original diffuse IBL/SH term, never add a second copy",
+    "miss_policy": "original HDR level0 radiance along sample direction, or uniform environment; zero if absent",
+    "terminal_lighting": "bounded 16 primary paths; optional one cosine continuation at each first hit; replace that hit diffuse IBL, retain direct/specular environment; final hit never recurses",
+    "seed_scope": "seed + capture-local pixel + 0-based batch; state changes reset batch zero",
+    "geometry_policy": "shading-normal cosine distribution clipped by oriented true face; inward/degenerate sample=0, denominator stays16",
+    "combination": "independent primary specular/diffuse lobes may share terminal shading; no additional bounce",
+    "limitations": "16 noisy samples; no denoiser, temporal history, multiple diffuse bounces or raw-HDR output attachment"
+  },
+  "effective_directional_lights": [
+    {
+      "direction": [
+        0.7071067811865475,
+        0.0,
+        -0.7071067811865475
+      ],
+      "illuminance": [
+        3.0,
+        3.0,
+        3.0
+      ]
+    }
+  ],
+  "submitted_directional_lights": [
+    {
+      "direction": [
+        0.7071067690849304,
+        0.0,
+        -0.7071067690849304
+      ],
+      "illuminance": [
+        3.0,
+        3.0,
+        3.0
+      ]
+    }
+  ],
+  "plane_sha256": {
+    "srgb8_rgb": "0c1de3501d7572c128bd032da19df6101f3e07412b816673d4d70f0626bbf518",
+    "forward_depth_m_f32": "364d504a5d5696d7ac3f9f65c24401198b8c7cb1acf0aac924e513d491b4b9b9",
+    "instance_id_u32": "46a21f810889aa8c26369f9cae6c1df29b360c38e93e4d2a20590077e840b400",
+    "valid_u8": "f6b1266da5f008506ef9117269e5d3c8a24a998e19002f1ba4d645199ce85fc1"
+  },
+  "linear_readback": {
+    "capture_advancement": 0,
+    "readback_ms": 15.024800028186291,
+    "metadata": {
+      "width": 1280,
+      "height": 960,
+      "batches": 4,
+      "primary_samples_per_pixel": 64,
+      "format": "RGBA32F_LE",
+      "space": "scene-linear-before-exposure"
+    },
+    "sha256": "ad4397ca84d0ea2d562fc7590c8c3bf488e13c29789004f8cf0e60291960001d",
+    "device_before": {
+      "progressive_abi_version": 1,
+      "supported": 1,
+      "shader_compatible": 1,
+      "enabled": 1,
+      "bounces": 1,
+      "max_batches": 4096,
+      "batches": 4,
+      "last_batch_index": 3,
+      "seed": 0,
+      "samples_per_batch": 16,
+      "width": 1280,
+      "height": 960,
+      "rgb_captures": 8,
+      "reset_calls": 2,
+      "mean_readbacks": 2,
+      "mean_readback_bytes": 39321600,
+      "status_readback_bytes": 32
+    },
+    "device_after": {
+      "progressive_abi_version": 1,
+      "supported": 1,
+      "shader_compatible": 1,
+      "enabled": 1,
+      "bounces": 1,
+      "max_batches": 4096,
+      "batches": 4,
+      "last_batch_index": 3,
+      "seed": 0,
+      "samples_per_batch": 16,
+      "width": 1280,
+      "height": 960,
+      "rgb_captures": 8,
+      "reset_calls": 2,
+      "mean_readbacks": 3,
+      "mean_readback_bytes": 58982400,
+      "status_readback_bytes": 32
+    }
+  },
+  "png": "restart-blocker/changed-b0004.png",
+  "png_sha256": "6adb1ec1919d205981fecfbc453efed267a585010b8782665bdf7961c7bb679b",
+  "data": "restart-blocker/changed-b0004.npz",
+  "data_sha256": "a945d7a6b946967f46c25a154d80b70cb3777e26a6e1ad8f80c0e4fedba5bead"
+}

@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>夹爪暗面为什么有颗粒？ · Phymeo</title>
+<style>
+  :root { color-scheme: dark; background:#15191c; color:#f4f2ed; font:16px/1.55 system-ui,sans-serif }
+  body, figure, p { margin:0 } main { max-width:1440px; margin:auto; padding:20px clamp(12px,3vw,40px) 42px }
+  nav,.tabs,.controls { display:flex; flex-wrap:wrap; align-items:center; gap:.45em 1em }
+  a { color:#a9dfef } h1 { font-size:clamp(1.55rem,3.6vw,2.4rem); margin:.5em 0 .35em; line-height:1.25 }
+  .tabs { margin:1.2em 0 .65em; gap:6px }
+  button,select { color:inherit; background:#242c32; font:inherit; border:1px solid #60707a; padding:.3em .65em; border-radius:4px }
+  button { cursor:pointer } button[aria-pressed=true] { background:#253d45; border-color:#9fd6e3 }
+  .controls {min-height:2.8em} [hidden] {display:none!important}
+  #description { color:#ccd5d9; margin:.5em 0 1em; max-width:75em }
+  .images {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  figure a {display:block;background:black} svg {display:block;width:100%;height:auto}
+  .room-views svg image {image-rendering:pixelated}
+  figcaption {margin:.28em 0 .75em} #filterImage {max-width:100%;height:auto}
+  @media(max-width:680px){.images{grid-template-columns:1fr}}
+</style>
+<main>
+  <nav><a href="../index.html">全部回放</a><a href="README.md">测量与复现</a><a href="../diffuse-bounce/index.html">原始红板实验</a></nav>
+  <h1>夹爪暗面为什么有颗粒？</h1>
+  <div class="tabs" aria-label="选择对照实验">
+    <button data-panel="panda" aria-pressed="true">同一夹爪逐步采样</button>
+    <button data-panel="room" aria-pressed="false">封闭室的反弹次数</button>
+    <button data-panel="motion" aria-pressed="false">移动后的旧影</button>
+    <button data-panel="preview" aria-pressed="false">单帧空间预览</button>
+  </div>
+  <div class="controls" id="panda">
+    <label>右图采样 <select id="samples"><option value="0004">64 样本</option><option value="0016">256 样本</option><option value="0064" selected>1024 样本</option></select></label>
+    <label><input id="whole" type="checkbox"> 全幅机位</label>
+  </div>
+  <div class="controls" id="room" hidden>
+    <label>右图光路 <select id="depth"><option value="two">自研两次反弹</option><option value="reference">参考两次反弹</option><option value="six">参考六次反弹</option></select></label>
+  </div>
+  <div class="controls" id="motion" hidden>
+    <label>状态变化 <select id="change"><option value="camera">相机横移</option><option value="lights">方向灯转向</option><option value="blocker">插入遮光板</option><option value="board">红板横移</option></select></label>
+    <label>对照 <select id="history"><option value="before">旧状态与新状态首批</option><option value="fresh1">新状态首批与独立重开</option><option value="fresh4">新状态第四批与独立重开</option></select></label>
+  </div>
+  <p id="description" aria-live="polite"></p>
+  <div class="images" id="images">
+    <figure><a id="sourceA"><svg id="frameA" role="img" viewBox="384 288 512 384"><title></title><image width="1280" height="960"/></svg></a><figcaption id="labelA"></figcaption></figure>
+    <figure><a id="sourceB"><svg id="frameB" role="img" viewBox="384 288 512 384"><title></title><image width="1280" height="960"/></svg></a><figcaption id="labelB"></figcaption></figure>
+  </div>
+  <figure id="preview" hidden><a href="preview/first-preview-reference.png"><img id="filterImage" alt="左为第一批原图，中为单帧空间预览，右为独立的高采样原图"></a><figcaption>从左到右，16 样本原图、同一帧的空间预览、独立种子的 1024 样本原图。点击图片查看原尺寸。</figcaption></figure>
+</main>
+<script>
+  const el = id => document.getElementById(id);
+  let panel = "panda";
+  function picture(slot, file, label, width, height, crop) {
+    const svg = el("frame"+slot), img = svg.querySelector("image");
+    svg.setAttribute("viewBox", crop || [0,0,width,height].join(" "));
+    svg.querySelector("title").textContent = label;
+    img.setAttribute("width",width); img.setAttribute("height",height); img.setAttribute("href",file);
+    el("source"+slot).href=file; el("label"+slot).textContent=label;
+  }
+  function show() {
+    for (const id of ["panda","room","motion","preview"]) el(id).hidden = id !== panel;
+    for (const tab of document.querySelectorAll("[data-panel]")) tab.setAttribute("aria-pressed",String(tab.dataset.panel===panel));
+    el("images").hidden = panel==="preview";
+    el("images").classList.toggle("room-views", panel==="room");
+    if (panel==="panda") {
+      const batch = el("samples").value, crop = el("whole").checked ? null : "384 288 512 384";
+      el("description").textContent="看两根指尖的暗红面。左图始终只取 16 个方向。右图在同一机位累积新的样本，曝光、材质和一次反弹的光路均相同。点击任一图可看全幅原图。";
+      picture("A","panda/seed-0/batch-0001.png","第一批 · 16 样本",1280,960,crop);
+      picture("B","panda/seed-0/batch-"+batch+".png",Number(batch)+" 批 · "+Number(batch)*16+" 样本",1280,960,crop);
+    } else if (panel==="room") {
+      const choice=el("depth").value;
+      const entry={two:["native-depth2-seed0-batch16","自研两次反弹 · 256 样本"],reference:["pt-depth2-seed0","独立参考两次反弹 · 512 样本"],six:["pt-depth6-seed0","独立参考六次反弹 · 512 样本"]}[choice];
+      el("description").textContent="在室内固定机位观察白墙和遮板旁边的暗部。自研左右对照使用相同样本预算。参考图来自同一几何与灯位的 SAPIEN SDK，材质模型存在差异。原图为 96 × 96 像素。";
+      picture("A","room/native-depth1-seed0-batch16.png","自研一次反弹 · 256 样本",96,96);
+      picture("B","room/"+entry[0]+".png",entry[1],96,96);
+    } else if (panel==="motion") {
+      const mode=el("history").value, dir="panda/restart-"+el("change").value+"/";
+      const pair={before:["before","变化前 · 已累积四批","changed-b0001","变化后 · 第一批"],fresh1:["changed-b0001","会话中改变状态 · 第一批","fresh-b0001","同一新状态独立重开 · 第一批"],fresh4:["changed-b0004","会话中改变状态 · 第四批","fresh-b0004","同一新状态独立重开 · 第四批"]}[mode];
+      el("description").textContent="先看改变前后图像确实不同，再切到独立重开对照。如果旧历史混入新图，左右就会有差别。新状态首批会重新出现 16 样本的颗粒。";
+      picture("A",dir+pair[0]+".png",pair[1],1280,960); picture("B",dir+pair[2]+".png",pair[3],1280,960);
+    } else {
+      el("description").textContent="中图只使用首批线性图像和当前视图的几何、直接光指引，在邻近的同一表面平均。这个有偏的离线实验单独评估，原生渲染输出仍可在第一个标签查看。";
+      el("filterImage").src="preview/first-preview-reference.png";
+    }
+  }
+  for (const tab of document.querySelectorAll("[data-panel]")) tab.addEventListener("click",()=>{panel=tab.dataset.panel;show();});
+  for (const input of document.querySelectorAll("select,input")) input.addEventListener("change",show);
+  show();
+</script>
+</html>

@@ -93,5 +93,16 @@ class PortablePandaTests(unittest.TestCase):
         self.assertTrue(first.daylight and first.photographic and first.surface_roughness)
         self.assertEqual(first.excerpt,self.work/'tests/fixtures/panda_film/trace.json')
 
+    def test_main_film_settings_are_forwarded_without_changing_source_clock(self):
+        args=self.entry.parse_args(['native','--library','engine.dll','--all',
+            '--resolution','1080p','--area-light-grid','8','--shadow-mode','ray_query',
+            '--cube-size','256','--camera','sequence','--output','out'])
+        call=self.entry.film_arguments(args,self.work)
+        self.assertEqual((call.resolution,call.area_light_grid,call.shadow_mode,call.cube_size),
+                         ('1080p',8,'ray_query',256))
+        self.assertEqual(call.camera,'sequence'); self.assertIsNone(call.frame)
+        self.assertEqual(call.stride,1); self.assertEqual(call.display_transform,'pbr-neutral')
+        self.assertTrue(call.surface_roughness and call.photographic and call.daylight)
+
 
 if __name__=='__main__': unittest.main()

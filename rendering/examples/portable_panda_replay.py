@@ -176,6 +176,7 @@ def parse_args(argv=None):
     parser.add_argument("--tiles", type=int, choices=(1, 2, 4))
     parser.add_argument("--shadow-mode", choices=("software", "ray_query"), default="software")
     parser.add_argument("--area-light-grid", type=int, choices=(2, 4, 8), default=2)
+    parser.add_argument("--cube-size", type=int, choices=(16, 32, 64, 128, 256), default=128)
     parser.add_argument("--validation", action="store_true")
     select = parser.add_mutually_exclusive_group()
     select.add_argument("--frame", type=int, choices=range(300), metavar="0..299")
@@ -203,7 +204,7 @@ def film_arguments(args, root):
         display_transform="pbr-neutral", native_studio=False, workshop=False,
         photographic=True, camera=args.camera, resolution=args.resolution,
         tiles=args.tiles if args.tiles is not None else (1 if args.mode == "native" else 2),
-        daylight=True, light_strength=.5, light_yaw=25., cube_size=128, stride=1,
+        daylight=True, light_strength=.5, light_yaw=25., cube_size=args.cube_size, stride=1,
         frame=None if args.all else (60 if args.frame is None else args.frame))
 
 

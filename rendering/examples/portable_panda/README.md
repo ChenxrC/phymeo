@@ -21,6 +21,14 @@ python -I replay.py native --library C:/render/build/phymeo_native.dll --frame 6
 python -I replay.py studio --samples 64 --frame 60 --output ../panda-reference
 ```
 
+主片配置可显式复现；下面仍只拍源帧索引 60 的姿态（索引从 0 开始），把 `--frame 60` 换成 `--all` 即为整段：
+
+```text
+python -I replay.py native --library C:/render/build/phymeo_native.dll --frame 60 --resolution 1080p --camera sequence --shadow-mode ray_query --area-light-grid 8 --cube-size 256 --output ../panda-main-frame
+```
+
+`--cube-size 16|32|64|128|256` 透传原 HDR 环境预处理分辨率，默认 128；它不改变源姿态或时钟。
+
 原生默认软件 BVH 阴影；已验证支持的 GPU/DLL 可显式加 `--shadow-mode ray_query`。参考调用已安装的 SAPIEN 路径追踪，默认 2×2 分块；`--tiles 1` 可选择完整相机。两者默认使用相同的 720p 相机、真实扫描纹理、HDR 环境和 PBR Neutral。随机采样噪声和估计方法不同，不承诺跨后端逐字节相同。
 
 ## 拍完整十秒

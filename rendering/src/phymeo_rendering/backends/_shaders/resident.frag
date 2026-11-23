@@ -137,6 +137,10 @@ bool occluded(vec3 worldOrigin, vec3 worldDirection, float tMax) {
 #define PR_RESIDENT_DIRECTIONAL_ENVIRONMENT
 #include "resident_studio.glsl"
 #if defined(PR_RESIDENT_REFLECTION) || defined(PR_RESIDENT_INDIRECT)
+#ifdef PR_RESIDENT_PROGRESSIVE
+layout(constant_id=66) const uint PR_PROGRESSIVE_ABI=1u;
+struct BounceSurface { vec3 P,N,Ng,V,albedo; float metal,roughness; bool valid; };
+#endif
 #include "resident_reflection.glsl"
 #endif
 #ifdef PR_RESIDENT_INDIRECT
@@ -254,5 +258,9 @@ void main() {
         color += residentStudioRadiance(worldPosition,N,Ng,V,albedo,metalRough.x,surfaceRoughness);
     }
 #endif
+#ifdef PR_RESIDENT_PROGRESSIVE
+    rgb=vec4(PR_PROGRESSIVE_ABI==1u?color:vec3(0.0),1.0);
+#else
     rgb = vec4(encodeSRGB(residentDisplayLinear(color*u.options.x,u.options.z)), 1.0);
+#endif
 }

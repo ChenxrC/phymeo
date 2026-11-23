@@ -156,6 +156,8 @@ void resident_set_environment(Context& c,const PrResidentEnvironment& config,con
     constexpr uint64_t sky_bindings=(1ull<<1)|(1ull<<11)|(1ull<<12);
     require(fragment.valid && fragment.main && fragment.bindings==sky_bindings && fragment.locations==1,
         "resident sky fragment SPIR-V has incompatible stage/interface");
+    require(bool(c.progressive_info.shader_compatible)==named_shader_marker(frag,frag_bytes,66,"PR_PROGRESSIVE_ABI"),
+        "resident sky progressive radiance ABI mismatch");
     const bool display_compatible=display_shader_marker(frag,frag_bytes);
     const bool msaa_compatible=named_shader_marker(frag,frag_bytes,59,"PR_MSAA_COLOR_ABI");
     require(c.msaa_info.requested_samples!=4 || msaa_compatible,"resident sky lacks MSAA color ABI marker");

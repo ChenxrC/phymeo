@@ -13,6 +13,9 @@ vec3 encodeSky(vec3 linearColor) {
     vec3 x=clamp(linearColor,0.0,1.0);
     return mix(12.92*x,1.055*pow(x,vec3(1.0/2.4))-0.055,greaterThan(x,vec3(0.0031308)));
 }
+#ifdef PR_RESIDENT_PROGRESSIVE
+layout(constant_id=66) const uint PR_PROGRESSIVE_ABI=1u;
+#endif
 void main() {
     // Pixel centers and off-axis principal point use the same camera convention
     // as resident.vert: camera forward -Z, up +Y, image rows downwards.
@@ -20,5 +23,9 @@ void main() {
     vec3 ray=transpose(mat3(u.view))*normalize(vec3(sensor.x,-sensor.y,-1.0));
     vec3 radiance=textureLod(environmentCube,ray.xzy,0.0).rgb;
     // Reading enabled makes a mismatched sky UBO visible to interface checks.
+#ifdef PR_RESIDENT_PROGRESSIVE
+    rgb=vec4(PR_PROGRESSIVE_ABI==1u&&residentEnvironmentEnabled()?radiance:vec3(0.0),1.0);
+#else
     rgb=vec4(encodeSky(residentDisplayLinear((residentEnvironmentEnabled()?radiance:vec3(0.0))*u.options.x,u.options.z)),1.0);
+#endif
 }

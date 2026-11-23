@@ -64,7 +64,12 @@ vec3 reflectionHitNormal(vec3 N,uint slot,vec2 uv,vec3 e1,vec3 e2,vec2 t1,vec2 t
     return normalFinite(result)&&result2>1e-20?result*inversesqrt(result2):N;
 }
 #endif
+#ifdef PR_RESIDENT_PROGRESSIVE
+bool residentTraceSurface(vec3 P,vec3 Ng,vec3 direction,bool shade,out vec3 radiance,out BounceSurface hit) {
+    hit.valid=false;
+#else
 bool residentTraceTerminal(vec3 P,vec3 Ng,vec3 direction,out vec3 radiance) {
+#endif
     radiance=vec3(0.0);
     if(u.counts.w==0u) return false;
     rayQueryEXT query;
@@ -116,7 +121,13 @@ bool residentTraceTerminal(vec3 P,vec3 Ng,vec3 direction,out vec3 radiance) {
     }
 #endif
     if(dot(hitNg,hitV)<0.0){hitNg=-hitNg;hitN=-hitN;}
+#ifdef PR_RESIDENT_PROGRESSIVE
+    hit.P=hitP;hit.N=hitN;hit.Ng=faceN;hit.V=hitV;hit.albedo=albedo;
+    hit.metal=metal;hit.roughness=roughness;hit.valid=dot(hitN,hitV)>0.0;
+    if(shade && hit.valid) {
+#else
     if(dot(hitN,hitV)>0.0) {
+#endif
         radiance=reflectionDirect(hitP,hitN,faceN,hitV,albedo,metal,roughness);
         if(studio.environment.w!=0.0 || residentEnvironmentEnabled())
             radiance+=residentStudioRadiance(hitP,hitN,faceN,hitV,albedo,metal,roughness);
@@ -124,6 +135,12 @@ bool residentTraceTerminal(vec3 P,vec3 Ng,vec3 direction,out vec3 radiance) {
     return true;
 }
 
+#ifdef PR_RESIDENT_PROGRESSIVE
+bool residentTraceTerminal(vec3 P,vec3 Ng,vec3 direction,out vec3 radiance) {
+    BounceSurface hit;
+    return residentTraceSurface(P,Ng,direction,true,radiance,hit);
+}
+#endif
 #ifdef PR_RESIDENT_REFLECTION
 bool residentNearReflection(vec3 P,vec3 N,vec3 Ng,vec3 V,out vec3 radiance) {
     vec3 direction=normalize(reflect(-V,N));radiance=vec3(0.0);

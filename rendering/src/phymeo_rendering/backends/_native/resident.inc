@@ -281,6 +281,7 @@ uint64_t upload_static(Context& c, const std::vector<StaticUpload>& uploads) {
 #include "resident_environment.inc"
 #include "resident_rayquery.inc"
 #include "resident_msaa.inc"
+#include "resident_progressive.inc"
 
 void resident_upload(Context& c, const PrResidentVertex* vertices, uint32_t vertex_count,
                      const uint32_t* indices, uint32_t index_count,
@@ -586,7 +587,7 @@ void resident_target(Context& c, ResidentState& state, uint32_t width, uint32_t 
     uint64_t errors_before = c.errors.load();
     auto frame = std::make_unique<FrameResources>(c);
     c.make_buffer(frame->uniform, sizeof(PrParams), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
-    frame->readback_capacity=static_cast<size_t>(width)*height*13;
+    frame->readback_capacity=static_cast<size_t>(width)*height*13+(c.progressive_info.shader_compatible?8:0);
     c.make_buffer(frame->readback,frame->readback_capacity,VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                   VK_MEMORY_PROPERTY_HOST_CACHED_BIT);
@@ -597,7 +598,8 @@ void resident_target(Context& c, ResidentState& state, uint32_t width, uint32_t 
     ++c.readback_info.map_calls;
     std::array<VkImageView, 5> views{};
     for (uint32_t i = 0; i < 5; ++i) {
-        c.make_image(frame->images[i], width, height, FORMATS[i], i == 4);
+        c.make_image(frame->images[i], width, height, c.attachment_format(i), i == 4, VK_SAMPLE_COUNT_1_BIT,
+            i==0 && c.progressive_info.shader_compatible?VK_IMAGE_USAGE_STORAGE_BIT:0);
         views[i] = frame->images[i].view;
     }
     VkFramebufferCreateInfo framebuffer{VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO};
@@ -737,6 +739,9 @@ void resident_render(Context& c, const float* matrices, uint32_t instance_count,
             "indirect shader requires successful explicit setup before capture");
     validate_resident_params(c, params, width, height, output, output_bytes, channel_mask, compact);
     auto& state = *c.resident_state;
+    require(!c.progressive_info.shader_compatible||c.progressive_info.enabled,"progressive shader requires setup");
+    const bool progressive_rgb=c.progressive_info.enabled&&params.counts[2]!=0;
+    require(!progressive_rgb||c.progressive_state->armed,"progressive RGB capture requires explicit history begin");
     const bool msaa_color=c.msaa_info.requested_samples==4 && params.counts[2]!=0;
     const bool center_pass=!msaa_color || (channel_mask&14u)!=0;
     auto transforms = resident_transforms(state, matrices, instance_count);
@@ -746,6 +751,10 @@ void resident_render(Context& c, const float* matrices, uint32_t instance_count,
     resident_target(c, state, width, height);
     auto& frame = *state.target;
     if (msaa_color) msaa_prepare(c,frame,width,height);
+    if(progressive_rgb)progressive_prepare(c,frame,width,height);
+    const uint32_t progressive_batch=progressive_rgb ? (c.progressive_state->pending_reset?0:c.progressive_info.batches):0;
+    require(!progressive_rgb||progressive_batch<4096,"progressive sample budget exceeded");
+    const size_t progressive_status_offset=(output_bytes+3)&~size_t(3);
     require(frame.readback_mapping && output_bytes<=frame.readback_capacity,
             "resident readback target capacity mismatch");
     auto& info = c.resident_properties;
@@ -769,6 +778,7 @@ void resident_render(Context& c, const float* matrices, uint32_t instance_count,
     // Resident shaders do not use the legacy triangle-count word. The caller
     // still supplies/validates it; only explicit indirect variants read a seed.
     if(c.indirect_info.enabled) submitted.counts[1]=c.indirect_info.seed;
+    if(progressive_rgb)submitted.options[3]=static_cast<float>(2*progressive_batch+c.progressive_info.bounces-1);
     c.upload(frame.uniform, &submitted, sizeof(submitted));
     info.parameter_upload_bytes += sizeof(params);
     const auto record_begin=HostClock::now();
@@ -808,6 +818,9 @@ void resident_render(Context& c, const float* matrices, uint32_t instance_count,
                 1.055*std::pow(linear,1.0/2.4)-0.055);
         }
     }
+    if(c.progressive_info.shader_compatible) {
+        for(uint32_t k=0;k<3;++k)clear[0].color.float32[k]=c.studio.environment[3]!=0&&params.counts[2]?c.studio.environment[k]:0.f;
+    }
     clear[1].color.float32[0] = std::numeric_limits<float>::infinity();
     clear[4].depthStencil.depth = 1;
     VkRenderPassBeginInfo pass{VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO};
@@ -837,6 +850,7 @@ void resident_render(Context& c, const float* matrices, uint32_t instance_count,
     vkCmdEndRenderPass(frame.commands);
     }
     if (msaa_color) msaa_record(c,frame,params);
+    if(progressive_rgb)progressive_record(c,frame,params,progressive_batch,progressive_status_offset);
     if (frame.timestamps)
         vkCmdWriteTimestamp(frame.commands,VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,frame.timestamps,1);
     const size_t bytes_per_pixel[]{4,4,4,1};
@@ -851,7 +865,7 @@ void resident_render(Context& c, const float* matrices, uint32_t instance_count,
         copy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         copy.imageSubresource.layerCount = 1;
         copy.imageExtent = {width,height,1};
-        vkCmdCopyImageToBuffer(frame.commands, frame.images[i].handle, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+        vkCmdCopyImageToBuffer(frame.commands, i==0&&progressive_rgb?c.progressive_state->display.handle:frame.images[i].handle, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                               frame.readback.handle, 1, &copy);
         offset += pixels*bytes_per_pixel[i];
     }
@@ -894,9 +908,13 @@ void resident_render(Context& c, const float* matrices, uint32_t instance_count,
     }
     // The HOST_COHERENT mapping lives with the target. Fence completion and the
     // transfer->HOST barrier make writes visible without invalidate operations.
+    if(progressive_rgb) {
+        uint32_t invalid=0;std::memcpy(&invalid,static_cast<const uint8_t*>(frame.readback_mapping)+progressive_status_offset,4);
+        require(invalid==0,"progressive shader produced nonfinite or negative radiance; no publication");
+    }
     std::memcpy(output, frame.readback_mapping, output_bytes);
-    c.telemetry.readback_bytes += output_bytes;
-    c.readback_info.copied_bytes += output_bytes;
+    c.telemetry.readback_bytes += output_bytes+(progressive_rgb?4:0);
+    c.readback_info.copied_bytes += output_bytes+(progressive_rgb?4:0);
     c.readback_info.last_channel_mask=channel_mask;
     auto& profile=c.profile;
     ++profile.captures;
@@ -906,6 +924,15 @@ void resident_render(Context& c, const float* matrices, uint32_t instance_count,
     profile.host_wait_ns+=timing.wait; profile.host_readback_ns+=elapsed_ns(readback_begin);
     profile.gpu_render_ns+=gpu_render; profile.gpu_copy_ns+=gpu_copy; profile.gpu_total_ns+=gpu_total;
     profile.timestamp_samples+=timestamp_samples; profile.tlas_upload_bytes+=tlas.size()*sizeof(GpuBvhNode);
+    if(progressive_rgb) {
+        auto& progressive=c.progressive_info;
+        if(c.progressive_state->pending_reset && (progressive.batches>0 || progressive.rgb_captures==0))++progressive.reset_calls;
+        progressive.status_readback_bytes+=4;
+        progressive.batches=progressive_batch+1;progressive.last_batch_index=progressive_batch;
+        progressive.width=width;progressive.height=height;++progressive.rgb_captures;
+
+        c.progressive_state->initialized=true;c.progressive_state->armed=false;c.progressive_state->pending_reset=false;
+    }
     if(c.indirect_info.enabled){++c.indirect_info.captures;if(params.counts[2])++c.indirect_info.rgb_captures;}
     if (c.reflection_info.enabled) { ++c.reflection_info.captures; if(params.counts[2]) ++c.reflection_info.rgb_captures; }
     if (c.normal_info.loaded && params.counts[2]) ++c.normal_info.rgb_captures_with_normals;

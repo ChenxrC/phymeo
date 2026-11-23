@@ -46,7 +46,7 @@ class GuidedSettlingStudyTests(unittest.TestCase):
     def diagnostic(n,ordinal=0):
         k=min(n,15)
         weight=max(0.,1-math.sqrt((n-1)/15))
-        actual=float(np.float32(weight))
+        actual=float(np.float32(1)-np.sqrt(np.float32(n-1)/np.float32(15))) if n<16 else 0.
         total=ordinal*1920+16*k*(k+1)//2
         count=ordinal*15+k
         return dict(spatial_filter=dict(mode="guided_settling",scope="settling-first-16-rgb-batches",
@@ -156,5 +156,16 @@ class GuidedSettlingStudyTests(unittest.TestCase):
         for args in (("old",14,2),("reference",15,16),("settling",15,3)):
             with self.subTest(args=args),self.assertRaises(ValueError):self.study.image_name(*args)
 
+
+    def test_actual_weight_uses_each_native_fp32_operation_not_one_final_cast(self):
+        data=self.diagnostic(2)
+        # Actual documented float divide, float sqrt, float subtraction.
+        for d in (data["spatial_filter"],data["device"]["resident_settling_info"]):
+            d["last_filtered_fraction"]=0.7418011426925659
+        self.assertTrue(self.study.verify_settling(data,n=2,ordinal=0))
+        wrong=deepcopy(data)
+        for d in (wrong["spatial_filter"],wrong["device"]["resident_settling_info"]):
+            d["last_filtered_fraction"]=0.7418010830879211
+        with self.assertRaises(ValueError):self.study.verify_settling(wrong,n=2,ordinal=0)
 
 if __name__=="__main__":unittest.main()

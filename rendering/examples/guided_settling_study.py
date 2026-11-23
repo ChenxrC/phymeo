@@ -39,7 +39,8 @@ def frozen_profile():
         trajectory_scope="three entered states from the registered 25-pose input; not replay of the intervening motion",
         size=[1280,960],msaa_samples=1,bounces=1,exposure=1.,display_transform="pbr-neutral",
         shadow_mode="ray_query",primary_samples_per_batch=16,
-        schedule="w=1-sqrt((n-1)/15), one-based n<16; n>=16 exactly zero; GPU weight is the FP32 value",
+        schedule="w=1-sqrt((n-1)/15), one-based n<16; n>=16 exactly zero",
+        native_weight_arithmetic="float32 divide, float32 sqrt, float32 subtraction; scheduled_filtered_fraction retains the separate FP64 formula",
         source_geometry="current 0/15/24 and predecessor 14/23 from bound actual 4c evidence; full current arrays must match before masks are used",
         guide_source="same-exposure-gpu-direct-pass",guide_check_batches=[1,2,4,8],
         reference_scope="new same-state native seed1 64 batches=1024 spp; a finite reference, not exact radiance",
@@ -65,7 +66,8 @@ def verify_settling(diagnostic,*,n,ordinal):
     if type(n) is not int or not 1<=n<=17 or type(ordinal) is not int or ordinal<0:
         raise ValueError("registered actual batch/state ordinal required")
     k=min(n,15);w=1-math.sqrt((n-1)/15) if n<16 else 0.
-    fp=float(np.float32(w));count=ordinal*15+k;represented=ordinal*1920+8*k*(k+1)
+    fp=float(np.float32(1)-np.sqrt(np.float32(n-1)/np.float32(15))) if n<16 else 0.
+    count=ordinal*15+k;represented=ordinal*1920+8*k*(k+1)
     top=dict(mode="guided_settling",scope="settling-first-16-rgb-batches",last_capture_filtered=n<16,
         filtered_captures=count,last_filtered_fraction=fp,scheduled_filtered_fraction=w,last_batch=n,
         filtered_primary_samples=represented,last_filtered_primary_samples=16*n if n<16 else 0,

@@ -15,7 +15,7 @@ def load_image(path, expected):
     return image
 
 
-def render(reference, near, font, output):
+def render(reference, near, font, output, rescue=None):
     def summary(directory):
         return json.loads((directory/"summary.json").read_text(encoding="utf-8"))
     b, n = summary(reference), summary(near)
@@ -48,6 +48,19 @@ def render(reference, near, font, output):
     scale=224/(2*radius)
     ink.text((17,44),f"第 15 帧  ·  右侧绿色为真实 69 个像素  ·  同一裁区，最近邻放大 {scale:.2f} 倍",font=small,fill="#bbc9ca")
     names=("完整一跳 16 路","12 cm 近场预览","1024 样本参考","显露区域位置")
+    if rescue is not None:
+        evidence=summary(rescue)
+        row=evidence["frames"]["15"]
+        detail=evidence["actual_rescue"]
+        if (evidence["status"]!="actual_readbacks_bound" or
+                detail["registered_pixels"]!=69 or detail["valid_results"]!=69 or
+                any(row[k]!=b["frames"]["15"][k] for k in ("sensors","key","time"))):
+            raise ValueError("rescue evidence does not match the 69 registered pixels")
+        with Image.open(rescue/"exposed-right-finger.png") as rescue_mask:
+            if rescue_mask.convert("L").tobytes()!=mask.tobytes():
+                raise ValueError("registered rescue mask differs")
+        images=[images[1],load_image(rescue/"pose-15.png",row["rgb_sha256"]),images[2],marked]
+        names=("12 cm 近场预览","低支撑像素补 16 路","1024 样本参考","显露区域位置")
     for i,(im,name) in enumerate(zip(images,names,strict=True)):
         x=24+i*284
         ink.text((x,86),name,font=header,fill="#f7ebcb")
@@ -61,4 +74,5 @@ if __name__=="__main__":
     parser=ArgumentParser(description=__doc__)
     for name in ("reference","near","font","output"):
         parser.add_argument("--"+name,type=Path,required=True)
+    parser.add_argument("--rescue",type=Path,help="optional measured edge-rescue exposure from the same thin fixture")
     render(**vars(parser.parse_args()))

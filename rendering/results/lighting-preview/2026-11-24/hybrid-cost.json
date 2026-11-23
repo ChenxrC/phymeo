@@ -1,0 +1,2674 @@
+{
+  "schema": "phymeo-panda-hybrid-observation-v1",
+  "assessment_status": "failed_observed_gate",
+  "score_sha256": "ffa4acb46288f2627790848ac219afda0544af7c1a9a961a6839d42e5d8e1d02",
+  "archived_baseline_sha256": "48b59d91573749ae7939692221bde4dff6779535e73462aecafd815b433973ef",
+  "reference_and_quality_gates": {
+    "rmse_allowance": 0.005,
+    "reference_resolution_screen": 0.0025,
+    "temporal_p95_lte_baseline": true,
+    "min_pixels": 16
+  },
+  "quality": {
+    "59": {
+      "white-shell": {
+        "ids": [
+          150,
+          151,
+          154
+        ],
+        "pixels": 52044,
+        "estimates": [
+          {
+            "seed": 1,
+            "baseline16": {
+              "rmse": 0.03427978079220876,
+              "signed_bias_rgb": [
+                -0.00015998626144479911,
+                -0.0002869576748912287,
+                -0.000455343918949986
+              ],
+              "signed_luminance_bias": -0.00027212103921356643
+            },
+            "sparse": {
+              "rmse": 0.030711495450723967,
+              "signed_bias_rgb": [
+                0.0028872270592686733,
+                0.005767243059888121,
+                0.003223849845766189
+              ],
+              "signed_luminance_bias": 0.004971318668097064
+            },
+            "observed_gate": true
+          },
+          {
+            "seed": 2,
+            "baseline16": {
+              "rmse": 0.03425805653908128,
+              "signed_bias_rgb": [
+                -0.0001703764622668886,
+                -0.0002687910155830241,
+                -0.0004351984963916916
+              ],
+              "signed_luminance_bias": -0.0002598827016624073
+            },
+            "sparse": {
+              "rmse": 0.030673128817179828,
+              "signed_bias_rgb": [
+                0.0028768368584465792,
+                0.0057854097191963475,
+                0.003243995268324476
+              ],
+              "signed_luminance_bias": 0.004983557005648223
+            },
+            "observed_gate": true
+          }
+        ],
+        "reference_disagreement_rmse": 0.003756617463800682,
+        "reference_resolution_screen": false,
+        "passed": null
+      },
+      "fingers": {
+        "ids": [
+          156,
+          158
+        ],
+        "pixels": 6047,
+        "estimates": [
+          {
+            "seed": 1,
+            "baseline16": {
+              "rmse": 0.03215571747989761,
+              "signed_bias_rgb": [
+                0.001779382334036288,
+                0.0012668646410176156,
+                0.0005752425883228181
+              ],
+              "signed_luminance_bias": 0.001325890790348826
+            },
+            "sparse": {
+              "rmse": 0.04194624577779239,
+              "signed_bias_rgb": [
+                0.017465977979335256,
+                0.021620536830826022,
+                0.017825898528813767
+              ],
+              "signed_luminance_bias": 0.020463304733593996
+            },
+            "observed_gate": false
+          },
+          {
+            "seed": 2,
+            "baseline16": {
+              "rmse": 0.03218511240210398,
+              "signed_bias_rgb": [
+                0.001802538184233368,
+                0.0012507393629738208,
+                0.0006049162859576144
+              ],
+              "signed_luminance_bias": 0.0013214233662130319
+            },
+            "sparse": {
+              "rmse": 0.0419699560958821,
+              "signed_bias_rgb": [
+                0.017489133829532332,
+                0.021604411552782237,
+                0.017855572226448554
+              ],
+              "signed_luminance_bias": 0.020458837309458203
+            },
+            "observed_gate": false
+          }
+        ],
+        "reference_disagreement_rmse": 0.003003610390032559,
+        "reference_resolution_screen": false,
+        "passed": null
+      },
+      "rubber": {
+        "ids": [
+          2
+        ],
+        "pixels": 30604,
+        "estimates": [
+          {
+            "seed": 1,
+            "baseline16": {
+              "rmse": 0.0031037082461538024,
+              "signed_bias_rgb": [
+                1.3939435239399912E-05,
+                4.360631798911865E-05,
+                6.0844240771271155E-05
+              ],
+              "signed_luminance_bias": 3.854371674140016E-05
+            },
+            "sparse": {
+              "rmse": 0.003618553996581788,
+              "signed_bias_rgb": [
+                0.0008280043711265105,
+                7.975300820040297E-05,
+                6.724753517353033E-05
+              ],
+              "signed_luminance_bias": 0.0002379283528059568
+            },
+            "observed_gate": true
+          },
+          {
+            "seed": 2,
+            "baseline16": {
+              "rmse": 0.0031046392499271148,
+              "signed_bias_rgb": [
+                1.453577633069107E-05,
+                4.412735707537507E-05,
+                5.9253334785932534E-05
+              ],
+              "signed_luminance_bias": 3.892828259975775E-05
+            },
+            "sparse": {
+              "rmse": 0.003622961385066482,
+              "signed_bias_rgb": [
+                0.0008286007122178046,
+                8.027404728665899E-05,
+                6.565662918819179E-05
+              ],
+              "signed_luminance_bias": 0.00023831291866431437
+            },
+            "observed_gate": true
+          }
+        ],
+        "reference_disagreement_rmse": 0.0004692833458569424,
+        "reference_resolution_screen": true,
+        "passed": true
+      },
+      "left-arm": {
+        "ids": [
+          112,
+          113,
+          115,
+          117
+        ],
+        "pixels": 121095,
+        "estimates": [
+          {
+            "seed": 1,
+            "baseline16": {
+              "rmse": 0.03331219077253285,
+              "signed_bias_rgb": [
+                -0.0004194903141612288,
+                -0.0004259866247687718,
+                -0.0003211707878368068
+              ],
+              "signed_luminance_bias": -0.00041703780570711895
+            },
+            "sparse": {
+              "rmse": 0.06924664580702715,
+              "signed_bias_rgb": [
+                0.05281333254427531,
+                0.04753816222460135,
+                0.030688997618279677
+              ],
+              "signed_luminance_bias": 0.047443153749993916
+            },
+            "observed_gate": false
+          },
+          {
+            "seed": 2,
+            "baseline16": {
+              "rmse": 0.033312815407397424,
+              "signed_bias_rgb": [
+                -0.0004176189733359824,
+                -0.00041836776332803625,
+                -0.00033384421854267086
+              ],
+              "signed_luminance_bias": -0.00041210597064221847
+            },
+            "sparse": {
+              "rmse": 0.069249388770759,
+              "signed_bias_rgb": [
+                0.052815203885100796,
+                0.04754578108604186,
+                0.030676324187573833
+              ],
+              "signed_luminance_bias": 0.04744808558505882
+            },
+            "observed_gate": false
+          }
+        ],
+        "reference_disagreement_rmse": 0.0033359453182254598,
+        "reference_resolution_screen": false,
+        "passed": null
+      },
+      "wrist-shell": {
+        "ids": [
+          125,
+          142,
+          149
+        ],
+        "pixels": 40547,
+        "estimates": [
+          {
+            "seed": 1,
+            "baseline16": {
+              "rmse": 0.035710544676705716,
+              "signed_bias_rgb": [
+                -0.0015485241509443518,
+                -0.001411245006394826,
+                -0.0010309118627647728
+              ],
+              "signed_luminance_bias": -0.001412970499555994
+            },
+            "sparse": {
+              "rmse": 0.032176111332551126,
+              "signed_bias_rgb": [
+                -0.003663380127783722,
+                -0.0020401095319129586,
+                -0.003720554770559812
+              ],
+              "signed_luminance_bias": -0.002506545006825353
+            },
+            "observed_gate": true
+          },
+          {
+            "seed": 2,
+            "baseline16": {
+              "rmse": 0.035719185944913745,
+              "signed_bias_rgb": [
+                -0.0015741077082442568,
+                -0.0014231842979764019,
+                -0.0010578946854331059
+              ],
+              "signed_luminance_bias": -0.0014288967049737476
+            },
+            "sparse": {
+              "rmse": 0.03220361835244158,
+              "signed_bias_rgb": [
+                -0.003688963685083628,
+                -0.0020520488234945194,
+                -0.003747537593228149
+              ],
+              "signed_luminance_bias": -0.002522471212243106
+            },
+            "observed_gate": true
+          }
+        ],
+        "reference_disagreement_rmse": 0.003334602397329694,
+        "reference_resolution_screen": false,
+        "passed": null
+      }
+    },
+    "60": {
+      "white-shell": {
+        "ids": [
+          150,
+          151,
+          154
+        ],
+        "pixels": 52276,
+        "estimates": [
+          {
+            "seed": 1,
+            "baseline16": {
+              "rmse": 0.0333103704594522,
+              "signed_bias_rgb": [
+                -0.00017311684270676427,
+                -0.0001991909656733798,
+                -0.00027605975104050186
+              ],
+              "signed_luminance_bias": -0.00019919753343417362
+            },
+            "sparse": {
+              "rmse": 0.028479031143242312,
+              "signed_bias_rgb": [
+                0.002188059375822274,
+                0.004848954098413282,
+                0.002300006062088196
+              ],
+              "signed_luminance_bias": 0.004099213832167805
+            },
+            "observed_gate": true
+          },
+          {
+            "seed": 2,
+            "baseline16": {
+              "rmse": 0.03332127666135491,
+              "signed_bias_rgb": [
+                -0.0001661225749701007,
+                -0.00020547616909353945,
+                -0.00027440792329370587
+              ],
+              "signed_luminance_bias": -0.00020208646763614097
+            },
+            "sparse": {
+              "rmse": 0.028485832779389653,
+              "signed_bias_rgb": [
+                0.002195053643558941,
+                0.004842668894993112,
+                0.0023016578898349864
+              ],
+              "signed_luminance_bias": 0.004096324897965837
+            },
+            "observed_gate": true
+          }
+        ],
+        "reference_disagreement_rmse": 0.0036765137099856364,
+        "reference_resolution_screen": false,
+        "passed": null
+      },
+      "fingers": {
+        "ids": [
+          156,
+          158
+        ],
+        "pixels": 6103,
+        "estimates": [
+          {
+            "seed": 1,
+            "baseline16": {
+              "rmse": 0.032344598499743846,
+              "signed_bias_rgb": [
+                -0.0004993085772260487,
+                -0.0007228354119588131,
+                -0.0008619088753231869
+              ],
+              "signed_luminance_bias": -0.0006853547109495354
+            },
+            "sparse": {
+              "rmse": 0.04169758021885089,
+              "signed_bias_rgb": [
+                0.014779642641626881,
+                0.01970267345446666,
+                0.016494280025686463
+              ],
+              "signed_luminance_bias": 0.01842439109809932
+            },
+            "observed_gate": false
+          },
+          {
+            "seed": 2,
+            "baseline16": {
+              "rmse": 0.032380798375247044,
+              "signed_bias_rgb": [
+                -0.000491691813751946,
+                -0.0007182531664746901,
+                -0.0008728563463143951
+              ],
+              "signed_luminance_bias": -0.000681248572470262
+            },
+            "sparse": {
+              "rmse": 0.041664543614608716,
+              "signed_bias_rgb": [
+                0.014787259405101005,
+                0.019707255699950812,
+                0.016483332554695217
+              ],
+              "signed_luminance_bias": 0.018428497236578596
+            },
+            "observed_gate": false
+          }
+        ],
+        "reference_disagreement_rmse": 0.003016838631675145,
+        "reference_resolution_screen": false,
+        "passed": null
+      },
+      "rubber": {
+        "ids": [
+          2
+        ],
+        "pixels": 30781,
+        "estimates": [
+          {
+            "seed": 1,
+            "baseline16": {
+              "rmse": 0.0030649799865417947,
+              "signed_bias_rgb": [
+                1.3541935882716779E-05,
+                4.425858478080013E-05,
+                7.038460759399655E-05
+              ],
+              "signed_luminance_bias": 3.9614524072180554E-05
+            },
+            "sparse": {
+              "rmse": 0.003556512656828764,
+              "signed_bias_rgb": [
+                0.0008191658681231664,
+                7.212200264832408E-05,
+                7.596559216794555E-05
+              ],
+              "signed_luminance_bias": 0.00023122103561159732
+            },
+            "observed_gate": true
+          },
+          {
+            "seed": 2,
+            "baseline16": {
+              "rmse": 0.0030658308987387786,
+              "signed_bias_rgb": [
+                7.2504348420366935E-06,
+                4.0749065907879786E-05,
+                6.944257295589814E-05
+              ],
+              "signed_luminance_bias": 3.569892815214862E-05
+            },
+            "sparse": {
+              "rmse": 0.0035614713461658335,
+              "signed_bias_rgb": [
+                0.0008128743670824899,
+                6.861248377540372E-05,
+                7.502355752984714E-05
+              ],
+              "signed_luminance_bias": 0.00022730543969156535
+            },
+            "observed_gate": true
+          }
+        ],
+        "reference_disagreement_rmse": 0.00046201467963726564,
+        "reference_resolution_screen": true,
+        "passed": true
+      },
+      "left-arm": {
+        "ids": [
+          112,
+          113,
+          115,
+          117
+        ],
+        "pixels": 121571,
+        "estimates": [
+          {
+            "seed": 1,
+            "baseline16": {
+              "rmse": 0.03342740876944059,
+              "signed_bias_rgb": [
+                -0.00044782935364426124,
+                -0.00045231491555221097,
+                -0.0003384731713120309
+              ],
+              "signed_luminance_bias": -0.0004431419111564381
+            },
+            "sparse": {
+              "rmse": 0.06906986907359697,
+              "signed_bias_rgb": [
+                0.05250542772993926,
+                0.04719715796988329,
+                0.03041091951106932
+              ],
+              "signed_luminance_bias": 0.04711372970415085
+            },
+            "observed_gate": false
+          },
+          {
+            "seed": 2,
+            "baseline16": {
+              "rmse": 0.03343003794815804,
+              "signed_bias_rgb": [
+                -0.0004600720680377882,
+                -0.00045211013742690935,
+                -0.0003522679516129289
+              ],
+              "signed_luminance_bias": -0.0004465942380590138
+            },
+            "sparse": {
+              "rmse": 0.0690699436421208,
+              "signed_bias_rgb": [
+                0.0524931850155458,
+                0.04719736274800842,
+                0.030397124730768266
+              ],
+              "signed_luminance_bias": 0.04711027737724827
+            },
+            "observed_gate": false
+          }
+        ],
+        "reference_disagreement_rmse": 0.0033450615400146943,
+        "reference_resolution_screen": false,
+        "passed": null
+      },
+      "wrist-shell": {
+        "ids": [
+          125,
+          142,
+          149
+        ],
+        "pixels": 38380,
+        "estimates": [
+          {
+            "seed": 1,
+            "baseline16": {
+              "rmse": 0.034948851995285385,
+              "signed_bias_rgb": [
+                -0.0009163613034552098,
+                -0.0008105845815308585,
+                -0.0005867639038863263
+              ],
+              "signed_luminance_bias": -0.0008169128596860354
+            },
+            "sparse": {
+              "rmse": 0.031270333035917995,
+              "signed_bias_rgb": [
+                -0.002585623567136084,
+                -0.0009660708149137973,
+                -0.0028728467178162466
+              ],
+              "signed_luminance_bias": -0.0014480569502259098
+            },
+            "observed_gate": true
+          },
+          {
+            "seed": 2,
+            "baseline16": {
+              "rmse": 0.03496849769077445,
+              "signed_bias_rgb": [
+                -0.0009145887117980522,
+                -0.0007959976420119807,
+                -0.0005515119366156408
+              ],
+              "signed_luminance_bias": -0.0008035582355188785
+            },
+            "sparse": {
+              "rmse": 0.03128388858980448,
+              "signed_bias_rgb": [
+                -0.002583850975478933,
+                -0.0009514838753949216,
+                -0.002837594750545546
+              ],
+              "signed_luminance_bias": -0.0014347023260587524
+            },
+            "observed_gate": true
+          }
+        ],
+        "reference_disagreement_rmse": 0.0033113918494792056,
+        "reference_resolution_screen": false,
+        "passed": null
+      }
+    },
+    "149": {
+      "white-shell": {
+        "ids": [
+          150,
+          151,
+          154
+        ],
+        "pixels": 60302,
+        "estimates": [
+          {
+            "seed": 1,
+            "baseline16": {
+              "rmse": 0.03182889583598893,
+              "signed_bias_rgb": [
+                -0.000773431406568985,
+                -0.0005749304038254682,
+                -0.0005207595197071537
+              ],
+              "signed_luminance_bias": -0.000613220579175373
+            },
+            "sparse": {
+              "rmse": 0.026316653267950796,
+              "signed_bias_rgb": [
+                -0.0014655883495255527,
+                0.0017702002896569633,
+                5.734699530505462E-05
+              ],
+              "signed_luminance_bias": 0.0009586036171146158
+            },
+            "observed_gate": true
+          },
+          {
+            "seed": 2,
+            "baseline16": {
+              "rmse": 0.03182265700991856,
+              "signed_bias_rgb": [
+                -0.0007599396744643512,
+                -0.0005748924642065664,
+                -0.0005117000359672397
+              ],
+              "signed_luminance_bias": -0.0006096710077884621
+            },
+            "sparse": {
+              "rmse": 0.026332195060702123,
+              "signed_bias_rgb": [
+                -0.0014520966174209218,
+                0.001770238229275866,
+                6.640647904496884E-05
+              ],
+              "signed_luminance_bias": 0.0009621531885015263
+            },
+            "observed_gate": true
+          }
+        ],
+        "reference_disagreement_rmse": 0.0034092460750478905,
+        "reference_resolution_screen": false,
+        "passed": null
+      },
+      "fingers": {
+        "ids": [
+          156,
+          158
+        ],
+        "pixels": 6477,
+        "estimates": [
+          {
+            "seed": 1,
+            "baseline16": {
+              "rmse": 0.03644633953104367,
+              "signed_bias_rgb": [
+                0.0005341928705393284,
+                0.00043986079575689726,
+                0.0002205585428451096
+              ],
+              "signed_luminance_bias": 0.000444082172195411
+            },
+            "sparse": {
+              "rmse": 0.04095605645106969,
+              "signed_bias_rgb": [
+                0.008703238013916089,
+                0.015508054537293568,
+                0.014987631244714023
+              ],
+              "signed_luminance_bias": 0.014023775982699244
+            },
+            "observed_gate": true
+          },
+          {
+            "seed": 2,
+            "baseline16": {
+              "rmse": 0.03642369131238129,
+              "signed_bias_rgb": [
+                0.0006064222786918351,
+                0.0004874408053904931,
+                0.00022222755212654655
+              ],
+              "signed_luminance_bias": 0.0004935878697287005
+            },
+            "sparse": {
+              "rmse": 0.040965828691859156,
+              "signed_bias_rgb": [
+                0.008775467422068582,
+                0.01555563454692712,
+                0.014989300253995462
+              ],
+              "signed_luminance_bias": 0.014073281680232533
+            },
+            "observed_gate": true
+          }
+        ],
+        "reference_disagreement_rmse": 0.004218854831166365,
+        "reference_resolution_screen": false,
+        "passed": null
+      },
+      "rubber": {
+        "ids": [
+          2
+        ],
+        "pixels": 30785,
+        "estimates": [
+          {
+            "seed": 1,
+            "baseline16": {
+              "rmse": 0.009963362638314372,
+              "signed_bias_rgb": [
+                0.00016076618510945976,
+                0.00014068233976948993,
+                0.00010757470051389378
+              ],
+              "signed_luminance_bias": 0.00014256179373451071
+            },
+            "sparse": {
+              "rmse": 0.008539857943502972,
+              "signed_bias_rgb": [
+                0.0008568295343246816,
+                0.00013429397036557406,
+                0.00012183591772922125
+              ],
+              "signed_luminance_bias": 0.00028700555986293575
+            },
+            "observed_gate": true
+          },
+          {
+            "seed": 2,
+            "baseline16": {
+              "rmse": 0.009962003454985961,
+              "signed_bias_rgb": [
+                0.00015648101845651925,
+                0.00014070342989456225,
+                0.00010806385185882717
+              ],
+              "signed_luminance_bias": 0.0001417011676886512
+            },
+            "sparse": {
+              "rmse": 0.008530311897226538,
+              "signed_bias_rgb": [
+                0.0008525443676717375,
+                0.00013431506049064575,
+                0.00012232506907415444
+              ],
+              "signed_luminance_bias": 0.0002861449338170762
+            },
+            "observed_gate": true
+          }
+        ],
+        "reference_disagreement_rmse": 0.00041545028971642114,
+        "reference_resolution_screen": true,
+        "passed": true
+      },
+      "left-arm": {
+        "ids": [
+          112,
+          113,
+          115,
+          117
+        ],
+        "pixels": 161985,
+        "estimates": [
+          {
+            "seed": 1,
+            "baseline16": {
+              "rmse": 0.033669159611099765,
+              "signed_bias_rgb": [
+                -0.0003680849474902356,
+                -0.0003931510632455526,
+                -0.00025939905754420893
+              ],
+              "signed_luminance_bias": -0.0003781651122243313
+            },
+            "sparse": {
+              "rmse": 0.06540901869262448,
+              "signed_bias_rgb": [
+                0.044051962152230964,
+                0.039845044330713966,
+                0.02513053876442845
+              ],
+              "signed_luminance_bias": 0.03967704775768531
+            },
+            "observed_gate": false
+          },
+          {
+            "seed": 2,
+            "baseline16": {
+              "rmse": 0.03365573014216509,
+              "signed_bias_rgb": [
+                -0.0003783432151846409,
+                -0.0003926274453812786,
+                -0.0002634673611071225
+              ],
+              "signed_luminance_bias": -0.0003802652599568741
+            },
+            "sparse": {
+              "rmse": 0.06541060541360573,
+              "signed_bias_rgb": [
+                0.04404170388453685,
+                0.03984556794857843,
+                0.025126470460865694
+              ],
+              "signed_luminance_bias": 0.03967494760995277
+            },
+            "observed_gate": false
+          }
+        ],
+        "reference_disagreement_rmse": 0.0033869840850565963,
+        "reference_resolution_screen": false,
+        "passed": null
+      },
+      "wrist-shell": {
+        "ids": [
+          125,
+          142,
+          149
+        ],
+        "pixels": 8707,
+        "estimates": [
+          {
+            "seed": 1,
+            "baseline16": {
+              "rmse": 0.039462664502395196,
+              "signed_bias_rgb": [
+                0.00019545600496199218,
+                0.00020257209130698054,
+                0.00022626335878630648
+              ],
+              "signed_luminance_bias": 0.00020276972086204602
+            },
+            "sparse": {
+              "rmse": 0.038980369193248716,
+              "signed_bias_rgb": [
+                0.005241159795898075,
+                0.007644674225145891,
+                0.005041264701441855
+              ],
+              "signed_luminance_bias": 0.0069457208898763565
+            },
+            "observed_gate": true
+          },
+          {
+            "seed": 2,
+            "baseline16": {
+              "rmse": 0.03943878713001189,
+              "signed_bias_rgb": [
+                0.00021454013641865354,
+                0.00016487025596591167,
+                0.00020150248466111912
+              ],
+              "signed_luminance_bias": 0.00017807491946195765
+            },
+            "sparse": {
+              "rmse": 0.03896448820314247,
+              "signed_bias_rgb": [
+                0.005260243927354722,
+                0.0076069723898048195,
+                0.005016503827316673
+              ],
+              "signed_luminance_bias": 0.006921026088476267
+            },
+            "observed_gate": true
+          }
+        ],
+        "reference_disagreement_rmse": 0.0032611804584117797,
+        "reference_resolution_screen": false,
+        "passed": null
+      }
+    }
+  },
+  "motion": {
+    "pair": [
+      59,
+      60
+    ],
+    "correspondence": {
+      "proposed_pixels": 5466,
+      "accepted_pixels": 5353,
+      "identity_ids": [
+        156,
+        158
+      ],
+      "relative_depth_limit": 0.003,
+      "roundtrip_pixel_limit": 0.75,
+      "method": "registered rigid instance/camera transforms and actual depth; nearest pixel, eroded same-ID endpoints",
+      "new_background_excluded": true,
+      "scope": "screen resampling introduces finite correspondence error; same mapping for candidate/baseline/reference"
+    },
+    "estimates": [
+      {
+        "seed": 1,
+        "baseline16": {
+          "count": 5353,
+          "p95": 0.08721981599166709,
+          "mean_bias_rgb": [
+            -0.0018460727396380026,
+            -0.0017668294008182605,
+            -0.0013992713374831628
+          ],
+          "scope": "reference-compensated adjacent-frame residual; same geometric correspondence"
+        },
+        "sparse": {
+          "count": 5353,
+          "p95": 0.05922050283211085,
+          "mean_bias_rgb": [
+            -0.0016474996663548085,
+            -0.0008722868873602669,
+            -0.0005885152661541853
+          ],
+          "scope": "reference-compensated adjacent-frame residual; same geometric correspondence"
+        },
+        "observed_gate": true
+      },
+      {
+        "seed": 2,
+        "baseline16": {
+          "count": 5353,
+          "p95": 0.0877243941730617,
+          "mean_bias_rgb": [
+            -0.001863815921706762,
+            -0.0017644459836308646,
+            -0.0014597275518552844
+          ],
+          "scope": "reference-compensated adjacent-frame residual; same geometric correspondence"
+        },
+        "sparse": {
+          "count": 5353,
+          "p95": 0.058424888451981086,
+          "mean_bias_rgb": [
+            -0.0016652428484235737,
+            -0.0008699034701728797,
+            -0.0006489714805263066
+          ],
+          "scope": "reference-compensated adjacent-frame residual; same geometric correspondence"
+        },
+        "observed_gate": true
+      }
+    ]
+  },
+  "rounds": [
+    {
+      "index": 1,
+      "groups": [
+        {
+          "name": "sparse",
+          "channels": "rgb",
+          "timing": {
+            "count": 300,
+            "mean_ms": 42.08231066683462,
+            "p50_ms": 41.697599983308464,
+            "p95_ms": 49.90649997489527,
+            "max_ms": 54.18779997853562,
+            "completed_fps_from_mean": 23.76295370083153,
+            "within_33_3_ms": 6,
+            "within_33_3_fraction": 0.02,
+            "latency_gate_passed": false,
+            "scope": "completed synchronous public capture including CPU-owned requested planes; not presentation/GPU-only"
+          },
+          "phase_timing": {
+            "scope": "registered movie-view clock windows [0,.5),[.5,2.3),[2.3,10]; not inferred controller phases",
+            "phases": {
+              "before_finger_window": {
+                "count": 14,
+                "source_pose_indices": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8,
+                  9,
+                  10,
+                  11,
+                  12,
+                  13
+                ],
+                "timing": {
+                  "count": 14,
+                  "mean_ms": 48.004950005893726,
+                  "p50_ms": 48.681800020858645,
+                  "p95_ms": 52.488000015728176,
+                  "max_ms": 52.488000015728176,
+                  "completed_fps_from_mean": 20.83118511481059,
+                  "within_33_3_ms": 0,
+                  "within_33_3_fraction": 0.0,
+                  "latency_gate_passed": null,
+                  "scope": "completed synchronous public capture including CPU-owned requested planes; not presentation/GPU-only"
+                },
+                "native_mean_ms": {
+                  "gpu_copy_ns": 0.31069028571428575,
+                  "gpu_render_ns": 40.486354285714285,
+                  "gpu_total_ns": 40.79704457142857,
+                  "host_prepare_ns": 0.01365,
+                  "host_readback_ns": 0.4123428571428572,
+                  "host_record_ns": 0.19089285714285714,
+                  "host_submit_ns": 0.07457857142857144,
+                  "host_upload_ns": 0.010914285714285713,
+                  "host_wait_ns": 41.113435714285714
+                }
+              },
+              "finger_view_window": {
+                "count": 54,
+                "source_pose_indices": [
+                  14,
+                  15,
+                  16,
+                  17,
+                  18,
+                  19,
+                  20,
+                  21,
+                  22,
+                  23,
+                  24,
+                  25,
+                  26,
+                  27,
+                  28,
+                  29,
+                  30,
+                  31,
+                  32,
+                  33,
+                  34,
+                  35,
+                  36,
+                  37,
+                  38,
+                  39,
+                  40,
+                  41,
+                  42,
+                  43,
+                  44,
+                  45,
+                  46,
+                  47,
+                  48,
+                  49,
+                  50,
+                  51,
+                  52,
+                  53,
+                  54,
+                  55,
+                  56,
+                  57,
+                  58,
+                  59,
+                  60,
+                  61,
+                  62,
+                  63,
+                  64,
+                  65,
+                  66,
+                  67
+                ],
+                "timing": {
+                  "count": 54,
+                  "mean_ms": 44.02529999411113,
+                  "p50_ms": 43.246000015642494,
+                  "p95_ms": 52.74240003200248,
+                  "max_ms": 54.18779997853562,
+                  "completed_fps_from_mean": 22.714212058379182,
+                  "within_33_3_ms": 2,
+                  "within_33_3_fraction": 0.037037037037037035,
+                  "latency_gate_passed": null,
+                  "scope": "completed synchronous public capture including CPU-owned requested planes; not presentation/GPU-only"
+                },
+                "native_mean_ms": {
+                  "gpu_copy_ns": 0.37110696296296297,
+                  "gpu_render_ns": 37.066760888888886,
+                  "gpu_total_ns": 37.43786785185185,
+                  "host_prepare_ns": 0.011266666666666666,
+                  "host_readback_ns": 0.40069074074074074,
+                  "host_record_ns": 0.16194629629629628,
+                  "host_submit_ns": 0.06252222222222222,
+                  "host_upload_ns": 0.010146296296296296,
+                  "host_wait_ns": 37.76023148148148
+                }
+              },
+              "after_finger_window": {
+                "count": 232,
+                "source_pose_indices": [
+                  68,
+                  69,
+                  70,
+                  71,
+                  72,
+                  73,
+                  74,
+                  75,
+                  76,
+                  77,
+                  78,
+                  79,
+                  80,
+                  81,
+                  82,
+                  83,
+                  84,
+                  85,
+                  86,
+                  87,
+                  88,
+                  89,
+                  90,
+                  91,
+                  92,
+                  93,
+                  94,
+                  95,
+                  96,
+                  97,
+                  98,
+                  99,
+                  100,
+                  101,
+                  102,
+                  103,
+                  104,
+                  105,
+                  106,
+                  107,
+                  108,
+                  109,
+                  110,
+                  111,
+                  112,
+                  113,
+                  114,
+                  115,
+                  116,
+                  117,
+                  118,
+                  119,
+                  120,
+                  121,
+                  122,
+                  123,
+                  124,
+                  125,
+                  126,
+                  127,
+                  128,
+                  129,
+                  130,
+                  131,
+                  132,
+                  133,
+                  134,
+                  135,
+                  136,
+                  137,
+                  138,
+                  139,
+                  140,
+                  141,
+                  142,
+                  143,
+                  144,
+                  145,
+                  146,
+                  147,
+                  148,
+                  149,
+                  150,
+                  151,
+                  152,
+                  153,
+                  154,
+                  155,
+                  156,
+                  157,
+                  158,
+                  159,
+                  160,
+                  161,
+                  162,
+                  163,
+                  164,
+                  165,
+                  166,
+                  167,
+                  168,
+                  169,
+                  170,
+                  171,
+                  172,
+                  173,
+                  174,
+                  175,
+                  176,
+                  177,
+                  178,
+                  179,
+                  180,
+                  181,
+                  182,
+                  183,
+                  184,
+                  185,
+                  186,
+                  187,
+                  188,
+                  189,
+                  190,
+                  191,
+                  192,
+                  193,
+                  194,
+                  195,
+                  196,
+                  197,
+                  198,
+                  199,
+                  200,
+                  201,
+                  202,
+                  203,
+                  204,
+                  205,
+                  206,
+                  207,
+                  208,
+                  209,
+                  210,
+                  211,
+                  212,
+                  213,
+                  214,
+                  215,
+                  216,
+                  217,
+                  218,
+                  219,
+                  220,
+                  221,
+                  222,
+                  223,
+                  224,
+                  225,
+                  226,
+                  227,
+                  228,
+                  229,
+                  230,
+                  231,
+                  232,
+                  233,
+                  234,
+                  235,
+                  236,
+                  237,
+                  238,
+                  239,
+                  240,
+                  241,
+                  242,
+                  243,
+                  244,
+                  245,
+                  246,
+                  247,
+                  248,
+                  249,
+                  250,
+                  251,
+                  252,
+                  253,
+                  254,
+                  255,
+                  256,
+                  257,
+                  258,
+                  259,
+                  260,
+                  261,
+                  262,
+                  263,
+                  264,
+                  265,
+                  266,
+                  267,
+                  268,
+                  269,
+                  270,
+                  271,
+                  272,
+                  273,
+                  274,
+                  275,
+                  276,
+                  277,
+                  278,
+                  279,
+                  280,
+                  281,
+                  282,
+                  283,
+                  284,
+                  285,
+                  286,
+                  287,
+                  288,
+                  289,
+                  290,
+                  291,
+                  292,
+                  293,
+                  294,
+                  295,
+                  296,
+                  297,
+                  298,
+                  299
+                ],
+                "timing": {
+                  "count": 232,
+                  "mean_ms": 41.27266250123222,
+                  "p50_ms": 41.15629999432713,
+                  "p95_ms": 47.20109998015687,
+                  "max_ms": 50.86319998372346,
+                  "completed_fps_from_mean": 24.22911291390868,
+                  "within_33_3_ms": 4,
+                  "within_33_3_fraction": 0.017241379310344827,
+                  "latency_gate_passed": null,
+                  "scope": "completed synchronous public capture including CPU-owned requested planes; not presentation/GPU-only"
+                },
+                "native_mean_ms": {
+                  "gpu_copy_ns": 0.3356601379310345,
+                  "gpu_render_ns": 34.52991075862069,
+                  "gpu_total_ns": 34.86557089655172,
+                  "host_prepare_ns": 0.010479741379310344,
+                  "host_readback_ns": 0.3882577586206897,
+                  "host_record_ns": 0.1589685344827586,
+                  "host_submit_ns": 0.06615431034482758,
+                  "host_upload_ns": 0.010464224137931034,
+                  "host_wait_ns": 35.17978146551724
+                }
+              }
+            }
+          },
+          "identity_audit": {
+            "count": 300,
+            "unique_frame_keys": 300,
+            "unique_source_indices": 300,
+            "first_pose": 0,
+            "last_pose": 299,
+            "scope": "unique source/frame identities, not a claim that all physical joint configurations differ"
+          }
+        },
+        {
+          "name": "sparse",
+          "channels": "all",
+          "timing": {
+            "count": 300,
+            "mean_ms": 47.16418766630037,
+            "p50_ms": 46.34020000230521,
+            "p95_ms": 55.50800001947209,
+            "max_ms": 61.80800002766773,
+            "completed_fps_from_mean": 21.202527796625603,
+            "within_33_3_ms": 0,
+            "within_33_3_fraction": 0.0,
+            "latency_gate_passed": false,
+            "scope": "completed synchronous public capture including CPU-owned requested planes; not presentation/GPU-only"
+          },
+          "phase_timing": {
+            "scope": "registered movie-view clock windows [0,.5),[.5,2.3),[2.3,10]; not inferred controller phases",
+            "phases": {
+              "before_finger_window": {
+                "count": 14,
+                "source_pose_indices": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8,
+                  9,
+                  10,
+                  11,
+                  12,
+                  13
+                ],
+                "timing": {
+                  "count": 14,
+                  "mean_ms": 51.83308571161303,
+                  "p50_ms": 51.29179998766631,
+                  "p95_ms": 56.087000004481524,
+                  "max_ms": 56.087000004481524,
+                  "completed_fps_from_mean": 19.29269666798852,
+                  "within_33_3_ms": 0,
+                  "within_33_3_fraction": 0.0,
+                  "latency_gate_passed": null,
+                  "scope": "completed synchronous public capture including CPU-owned requested planes; not presentation/GPU-only"
+                },
+                "native_mean_ms": {
+                  "gpu_copy_ns": 1.1138445714285714,
+                  "gpu_render_ns": 39.10159085714286,
+                  "gpu_total_ns": 40.215435428571425,
+                  "host_prepare_ns": 0.008935714285714286,
+                  "host_readback_ns": 1.3376785714285713,
+                  "host_record_ns": 0.15227142857142859,
+                  "host_submit_ns": 0.056592857142857146,
+                  "host_upload_ns": 0.009821428571428571,
+                  "host_wait_ns": 40.54405714285714
+                }
+              },
+              "finger_view_window": {
+                "count": 54,
+                "source_pose_indices": [
+                  14,
+                  15,
+                  16,
+                  17,
+                  18,
+                  19,
+                  20,
+                  21,
+                  22,
+                  23,
+                  24,
+                  25,
+                  26,
+                  27,
+                  28,
+                  29,
+                  30,
+                  31,
+                  32,
+                  33,
+                  34,
+                  35,
+                  36,
+                  37,
+                  38,
+                  39,
+                  40,
+                  41,
+                  42,
+                  43,
+                  44,
+                  45,
+                  46,
+                  47,
+                  48,
+                  49,
+                  50,
+                  51,
+                  52,
+                  53,
+                  54,
+                  55,
+                  56,
+                  57,
+                  58,
+                  59,
+                  60,
+                  61,
+                  62,
+                  63,
+                  64,
+                  65,
+                  66,
+                  67
+                ],
+                "timing": {
+                  "count": 54,
+                  "mean_ms": 50.227338890113906,
+                  "p50_ms": 49.60729996673763,
+                  "p95_ms": 59.257600049022585,
+                  "max_ms": 61.80800002766773,
+                  "completed_fps_from_mean": 19.90947603630315,
+                  "within_33_3_ms": 0,
+                  "within_33_3_fraction": 0.0,
+                  "latency_gate_passed": null,
+                  "scope": "completed synchronous public capture including CPU-owned requested planes; not presentation/GPU-only"
+                },
+                "native_mean_ms": {
+                  "gpu_copy_ns": 1.0467383703703703,
+                  "gpu_render_ns": 36.96326637037037,
+                  "gpu_total_ns": 38.01000474074074,
+                  "host_prepare_ns": 0.009383333333333334,
+                  "host_readback_ns": 1.3403166666666668,
+                  "host_record_ns": 0.14860925925925927,
+                  "host_submit_ns": 0.057464814814814816,
+                  "host_upload_ns": 0.010433333333333334,
+                  "host_wait_ns": 38.32693148148149
+                }
+              },
+              "after_finger_window": {
+                "count": 232,
+                "source_pose_indices": [
+                  68,
+                  69,
+                  70,
+                  71,
+                  72,
+                  73,
+                  74,
+                  75,
+                  76,
+                  77,
+                  78,
+                  79,
+                  80,
+                  81,
+                  82,
+                  83,
+                  84,
+                  85,
+                  86,
+                  87,
+                  88,
+                  89,
+                  90,
+                  91,
+                  92,
+                  93,
+                  94,
+                  95,
+                  96,
+                  97,
+                  98,
+                  99,
+                  100,
+                  101,
+                  102,
+                  103,
+                  104,
+                  105,
+                  106,
+                  107,
+                  108,
+                  109,
+                  110,
+                  111,
+                  112,
+                  113,
+                  114,
+                  115,
+                  116,
+                  117,
+                  118,
+                  119,
+                  120,
+                  121,
+                  122,
+                  123,
+                  124,
+                  125,
+                  126,
+                  127,
+                  128,
+                  129,
+                  130,
+                  131,
+                  132,
+                  133,
+                  134,
+                  135,
+                  136,
+                  137,
+                  138,
+                  139,
+                  140,
+                  141,
+                  142,
+                  143,
+                  144,
+                  145,
+                  146,
+                  147,
+                  148,
+                  149,
+                  150,
+                  151,
+                  152,
+                  153,
+                  154,
+                  155,
+                  156,
+                  157,
+                  158,
+                  159,
+                  160,
+                  161,
+                  162,
+                  163,
+                  164,
+                  165,
+                  166,
+                  167,
+                  168,
+                  169,
+                  170,
+                  171,
+                  172,
+                  173,
+                  174,
+                  175,
+                  176,
+                  177,
+                  178,
+                  179,
+                  180,
+                  181,
+                  182,
+                  183,
+                  184,
+                  185,
+                  186,
+                  187,
+                  188,
+                  189,
+                  190,
+                  191,
+                  192,
+                  193,
+                  194,
+                  195,
+                  196,
+                  197,
+                  198,
+                  199,
+                  200,
+                  201,
+                  202,
+                  203,
+                  204,
+                  205,
+                  206,
+                  207,
+                  208,
+                  209,
+                  210,
+                  211,
+                  212,
+                  213,
+                  214,
+                  215,
+                  216,
+                  217,
+                  218,
+                  219,
+                  220,
+                  221,
+                  222,
+                  223,
+                  224,
+                  225,
+                  226,
+                  227,
+                  228,
+                  229,
+                  230,
+                  231,
+                  232,
+                  233,
+                  234,
+                  235,
+                  236,
+                  237,
+                  238,
+                  239,
+                  240,
+                  241,
+                  242,
+                  243,
+                  244,
+                  245,
+                  246,
+                  247,
+                  248,
+                  249,
+                  250,
+                  251,
+                  252,
+                  253,
+                  254,
+                  255,
+                  256,
+                  257,
+                  258,
+                  259,
+                  260,
+                  261,
+                  262,
+                  263,
+                  264,
+                  265,
+                  266,
+                  267,
+                  268,
+                  269,
+                  270,
+                  271,
+                  272,
+                  273,
+                  274,
+                  275,
+                  276,
+                  277,
+                  278,
+                  279,
+                  280,
+                  281,
+                  282,
+                  283,
+                  284,
+                  285,
+                  286,
+                  287,
+                  288,
+                  289,
+                  290,
+                  291,
+                  292,
+                  293,
+                  294,
+                  295,
+                  296,
+                  297,
+                  298,
+                  299
+                ],
+                "timing": {
+                  "count": 232,
+                  "mean_ms": 46.16946896491974,
+                  "p50_ms": 45.60999997192994,
+                  "p95_ms": 53.303099994082004,
+                  "max_ms": 56.49069999344647,
+                  "completed_fps_from_mean": 21.659335106492456,
+                  "within_33_3_ms": 0,
+                  "within_33_3_fraction": 0.0,
+                  "latency_gate_passed": null,
+                  "scope": "completed synchronous public capture including CPU-owned requested planes; not presentation/GPU-only"
+                },
+                "native_mean_ms": {
+                  "gpu_copy_ns": 1.0429502068965517,
+                  "gpu_render_ns": 34.59936482758621,
+                  "gpu_total_ns": 35.64231503448276,
+                  "host_prepare_ns": 0.008508189655172412,
+                  "host_readback_ns": 1.2632810344827587,
+                  "host_record_ns": 0.1433198275862069,
+                  "host_submit_ns": 0.05765301724137931,
+                  "host_upload_ns": 0.010317241379310345,
+                  "host_wait_ns": 35.942061206896554
+                }
+              }
+            }
+          },
+          "identity_audit": {
+            "count": 300,
+            "unique_frame_keys": 300,
+            "unique_source_indices": 300,
+            "first_pose": 0,
+            "last_pose": 299,
+            "scope": "unique source/frame identities, not a claim that all physical joint configurations differ"
+          }
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "groups": [
+        {
+          "name": "sparse",
+          "channels": "all",
+          "timing": {
+            "count": 300,
+            "mean_ms": 47.67344733098677,
+            "p50_ms": 47.36199998296797,
+            "p95_ms": 55.35300000337884,
+            "max_ms": 62.64820002252236,
+            "completed_fps_from_mean": 20.97603710210443,
+            "within_33_3_ms": 0,
+            "within_33_3_fraction": 0.0,
+            "latency_gate_passed": false,
+            "scope": "completed synchronous public capture including CPU-owned requested planes; not presentation/GPU-only"
+          },
+          "phase_timing": {
+            "scope": "registered movie-view clock windows [0,.5),[.5,2.3),[2.3,10]; not inferred controller phases",
+            "phases": {
+              "before_finger_window": {
+                "count": 14,
+                "source_pose_indices": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8,
+                  9,
+                  10,
+                  11,
+                  12,
+                  13
+                ],
+                "timing": {
+                  "count": 14,
+                  "mean_ms": 55.235507149648456,
+                  "p50_ms": 55.35300000337884,
+                  "p95_ms": 60.42400002479553,
+                  "max_ms": 60.42400002479553,
+                  "completed_fps_from_mean": 18.104296522356897,
+                  "within_33_3_ms": 0,
+                  "within_33_3_fraction": 0.0,
+                  "latency_gate_passed": null,
+                  "scope": "completed synchronous public capture including CPU-owned requested planes; not presentation/GPU-only"
+                },
+                "native_mean_ms": {
+                  "gpu_copy_ns": 1.129366857142857,
+                  "gpu_render_ns": 41.83157257142857,
+                  "gpu_total_ns": 42.96093942857143,
+                  "host_prepare_ns": 0.010492857142857142,
+                  "host_readback_ns": 1.312992857142857,
+                  "host_record_ns": 0.15335714285714286,
+                  "host_submit_ns": 0.05801428571428572,
+                  "host_upload_ns": 0.009464285714285713,
+                  "host_wait_ns": 43.302121428571425
+                }
+              },
+              "finger_view_window": {
+                "count": 54,
+                "source_pose_indices": [
+                  14,
+                  15,
+                  16,
+                  17,
+                  18,
+                  19,
+                  20,
+                  21,
+                  22,
+                  23,
+                  24,
+                  25,
+                  26,
+                  27,
+                  28,
+                  29,
+                  30,
+                  31,
+                  32,
+                  33,
+                  34,
+                  35,
+                  36,
+                  37,
+                  38,
+                  39,
+                  40,
+                  41,
+                  42,
+                  43,
+                  44,
+                  45,
+                  46,
+                  47,
+                  48,
+                  49,
+                  50,
+                  51,
+                  52,
+                  53,
+                  54,
+                  55,
+                  56,
+                  57,
+                  58,
+                  59,
+                  60,
+                  61,
+                  62,
+                  63,
+                  64,
+                  65,
+                  66,
+                  67
+                ],
+                "timing": {
+                  "count": 54,
+                  "mean_ms": 50.1984722235378,
+                  "p50_ms": 49.46599999675527,
+                  "p95_ms": 61.97149999206886,
+                  "max_ms": 62.64820002252236,
+                  "completed_fps_from_mean": 19.92092499442852,
+                  "within_33_3_ms": 0,
+                  "within_33_3_fraction": 0.0,
+                  "latency_gate_passed": null,
+                  "scope": "completed synchronous public capture including CPU-owned requested planes; not presentation/GPU-only"
+                },
+                "native_mean_ms": {
+                  "gpu_copy_ns": 1.0744853333333333,
+                  "gpu_render_ns": 37.54999111111111,
+                  "gpu_total_ns": 38.62447644444445,
+                  "host_prepare_ns": 0.010190740740740742,
+                  "host_readback_ns": 1.2997796296296296,
+                  "host_record_ns": 0.14612407407407407,
+                  "host_submit_ns": 0.05687592592592593,
+                  "host_upload_ns": 0.009357407407407406,
+                  "host_wait_ns": 38.92765185185185
+                }
+              },
+              "after_finger_window": {
+                "count": 232,
+                "source_pose_indices": [
+                  68,
+                  69,
+                  70,
+                  71,
+                  72,
+                  73,
+                  74,
+                  75,
+                  76,
+                  77,
+                  78,
+                  79,
+                  80,
+                  81,
+                  82,
+                  83,
+                  84,
+                  85,
+                  86,
+                  87,
+                  88,
+                  89,
+                  90,
+                  91,
+                  92,
+                  93,
+                  94,
+                  95,
+                  96,
+                  97,
+                  98,
+                  99,
+                  100,
+                  101,
+                  102,
+                  103,
+                  104,
+                  105,
+                  106,
+                  107,
+                  108,
+                  109,
+                  110,
+                  111,
+                  112,
+                  113,
+                  114,
+                  115,
+                  116,
+                  117,
+                  118,
+                  119,
+                  120,
+                  121,
+                  122,
+                  123,
+                  124,
+                  125,
+                  126,
+                  127,
+                  128,
+                  129,
+                  130,
+                  131,
+                  132,
+                  133,
+                  134,
+                  135,
+                  136,
+                  137,
+                  138,
+                  139,
+                  140,
+                  141,
+                  142,
+                  143,
+                  144,
+                  145,
+                  146,
+                  147,
+                  148,
+                  149,
+                  150,
+                  151,
+                  152,
+                  153,
+                  154,
+                  155,
+                  156,
+                  157,
+                  158,
+                  159,
+                  160,
+                  161,
+                  162,
+                  163,
+                  164,
+                  165,
+                  166,
+                  167,
+                  168,
+                  169,
+                  170,
+                  171,
+                  172,
+                  173,
+                  174,
+                  175,
+                  176,
+                  177,
+                  178,
+                  179,
+                  180,
+                  181,
+                  182,
+                  183,
+                  184,
+                  185,
+                  186,
+                  187,
+                  188,
+                  189,
+                  190,
+                  191,
+                  192,
+                  193,
+                  194,
+                  195,
+                  196,
+                  197,
+                  198,
+                  199,
+                  200,
+                  201,
+                  202,
+                  203,
+                  204,
+                  205,
+                  206,
+                  207,
+                  208,
+                  209,
+                  210,
+                  211,
+                  212,
+                  213,
+                  214,
+                  215,
+                  216,
+                  217,
+                  218,
+                  219,
+                  220,
+                  221,
+                  222,
+                  223,
+                  224,
+                  225,
+                  226,
+                  227,
+                  228,
+                  229,
+                  230,
+                  231,
+                  232,
+                  233,
+                  234,
+                  235,
+                  236,
+                  237,
+                  238,
+                  239,
+                  240,
+                  241,
+                  242,
+                  243,
+                  244,
+                  245,
+                  246,
+                  247,
+                  248,
+                  249,
+                  250,
+                  251,
+                  252,
+                  253,
+                  254,
+                  255,
+                  256,
+                  257,
+                  258,
+                  259,
+                  260,
+                  261,
+                  262,
+                  263,
+                  264,
+                  265,
+                  266,
+                  267,
+                  268,
+                  269,
+                  270,
+                  271,
+                  272,
+                  273,
+                  274,
+                  275,
+                  276,
+                  277,
+                  278,
+                  279,
+                  280,
+                  281,
+                  282,
+                  283,
+                  284,
+                  285,
+                  286,
+                  287,
+                  288,
+                  289,
+                  290,
+                  291,
+                  292,
+                  293,
+                  294,
+                  295,
+                  296,
+                  297,
+                  298,
+                  299
+                ],
+                "timing": {
+                  "count": 232,
+                  "mean_ms": 46.629394823835824,
+                  "p50_ms": 46.71080003026873,
+                  "p95_ms": 52.378499996848404,
+                  "max_ms": 55.06119999336079,
+                  "completed_fps_from_mean": 21.445699730351723,
+                  "within_33_3_ms": 0,
+                  "within_33_3_fraction": 0.0,
+                  "latency_gate_passed": null,
+                  "scope": "completed synchronous public capture including CPU-owned requested planes; not presentation/GPU-only"
+                },
+                "native_mean_ms": {
+                  "gpu_copy_ns": 1.0867631724137932,
+                  "gpu_render_ns": 34.56979186206897,
+                  "gpu_total_ns": 35.656555034482764,
+                  "host_prepare_ns": 0.009488362068965518,
+                  "host_readback_ns": 1.2510948275862068,
+                  "host_record_ns": 0.1397375,
+                  "host_submit_ns": 0.05845086206896551,
+                  "host_upload_ns": 0.009210775862068966,
+                  "host_wait_ns": 35.979660344827586
+                }
+              }
+            }
+          },
+          "identity_audit": {
+            "count": 300,
+            "unique_frame_keys": 300,
+            "unique_source_indices": 300,
+            "first_pose": 0,
+            "last_pose": 299,
+            "scope": "unique source/frame identities, not a claim that all physical joint configurations differ"
+          }
+        },
+        {
+          "name": "sparse",
+          "channels": "rgb",
+          "timing": {
+            "count": 300,
+            "mean_ms": 41.887701665594555,
+            "p50_ms": 42.026500042993575,
+            "p95_ms": 48.770499997772276,
+            "max_ms": 56.74819997511804,
+            "completed_fps_from_mean": 23.873355668529634,
+            "within_33_3_ms": 5,
+            "within_33_3_fraction": 0.016666666666666666,
+            "latency_gate_passed": false,
+            "scope": "completed synchronous public capture including CPU-owned requested planes; not presentation/GPU-only"
+          },
+          "phase_timing": {
+            "scope": "registered movie-view clock windows [0,.5),[.5,2.3),[2.3,10]; not inferred controller phases",
+            "phases": {
+              "before_finger_window": {
+                "count": 14,
+                "source_pose_indices": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8,
+                  9,
+                  10,
+                  11,
+                  12,
+                  13
+                ],
+                "timing": {
+                  "count": 14,
+                  "mean_ms": 47.48950714045869,
+                  "p50_ms": 47.32369998237118,
+                  "p95_ms": 54.537100018933415,
+                  "max_ms": 54.537100018933415,
+                  "completed_fps_from_mean": 21.057283181363022,
+                  "within_33_3_ms": 0,
+                  "within_33_3_fraction": 0.0,
+                  "latency_gate_passed": null,
+                  "scope": "completed synchronous public capture including CPU-owned requested planes; not presentation/GPU-only"
+                },
+                "native_mean_ms": {
+                  "gpu_copy_ns": 0.3691725714285714,
+                  "gpu_render_ns": 40.47413028571428,
+                  "gpu_total_ns": 40.84330285714286,
+                  "host_prepare_ns": 0.012264285714285714,
+                  "host_readback_ns": 0.4109642857142857,
+                  "host_record_ns": 0.1771285714285714,
+                  "host_submit_ns": 0.06815714285714286,
+                  "host_upload_ns": 0.011114285714285714,
+                  "host_wait_ns": 41.1667
+                }
+              },
+              "finger_view_window": {
+                "count": 54,
+                "source_pose_indices": [
+                  14,
+                  15,
+                  16,
+                  17,
+                  18,
+                  19,
+                  20,
+                  21,
+                  22,
+                  23,
+                  24,
+                  25,
+                  26,
+                  27,
+                  28,
+                  29,
+                  30,
+                  31,
+                  32,
+                  33,
+                  34,
+                  35,
+                  36,
+                  37,
+                  38,
+                  39,
+                  40,
+                  41,
+                  42,
+                  43,
+                  44,
+                  45,
+                  46,
+                  47,
+                  48,
+                  49,
+                  50,
+                  51,
+                  52,
+                  53,
+                  54,
+                  55,
+                  56,
+                  57,
+                  58,
+                  59,
+                  60,
+                  61,
+                  62,
+                  63,
+                  64,
+                  65,
+                  66,
+                  67
+                ],
+                "timing": {
+                  "count": 54,
+                  "mean_ms": 43.89315740101867,
+                  "p50_ms": 43.53839997202158,
+                  "p95_ms": 51.25930003123358,
+                  "max_ms": 56.74819997511804,
+                  "completed_fps_from_mean": 22.782594354371785,
+                  "within_33_3_ms": 3,
+                  "within_33_3_fraction": 0.05555555555555555,
+                  "latency_gate_passed": null,
+                  "scope": "completed synchronous public capture including CPU-owned requested planes; not presentation/GPU-only"
+                },
+                "native_mean_ms": {
+                  "gpu_copy_ns": 0.3051768888888889,
+                  "gpu_render_ns": 37.26510577777778,
+                  "gpu_total_ns": 37.570282666666664,
+                  "host_prepare_ns": 0.013437037037037037,
+                  "host_readback_ns": 0.3932611111111111,
+                  "host_record_ns": 0.1763537037037037,
+                  "host_submit_ns": 0.0682537037037037,
+                  "host_upload_ns": 0.010655555555555555,
+                  "host_wait_ns": 37.893344444444445
+                }
+              },
+              "after_finger_window": {
+                "count": 232,
+                "source_pose_indices": [
+                  68,
+                  69,
+                  70,
+                  71,
+                  72,
+                  73,
+                  74,
+                  75,
+                  76,
+                  77,
+                  78,
+                  79,
+                  80,
+                  81,
+                  82,
+                  83,
+                  84,
+                  85,
+                  86,
+                  87,
+                  88,
+                  89,
+                  90,
+                  91,
+                  92,
+                  93,
+                  94,
+                  95,
+                  96,
+                  97,
+                  98,
+                  99,
+                  100,
+                  101,
+                  102,
+                  103,
+                  104,
+                  105,
+                  106,
+                  107,
+                  108,
+                  109,
+                  110,
+                  111,
+                  112,
+                  113,
+                  114,
+                  115,
+                  116,
+                  117,
+                  118,
+                  119,
+                  120,
+                  121,
+                  122,
+                  123,
+                  124,
+                  125,
+                  126,
+                  127,
+                  128,
+                  129,
+                  130,
+                  131,
+                  132,
+                  133,
+                  134,
+                  135,
+                  136,
+                  137,
+                  138,
+                  139,
+                  140,
+                  141,
+                  142,
+                  143,
+                  144,
+                  145,
+                  146,
+                  147,
+                  148,
+                  149,
+                  150,
+                  151,
+                  152,
+                  153,
+                  154,
+                  155,
+                  156,
+                  157,
+                  158,
+                  159,
+                  160,
+                  161,
+                  162,
+                  163,
+                  164,
+                  165,
+                  166,
+                  167,
+                  168,
+                  169,
+                  170,
+                  171,
+                  172,
+                  173,
+                  174,
+                  175,
+                  176,
+                  177,
+                  178,
+                  179,
+                  180,
+                  181,
+                  182,
+                  183,
+                  184,
+                  185,
+                  186,
+                  187,
+                  188,
+                  189,
+                  190,
+                  191,
+                  192,
+                  193,
+                  194,
+                  195,
+                  196,
+                  197,
+                  198,
+                  199,
+                  200,
+                  201,
+                  202,
+                  203,
+                  204,
+                  205,
+                  206,
+                  207,
+                  208,
+                  209,
+                  210,
+                  211,
+                  212,
+                  213,
+                  214,
+                  215,
+                  216,
+                  217,
+                  218,
+                  219,
+                  220,
+                  221,
+                  222,
+                  223,
+                  224,
+                  225,
+                  226,
+                  227,
+                  228,
+                  229,
+                  230,
+                  231,
+                  232,
+                  233,
+                  234,
+                  235,
+                  236,
+                  237,
+                  238,
+                  239,
+                  240,
+                  241,
+                  242,
+                  243,
+                  244,
+                  245,
+                  246,
+                  247,
+                  248,
+                  249,
+                  250,
+                  251,
+                  252,
+                  253,
+                  254,
+                  255,
+                  256,
+                  257,
+                  258,
+                  259,
+                  260,
+                  261,
+                  262,
+                  263,
+                  264,
+                  265,
+                  266,
+                  267,
+                  268,
+                  269,
+                  270,
+                  271,
+                  272,
+                  273,
+                  274,
+                  275,
+                  276,
+                  277,
+                  278,
+                  279,
+                  280,
+                  281,
+                  282,
+                  283,
+                  284,
+                  285,
+                  286,
+                  287,
+                  288,
+                  289,
+                  290,
+                  291,
+                  292,
+                  293,
+                  294,
+                  295,
+                  296,
+                  297,
+                  298,
+                  299
+                ],
+                "timing": {
+                  "count": 232,
+                  "mean_ms": 41.08287456921093,
+                  "p50_ms": 41.58989997813478,
+                  "p95_ms": 46.06640001293272,
+                  "max_ms": 47.24540002644062,
+                  "completed_fps_from_mean": 24.34104259952243,
+                  "within_33_3_ms": 2,
+                  "within_33_3_fraction": 0.008620689655172414,
+                  "latency_gate_passed": null,
+                  "scope": "completed synchronous public capture including CPU-owned requested planes; not presentation/GPU-only"
+                },
+                "native_mean_ms": {
+                  "gpu_copy_ns": 0.3293808275862069,
+                  "gpu_render_ns": 34.435185103448276,
+                  "gpu_total_ns": 34.76456593103448,
+                  "host_prepare_ns": 0.011401724137931035,
+                  "host_readback_ns": 0.4071103448275862,
+                  "host_record_ns": 0.1655935344827586,
+                  "host_submit_ns": 0.0675521551724138,
+                  "host_upload_ns": 0.010739224137931035,
+                  "host_wait_ns": 35.0944025862069
+                }
+              }
+            }
+          },
+          "identity_audit": {
+            "count": 300,
+            "unique_frame_keys": 300,
+            "unique_source_indices": 300,
+            "first_pose": 0,
+            "last_pose": 299,
+            "scope": "unique source/frame identities, not a claim that all physical joint configurations differ"
+          }
+        }
+      ]
+    }
+  ],
+  "thin": {
+    "pixels": 69,
+    "candidate": [
+      {
+        "pixels": 69,
+        "rmse": 0.0075088425189361015,
+        "signed_rgb": [
+          -0.001713943595473785,
+          -0.0006546979545049843,
+          -0.0006546979545049843
+        ],
+        "signed_luminance": -0.0008798935777749512,
+        "maximum_absolute_error": 0.019601512169821533,
+        "space": "inverse-sRGB of published RGB8 (display-linear), not scene radiance"
+      },
+      {
+        "pixels": 69,
+        "rmse": 0.007671916944491914,
+        "signed_rgb": [
+          -0.0010294814861946272,
+          2.927619593374626E-05,
+          2.927619593374626E-05
+        ],
+        "signed_luminance": -0.00019581568728674594,
+        "maximum_absolute_error": 0.019601512169821533,
+        "space": "inverse-sRGB of published RGB8 (display-linear), not scene radiance"
+      }
+    ],
+    "original_fullrate16_guided": [
+      {
+        "pixels": 69,
+        "rmse": 0.007561580975175904,
+        "signed_rgb": [
+          -0.0016587184703048565,
+          -0.0005957756599736535,
+          -0.0005957756599736535
+        ],
+        "signed_luminance": -0.0008217573014500673,
+        "maximum_absolute_error": 0.019601512169821533,
+        "space": "inverse-sRGB of published RGB8 (display-linear), not scene radiance"
+      },
+      {
+        "pixels": 69,
+        "rmse": 0.007714118898338654,
+        "signed_rgb": [
+          -0.0009742563610256987,
+          8.819849046507705E-05,
+          8.819849046507705E-05
+        ],
+        "signed_luminance": -0.00013767941096186188,
+        "maximum_absolute_error": 0.019601512169821533,
+        "space": "inverse-sRGB of published RGB8 (display-linear), not scene radiance"
+      }
+    ]
+  },
+  "thin_work": {
+    "registered_pixels": 69,
+    "valid_results": 69,
+    "incoming_scope": "RGB actual per-pixel 16-proposal incoming before rescue filter; A oct-Ns bits0..19 and real-result-valid bit20; zero A unselected",
+    "device_counts": {
+      "selected_pixels": 24647,
+      "fragment_invocations": 24647,
+      "traced_invocations": 24647,
+      "reconstructed_rescue_pixels": 24647,
+      "filtered_neighbors": 140129,
+      "missing_rescue": 0,
+      "budget_exhausted": 0,
+      "max_invocations": 262144,
+      "invalid": 0,
+      "extra_primary_proposals": 394352
+    }
+  }
+}

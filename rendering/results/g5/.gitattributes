@@ -1,0 +1,4 @@
+*.json binary
+*.log binary
+*.whl binary
+*.zip binary

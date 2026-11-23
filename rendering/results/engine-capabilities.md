@@ -10,7 +10,9 @@ flowchart LR
   C --> E[SAPIEN 参考<br/>光栅或路径追踪]
   D --> F[Capture：RGB／深度／ID／有效掩码]
   E -->|路径追踪仅 RGB| F
-  F --> G[单世界与多世界回放<br/>源码外 wheel 验收待补]
+  F --> G[单世界与多世界回放]
+  D --> H[源码外 wheel<br/>三个后端标定桌与十二项能力检查]
+  E --> H
 ```
 
 | 能力 | 已实测与可打开证据 | 边界 |
@@ -23,6 +25,6 @@ flowchart LR
 | 显示与参考成像 | 自研在两种阴影求交、三档灯面密度下验证 Neutral 高光显示。SAPIEN 在同一原始 HDR 上保留 1600 个原先剪裁的像素。两种光栅均保留几何附件。[自研标定](r2/native-neutral-verification.json) · [参考标定](r2/reference-neutral-calibration.json) | SAPIEN 路径追踪发布 RGB。512 样本下夹爪近景仍有可见颗粒；本机 OIDN 及 OptiX 在实际采集阶段退出，高清片采用直接采样。[兼容性记录](r2/denoiser-probe.json) |
 | 分块与相机回放 | 647×419 离轴相机分九块，两个光栅后端分别与整图对照；全部 ID、有效掩码、RGB 一致，内部深度差 0。[标定读数](r3/README.md) · [同相机 1080p 动态片](r2/README.md) | 光追分块改变像素的随机序列。独立记录单图采集、传感差异和最终有损编码误差。 |
 | 单／多世界回放 | [R4](r4/README.md)：**1、2、8 世界 × 两相机**，每档 300 批，6,600 次曝光对照独跑，深度差 0、ID／掩码逐字相同，单世界 reset 不影响其他世界。 | 此全套是原软件阴影路径，未声称硬件阴影也完成 R4。逐世界、逐相机提交；渲染不推进物理，回放成功不等于控制任务成功。 |
-| 独立交付 | 候选 `82ca3a0b` 的 wheel 已构建（8,134,733 字节）。使用该 wheel 验收时 28 项 HOST 中 27 项通过，1 项因资源清单要求的 `_panda_assets/.gitattributes` 缺失而出错。[本轮结果](../plans/2026-11-23-rendering-to-0700.md) · [G5 规程](g5/README.md) | 源码外安装、原生编译、三个后端 F0 与十二项能力检查尚未执行，G5 待通过。 |
+| 独立交付 | [已验 wheel 与安装说明](g5/README.md)。候选 `5fdf4ec3` 在源码外建环境，从安装包编译 Vulkan 并完成三个后端的标定桌与 12 项能力检查。[逐项结果](g5/installed-report.json) | 已验 Windows、CPython 3.11.9 和 RTX 4060 Laptop。自研后端需要本机 Vulkan SDK、C++ 工具链与 CMake；SAPIEN 和图像依赖通过可选安装项提供。 |
 
 直接观看：[同轨迹日光自研版](r2/workshop-daylight-native.mp4) · [同轨迹日光光追版](r2/workshop-daylight-reference.mp4) · [八世界及单世界 reset](r4/eight-worlds.mp4) · [单世界推 T 光追近景](r4/pusht-reference.mp4)。原图、采样、编码损失与硬件范围以各具名收据为准。

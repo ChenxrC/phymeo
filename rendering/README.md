@@ -4,6 +4,8 @@
 
 [开发计划与 agent 分工](plans/README.md)列出七个模块的任务单、合并次序及整机验收方法。接手单个模块从分工表进入，负责集成或签收可直接阅读[上下游合并计划](plans/08-integration.md)和[最终验收规程](plans/09-acceptance.md)。
 
+[独立安装包与验收结果](results/g5/README.md)提供 Windows 上实测的 wheel，以及从安装包生成的三种后端标定桌画面。
+
 这个目录是一个独立 Python 项目，发行名为 `phymeo-rendering`，导入名为 `phymeo_rendering`。基础包仅依赖 Python 3.11+ 标准库，可读取程序场景、规划一次曝光，并校验后端返回的帧包。G3 已接通三条真实离屏路径。可并排查看[标定桌原图、测量结果与复现步骤](results/g3/README.md)。
 
 [Panda 抓取回放与同机位布光对照](results/r1/README.md)展示 R1 的两个归档姿态、固定及腕部相机，以及自研 Vulkan 的局部采集。

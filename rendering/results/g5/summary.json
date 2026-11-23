@@ -1,0 +1,312 @@
+{
+  "schema": "phymeo-g5-final-handoff-v1",
+  "status": "passed",
+  "candidate": "5fdf4ec37896153c93a5337a44663d581bd1b286",
+  "runtime_git_tree": "91441e7a3b16d0c291e14a09239b2796aee27cc7",
+  "source_archive_sha256": "857ab9fd89066edb1eeb8bd705068c508cae6dfa2a8ffc7a0db734b92202c666",
+  "wheel": {
+    "file": "C:\\Users\\38347\\AppData\\Local\\Temp\\phymeo-g5-5fdf4ec3-20261123-02\\dist\\phymeo_rendering-0.1.0a0-py3-none-any.whl",
+    "sha256": "0ba6e6c65515148c1c5357b6613747e8c53d3d552c998efd5569dbcec44faf43",
+    "tag": "py3-none-any",
+    "version": "0.1.0a0",
+    "base_dependencies": [],
+    "optional_dependencies": [
+      "sapien==3.0.3; extra == \"sapien\"",
+      "numpy==1.26.4; extra == \"sapien\"",
+      "Pillow==12.2.0; extra == \"textures\"",
+      "numpy==1.26.4; extra == \"ibl\""
+    ]
+  },
+  "source_root": "C:\\Users\\38347\\AppData\\Local\\Temp\\phymeo-g5-5fdf4ec3-20261123-02\\source",
+  "work_dir": "C:\\Users\\38347\\AppData\\Local\\Temp\\phymeo-g5-5fdf4ec3-20261123-02\\runtime",
+  "report_sha256": "84b3d78f10237cbe7bdff8b7b6822a3fda7905004896afc0a7bb08a3dd1919b8",
+  "host": {
+    "methods": 30,
+    "passed": 30,
+    "skipped": 0,
+    "unittest_seconds": 5.803
+  },
+  "f0": [
+    {
+      "path": "native-raster",
+      "status": "passed",
+      "executed_channels": [
+        "srgb8_rgb",
+        "forward_depth_m_f32",
+        "instance_id_u32",
+        "valid_u8"
+      ]
+    },
+    {
+      "path": "sapien-raster",
+      "status": "passed",
+      "executed_channels": [
+        "srgb8_rgb",
+        "forward_depth_m_f32",
+        "instance_id_u32",
+        "valid_u8"
+      ]
+    },
+    {
+      "path": "sapien-pt",
+      "status": "passed",
+      "executed_channels": [
+        "srgb8_rgb"
+      ]
+    }
+  ],
+  "features": [
+    {
+      "kind": "host",
+      "status": "passed"
+    },
+    {
+      "kind": "uv-native",
+      "status": "passed"
+    },
+    {
+      "kind": "uv-sapien-raster",
+      "status": "passed"
+    },
+    {
+      "kind": "uv-sapien-pt",
+      "status": "passed"
+    },
+    {
+      "kind": "ibl-native",
+      "status": "passed"
+    },
+    {
+      "kind": "ibl-sapien",
+      "status": "passed"
+    },
+    {
+      "kind": "roughness-native",
+      "status": "passed"
+    },
+    {
+      "kind": "roughness-sapien-raster",
+      "status": "passed"
+    },
+    {
+      "kind": "roughness-sapien-pt",
+      "status": "passed"
+    },
+    {
+      "kind": "neutral-sapien",
+      "status": "passed"
+    },
+    {
+      "kind": "ray-query-native",
+      "status": "passed"
+    },
+    {
+      "kind": "neutral-native",
+      "status": "passed"
+    }
+  ],
+  "commands": 23,
+  "charts": [
+    {
+      "kind": "uv-native",
+      "passed": true,
+      "cells": 16,
+      "sample_count": 784,
+      "max_absolute_rgb8": 1,
+      "sensor_differences": {
+        "forward_depth_m_f32": false,
+        "instance_id_u32": false,
+        "valid_u8": false
+      }
+    },
+    {
+      "kind": "uv-sapien-raster",
+      "passed": true,
+      "cells": 16,
+      "sample_count": 784,
+      "max_absolute_rgb8": 1,
+      "sensor_differences": {
+        "forward_depth_m_f32": false,
+        "instance_id_u32": false,
+        "valid_u8": false
+      }
+    },
+    {
+      "kind": "uv-sapien-pt",
+      "passed": true,
+      "cells": 16,
+      "sample_count": 784,
+      "max_absolute_rgb8": 1,
+      "sensor_differences": {}
+    },
+    {
+      "kind": "roughness-native",
+      "passed": true,
+      "cells": 16,
+      "sample_count": 784,
+      "max_absolute_rgb8": 1,
+      "sensor_differences": {
+        "forward_depth_m_f32": false,
+        "instance_id_u32": false,
+        "valid_u8": false
+      }
+    },
+    {
+      "kind": "roughness-sapien-raster",
+      "passed": true,
+      "cells": 16,
+      "sample_count": 784,
+      "max_absolute_rgb8": 0,
+      "sensor_differences": {
+        "forward_depth_m_f32": false,
+        "instance_id_u32": false,
+        "valid_u8": false
+      }
+    },
+    {
+      "kind": "roughness-sapien-pt",
+      "passed": true,
+      "cells": 16,
+      "sample_count": 784,
+      "max_absolute_rgb8": 0,
+      "sensor_differences": {}
+    }
+  ],
+  "native_ibl": {
+    "sky_max_rgb8": 1,
+    "mirror_max_rgb8": 1,
+    "red_delta_90": {
+      "mirror": 42.17466666666667,
+      "matte": 12.111999999999995
+    }
+  },
+  "sapien_ibl": {
+    "sky_max_rgb8": 3,
+    "reflection_red_delta_90": 40.56933333333333,
+    "raster_sensors_unchanged": true
+  },
+  "neutral": {
+    "native_tests": 2,
+    "native_skipped": 0,
+    "native_captures": 24,
+    "native_highlight_recovered": true,
+    "native_sensors_unchanged": true,
+    "sapien_recovered_pixels": 1600,
+    "sapien_raw_unchanged": {
+      "pt": true,
+      "raster": true
+    },
+    "sapien_raster_sensors_unchanged": true
+  },
+  "device": {
+    "abi_version": 2,
+    "device_index": 1,
+    "api_version": 4206881,
+    "driver_version": 2374090752,
+    "vendor_id": 4318,
+    "device_id": 10464,
+    "device_type": 2,
+    "max_width": 32768,
+    "max_height": 32768,
+    "max_vertices": 12288,
+    "validation_errors": 0,
+    "validation_warnings": 0,
+    "captures": 0,
+    "device_name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+    "device_uuid": "3b78d98198a3be57a8cb4d72fdfbfa96",
+    "closed": true,
+    "validation_enabled": true,
+    "live_contexts": 0,
+    "live_frames": 0,
+    "live_resources": 0
+  },
+  "native_build_artifacts": {
+    "CMakeCache.txt": "22d48831f835edb956c3c0ba768bb2abb67ae227b976ae59a942b3ffe922f3bf",
+    "native.frag.spv": "cd6f295432a75c7383357cb9d4805f72f8ea5a47f7c117adb2975ae919c90066",
+    "native.vert.spv": "9595a6722905db50583a3d3518c4853463568124bade005db7ffa04f2d1f41b4",
+    "phymeo_native.dll": "171ea912cfeb2b9304464514405f5a5603d810fd73627f929038032f336cbc21",
+    "resident.frag.spv": "932d4807945b92d6629a303f5d03fe8f4d4f3251f39300920810ee65af4f704f",
+    "resident.vert.spv": "b1cb30601e2f8ff78e7a14818d3253ec95806b4ba22039b106927ffa4ca86810",
+    "resident_area4.frag.spv": "30722e75d3a14aa380e013302305e7758ddf2e7d3d112241b3a38a1214526bea",
+    "resident_area8.frag.spv": "ee56f769da6d7c31bca0f379514794bbc1e16e5ab8196304a498aa3371e0683a",
+    "resident_rayquery.frag.spv": "26d88301a85b868c2f423cc19440bdd3ea81d7ee2fe35107ae018e837252ed4a",
+    "resident_rayquery.vert.spv": "b1069d14f062dcf3b441d1c44286068b92754557dbe8ce8327e9407cd7c0ec82",
+    "resident_rayquery_area4.frag.spv": "702d2cfca15158086867711b8de3e1eb9029e4e0947f8e09d448c70c6a79c409",
+    "resident_rayquery_area8.frag.spv": "2310c4971e18d8909079bd3fe80b48f07e583896039f05c7f4fdd9eb1d9e0877",
+    "resident_sky.frag.spv": "460ba70c274ce9adda99c506e5b2c2ae80d9534f986e6aab3aa62c61f3b5d8d7",
+    "resident_sky.vert.spv": "d9bbb44453660efa44c1f5f6c2861102b62f6b23b400400fac7d7f3faa02b798"
+  },
+  "stages": [
+    {
+      "label": "01-build-venv",
+      "start_utc": "2026-11-23T01:14:21.5495017Z",
+      "end_utc": "2026-11-23T01:14:25.1987482Z",
+      "seconds": 3.6492465,
+      "exit_code": 0,
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "02-offline-build-tools",
+      "start_utc": "2026-11-23T01:14:29.8376745Z",
+      "end_utc": "2026-11-23T01:14:31.5997083Z",
+      "seconds": 1.7620338,
+      "exit_code": 0,
+      "log_sha256": "3f6250b4d31214cce560bb1031a5ece8025d0a2b71920fe955a07dea4c497b0d"
+    },
+    {
+      "label": "03-build-freeze",
+      "start_utc": "2026-11-23T01:14:35.9434346Z",
+      "end_utc": "2026-11-23T01:14:36.2645838Z",
+      "seconds": 0.3211492,
+      "exit_code": 0,
+      "log_sha256": "33020776fa959333f964a786af3aa83c554fcf9c6fd7df3a5a08d7f7845db7b3"
+    },
+    {
+      "label": "04-wheel-build",
+      "start_utc": "2026-11-23T01:14:40.9279953Z",
+      "end_utc": "2026-11-23T01:14:42.1627162Z",
+      "seconds": 1.2347209,
+      "exit_code": 0,
+      "log_sha256": "8319c951fb54a43619a8a4d287c5e92cfed35293286fb94be2ca41c7b1cb845d"
+    },
+    {
+      "label": "05-built-wheel-host",
+      "start_utc": "2026-11-23T01:15:01.6323453Z",
+      "end_utc": "2026-11-23T01:15:07.5988061Z",
+      "seconds": 5.9664608,
+      "exit_code": 0,
+      "log_sha256": "475540476b7e6133f89076e04c99b9665ccee335fc9fd87be9ad87b8c11e0b09"
+    },
+    {
+      "label": "06-installed-twelve-features",
+      "start_utc": "2026-11-23T01:15:40.5899303Z",
+      "end_utc": "2026-11-23T01:16:54.1261921Z",
+      "seconds": 73.5362618,
+      "exit_code": 0,
+      "log_sha256": "c3de3d61869fb9bc3fcffe0527734143de77fdb3b7846e67c9b8cc0f2293f700"
+    }
+  ],
+  "release_guard": {
+    "utc": "2026-11-23T01:16:56.3336539Z",
+    "active_entrypoints": [],
+    "excluded_idle_workers": []
+  },
+  "installation": {
+    "python": "C:\\Users\\38347\\AppData\\Local\\Temp\\phymeo-g5-5fdf4ec3-20261123-02\\runtime\\env\\Scripts\\python.exe",
+    "package": "C:\\Users\\38347\\AppData\\Local\\Temp\\phymeo-g5-5fdf4ec3-20261123-02\\runtime\\env\\Lib\\site-packages\\phymeo_rendering",
+    "library": "C:\\Users\\38347\\AppData\\Local\\Temp\\phymeo-g5-5fdf4ec3-20261123-02\\runtime\\native-build\\phymeo_native.dll",
+    "shader_directory": "C:\\Users\\38347\\AppData\\Local\\Temp\\phymeo-g5-5fdf4ec3-20261123-02\\runtime\\native-build",
+    "validation_layer": "C:\\Users\\38347\\AppData\\Local\\Temp\\phymeo-g5-5fdf4ec3-20261123-02\\sdk\\validation",
+    "native_device_index": 1,
+    "sapien_device": "cuda:0"
+  },
+  "limitations": [
+    "Source-only wheel; no platform DLL or SPIR-V embedded. Native requires external Vulkan SDK/compiler and a new build.",
+    "This installed-device validation is Windows CPython 3.11.9 on RTX 4060 Laptop GPU only.",
+    "Native is raster primary visibility with optional ray-query shadows, not path tracing.",
+    "SAPIEN path tracing exposes RGB only; raster supplies depth/ID/VALID.",
+    "Official SAPIEN fixed fresh-camera sequence; arbitrary user seed and cross-device bitwise determinism are unsupported.",
+    "G5 verifies packaged Panda assets and original bounded F0/feature scenes; it does not claim a rerun of every long movie or multi-world benchmark.",
+    "Root .gitattributes/.gitignore are source controls, omitted and SHA-recorded; all declared assets/licences and other present or hidden files remain byte-checked."
+  ]
+}

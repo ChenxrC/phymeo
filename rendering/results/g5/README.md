@@ -1,6 +1,18 @@
 # G5 · 源码外 wheel 复现
 
-本目录定义交付与执行口径。**原 G5 HOST 9 项通过，实际 wheel 节点明确跳过；官方离线依赖已准备。最终 wheel 构建、隔离安装和设备 F0 尚待串行实测。** 不把源码树内的既有 R0 结果计为此项通过。
+**G5 已通过。** 2026 年 11 月 23 日，候选 `5fdf4ec37896153c93a5337a44663d581bd1b286` 在 Windows、CPython 3.11.9、RTX 4060 Laptop 上完成源码外离线安装。基础安装直接从 site-packages 核验 57 份 Panda 网格和 59 个实例，随后从安装包携带的 C++ 与 GLSL 编译出本机 DLL 和 12 个 SPIR-V。共执行 23 条外部命令，均返回 0。[已验 wheel](phymeo_rendering-0.1.0a0-py3-none-any.whl) · [30 项 HOST 原始结果](built-wheel-host.log) · [安装与设备完整记录](installed-report.json)
+
+| 用同一张标定桌检验安装结果 | 实际输出 |
+| --- | --- |
+| 自研 Vulkan 光栅 | [打开标定桌画面](native-raster.png) |
+| SAPIEN 参考光栅 | [打开标定桌画面](sapien-raster.png) |
+| SAPIEN 参考路径追踪 | [打开标定桌画面](sapien-pt.png) |
+
+16 块粗糙度标定片上，将已知粗糙度填入材质与从贴图读取的两次曝光相比，最大 RGB8 通道差依次为 1、0、0。设备比较在编码视频前进行。[实测摘要](summary.json) · [503 份原始图像、日志与设备记录](evidence.zip) · [证据文件清单](evidence-files.json)
+
+另外 12 个阶段均通过，涵盖已安装模块的 HOST 检查、三条路径的 UV 与粗糙度贴图、自研与参考的环境光及 Neutral 显示，以及自研硬件阴影查询。完整报告给出各阶段的设备、输入、输出文件摘要与退出码。wheel 大小为 8,134,733 字节，SHA-256 为 `0ba6e6c65515148c1c5357b6613747e8c53d3d552c998efd5569dbcec44faf43`。
+
+此前候选 `82ca3a0b` 在首次 wheel 检查中因 Panda 资产目录的 Git 控制文件报错。修复后的检查器只允许资产根目录两份明确列出的 Git 控制文件在 wheel 中缺席，继续核验资产清单及其列出的 72 份资源，共 73 份文件。下方保留开发阶段的命令、故障与测试记录。
 
 ## 交付边界
 
@@ -23,7 +35,7 @@ python rendering/tools/g5_reproduce.py `
   --wheel C:/candidate/dist/phymeo_rendering-0.1.0a0-py3-none-any.whl `
   --wheelhouse C:/offline/wheels `
   --work-dir C:/independent/NEW-G5-run `
-  --native-device-index 1 --sapien-device cuda:0 `
+  --feature-smoke --native-device-index 1 --sapien-device cuda:0 `
   --validation-layer-path C:/sdk/validation `
   --cmake-arg=-DVULKAN_INCLUDE_DIR=C:/sdk/include `
   --cmake-arg=-DVULKAN_LIBRARY=C:/sdk/lib/vulkan-1.lib `

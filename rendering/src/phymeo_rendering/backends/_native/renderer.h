@@ -342,3 +342,16 @@ PR_API int pr_resident_progressive_info(void*,PrResidentProgressiveInfo*);
 PR_API int pr_resident_begin_progressive(void*,uint32_t);
 PR_API int pr_resident_reset_progressive(void*);
 PR_API int pr_resident_read_progressive_mean(void*,void*,size_t);
+
+// Opt-in first-batch spatial display. Raw progressive mean is never filtered.
+struct PrResidentSpatialInfo {
+    uint32_t spatial_abi_version,supported,shader_compatible,enabled;
+    uint32_t last_capture_filtered,kernel_radius,guide_code_limit,reserved;
+    uint64_t filtered_rgb_captures,rgb_captures,guide_readbacks,guide_readback_bytes;
+};
+static_assert(sizeof(PrResidentSpatialInfo)==64,"spatial info ABI");
+PR_API uint32_t pr_resident_spatial_abi_version();
+// Replaces set_progressive; uses a separate same-exposure direct guide pass.
+PR_API int pr_resident_set_spatial(void*,uint32_t,const uint32_t*,size_t,const uint32_t*,size_t);
+PR_API int pr_resident_spatial_info(void*,PrResidentSpatialInfo*);
+PR_API int pr_resident_read_spatial_guide(void*,void*,size_t);

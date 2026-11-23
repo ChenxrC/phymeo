@@ -73,6 +73,7 @@ struct Context {
     PrResidentReflectionInfo reflection_info{};
     PrResidentIndirectInfo indirect_info{};
     PrResidentProgressiveInfo progressive_info{};
+    PrResidentSpatialInfo spatial_info{};
     std::shared_ptr<ProgressiveState> progressive_state;
     std::shared_ptr<MsaaState> msaa_state;
     uint32_t display_transform = 0;
@@ -114,6 +115,7 @@ struct Context {
         texture_info.texture_abi_version=1;
         normal_info.normal_abi_version=1;
         progressive_info.progressive_abi_version=1;
+        spatial_info.spatial_abi_version=1;
         indirect_info.indirect_abi_version=1;indirect_info.samples_per_pixel=16;indirect_info.max_bounces=1;
         reflection_info.reflection_abi_version=1; reflection_info.max_bounces=1;
         reflection_info.metallic_min=.99f; reflection_info.roughness_max=.10f;
@@ -147,6 +149,7 @@ struct Context {
         return waited;
     }
     VkFormat attachment_format(size_t i) const {
+        if(i==5)return VK_FORMAT_R8G8B8A8_UNORM;
         return i==0 && progressive_info.shader_compatible ? VK_FORMAT_R32G32B32A32_SFLOAT : FORMATS[i];
     }
     void info(PrInfo* output) const {
@@ -278,6 +281,9 @@ struct Context {
         progressive_info.shader_compatible=resident && named_shader_marker(frag,frag_bytes,66,"PR_PROGRESSIVE_ABI");
         require(!progressive_info.shader_compatible || (ray_query&&indirect_info.shader_compatible),"progressive shader requires explicit indirect ray-query context");
         progressive_info.supported=progressive_info.shader_compatible;
+        spatial_info.shader_compatible=progressive_info.shader_compatible;
+        require(!spatial_info.shader_compatible||progressive_info.shader_compatible,"spatial guide requires progressive shader");
+        spatial_info.supported=spatial_info.shader_compatible;
         surface_maps_compatible=resident && surface_maps_shader_marker(frag,frag_bytes);
         display_compatible=resident && display_shader_marker(frag,frag_bytes);
         msaa_info.shader_compatible=resident && named_shader_marker(frag,frag_bytes,59,"PR_MSAA_COLOR_ABI");
@@ -578,6 +584,7 @@ struct Context {
             value.initialLayout=VK_IMAGE_LAYOUT_UNDEFINED;
             value.finalLayout=i==4 ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL : VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
             if (i<4) colors[i]={i,VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
+
         }
         VkAttachmentReference depth{4,VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL};
         VkSubpassDescription subpass{}; subpass.pipelineBindPoint=VK_PIPELINE_BIND_POINT_GRAPHICS;
@@ -656,8 +663,9 @@ struct FrameResources {
     Buffer vertices{}, uniform{}, readback{};
     void* readback_mapping{};
     size_t readback_capacity{};
-    std::array<Image,5> images{};
-    VkFramebuffer framebuffer{};
+    std::array<Image,6> images{};
+    VkFramebuffer framebuffer{},guide_framebuffer{};
+    bool guide_initialized=false;
     VkDescriptorPool descriptors{};
     VkQueryPool timestamps{};
     VkCommandBuffer commands{};
@@ -670,6 +678,7 @@ struct FrameResources {
         release(commands, [&](auto h) { vkFreeCommandBuffers(c.device,c.command_pool,1,&h); });
         release(descriptors, [&](auto owned) { vkDestroyDescriptorPool(c.device,owned,nullptr); });
         release(timestamps, [&](auto owned) { vkDestroyQueryPool(c.device,owned,nullptr); });
+        release(guide_framebuffer, [&](auto owned) { vkDestroyFramebuffer(c.device,owned,nullptr); });
         release(framebuffer, [&](auto owned) { vkDestroyFramebuffer(c.device,owned,nullptr); });
         for(auto& image:images) {
             release(image.view, [&](auto owned) { vkDestroyImageView(c.device,owned,nullptr); });
@@ -1198,7 +1207,7 @@ int pr_resident_reset_progressive(void* handle){
         require(handle,"null progressive context");auto& c=*static_cast<Context*>(handle);
         require(c.progressive_info.enabled&&!c.poisoned,"progressive reset requires valid enabled session");
         c.progressive_info.batches=0;c.progressive_info.last_batch_index=0;++c.progressive_info.reset_calls;
-        c.progressive_state->armed=false;c.progressive_state->pending_reset=true;return 0;
+        c.progressive_state->armed=false;c.progressive_state->pending_reset=true;c.spatial_info.last_capture_filtered=0;return 0;
     }catch(const std::exception& error){last_error=error.what();return -1;}
 }
 int pr_resident_read_progressive_mean(void* handle,void* output,size_t bytes){
@@ -1207,4 +1216,18 @@ int pr_resident_read_progressive_mean(void* handle,void* output,size_t bytes){
         require(c.progressive_info.enabled,"progressive mean unavailable");
         progressive_read(c,output,bytes);return 0;
     }catch(const std::exception& error){last_error=error.what();return -1;}
+}
+
+uint32_t pr_resident_spatial_abi_version(){return 1;}
+int pr_resident_spatial_info(void* handle,PrResidentSpatialInfo* output){
+    if(!handle||!output){last_error="null spatial info";return -1;}
+    *output=static_cast<Context*>(handle)->spatial_info;return 0;
+}
+int pr_resident_set_spatial(void* handle,uint32_t bounces,const uint32_t* code,size_t bytes,const uint32_t* guide,size_t guide_bytes){
+    try{require(handle,"null spatial context");spatial_setup(*static_cast<Context*>(handle),bounces,code,bytes,guide,guide_bytes);return 0;}
+    catch(const std::exception& e){last_error=e.what();return -1;}
+}
+int pr_resident_read_spatial_guide(void* handle,void* output,size_t bytes){
+    try{require(handle,"null spatial context");spatial_read(*static_cast<Context*>(handle),output,bytes);return 0;}
+    catch(const std::exception& e){last_error=e.what();return -1;}
 }

@@ -31,6 +31,7 @@ from ._native_normal import pack_normal_maps, configure_normal_maps
 from ._native_reflection import reflection_declaration, configure_reflection
 from ._native_indirect import indirect_declaration, configure_indirect
 from ._native_progressive import configure_progressive
+from ._native_spatial import configure_spatial
 from ._native_device import (
     NativeDevice,
     Parameters,
@@ -153,7 +154,7 @@ def _image_planes(raw, pixels, channels, attachment_mask):
 
 
 class _NativeDelegate:
-    def __init__(self, scene, meshes, device, exposure, *, resident=False, studio=None, textures=None, environment=None, shadow_mode='software', area_light_grid=2, display_info=None, msaa_info=None, normal_info=None, reflection_info=None, indirect_info=None, progressive_history=None):
+    def __init__(self, scene, meshes, device, exposure, *, resident=False, studio=None, textures=None, environment=None, shadow_mode='software', area_light_grid=2, display_info=None, msaa_info=None, normal_info=None, reflection_info=None, indirect_info=None, progressive_history=None, spatial_info=None):
         self.scene, self.meshes, self.device, self.exposure = scene, meshes, device, exposure
         self.display_info = display_info or {'display_transform':'clip', 'display_transform_abi':None}
         self.resident = resident
@@ -164,6 +165,7 @@ class _NativeDelegate:
         self.reflection_info = deepcopy(reflection_info)
         self.indirect_info = deepcopy(indirect_info)
         self.progressive_history = progressive_history
+        self.spatial_info = spatial_info
         self._progressive_pending_publication = None
         self.effective_lights = scene.lights
         self.environment = deepcopy(environment)
@@ -225,6 +227,8 @@ class _NativeDelegate:
         result=Capture(frame.key,frame.time_s,camera,
             _image_planes(raw,camera.width*camera.height,request.channels,attachment_mask))
         self.last_passes = tuple(stage.value for stage in plan)
+        if self.spatial_info is not None and Channel.RGB in request.channels and (progressive_reasons or not self.progressive_history.batches):
+            self.last_passes += ('spatial-direct-guide', 'spatial-first-batch-display')
         self.last_request = dict(
             width=camera.width,
             height=camera.height,
@@ -282,7 +286,7 @@ class _NativeDelegate:
             attachment_formats=["RGBA32F -> GPU mean -> RGBA8_UNORM" if self.progressive_history else "RGBA8_UNORM", "R32_SFLOAT", "R32_UINT", "R8_UINT"],
             last_passes=list(self.last_passes),
             last_request=self.last_request,
-            stage_execution=("visibility raster + bounded indirect lighting/sensors + GPU linear mean/display compute" if self.progressive_history else "visibility raster + fused fragment shadows/lighting/display/sensors"),
+            stage_execution=("visibility raster + bounded indirect lighting/sensors + GPU linear mean/display compute" if self.progressive_history else "visibility raster + fused fragment shadows/lighting/display/sensors") + ("; first/reset RGB adds direct-guide raster and guided display" if self.spatial_info else ""),
             lifecycle_counts="DLL-wide owned contexts, frames, and explicit Vulkan handles; pools own descriptor sets",
             path_trace=False,
             textures=self.textures is not None,
@@ -291,6 +295,8 @@ class _NativeDelegate:
             reflection=deepcopy(self.reflection_info),
             indirect=deepcopy(self.indirect_info),
             progressive=self.progressive_history.diagnostics() if self.progressive_history else None,
+            spatial_filter=(deepcopy(self.spatial_info) if self.spatial_info is not None else
+                            dict(mode='none', last_capture_filtered=False, filtered_captures=0)),
             physics_steps=0,
         )
 
@@ -318,12 +324,19 @@ class NativeRenderSession(ValidatedRenderSession):
                     device = self._delegate.device
                     device._progressive_reset(device._handle)
                     self._delegate.progressive_history.reset('failed_capture')
+                    if self._delegate.spatial_info is not None:
+                        self._delegate.spatial_info['last_capture_filtered'] = False
                     self._delegate._progressive_pending_publication = None
                 raise
             pending = getattr(self._delegate, "_progressive_pending_publication", None)
             if pending is not None:
                 self._delegate.progressive_history.commit(*pending)
                 self._delegate._progressive_pending_publication = None
+            spatial = getattr(self._delegate, 'spatial_info', None)
+            if spatial is not None:
+                filtered = pending is not None and self._delegate.progressive_history.batches == 1
+                spatial['last_capture_filtered'] = filtered
+                spatial['filtered_captures'] += int(filtered)
             return result
 
     def reset_accumulation(self):
@@ -336,6 +349,8 @@ class NativeRenderSession(ValidatedRenderSession):
             if delegate.device._progressive_reset(delegate.device._handle):
                 raise RuntimeError(delegate.device._error())
             delegate.progressive_history.reset()
+            if delegate.spatial_info is not None:
+                delegate.spatial_info['last_capture_filtered'] = False
 
     def set_directional_lights(self, lights):
         """Atomically override 0..4 directional lights in a progressive session."""
@@ -354,6 +369,20 @@ class NativeRenderSession(ValidatedRenderSession):
                 if any(not math.isfinite(ct.c_float(x).value) for x in values):
                     raise ValueError('directional light is not finite in FP32')
             self._delegate.effective_lights = lights
+
+    def read_spatial_guide(self):
+        """Copy the latest first-batch display-direct guide; never advances sampling."""
+        with self._lock:
+            self._check_open()
+            delegate = self._delegate
+            if delegate.spatial_info is None or not delegate.spatial_info['last_capture_filtered']:
+                raise UnsupportedRequestError('read_spatial_guide requires the latest accepted capture to be filtered RGB')
+            width, height = delegate.progressive_history.key['extent']
+            output = (ct.c_ubyte * (width * height * 4))()
+            if delegate.device._spatial_read(delegate.device._handle, output, ct.sizeof(output)):
+                raise RuntimeError(delegate.device._error())
+            return dict(width=width, height=height, format='RGBA8_UNORM',
+                        space='display-srgb-direct', data=bytes(output))
 
     def read_linear_mean(self):
         """Read the current GPU mean without a new exposure or sample batch."""
@@ -405,6 +434,13 @@ class NativeBackend:
     read_linear_mean explicitly copies the last accepted RGB mean without a new
     exposure. Static materials/panels belong to a session; direction lights may
     be changed atomically with set_directional_lights in progressive sessions.
+    spatial_filter='guided' is an explicit progressive-only first/reset RGB
+    preview: same-ID/valid, relative depth .003 and direct-guide RGB8 difference
+    <=2 gate a 5x5 binomial kernel. The current direct/environment guide uses
+    an extra GPU raster pass only on the first batch, including its shadow tests.
+    Raw mean and later RGB batches use the original primary shader unchanged.
+    A separate compute ABI and guide image are required; old devices
+    never silently approximate it. read_spatial_guide is explicit debug readback.
     display_transform='pbr-neutral' requires a declared resident display ABI;
     default 'clip' preserves the previous output and never probes that extension.
     """
@@ -428,6 +464,7 @@ class NativeBackend:
         indirect_seed=0,
         progressive=False,
         indirect_bounces=1,
+        spatial_filter='none',
     ):
         if isinstance(device_index, bool) or not isinstance(device_index, int):
             raise TypeError("device_index must be an integer, not bool")
@@ -486,6 +523,13 @@ class NativeBackend:
             raise UnsupportedRequestError('progressive requires resident ray_query diffuse_bounce with msaa_samples=1')
         if not progressive and indirect_bounces != 1:
             raise UnsupportedRequestError('two diffuse bounces require progressive=True')
+        if not isinstance(spatial_filter, str):
+            raise TypeError('spatial_filter must be none or guided')
+        if spatial_filter not in ('none', 'guided'):
+            raise ValueError('spatial_filter must be none or guided')
+        if spatial_filter != 'none' and not progressive:
+            raise UnsupportedRequestError('guided spatial filtering requires progressive=True')
+        self.spatial_filter = spatial_filter
         self.progressive = progressive
         self.indirect_bounces = indirect_bounces
         self.shadow_mode = shadow_mode
@@ -542,7 +586,8 @@ class NativeBackend:
             **({'normal_maps': True} if has_normal_maps else {}),
             **({'reflection': True} if self.reflection_mode=='single_bounce' else {}),
             **({'indirect': True} if self.indirect_mode!='none' else {}),
-            **({'progressive': True} if self.progressive else {})
+            **({'progressive': True} if self.progressive else {}),
+            **({'spatial': True} if self.spatial_filter == 'guided' else {})
         )
         try:
             display_info = configure_display(device, self.display_transform)
@@ -576,6 +621,7 @@ class NativeBackend:
             indirect_info=configure_indirect(device,indirect)
             msaa_info = configure_msaa(device, self.msaa_samples)
             progressive_history = configure_progressive(device, self.progressive, self.indirect_bounces)
+            spatial_info = configure_spatial(device, self.spatial_filter)
             if self.progressive:
                 indirect_info = dict(indirect_info)
                 indirect_info['bounces'] = self.indirect_bounces
@@ -585,7 +631,7 @@ class NativeBackend:
                 )
                 indirect_info['seed_scope'] = 'seed + capture-local pixel + 0-based batch; state changes reset batch zero'
             return NativeRenderSession(scene, _NativeDelegate(
-                scene, meshes, device, self.exposure, resident=self.resident, studio=studio_info, textures=texture_info, environment=environment_info, shadow_mode=self.shadow_mode, area_light_grid=self.area_light_grid, display_info=display_info, msaa_info=msaa_info, normal_info=normal_info, reflection_info=reflection_info, indirect_info=indirect_info, progressive_history=progressive_history))
+                scene, meshes, device, self.exposure, resident=self.resident, studio=studio_info, textures=texture_info, environment=environment_info, shadow_mode=self.shadow_mode, area_light_grid=self.area_light_grid, display_info=display_info, msaa_info=msaa_info, normal_info=normal_info, reflection_info=reflection_info, indirect_info=indirect_info, progressive_history=progressive_history, spatial_info=spatial_info))
         except BaseException as primary:
             try:
                 device.close()

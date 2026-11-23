@@ -93,12 +93,21 @@ def _instance_matrices(scene, frame):
     """World-from-mesh rigid transforms in the static instance table order."""
     nodes = {node.node_id: node.world_pose for node in frame.nodes}
     result = (ct.c_float * (16 * len(scene.instances)))()
+    # Material submeshes on the same link frequently have the same local pose.
+    # Keep the cache inside this exposure so replay/reset cannot reuse old motion.
+    packed = {}
     for index, instance in enumerate(scene.instances):
-        pose = compose_pose(nodes[instance.node_id], instance.local_pose)
-        rotation = _rotation(pose)
-        values = tuple(value for column in range(3)
-                       for value in (*[rotation[row][column] for row in range(3)], 0.))
-        result[16*index:16*(index+1)] = (*values, *pose.position_m, 1.)
+        key = (instance.node_id, id(instance.local_pose))
+        matrix = packed.get(key)
+        if matrix is None:
+            pose = compose_pose(nodes[instance.node_id], instance.local_pose)
+            rotation = _rotation(pose)
+            matrix = (rotation[0][0], rotation[1][0], rotation[2][0], 0.,
+                      rotation[0][1], rotation[1][1], rotation[2][1], 0.,
+                      rotation[0][2], rotation[1][2], rotation[2][2], 0.,
+                      *pose.position_m, 1.)
+            packed[key] = matrix
+        result[16*index:16*(index+1)] = matrix
     if not all(math.isfinite(value) for value in result):
         raise ValueError('resident transform FP32 conversion is nonfinite')
     return result
@@ -141,12 +150,11 @@ def _image_planes(raw, pixels, channels, attachment_mask):
         if not attachment_mask&(1<<bit): continue
         length=pixels*width
         if channel in requested:
-            part=raw[offset:offset+length]
             if channel is Channel.RGB:
-                rgb=bytearray(pixels*3)
-                rgb[0::3],rgb[1::3],rgb[2::3]=part[0::4],part[1::4],part[2::4]
+                rgb=bytearray(memoryview(raw)[offset:offset+length])
+                del rgb[3::4]
                 values[channel]=bytes(rgb)
-            else: values[channel]=part
+            else: values[channel]=raw[offset:offset+length]
         offset+=length
     if offset!=len(raw) or set(values)!=requested:
         raise ValueError('native attachment packing does not match requested channels')

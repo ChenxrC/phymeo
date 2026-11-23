@@ -333,6 +333,21 @@ class SessionContracts(unittest.TestCase):
 
 
 class BackendAvailability(unittest.TestCase):
+    def test_large_instance_id_plane_checks_transitions_and_block_boundaries(self):
+        from struct import pack
+
+        largest = 0xffffffff
+        absent = 0xfffffffe
+        allowed = frozenset({7, largest})
+        for values in ([0] * 65537, [7, largest] * 32768 + [largest]):
+            self.assertTrue(backends._scene_ids_valid(pack("<65537I", *values), allowed))
+            for position in (0, 32767, 32768, 65536):
+                with self.subTest(position=position, first=values[0]):
+                    original = values[position]
+                    values[position] = absent
+                    self.assertFalse(backends._scene_ids_valid(pack("<65537I", *values), allowed))
+                    values[position] = original
+
     def test_invalid_session_constructor_does_not_claim_delegate_ownership(self):
         scene, _, _ = fixture()
         delegate = Recorder()

@@ -51,6 +51,24 @@ class Recorder:
 
 
 class ResidentNative(unittest.TestCase):
+    def test_submesh_transform_reuse_tracks_the_frame_and_full_local_pose(self):
+        from dataclasses import replace
+        from phymeo_rendering.backends.native import _instance_matrices
+
+        scene, _ = fixture()
+        first, second = scene.instances
+        scene = replace(scene, instances=(
+            first, replace(first, id=13), second,
+            replace(first, id=14, local_pose=Pose((0., 2., 0.))),
+        ))
+        for revision in (0, 3, 0):
+            value = frame(revision)
+            actual = bytes(_instance_matrices(scene, value))
+            individual = b"".join(bytes(_instance_matrices(replace(scene, instances=(i,)), value))
+                                  for i in scene.instances)
+            self.assertEqual(actual, individual)
+            self.assertNotEqual(actual[:64], actual[-64:])
+
     def test_opt_in_preserves_default_and_rejects_non_bool(self):
         self.assertFalse(NativeBackend().resident)
         self.assertTrue(NativeBackend(resident=True).resident)

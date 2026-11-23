@@ -12,13 +12,24 @@ from ..scene import SceneFrame, VisualScene, validate_scene_frame
 
 
 def _scene_ids_valid(raw: bytes, allowed: frozenset) -> bool:
-    """Check unique IDs in bounded chunks; preserve uint32 identity throughout."""
+    """Validate every run of equal IDs, keeping scratch space bounded."""
     np = sys.modules.get("numpy")
     if len(raw) < 8192 * 4 or not hasattr(np, "frombuffer"):
         return all(identity == 0 or identity in allowed for (identity,) in struct.iter_unpack("<I", raw))
     pixels = np.frombuffer(raw, dtype="<u4")
-    for start in range(0, len(pixels), 8192):
-        if any(i != 0 and i not in allowed for i in np.unique(pixels[start:start + 8192]).tolist()):
+    for start in range(0, len(pixels), 32768):
+        block = pixels[start:start + 32768]
+        first = int(block[0])
+        if first and first not in allowed:
+            return False
+        changed = block[1:] != block[:-1]
+        count = np.count_nonzero(changed)
+        if count == 0:
+            continue
+        # Scanline interiors need a single membership check per run. Sorting
+        # is cheaper for noisy label images with many repeated transitions.
+        labels = block[1:][changed] if count <= 256 else np.unique(block)
+        if any(i != 0 and i not in allowed for i in labels.tolist()):
             return False
     return True
 

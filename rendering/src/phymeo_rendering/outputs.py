@@ -70,10 +70,13 @@ def _valid_sensor_blocks(planes, pixels):
         return False
     data = {p.channel: np.frombuffer(p.data, dtype="u1" if p.channel is Channel.VALID else "<u4")
             for p in planes}
-    for start in range(0, pixels, 8192):
+    # Keep the temporary visibility vectors small enough for a sensor tile,
+    # while amortizing NumPy dispatch across multiple scanlines.
+    block_size = 32768
+    for start in range(0, pixels, block_size):
         expected = None
         for channel, samples in data.items():
-            block = samples[start:start+8192]
+            block = samples[start:start+block_size]
             if channel is Channel.FORWARD_DEPTH:
                 # In little-endian binary32, all positive finite encodings
                 # precede +infinity. This also handles subnormals and sNaNs

@@ -4,11 +4,11 @@
 
 G1 在 `b018b32b` 接通资产声明、场景引用、位姿和相机曝光。G2 用同一张[双帧米制标定桌](../tests/fixtures/g1/README.md)接通程序场景、请求规划、输出帧包和拍摄会话。三个开发提交为 M7 `83db6d31`、M6/M4 `2666ac84`、M5 `932e16aa`。在 Python 3.11 和 3.13 上，渲染包的 142 项测试均通过。[拍摄集成测试](../tests/integration/test_backend_contract.py)使用两个人工像素校验通道、帧身份和关闭后的所有权。
 
-G3／R0 已在 RTX 4060 Laptop 上通过。自研 Vulkan 光栅及 SAPIEN 光栅输出 RGB、深度、实例 ID 和掩码，SAPIEN 路径追踪输出参考 RGB。G4 的 [R1 两帧 Panda 回放](../results/r1/README.md)已通过，已保存固定相机的独立测点及腕部传感图。R2 连续回放画质和 R3 全幅传感计量仍待验收。详见[标定桌实拍与复现](../results/g3/README.md)和[验收规程](09-acceptance.md)。
+G3／R0 已在 RTX 4060 Laptop 上通过。自研 Vulkan 光栅及 SAPIEN 光栅输出 RGB、深度、实例 ID 和掩码，SAPIEN 路径追踪输出参考 RGB。首版已验收 Panda 姿态与回放画质、训练相机、多世界和源码外安装。详见[标定桌实拍与复现](../results/g3/README.md)和[首版验收记录](09-acceptance.md)。
 
 ## 给模块负责人的七张任务单
 
-当前执行批次见[11 月 23 日完整 Panda、原生设备与相机标定计划](2026-11-23-rendering-to-0700.md)。
+当前执行批次见[自研 Vulkan 四步画质路线](2026-11-23-native-vulkan-quality.md)和[第一批 4× MSAA 三人分工与验收](2026-11-23-native-msaa.md)。上一批的高清 Panda、便携回放与源码外安装结果见[已完成批次](2026-11-23-rendering-to-0700.md)及[首版签收单](09-acceptance.md)。
 
 路径均相对仓库根。每份任务单写明负责的产品文件、本模块测试、消费者及进入集成的条件。每个模块由一位负责人决定其公开接口。
 

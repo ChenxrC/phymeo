@@ -141,5 +141,43 @@ foreach(normal plain normal)
     list(APPEND shader_outputs "${output}")
   endforeach()
 endforeach()
+# Diffuse-only and specular+diffuse variants share the same terminal hit tables.
+foreach(normal plain normal)
+  set(prefix resident_rayquery)
+  set(normal_options "")
+  if(normal STREQUAL "normal")
+    set(prefix resident_rayquery_normal)
+    set(normal_options -DPR_RESIDENT_NORMAL_MAPS=1)
+  endif()
+  foreach(reflection plain reflection)
+    set(reflection_suffix "")
+    set(reflection_options "")
+    if(reflection STREQUAL "reflection")
+      set(reflection_suffix "_reflection")
+      set(reflection_options -DPR_RESIDENT_REFLECTION=1)
+    endif()
+    foreach(grid 2 4 8)
+      set(suffix "")
+      if(NOT grid EQUAL 2)
+        set(suffix "_area${grid}")
+      endif()
+      set(output "${CMAKE_BINARY_DIR}/${prefix}${reflection_suffix}_indirect${suffix}.frag.spv")
+      add_custom_command(OUTPUT "${output}"
+        COMMAND "${GLSLANG_VALIDATOR}" -V --target-env vulkan1.2 --glsl-version 460
+          -DPR_RESIDENT_RAY_QUERY=1 -DPR_RESIDENT_INDIRECT=1 ${normal_options} ${reflection_options}
+          -DPR_STUDIO_AREA_GRID=${grid} "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident.frag" -o "${output}"
+        DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident.frag"
+          "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident_indirect.glsl"
+          "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident_reflection.glsl"
+          "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident_normal.glsl"
+          "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident_environment.glsl"
+          "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident_studio.glsl"
+          "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident_rayquery.glsl"
+          "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident_display.glsl"
+          "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident_msaa.glsl" VERBATIM)
+      list(APPEND shader_outputs "${output}")
+    endforeach()
+  endforeach()
+endforeach()
 add_custom_target(native_shaders ALL DEPENDS ${shader_outputs})
 add_dependencies(phymeo_native native_shaders)

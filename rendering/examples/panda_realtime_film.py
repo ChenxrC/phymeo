@@ -5,7 +5,7 @@ compression, integrity hashes, video encoding and the initial upload are
 reported outside the interval.
 """
 import argparse
-from dataclasses import replace
+from dataclasses import asdict, replace
 from fractions import Fraction
 from hashlib import sha256
 import json
@@ -60,7 +60,39 @@ def load_episode(geo, excerpt, *, workshop=False, photographic=False, local_ligh
     return scene, frames
 
 
-def capture(args):
+def exposure_camera(args, frame, index, frame_count, width, height):
+    """Original film camera, shared with pre-exposure input registration."""
+    if args.camera == "fixed":
+        return fixed(frame, width, height)
+    from panda_movies import movie_camera
+
+    view = args.camera
+    if view == "sequence":
+        view = "detail" if .5 <= frame.time_s < 2.3 else "wide"
+    cam = movie_camera(frame, "materials-" + view, index / (frame_count - 1))
+    scale = height / cam.height
+    return replace(cam, width=width, height=height, fx_px=cam.fx_px * scale,
+                   fy_px=cam.fy_px * scale, cx_px=width / 2, cy_px=height / 2)
+
+
+def input_binding(scene, items, excerpt):
+    """Bind actual immutable visual inputs before timing; no renderer oracle."""
+    def digest(value):
+        return sha256(json.dumps(value, sort_keys=True, separators=(",", ":"),
+                                 allow_nan=False).encode()).hexdigest()
+    return {"scene_sha256": digest(asdict(scene)),
+            "source_excerpt_sha256": sha256(excerpt.read_bytes()).hexdigest(),
+            "frames": [{"index": index, "time_s": frame.time_s,
+                        "state_sha256": digest(asdict(frame)), "camera": asdict(req.camera)}
+                       for index, (frame, req) in enumerate(items)]}
+
+
+def capture(args, *, prepared=None):
+    msaa_samples = getattr(args, "msaa_samples", 1)
+    if isinstance(msaa_samples, bool) or not isinstance(msaa_samples, int) or msaa_samples not in (1, 4):
+        raise ValueError("msaa_samples must be the integer 1 or 4")
+    if msaa_samples != 1 and args.mode != "native":
+        raise ValueError("msaa_samples=4 requires the native backend")
     if args.surface_roughness and not args.photographic:
         raise ValueError("the scanned roughness map requires photographic worktop UVs")
     if args.reference_seed is not None and args.mode!="studio":
@@ -73,9 +105,12 @@ def capture(args):
     # The relative source peaks at 1072. Represent all daylight scene lights
     # in 1/8 units inside the integrator, and restore that scale at the camera.
     unit_scale = .125 if args.daylight else 1.
-    scene, frames = load_episode(args.output / "geometry", args.excerpt, workshop=args.workshop,
-                                 photographic=args.photographic, local_light_scale=unit_scale,
-                                 surface_roughness=args.surface_roughness)
+    if prepared is None:
+        scene, frames = load_episode(args.output / "geometry", args.excerpt, workshop=args.workshop,
+                                     photographic=args.photographic, local_light_scale=unit_scale,
+                                     surface_roughness=args.surface_roughness)
+    else:
+        scene, frames = prepared
     is_native = args.mode == "native"
     width, height = (1280, 720) if is_native else (960, 540)
     if args.resolution is not None:
@@ -100,6 +135,8 @@ def capture(args):
         if not is_native:
             raise ValueError("shadow traversal selection requires the native raster backend")
         extra["shadow_mode"] = args.shadow_mode
+    if msaa_samples != 1:
+        extra["msaa_samples"] = msaa_samples
     backend = (NativeBackend(library_path=args.library, resident=True, device_index=args.device_index,
                              validation=args.validation, exposure=1./unit_scale, **extra) if is_native else
                SapienBackend(SapienConfig(path=path, device=args.device, samples_per_pixel=args.samples,
@@ -110,22 +147,9 @@ def capture(args):
     started = perf_counter()
     sess = backend.open_scene(scene)
     open_ms = 1000 * (perf_counter() - started)
-    def exposure(index, frame):
-        if args.camera == "fixed":
-            return fixed(frame, width, height)
-        from panda_movies import movie_camera
-
-        view = args.camera
-        if view=="sequence":
-            # Edit the camera alone on the original 300-pose episode clock.
-            view = "detail" if .5<=frame.time_s<2.3 else "wide"
-        cam = movie_camera(frame, "materials-" + view, index / (len(frames)-1))
-        scale = height / cam.height
-        return replace(cam, width=width, height=height, fx_px=cam.fx_px*scale, fy_px=cam.fy_px*scale,
-                       cx_px=width/2, cy_px=height/2)
-
     indices = range(0,len(frames),args.stride) if args.frame is None else (args.frame,)
-    items = [(frames[i], CaptureRequest(exposure(i,frames[i]), path, (Channel.RGB,))) for i in indices]
+    items = [(frames[i], CaptureRequest(exposure_camera(args, frames[i], i, len(frames), width, height), path, (Channel.RGB,))) for i in indices]
+    binding = input_binding(scene, items, args.excerpt)
     hashes, times, consumer_times = [], [], []
     warm = 10 if is_native and len(items)>=10 else 0
     movies = args.output / "frames"
@@ -157,6 +181,7 @@ def capture(args):
                 consumer_times.append((perf_counter() - start) * 1000)
             if (i + 1) % 60 == 0:
                 print(f"{args.mode} {i + 1}/{len(items)}", flush=True)
+        before_close = sess.diagnostics()
     finally:
         sess.close()
     for i, rgb in enumerate(buffered):
@@ -174,7 +199,8 @@ def capture(args):
     elif diag["lifecycle"]["completed_captures"] != len(items)*args.tiles**2:
         raise RuntimeError("incomplete reference exposures")
     ranked = sorted(times)
-    receipt = dict(mode=args.mode, backend=diag, camera_setup=args.camera, workshop=args.workshop,
+    receipt = dict(mode=args.mode, backend=diag, backend_before_close=before_close,
+                   msaa_samples=msaa_samples, input_binding=binding, camera_setup=args.camera, workshop=args.workshop,
                    camera_cuts_s=[.5,2.3] if args.camera=="sequence" else [],
                    shadow_traversal=args.shadow_mode if is_native else None,
                    area_light_grid=args.area_light_grid if is_native and extra.get("studio") else None,
@@ -199,8 +225,17 @@ def capture(args):
                    open_ms=open_ms, warmup=warm, capture_ms=times, consumer_work_ms=consumer_times,
                    p50_ms=ranked[math.ceil(len(ranked)*.50)-1], p95_ms=ranked[math.ceil(len(ranked)*.95)-1],
                    max_ms=max(times), over_33_3=sum(t>33.3 for t in times), frame_sha256=hashes)
+    import inspect
+    import phymeo_rendering
+
+    receipt["implementation"] = {"package": str(Path(phymeo_rendering.__file__).resolve()),
+        "native_backend": inspect.getfile(NativeBackend),
+        "film_sha256": sha256(Path(__file__).read_bytes()).hexdigest()}
+    if getattr(args, "comparison_profile", None) is not None:
+        receipt["profile"] = args.comparison_profile
     (args.output / "capture.json").write_text(json.dumps(receipt, indent=2), encoding="utf-8")
     print(json.dumps({k:receipt[k] for k in ("mode","frames","p50_ms","p95_ms","max_ms","over_33_3")}))
+    return receipt
 
 
 if __name__ == "__main__":
@@ -215,6 +250,8 @@ if __name__ == "__main__":
     parser.add_argument("--area-light-grid",type=int,choices=(2,4,8),default=2)
     parser.add_argument("--validation", action="store_true")
     parser.add_argument("--samples", type=int, default=256)
+    parser.add_argument("--msaa-samples", type=int, choices=(1, 4), default=1,
+                        help="native coverage samples; default keeps the legacy 1x backend call")
     parser.add_argument("--reference-seed",type=int,help="explicit shifted-Halton stream for a held-out reference")
     parser.add_argument("--surface-roughness",action="store_true",
                         help="use the wood scan's registered linear roughness channel")

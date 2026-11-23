@@ -57,3 +57,22 @@ python -B -m preview_compact_rigid_history.run_smoke --prepared PATH/rigid4-new 
 合成 smoke 是 97×95、12 次 RGB×两 owner，加两次传感 resize；包括平移、旋转、细遮挡、移动镜头、大幅实例跳变、同会话改灯、explicit reset、错误前帧 SHA 的负控。Panda smoke 使用 12 个真实相邻录制状态和原镜头，只显式缩小到 320×180；每档 12 次 RGB，没有物理步进。两档逐字核当前 estimator、三传感与 first/reset 总输出，要求真实运动实例接受计数非零。独立 FP64 刚体投影检查明确显露像素 age=1；排除距 raster 单元边界 .002px 内和深度阈值 10μm 内的不确定像素，不复演 shader 接受/置信/滤波。没有显露见证时如实记缺证据，合成夹具则要求见证非零。
 
 输出 `inputs.json`、`report.json`、每帧原平面/当前 incoming/历史/总线性数据和 PNG；错误保留前缀并非零退出。报告 capture 时间不包含事后调试读回。小 smoke 不评定画质收益；720p、300 帧、手指边缘残影和相同预算独立参考必须另验，不能从“有历史接受”推导画质通过。
+
+## 独立 720p 运动预览与质量驱动
+
+`preview.py` 是本目录显式的实验预览入口，不修改正式 `NativeBackend` 构造或父 `preview_sparse_motion`。它消费后者已冻结的统计、输入工厂、媒体编码工具。串行执行者已通过 8 个 HOST 合同、完整两档 300 姿态、两份独立 8192 样本评分及影片检查。`D-full-all/summary.json` SHA256 为 `81eb29e12a9effc71ecb19de320de225083e23120047c141ec5a92b15c88318e`，`D-full-media/media.json` 为 `26a0ba154298e3c1fbd74130742af166cea2487a2775a2cb9316b93c8b40fd48`。当前/历史四通道 P95 为 40.3861 / 39.4333 ms；两者未达到 33.3 ms 门。第 60 帧观察到左臂 RMSE 约 .0429→.0365、白壳约 .0408→.0376，但整体质量结论为 `insufficient_evidence`，既不是全面画质接受，也不能改写成失败。
+
+两独立 owner 分别禁用/启用短历史；两者均为**相同 compact 方法、相同实际变化 seed**。各有 10 次真实预热，随后显式 reset，再从真实姿态 0 连续执行到 299。55..60 的前史由实际捕获建立，不跳到第 60 帧冷启动，也不使用未来姿态。默认同次请求四平面，每帧核 source/seed/三个传感，报告四平面的同步 capture P95。`--channels rgb` 可另测 RGB 成本，但该收据不能进入需要逐帧几何证据的质量验收。单次顺序不是反序重复 benchmark；可另以 `--reverse-order` 形成新的独立收据。
+
+历史档保存全部 300 张原 PNG，当前档默认只保存 59/60/149；`--current-film` 另保存当前档全片。每帧小收据 append 到 JSONL，完整 receipt 与 summary 在 owner 结束时写入，失败保留已接受前缀。三个注册姿态额外保存 current/history/total 的真实 GPU 读回、age 分布与传感 NPZ；这些审计读回不包含在 capture 时间内。整段 native profile 总计含审计读回，逐帧 profile 已排除它们，不能混用。
+
+```powershell
+python -B -m unittest preview_compact_rigid_history.test_preview -v
+python -B -m preview_compact_rigid_history.preview --prepared PATH/rigid4 --source-inputs PATH/film-cp4/inputs.json --delivery PARENT/rendering/examples/preview_sparse_motion --channels all --device-index 1 --output NEW/rigid-movie
+python -B -m preview_compact_rigid_history.preview_assess --result NEW/rigid-movie --delivery PARENT/rendering/examples/preview_sparse_motion --references PATH/ref8192-1 PATH/ref8192-2 --baseline PATH/film-cp4 --panels NEW/rigid-crops --output NEW/rigid-assessment.json
+python -B -m preview_compact_rigid_history.preview_media --result NEW/rigid-movie --delivery PARENT/rendering/examples/preview_sparse_motion --output NEW/rigid-media
+```
+
+质量工具复用已经注册的五组几何 ID 区域及 59→60 刚体指尖对应，额外明确列右指 ID158 子区域。两份参考必须为不同非零 seed、每像素至少 8192 个原全率单跳 proposal、最终无滤波显示；检查原 trace、scene/material/light、实际 frame/camera、传感、实际加载 DLL/SPV 与解码网格。原封存 full-rate16 只作另外一列历史基线，其旧时间不混入本次公平 A/B。误差空间为逆 IEC sRGB 的 display-linear，不冒充 raw HDR。参考彼此差异超过既有噪声门时记证据不足。
+
+可选 contact sheet 是姿态 60 左臂、右指、白壳**固定 ID 边界框**内的原像素裁片，依次显示当前/历史/两独立参考。不按候选亮度挑位置、不改曝光、不放大插值、不替换影片像素。它用于看亮斑和残影，不能代替统计。影片复用父既有 FFmpeg/probe/full-decode 流程，仅播放这 300 张已测 PNG；30 Hz 播放时钟不代表渲染已达到 30 FPS。

@@ -24,7 +24,7 @@ SOURCES = {
     "replay.py": {"source": "examples/portable_panda_replay.py", "sha256": None, "text": True},
     "README.md": {"source": "examples/portable_panda/README.md", "sha256": None, "text": True},
     "licenses/CC0-1.0.txt": {"source": "examples/portable_panda/CC0-1.0.txt", "sha256": "a2010f343487d3f7618affe54f789f5487602331c0a8d03f49e9a7c547cf0499", "text": True},
-    "examples/panda_realtime_film.py": {"source": "examples/panda_realtime_film.py", "sha256": "294b9a8f1fd53d1f95d9d5dff45e930be77931540f74dd9d2cd48f8c0ae974c4", "text": True},
+    "examples/panda_realtime_film.py": {"source": "examples/panda_realtime_film.py", "sha256": "78b0ff2cdeab5c24e3715ff7ed880cb7bcb720d8376a939c2d399c3569b3e61a", "text": True},
     "examples/_panda_scene.py": {"source": "examples/_panda_scene.py", "sha256": "e781b754a72a47fd8cc1f3efeef7d03fd7d30e4634236d34a752c051a94196a6", "text": True},
     "examples/_panda_textures.py": {"source": "examples/_panda_textures.py", "sha256": "95539eadbeb10b6c9b921d117113eb5c3cb8a28e7343b94977c352ee2f783e5f", "text": True},
     "examples/panda_movies.py": {"source": "examples/panda_movies.py", "sha256": "4d297bc4b6dbfc41bb27c7651f6b2de7929a0b62aa1e97211c050b96bf2107aa", "text": True},

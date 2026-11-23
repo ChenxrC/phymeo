@@ -1,0 +1,1368 @@
+{
+  "output_root": "C:\\Users\\38347\\.codex\\worktrees\\render-g5-package\\phymeo\\artifacts\\rendering\\guided-motion-study",
+  "schema": "phymeo-guided-motion-handoff-v1",
+  "author_commits": [
+    "700ad586",
+    "90168fb4d5843a46052145ddb21ee241496ccde1",
+    "81f772acdaf6f04687ae3c6f8db2efd49f206085"
+  ],
+  "mode_order": [
+    "none",
+    "guided",
+    "reference",
+    "fresh-none-then-guided-per-reference"
+  ],
+  "disocclusion_geometry": [
+    "capture-01/geometry/frame-0014.npz",
+    "capture-01/geometry/frame-0015.npz"
+  ],
+  "manifest": {
+    "files": 312,
+    "bytes": 69240920.0,
+    "file": "manifest.json",
+    "sha256": "e553fddc880ca03c7b86392a19e53183bc4d866ea163101fcafca7a65979e231"
+  },
+  "capture_summary_sha256": "cf43f5d9d1d5b02b09a3238f2bac119affdeb63c2022d9b1ad7026b3587c9c6a",
+  "counts": {
+    "owners": 9,
+    "guide_reads": 28.0,
+    "raw_reads": 171.0,
+    "captures": 272.0
+  },
+  "tests": {
+    "webp_regression": 1,
+    "fixture_failure_preserved": "04-c-host-green",
+    "independent_metrics": 14,
+    "red_logs": [
+      "01-c-study-red",
+      "02-b-metrics-red",
+      "03-b-boundaries-red",
+      "08-webp-red"
+    ],
+    "green_logs": [
+      "05-c-host-green",
+      "06-b-host-green",
+      "09-webp-green"
+    ],
+    "study_host": 12
+  },
+  "timings": {
+    "none": {
+      "file": "none/receipt.json",
+      "sha256": "95be46316b5474c6ca98e3d3992616d9bfde9161ea439c404d55452344f26bcc",
+      "open_ms": 469.05660000629723,
+      "initial_first_capture_ms": 56.10410001827404,
+      "timing_motion_first_batches": {
+        "p50_ms": 62.998600013088435,
+        "p95_ms": 69.2383999703452,
+        "mean_ms": 61.51882799109444,
+        "max_ms": 72.79499998549,
+        "worst_frame": 8,
+        "over_33_3": 25
+      },
+      "timing_motion_resets_after_initial": {
+        "p50_ms": 62.998600013088435,
+        "p95_ms": 69.2383999703452,
+        "mean_ms": 61.744441656628624,
+        "max_ms": 72.79499998549,
+        "worst_frame": 7,
+        "over_33_3": 24
+      },
+      "timing_settled_batches_2_to_4": {
+        "p50_ms": 64.27299999631941,
+        "p95_ms": 73.33099999232218,
+        "mean_ms": 62.11322000793492,
+        "max_ms": 74.45970003027469,
+        "worst_frame": 47,
+        "over_33_3": 75
+      },
+      "audit_raw_readback_ms": 1115.4337001498789,
+      "audit_guide_readback_ms": 0.0,
+      "png_save_ms": 2137.228299921844,
+      "close": {
+        "closed": true,
+        "telemetry": {
+          "telemetry_abi_version": 1,
+          "device_luid_valid": 1,
+          "device_node_mask": 1,
+          "device_local_bytes_current": 0,
+          "device_local_bytes_peak": 65822672,
+          "device_local_bytes_allocated": 65822672,
+          "host_visible_bytes_current": 0,
+          "host_visible_bytes_peak": 35638904,
+          "host_visible_bytes_allocated": 36597784,
+          "readback_bytes": 3072000400,
+          "fence_wait_wall_ns": 3994736100,
+          "fence_wait_calls": 179,
+          "submissions": 179,
+          "allocation_count": 38,
+          "free_count": 38,
+          "device_luid_hex": "ef22010000000000",
+          "final_after_destroy": true,
+          "allocation_scope": "this context explicit VkDeviceMemory allocations; not driver total VRAM",
+          "wait_scope": "host wall time blocked in fence waits, including upload; not GPU kernel time"
+        }
+      }
+    },
+    "guided": {
+      "file": "guided/receipt.json",
+      "sha256": "4bfab08389e70b3cc56fd22266ea88f0ddd304f8d6f702ea303f619a376fd0ee",
+      "open_ms": 315.9608999849297,
+      "initial_first_capture_ms": 70.15450001927093,
+      "timing_motion_first_batches": {
+        "p50_ms": 66.3409999688156,
+        "p95_ms": 74.00820002658293,
+        "mean_ms": 65.89842400280759,
+        "max_ms": 76.03540003765374,
+        "worst_frame": 24,
+        "over_33_3": 25
+      },
+      "timing_motion_resets_after_initial": {
+        "p50_ms": 65.80049998592585,
+        "p95_ms": 74.00820002658293,
+        "mean_ms": 65.72108750212162,
+        "max_ms": 76.03540003765374,
+        "worst_frame": 23,
+        "over_33_3": 24
+      },
+      "timing_settled_batches_2_to_4": {
+        "p50_ms": 64.9832000490278,
+        "p95_ms": 74.85900004394352,
+        "mean_ms": 64.86468933677922,
+        "max_ms": 85.81719995709136,
+        "worst_frame": 0,
+        "over_33_3": 75
+      },
+      "audit_raw_readback_ms": 1164.015400223434,
+      "audit_guide_readback_ms": 124.44450019393116,
+      "png_save_ms": 3336.7098001763225,
+      "close": {
+        "closed": true,
+        "telemetry": {
+          "telemetry_abi_version": 1,
+          "device_luid_valid": 1,
+          "device_node_mask": 1,
+          "device_local_bytes_current": 0,
+          "device_local_bytes_peak": 71065552,
+          "device_local_bytes_allocated": 71065552,
+          "host_visible_bytes_current": 0,
+          "host_visible_bytes_peak": 35638904,
+          "host_visible_bytes_allocated": 36597784,
+          "readback_bytes": 3194880400,
+          "fence_wait_wall_ns": 4444344700,
+          "fence_wait_calls": 204,
+          "submissions": 204,
+          "allocation_count": 39,
+          "free_count": 39,
+          "device_luid_hex": "ef22010000000000",
+          "final_after_destroy": true,
+          "allocation_scope": "this context explicit VkDeviceMemory allocations; not driver total VRAM",
+          "wait_scope": "host wall time blocked in fence waits, including upload; not GPU kernel time"
+        }
+      }
+    }
+  },
+  "backend_commit": "ee08c1de08d9806ea8a597f52eaabe3a2355a060",
+  "status": "passed",
+  "owners": [
+    {
+      "guide_reads": 0,
+      "sha256": "95be46316b5474c6ca98e3d3992616d9bfde9161ea439c404d55452344f26bcc",
+      "file": "capture-01/none/receipt.json",
+      "mean_reads": 75,
+      "captures": 100,
+      "close": {
+        "closed": true,
+        "telemetry": {
+          "telemetry_abi_version": 1,
+          "device_luid_valid": 1,
+          "device_node_mask": 1,
+          "device_local_bytes_current": 0,
+          "device_local_bytes_peak": 65822672,
+          "device_local_bytes_allocated": 65822672,
+          "host_visible_bytes_current": 0,
+          "host_visible_bytes_peak": 35638904,
+          "host_visible_bytes_allocated": 36597784,
+          "readback_bytes": 3072000400,
+          "fence_wait_wall_ns": 3994736100,
+          "fence_wait_calls": 179,
+          "submissions": 179,
+          "allocation_count": 38,
+          "free_count": 38,
+          "device_luid_hex": "ef22010000000000",
+          "final_after_destroy": true,
+          "allocation_scope": "this context explicit VkDeviceMemory allocations; not driver total VRAM",
+          "wait_scope": "host wall time blocked in fence waits, including upload; not GPU kernel time"
+        }
+      }
+    },
+    {
+      "guide_reads": 25,
+      "sha256": "4bfab08389e70b3cc56fd22266ea88f0ddd304f8d6f702ea303f619a376fd0ee",
+      "file": "capture-01/guided/receipt.json",
+      "mean_reads": 75,
+      "captures": 100,
+      "close": {
+        "closed": true,
+        "telemetry": {
+          "telemetry_abi_version": 1,
+          "device_luid_valid": 1,
+          "device_node_mask": 1,
+          "device_local_bytes_current": 0,
+          "device_local_bytes_peak": 71065552,
+          "device_local_bytes_allocated": 71065552,
+          "host_visible_bytes_current": 0,
+          "host_visible_bytes_peak": 35638904,
+          "host_visible_bytes_allocated": 36597784,
+          "readback_bytes": 3194880400,
+          "fence_wait_wall_ns": 4444344700,
+          "fence_wait_calls": 204,
+          "submissions": 204,
+          "allocation_count": 39,
+          "free_count": 39,
+          "device_luid_hex": "ef22010000000000",
+          "final_after_destroy": true,
+          "allocation_scope": "this context explicit VkDeviceMemory allocations; not driver total VRAM",
+          "wait_scope": "host wall time blocked in fence waits, including upload; not GPU kernel time"
+        }
+      }
+    },
+    {
+      "guide_reads": 0,
+      "sha256": "2ebe6274ca3953e07a55e0aa8a04a0154a106fa701f5463fc9a177dc89f30c58",
+      "file": "capture-01/reference/receipt.json",
+      "mean_reads": 3,
+      "captures": 48,
+      "close": {
+        "closed": true,
+        "telemetry": {
+          "telemetry_abi_version": 1,
+          "device_luid_valid": 1,
+          "device_node_mask": 1,
+          "device_local_bytes_current": 0,
+          "device_local_bytes_peak": 65822672,
+          "device_local_bytes_allocated": 65822672,
+          "host_visible_bytes_current": 0,
+          "host_visible_bytes_peak": 35638904,
+          "host_visible_bytes_allocated": 36597784,
+          "readback_bytes": 825753792,
+          "fence_wait_wall_ns": 1560665000,
+          "fence_wait_calls": 55,
+          "submissions": 55,
+          "allocation_count": 38,
+          "free_count": 38,
+          "device_luid_hex": "ef22010000000000",
+          "final_after_destroy": true,
+          "allocation_scope": "this context explicit VkDeviceMemory allocations; not driver total VRAM",
+          "wait_scope": "host wall time blocked in fence waits, including upload; not GPU kernel time"
+        }
+      }
+    },
+    {
+      "guide_reads": 0,
+      "sha256": "e05c5ec5f33f3cb7b2c190c6edf25bacc623539904dfd0f6cd208e2a0e17b82a",
+      "file": "capture-01/fresh/pose-0000/none/receipt.json",
+      "mean_reads": 3,
+      "captures": 4,
+      "close": {
+        "closed": true,
+        "telemetry": {
+          "telemetry_abi_version": 1,
+          "device_luid_valid": 1,
+          "device_node_mask": 1,
+          "device_local_bytes_current": 0,
+          "device_local_bytes_peak": 65822672,
+          "device_local_bytes_allocated": 65822672,
+          "host_visible_bytes_current": 0,
+          "host_visible_bytes_peak": 35638904,
+          "host_visible_bytes_allocated": 36597784,
+          "readback_bytes": 122880016,
+          "fence_wait_wall_ns": 156138600,
+          "fence_wait_calls": 11,
+          "submissions": 11,
+          "allocation_count": 38,
+          "free_count": 38,
+          "device_luid_hex": "ef22010000000000",
+          "final_after_destroy": true,
+          "allocation_scope": "this context explicit VkDeviceMemory allocations; not driver total VRAM",
+          "wait_scope": "host wall time blocked in fence waits, including upload; not GPU kernel time"
+        }
+      }
+    },
+    {
+      "guide_reads": 1,
+      "sha256": "bfad7dd8cd9f3841778b45cf38192d362aed83e1c456086057995a0f28af8065",
+      "file": "capture-01/fresh/pose-0000/guided/receipt.json",
+      "mean_reads": 3,
+      "captures": 4,
+      "close": {
+        "closed": true,
+        "telemetry": {
+          "telemetry_abi_version": 1,
+          "device_luid_valid": 1,
+          "device_node_mask": 1,
+          "device_local_bytes_current": 0,
+          "device_local_bytes_peak": 71065552,
+          "device_local_bytes_allocated": 71065552,
+          "host_visible_bytes_current": 0,
+          "host_visible_bytes_peak": 35638904,
+          "host_visible_bytes_allocated": 36597784,
+          "readback_bytes": 127795216,
+          "fence_wait_wall_ns": 176764200,
+          "fence_wait_calls": 12,
+          "submissions": 12,
+          "allocation_count": 39,
+          "free_count": 39,
+          "device_luid_hex": "ef22010000000000",
+          "final_after_destroy": true,
+          "allocation_scope": "this context explicit VkDeviceMemory allocations; not driver total VRAM",
+          "wait_scope": "host wall time blocked in fence waits, including upload; not GPU kernel time"
+        }
+      }
+    },
+    {
+      "guide_reads": 0,
+      "sha256": "45bd934a59c8449a1e0e263dc92a525440fa4538e0eb55f4e60c91ca094800ef",
+      "file": "capture-01/fresh/pose-0015/none/receipt.json",
+      "mean_reads": 3,
+      "captures": 4,
+      "close": {
+        "closed": true,
+        "telemetry": {
+          "telemetry_abi_version": 1,
+          "device_luid_valid": 1,
+          "device_node_mask": 1,
+          "device_local_bytes_current": 0,
+          "device_local_bytes_peak": 65822672,
+          "device_local_bytes_allocated": 65822672,
+          "host_visible_bytes_current": 0,
+          "host_visible_bytes_peak": 35638904,
+          "host_visible_bytes_allocated": 36597784,
+          "readback_bytes": 122880016,
+          "fence_wait_wall_ns": 207916800,
+          "fence_wait_calls": 11,
+          "submissions": 11,
+          "allocation_count": 38,
+          "free_count": 38,
+          "device_luid_hex": "ef22010000000000",
+          "final_after_destroy": true,
+          "allocation_scope": "this context explicit VkDeviceMemory allocations; not driver total VRAM",
+          "wait_scope": "host wall time blocked in fence waits, including upload; not GPU kernel time"
+        }
+      }
+    },
+    {
+      "guide_reads": 1,
+      "sha256": "6e563e4c7c0864e84b04b8c34155db53e5f8e6749393ed9385b759ef025fa6d5",
+      "file": "capture-01/fresh/pose-0015/guided/receipt.json",
+      "mean_reads": 3,
+      "captures": 4,
+      "close": {
+        "closed": true,
+        "telemetry": {
+          "telemetry_abi_version": 1,
+          "device_luid_valid": 1,
+          "device_node_mask": 1,
+          "device_local_bytes_current": 0,
+          "device_local_bytes_peak": 71065552,
+          "device_local_bytes_allocated": 71065552,
+          "host_visible_bytes_current": 0,
+          "host_visible_bytes_peak": 35638904,
+          "host_visible_bytes_allocated": 36597784,
+          "readback_bytes": 127795216,
+          "fence_wait_wall_ns": 194783300,
+          "fence_wait_calls": 12,
+          "submissions": 12,
+          "allocation_count": 39,
+          "free_count": 39,
+          "device_luid_hex": "ef22010000000000",
+          "final_after_destroy": true,
+          "allocation_scope": "this context explicit VkDeviceMemory allocations; not driver total VRAM",
+          "wait_scope": "host wall time blocked in fence waits, including upload; not GPU kernel time"
+        }
+      }
+    },
+    {
+      "guide_reads": 0,
+      "sha256": "8cd0082ca9b857e5159334b44d64121784b5f478d3dbe90aa41c455b60b3fe27",
+      "file": "capture-01/fresh/pose-0024/none/receipt.json",
+      "mean_reads": 3,
+      "captures": 4,
+      "close": {
+        "closed": true,
+        "telemetry": {
+          "telemetry_abi_version": 1,
+          "device_luid_valid": 1,
+          "device_node_mask": 1,
+          "device_local_bytes_current": 0,
+          "device_local_bytes_peak": 65822672,
+          "device_local_bytes_allocated": 65822672,
+          "host_visible_bytes_current": 0,
+          "host_visible_bytes_peak": 35638904,
+          "host_visible_bytes_allocated": 36597784,
+          "readback_bytes": 122880016,
+          "fence_wait_wall_ns": 180734600,
+          "fence_wait_calls": 11,
+          "submissions": 11,
+          "allocation_count": 38,
+          "free_count": 38,
+          "device_luid_hex": "ef22010000000000",
+          "final_after_destroy": true,
+          "allocation_scope": "this context explicit VkDeviceMemory allocations; not driver total VRAM",
+          "wait_scope": "host wall time blocked in fence waits, including upload; not GPU kernel time"
+        }
+      }
+    },
+    {
+      "guide_reads": 1,
+      "sha256": "8979ad1828e7a747103ac554f5ba6d1bdcfdd5cf465ba842c8cc90b481b98c4d",
+      "file": "capture-01/fresh/pose-0024/guided/receipt.json",
+      "mean_reads": 3,
+      "captures": 4,
+      "close": {
+        "closed": true,
+        "telemetry": {
+          "telemetry_abi_version": 1,
+          "device_luid_valid": 1,
+          "device_node_mask": 1,
+          "device_local_bytes_current": 0,
+          "device_local_bytes_peak": 71065552,
+          "device_local_bytes_allocated": 71065552,
+          "host_visible_bytes_current": 0,
+          "host_visible_bytes_peak": 35638904,
+          "host_visible_bytes_allocated": 36597784,
+          "readback_bytes": 127795216,
+          "fence_wait_wall_ns": 183089400,
+          "fence_wait_calls": 12,
+          "submissions": 12,
+          "allocation_count": 39,
+          "free_count": 39,
+          "device_luid_hex": "ef22010000000000",
+          "final_after_destroy": true,
+          "allocation_scope": "this context explicit VkDeviceMemory allocations; not driver total VRAM",
+          "wait_scope": "host wall time blocked in fence waits, including upload; not GPU kernel time"
+        }
+      }
+    }
+  ],
+  "quality": [
+    {
+      "status": "passed",
+      "pooled": {
+        "finger_156": {
+          "count": 14507,
+          "raw": {
+            "squared_error_sum": 7.567027995007647,
+            "error_sum_rgb": [
+              -7.9722096500342055,
+              -0.8573272759791774,
+              -0.8573272759791774
+            ],
+            "pixel_error_squared_sum": 1.0705187986224853,
+            "rmse": 0.013186005041657218,
+            "mean_bias": -0.00022257908140880403,
+            "mean_bias_rgb": [
+              -0.0005495422658050738,
+              -5.909748921066915E-05,
+              -5.909748921066915E-05
+            ],
+            "mean_bias_luminance": -0.00016336604871463958,
+            "pixel_error_sd": 0.008587712183959182
+          },
+          "filtered": {
+            "squared_error_sum": 1.237088582376821,
+            "error_sum_rgb": [
+              -5.998607150502258,
+              -1.4907246828929173,
+              -1.4907246828929173
+            ],
+            "pixel_error_squared_sum": 0.17840420100053467,
+            "rmse": 0.005331519063622023,
+            "mean_bias": -0.0002063384691594424,
+            "mean_bias_rgb": [
+              -0.00041349742541547236,
+              -0.0001027589910314274,
+              -0.0001027589910314274
+            ],
+            "mean_bias_luminance": -0.00016882198218147535,
+            "pixel_error_sd": 0.003500867093314504
+          },
+          "filtered_equals_raw": false,
+          "rmse_change_sign": "improved"
+        },
+        "finger_158": {
+          "count": 9716,
+          "raw": {
+            "squared_error_sum": 4.855318871399432,
+            "error_sum_rgb": [
+              0.3493643967848302,
+              -0.7325409529035155,
+              -0.7325409529035155
+            ],
+            "pixel_error_squared_sum": 0.6765436479166748,
+            "rmse": 0.01290638149863106,
+            "mean_bias": -3.827766944634969E-05,
+            "mean_bias_rgb": [
+              3.595763655669311E-05,
+              -7.539532244787109E-05,
+              -7.539532244787109E-05
+            ],
+            "mean_bias_luminance": -5.172168336350074E-05,
+            "pixel_error_sd": 0.00834491540993504
+          },
+          "filtered": {
+            "squared_error_sum": 0.8003000975206396,
+            "error_sum_rgb": [
+              0.4135594769564952,
+              -1.1793758730557347,
+              -1.1793758730557347
+            ],
+            "pixel_error_squared_sum": 0.11414299814382997,
+            "rmse": 0.005239888605999944,
+            "mean_bias": -6.673501678176801E-05,
+            "mean_bias_rgb": [
+              4.256478766534533E-05,
+              -0.00012138491900532468,
+              -0.00012138491900532468
+            ],
+            "mean_bias_luminance": -8.652921136714023E-05,
+            "pixel_error_sd": 0.003427053630421775
+          },
+          "filtered_equals_raw": false,
+          "rmse_change_sign": "improved"
+        },
+        "fingers": {
+          "count": 24223,
+          "raw": {
+            "squared_error_sum": 12.422346866407079,
+            "error_sum_rgb": [
+              -7.6228452532493804,
+              -1.589868228882694,
+              -1.589868228882694
+            ],
+            "pixel_error_squared_sum": 1.74706244653916,
+            "rmse": 0.013074564561934092,
+            "mean_bias": -0.000148654608031138,
+            "mean_bias_rgb": [
+              -0.00031469451567722333,
+              -6.563465420809536E-05,
+              -6.563465420809536E-05
+            ],
+            "mean_bias_luminance": -0.00011858478075643197,
+            "pixel_error_sd": 0.008491465944746006
+          },
+          "filtered": {
+            "squared_error_sum": 2.0373886798974605,
+            "error_sum_rgb": [
+              -5.585047673545764,
+              -2.6701005559486513,
+              -2.6701005559486513
+            ],
+            "pixel_error_squared_sum": 0.2925471991443646,
+            "rmse": 0.0052949559621588305,
+            "mean_bias": -0.00015034263283440075,
+            "mean_bias_rgb": [
+              -0.00023056795911100046,
+              -0.00011022996969610086,
+              -0.00011022996969610086
+            ],
+            "mean_bias_luminance": -0.0001358138262457085,
+            "pixel_error_sd": 0.0034720517891503656
+          },
+          "filtered_equals_raw": false,
+          "rmse_change_sign": "improved"
+        },
+        "edge": {
+          "count": 30379,
+          "raw": {
+            "squared_error_sum": 7.2411587763333385,
+            "error_sum_rgb": [
+              3.6871033635270996,
+              3.721608037591965,
+              3.721608037591965
+            ],
+            "pixel_error_squared_sum": 1.1103847860525202,
+            "rmse": 0.008913672445944345,
+            "mean_bias": 0.0001221273405829798,
+            "mean_bias_rgb": [
+              0.00012137013606527863,
+              0.00012250594284183037,
+              0.00012250594284183037
+            ],
+            "mean_bias_luminance": 0.00012226447032113547,
+            "pixel_error_sd": 0.006044613474103736
+          },
+          "filtered": {
+            "squared_error_sum": 2.6291909055441045,
+            "error_sum_rgb": [
+              -29.25768650881092,
+              -1.8976196942063859,
+              -1.8976196942063859
+            ],
+            "pixel_error_squared_sum": 0.46288733610658866,
+            "rmse": 0.005371105666373936,
+            "mean_bias": -0.00036267296374934105,
+            "mean_bias_rgb": [
+              -0.0009630891901909516,
+              -6.246485052853569E-05,
+              -6.246485052853569E-05
+            ],
+            "mean_bias_luminance": -0.0002539375851407653,
+            "pixel_error_sd": 0.003886650009902032
+          },
+          "filtered_equals_raw": false,
+          "rmse_change_sign": "improved"
+        },
+        "reveal": {
+          "count": 48191,
+          "raw": {
+            "squared_error_sum": 8.992400731401627,
+            "error_sum_rgb": [
+              9.542110172400067,
+              2.2110587802746435,
+              2.2110587802746435
+            ],
+            "pixel_error_squared_sum": 1.2152455450109432,
+            "rmse": 0.007886680178126923,
+            "mean_bias": 9.658945814882E-05,
+            "mean_bias_rgb": [
+              0.0001980060628001093,
+              4.588115582317536E-05,
+              4.588115582317536E-05
+            ],
+            "mean_bias_luminance": 7.822291104647151E-05,
+            "pixel_error_sd": 0.005020803258958677
+          },
+          "filtered": {
+            "squared_error_sum": 1.6289992692761852,
+            "error_sum_rgb": [
+              4.689360667158298,
+              0.574048238751625,
+              0.574048238751625
+            ],
+            "pixel_error_squared_sum": 0.24523717506985276,
+            "rmse": 0.003356733387133447,
+            "mean_bias": 4.037722911374564E-05,
+            "mean_bias_rgb": [
+              9.730780990554871E-05,
+              1.19119387178441E-05,
+              1.19119387178441E-05
+            ],
+            "mean_bias_luminance": 3.00671009323501E-05,
+            "pixel_error_sd": 0.002255511836295109
+          },
+          "filtered_equals_raw": false,
+          "rmse_change_sign": "improved"
+        }
+      },
+      "batch": 1,
+      "interpretation": "first/reset displayed filter quality gate",
+      "gates": {
+        "fingers": {
+          "passed": true,
+          "limit": 0.8,
+          "rmse_ratio": 0.404981438355111,
+          "interpretation": "relative_improvement",
+          "zero_raw_error": false,
+          "rule": "positive raw RMSE and filtered_rmse <= limit * raw_rmse"
+        },
+        "edge": {
+          "passed": true,
+          "limit": 1.05,
+          "rmse_ratio": 0.6025693336776975,
+          "interpretation": "noninferiority",
+          "zero_raw_error": false,
+          "rule": "filtered_rmse <= limit * raw_rmse; zero raw requires zero filtered"
+        },
+        "reveal": {
+          "passed": true,
+          "limit": 1.05,
+          "rmse_ratio": 0.4256205794223885,
+          "interpretation": "noninferiority",
+          "zero_raw_error": false,
+          "rule": "filtered_rmse <= limit * raw_rmse; zero raw requires zero filtered"
+        }
+      }
+    },
+    {
+      "status": "failed",
+      "pooled": {
+        "finger_156": {
+          "count": 14507,
+          "raw": {
+            "squared_error_sum": 3.9933208231964974,
+            "error_sum_rgb": [
+              -1.7983832713124621,
+              0.18476413226592914,
+              0.18476413226592914
+            ],
+            "pixel_error_squared_sum": 0.5582981285913733,
+            "rmse": 0.009578944754304501,
+            "mean_bias": -3.2831391897718424E-05,
+            "mean_bias_rgb": [
+              -0.00012396658656596554,
+              1.2736205436405124E-05,
+              1.2736205436405124E-05
+            ],
+            "mean_bias_luminance": -1.6326808143298882E-05,
+            "pixel_error_sd": 0.006203733990157892
+          },
+          "filtered": {
+            "squared_error_sum": 3.9933208231964974,
+            "error_sum_rgb": [
+              -1.7983832713124621,
+              0.18476413226592914,
+              0.18476413226592914
+            ],
+            "pixel_error_squared_sum": 0.5582981285913733,
+            "rmse": 0.009578944754304501,
+            "mean_bias": -3.2831391897718424E-05,
+            "mean_bias_rgb": [
+              -0.00012396658656596554,
+              1.2736205436405124E-05,
+              1.2736205436405124E-05
+            ],
+            "mean_bias_luminance": -1.6326808143298882E-05,
+            "pixel_error_sd": 0.006203733990157892
+          },
+          "filtered_equals_raw": true,
+          "rmse_change_sign": "unchanged"
+        },
+        "finger_158": {
+          "count": 9716,
+          "raw": {
+            "squared_error_sum": 2.636507565197578,
+            "error_sum_rgb": [
+              1.6949505338800632,
+              -0.27306164586364806,
+              -0.27306164586364806
+            ],
+            "pixel_error_squared_sum": 0.37048365387935805,
+            "rmse": 0.009510648487388482,
+            "mean_bias": 3.9413587283956604E-05,
+            "mean_bias_rgb": [
+              0.00017444941682586077,
+              -2.810432748699548E-05,
+              -2.810432748699548E-05
+            ],
+            "mean_bias_luminance": 1.4958598553917766E-05,
+            "pixel_error_sd": 0.006175246192863092
+          },
+          "filtered": {
+            "squared_error_sum": 2.636507565197578,
+            "error_sum_rgb": [
+              1.6949505338800632,
+              -0.27306164586364806,
+              -0.27306164586364806
+            ],
+            "pixel_error_squared_sum": 0.37048365387935805,
+            "rmse": 0.009510648487388482,
+            "mean_bias": 3.9413587283956604E-05,
+            "mean_bias_rgb": [
+              0.00017444941682586077,
+              -2.810432748699548E-05,
+              -2.810432748699548E-05
+            ],
+            "mean_bias_luminance": 1.4958598553917766E-05,
+            "pixel_error_sd": 0.006175246192863092
+          },
+          "filtered_equals_raw": true,
+          "rmse_change_sign": "unchanged"
+        },
+        "fingers": {
+          "count": 24223,
+          "raw": {
+            "squared_error_sum": 6.629828388394076,
+            "error_sum_rgb": [
+              -0.10343273743238626,
+              -0.0882975135977179,
+              -0.0882975135977179
+            ],
+            "pixel_error_squared_sum": 0.9287817824707314,
+            "rmse": 0.009551609339517063,
+            "mean_bias": -3.853469355954012E-06,
+            "mean_bias_rgb": [
+              -4.270021774032377E-06,
+              -3.645193146914829E-06,
+              -3.645193146914829E-06
+            ],
+            "mean_bias_luminance": -3.778031713040019E-06,
+            "pixel_error_sd": 0.006192296743831518
+          },
+          "filtered": {
+            "squared_error_sum": 6.629828388394076,
+            "error_sum_rgb": [
+              -0.10343273743238626,
+              -0.0882975135977179,
+              -0.0882975135977179
+            ],
+            "pixel_error_squared_sum": 0.9287817824707314,
+            "rmse": 0.009551609339517063,
+            "mean_bias": -3.853469355954012E-06,
+            "mean_bias_rgb": [
+              -4.270021774032377E-06,
+              -3.645193146914829E-06,
+              -3.645193146914829E-06
+            ],
+            "mean_bias_luminance": -3.778031713040019E-06,
+            "pixel_error_sd": 0.006192296743831518
+          },
+          "filtered_equals_raw": true,
+          "rmse_change_sign": "unchanged"
+        },
+        "edge": {
+          "count": 30379,
+          "raw": {
+            "squared_error_sum": 3.8852398523851255,
+            "error_sum_rgb": [
+              1.4117347773773337,
+              2.0747385010272903,
+              2.0747385010272903
+            ],
+            "pixel_error_squared_sum": 0.5961619221247998,
+            "rmse": 0.0065292237711126015,
+            "mean_bias": 6.1020351552409174E-05,
+            "mean_bias_rgb": [
+              4.6470745494497305E-05,
+              6.829515458136509E-05,
+              6.829515458136509E-05
+            ],
+            "mean_bias_luminance": 6.3655285209497E-05,
+            "pixel_error_sd": 0.004429567483354163
+          },
+          "filtered": {
+            "squared_error_sum": 3.8852398523851255,
+            "error_sum_rgb": [
+              1.4117347773773337,
+              2.0747385010272903,
+              2.0747385010272903
+            ],
+            "pixel_error_squared_sum": 0.5961619221247998,
+            "rmse": 0.0065292237711126015,
+            "mean_bias": 6.1020351552409174E-05,
+            "mean_bias_rgb": [
+              4.6470745494497305E-05,
+              6.829515458136509E-05,
+              6.829515458136509E-05
+            ],
+            "mean_bias_luminance": 6.3655285209497E-05,
+            "pixel_error_sd": 0.004429567483354163
+          },
+          "filtered_equals_raw": true,
+          "rmse_change_sign": "unchanged"
+        },
+        "reveal": {
+          "count": 48191,
+          "raw": {
+            "squared_error_sum": 4.830494152935322,
+            "error_sum_rgb": [
+              6.844358506016324,
+              0.6748366725200327,
+              0.6748366725200327
+            ],
+            "pixel_error_squared_sum": 0.650496862776054,
+            "rmse": 0.005780324020977861,
+            "mean_bias": 5.6677469866824295E-05,
+            "mean_bias_rgb": [
+              0.00014202565844278648,
+              1.40033755788432E-05,
+              1.40033755788432E-05
+            ],
+            "mean_bias_luminance": 4.1220912915717544E-05,
+            "pixel_error_sd": 0.0036736049963287994
+          },
+          "filtered": {
+            "squared_error_sum": 4.830494152935322,
+            "error_sum_rgb": [
+              6.844358506016324,
+              0.6748366725200327,
+              0.6748366725200327
+            ],
+            "pixel_error_squared_sum": 0.650496862776054,
+            "rmse": 0.005780324020977861,
+            "mean_bias": 5.6677469866824295E-05,
+            "mean_bias_rgb": [
+              0.00014202565844278648,
+              1.40033755788432E-05,
+              1.40033755788432E-05
+            ],
+            "mean_bias_luminance": 4.1220912915717544E-05,
+            "pixel_error_sd": 0.0036736049963287994
+          },
+          "filtered_equals_raw": true,
+          "rmse_change_sign": "unchanged"
+        }
+      },
+      "batch": 2,
+      "interpretation": "unfiltered settled control: ratio 1 is expected and does not meet the separate 0.8 first-batch improvement gate",
+      "gates": {
+        "fingers": {
+          "passed": false,
+          "limit": 0.8,
+          "rmse_ratio": 1.0,
+          "interpretation": "relative_improvement",
+          "zero_raw_error": false,
+          "rule": "positive raw RMSE and filtered_rmse <= limit * raw_rmse"
+        },
+        "edge": {
+          "passed": true,
+          "limit": 1.05,
+          "rmse_ratio": 1.0,
+          "interpretation": "noninferiority",
+          "zero_raw_error": false,
+          "rule": "filtered_rmse <= limit * raw_rmse; zero raw requires zero filtered"
+        },
+        "reveal": {
+          "passed": true,
+          "limit": 1.05,
+          "rmse_ratio": 1.0,
+          "interpretation": "noninferiority",
+          "zero_raw_error": false,
+          "rule": "filtered_rmse <= limit * raw_rmse; zero raw requires zero filtered"
+        }
+      }
+    },
+    {
+      "status": "failed",
+      "pooled": {
+        "finger_156": {
+          "count": 14507,
+          "raw": {
+            "squared_error_sum": 2.252986472952907,
+            "error_sum_rgb": [
+              2.308670453439234,
+              0.09098715469081908,
+              0.09098715469081908
+            ],
+            "pixel_error_squared_sum": 0.32000112202541575,
+            "rmse": 0.007194984442610467,
+            "mean_bias": 5.722857385677884E-05,
+            "mean_bias_rgb": [
+              0.00015914182487345653,
+              6.27194834844E-06,
+              6.27194834844E-06
+            ],
+            "mean_bias_luminance": 3.877208409765852E-05,
+            "pixel_error_sd": 0.004696449650780322
+          },
+          "filtered": {
+            "squared_error_sum": 2.252986472952907,
+            "error_sum_rgb": [
+              2.308670453439234,
+              0.09098715469081908,
+              0.09098715469081908
+            ],
+            "pixel_error_squared_sum": 0.32000112202541575,
+            "rmse": 0.007194984442610467,
+            "mean_bias": 5.722857385677884E-05,
+            "mean_bias_rgb": [
+              0.00015914182487345653,
+              6.27194834844E-06,
+              6.27194834844E-06
+            ],
+            "mean_bias_luminance": 3.877208409765852E-05,
+            "pixel_error_sd": 0.004696449650780322
+          },
+          "filtered_equals_raw": true,
+          "rmse_change_sign": "unchanged"
+        },
+        "finger_158": {
+          "count": 9716,
+          "raw": {
+            "squared_error_sum": 1.4868073273518407,
+            "error_sum_rgb": [
+              2.079826845068467,
+              -0.04925467139125281,
+              -0.04925467139125281
+            ],
+            "pixel_error_squared_sum": 0.20661719748620638,
+            "rmse": 0.007142051310199255,
+            "mean_bias": 6.797438940187874E-05,
+            "mean_bias_rgb": [
+              0.00021406204663117198,
+              -5.069439212767889E-06,
+              -5.069439212767889E-06
+            ],
+            "mean_bias_luminance": 4.151791467765372E-05,
+            "pixel_error_sd": 0.00461120728034448
+          },
+          "filtered": {
+            "squared_error_sum": 1.4868073273518407,
+            "error_sum_rgb": [
+              2.079826845068467,
+              -0.04925467139125281,
+              -0.04925467139125281
+            ],
+            "pixel_error_squared_sum": 0.20661719748620638,
+            "rmse": 0.007142051310199255,
+            "mean_bias": 6.797438940187874E-05,
+            "mean_bias_rgb": [
+              0.00021406204663117198,
+              -5.069439212767889E-06,
+              -5.069439212767889E-06
+            ],
+            "mean_bias_luminance": 4.151791467765372E-05,
+            "pixel_error_sd": 0.00461120728034448
+          },
+          "filtered_equals_raw": true,
+          "rmse_change_sign": "unchanged"
+        },
+        "fingers": {
+          "count": 24223,
+          "raw": {
+            "squared_error_sum": 3.7397938003047484,
+            "error_sum_rgb": [
+              4.3884972985076995,
+              0.041732483299566386,
+              0.041732483299566386
+            ],
+            "pixel_error_squared_sum": 0.5266183195116222,
+            "rmse": 0.00717379953743361,
+            "mean_bias": 6.15387890999853E-05,
+            "mean_bias_rgb": [
+              0.00018117067656804275,
+              1.7228453659565862E-06,
+              1.7228453659565862E-06
+            ],
+            "mean_bias_luminance": 3.987345427952011E-05,
+            "pixel_error_sd": 0.004662353007372583
+          },
+          "filtered": {
+            "squared_error_sum": 3.7397938003047484,
+            "error_sum_rgb": [
+              4.3884972985076995,
+              0.041732483299566386,
+              0.041732483299566386
+            ],
+            "pixel_error_squared_sum": 0.5266183195116222,
+            "rmse": 0.00717379953743361,
+            "mean_bias": 6.15387890999853E-05,
+            "mean_bias_rgb": [
+              0.00018117067656804275,
+              1.7228453659565862E-06,
+              1.7228453659565862E-06
+            ],
+            "mean_bias_luminance": 3.987345427952011E-05,
+            "pixel_error_sd": 0.004662353007372583
+          },
+          "filtered_equals_raw": true,
+          "rmse_change_sign": "unchanged"
+        },
+        "edge": {
+          "count": 30379,
+          "raw": {
+            "squared_error_sum": 2.1160919166758996,
+            "error_sum_rgb": [
+              0.49738204825458954,
+              0.9199522034622925,
+              0.9199522034622925
+            ],
+            "pixel_error_squared_sum": 0.3261406483567903,
+            "rmse": 0.004818589165715851,
+            "mean_bias": 2.564585684386335E-05,
+            "mean_bias_rgb": [
+              1.6372561580519092E-05,
+              3.0282504475535482E-05,
+              3.0282504475535482E-05
+            ],
+            "mean_bias_luminance": 2.7325250616054995E-05,
+            "pixel_error_sd": 0.00327649547556624
+          },
+          "filtered": {
+            "squared_error_sum": 2.1160919166758996,
+            "error_sum_rgb": [
+              0.49738204825458954,
+              0.9199522034622925,
+              0.9199522034622925
+            ],
+            "pixel_error_squared_sum": 0.3261406483567903,
+            "rmse": 0.004818589165715851,
+            "mean_bias": 2.564585684386335E-05,
+            "mean_bias_rgb": [
+              1.6372561580519092E-05,
+              3.0282504475535482E-05,
+              3.0282504475535482E-05
+            ],
+            "mean_bias_luminance": 2.7325250616054995E-05,
+            "pixel_error_sd": 0.00327649547556624
+          },
+          "filtered_equals_raw": true,
+          "rmse_change_sign": "unchanged"
+        },
+        "reveal": {
+          "count": 48191,
+          "raw": {
+            "squared_error_sum": 2.7650487453754775,
+            "error_sum_rgb": [
+              3.973536943542765,
+              0.6530365485121024,
+              0.6530365485121024
+            ],
+            "pixel_error_squared_sum": 0.3771322325450422,
+            "rmse": 0.004373285190278056,
+            "mean_bias": 3.6518644840786106E-05,
+            "mean_bias_rgb": [
+              8.245392176013705E-05,
+              1.3551006381110629E-05,
+              1.3551006381110629E-05
+            ],
+            "mean_bias_luminance": 2.8199766190691647E-05,
+            "pixel_error_sd": 0.0027972504675098497
+          },
+          "filtered": {
+            "squared_error_sum": 2.7650487453754775,
+            "error_sum_rgb": [
+              3.973536943542765,
+              0.6530365485121024,
+              0.6530365485121024
+            ],
+            "pixel_error_squared_sum": 0.3771322325450422,
+            "rmse": 0.004373285190278056,
+            "mean_bias": 3.6518644840786106E-05,
+            "mean_bias_rgb": [
+              8.245392176013705E-05,
+              1.3551006381110629E-05,
+              1.3551006381110629E-05
+            ],
+            "mean_bias_luminance": 2.8199766190691647E-05,
+            "pixel_error_sd": 0.0027972504675098497
+          },
+          "filtered_equals_raw": true,
+          "rmse_change_sign": "unchanged"
+        }
+      },
+      "batch": 4,
+      "interpretation": "unfiltered settled control: ratio 1 is expected and does not meet the separate 0.8 first-batch improvement gate",
+      "gates": {
+        "fingers": {
+          "passed": false,
+          "limit": 0.8,
+          "rmse_ratio": 1.0,
+          "interpretation": "relative_improvement",
+          "zero_raw_error": false,
+          "rule": "positive raw RMSE and filtered_rmse <= limit * raw_rmse"
+        },
+        "edge": {
+          "passed": true,
+          "limit": 1.05,
+          "rmse_ratio": 1.0,
+          "interpretation": "noninferiority",
+          "zero_raw_error": false,
+          "rule": "filtered_rmse <= limit * raw_rmse; zero raw requires zero filtered"
+        },
+        "reveal": {
+          "passed": true,
+          "limit": 1.05,
+          "rmse_ratio": 1.0,
+          "interpretation": "noninferiority",
+          "zero_raw_error": false,
+          "rule": "filtered_rmse <= limit * raw_rmse; zero raw requires zero filtered"
+        }
+      }
+    }
+  ],
+  "fresh_exit_active": [],
+  "media": {
+    "directory": "media-01",
+    "decoded_frames": 50,
+    "comparison_size": [
+      1540,
+      432
+    ],
+    "resolution": [
+      1280,
+      960
+    ],
+    "receipt_sha256": "ce8b3c3e4d347cc7de9a4b55d2f375a33bd3ec42162b15380605c4af4719570b",
+    "duration_ms": 2083,
+    "animations": {
+      "none": {
+        "file": "motion-none.webp",
+        "sha256": "6eee114efb5e087d72d94e591d8d616ebfe68b4e46e9205aa3b446e5f722af67",
+        "frames": 25,
+        "durations_ms": [
+          83,
+          84,
+          83,
+          83,
+          84,
+          83,
+          83,
+          84,
+          83,
+          83,
+          84,
+          83,
+          83,
+          84,
+          83,
+          83,
+          84,
+          83,
+          83,
+          84,
+          83,
+          83,
+          84,
+          83,
+          83
+        ],
+        "size": [
+          1280,
+          960
+        ],
+        "lossless_decode_exact": true,
+        "scope": "12-Hz viewing rhythm, not measured renderer throughput"
+      },
+      "guided": {
+        "file": "motion-guided.webp",
+        "sha256": "8c97a0c35b3869da276e0ccee3cef8787e50139a1af70837e1ffd4dc80939a28",
+        "frames": 25,
+        "durations_ms": [
+          83,
+          84,
+          83,
+          83,
+          84,
+          83,
+          83,
+          84,
+          83,
+          83,
+          84,
+          83,
+          83,
+          84,
+          83,
+          83,
+          84,
+          83,
+          83,
+          84,
+          83,
+          83,
+          84,
+          83,
+          83
+        ],
+        "size": [
+          1280,
+          960
+        ],
+        "lossless_decode_exact": true,
+        "scope": "12-Hz viewing rhythm, not measured renderer throughput"
+      }
+    },
+    "comparison_crop": [
+      384,
+      288,
+      896,
+      672
+    ],
+    "png_source_count": 153,
+    "framerate_scope": "12Hz viewing schedule; not a throughput claim",
+    "new_captures": 0
+  },
+  "runtime": {
+    "python": "3.11.9 (tags/v3.11.9:de54cf5, Apr  2 2024, 10:12:12) [MSC v.1938 64 bit (AMD64)]",
+    "executable": "C:\\Users\\38347\\AppData\\Local\\Temp\\phymeo-g5-5fdf4ec3-20261123-02\\runtime\\env\\Scripts\\python.exe",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "numpy": "1.26.4"
+  },
+  "device": {
+    "driver_version": 2374090752,
+    "index": 1,
+    "uuid": "3b78d98198a3be57a8cb4d72fdfbfa96",
+    "name": "NVIDIA GeForce RTX 4060 Laptop GPU"
+  },
+  "media_wall_seconds": 11.2875857,
+  "metrics_source_commit": "6c720640",
+  "clarity_transition": {
+    "fourth_raw_and_guided_rmse": 0.00717379953743361,
+    "second_vs_first_relative_change": 0.8039072294045544,
+    "scope": "There is a real displayed-error increase at the unfiltered second batch; not claimed to be temporally smooth",
+    "second_raw_and_guided_rmse": 0.009551609339517063,
+    "fourth_vs_first_relative_change": 0.35483648753685704,
+    "first_guided_rmse": 0.0052949559621588305
+  },
+  "backend_receipt_sha256": "d7c716699da42906272cbd2afbe052fd35f584b28dd5e2208815f0bccde71163",
+  "capture_execution": {
+    "log_sha256": "3f7212f20406223deaeb250668084a2b5fb37f0e70266dffb9efba23f83a2ae2",
+    "argv": [
+      "-B",
+      "C:\\Users\\38347\\.codex\\worktrees\\render-g5-package\\phymeo\\rendering\\examples\\guided_motion_study.py",
+      "--output",
+      "C:\\Users\\38347\\.codex\\worktrees\\render-g5-package\\phymeo\\artifacts\\rendering\\guided-motion-study\\capture-01",
+      "--library",
+      "C:/Users/38347/.codex/worktrees/render-resident-native/phymeo/artifacts/rendering/native-spatial/build-spatial-guide/phymeo_native.dll",
+      "--device-index",
+      "1"
+    ],
+    "backend_receipt_sha256": "d7c716699da42906272cbd2afbe052fd35f584b28dd5e2208815f0bccde71163",
+    "end": "2026-11-23T10:28:46.327605Z",
+    "source": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\rendering\\src",
+    "backend_commit": "ee08c1de08d9806ea8a597f52eaabe3a2355a060",
+    "exit_code": 0,
+    "start": "2026-11-23T10:28:02.0895212Z"
+  },
+  "media_execution": {
+    "log_sha256": "07e9d3407b8501ab5efaa61016099ed04db6db7c9c152682b9728735f503301d",
+    "end": "2026-11-23T10:35:26.2426884Z",
+    "start": "2026-11-23T10:35:14.9551027Z",
+    "exit_code": 0,
+    "argv": [
+      "-B",
+      "-u",
+      "C:\\Users\\38347\\.codex\\worktrees\\render-g5-package\\phymeo\\rendering\\examples\\guided_motion_study.py",
+      "--media-only",
+      "C:/Users/38347/.codex/worktrees/render-g5-package/phymeo/artifacts/rendering/guided-motion-study/capture-01",
+      "--output",
+      "C:/Users/38347/.codex/worktrees/render-g5-package/phymeo/artifacts/rendering/guided-motion-study/media-01"
+    ]
+  },
+  "registered_visibility": {
+    "0": {
+      "revealed_foreground": 0,
+      "revealed_receivers": {
+        "156": 0,
+        "158": 0
+      },
+      "revealed_right_finger": 0,
+      "new_background_excluded": 0
+    },
+    "15": {
+      "revealed_foreground": 48191,
+      "revealed_receivers": {
+        "156": 0,
+        "158": 69
+      },
+      "revealed_right_finger": 69,
+      "new_background_excluded": 21376
+    },
+    "24": {
+      "revealed_foreground": 0,
+      "revealed_receivers": {
+        "156": 0,
+        "158": 0
+      },
+      "revealed_right_finger": 0,
+      "new_background_excluded": 2339
+    }
+  },
+  "mask_files": [
+    "capture-01/masks/pose-0015-reveal_all.png",
+    "capture-01/masks/pose-0015-reveal_right_158.png",
+    "capture-01/masks/pose-0015-edge.png"
+  ],
+  "limits": [
+    "Single independent 256 spp seed is a finite reference; errors are inverse-sRGB display-linear, not radiance truth",
+    "Pose 15 all foreground reveal is 48191 pixels; only 69 belong to right finger 158; 21376 new background pixels excluded",
+    "Only first/reset RGB is spatially filtered; batch 2 and 4 are exact unfiltered controls and do not meet the separate 0.8 improvement gate",
+    "Original camera/foreground motion is authored optical replay, not physics",
+    "Request-to-return timing includes guide/filter and four-plane publication; debug raw/guide readback and PNG encoding separately reported; sequential none then guided may carry order effects",
+    "Only this native ray_query, progressive one-bounce, MSAA1 configuration exercised",
+    "Explicit VkDeviceMemory context allocation counts only; not process/driver total VRAM",
+    "First media attempt skipped animation because Pillow 12 removed webp_anim; original result retained, corrected export used saved frames only"
+  ],
+  "capture_wall_seconds": 44.2380838
+}

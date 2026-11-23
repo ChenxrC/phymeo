@@ -1,0 +1,15 @@
+{
+  "log_sha256": "07e9d3407b8501ab5efaa61016099ed04db6db7c9c152682b9728735f503301d",
+  "end": "2026-11-23T10:35:26.2426884Z",
+  "start": "2026-11-23T10:35:14.9551027Z",
+  "exit_code": 0,
+  "argv": [
+    "-B",
+    "-u",
+    "C:\\Users\\38347\\.codex\\worktrees\\render-g5-package\\phymeo\\rendering\\examples\\guided_motion_study.py",
+    "--media-only",
+    "C:/Users/38347/.codex/worktrees/render-g5-package/phymeo/artifacts/rendering/guided-motion-study/capture-01",
+    "--output",
+    "C:/Users/38347/.codex/worktrees/render-g5-package/phymeo/artifacts/rendering/guided-motion-study/media-01"
+  ]
+}

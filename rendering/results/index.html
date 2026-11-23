@@ -21,15 +21,15 @@
   .meta a{margin-left:14px}#error{color:#ffd9a8}
   @media(max-width:760px){main{grid-template-columns:1fr}header{margin-bottom:16px}nav{order:2}header a{font-size:.85em}}
 </style>
-<header><h1>Phymeo 渲染回放</h1><div><a href="progressive-room/index.html">夹爪降噪、封闭室与运动旧影</a> · <a href="diffuse-bounce/index.html">红板照亮夹爪暗面</a> · <a href="near-reflections/index.html">画外红块的倒影</a> · <a href="normal-maps/index.html">钢与橡胶法线开关</a> · <a href="msaa/compare.html">Panda 抗锯齿开关</a> · <a href="compare.html">自研与参考同帧比较</a> · <a href="engine-capabilities.md">引擎能力</a> · <a href="../architecture.html">架构图</a></div></header>
+<header><h1>Phymeo 渲染回放</h1><div><a href="guided-motion/index.html">运动首帧 GPU 降噪</a> · <a href="progressive-room/index.html">静止累积与室内反弹</a> · <a href="diffuse-bounce/index.html">红板照亮夹爪暗面</a> · <a href="near-reflections/index.html">画外红块的倒影</a> · <a href="normal-maps/index.html">钢与橡胶法线开关</a> · <a href="msaa/compare.html">Panda 抗锯齿开关</a> · <a href="compare.html">自研与参考同帧比较</a> · <a href="engine-capabilities.md">引擎能力</a> · <a href="../architecture.html">架构图</a></div></header>
 <main>
   <section aria-label="当前影片">
-    <video id="film" controls playsinline preload="metadata" poster="r2/reference-gripper-512.png">
-      <source src="r2/panda-daylight-reference-1080.mp4" type="video/mp4">
+    <video id="film" controls playsinline preload="metadata" poster="guided-motion/comparison-frame15.png">
+      <source src="guided-motion/motion-comparison.mp4" type="video/mp4">
     </video>
-    <h2 id="title">Panda 抓放 · 全景与夹爪近景</h2>
+    <h2 id="title">遮挡板扫过夹爪 · GPU 首帧降噪</h2>
     <p id="caption"></p><div id="shots" class="shots" aria-label="跳转到片中时刻"></div>
-    <div class="meta"><span id="detail"></span><a id="original" href="r2/panda-daylight-reference-1080.mp4">打开 MP4</a></div>
+    <div class="meta"><span id="detail"></span><a id="original" href="guided-motion/motion-comparison.mp4">打开 MP4</a></div>
     <p id="error" hidden>当前播放器未能解码，可用上方链接在本机播放器中打开。</p>
   </section>
   <nav id="choices" aria-label="选择回放"></nav>
@@ -37,6 +37,8 @@
 <script>
   const panda = [[0,"从头播放"],[1.2,"搬运方块"],[1.9,"放回台面"],[2.25,"开爪回程"]];
   const movies = [
+    {id:"guided-motion", title:"遮挡板扫过夹爪 · GPU 首帧降噪", description:"同一姿态与样本 · 左关右开", file:"guided-motion/motion-comparison.mp4", poster:"guided-motion/comparison-frame15.png", group:"guided-motion", shots:[[0,"起点"],[15/12,"遮挡板移开"],[24/12,"结束姿态"]],
+     caption:"看黑板移过时新露出的暗红表面。影片左右各取每个姿态的第一批原图。页首的运动首帧查看器可查看无损原图和三个独立高采样参考姿态。",detail:"25 个真实渲染姿态 · 按 12 Hz 演示 · 每像素 16 样本 · 1∶1 裁剪"},
     {id:"hero-reference", title:"Panda 抓放 · 日光下的夹爪", description:"SAPIEN 光追 · 1080p · 全景与夹爪近景", file:"r2/panda-daylight-reference-1080.mp4", poster:"r2/reference-gripper-512.png", group:"panda", shots:panda,
      caption:"在 1.2 秒看红色方块贴近指尖时，背光面受到的反射光。再切到自研版，运动时刻会保留。夹爪和方块的位置均来自本次十秒物理记录。", detail:"10 秒 · 300 帧 · 每像素 512 样本 · 每帧四块曝光"},
     {id:"hero-native", title:"Panda 抓放 · 全景与夹爪近景", description:"自研 Vulkan · 1080p · 双面积灯与车间日光", file:"r2/panda-daylight-native-1080.mp4", poster:"r2/native-gripper-1080.png", group:"panda", shots:panda,

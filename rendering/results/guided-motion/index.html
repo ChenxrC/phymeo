@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Panda 运动首帧降噪 · Phymeo</title>
+<style>
+  :root{color-scheme:dark;font:16px/1.55 "Microsoft YaHei UI",system-ui,sans-serif;background:#161a1c;color:#f3f3ed}
+  *{box-sizing:border-box}body{margin:auto;max-width:1600px;padding:clamp(14px,3vw,42px)}
+  a{color:#ace0ec}h1{font-weight:600;line-height:1.2;font-size:clamp(1.6rem,3vw,2.4rem);margin:.6em 0 .3em}
+  p{color:#d2d9d9;margin:.4em 0 1em}nav,.controls,.poses{display:flex;align-items:center;flex-wrap:wrap;gap:.5em 1em}
+  button,select{border:1px solid #798785;border-radius:5px;background:#26312f;color:inherit;padding:.35em .7em;font:inherit}
+  button{cursor:pointer}input{accent-color:#bde2c5}button:focus-visible,select:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid #bde2c5;outline-offset:2px}
+  #seek{width:clamp(120px,25vw,350px);vertical-align:middle}output{font-variant-numeric:tabular-nums}
+  .poses{margin:.7em 0}#views{display:grid;gap:12px;grid-template-columns:repeat(2,minmax(0,1fr))}
+  #reference-view{grid-column:1}
+  figure{margin:0;min-width:0}figcaption{margin:.45em 0;color:#e6ebe6}
+  figure a{display:block;overflow:hidden;position:relative;aspect-ratio:4/3;background:#0b0d0e}
+  figure img{display:block;width:100%;height:auto}#views.crop img{position:absolute;width:250%;top:-75%;left:-75%}
+  [hidden]{display:none!important}#error{color:#ffd1a3}
+  @media(max-width:760px){#views{grid-template-columns:1fr}.controls,.poses{gap:.5em}.controls label{white-space:nowrap}}
+</style>
+<main>
+  <nav><a href="../index.html">渲染回放</a><a href="motion-comparison.mp4">首帧对照影片</a><a href="reveal-15.png">姿态 15 的右指显露区</a><a href="README.md">实测与复现</a><a href="../progressive-room/index.html">上一批静止对照</a></nav>
+  <h1>遮挡板经过夹爪时，首帧能有多干净？</h1>
+  <p>先看两指朝向红板的暗面，再把进度拖到黑板刚移开的位置。左右共用相机、曝光、姿态和随机种子。点击图片可打开全幅原图。</p>
+  <div class="controls">
+    <button id="play" type="button" aria-pressed="false">播放</button>
+    <label>姿态 <input id="seek" type="range" min="0" max="24" value="15" step="1"> <output id="counter" for="seek"></output></label>
+    <label>曝光 <select id="batch"><option value="1">运动首批 · 16 样本</option><option value="2">同姿态第二批 · 32 样本</option><option value="4">同姿态第四批 · 64 样本</option></select></label>
+    <label><input id="whole" type="checkbox"> 全幅</label>
+  </div>
+  <div class="poses" aria-label="有独立高采样参考的姿态">
+    <span>有独立参考的姿态</span>
+    <button type="button" data-pose="0">0 · 起点</button>
+    <button type="button" data-pose="15">15 · 遮挡板离开中</button>
+    <button type="button" data-pose="24">24 · 终点</button>
+  </div>
+  <p id="error" role="alert" hidden></p>
+  <div class="crop" id="views">
+    <figure><a id="raw"></a><figcaption>关闭空间滤波</figcaption></figure>
+    <figure><a id="guided"></a><figcaption id="guided-label">开启 GPU 空间滤波</figcaption></figure>
+    <figure id="reference-view" hidden><a id="reference"></a><figcaption>独立种子参考 · 256 样本</figcaption></figure>
+  </div>
+</main>
+<script>
+  const byId = id => document.getElementById(id);
+  const seek = byId("seek"), play = byId("play"), views = byId("views");
+  const references = [0, 15, 24];
+  let revision = 0, playing = false, timer;
+  const pad = x => String(x).padStart(4,"0");
+  function stop() {
+    playing = false;
+    clearTimeout(timer);
+    play.textContent = "播放";
+    play.setAttribute("aria-pressed", "false");
+  }
+  async function picture(slot, path, label) {
+    const image = new Image();
+    image.alt = label;
+    image.src = path;
+    await image.decode();
+    if (image.naturalWidth !== 1280 || image.naturalHeight !== 960) throw Error(path);
+    return {slot, image, path};
+  }
+  async function draw() {
+    clearTimeout(timer);
+    const version = ++revision, pose = Number(seek.value), batch = Number(byId("batch").value);
+    const base = "frame-" + pad(pose) + "-b";
+    const name = base + pad(batch) + ".png";
+    const items = [picture("raw","none/"+name,"关闭滤波的同姿态原图"),
+                   picture("guided","guided/"+name,"开启滤波的同姿态原图")];
+    const reference = references.includes(pose);
+    if (reference) items.push(picture("reference","reference/"+base+"0016.png","独立高采样参考原图"));
+    try {
+      const ready = await Promise.all(items);
+      if (revision !== version) return;
+      for (const {slot,image,path} of ready) {
+        const link = byId(slot);
+        link.href = path;
+        link.replaceChildren(image);
+      }
+      byId("reference-view").hidden = !reference;
+      byId("counter").value = pose + " / 24";
+      byId("guided-label").textContent = batch === 1 ? "开启 GPU 空间滤波 · 本帧使用" : "开启 GPU 空间滤波 · 本批显示原始累积";
+      views.dataset.pose = pose;
+      views.dataset.batch = batch;
+      byId("error").hidden = true;
+      if (playing) timer = setTimeout(() => {
+        if (pose === 24) return stop();
+        seek.value = pose + 1;
+        draw();
+      }, 1000/12);
+    } catch (error) {
+      if (revision !== version) return;
+      stop();
+      byId("error").textContent = "姿态 " + pose + " 的原图读取失败，请检查旁边的采集文件。";
+      byId("error").hidden = false;
+    }
+  }
+  play.addEventListener("click", () => {
+    if (playing) return stop();
+    if (+seek.value === 24) seek.value = 0;
+    playing = true; play.textContent = "暂停"; play.setAttribute("aria-pressed","true");
+    draw();
+  });
+  seek.addEventListener("input", () => {stop();draw();});
+  byId("batch").addEventListener("change", () => {stop();draw();});
+  byId("whole").addEventListener("change", () => views.classList.toggle("crop",!byId("whole").checked));
+  for (const button of document.querySelectorAll("button[data-pose]")) button.onclick = () => {
+    stop(); seek.value = button.dataset.pose; draw();
+  };
+  draw();
+</script>
+</html>

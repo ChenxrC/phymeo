@@ -1,0 +1,14 @@
+{
+  "argv": [
+    "-B",
+    "-m",
+    "unittest",
+    "test_guided_motion_metrics",
+    "-v"
+  ],
+  "source": "C:/Users/38347/.codex/worktrees/render-g5-package/phymeo/rendering/src;C:\\Users\\38347\\.codex\\worktrees\\render-g5-package\\phymeo\\rendering\\tests",
+  "exit_code": 0,
+  "end": "2026-11-23T10:26:50.8800325Z",
+  "log_sha256": "dc5d8241033e414dce09db1e44d789747184901a7fa754879c919146d3c2dc4c",
+  "start": "2026-11-23T10:26:50.7161378Z"
+}

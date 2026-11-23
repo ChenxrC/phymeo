@@ -1,0 +1,19 @@
+{
+  "log_sha256": "3f7212f20406223deaeb250668084a2b5fb37f0e70266dffb9efba23f83a2ae2",
+  "argv": [
+    "-B",
+    "C:\\Users\\38347\\.codex\\worktrees\\render-g5-package\\phymeo\\rendering\\examples\\guided_motion_study.py",
+    "--output",
+    "C:\\Users\\38347\\.codex\\worktrees\\render-g5-package\\phymeo\\artifacts\\rendering\\guided-motion-study\\capture-01",
+    "--library",
+    "C:/Users/38347/.codex/worktrees/render-resident-native/phymeo/artifacts/rendering/native-spatial/build-spatial-guide/phymeo_native.dll",
+    "--device-index",
+    "1"
+  ],
+  "backend_receipt_sha256": "d7c716699da42906272cbd2afbe052fd35f584b28dd5e2208815f0bccde71163",
+  "end": "2026-11-23T10:28:46.3276050Z",
+  "source": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\rendering\\src",
+  "backend_commit": "ee08c1de08d9806ea8a597f52eaabe3a2355a060",
+  "exit_code": 0,
+  "start": "2026-11-23T10:28:02.0895212Z"
+}

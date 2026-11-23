@@ -251,4 +251,3 @@ def summarize_scores(scores, *, registered_pose_ids, required_reveal_pose_ids):
             'pooled': pooled, 'extra_reveal': extra_reveal, 'gates': gates, 'poses': scores,
             'pooling': 'Pixel-weighted squared error; not mean of pose RMSE. Correlated pixels/poses are not treated as IID trials.',
             'evidence_boundary': 'Caller verifies matching poses, camera, geometry channels and actual blocker withdrawal. Metrics do not establish those identities or reference convergence.'}
-

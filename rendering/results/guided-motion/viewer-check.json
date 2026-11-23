@@ -1,0 +1,29 @@
+{
+  "browser": "Edg/154.0.4258.37",
+  "title": "Panda 运动首帧降噪 · Phymeo",
+  "frame_pairs": 75,
+  "poses": 25,
+  "batches": [
+    1,
+    2,
+    4
+  ],
+  "reference_poses": [
+    0,
+    15,
+    24
+  ],
+  "controls": [
+    "seek",
+    "full/crop",
+    "reference jumps",
+    "play/pause"
+  ],
+  "default_crop": true,
+  "gallery_video": {
+    "width": 1040,
+    "height": 432,
+    "duration": 2.083333,
+    "seek": 1.25
+  }
+}

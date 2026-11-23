@@ -1,0 +1,4089 @@
+{
+  "schema": "phymeo-guided-motion-protocol-v1",
+  "profile": {
+    "frames": 25,
+    "fps": 12,
+    "time_s": [
+      0.0,
+      2.0
+    ],
+    "saved_batches": [
+      1,
+      2,
+      4
+    ],
+    "batches_per_pose": 4,
+    "reference_poses": [
+      0,
+      15,
+      24
+    ],
+    "required_reveal_poses": [
+      15
+    ],
+    "seed": 0,
+    "reference_seed": 1,
+    "reference_batches": 16,
+    "primary_samples_per_batch": 16,
+    "expected_public_captures": 272,
+    "msaa_samples": 1,
+    "bounces": 1,
+    "size": [
+      1280,
+      960
+    ],
+    "exposure": 1.0,
+    "display_transform": "pbr-neutral",
+    "shadow_mode": "ray_query",
+    "environment": null,
+    "display_error_space": "inverse-sRGB display-linear",
+    "mode_order": [
+      "none",
+      "guided",
+      "reference",
+      "fresh-none-then-guided-per-reference"
+    ],
+    "camera_eye_start_m": [
+      0.42,
+      -0.012,
+      0.24
+    ],
+    "camera_eye_end_m": [
+      0.42,
+      0.012,
+      0.24
+    ],
+    "camera_target_m": [
+      0.0,
+      0.0,
+      0.09
+    ],
+    "blocker_id": 202,
+    "blocker_node": "blocker",
+    "blocker_size_m": [
+      0.004,
+      0.06,
+      0.18
+    ],
+    "blocker_start_m": [
+      0.08,
+      -0.18,
+      0.14
+    ],
+    "blocker_end_m": [
+      0.08,
+      0.18,
+      0.14
+    ],
+    "blocker_path": "smoothstep(0,1) in world Y",
+    "receiver_ids": {
+      "156": "panda_leftfinger",
+      "158": "panda_rightfinger"
+    },
+    "right_finger_id": 158,
+    "reference_registration": "indices 0,15,24 fixed before capture; 15 must expose actual right-finger pixels or evidence is insufficient",
+    "masks": "actual current ID/depth/VALID; screen-space reveal requires previous blocker and current farther finite valid foreground; new background excluded",
+    "filter_scope": "public guided mode only first/reset RGB batch; batches 2 and 4 must exactly equal none",
+    "timing": "request-to-return four-channel wall time including product guide/filter; explicit audit guide/raw reads and PNG encoding timed separately; no warmup",
+    "playback": "12 Hz viewing schedule, not a measured throughput claim",
+    "original_profile": {
+      "states": [
+        "red",
+        "grey",
+        "red-blocked",
+        "grey-blocked"
+      ],
+      "modes": [
+        "none",
+        "diffuse_bounce"
+      ],
+      "size": [
+        1280,
+        960
+      ],
+      "seed": 0,
+      "cosine_samples": 16,
+      "bounces": 1,
+      "warmup": 3,
+      "repeats": 9,
+      "msaa_samples": 1,
+      "channels": [
+        "srgb8_rgb",
+        "forward_depth_m_f32",
+        "instance_id_u32",
+        "valid_u8"
+      ],
+      "crop_xyxy": [
+        384,
+        288,
+        896,
+        672
+      ],
+      "receiver_ids": [
+        156,
+        158
+      ],
+      "camera_eye_m": [
+        0.42,
+        0.0,
+        0.24
+      ],
+      "camera_target_m": [
+        0.0,
+        0.0,
+        0.09
+      ],
+      "focal_px": 1550.0,
+      "hand_origin_m": [
+        0.0,
+        0.0,
+        0.18
+      ],
+      "hand_quaternion_xyzw": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "finger_displacement_m": 0.035,
+      "urdf_finger_origin_z_m": 0.0584,
+      "board_size_m": [
+        0.22,
+        0.26,
+        0.006
+      ],
+      "board_centre_m": [
+        0.0,
+        0.0,
+        0.037
+      ],
+      "blocker_size_m": [
+        0.11,
+        0.2,
+        0.002
+      ],
+      "blocker_z_m": 0.055,
+      "parked_blocker_z_m": -0.2,
+      "white_reflectance": [
+        0.7,
+        0.7,
+        0.7
+      ],
+      "red_reflectance": [
+        0.8,
+        0.01,
+        0.01
+      ],
+      "grey_reflectance": 0.177954,
+      "luminance_coefficients": [
+        0.2126,
+        0.7152,
+        0.0722
+      ],
+      "environment": null,
+      "directional_travel": [
+        0.7071067811865475,
+        0.0,
+        -0.7071067811865475
+      ],
+      "illuminance": [
+        3.0,
+        3.0,
+        3.0
+      ],
+      "display_transform": "pbr-neutral",
+      "exposure": 1.0,
+      "shadow_mode": "ray_query",
+      "validation": false,
+      "roi_rule": "same pre-GPU nearest original finger_01 triangles; local z [0.012,0.032]m, world normal.x>=0.5, barycentric min>=0.02",
+      "minimum_roi_pixels_per_finger": 128,
+      "depth_error_max_m": 0.0001,
+      "linear_scope": "inverse IEC sRGB of published RGB8: quantized display-linear, not raw HDR or radiance",
+      "transfer_expression": "T=((on-off)_red-(on-off)_grey) dot (1,-0.5,-0.5)",
+      "transfer_linear_min": 0.005,
+      "transfer_rgb8_min": 3.0,
+      "blocked_max_fraction": 0.5,
+      "blocked_linear_allowance": 0.002,
+      "pixel_policy": "all registered pixels retained, including zero energy and 16-sample noise; no post-image pruning",
+      "occlusion_scope": "physical black screen can both intercept transfer paths and shade the board; not an isolated secondary-visibility-only test",
+      "timing": "public synchronous RGB+forward-depth+ID+VALID owned bytes; three warmups excluded; nine static repeats",
+      "limitation": "one diffuse bounce, 16 stable cosine samples, no denoising or temporal accumulation; no physical motion"
+    },
+    "limits": [
+      "authored optical motion, zero physics steps",
+      "one diffuse bounce",
+      "single independent seed finite 256-spp reference",
+      "no image-space smoothing in this driver"
+    ]
+  },
+  "scene": {
+    "key": "panda-guided-motion-v1",
+    "meshes": [
+      {
+        "id": "panda_visual_hand_00",
+        "uri": "file:///C:/Users/38347/.codex/worktrees/render-resident-native/phymeo/rendering/assets/panda/meshes/hand-00.gltf"
+      },
+      {
+        "id": "panda_visual_hand_01",
+        "uri": "file:///C:/Users/38347/.codex/worktrees/render-resident-native/phymeo/rendering/assets/panda/meshes/hand-01.gltf"
+      },
+      {
+        "id": "panda_visual_hand_02",
+        "uri": "file:///C:/Users/38347/.codex/worktrees/render-resident-native/phymeo/rendering/assets/panda/meshes/hand-02.gltf"
+      },
+      {
+        "id": "panda_visual_hand_03",
+        "uri": "file:///C:/Users/38347/.codex/worktrees/render-resident-native/phymeo/rendering/assets/panda/meshes/hand-03.gltf"
+      },
+      {
+        "id": "panda_visual_hand_04",
+        "uri": "file:///C:/Users/38347/.codex/worktrees/render-resident-native/phymeo/rendering/assets/panda/meshes/hand-04.gltf"
+      },
+      {
+        "id": "panda_visual_finger_00",
+        "uri": "file:///C:/Users/38347/.codex/worktrees/render-resident-native/phymeo/rendering/assets/panda/meshes/finger-00.gltf"
+      },
+      {
+        "id": "panda_visual_finger_01",
+        "uri": "file:///C:/Users/38347/.codex/worktrees/render-resident-native/phymeo/rendering/assets/panda/meshes/finger-01.gltf"
+      },
+      {
+        "id": "study-board-mesh",
+        "uri": "file:///C:/Users/38347/.codex/worktrees/render-g5-package/phymeo/artifacts/rendering/guided-motion-study/capture-01/geometry/study-board-mesh.gltf"
+      },
+      {
+        "id": "motion-foreground-blocker",
+        "uri": "file:///C:/Users/38347/.codex/worktrees/render-g5-package/phymeo/artifacts/rendering/guided-motion-study/capture-01/geometry/motion-foreground-blocker.gltf"
+      }
+    ],
+    "materials": [
+      {
+        "id": "study-white",
+        "base_color": [
+          0.7,
+          0.7,
+          0.7
+        ],
+        "metallic": 0.0,
+        "roughness": 1.0
+      },
+      {
+        "id": "study-board",
+        "base_color": [
+          0.8,
+          0.01,
+          0.01
+        ],
+        "metallic": 0.0,
+        "roughness": 1.0
+      },
+      {
+        "id": "study-black",
+        "base_color": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "metallic": 0.0,
+        "roughness": 1.0
+      }
+    ],
+    "instances": [
+      {
+        "id": 150,
+        "mesh_id": "panda_visual_hand_00",
+        "material_id": "study-white",
+        "node_id": "panda_hand",
+        "local_pose": {
+          "position_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "orientation_xyzw": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        }
+      },
+      {
+        "id": 151,
+        "mesh_id": "panda_visual_hand_01",
+        "material_id": "study-white",
+        "node_id": "panda_hand",
+        "local_pose": {
+          "position_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "orientation_xyzw": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        }
+      },
+      {
+        "id": 152,
+        "mesh_id": "panda_visual_hand_02",
+        "material_id": "study-white",
+        "node_id": "panda_hand",
+        "local_pose": {
+          "position_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "orientation_xyzw": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        }
+      },
+      {
+        "id": 153,
+        "mesh_id": "panda_visual_hand_03",
+        "material_id": "study-white",
+        "node_id": "panda_hand",
+        "local_pose": {
+          "position_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "orientation_xyzw": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        }
+      },
+      {
+        "id": 154,
+        "mesh_id": "panda_visual_hand_04",
+        "material_id": "study-white",
+        "node_id": "panda_hand",
+        "local_pose": {
+          "position_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "orientation_xyzw": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        }
+      },
+      {
+        "id": 155,
+        "mesh_id": "panda_visual_finger_00",
+        "material_id": "study-white",
+        "node_id": "panda_leftfinger",
+        "local_pose": {
+          "position_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "orientation_xyzw": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        }
+      },
+      {
+        "id": 156,
+        "mesh_id": "panda_visual_finger_01",
+        "material_id": "study-white",
+        "node_id": "panda_leftfinger",
+        "local_pose": {
+          "position_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "orientation_xyzw": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        }
+      },
+      {
+        "id": 157,
+        "mesh_id": "panda_visual_finger_00",
+        "material_id": "study-white",
+        "node_id": "panda_rightfinger",
+        "local_pose": {
+          "position_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "orientation_xyzw": [
+            0.0,
+            0.0,
+            1.0,
+            0.0
+          ]
+        }
+      },
+      {
+        "id": 158,
+        "mesh_id": "panda_visual_finger_01",
+        "material_id": "study-white",
+        "node_id": "panda_rightfinger",
+        "local_pose": {
+          "position_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "orientation_xyzw": [
+            0.0,
+            0.0,
+            1.0,
+            0.0
+          ]
+        }
+      },
+      {
+        "id": 201,
+        "mesh_id": "study-board-mesh",
+        "material_id": "study-board",
+        "node_id": "board",
+        "local_pose": {
+          "position_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "orientation_xyzw": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        }
+      },
+      {
+        "id": 202,
+        "mesh_id": "motion-foreground-blocker",
+        "material_id": "study-black",
+        "node_id": "blocker",
+        "local_pose": {
+          "position_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "orientation_xyzw": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        }
+      }
+    ],
+    "lights": [
+      {
+        "direction": [
+          0.7071067811865475,
+          0.0,
+          -0.7071067811865475
+        ],
+        "illuminance": [
+          3.0,
+          3.0,
+          3.0
+        ]
+      }
+    ]
+  },
+  "runtime": {
+    "python": "3.11.9 (tags/v3.11.9:de54cf5, Apr  2 2024, 10:12:12) [MSC v.1938 64 bit (AMD64)]",
+    "executable": "C:\\Users\\38347\\AppData\\Local\\Temp\\phymeo-g5-5fdf4ec3-20261123-02\\runtime\\env\\Scripts\\python.exe",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "numpy": "1.26.4"
+  },
+  "poses": [
+    {
+      "pose_id": 0,
+      "frame": {
+        "key": {
+          "scene_key": "panda-guided-motion-v1",
+          "world_id": "guided-motion",
+          "epoch": 0,
+          "revision": 0,
+          "tick": 0,
+          "phase": "authored"
+        },
+        "time_s": 0.0,
+        "nodes": [
+          {
+            "node_id": "panda_hand",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.18
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "panda_leftfinger",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                -0.035,
+                0.1216
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "panda_rightfinger",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.035,
+                0.1216
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "board",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.037
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          },
+          {
+            "node_id": "blocker",
+            "world_pose": {
+              "position_m": [
+                0.08,
+                -0.18,
+                0.14
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          }
+        ]
+      },
+      "camera": {
+        "id": "motion-gripper-camera",
+        "frame_key": {
+          "scene_key": "panda-guided-motion-v1",
+          "world_id": "guided-motion",
+          "epoch": 0,
+          "revision": 0,
+          "tick": 0,
+          "phase": "authored"
+        },
+        "world_pose": {
+          "position_m": [
+            0.42,
+            -0.012,
+            0.24
+          ],
+          "orientation_xyzw": [
+            -0.4131412728709628,
+            -0.40150583119412786,
+            -0.569660583652822,
+            -0.5861690674199714
+          ]
+        },
+        "width": 1280,
+        "height": 960,
+        "fx_px": 1550.0,
+        "fy_px": 1550.0,
+        "cx_px": 640.0,
+        "cy_px": 480.0,
+        "near_m": 0.01,
+        "far_m": 3.0
+      }
+    },
+    {
+      "pose_id": 1,
+      "frame": {
+        "key": {
+          "scene_key": "panda-guided-motion-v1",
+          "world_id": "guided-motion",
+          "epoch": 0,
+          "revision": 1,
+          "tick": 1,
+          "phase": "authored"
+        },
+        "time_s": 0.08333333333333333,
+        "nodes": [
+          {
+            "node_id": "panda_hand",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.18
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "panda_leftfinger",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                -0.035,
+                0.1216
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "panda_rightfinger",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.035,
+                0.1216
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "board",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.037
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          },
+          {
+            "node_id": "blocker",
+            "world_pose": {
+              "position_m": [
+                0.08,
+                -0.17817708333333332,
+                0.14
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          }
+        ]
+      },
+      "camera": {
+        "id": "motion-gripper-camera",
+        "frame_key": {
+          "scene_key": "panda-guided-motion-v1",
+          "world_id": "guided-motion",
+          "epoch": 0,
+          "revision": 1,
+          "tick": 1,
+          "phase": "authored"
+        },
+        "world_pose": {
+          "position_m": [
+            0.42,
+            -0.011,
+            0.24
+          ],
+          "orientation_xyzw": [
+            -0.4126573171238965,
+            -0.4019911305183419,
+            -0.570361623762277,
+            -0.5854952499789832
+          ]
+        },
+        "width": 1280,
+        "height": 960,
+        "fx_px": 1550.0,
+        "fy_px": 1550.0,
+        "cx_px": 640.0,
+        "cy_px": 480.0,
+        "near_m": 0.01,
+        "far_m": 3.0
+      }
+    },
+    {
+      "pose_id": 2,
+      "frame": {
+        "key": {
+          "scene_key": "panda-guided-motion-v1",
+          "world_id": "guided-motion",
+          "epoch": 0,
+          "revision": 2,
+          "tick": 2,
+          "phase": "authored"
+        },
+        "time_s": 0.16666666666666666,
+        "nodes": [
+          {
+            "node_id": "panda_hand",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.18
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "panda_leftfinger",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                -0.035,
+                0.1216
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "panda_rightfinger",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.035,
+                0.1216
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "board",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.037
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          },
+          {
+            "node_id": "blocker",
+            "world_pose": {
+              "position_m": [
+                0.08,
+                -0.17291666666666666,
+                0.14
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          }
+        ]
+      },
+      "camera": {
+        "id": "motion-gripper-camera",
+        "frame_key": {
+          "scene_key": "panda-guided-motion-v1",
+          "world_id": "guided-motion",
+          "epoch": 0,
+          "revision": 2,
+          "tick": 2,
+          "phase": "authored"
+        },
+        "world_pose": {
+          "position_m": [
+            0.42,
+            -0.01,
+            0.24
+          ],
+          "orientation_xyzw": [
+            0.4121732552495343,
+            0.40247641891627584,
+            0.5710615932131892,
+            0.584820140410833
+          ]
+        },
+        "width": 1280,
+        "height": 960,
+        "fx_px": 1550.0,
+        "fy_px": 1550.0,
+        "cx_px": 640.0,
+        "cy_px": 480.0,
+        "near_m": 0.01,
+        "far_m": 3.0
+      }
+    },
+    {
+      "pose_id": 3,
+      "frame": {
+        "key": {
+          "scene_key": "panda-guided-motion-v1",
+          "world_id": "guided-motion",
+          "epoch": 0,
+          "revision": 3,
+          "tick": 3,
+          "phase": "authored"
+        },
+        "time_s": 0.25,
+        "nodes": [
+          {
+            "node_id": "panda_hand",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.18
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "panda_leftfinger",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                -0.035,
+                0.1216
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "panda_rightfinger",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.035,
+                0.1216
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "board",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.037
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          },
+          {
+            "node_id": "blocker",
+            "world_pose": {
+              "position_m": [
+                0.08,
+                -0.16453125,
+                0.14
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          }
+        ]
+      },
+      "camera": {
+        "id": "motion-gripper-camera",
+        "frame_key": {
+          "scene_key": "panda-guided-motion-v1",
+          "world_id": "guided-motion",
+          "epoch": 0,
+          "revision": 3,
+          "tick": 3,
+          "phase": "authored"
+        },
+        "world_pose": {
+          "position_m": [
+            0.42,
+            -0.009000000000000001,
+            0.24
+          ],
+          "orientation_xyzw": [
+            -0.4116890915974644,
+            -0.4029616920984356,
+            -0.5717604813666087,
+            -0.5841437481547187
+          ]
+        },
+        "width": 1280,
+        "height": 960,
+        "fx_px": 1550.0,
+        "fy_px": 1550.0,
+        "cx_px": 640.0,
+        "cy_px": 480.0,
+        "near_m": 0.01,
+        "far_m": 3.0
+      }
+    },
+    {
+      "pose_id": 4,
+      "frame": {
+        "key": {
+          "scene_key": "panda-guided-motion-v1",
+          "world_id": "guided-motion",
+          "epoch": 0,
+          "revision": 4,
+          "tick": 4,
+          "phase": "authored"
+        },
+        "time_s": 0.3333333333333333,
+        "nodes": [
+          {
+            "node_id": "panda_hand",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.18
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "panda_leftfinger",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                -0.035,
+                0.1216
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "panda_rightfinger",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.035,
+                0.1216
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "board",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.037
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          },
+          {
+            "node_id": "blocker",
+            "world_pose": {
+              "position_m": [
+                0.08,
+                -0.15333333333333332,
+                0.14
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          }
+        ]
+      },
+      "camera": {
+        "id": "motion-gripper-camera",
+        "frame_key": {
+          "scene_key": "panda-guided-motion-v1",
+          "world_id": "guided-motion",
+          "epoch": 0,
+          "revision": 4,
+          "tick": 4,
+          "phase": "authored"
+        },
+        "world_pose": {
+          "position_m": [
+            0.42,
+            -0.008,
+            0.24
+          ],
+          "orientation_xyzw": [
+            -0.4112048305166611,
+            -0.4034469457702744,
+            -0.5724582776325725,
+            -0.5834660827146252
+          ]
+        },
+        "width": 1280,
+        "height": 960,
+        "fx_px": 1550.0,
+        "fy_px": 1550.0,
+        "cx_px": 640.0,
+        "cy_px": 480.0,
+        "near_m": 0.01,
+        "far_m": 3.0
+      }
+    },
+    {
+      "pose_id": 5,
+      "frame": {
+        "key": {
+          "scene_key": "panda-guided-motion-v1",
+          "world_id": "guided-motion",
+          "epoch": 0,
+          "revision": 5,
+          "tick": 5,
+          "phase": "authored"
+        },
+        "time_s": 0.4166666666666667,
+        "nodes": [
+          {
+            "node_id": "panda_hand",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.18
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "panda_leftfinger",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                -0.035,
+                0.1216
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "panda_rightfinger",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.035,
+                0.1216
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "board",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.037
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          },
+          {
+            "node_id": "blocker",
+            "world_pose": {
+              "position_m": [
+                0.08,
+                -0.13963541666666665,
+                0.14
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          }
+        ]
+      },
+      "camera": {
+        "id": "motion-gripper-camera",
+        "frame_key": {
+          "scene_key": "panda-guided-motion-v1",
+          "world_id": "guided-motion",
+          "epoch": 0,
+          "revision": 5,
+          "tick": 5,
+          "phase": "authored"
+        },
+        "world_pose": {
+          "position_m": [
+            0.42,
+            -0.007,
+            0.24
+          ],
+          "orientation_xyzw": [
+            -0.4107204763552587,
+            -0.40393217563240125,
+            -0.5731549714709606,
+            -0.5827871536586113
+          ]
+        },
+        "width": 1280,
+        "height": 960,
+        "fx_px": 1550.0,
+        "fy_px": 1550.0,
+        "cx_px": 640.0,
+        "cy_px": 480.0,
+        "near_m": 0.01,
+        "far_m": 3.0
+      }
+    },
+    {
+      "pose_id": 6,
+      "frame": {
+        "key": {
+          "scene_key": "panda-guided-motion-v1",
+          "world_id": "guided-motion",
+          "epoch": 0,
+          "revision": 6,
+          "tick": 6,
+          "phase": "authored"
+        },
+        "time_s": 0.5,
+        "nodes": [
+          {
+            "node_id": "panda_hand",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.18
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "panda_leftfinger",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                -0.035,
+                0.1216
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "panda_rightfinger",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.035,
+                0.1216
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "board",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.037
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          },
+          {
+            "node_id": "blocker",
+            "world_pose": {
+              "position_m": [
+                0.08,
+                -0.12375,
+                0.14
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          }
+        ]
+      },
+      "camera": {
+        "id": "motion-gripper-camera",
+        "frame_key": {
+          "scene_key": "panda-guided-motion-v1",
+          "world_id": "guided-motion",
+          "epoch": 0,
+          "revision": 6,
+          "tick": 6,
+          "phase": "authored"
+        },
+        "world_pose": {
+          "position_m": [
+            0.42,
+            -0.006,
+            0.24
+          ],
+          "orientation_xyzw": [
+            0.41023603346031756,
+            0.40441737738080197,
+            0.5738505523923536,
+            0.5821069706180906
+          ]
+        },
+        "width": 1280,
+        "height": 960,
+        "fx_px": 1550.0,
+        "fy_px": 1550.0,
+        "cx_px": 640.0,
+        "cy_px": 480.0,
+        "near_m": 0.01,
+        "far_m": 3.0
+      }
+    },
+    {
+      "pose_id": 7,
+      "frame": {
+        "key": {
+          "scene_key": "panda-guided-motion-v1",
+          "world_id": "guided-motion",
+          "epoch": 0,
+          "revision": 7,
+          "tick": 7,
+          "phase": "authored"
+        },
+        "time_s": 0.5833333333333334,
+        "nodes": [
+          {
+            "node_id": "panda_hand",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.18
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "panda_leftfinger",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                -0.035,
+                0.1216
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "panda_rightfinger",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.035,
+                0.1216
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "board",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.037
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          },
+          {
+            "node_id": "blocker",
+            "world_pose": {
+              "position_m": [
+                0.08,
+                -0.10598958333333332,
+                0.14
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          }
+        ]
+      },
+      "camera": {
+        "id": "motion-gripper-camera",
+        "frame_key": {
+          "scene_key": "panda-guided-motion-v1",
+          "world_id": "guided-motion",
+          "epoch": 0,
+          "revision": 7,
+          "tick": 7,
+          "phase": "authored"
+        },
+        "world_pose": {
+          "position_m": [
+            0.42,
+            -0.004999999999999999,
+            0.24
+          ],
+          "orientation_xyzw": [
+            0.4097515061775999,
+            0.40490254670704484,
+            0.5745450099588736,
+            0.5814255432870964
+          ]
+        },
+        "width": 1280,
+        "height": 960,
+        "fx_px": 1550.0,
+        "fy_px": 1550.0,
+        "cx_px": 640.0,
+        "cy_px": 480.0,
+        "near_m": 0.01,
+        "far_m": 3.0
+      }
+    },
+    {
+      "pose_id": 8,
+      "frame": {
+        "key": {
+          "scene_key": "panda-guided-motion-v1",
+          "world_id": "guided-motion",
+          "epoch": 0,
+          "revision": 8,
+          "tick": 8,
+          "phase": "authored"
+        },
+        "time_s": 0.6666666666666666,
+        "nodes": [
+          {
+            "node_id": "panda_hand",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.18
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "panda_leftfinger",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                -0.035,
+                0.1216
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "panda_rightfinger",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.035,
+                0.1216
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "board",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.037
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          },
+          {
+            "node_id": "blocker",
+            "world_pose": {
+              "position_m": [
+                0.08,
+                -0.08666666666666667,
+                0.14
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          }
+        ]
+      },
+      "camera": {
+        "id": "motion-gripper-camera",
+        "frame_key": {
+          "scene_key": "panda-guided-motion-v1",
+          "world_id": "guided-motion",
+          "epoch": 0,
+          "revision": 8,
+          "tick": 8,
+          "phase": "authored"
+        },
+        "world_pose": {
+          "position_m": [
+            0.42,
+            -0.004,
+            0.24
+          ],
+          "orientation_xyzw": [
+            0.409266898851339,
+            0.4053876792985074,
+            0.5752383337850282,
+            0.5807428814215488
+          ]
+        },
+        "width": 1280,
+        "height": 960,
+        "fx_px": 1550.0,
+        "fy_px": 1550.0,
+        "cx_px": 640.0,
+        "cy_px": 480.0,
+        "near_m": 0.01,
+        "far_m": 3.0
+      }
+    },
+    {
+      "pose_id": 9,
+      "frame": {
+        "key": {
+          "scene_key": "panda-guided-motion-v1",
+          "world_id": "guided-motion",
+          "epoch": 0,
+          "revision": 9,
+          "tick": 9,
+          "phase": "authored"
+        },
+        "time_s": 0.75,
+        "nodes": [
+          {
+            "node_id": "panda_hand",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.18
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "panda_leftfinger",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                -0.035,
+                0.1216
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "panda_rightfinger",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.035,
+                0.1216
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "board",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.037
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          },
+          {
+            "node_id": "blocker",
+            "world_pose": {
+              "position_m": [
+                0.08,
+                -0.06609374999999999,
+                0.14
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          }
+        ]
+      },
+      "camera": {
+        "id": "motion-gripper-camera",
+        "frame_key": {
+          "scene_key": "panda-guided-motion-v1",
+          "world_id": "guided-motion",
+          "epoch": 0,
+          "revision": 9,
+          "tick": 9,
+          "phase": "authored"
+        },
+        "world_pose": {
+          "position_m": [
+            0.42,
+            -0.002999999999999999,
+            0.24
+          ],
+          "orientation_xyzw": [
+            0.4087822158240141,
+            0.4058727708385843,
+            0.5759305135385403,
+            0.5800589948385011
+          ]
+        },
+        "width": 1280,
+        "height": 960,
+        "fx_px": 1550.0,
+        "fy_px": 1550.0,
+        "cx_px": 640.0,
+        "cy_px": 480.0,
+        "near_m": 0.01,
+        "far_m": 3.0
+      }
+    },
+    {
+      "pose_id": 10,
+      "frame": {
+        "key": {
+          "scene_key": "panda-guided-motion-v1",
+          "world_id": "guided-motion",
+          "epoch": 0,
+          "revision": 10,
+          "tick": 10,
+          "phase": "authored"
+        },
+        "time_s": 0.8333333333333334,
+        "nodes": [
+          {
+            "node_id": "panda_hand",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.18
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "panda_leftfinger",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                -0.035,
+                0.1216
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "panda_rightfinger",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.035,
+                0.1216
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "board",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.037
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          },
+          {
+            "node_id": "blocker",
+            "world_pose": {
+              "position_m": [
+                0.08,
+                -0.04458333333333331,
+                0.14
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          }
+        ]
+      },
+      "camera": {
+        "id": "motion-gripper-camera",
+        "frame_key": {
+          "scene_key": "panda-guided-motion-v1",
+          "world_id": "guided-motion",
+          "epoch": 0,
+          "revision": 10,
+          "tick": 10,
+          "phase": "authored"
+        },
+        "world_pose": {
+          "position_m": [
+            0.42,
+            -0.002,
+            0.24
+          ],
+          "orientation_xyzw": [
+            -0.4082974614361225,
+            -0.4063578170069124,
+            -0.5766215389411757,
+            -0.5793738934153871
+          ]
+        },
+        "width": 1280,
+        "height": 960,
+        "fx_px": 1550.0,
+        "fy_px": 1550.0,
+        "cx_px": 640.0,
+        "cy_px": 480.0,
+        "near_m": 0.01,
+        "far_m": 3.0
+      }
+    },
+    {
+      "pose_id": 11,
+      "frame": {
+        "key": {
+          "scene_key": "panda-guided-motion-v1",
+          "world_id": "guided-motion",
+          "epoch": 0,
+          "revision": 11,
+          "tick": 11,
+          "phase": "authored"
+        },
+        "time_s": 0.9166666666666666,
+        "nodes": [
+          {
+            "node_id": "panda_hand",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.18
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "panda_leftfinger",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                -0.035,
+                0.1216
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "panda_rightfinger",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.035,
+                0.1216
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "board",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.037
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          },
+          {
+            "node_id": "blocker",
+            "world_pose": {
+              "position_m": [
+                0.08,
+                -0.02244791666666665,
+                0.14
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          }
+        ]
+      },
+      "camera": {
+        "id": "motion-gripper-camera",
+        "frame_key": {
+          "scene_key": "panda-guided-motion-v1",
+          "world_id": "guided-motion",
+          "epoch": 0,
+          "revision": 11,
+          "tick": 11,
+          "phase": "authored"
+        },
+        "world_pose": {
+          "position_m": [
+            0.42,
+            -0.0010000000000000009,
+            0.24
+          ],
+          "orientation_xyzw": [
+            -0.4078126400259567,
+            -0.40684281347958495,
+            -0.5773113997695618,
+            -0.5786875870892555
+          ]
+        },
+        "width": 1280,
+        "height": 960,
+        "fx_px": 1550.0,
+        "fy_px": 1550.0,
+        "cx_px": 640.0,
+        "cy_px": 480.0,
+        "near_m": 0.01,
+        "far_m": 3.0
+      }
+    },
+    {
+      "pose_id": 12,
+      "frame": {
+        "key": {
+          "scene_key": "panda-guided-motion-v1",
+          "world_id": "guided-motion",
+          "epoch": 0,
+          "revision": 12,
+          "tick": 12,
+          "phase": "authored"
+        },
+        "time_s": 1.0,
+        "nodes": [
+          {
+            "node_id": "panda_hand",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.18
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "panda_leftfinger",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                -0.035,
+                0.1216
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "panda_rightfinger",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.035,
+                0.1216
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "board",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.037
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          },
+          {
+            "node_id": "blocker",
+            "world_pose": {
+              "position_m": [
+                0.08,
+                0.0,
+                0.14
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          }
+        ]
+      },
+      "camera": {
+        "id": "motion-gripper-camera",
+        "frame_key": {
+          "scene_key": "panda-guided-motion-v1",
+          "world_id": "guided-motion",
+          "epoch": 0,
+          "revision": 12,
+          "tick": 12,
+          "phase": "authored"
+        },
+        "world_pose": {
+          "position_m": [
+            0.42,
+            0.0,
+            0.24
+          ],
+          "orientation_xyzw": [
+            -0.40732775592937565,
+            -0.4073277559293753,
+            -0.5780000858559963,
+            -0.5780000858559963
+          ]
+        },
+        "width": 1280,
+        "height": 960,
+        "fx_px": 1550.0,
+        "fy_px": 1550.0,
+        "cx_px": 640.0,
+        "cy_px": 480.0,
+        "near_m": 0.01,
+        "far_m": 3.0
+      }
+    },
+    {
+      "pose_id": 13,
+      "frame": {
+        "key": {
+          "scene_key": "panda-guided-motion-v1",
+          "world_id": "guided-motion",
+          "epoch": 0,
+          "revision": 13,
+          "tick": 13,
+          "phase": "authored"
+        },
+        "time_s": 1.0833333333333333,
+        "nodes": [
+          {
+            "node_id": "panda_hand",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.18
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "panda_leftfinger",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                -0.035,
+                0.1216
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "panda_rightfinger",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.035,
+                0.1216
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "board",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.037
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          },
+          {
+            "node_id": "blocker",
+            "world_pose": {
+              "position_m": [
+                0.08,
+                0.022447916666666623,
+                0.14
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          }
+        ]
+      },
+      "camera": {
+        "id": "motion-gripper-camera",
+        "frame_key": {
+          "scene_key": "panda-guided-motion-v1",
+          "world_id": "guided-motion",
+          "epoch": 0,
+          "revision": 13,
+          "tick": 13,
+          "phase": "authored"
+        },
+        "world_pose": {
+          "position_m": [
+            0.42,
+            0.0009999999999999992,
+            0.24
+          ],
+          "orientation_xyzw": [
+            0.40684281347958506,
+            0.40781264002595685,
+            0.5786875870892556,
+            0.5773113997695617
+          ]
+        },
+        "width": 1280,
+        "height": 960,
+        "fx_px": 1550.0,
+        "fy_px": 1550.0,
+        "cx_px": 640.0,
+        "cy_px": 480.0,
+        "near_m": 0.01,
+        "far_m": 3.0
+      }
+    },
+    {
+      "pose_id": 14,
+      "frame": {
+        "key": {
+          "scene_key": "panda-guided-motion-v1",
+          "world_id": "guided-motion",
+          "epoch": 0,
+          "revision": 14,
+          "tick": 14,
+          "phase": "authored"
+        },
+        "time_s": 1.1666666666666667,
+        "nodes": [
+          {
+            "node_id": "panda_hand",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.18
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "panda_leftfinger",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                -0.035,
+                0.1216
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "panda_rightfinger",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.035,
+                0.1216
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "board",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.037
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          },
+          {
+            "node_id": "blocker",
+            "world_pose": {
+              "position_m": [
+                0.08,
+                0.044583333333333364,
+                0.14
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          }
+        ]
+      },
+      "camera": {
+        "id": "motion-gripper-camera",
+        "frame_key": {
+          "scene_key": "panda-guided-motion-v1",
+          "world_id": "guided-motion",
+          "epoch": 0,
+          "revision": 14,
+          "tick": 14,
+          "phase": "authored"
+        },
+        "world_pose": {
+          "position_m": [
+            0.42,
+            0.0020000000000000018,
+            0.24
+          ],
+          "orientation_xyzw": [
+            0.4063578170069126,
+            0.40829746143612256,
+            0.5793738934153873,
+            0.5766215389411758
+          ]
+        },
+        "width": 1280,
+        "height": 960,
+        "fx_px": 1550.0,
+        "fy_px": 1550.0,
+        "cx_px": 640.0,
+        "cy_px": 480.0,
+        "near_m": 0.01,
+        "far_m": 3.0
+      }
+    },
+    {
+      "pose_id": 15,
+      "frame": {
+        "key": {
+          "scene_key": "panda-guided-motion-v1",
+          "world_id": "guided-motion",
+          "epoch": 0,
+          "revision": 15,
+          "tick": 15,
+          "phase": "authored"
+        },
+        "time_s": 1.25,
+        "nodes": [
+          {
+            "node_id": "panda_hand",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.18
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "panda_leftfinger",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                -0.035,
+                0.1216
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "panda_rightfinger",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.035,
+                0.1216
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "board",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.037
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          },
+          {
+            "node_id": "blocker",
+            "world_pose": {
+              "position_m": [
+                0.08,
+                0.06609375,
+                0.14
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          }
+        ]
+      },
+      "camera": {
+        "id": "motion-gripper-camera",
+        "frame_key": {
+          "scene_key": "panda-guided-motion-v1",
+          "world_id": "guided-motion",
+          "epoch": 0,
+          "revision": 15,
+          "tick": 15,
+          "phase": "authored"
+        },
+        "world_pose": {
+          "position_m": [
+            0.42,
+            0.002999999999999999,
+            0.24
+          ],
+          "orientation_xyzw": [
+            0.4058727708385847,
+            0.4087822158240141,
+            0.5800589948385013,
+            0.5759305135385403
+          ]
+        },
+        "width": 1280,
+        "height": 960,
+        "fx_px": 1550.0,
+        "fy_px": 1550.0,
+        "cx_px": 640.0,
+        "cy_px": 480.0,
+        "near_m": 0.01,
+        "far_m": 3.0
+      }
+    },
+    {
+      "pose_id": 16,
+      "frame": {
+        "key": {
+          "scene_key": "panda-guided-motion-v1",
+          "world_id": "guided-motion",
+          "epoch": 0,
+          "revision": 16,
+          "tick": 16,
+          "phase": "authored"
+        },
+        "time_s": 1.3333333333333333,
+        "nodes": [
+          {
+            "node_id": "panda_hand",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.18
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "panda_leftfinger",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                -0.035,
+                0.1216
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "panda_rightfinger",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.035,
+                0.1216
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "board",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.037
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          },
+          {
+            "node_id": "blocker",
+            "world_pose": {
+              "position_m": [
+                0.08,
+                0.08666666666666667,
+                0.14
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          }
+        ]
+      },
+      "camera": {
+        "id": "motion-gripper-camera",
+        "frame_key": {
+          "scene_key": "panda-guided-motion-v1",
+          "world_id": "guided-motion",
+          "epoch": 0,
+          "revision": 16,
+          "tick": 16,
+          "phase": "authored"
+        },
+        "world_pose": {
+          "position_m": [
+            0.42,
+            0.004,
+            0.24
+          ],
+          "orientation_xyzw": [
+            -0.4053876792985071,
+            -0.40926689885133927,
+            -0.580742881421549,
+            -0.5752383337850285
+          ]
+        },
+        "width": 1280,
+        "height": 960,
+        "fx_px": 1550.0,
+        "fy_px": 1550.0,
+        "cx_px": 640.0,
+        "cy_px": 480.0,
+        "near_m": 0.01,
+        "far_m": 3.0
+      }
+    },
+    {
+      "pose_id": 17,
+      "frame": {
+        "key": {
+          "scene_key": "panda-guided-motion-v1",
+          "world_id": "guided-motion",
+          "epoch": 0,
+          "revision": 17,
+          "tick": 17,
+          "phase": "authored"
+        },
+        "time_s": 1.4166666666666667,
+        "nodes": [
+          {
+            "node_id": "panda_hand",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.18
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "panda_leftfinger",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                -0.035,
+                0.1216
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "panda_rightfinger",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.035,
+                0.1216
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "board",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.037
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          },
+          {
+            "node_id": "blocker",
+            "world_pose": {
+              "position_m": [
+                0.08,
+                0.10598958333333336,
+                0.14
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          }
+        ]
+      },
+      "camera": {
+        "id": "motion-gripper-camera",
+        "frame_key": {
+          "scene_key": "panda-guided-motion-v1",
+          "world_id": "guided-motion",
+          "epoch": 0,
+          "revision": 17,
+          "tick": 17,
+          "phase": "authored"
+        },
+        "world_pose": {
+          "position_m": [
+            0.42,
+            0.005000000000000001,
+            0.24
+          ],
+          "orientation_xyzw": [
+            -0.40490254670704506,
+            -0.40975150617760003,
+            -0.5814255432870966,
+            -0.5745450099588739
+          ]
+        },
+        "width": 1280,
+        "height": 960,
+        "fx_px": 1550.0,
+        "fy_px": 1550.0,
+        "cx_px": 640.0,
+        "cy_px": 480.0,
+        "near_m": 0.01,
+        "far_m": 3.0
+      }
+    },
+    {
+      "pose_id": 18,
+      "frame": {
+        "key": {
+          "scene_key": "panda-guided-motion-v1",
+          "world_id": "guided-motion",
+          "epoch": 0,
+          "revision": 18,
+          "tick": 18,
+          "phase": "authored"
+        },
+        "time_s": 1.5,
+        "nodes": [
+          {
+            "node_id": "panda_hand",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.18
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "panda_leftfinger",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                -0.035,
+                0.1216
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "panda_rightfinger",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.035,
+                0.1216
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "board",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.037
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          },
+          {
+            "node_id": "blocker",
+            "world_pose": {
+              "position_m": [
+                0.08,
+                0.12374999999999997,
+                0.14
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          }
+        ]
+      },
+      "camera": {
+        "id": "motion-gripper-camera",
+        "frame_key": {
+          "scene_key": "panda-guided-motion-v1",
+          "world_id": "guided-motion",
+          "epoch": 0,
+          "revision": 18,
+          "tick": 18,
+          "phase": "authored"
+        },
+        "world_pose": {
+          "position_m": [
+            0.42,
+            0.006000000000000002,
+            0.24
+          ],
+          "orientation_xyzw": [
+            -0.4044173773808016,
+            -0.4102360334603177,
+            -0.5821069706180902,
+            -0.5738505523923535
+          ]
+        },
+        "width": 1280,
+        "height": 960,
+        "fx_px": 1550.0,
+        "fy_px": 1550.0,
+        "cx_px": 640.0,
+        "cy_px": 480.0,
+        "near_m": 0.01,
+        "far_m": 3.0
+      }
+    },
+    {
+      "pose_id": 19,
+      "frame": {
+        "key": {
+          "scene_key": "panda-guided-motion-v1",
+          "world_id": "guided-motion",
+          "epoch": 0,
+          "revision": 19,
+          "tick": 19,
+          "phase": "authored"
+        },
+        "time_s": 1.5833333333333333,
+        "nodes": [
+          {
+            "node_id": "panda_hand",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.18
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "panda_leftfinger",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                -0.035,
+                0.1216
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "panda_rightfinger",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.035,
+                0.1216
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "board",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.037
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          },
+          {
+            "node_id": "blocker",
+            "world_pose": {
+              "position_m": [
+                0.08,
+                0.13963541666666662,
+                0.14
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          }
+        ]
+      },
+      "camera": {
+        "id": "motion-gripper-camera",
+        "frame_key": {
+          "scene_key": "panda-guided-motion-v1",
+          "world_id": "guided-motion",
+          "epoch": 0,
+          "revision": 19,
+          "tick": 19,
+          "phase": "authored"
+        },
+        "world_pose": {
+          "position_m": [
+            0.42,
+            0.006999999999999999,
+            0.24
+          ],
+          "orientation_xyzw": [
+            -0.40393217563240186,
+            -0.41072047635525855,
+            -0.5827871536586114,
+            -0.5731549714709608
+          ]
+        },
+        "width": 1280,
+        "height": 960,
+        "fx_px": 1550.0,
+        "fy_px": 1550.0,
+        "cx_px": 640.0,
+        "cy_px": 480.0,
+        "near_m": 0.01,
+        "far_m": 3.0
+      }
+    },
+    {
+      "pose_id": 20,
+      "frame": {
+        "key": {
+          "scene_key": "panda-guided-motion-v1",
+          "world_id": "guided-motion",
+          "epoch": 0,
+          "revision": 20,
+          "tick": 20,
+          "phase": "authored"
+        },
+        "time_s": 1.6666666666666667,
+        "nodes": [
+          {
+            "node_id": "panda_hand",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.18
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "panda_leftfinger",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                -0.035,
+                0.1216
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "panda_rightfinger",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.035,
+                0.1216
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "board",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.037
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          },
+          {
+            "node_id": "blocker",
+            "world_pose": {
+              "position_m": [
+                0.08,
+                0.15333333333333338,
+                0.14
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          }
+        ]
+      },
+      "camera": {
+        "id": "motion-gripper-camera",
+        "frame_key": {
+          "scene_key": "panda-guided-motion-v1",
+          "world_id": "guided-motion",
+          "epoch": 0,
+          "revision": 20,
+          "tick": 20,
+          "phase": "authored"
+        },
+        "world_pose": {
+          "position_m": [
+            0.42,
+            0.008,
+            0.24
+          ],
+          "orientation_xyzw": [
+            0.4034469457702744,
+            0.4112048305166611,
+            0.5834660827146253,
+            0.5724582776325724
+          ]
+        },
+        "width": 1280,
+        "height": 960,
+        "fx_px": 1550.0,
+        "fy_px": 1550.0,
+        "cx_px": 640.0,
+        "cy_px": 480.0,
+        "near_m": 0.01,
+        "far_m": 3.0
+      }
+    },
+    {
+      "pose_id": 21,
+      "frame": {
+        "key": {
+          "scene_key": "panda-guided-motion-v1",
+          "world_id": "guided-motion",
+          "epoch": 0,
+          "revision": 21,
+          "tick": 21,
+          "phase": "authored"
+        },
+        "time_s": 1.75,
+        "nodes": [
+          {
+            "node_id": "panda_hand",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.18
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "panda_leftfinger",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                -0.035,
+                0.1216
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "panda_rightfinger",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.035,
+                0.1216
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "board",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.037
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          },
+          {
+            "node_id": "blocker",
+            "world_pose": {
+              "position_m": [
+                0.08,
+                0.16453125000000002,
+                0.14
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          }
+        ]
+      },
+      "camera": {
+        "id": "motion-gripper-camera",
+        "frame_key": {
+          "scene_key": "panda-guided-motion-v1",
+          "world_id": "guided-motion",
+          "epoch": 0,
+          "revision": 21,
+          "tick": 21,
+          "phase": "authored"
+        },
+        "world_pose": {
+          "position_m": [
+            0.42,
+            0.009000000000000001,
+            0.24
+          ],
+          "orientation_xyzw": [
+            -0.4029616920984358,
+            -0.41168909159746425,
+            -0.5841437481547189,
+            -0.5717604813666088
+          ]
+        },
+        "width": 1280,
+        "height": 960,
+        "fx_px": 1550.0,
+        "fy_px": 1550.0,
+        "cx_px": 640.0,
+        "cy_px": 480.0,
+        "near_m": 0.01,
+        "far_m": 3.0
+      }
+    },
+    {
+      "pose_id": 22,
+      "frame": {
+        "key": {
+          "scene_key": "panda-guided-motion-v1",
+          "world_id": "guided-motion",
+          "epoch": 0,
+          "revision": 22,
+          "tick": 22,
+          "phase": "authored"
+        },
+        "time_s": 1.8333333333333333,
+        "nodes": [
+          {
+            "node_id": "panda_hand",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.18
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "panda_leftfinger",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                -0.035,
+                0.1216
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "panda_rightfinger",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.035,
+                0.1216
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "board",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.037
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          },
+          {
+            "node_id": "blocker",
+            "world_pose": {
+              "position_m": [
+                0.08,
+                0.17291666666666666,
+                0.14
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          }
+        ]
+      },
+      "camera": {
+        "id": "motion-gripper-camera",
+        "frame_key": {
+          "scene_key": "panda-guided-motion-v1",
+          "world_id": "guided-motion",
+          "epoch": 0,
+          "revision": 22,
+          "tick": 22,
+          "phase": "authored"
+        },
+        "world_pose": {
+          "position_m": [
+            0.42,
+            0.009999999999999998,
+            0.24
+          ],
+          "orientation_xyzw": [
+            -0.4024764189162757,
+            -0.41217325524953463,
+            -0.5848201404108332,
+            -0.5710615932131893
+          ]
+        },
+        "width": 1280,
+        "height": 960,
+        "fx_px": 1550.0,
+        "fy_px": 1550.0,
+        "cx_px": 640.0,
+        "cy_px": 480.0,
+        "near_m": 0.01,
+        "far_m": 3.0
+      }
+    },
+    {
+      "pose_id": 23,
+      "frame": {
+        "key": {
+          "scene_key": "panda-guided-motion-v1",
+          "world_id": "guided-motion",
+          "epoch": 0,
+          "revision": 23,
+          "tick": 23,
+          "phase": "authored"
+        },
+        "time_s": 1.9166666666666667,
+        "nodes": [
+          {
+            "node_id": "panda_hand",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.18
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "panda_leftfinger",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                -0.035,
+                0.1216
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "panda_rightfinger",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.035,
+                0.1216
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "board",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.037
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          },
+          {
+            "node_id": "blocker",
+            "world_pose": {
+              "position_m": [
+                0.08,
+                0.17817708333333337,
+                0.14
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          }
+        ]
+      },
+      "camera": {
+        "id": "motion-gripper-camera",
+        "frame_key": {
+          "scene_key": "panda-guided-motion-v1",
+          "world_id": "guided-motion",
+          "epoch": 0,
+          "revision": 23,
+          "tick": 23,
+          "phase": "authored"
+        },
+        "world_pose": {
+          "position_m": [
+            0.42,
+            0.011000000000000003,
+            0.24
+          ],
+          "orientation_xyzw": [
+            -0.40199113051834173,
+            -0.4126573171238965,
+            -0.5854952499789833,
+            -0.5703616237622771
+          ]
+        },
+        "width": 1280,
+        "height": 960,
+        "fx_px": 1550.0,
+        "fy_px": 1550.0,
+        "cx_px": 640.0,
+        "cy_px": 480.0,
+        "near_m": 0.01,
+        "far_m": 3.0
+      }
+    },
+    {
+      "pose_id": 24,
+      "frame": {
+        "key": {
+          "scene_key": "panda-guided-motion-v1",
+          "world_id": "guided-motion",
+          "epoch": 0,
+          "revision": 24,
+          "tick": 24,
+          "phase": "authored"
+        },
+        "time_s": 2.0,
+        "nodes": [
+          {
+            "node_id": "panda_hand",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.18
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "panda_leftfinger",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                -0.035,
+                0.1216
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "panda_rightfinger",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.035,
+                0.1216
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "board",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.037
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          },
+          {
+            "node_id": "blocker",
+            "world_pose": {
+              "position_m": [
+                0.08,
+                0.18,
+                0.14
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          }
+        ]
+      },
+      "camera": {
+        "id": "motion-gripper-camera",
+        "frame_key": {
+          "scene_key": "panda-guided-motion-v1",
+          "world_id": "guided-motion",
+          "epoch": 0,
+          "revision": 24,
+          "tick": 24,
+          "phase": "authored"
+        },
+        "world_pose": {
+          "position_m": [
+            0.42,
+            0.012,
+            0.24
+          ],
+          "orientation_xyzw": [
+            0.4015058311941278,
+            0.4131412728709628,
+            0.5861690674199717,
+            0.569660583652822
+          ]
+        },
+        "width": 1280,
+        "height": 960,
+        "fx_px": 1550.0,
+        "fy_px": 1550.0,
+        "cx_px": 640.0,
+        "cy_px": 480.0,
+        "near_m": 0.01,
+        "far_m": 3.0
+      }
+    }
+  ],
+  "source": {
+    "script_sha256": "6f3d407206b0ba0d6662adf3a63510f30e9b64a2685da6159bd1cc5231b92b38",
+    "helpers": {
+      "diffuse_bounce_study.py": "e81a5574d44939d32b64ee96729fcb0df15045fe73ed794de957a3531fad3d09",
+      "progressive_panda_study.py": "5c65ac2d2ff1e0877cc6e5a4a9b07361fb0bf0d0c8becd839f0b56dfd5eeee66",
+      "guided_motion_metrics.py": "cd86df9b274153335559bffe72dcf4df386413cea6806d9e77360390e2ecf560",
+      "_panda_scene.py": "e781b754a72a47fd8cc1f3efeef7d03fd7d30e4634236d34a752c051a94196a6",
+      "normal_map_film.py": "9a01be3827fcdbafe107d96df4bb99fb1380b7662773feee88245ec309a9b353",
+      "panda_msaa_compare.py": "950594ffaacda777ea599b89710eb41e717e7e29451ab170a60c35fc44364a2c"
+    },
+    "implementation": {
+      "directory": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\rendering\\src\\phymeo_rendering",
+      "files": {
+        "__init__.py": "a8d0dc81b7c896fa6abb80e25a026d7155acf1d99f29feb712a8558ed9d9d23e",
+        "_environment_ibl.py": "8fbf40f27ab4ea439908f3564b9a68dc35b810fda47893c116ff4d425e2c304b",
+        "adapters\\__init__.py": "0c162fbcf6f013ca9611e91ca1ef763c27c7d51147179131e96265b0f2040714",
+        "adapters\\authored.py": "c543550c0709cca2cd5c73fe488d96729cf11ff27494f11889c9cbed3d21edb4",
+        "adapters\\panda_replay.py": "8587b1104c16430376106d229c5db336042e4c9ef76189c07810c4288a018bd0",
+        "assets.py": "280f0eb86cb86ba6b5505053dc3802fbc354236786f2c013922ebad22e508789",
+        "backends\\__init__.py": "8fe6585b36124e34a317fe8d114e5a46a798d7acf214cbed4eab71d5ec6a03b4",
+        "backends\\_native\\renderer.cpp": "0b85d800478a612c56581c3f4309c7c75ebdccf34c2caef5913a09b8877c2477",
+        "backends\\_native\\renderer.h": "acbc9db06578fd835d2cf5a4aded5fb8ef85d5534d0e376fb1364105b453716f",
+        "backends\\_native\\resident.inc": "f36ae6f17fcdce3d89b614e48868891b4132c7ee6c9c1207c13501c1e70fdb91",
+        "backends\\_native\\resident_display.inc": "2aa583777c8876ee8ccc2df7b86cbfe51ea47a63318941589a423897e760cbc9",
+        "backends\\_native\\resident_environment.inc": "b7a480fdd0b0fb430c714cc4c44534e553e978b70d30da5d86893492de781352",
+        "backends\\_native\\resident_msaa.inc": "4235a63f1d2b171d49c146eeeb91be600c7a684498b862c76029c2024a659f06",
+        "backends\\_native\\resident_normal.inc": "166c0c303cf3fa9b56423e0283f6d9b8205229b7b2c8dc0658c2589b9a514005",
+        "backends\\_native\\resident_progressive.inc": "f71ac1462a8cc4e99f9680460568769202561d21265c1895f6492bf994f51d48",
+        "backends\\_native\\resident_rayquery.inc": "4601548bbf7c42381d1697c2f86699661ef7674b608f1c1789c74e46063033ff",
+        "backends\\_native\\resident_rayquery_types.inc": "f137fe01ca7e71fd988e6b12b313e55277915f5e5e99fc3e676b45a6ae9401a8",
+        "backends\\_native\\resident_spatial.inc": "6cc11449b0b3cbd9952f900a65aa1e7c85b798cbaf8ee3ac65f5dd9764d069d9",
+        "backends\\_native\\resident_spirv.inc": "4db7c7e4dfe761bf14f0299c6424f54822f5038d57224196ce24cd3f9b82fde0",
+        "backends\\_native\\resident_textures.inc": "104eaa9d65043bb3c1398d8ad9d370034bef6c24a32f22b70013d731dda24ec2",
+        "backends\\_native_device.py": "3601d2626f83b722731564b62df2b2862bda2c2945483b60258cb9e682b1aa50",
+        "backends\\_native_display.py": "572fc890c2e344f2f34bb9af866ccac160052098fd41bcf2838bd98971e05844",
+        "backends\\_native_environment.py": "020bb47e88ac1772fd8c6111455c41cb96fa4c4914cf263f966215ac441ee9ce",
+        "backends\\_native_indirect.py": "25e46a6ac1169852afc3b6beb6889efdf9d96faab8c562ae0693c0488700f392",
+        "backends\\_native_msaa.py": "4e0490af2370a624a2d3510ef09ed9f7c7747279f59b247c4cead1601ceb4094",
+        "backends\\_native_normal.py": "08c28e7d58289b907a51faad3afdf8f8794d7aaadd73d651d26491b5199145a4",
+        "backends\\_native_progressive.py": "7ca7e64c659560e547cd6dd3788d8c9077b61d1d67aeac806288da6c8f0b1c21",
+        "backends\\_native_ray_query.py": "b06fcb625425315b27fec01a24511f6e9dc6764db5bdba662b9966e44a3c9d87",
+        "backends\\_native_reflection.py": "761f9e56127f8ebf230f4e156438faa4e0cd1abecf6d66c46b2892c119bee826",
+        "backends\\_native_resident.py": "fb38f96200475d72c10917643047d4b33ebda07b1bd83c8e2005f8dedbbcdd38",
+        "backends\\_native_spatial.py": "55602f5fb275408b39c2342423564f569cef7d89aa40163175e2eb585318520a",
+        "backends\\_native_studio.py": "7a5c7f1907daf0efa94be3b455858bbcb4ce74227bae5dc2c78d873c936ba3c8",
+        "backends\\_native_texture.py": "7f9109d08b2ce211dfb6ec580ca6a0cb9b35cb701ce6033442bed259ed357c4d",
+        "backends\\_sapien_neutral.py": "982c1a7d74d0bac667bb50a393946f464305d92b86c028ee894fa27045782b06",
+        "backends\\_sapien_pixels.py": "3584562f1f2916df320ea69fc5b7e04322c1b9869d4972c6ae5aa24c6f51b204",
+        "backends\\_sapien_sampling.py": "e17b6cf474350b648eafc1d9118ab2964ca113784dc207dbb149ad9bfa0b86a7",
+        "backends\\_sapien_session.py": "ae2ed27db02d288d82f89fe4bcb3988b8bf750c9e808cac91e9d782975b4e804",
+        "backends\\_sapien_studio.py": "c3f4565a523c82a1d7a2b43c0579aeb0146b364cefaebe6e2cc500d98a3465bf",
+        "backends\\_shaders\\native.frag": "95b9a94083335edbfbe426f07a03ee70899759084edce1d79a99e3e74ceeb8b2",
+        "backends\\_shaders\\native.vert": "066c066a3f629a8a9b080e27de1f94d4154f4afbc16d679159ae2aa97885250e",
+        "backends\\_shaders\\resident.frag": "14e9b111bf9eade60219a4b828232d25f5a4e55d3fde1d55ce13cec3c5a95663",
+        "backends\\_shaders\\resident.vert": "307a1490989df60ff837f4e5690a630427f440017fcc77ff66a623000a3b03dc",
+        "backends\\_shaders\\resident_display.glsl": "b9841bcd171ac077a2eb46ec4cc0980dea6ea19db3948e210e569c577e17bc25",
+        "backends\\_shaders\\resident_environment.glsl": "bc67e602c495f3fe65ba078fa5218785966f8d5b9c3e6c9bbd04671febcd5283",
+        "backends\\_shaders\\resident_indirect.glsl": "69fcc3f4ae37522cb7df3baf7c2891961c39e77fa0892731b1bf3061b5e36d14",
+        "backends\\_shaders\\resident_msaa.glsl": "2510b04a8152f1acde9ca817d94c1c8984cdda5662d2b99a3536fd79ed7a962c",
+        "backends\\_shaders\\resident_msaa_resolve.frag": "6edc6c126b55b1928348cc4c801c1f98f7f48d3e81c5df9d60a95a4e773ef08b",
+        "backends\\_shaders\\resident_msaa_resolve.vert": "a2972e3673a51c6af2114a57531cd23275a099bae1e8e8eb8de9072b46878ff6",
+        "backends\\_shaders\\resident_normal.glsl": "75e4385a055f9f51e58086154dd5319501729ec1adcfbd90275d9edf4d7a1400",
+        "backends\\_shaders\\resident_rayquery.glsl": "ae1829e7e2a075151876d750347304f54fdd788a828a1c8d53916e5c076b6c48",
+        "backends\\_shaders\\resident_reflection.glsl": "d5ea606f2f6a1e9d714ea9a4864b9e4edbd2415ca8661e44e2a19c952937a86d",
+        "backends\\_shaders\\resident_sky.frag": "05e976394aa5e4314a0a8e5f5f2ee4c5f6a5303abca5a8663cd3e20c076a1892",
+        "backends\\_shaders\\resident_sky.vert": "fe414ecce1be709ccb00c6da0f649b55994903445c18dfe95adff3f1291540d2",
+        "backends\\_shaders\\resident_studio.glsl": "5a572714eee25cde40b516845ff9b8708b534e83b550d1b7716cef95e2c1b7ae",
+        "backends\\native.py": "c5bcbbb2513aacee6564d16ce6ec0811c572e34f3a0d15365d7773d2a83ab47b",
+        "backends\\sapien.py": "3bee3041a3993adec2302bb7b396fc7735f2033312d8472abd0a2eba8ee5536b",
+        "cameras.py": "9f6584d62bebb85775296cd79fc1bbcb43214f41c1a2df3282703676f8531ab6",
+        "environment.py": "63e272eb87c398f48323d4a7974b5f818027edb6ad880367bae921895c783588",
+        "mesh_data.py": "35ca4ba27f203d9bf3892cd13050c803f6c20e76408c61b1d0755929441f4709",
+        "outputs.py": "c0a8d5571144116b3a70d4c476aed1bc3797c3c3d05ad9079dd0c6bd09adf4de",
+        "panda_visuals.py": "36c333751195aa58e6c0c429d65aeb641995b368b5758a0c69c1e1aefde3918b",
+        "pipeline.py": "01344e5ac31dfcc36cebb1487c8766c3f48bc3caa72f3c226db8c24b5bdcfd3e",
+        "scene.py": "75c88f029bd54f206f074ad3f4012d078aa25a766cd5a0e7350b13d83d117be9",
+        "studio.py": "719e1e7b462f107bf20b76f01c8ef88d2a15f6657e373ac6b87e5a4145129a17",
+        "texture_data.py": "b1ee65c0fbe2d71afc451fbec8e51c8af24c94e8ca5baf9e66717f13c68bc315",
+        "tiled.py": "f0d3a0250cd5343a8f2475cbff19d33b7b77deb759b4463dd5b25e9fcf12f700"
+      }
+    }
+  },
+  "library": {
+    "file": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-spatial\\build-spatial-guide\\phymeo_native.dll",
+    "sha256": "90f28ab9618a4d865c7811511e3375d5a8e435543ae1750d099f8fa60a780779"
+  },
+  "shaders": {
+    "native.frag.spv": "cd6f295432a75c7383357cb9d4805f72f8ea5a47f7c117adb2975ae919c90066",
+    "native.vert.spv": "9595a6722905db50583a3d3518c4853463568124bade005db7ffa04f2d1f41b4",
+    "resident.frag.spv": "72215fcebf7e1af6a1af1be9258f9b5a5411dac1bf108a699ff6ad3d7bb20ab5",
+    "resident.vert.spv": "b1cb30601e2f8ff78e7a14818d3253ec95806b4ba22039b106927ffa4ca86810",
+    "resident_area4.frag.spv": "f2c0d36748d223b34ccd7cd4023798d05120acdf0913dc85ef233bfe984090cd",
+    "resident_area8.frag.spv": "417dc986bc40b2baf9a7178b1933f0f6b7122bfa6a41358de0793d3f20b9a185",
+    "resident_msaa_resolve.frag.spv": "bc140bc9ce2668db043516fc6d35e11a26689b2b45d2f1d38d39972e1902c707",
+    "resident_msaa_resolve.vert.spv": "d9bbb44453660efa44c1f5f6c2861102b62f6b23b400400fac7d7f3faa02b798",
+    "resident_normal.frag.spv": "7fa538382ace5b300fa213618ef4a0d602cb79a2d1abc844f08bd78245be45ce",
+    "resident_normal.vert.spv": "45c2f2a0fd75c130f949fbebdf43033e4999a4a67c55e2c6b2eb99e4310eaa9c",
+    "resident_normal_area4.frag.spv": "a28e146a580736f1dfdcade3540f11430fc42dcb0da6cae32a4b9d40802aaafc",
+    "resident_normal_area8.frag.spv": "72cbfadb44532eb9c0d5c77ac6aa497af55aace59b78404617b011a865ec3699",
+    "resident_progressive.comp.spv": "7ff0535b5c6312aed2f0525302c3ef30d37f9df717ea5d4597c1127bab644d8c",
+    "resident_rayquery.frag.spv": "7b54bc5140c4e40d24152f54c57e98aaa5a16a4b58d54be10edd3542fe9c9593",
+    "resident_rayquery.vert.spv": "b1069d14f062dcf3b441d1c44286068b92754557dbe8ce8327e9407cd7c0ec82",
+    "resident_rayquery_area4.frag.spv": "043d0e991b770144bb92d15b3f95374680a9714162df793945cb63209d02aeaa",
+    "resident_rayquery_area8.frag.spv": "ff7f38b122b01303c686c1c0f4db7815e05ee332ee6490ec6ecb8bcf851259d8",
+    "resident_rayquery_indirect.frag.spv": "d74aa898647ffd28e82879b9861d7a27988bfd4c0683f8d85e21ff64f6dcc5d5",
+    "resident_rayquery_indirect_area4.frag.spv": "c3d3fce53e6b03f641e2921de1c159d7d82b148fa2e1d77a0cc063f3d0fd2527",
+    "resident_rayquery_indirect_area8.frag.spv": "163cf92bdf491c2075ff89c266b55d3de4d1ff8143ac57be6d710f563b7fbeee",
+    "resident_rayquery_indirect_progressive.frag.spv": "2265854f115e74f658fa8fa02f80fe5eb6c1eaf4b7e702dfb783f6be14f5354f",
+    "resident_rayquery_indirect_progressive_area4.frag.spv": "2e0389758f677284bccd0528860452507cf600105f062a5d641774b71491f6d6",
+    "resident_rayquery_indirect_progressive_area8.frag.spv": "5de2ff543940e457673aae71dc9add36ddd02a87b384c7457197ef84881378e6",
+    "resident_rayquery_normal.frag.spv": "c6e66b1a95b58a4ff707a1d783918f65cc2f690c4734b07498ac64a4770c38dd",
+    "resident_rayquery_normal.vert.spv": "f4babe286e92561226bbb0382b03e582f2eb87ee5603fc34f6bcd8f22c793109",
+    "resident_rayquery_normal_area4.frag.spv": "d3365b07cac963057c7f807a69932361191f8ddcaaf0c1afdccb8a6cb34527cc",
+    "resident_rayquery_normal_area8.frag.spv": "2ab92a834bcbbb555d36c82d0f6861f29423b7e60cf63c0d8a82726185ce9e0f",
+    "resident_rayquery_normal_indirect.frag.spv": "28ff794c21d4be67dcb6cf8eb19761344275dbd457ed985db74ec83918f93800",
+    "resident_rayquery_normal_indirect_area4.frag.spv": "42ee37ba7a29a9d76a322fc6931e5c57deed51f8e91485f0f9169e46ef16ccad",
+    "resident_rayquery_normal_indirect_area8.frag.spv": "2e1bf2da65cd0767325ec8484c83fd22942028c21bd09dd6390e991bed7d9a96",
+    "resident_rayquery_normal_indirect_progressive.frag.spv": "bbe205e5a9490f273722b32a864a29a01c7624a1c492596ae6811a85c157b69b",
+    "resident_rayquery_normal_indirect_progressive_area4.frag.spv": "f1c74775115e1ec27ab3ed86ac1902b8205a924e5af3d59ec2eb251d453f8d95",
+    "resident_rayquery_normal_indirect_progressive_area8.frag.spv": "4947817c4397369099779de5e955abfb77208c6e11798fa0badfcdbe6f43a6c1",
+    "resident_rayquery_normal_reflection.frag.spv": "d1a05fbe2f3fdfef7b23d817139826aa18da2951298081eeb9f567b91e5b645f",
+    "resident_rayquery_normal_reflection_area4.frag.spv": "7a7f7091af8691fea270987fe309f9809ffd5e4b04a5e304f61a6eacc80334c9",
+    "resident_rayquery_normal_reflection_area8.frag.spv": "29fc236291c047b01de56d398eae08ab7d31906beb2fe925e8e5d3c6d5dae898",
+    "resident_rayquery_normal_reflection_indirect.frag.spv": "b8b7d52256c41719e92bf62f39d16d99ec9a11e9854044379cda62cfceec50e2",
+    "resident_rayquery_normal_reflection_indirect_area4.frag.spv": "c14094b6dac77d4cb332e01acd4571cf7af1ac3a5ba093ffdaa326379751106c",
+    "resident_rayquery_normal_reflection_indirect_area8.frag.spv": "a9a8af2281c910758beee17360811a61a8fc7396d6f832535c8f01048af3deba",
+    "resident_rayquery_normal_reflection_indirect_progressive.frag.spv": "1aeb1bfa703b74c853768a658c22ad7bbf4a0aed2b8e4ffee1f70671ce697016",
+    "resident_rayquery_normal_reflection_indirect_progressive_area4.frag.spv": "9d2e5c47a68c48e15e23aecc9e848f5e5713d51039e821bca9f97246a7eae9b5",
+    "resident_rayquery_normal_reflection_indirect_progressive_area8.frag.spv": "e0655e99eed4874823470f7399bf9195f3d810b804fb3b2db47e5a40b8ddfdad",
+    "resident_rayquery_reflection.frag.spv": "1cf7332f127d0f1106390589ca44a0c12a856b28c8f14818288b440e8898ff1c",
+    "resident_rayquery_reflection_area4.frag.spv": "3134db8d7985323ba7f03339ba8f1a826cd1e669fd543ad378d02bd451258b22",
+    "resident_rayquery_reflection_area8.frag.spv": "166abd07e053b38fcdd404d80b45e622e95b0a3ec4f102a5e8e2e7fbcb175a66",
+    "resident_rayquery_reflection_indirect.frag.spv": "6ef7157a5cd0341ae97fb2df98ba78a24dee7976029316083d685c26d7bcdd84",
+    "resident_rayquery_reflection_indirect_area4.frag.spv": "ad0d61d163fc19a79acd6d2564e46a9bc741c5acdacdf30ef27c340a3e502968",
+    "resident_rayquery_reflection_indirect_area8.frag.spv": "3348499939e1ad24459ec19967f98acd0c04c317cc27a3aed26f5db9bccbacd4",
+    "resident_rayquery_reflection_indirect_progressive.frag.spv": "f01c92b57eceff034be2fc96001ed9de16b5fcb18dc68363c9cd1a5e8599788c",
+    "resident_rayquery_reflection_indirect_progressive_area4.frag.spv": "a7fc8c2a147ca53131c85762be814ae06561752946095e879373149fa0a4c5cb",
+    "resident_rayquery_reflection_indirect_progressive_area8.frag.spv": "dd92fd0e00b22f18674b3614fa62bcf4fa54186260ff9463e4cdcf7d58238047",
+    "resident_sky.frag.spv": "d1f64fe50290ec0e905830c3d556d8d24ceced8c9a1665155fe5406ee59232b7",
+    "resident_sky.vert.spv": "d9bbb44453660efa44c1f5f6c2861102b62f6b23b400400fac7d7f3faa02b798",
+    "resident_sky_progressive.frag.spv": "bae01a76dc87f9f714ae437a2d4a8c4fd5e47c4b15ba2e6fa00a438eaf501367",
+    "resident_spatial.comp.spv": "0c11d0e79d4dc664c3361aad5d712c10c1f94d7e55d2fbdbc91d938244f6122c"
+  },
+  "device_index": 1,
+  "mesh_sha256": {
+    "panda_visual_hand_00": "dc809d9c48968bbb21edc0d882d6b8290e3833a8261728d1dc0f6ec5fba56591",
+    "panda_visual_hand_01": "7b3f192a1c7b7d38a9f2fe796f436bf382e1f2a83a1d8046a29295d4ae06de95",
+    "panda_visual_hand_02": "77dacceed9360fd879ba2d5e38f66014b5053b7e7b21eab1029bab7186946715",
+    "panda_visual_hand_03": "ccba3669f0e98cba0b4bce684aa0ec6ffc6ebf2f6312055f27b796b81637231d",
+    "panda_visual_hand_04": "277ba3f7d66c2f665fdfce83403c20cbd35d10f333e1c7f4003f905c20d41797",
+    "panda_visual_finger_00": "a3a6f1759decfe877009d885dba54e33023d10e49198100308b4e33efb180696",
+    "panda_visual_finger_01": "65e238145783e7609d5a7d966104bc4ae7f871e0b2ae249f0fdfc8f33fa51471",
+    "study-board-mesh": "df266059bb2a3a296ebd4385d12555a8608d37d91c5013337192a2d2ec52cb39",
+    "motion-foreground-blocker": "f92c18fb524ce069a70b4f19047ddc30d368d4603bd9516f156efb3360e7ff5d"
+  },
+  "panda_provenance": {
+    "manifest": {
+      "file": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\rendering\\assets\\panda\\manifest.json",
+      "sha256": "d6c5f952ec5e293403d37962a5a462a70fb1359307479c87e744dfb80b4846e4"
+    },
+    "selected_instances": [
+      {
+        "id": 150,
+        "mesh_id": "panda_visual_hand_00",
+        "material_id": "study-white",
+        "node_id": "panda_hand",
+        "local_pose": {
+          "position_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "orientation_xyzw": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        }
+      },
+      {
+        "id": 151,
+        "mesh_id": "panda_visual_hand_01",
+        "material_id": "study-white",
+        "node_id": "panda_hand",
+        "local_pose": {
+          "position_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "orientation_xyzw": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        }
+      },
+      {
+        "id": 152,
+        "mesh_id": "panda_visual_hand_02",
+        "material_id": "study-white",
+        "node_id": "panda_hand",
+        "local_pose": {
+          "position_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "orientation_xyzw": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        }
+      },
+      {
+        "id": 153,
+        "mesh_id": "panda_visual_hand_03",
+        "material_id": "study-white",
+        "node_id": "panda_hand",
+        "local_pose": {
+          "position_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "orientation_xyzw": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        }
+      },
+      {
+        "id": 154,
+        "mesh_id": "panda_visual_hand_04",
+        "material_id": "study-white",
+        "node_id": "panda_hand",
+        "local_pose": {
+          "position_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "orientation_xyzw": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        }
+      },
+      {
+        "id": 155,
+        "mesh_id": "panda_visual_finger_00",
+        "material_id": "study-white",
+        "node_id": "panda_leftfinger",
+        "local_pose": {
+          "position_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "orientation_xyzw": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        }
+      },
+      {
+        "id": 156,
+        "mesh_id": "panda_visual_finger_01",
+        "material_id": "study-white",
+        "node_id": "panda_leftfinger",
+        "local_pose": {
+          "position_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "orientation_xyzw": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        }
+      },
+      {
+        "id": 157,
+        "mesh_id": "panda_visual_finger_00",
+        "material_id": "study-white",
+        "node_id": "panda_rightfinger",
+        "local_pose": {
+          "position_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "orientation_xyzw": [
+            0.0,
+            0.0,
+            1.0,
+            0.0
+          ]
+        }
+      },
+      {
+        "id": 158,
+        "mesh_id": "panda_visual_finger_01",
+        "material_id": "study-white",
+        "node_id": "panda_rightfinger",
+        "local_pose": {
+          "position_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "orientation_xyzw": [
+            0.0,
+            0.0,
+            1.0,
+            0.0
+          ]
+        }
+      }
+    ],
+    "licenses": [
+      {
+        "file": "LICENSE",
+        "sha256": "a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9",
+        "text": "                                 Apache License\n                           Version 2.0, January 2004\n                        http://www.apache.org/licenses/\n\n   TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION\n\n   1. Definitions.\n\n      \"License\" shall mean the terms and conditions for use, reproduction,\n      and distribution as defined by Sections 1 through 9 of this document.\n\n      \"Licensor\" shall mean the copyright owner or entity authorized by\n      the copyright owner that is granting the License.\n\n      \"Legal Entity\" shall mean the union of the acting entity and all\n      other entities that control, are controlled by, or are under common\n      control with that entity. For the purposes of this definition,\n      \"control\" means (i) the power, direct or indirect, to cause the\n      direction or management of such entity, whether by contract or\n      otherwise, or (ii) ownership of fifty percent (50%) or more of the\n      outstanding shares, or (iii) beneficial ownership of such entity.\n\n      \"You\" (or \"Your\") shall mean an individual or Legal Entity\n      exercising permissions granted by this License.\n\n      \"Source\" form shall mean the preferred form for making modifications,\n      including but not limited to software source code, documentation\n      source, and configuration files.\n\n      \"Object\" form shall mean any form resulting from mechanical\n      transformation or translation of a Source form, including but\n      not limited to compiled object code, generated documentation,\n      and conversions to other media types.\n\n      \"Work\" shall mean the work of authorship, whether in Source or\n      Object form, made available under the License, as indicated by a\n      copyright notice that is included in or attached to the work\n      (an example is provided in the Appendix below).\n\n      \"Derivative Works\" shall mean any work, whether in Source or Object\n      form, that is based on (or derived from) the Work and for which the\n      editorial revisions, annotations, elaborations, or other modifications\n      represent, as a whole, an original work of authorship. For the purposes\n      of this License, Derivative Works shall not include works that remain\n      separable from, or merely link (or bind by name) to the interfaces of,\n      the Work and Derivative Works thereof.\n\n      \"Contribution\" shall mean any work of authorship, including\n      the original version of the Work and any modifications or additions\n      to that Work or Derivative Works thereof, that is intentionally\n      submitted to Licensor for inclusion in the Work by the copyright owner\n      or by an individual or Legal Entity authorized to submit on behalf of\n      the copyright owner. For the purposes of this definition, \"submitted\"\n      means any form of electronic, verbal, or written communication sent\n      to the Licensor or its representatives, including but not limited to\n      communication on electronic mailing lists, source code control systems,\n      and issue tracking systems that are managed by, or on behalf of, the\n      Licensor for the purpose of discussing and improving the Work, but\n      excluding communication that is conspicuously marked or otherwise\n      designated in writing by the copyright owner as \"Not a Contribution.\"\n\n      \"Contributor\" shall mean Licensor and any individual or Legal Entity\n      on behalf of whom a Contribution has been received by Licensor and\n      subsequently incorporated within the Work.\n\n   2. Grant of Copyright License. Subject to the terms and conditions of\n      this License, each Contributor hereby grants to You a perpetual,\n      worldwide, non-exclusive, no-charge, royalty-free, irrevocable\n      copyright license to reproduce, prepare Derivative Works of,\n      publicly display, publicly perform, sublicense, and distribute the\n      Work and such Derivative Works in Source or Object form.\n\n   3. Grant of Patent License. Subject to the terms and conditions of\n      this License, each Contributor hereby grants to You a perpetual,\n      worldwide, non-exclusive, no-charge, royalty-free, irrevocable\n      (except as stated in this section) patent license to make, have made,\n      use, offer to sell, sell, import, and otherwise transfer the Work,\n      where such license applies only to those patent claims licensable\n      by such Contributor that are necessarily infringed by their\n      Contribution(s) alone or by combination of their Contribution(s)\n      with the Work to which such Contribution(s) was submitted. If You\n      institute patent litigation against any entity (including a\n      cross-claim or counterclaim in a lawsuit) alleging that the Work\n      or a Contribution incorporated within the Work constitutes direct\n      or contributory patent infringement, then any patent licenses\n      granted to You under this License for that Work shall terminate\n      as of the date such litigation is filed.\n\n   4. Redistribution. You may reproduce and distribute copies of the\n      Work or Derivative Works thereof in any medium, with or without\n      modifications, and in Source or Object form, provided that You\n      meet the following conditions:\n\n      (a) You must give any other recipients of the Work or\n          Derivative Works a copy of this License; and\n\n      (b) You must cause any modified files to carry prominent notices\n          stating that You changed the files; and\n\n      (c) You must retain, in the Source form of any Derivative Works\n          that You distribute, all copyright, patent, trademark, and\n          attribution notices from the Source form of the Work,\n          excluding those notices that do not pertain to any part of\n          the Derivative Works; and\n\n      (d) If the Work includes a \"NOTICE\" text file as part of its\n          distribution, then any Derivative Works that You distribute must\n          include a readable copy of the attribution notices contained\n          within such NOTICE file, excluding those notices that do not\n          pertain to any part of the Derivative Works, in at least one\n          of the following places: within a NOTICE text file distributed\n          as part of the Derivative Works; within the Source form or\n          documentation, if provided along with the Derivative Works; or,\n          within a display generated by the Derivative Works, if and\n          wherever such third-party notices normally appear. The contents\n          of the NOTICE file are for informational purposes only and\n          do not modify the License. You may add Your own attribution\n          notices within Derivative Works that You distribute, alongside\n          or as an addendum to the NOTICE text from the Work, provided\n          that such additional attribution notices cannot be construed\n          as modifying the License.\n\n      You may add Your own copyright statement to Your modifications and\n      may provide additional or different license terms and conditions\n      for use, reproduction, or distribution of Your modifications, or\n      for any such Derivative Works as a whole, provided Your use,\n      reproduction, and distribution of the Work otherwise complies with\n      the conditions stated in this License.\n\n   5. Submission of Contributions. Unless You explicitly state otherwise,\n      any Contribution intentionally submitted for inclusion in the Work\n      by You to the Licensor shall be under the terms and conditions of\n      this License, without any additional terms or conditions.\n      Notwithstanding the above, nothing herein shall supersede or modify\n      the terms of any separate license agreement you may have executed\n      with Licensor regarding such Contributions.\n\n   6. Trademarks. This License does not grant permission to use the trade\n      names, trademarks, service marks, or product names of the Licensor,\n      except as required for reasonable and customary use in describing the\n      origin of the Work and reproducing the content of the NOTICE file.\n\n   7. Disclaimer of Warranty. Unless required by applicable law or\n      agreed to in writing, Licensor provides the Work (and each\n      Contributor provides its Contributions) on an \"AS IS\" BASIS,\n      WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or\n      implied, including, without limitation, any warranties or conditions\n      of TITLE, NON-INFRINGEMENT, MERCHANTABILITY, or FITNESS FOR A\n      PARTICULAR PURPOSE. You are solely responsible for determining the\n      appropriateness of using or redistributing the Work and assume any\n      risks associated with Your exercise of permissions under this License.\n\n   8. Limitation of Liability. In no event and under no legal theory,\n      whether in tort (including negligence), contract, or otherwise,\n      unless required by applicable law (such as deliberate and grossly\n      negligent acts) or agreed to in writing, shall any Contributor be\n      liable to You for damages, including any direct, indirect, special,\n      incidental, or consequential damages of any character arising as a\n      result of this License or out of the use or inability to use the\n      Work (including but not limited to damages for loss of goodwill,\n      work stoppage, computer failure or malfunction, or any and all\n      other commercial damages or losses), even if such Contributor\n      has been advised of the possibility of such damages.\n\n   9. Accepting Warranty or Additional Liability. While redistributing\n      the Work or Derivative Works thereof, You may choose to offer,\n      and charge a fee for, acceptance of support, warranty, indemnity,\n      or other liability obligations and/or rights consistent with this\n      License. However, in accepting such obligations, You may act only\n      on Your own behalf and on Your sole responsibility, not on behalf\n      of any other Contributor, and only if You agree to indemnify,\n      defend, and hold each Contributor harmless for any liability\n      incurred by, or claims asserted against, such Contributor by reason\n      of your accepting any such warranty or additional liability.\n\n   END OF TERMS AND CONDITIONS\n"
+      },
+      {
+        "file": "NOTICE",
+        "sha256": "d8ded0c268405e7847c281faa15042d381fbf7d308ec91d9941fbd943a6e1053",
+        "text": "franka_ros\n\nCopyright 2017 Franka Emika GmbH\n\nLicensed under the Apache License, Version 2.0 (the \"License\");\nyou may not use this file except in compliance with the License.\nYou may obtain a copy of the License at\n\n    http://www.apache.org/licenses/LICENSE-2.0\n\nUnless required by applicable law or agreed to in writing, software\ndistributed under the License is distributed on an \"AS IS\" BASIS,\nWITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\nSee the License for the specific language governing permissions and\nlimitations under the License.\n"
+      }
+    ],
+    "visual_placement_sources": [
+      {
+        "file": "original/franka_hand.xacro",
+        "sha256": "61bfc98d331fdcc9f340f028efff8b6ab6fbaf1db123384afb6c52d1c8ca9f17",
+        "url": "https://raw.githubusercontent.com/frankarobotics/franka_ros/30e598aa6fb703cc80a203481e6427f397337b4c/franka_description/robots/common/franka_hand.xacro"
+      },
+      {
+        "file": "original/utils.xacro",
+        "sha256": "f0124cd8ccb470b94be7c8da5e2dacf69671ec22c385013d34c9bed5409eca9b",
+        "url": "https://raw.githubusercontent.com/frankarobotics/franka_ros/30e598aa6fb703cc80a203481e6427f397337b4c/franka_description/robots/common/utils.xacro"
+      },
+      {
+        "file": "original/package.xml",
+        "sha256": "88832657e816997861731e2363477a2e02d0e3c95ffd1999c4d87cce16c0b2cc",
+        "url": "https://raw.githubusercontent.com/frankarobotics/franka_ros/30e598aa6fb703cc80a203481e6427f397337b4c/franka_description/package.xml"
+      }
+    ],
+    "change": "Original metre mesh geometry/local placements; uniform authored neutral white coating replaces all hand/finger material factors; static hand placement is not an archived physical state"
+  }
+}

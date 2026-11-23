@@ -1,0 +1,22 @@
+{
+  "pose": 15,
+  "previous_pose": 14,
+  "object_id": 158,
+  "current_pixels": 69,
+  "reference_spp": 256,
+  "space": "inverse sRGB display-linear, RGB RMS",
+  "rmse": {
+    "1": {
+      "none": 0.02077236809063278,
+      "guided": 0.009147125595378969
+    },
+    "2": {
+      "none": 0.014689980511947889,
+      "guided": 0.014689980511947889
+    },
+    "4": {
+      "none": 0.009342142442372909,
+      "guided": 0.009342142442372909
+    }
+  }
+}

@@ -1,0 +1,1644 @@
+{
+  "status": "complete",
+  "pose_id": 24,
+  "mode": "none",
+  "captures": [
+    {
+      "capture_ms": 73.34499998250976,
+      "frame": {
+        "key": {
+          "scene_key": "panda-guided-motion-v1",
+          "world_id": "guided-motion",
+          "epoch": 0,
+          "revision": 24,
+          "tick": 24,
+          "phase": "authored"
+        },
+        "time_s": 2.0,
+        "nodes": [
+          {
+            "node_id": "panda_hand",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.18
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "panda_leftfinger",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                -0.035,
+                0.1216
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "panda_rightfinger",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.035,
+                0.1216
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "board",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.037
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          },
+          {
+            "node_id": "blocker",
+            "world_pose": {
+              "position_m": [
+                0.08,
+                0.18,
+                0.14
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          }
+        ]
+      },
+      "camera": {
+        "id": "motion-gripper-camera",
+        "frame_key": {
+          "scene_key": "panda-guided-motion-v1",
+          "world_id": "guided-motion",
+          "epoch": 0,
+          "revision": 24,
+          "tick": 24,
+          "phase": "authored"
+        },
+        "world_pose": {
+          "position_m": [
+            0.42,
+            0.012,
+            0.24
+          ],
+          "orientation_xyzw": [
+            0.4015058311941278,
+            0.4131412728709628,
+            0.5861690674199717,
+            0.569660583652822
+          ]
+        },
+        "width": 1280,
+        "height": 960,
+        "fx_px": 1550.0,
+        "fy_px": 1550.0,
+        "cx_px": 640.0,
+        "cy_px": 480.0,
+        "near_m": 0.01,
+        "far_m": 3.0
+      },
+      "progressive": {
+        "enabled": true,
+        "bounces": 1,
+        "batches": 1,
+        "batch_index": 0,
+        "primary_samples_per_pixel": 16,
+        "samples_per_batch": 16,
+        "max_batches": 4096,
+        "reset_count": 1,
+        "last_reset_reasons": [
+          "new_session"
+        ],
+        "accumulation_space": "scene-linear-before-exposure",
+        "storage": "GPU RGBA32F mean",
+        "sequence": "seed + capture-local pixel + 0-based batch; 16 primary paths, at most one continuation each",
+        "scene_scope": "one immutable scene/session; camera, transforms, effective directional lights, world, epoch and extent are checked",
+        "non_rgb": "does not advance or replace RGB history"
+      },
+      "indirect": {
+        "mode": "diffuse_bounce",
+        "seed": 0,
+        "samples_per_pixel": 16,
+        "bounces": 1,
+        "estimator": "rho_d * sum(Li)/16; 4x4 stratified cosine hemisphere with hashed 23-bit open-interval jitter",
+        "diffuse_coefficient": "rho_d=(1-metallic)*albedo*(1-F0); F0=mix(.04,albedo,metallic)",
+        "environment_policy": "replace the original diffuse IBL/SH term, never add a second copy",
+        "miss_policy": "original HDR level0 radiance along sample direction, or uniform environment; zero if absent",
+        "terminal_lighting": "bounded 16 primary paths; optional one cosine continuation at each first hit; replace that hit diffuse IBL, retain direct/specular environment; final hit never recurses",
+        "seed_scope": "seed + capture-local pixel + 0-based batch; state changes reset batch zero",
+        "geometry_policy": "shading-normal cosine distribution clipped by oriented true face; inward/degenerate sample=0, denominator stays16",
+        "combination": "independent primary specular/diffuse lobes may share terminal shading; no additional bounce",
+        "limitations": "16 noisy samples; no denoiser, temporal history, multiple diffuse bounces or raw-HDR output attachment"
+      },
+      "effective_directional_lights": [
+        {
+          "direction": [
+            0.7071067811865475,
+            0.0,
+            -0.7071067811865475
+          ],
+          "illuminance": [
+            3.0,
+            3.0,
+            3.0
+          ]
+        }
+      ],
+      "submitted_directional_lights": [
+        {
+          "direction": [
+            0.7071067690849304,
+            0.0,
+            -0.7071067690849304
+          ],
+          "illuminance": [
+            3.0,
+            3.0,
+            3.0
+          ]
+        }
+      ],
+      "plane_sha256": {
+        "srgb8_rgb": "c67afcc71f579364d9ee1bcb07579370eba54b3de4af93c4db231fe039d776c1",
+        "forward_depth_m_f32": "1eb379f8c3d10dc4e82dedee5e3181996b923ed29c3ccade538e1242f7735db3",
+        "instance_id_u32": "c0470bd9f0450c6a822a4b769db0ab3631fb147280dc832ac79e68bfa7945eee",
+        "valid_u8": "e58d793def072152b1ed06676cd70114f0fc184972eba444861572e5aa0b7e4c"
+      },
+      "batch": 1,
+      "spatial_filter": {
+        "mode": "none",
+        "last_capture_filtered": false,
+        "filtered_captures": 0
+      },
+      "spatial_device": null,
+      "pose_id": 24,
+      "raw_mean_sha256": "9f8836ad12732d4384843901d93db27b9aedd07a55482d28272e43810b2825f0",
+      "raw_readback_ms": 16.144299996085465,
+      "raw_metadata": {
+        "width": 1280,
+        "height": 960,
+        "batches": 1,
+        "primary_samples_per_pixel": 16,
+        "format": "RGBA32F_LE",
+        "space": "scene-linear-before-exposure"
+      },
+      "png": "fresh/pose-0024/none/b0001.png",
+      "png_sha256": "dfc5f063789106c46027c7949ae8d85b91a9f8653e370f48a64ef5627c6dfb78",
+      "png_save_ms": 28.80100003676489
+    },
+    {
+      "capture_ms": 62.437399988994,
+      "frame": {
+        "key": {
+          "scene_key": "panda-guided-motion-v1",
+          "world_id": "guided-motion",
+          "epoch": 0,
+          "revision": 24,
+          "tick": 24,
+          "phase": "authored"
+        },
+        "time_s": 2.0,
+        "nodes": [
+          {
+            "node_id": "panda_hand",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.18
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "panda_leftfinger",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                -0.035,
+                0.1216
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "panda_rightfinger",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.035,
+                0.1216
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "board",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.037
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          },
+          {
+            "node_id": "blocker",
+            "world_pose": {
+              "position_m": [
+                0.08,
+                0.18,
+                0.14
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          }
+        ]
+      },
+      "camera": {
+        "id": "motion-gripper-camera",
+        "frame_key": {
+          "scene_key": "panda-guided-motion-v1",
+          "world_id": "guided-motion",
+          "epoch": 0,
+          "revision": 24,
+          "tick": 24,
+          "phase": "authored"
+        },
+        "world_pose": {
+          "position_m": [
+            0.42,
+            0.012,
+            0.24
+          ],
+          "orientation_xyzw": [
+            0.4015058311941278,
+            0.4131412728709628,
+            0.5861690674199717,
+            0.569660583652822
+          ]
+        },
+        "width": 1280,
+        "height": 960,
+        "fx_px": 1550.0,
+        "fy_px": 1550.0,
+        "cx_px": 640.0,
+        "cy_px": 480.0,
+        "near_m": 0.01,
+        "far_m": 3.0
+      },
+      "progressive": {
+        "enabled": true,
+        "bounces": 1,
+        "batches": 2,
+        "batch_index": 1,
+        "primary_samples_per_pixel": 32,
+        "samples_per_batch": 16,
+        "max_batches": 4096,
+        "reset_count": 1,
+        "last_reset_reasons": [
+          "new_session"
+        ],
+        "accumulation_space": "scene-linear-before-exposure",
+        "storage": "GPU RGBA32F mean",
+        "sequence": "seed + capture-local pixel + 0-based batch; 16 primary paths, at most one continuation each",
+        "scene_scope": "one immutable scene/session; camera, transforms, effective directional lights, world, epoch and extent are checked",
+        "non_rgb": "does not advance or replace RGB history"
+      },
+      "indirect": {
+        "mode": "diffuse_bounce",
+        "seed": 0,
+        "samples_per_pixel": 16,
+        "bounces": 1,
+        "estimator": "rho_d * sum(Li)/16; 4x4 stratified cosine hemisphere with hashed 23-bit open-interval jitter",
+        "diffuse_coefficient": "rho_d=(1-metallic)*albedo*(1-F0); F0=mix(.04,albedo,metallic)",
+        "environment_policy": "replace the original diffuse IBL/SH term, never add a second copy",
+        "miss_policy": "original HDR level0 radiance along sample direction, or uniform environment; zero if absent",
+        "terminal_lighting": "bounded 16 primary paths; optional one cosine continuation at each first hit; replace that hit diffuse IBL, retain direct/specular environment; final hit never recurses",
+        "seed_scope": "seed + capture-local pixel + 0-based batch; state changes reset batch zero",
+        "geometry_policy": "shading-normal cosine distribution clipped by oriented true face; inward/degenerate sample=0, denominator stays16",
+        "combination": "independent primary specular/diffuse lobes may share terminal shading; no additional bounce",
+        "limitations": "16 noisy samples; no denoiser, temporal history, multiple diffuse bounces or raw-HDR output attachment"
+      },
+      "effective_directional_lights": [
+        {
+          "direction": [
+            0.7071067811865475,
+            0.0,
+            -0.7071067811865475
+          ],
+          "illuminance": [
+            3.0,
+            3.0,
+            3.0
+          ]
+        }
+      ],
+      "submitted_directional_lights": [
+        {
+          "direction": [
+            0.7071067690849304,
+            0.0,
+            -0.7071067690849304
+          ],
+          "illuminance": [
+            3.0,
+            3.0,
+            3.0
+          ]
+        }
+      ],
+      "plane_sha256": {
+        "srgb8_rgb": "4824bb635d6f1da2e6c1e291c3ca3f8d460fe14d53f8c4770049524fb452b75d",
+        "forward_depth_m_f32": "1eb379f8c3d10dc4e82dedee5e3181996b923ed29c3ccade538e1242f7735db3",
+        "instance_id_u32": "c0470bd9f0450c6a822a4b769db0ab3631fb147280dc832ac79e68bfa7945eee",
+        "valid_u8": "e58d793def072152b1ed06676cd70114f0fc184972eba444861572e5aa0b7e4c"
+      },
+      "batch": 2,
+      "spatial_filter": {
+        "mode": "none",
+        "last_capture_filtered": false,
+        "filtered_captures": 0
+      },
+      "spatial_device": null,
+      "pose_id": 24,
+      "raw_mean_sha256": "cecf755d9a1602381ed8a0880ac8c8b13dc5b7cedd5ead37366d593857e4439c",
+      "raw_readback_ms": 14.741800026968122,
+      "raw_metadata": {
+        "width": 1280,
+        "height": 960,
+        "batches": 2,
+        "primary_samples_per_pixel": 32,
+        "format": "RGBA32F_LE",
+        "space": "scene-linear-before-exposure"
+      },
+      "png": "fresh/pose-0024/none/b0002.png",
+      "png_sha256": "45843acd51a41fa527a66a465d456bc4c460c5542d26eb89a8af64e99125a589",
+      "png_save_ms": 31.00550000090152
+    },
+    {
+      "capture_ms": 62.952600012067705,
+      "frame": {
+        "key": {
+          "scene_key": "panda-guided-motion-v1",
+          "world_id": "guided-motion",
+          "epoch": 0,
+          "revision": 24,
+          "tick": 24,
+          "phase": "authored"
+        },
+        "time_s": 2.0,
+        "nodes": [
+          {
+            "node_id": "panda_hand",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.18
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "panda_leftfinger",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                -0.035,
+                0.1216
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "panda_rightfinger",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.035,
+                0.1216
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "board",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.037
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          },
+          {
+            "node_id": "blocker",
+            "world_pose": {
+              "position_m": [
+                0.08,
+                0.18,
+                0.14
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          }
+        ]
+      },
+      "camera": {
+        "id": "motion-gripper-camera",
+        "frame_key": {
+          "scene_key": "panda-guided-motion-v1",
+          "world_id": "guided-motion",
+          "epoch": 0,
+          "revision": 24,
+          "tick": 24,
+          "phase": "authored"
+        },
+        "world_pose": {
+          "position_m": [
+            0.42,
+            0.012,
+            0.24
+          ],
+          "orientation_xyzw": [
+            0.4015058311941278,
+            0.4131412728709628,
+            0.5861690674199717,
+            0.569660583652822
+          ]
+        },
+        "width": 1280,
+        "height": 960,
+        "fx_px": 1550.0,
+        "fy_px": 1550.0,
+        "cx_px": 640.0,
+        "cy_px": 480.0,
+        "near_m": 0.01,
+        "far_m": 3.0
+      },
+      "progressive": {
+        "enabled": true,
+        "bounces": 1,
+        "batches": 3,
+        "batch_index": 2,
+        "primary_samples_per_pixel": 48,
+        "samples_per_batch": 16,
+        "max_batches": 4096,
+        "reset_count": 1,
+        "last_reset_reasons": [
+          "new_session"
+        ],
+        "accumulation_space": "scene-linear-before-exposure",
+        "storage": "GPU RGBA32F mean",
+        "sequence": "seed + capture-local pixel + 0-based batch; 16 primary paths, at most one continuation each",
+        "scene_scope": "one immutable scene/session; camera, transforms, effective directional lights, world, epoch and extent are checked",
+        "non_rgb": "does not advance or replace RGB history"
+      },
+      "indirect": {
+        "mode": "diffuse_bounce",
+        "seed": 0,
+        "samples_per_pixel": 16,
+        "bounces": 1,
+        "estimator": "rho_d * sum(Li)/16; 4x4 stratified cosine hemisphere with hashed 23-bit open-interval jitter",
+        "diffuse_coefficient": "rho_d=(1-metallic)*albedo*(1-F0); F0=mix(.04,albedo,metallic)",
+        "environment_policy": "replace the original diffuse IBL/SH term, never add a second copy",
+        "miss_policy": "original HDR level0 radiance along sample direction, or uniform environment; zero if absent",
+        "terminal_lighting": "bounded 16 primary paths; optional one cosine continuation at each first hit; replace that hit diffuse IBL, retain direct/specular environment; final hit never recurses",
+        "seed_scope": "seed + capture-local pixel + 0-based batch; state changes reset batch zero",
+        "geometry_policy": "shading-normal cosine distribution clipped by oriented true face; inward/degenerate sample=0, denominator stays16",
+        "combination": "independent primary specular/diffuse lobes may share terminal shading; no additional bounce",
+        "limitations": "16 noisy samples; no denoiser, temporal history, multiple diffuse bounces or raw-HDR output attachment"
+      },
+      "effective_directional_lights": [
+        {
+          "direction": [
+            0.7071067811865475,
+            0.0,
+            -0.7071067811865475
+          ],
+          "illuminance": [
+            3.0,
+            3.0,
+            3.0
+          ]
+        }
+      ],
+      "submitted_directional_lights": [
+        {
+          "direction": [
+            0.7071067690849304,
+            0.0,
+            -0.7071067690849304
+          ],
+          "illuminance": [
+            3.0,
+            3.0,
+            3.0
+          ]
+        }
+      ],
+      "plane_sha256": {
+        "srgb8_rgb": "c02c0f41ea54fea1f3ddf7e2f8f2c1f7f060f7818ab78d4acbe766657e614eb3",
+        "forward_depth_m_f32": "1eb379f8c3d10dc4e82dedee5e3181996b923ed29c3ccade538e1242f7735db3",
+        "instance_id_u32": "c0470bd9f0450c6a822a4b769db0ab3631fb147280dc832ac79e68bfa7945eee",
+        "valid_u8": "e58d793def072152b1ed06676cd70114f0fc184972eba444861572e5aa0b7e4c"
+      },
+      "batch": 3,
+      "spatial_filter": {
+        "mode": "none",
+        "last_capture_filtered": false,
+        "filtered_captures": 0
+      },
+      "spatial_device": null,
+      "pose_id": 24
+    },
+    {
+      "capture_ms": 66.68589997570962,
+      "frame": {
+        "key": {
+          "scene_key": "panda-guided-motion-v1",
+          "world_id": "guided-motion",
+          "epoch": 0,
+          "revision": 24,
+          "tick": 24,
+          "phase": "authored"
+        },
+        "time_s": 2.0,
+        "nodes": [
+          {
+            "node_id": "panda_hand",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.18
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "panda_leftfinger",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                -0.035,
+                0.1216
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "panda_rightfinger",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.035,
+                0.1216
+              ],
+              "orientation_xyzw": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "node_id": "board",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.037
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          },
+          {
+            "node_id": "blocker",
+            "world_pose": {
+              "position_m": [
+                0.08,
+                0.18,
+                0.14
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          }
+        ]
+      },
+      "camera": {
+        "id": "motion-gripper-camera",
+        "frame_key": {
+          "scene_key": "panda-guided-motion-v1",
+          "world_id": "guided-motion",
+          "epoch": 0,
+          "revision": 24,
+          "tick": 24,
+          "phase": "authored"
+        },
+        "world_pose": {
+          "position_m": [
+            0.42,
+            0.012,
+            0.24
+          ],
+          "orientation_xyzw": [
+            0.4015058311941278,
+            0.4131412728709628,
+            0.5861690674199717,
+            0.569660583652822
+          ]
+        },
+        "width": 1280,
+        "height": 960,
+        "fx_px": 1550.0,
+        "fy_px": 1550.0,
+        "cx_px": 640.0,
+        "cy_px": 480.0,
+        "near_m": 0.01,
+        "far_m": 3.0
+      },
+      "progressive": {
+        "enabled": true,
+        "bounces": 1,
+        "batches": 4,
+        "batch_index": 3,
+        "primary_samples_per_pixel": 64,
+        "samples_per_batch": 16,
+        "max_batches": 4096,
+        "reset_count": 1,
+        "last_reset_reasons": [
+          "new_session"
+        ],
+        "accumulation_space": "scene-linear-before-exposure",
+        "storage": "GPU RGBA32F mean",
+        "sequence": "seed + capture-local pixel + 0-based batch; 16 primary paths, at most one continuation each",
+        "scene_scope": "one immutable scene/session; camera, transforms, effective directional lights, world, epoch and extent are checked",
+        "non_rgb": "does not advance or replace RGB history"
+      },
+      "indirect": {
+        "mode": "diffuse_bounce",
+        "seed": 0,
+        "samples_per_pixel": 16,
+        "bounces": 1,
+        "estimator": "rho_d * sum(Li)/16; 4x4 stratified cosine hemisphere with hashed 23-bit open-interval jitter",
+        "diffuse_coefficient": "rho_d=(1-metallic)*albedo*(1-F0); F0=mix(.04,albedo,metallic)",
+        "environment_policy": "replace the original diffuse IBL/SH term, never add a second copy",
+        "miss_policy": "original HDR level0 radiance along sample direction, or uniform environment; zero if absent",
+        "terminal_lighting": "bounded 16 primary paths; optional one cosine continuation at each first hit; replace that hit diffuse IBL, retain direct/specular environment; final hit never recurses",
+        "seed_scope": "seed + capture-local pixel + 0-based batch; state changes reset batch zero",
+        "geometry_policy": "shading-normal cosine distribution clipped by oriented true face; inward/degenerate sample=0, denominator stays16",
+        "combination": "independent primary specular/diffuse lobes may share terminal shading; no additional bounce",
+        "limitations": "16 noisy samples; no denoiser, temporal history, multiple diffuse bounces or raw-HDR output attachment"
+      },
+      "effective_directional_lights": [
+        {
+          "direction": [
+            0.7071067811865475,
+            0.0,
+            -0.7071067811865475
+          ],
+          "illuminance": [
+            3.0,
+            3.0,
+            3.0
+          ]
+        }
+      ],
+      "submitted_directional_lights": [
+        {
+          "direction": [
+            0.7071067690849304,
+            0.0,
+            -0.7071067690849304
+          ],
+          "illuminance": [
+            3.0,
+            3.0,
+            3.0
+          ]
+        }
+      ],
+      "plane_sha256": {
+        "srgb8_rgb": "1c4751716bd864895e7f1d1b3c898bf61b88d10d0ca939c04e0fbe993cdf9152",
+        "forward_depth_m_f32": "1eb379f8c3d10dc4e82dedee5e3181996b923ed29c3ccade538e1242f7735db3",
+        "instance_id_u32": "c0470bd9f0450c6a822a4b769db0ab3631fb147280dc832ac79e68bfa7945eee",
+        "valid_u8": "e58d793def072152b1ed06676cd70114f0fc184972eba444861572e5aa0b7e4c"
+      },
+      "batch": 4,
+      "spatial_filter": {
+        "mode": "none",
+        "last_capture_filtered": false,
+        "filtered_captures": 0
+      },
+      "spatial_device": null,
+      "pose_id": 24,
+      "raw_mean_sha256": "2e358c6fc481b2d25de822a66f4210f607bb3dd4c7780a79f1d1b0b1c01545ea",
+      "raw_readback_ms": 15.874099975917488,
+      "raw_metadata": {
+        "width": 1280,
+        "height": 960,
+        "batches": 4,
+        "primary_samples_per_pixel": 64,
+        "format": "RGBA32F_LE",
+        "space": "scene-linear-before-exposure"
+      },
+      "png": "fresh/pose-0024/none/b0004.png",
+      "png_sha256": "553edb8ad51cd8e2d6428bde46fcbd0277e4c4fef0941dd044ab64e9a77f80c5",
+      "png_save_ms": 32.588600006420165
+    }
+  ],
+  "all_planes_identical": true,
+  "raw_mean_identical": true,
+  "before_close": {
+    "backend": "phymeo-native-vulkan",
+    "path": "raster",
+    "device": {
+      "abi_version": 2,
+      "device_index": 1,
+      "api_version": 4206881,
+      "driver_version": 2374090752,
+      "vendor_id": 4318,
+      "device_id": 10464,
+      "device_type": 2,
+      "max_width": 32768,
+      "max_height": 32768,
+      "max_vertices": 1048576,
+      "validation_errors": 0,
+      "validation_warnings": 0,
+      "captures": 4,
+      "device_name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "device_uuid": "3b78d98198a3be57a8cb4d72fdfbfa96",
+      "closed": false,
+      "validation_enabled": false,
+      "live_contexts": 1,
+      "live_frames": 1,
+      "live_resources": 110,
+      "resident_abi_version": 1,
+      "resident_max_vertices": 1048576,
+      "resident_max_indices": 1572864,
+      "resident_max_meshes": 1024,
+      "resident_max_instances": 1024,
+      "resident_max_bvh_nodes": 262144,
+      "resident_max_instanced_triangles": 1048576,
+      "resident_vertex_count": 23058,
+      "resident_index_count": 23178,
+      "resident_mesh_count": 9,
+      "resident_instance_count": 11,
+      "resident_bvh_nodes": 2651,
+      "resident_instanced_triangles": 8350,
+      "resident_loaded": 1,
+      "resident_poisoned": 0,
+      "resident_reserved": 0,
+      "resident_upload_calls": 1,
+      "resident_geometry_upload_bytes": 958632,
+      "resident_transform_upload_bytes": 5632,
+      "resident_parameter_upload_bytes": 1232,
+      "resident_captures": 4,
+      "resident_shadow_node_budget": 0,
+      "resident_target_rebuilds": 1,
+      "resident_host_transform_input_bytes": 2816,
+      "resident_render_planes_available": true,
+      "resident_environment_available": true,
+      "resident_environment_abi_version": 1,
+      "resident_environment_info": {
+        "environment_abi_version": 1,
+        "supported": 1,
+        "shader_compatible": 1,
+        "max_side": 1024,
+        "max_mip_levels": 11,
+        "side": 0,
+        "mip_levels": 0,
+        "loaded": 0,
+        "format": 43,
+        "cube_layers": 6,
+        "sh_coefficients": 9,
+        "axis_transform": 1,
+        "diffuse_basis": 1,
+        "max_rgba_bytes": 134217728,
+        "source_rgba_bytes": 0,
+        "image_upload_bytes": 24,
+        "parameter_upload_bytes": 160,
+        "upload_calls": 0,
+        "rgb_captures_with_environment": 0,
+        "sky_draws": 0,
+        "capture_scope": "successful RGB captures with an uploaded directional environment; sky draw count is not foreground pixel count",
+        "snapshot": "last live query; final GPU allocations are reported by teardown telemetry"
+      },
+      "resident_texture_available": true,
+      "resident_linear_roughness_available": true,
+      "resident_texture_abi_version": 1,
+      "resident_texture_info": {
+        "texture_abi_version": 1,
+        "max_textures": 64,
+        "max_width": 2048,
+        "max_height": 2048,
+        "max_layers": 64,
+        "texture_count": 0,
+        "array_width": 1,
+        "array_height": 1,
+        "array_layers": 1,
+        "uv_count": 0,
+        "bound_instances": 0,
+        "loaded": 0,
+        "sampler_filter": 1,
+        "mip_levels": 1,
+        "format": 43,
+        "max_array_bytes": 134217728,
+        "source_rgba_bytes": 0,
+        "padded_rgba_bytes": 4,
+        "metadata_upload_bytes": 60,
+        "upload_calls": 0,
+        "image_upload_bytes": 4,
+        "rgb_captures_with_textures": 0,
+        "capture_scope": "successful RGB captures with bound texture instances, not visible textured pixel count",
+        "upload_scope": "cumulative actual texture image and metadata GPU writes, including default white sentinel; excluded from geometry_upload_bytes",
+        "snapshot": "last live query, not final allocation state; teardown verified by allocation telemetry"
+      },
+      "resident_normal_info": null,
+      "resident_reflection_info": null,
+      "resident_progressive_info": {
+        "progressive_abi_version": 1,
+        "supported": 1,
+        "shader_compatible": 1,
+        "enabled": 1,
+        "bounces": 1,
+        "max_batches": 4096,
+        "batches": 4,
+        "last_batch_index": 3,
+        "seed": 0,
+        "samples_per_batch": 16,
+        "width": 1280,
+        "height": 960,
+        "rgb_captures": 4,
+        "reset_calls": 1,
+        "mean_readbacks": 3,
+        "mean_readback_bytes": 58982400,
+        "status_readback_bytes": 16
+      },
+      "resident_spatial_info": null,
+      "resident_indirect_info": {
+        "indirect_abi_version": 1,
+        "supported": 1,
+        "shader_compatible": 1,
+        "enabled": 1,
+        "samples_per_pixel": 16,
+        "seed": 0,
+        "max_bounces": 1,
+        "set_calls": 1,
+        "receiver_count": 10,
+        "captures": 4,
+        "rgb_captures": 4,
+        "capture_scope": "successful captures/RGB captures; samples_per_pixel is a budget, not an actual ray/hit counter",
+        "receiver_scope": "instances with uploaded metallic<1 and positive base-color factor; image-zero pixels may emit no rays",
+        "snapshot": "last live query retained after close; allocation teardown uses resident telemetry"
+      },
+      "resident_readback": {
+        "readback_abi_version": 1,
+        "memory_type_index": 3,
+        "memory_property_flags": 14,
+        "persistent_mapped": 1,
+        "last_channel_mask": 15,
+        "capacity_bytes": 15974408,
+        "copied_bytes": 63897616,
+        "map_calls": 1,
+        "unmap_calls": 0,
+        "host_visible": true,
+        "host_coherent": true,
+        "host_cached": true,
+        "device_local": false,
+        "snapshot": "last live query, not final mapping state; teardown verified by allocation telemetry",
+        "capacity_scope": "logical Vulkan readback buffer capacity, not total VkDeviceMemory allocation size"
+      },
+      "resident_profile": {
+        "profile_abi_version": 1,
+        "timestamp_supported": 1,
+        "timestamp_valid_bits": 64,
+        "tlas_node_count": 0,
+        "timestamp_period_ns": 1.0,
+        "captures": 4,
+        "host_prepare_ns": 12600,
+        "host_upload_ns": 2228000,
+        "host_record_ns": 503200,
+        "host_submit_ns": 199000,
+        "host_wait_ns": 153193000,
+        "host_readback_ns": 6462300,
+        "gpu_render_ns": 128609728,
+        "gpu_copy_ns": 18851904,
+        "gpu_total_ns": 147461632,
+        "tlas_upload_bytes": 0,
+        "timestamp_samples": 4,
+        "scope": "cumulative successful captures including warmup; excludes initial static geometry upload",
+        "gpu_scope": "render timestamp interval: TLAS + raster + bounded one/two-bounce paths + GPU scene-linear mean/display compute + 4-byte status copy; copy interval: requested planes; explicit mean readback is separate",
+        "snapshot": "last live query, retained after close; final ownership is checked by telemetry"
+      },
+      "resident_telemetry": {
+        "telemetry_abi_version": 1,
+        "device_luid_valid": 1,
+        "device_node_mask": 1,
+        "device_local_bytes_current": 65822672,
+        "device_local_bytes_peak": 65822672,
+        "device_local_bytes_allocated": 65822672,
+        "host_visible_bytes_current": 35638904,
+        "host_visible_bytes_peak": 35638904,
+        "host_visible_bytes_allocated": 36597784,
+        "readback_bytes": 122880016,
+        "fence_wait_wall_ns": 180734600,
+        "fence_wait_calls": 11,
+        "submissions": 11,
+        "allocation_count": 38,
+        "free_count": 3,
+        "device_luid_hex": "ef22010000000000",
+        "final_after_destroy": false,
+        "allocation_scope": "this context explicit VkDeviceMemory allocations; not driver total VRAM",
+        "wait_scope": "host wall time blocked in fence waits, including upload; not GPU kernel time"
+      },
+      "resident_studio_available": true,
+      "resident_msaa": null,
+      "resident_ray_query_abi_version": 1,
+      "resident_ray_query_info": {
+        "ray_query_abi_version": 1,
+        "enabled": 1,
+        "blas_count": 9,
+        "tlas_instance_count": 11,
+        "primitive_count": 7726,
+        "loaded": 1,
+        "poisoned": 0,
+        "max_meshes": 1024,
+        "max_instances": 1024,
+        "max_triangles": 524288,
+        "build_flags": 4,
+        "update_flags": 5,
+        "trace_flags": 6,
+        "max_acceleration_bytes": 536870912,
+        "acceleration_buffer_bytes": 557056,
+        "scratch_buffer_bytes": 76927,
+        "blas_builds": 9,
+        "tlas_builds": 1,
+        "tlas_updates": 3,
+        "instance_upload_bytes": 2816,
+        "shadow_captures": 4,
+        "capture_scope": "successful RGB-requested captures, not ray count or visible shadow pixel count",
+        "buffer_scope": "logical AS and scratch buffer bytes; actual VkDeviceMemory allocation telemetry is separate",
+        "update_scope": "each capture builds or updates TLAS, including two cameras at the same frame key",
+        "upload_scope": "additional VkAccelerationStructureInstanceKHR records, 64 bytes per instance per capture; not the ordinary forward/inverse matrix buffer",
+        "snapshot": "last live query, retained after close; final allocation teardown is reported by resident telemetry"
+      }
+    },
+    "library_path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-spatial\\build-spatial-guide\\phymeo_native.dll",
+    "library_sha256": "90f28ab9618a4d865c7811511e3375d5a8e435543ae1750d099f8fa60a780779",
+    "shader_sha256": {
+      "vert": "b1069d14f062dcf3b441d1c44286068b92754557dbe8ce8327e9407cd7c0ec82",
+      "frag": "2265854f115e74f658fa8fa02f80fe5eb6c1eaf4b7e702dfb783f6be14f5354f",
+      "progressive_compute": "7ff0535b5c6312aed2f0525302c3ef30d37f9df717ea5d4597c1127bab644d8c"
+    },
+    "scene_key": "panda-guided-motion-v1",
+    "decoded_geometry_sha256": "093bddb5a87c9fc7f186e4823d3f885f6fb056779ebe226dac82a75ed67b8efa",
+    "triangles": 8350,
+    "light_count": 1,
+    "effective_directional_lights": [
+      {
+        "direction": [
+          0.7071067811865475,
+          0.0,
+          -0.7071067811865475
+        ],
+        "illuminance": [
+          3.0,
+          3.0,
+          3.0
+        ]
+      }
+    ],
+    "max_lights": 4,
+    "max_triangles": 1048576,
+    "resident": true,
+    "shadow_mode": "ray_query",
+    "area_light_grid": 2,
+    "area_light_samples_per_panel": 4,
+    "area_light_brdf_samples_per_panel": 8,
+    "geometry_residency": "static indexed meshes; per-frame instance matrices",
+    "msaa": {
+      "requested_samples": 1,
+      "actual_color_samples": 1,
+      "sensor_samples": 1,
+      "resolve_space": "none (single sample)",
+      "sensor_sampling": "deterministic pixel center"
+    },
+    "primary_visibility": "single-sample Vulkan raster, two-sided opaque triangles",
+    "lighting": "direct GGX/Smith/Schlick metallic-roughness; no ambient or IBL",
+    "studio": null,
+    "environment": null,
+    "shadows": "GPU fragment Vulkan hardware ray queries against BLAS/TLAS; primary visibility remains raster",
+    "shadow_bias_m": 1e-05,
+    "minimum_perceptual_roughness": 0.045,
+    "exposure": 1.0,
+    "display": "nonnegative linear exposure, Khronos PBR Neutral, then IEC sRGB once",
+    "display_transform": "pbr-neutral",
+    "display_transform_abi": 1,
+    "display_transform_source": "https://github.com/KhronosGroup/ToneMapping/blob/b5a2eed5ddf6c2227090449399de9c7affb9e4c9/PBR_Neutral/pbrNeutral.glsl",
+    "readback": "explicit synchronous host-visible staging after fence; actual flags in resident_readback when available",
+    "readback_channels_mode": "compact requested attachments",
+    "published_ownership": "immutable CPU bytes; private resident host buffer may be reused after each copy",
+    "attachment_formats": [
+      "RGBA32F -> GPU mean -> RGBA8_UNORM",
+      "R32_SFLOAT",
+      "R32_UINT",
+      "R8_UINT"
+    ],
+    "last_passes": [
+      "visibility",
+      "shadows",
+      "lighting",
+      "display_transform",
+      "sensor_export"
+    ],
+    "last_request": {
+      "width": 1280,
+      "height": 960,
+      "channels": [
+        "srgb8_rgb",
+        "forward_depth_m_f32",
+        "instance_id_u32",
+        "valid_u8"
+      ],
+      "native_attachment_mask": 15,
+      "native_output_bytes": 15974400,
+      "effective_directional_lights": [
+        {
+          "direction": [
+            0.7071067690849304,
+            0.0,
+            -0.7071067690849304
+          ],
+          "illuminance": [
+            3.0,
+            3.0,
+            3.0
+          ]
+        }
+      ]
+    },
+    "stage_execution": "visibility raster + bounded indirect lighting/sensors + GPU linear mean/display compute",
+    "lifecycle_counts": "DLL-wide owned contexts, frames, and explicit Vulkan handles; pools own descriptor sets",
+    "path_trace": false,
+    "textures": false,
+    "texture_assets": null,
+    "normal_maps": null,
+    "reflection": {
+      "mode": "environment",
+      "bounces": 0,
+      "receiver_instances": []
+    },
+    "indirect": {
+      "mode": "diffuse_bounce",
+      "seed": 0,
+      "samples_per_pixel": 16,
+      "bounces": 1,
+      "estimator": "rho_d * sum(Li)/16; 4x4 stratified cosine hemisphere with hashed 23-bit open-interval jitter",
+      "diffuse_coefficient": "rho_d=(1-metallic)*albedo*(1-F0); F0=mix(.04,albedo,metallic)",
+      "environment_policy": "replace the original diffuse IBL/SH term, never add a second copy",
+      "miss_policy": "original HDR level0 radiance along sample direction, or uniform environment; zero if absent",
+      "terminal_lighting": "bounded 16 primary paths; optional one cosine continuation at each first hit; replace that hit diffuse IBL, retain direct/specular environment; final hit never recurses",
+      "seed_scope": "seed + capture-local pixel + 0-based batch; state changes reset batch zero",
+      "geometry_policy": "shading-normal cosine distribution clipped by oriented true face; inward/degenerate sample=0, denominator stays16",
+      "combination": "independent primary specular/diffuse lobes may share terminal shading; no additional bounce",
+      "limitations": "16 noisy samples; no denoiser, temporal history, multiple diffuse bounces or raw-HDR output attachment"
+    },
+    "progressive": {
+      "enabled": true,
+      "bounces": 1,
+      "batches": 4,
+      "batch_index": 3,
+      "primary_samples_per_pixel": 64,
+      "samples_per_batch": 16,
+      "max_batches": 4096,
+      "reset_count": 1,
+      "last_reset_reasons": [
+        "new_session"
+      ],
+      "accumulation_space": "scene-linear-before-exposure",
+      "storage": "GPU RGBA32F mean",
+      "sequence": "seed + capture-local pixel + 0-based batch; 16 primary paths, at most one continuation each",
+      "scene_scope": "one immutable scene/session; camera, transforms, effective directional lights, world, epoch and extent are checked",
+      "non_rgb": "does not advance or replace RGB history"
+    },
+    "spatial_filter": {
+      "mode": "none",
+      "last_capture_filtered": false,
+      "filtered_captures": 0
+    },
+    "physics_steps": 0
+  },
+  "backend": {
+    "backend": "phymeo-native-vulkan",
+    "path": "raster",
+    "device": {
+      "abi_version": 2,
+      "device_index": 1,
+      "api_version": 4206881,
+      "driver_version": 2374090752,
+      "vendor_id": 4318,
+      "device_id": 10464,
+      "device_type": 2,
+      "max_width": 32768,
+      "max_height": 32768,
+      "max_vertices": 1048576,
+      "validation_errors": 0,
+      "validation_warnings": 0,
+      "captures": 4,
+      "device_name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "device_uuid": "3b78d98198a3be57a8cb4d72fdfbfa96",
+      "closed": true,
+      "validation_enabled": false,
+      "live_contexts": 0,
+      "live_frames": 0,
+      "live_resources": 0,
+      "resident_abi_version": 1,
+      "resident_max_vertices": 1048576,
+      "resident_max_indices": 1572864,
+      "resident_max_meshes": 1024,
+      "resident_max_instances": 1024,
+      "resident_max_bvh_nodes": 262144,
+      "resident_max_instanced_triangles": 1048576,
+      "resident_vertex_count": 23058,
+      "resident_index_count": 23178,
+      "resident_mesh_count": 9,
+      "resident_instance_count": 11,
+      "resident_bvh_nodes": 2651,
+      "resident_instanced_triangles": 8350,
+      "resident_loaded": 1,
+      "resident_poisoned": 0,
+      "resident_reserved": 0,
+      "resident_upload_calls": 1,
+      "resident_geometry_upload_bytes": 958632,
+      "resident_transform_upload_bytes": 5632,
+      "resident_parameter_upload_bytes": 1232,
+      "resident_captures": 4,
+      "resident_shadow_node_budget": 0,
+      "resident_target_rebuilds": 1,
+      "resident_host_transform_input_bytes": 2816,
+      "resident_render_planes_available": true,
+      "resident_environment_available": true,
+      "resident_environment_abi_version": 1,
+      "resident_environment_info": {
+        "environment_abi_version": 1,
+        "supported": 1,
+        "shader_compatible": 1,
+        "max_side": 1024,
+        "max_mip_levels": 11,
+        "side": 0,
+        "mip_levels": 0,
+        "loaded": 0,
+        "format": 43,
+        "cube_layers": 6,
+        "sh_coefficients": 9,
+        "axis_transform": 1,
+        "diffuse_basis": 1,
+        "max_rgba_bytes": 134217728,
+        "source_rgba_bytes": 0,
+        "image_upload_bytes": 24,
+        "parameter_upload_bytes": 160,
+        "upload_calls": 0,
+        "rgb_captures_with_environment": 0,
+        "sky_draws": 0,
+        "capture_scope": "successful RGB captures with an uploaded directional environment; sky draw count is not foreground pixel count",
+        "snapshot": "last live query; final GPU allocations are reported by teardown telemetry"
+      },
+      "resident_texture_available": true,
+      "resident_linear_roughness_available": true,
+      "resident_texture_abi_version": 1,
+      "resident_texture_info": {
+        "texture_abi_version": 1,
+        "max_textures": 64,
+        "max_width": 2048,
+        "max_height": 2048,
+        "max_layers": 64,
+        "texture_count": 0,
+        "array_width": 1,
+        "array_height": 1,
+        "array_layers": 1,
+        "uv_count": 0,
+        "bound_instances": 0,
+        "loaded": 0,
+        "sampler_filter": 1,
+        "mip_levels": 1,
+        "format": 43,
+        "max_array_bytes": 134217728,
+        "source_rgba_bytes": 0,
+        "padded_rgba_bytes": 4,
+        "metadata_upload_bytes": 60,
+        "upload_calls": 0,
+        "image_upload_bytes": 4,
+        "rgb_captures_with_textures": 0,
+        "capture_scope": "successful RGB captures with bound texture instances, not visible textured pixel count",
+        "upload_scope": "cumulative actual texture image and metadata GPU writes, including default white sentinel; excluded from geometry_upload_bytes",
+        "snapshot": "last live query, not final allocation state; teardown verified by allocation telemetry"
+      },
+      "resident_normal_info": null,
+      "resident_reflection_info": null,
+      "resident_progressive_info": {
+        "progressive_abi_version": 1,
+        "supported": 1,
+        "shader_compatible": 1,
+        "enabled": 1,
+        "bounces": 1,
+        "max_batches": 4096,
+        "batches": 4,
+        "last_batch_index": 3,
+        "seed": 0,
+        "samples_per_batch": 16,
+        "width": 1280,
+        "height": 960,
+        "rgb_captures": 4,
+        "reset_calls": 1,
+        "mean_readbacks": 3,
+        "mean_readback_bytes": 58982400,
+        "status_readback_bytes": 16
+      },
+      "resident_spatial_info": null,
+      "resident_indirect_info": {
+        "indirect_abi_version": 1,
+        "supported": 1,
+        "shader_compatible": 1,
+        "enabled": 1,
+        "samples_per_pixel": 16,
+        "seed": 0,
+        "max_bounces": 1,
+        "set_calls": 1,
+        "receiver_count": 10,
+        "captures": 4,
+        "rgb_captures": 4,
+        "capture_scope": "successful captures/RGB captures; samples_per_pixel is a budget, not an actual ray/hit counter",
+        "receiver_scope": "instances with uploaded metallic<1 and positive base-color factor; image-zero pixels may emit no rays",
+        "snapshot": "last live query retained after close; allocation teardown uses resident telemetry"
+      },
+      "resident_readback": {
+        "readback_abi_version": 1,
+        "memory_type_index": 3,
+        "memory_property_flags": 14,
+        "persistent_mapped": 1,
+        "last_channel_mask": 15,
+        "capacity_bytes": 15974408,
+        "copied_bytes": 63897616,
+        "map_calls": 1,
+        "unmap_calls": 0,
+        "host_visible": true,
+        "host_coherent": true,
+        "host_cached": true,
+        "device_local": false,
+        "snapshot": "last live query, not final mapping state; teardown verified by allocation telemetry",
+        "capacity_scope": "logical Vulkan readback buffer capacity, not total VkDeviceMemory allocation size"
+      },
+      "resident_profile": {
+        "profile_abi_version": 1,
+        "timestamp_supported": 1,
+        "timestamp_valid_bits": 64,
+        "tlas_node_count": 0,
+        "timestamp_period_ns": 1.0,
+        "captures": 4,
+        "host_prepare_ns": 12600,
+        "host_upload_ns": 2228000,
+        "host_record_ns": 503200,
+        "host_submit_ns": 199000,
+        "host_wait_ns": 153193000,
+        "host_readback_ns": 6462300,
+        "gpu_render_ns": 128609728,
+        "gpu_copy_ns": 18851904,
+        "gpu_total_ns": 147461632,
+        "tlas_upload_bytes": 0,
+        "timestamp_samples": 4,
+        "scope": "cumulative successful captures including warmup; excludes initial static geometry upload",
+        "gpu_scope": "render timestamp interval: TLAS + raster + bounded one/two-bounce paths + GPU scene-linear mean/display compute + 4-byte status copy; copy interval: requested planes; explicit mean readback is separate",
+        "snapshot": "last live query, retained after close; final ownership is checked by telemetry"
+      },
+      "resident_telemetry": {
+        "telemetry_abi_version": 1,
+        "device_luid_valid": 1,
+        "device_node_mask": 1,
+        "device_local_bytes_current": 0,
+        "device_local_bytes_peak": 65822672,
+        "device_local_bytes_allocated": 65822672,
+        "host_visible_bytes_current": 0,
+        "host_visible_bytes_peak": 35638904,
+        "host_visible_bytes_allocated": 36597784,
+        "readback_bytes": 122880016,
+        "fence_wait_wall_ns": 180734600,
+        "fence_wait_calls": 11,
+        "submissions": 11,
+        "allocation_count": 38,
+        "free_count": 38,
+        "device_luid_hex": "ef22010000000000",
+        "final_after_destroy": true,
+        "allocation_scope": "this context explicit VkDeviceMemory allocations; not driver total VRAM",
+        "wait_scope": "host wall time blocked in fence waits, including upload; not GPU kernel time"
+      },
+      "resident_studio_available": true,
+      "resident_msaa": null,
+      "resident_ray_query_abi_version": 1,
+      "resident_ray_query_info": {
+        "ray_query_abi_version": 1,
+        "enabled": 1,
+        "blas_count": 9,
+        "tlas_instance_count": 11,
+        "primitive_count": 7726,
+        "loaded": 1,
+        "poisoned": 0,
+        "max_meshes": 1024,
+        "max_instances": 1024,
+        "max_triangles": 524288,
+        "build_flags": 4,
+        "update_flags": 5,
+        "trace_flags": 6,
+        "max_acceleration_bytes": 536870912,
+        "acceleration_buffer_bytes": 557056,
+        "scratch_buffer_bytes": 76927,
+        "blas_builds": 9,
+        "tlas_builds": 1,
+        "tlas_updates": 3,
+        "instance_upload_bytes": 2816,
+        "shadow_captures": 4,
+        "capture_scope": "successful RGB-requested captures, not ray count or visible shadow pixel count",
+        "buffer_scope": "logical AS and scratch buffer bytes; actual VkDeviceMemory allocation telemetry is separate",
+        "update_scope": "each capture builds or updates TLAS, including two cameras at the same frame key",
+        "upload_scope": "additional VkAccelerationStructureInstanceKHR records, 64 bytes per instance per capture; not the ordinary forward/inverse matrix buffer",
+        "snapshot": "last live query, retained after close; final allocation teardown is reported by resident telemetry"
+      }
+    },
+    "library_path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-spatial\\build-spatial-guide\\phymeo_native.dll",
+    "library_sha256": "90f28ab9618a4d865c7811511e3375d5a8e435543ae1750d099f8fa60a780779",
+    "shader_sha256": {
+      "vert": "b1069d14f062dcf3b441d1c44286068b92754557dbe8ce8327e9407cd7c0ec82",
+      "frag": "2265854f115e74f658fa8fa02f80fe5eb6c1eaf4b7e702dfb783f6be14f5354f",
+      "progressive_compute": "7ff0535b5c6312aed2f0525302c3ef30d37f9df717ea5d4597c1127bab644d8c"
+    },
+    "scene_key": "panda-guided-motion-v1",
+    "decoded_geometry_sha256": "093bddb5a87c9fc7f186e4823d3f885f6fb056779ebe226dac82a75ed67b8efa",
+    "triangles": 8350,
+    "light_count": 1,
+    "effective_directional_lights": [
+      {
+        "direction": [
+          0.7071067811865475,
+          0.0,
+          -0.7071067811865475
+        ],
+        "illuminance": [
+          3.0,
+          3.0,
+          3.0
+        ]
+      }
+    ],
+    "max_lights": 4,
+    "max_triangles": 1048576,
+    "resident": true,
+    "shadow_mode": "ray_query",
+    "area_light_grid": 2,
+    "area_light_samples_per_panel": 4,
+    "area_light_brdf_samples_per_panel": 8,
+    "geometry_residency": "static indexed meshes; per-frame instance matrices",
+    "msaa": {
+      "requested_samples": 1,
+      "actual_color_samples": 1,
+      "sensor_samples": 1,
+      "resolve_space": "none (single sample)",
+      "sensor_sampling": "deterministic pixel center"
+    },
+    "primary_visibility": "single-sample Vulkan raster, two-sided opaque triangles",
+    "lighting": "direct GGX/Smith/Schlick metallic-roughness; no ambient or IBL",
+    "studio": null,
+    "environment": null,
+    "shadows": "GPU fragment Vulkan hardware ray queries against BLAS/TLAS; primary visibility remains raster",
+    "shadow_bias_m": 1e-05,
+    "minimum_perceptual_roughness": 0.045,
+    "exposure": 1.0,
+    "display": "nonnegative linear exposure, Khronos PBR Neutral, then IEC sRGB once",
+    "display_transform": "pbr-neutral",
+    "display_transform_abi": 1,
+    "display_transform_source": "https://github.com/KhronosGroup/ToneMapping/blob/b5a2eed5ddf6c2227090449399de9c7affb9e4c9/PBR_Neutral/pbrNeutral.glsl",
+    "readback": "explicit synchronous host-visible staging after fence; actual flags in resident_readback when available",
+    "readback_channels_mode": "compact requested attachments",
+    "published_ownership": "immutable CPU bytes; private resident host buffer may be reused after each copy",
+    "attachment_formats": [
+      "RGBA32F -> GPU mean -> RGBA8_UNORM",
+      "R32_SFLOAT",
+      "R32_UINT",
+      "R8_UINT"
+    ],
+    "last_passes": [
+      "visibility",
+      "shadows",
+      "lighting",
+      "display_transform",
+      "sensor_export"
+    ],
+    "last_request": {
+      "width": 1280,
+      "height": 960,
+      "channels": [
+        "srgb8_rgb",
+        "forward_depth_m_f32",
+        "instance_id_u32",
+        "valid_u8"
+      ],
+      "native_attachment_mask": 15,
+      "native_output_bytes": 15974400,
+      "effective_directional_lights": [
+        {
+          "direction": [
+            0.7071067690849304,
+            0.0,
+            -0.7071067690849304
+          ],
+          "illuminance": [
+            3.0,
+            3.0,
+            3.0
+          ]
+        }
+      ]
+    },
+    "stage_execution": "visibility raster + bounded indirect lighting/sensors + GPU linear mean/display compute",
+    "lifecycle_counts": "DLL-wide owned contexts, frames, and explicit Vulkan handles; pools own descriptor sets",
+    "path_trace": false,
+    "textures": false,
+    "texture_assets": null,
+    "normal_maps": null,
+    "reflection": {
+      "mode": "environment",
+      "bounces": 0,
+      "receiver_instances": []
+    },
+    "indirect": {
+      "mode": "diffuse_bounce",
+      "seed": 0,
+      "samples_per_pixel": 16,
+      "bounces": 1,
+      "estimator": "rho_d * sum(Li)/16; 4x4 stratified cosine hemisphere with hashed 23-bit open-interval jitter",
+      "diffuse_coefficient": "rho_d=(1-metallic)*albedo*(1-F0); F0=mix(.04,albedo,metallic)",
+      "environment_policy": "replace the original diffuse IBL/SH term, never add a second copy",
+      "miss_policy": "original HDR level0 radiance along sample direction, or uniform environment; zero if absent",
+      "terminal_lighting": "bounded 16 primary paths; optional one cosine continuation at each first hit; replace that hit diffuse IBL, retain direct/specular environment; final hit never recurses",
+      "seed_scope": "seed + capture-local pixel + 0-based batch; state changes reset batch zero",
+      "geometry_policy": "shading-normal cosine distribution clipped by oriented true face; inward/degenerate sample=0, denominator stays16",
+      "combination": "independent primary specular/diffuse lobes may share terminal shading; no additional bounce",
+      "limitations": "16 noisy samples; no denoiser, temporal history, multiple diffuse bounces or raw-HDR output attachment"
+    },
+    "progressive": {
+      "enabled": true,
+      "bounces": 1,
+      "batches": 4,
+      "batch_index": 3,
+      "primary_samples_per_pixel": 64,
+      "samples_per_batch": 16,
+      "max_batches": 4096,
+      "reset_count": 1,
+      "last_reset_reasons": [
+        "new_session"
+      ],
+      "accumulation_space": "scene-linear-before-exposure",
+      "storage": "GPU RGBA32F mean",
+      "sequence": "seed + capture-local pixel + 0-based batch; 16 primary paths, at most one continuation each",
+      "scene_scope": "one immutable scene/session; camera, transforms, effective directional lights, world, epoch and extent are checked",
+      "non_rgb": "does not advance or replace RGB history"
+    },
+    "spatial_filter": {
+      "mode": "none",
+      "last_capture_filtered": false,
+      "filtered_captures": 0
+    },
+    "physics_steps": 0
+  },
+  "close": {
+    "closed": true,
+    "telemetry": {
+      "telemetry_abi_version": 1,
+      "device_luid_valid": 1,
+      "device_node_mask": 1,
+      "device_local_bytes_current": 0,
+      "device_local_bytes_peak": 65822672,
+      "device_local_bytes_allocated": 65822672,
+      "host_visible_bytes_current": 0,
+      "host_visible_bytes_peak": 35638904,
+      "host_visible_bytes_allocated": 36597784,
+      "readback_bytes": 122880016,
+      "fence_wait_wall_ns": 180734600,
+      "fence_wait_calls": 11,
+      "submissions": 11,
+      "allocation_count": 38,
+      "free_count": 38,
+      "device_luid_hex": "ef22010000000000",
+      "final_after_destroy": true,
+      "allocation_scope": "this context explicit VkDeviceMemory allocations; not driver total VRAM",
+      "wait_scope": "host wall time blocked in fence waits, including upload; not GPU kernel time"
+    }
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "log_sha256": "f83a5a5beeee4ee1fd4e9000e7fc940f3c04c55388730c6a0bb7a43bd44c65e2",
+  "argv": [
+    "-B",
+    "-m",
+    "unittest",
+    "test_guided_motion_study",
+    "-v"
+  ],
+  "exit_code": 0,
+  "source": "C:/Users/38347/.codex/worktrees/render-g5-package/phymeo/rendering/src;C:\\Users\\38347\\.codex\\worktrees\\render-g5-package\\phymeo\\rendering\\tests",
+  "start": "2026-11-23T10:19:54.8721506Z",
+  "end": "2026-11-23T10:19:55.5803332Z"
+}

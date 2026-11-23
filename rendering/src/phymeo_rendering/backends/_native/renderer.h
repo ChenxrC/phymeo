@@ -263,3 +263,24 @@ PR_API int pr_resident_set_surface_maps(void* context,
 PR_API uint32_t pr_resident_display_transform_abi_version();
 PR_API int pr_resident_display_transform_shader_compatible(void* context);
 PR_API int pr_resident_set_display_transform(void* context,uint32_t mode);
+
+// Optional MSAA1: 4x display-linear color, independent 1x pixel-center sensors.
+// Names and sample masks are actual Vulkan observations. Counters count completed
+// captures/passes; target rebuilds count allocated attachment sets, including resize.
+struct PrResidentMsaaInfo {
+    uint32_t msaa_abi_version, requested_samples, color_samples, sensor_samples;
+    uint32_t color_format, depth_format, resolve_format, output_format;
+    uint32_t color_sample_counts, depth_sample_counts, max_width, max_height;
+    uint32_t shader_compatible, standard_sample_locations, reserved0, reserved1;
+    uint64_t color_passes, center_passes, resolve_passes, target_rebuilds;
+    uint64_t reserved64[4];
+};
+static_assert(sizeof(PrResidentMsaaInfo)==128, "MSAA info ABI");
+PR_API uint32_t pr_resident_msaa_abi_version();
+PR_API int pr_resident_msaa_info(void* context,PrResidentMsaaInfo* output);
+// Once before capture. Caller shader bytes are consumed synchronously. New main
+// and sky must declare MSAA ABI marker59; resolve fragment marker61. Old 1x ABI
+// never calls this entry and remains usable with its original shaders.
+PR_API int pr_resident_set_msaa(void* context,uint32_t samples,
+    const uint32_t* resolve_vert,size_t resolve_vert_bytes,
+    const uint32_t* resolve_frag,size_t resolve_frag_bytes);

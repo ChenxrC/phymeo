@@ -351,6 +351,14 @@ class ResidentDevice(NativeDevice):
         result['resident_profile'] = dict(self._profile) if self._profile is not None else None
         result['resident_telemetry'] = dict(self._telemetry) if self._telemetry is not None else None
         result['resident_studio_available'] = self._studio_function is not None
+        query=getattr(self,'_msaa_info_function',None)
+        if query is not None and self._handle is not None:
+            from ._native_msaa import ResidentMsaaInfo, msaa_info
+            value=ResidentMsaaInfo()
+            if query(self._handle,ct.byref(value)):
+                raise RuntimeError(self._error())
+            self._msaa_info=msaa_info(value)
+        result['resident_msaa']=dict(self._msaa_info) if getattr(self,'_msaa_info',None) is not None else None
         return result
 
     def upload(self, vertices, indices, meshes, instances):

@@ -135,8 +135,10 @@ bool occluded(vec3 worldOrigin, vec3 worldDirection, float tMax) {
 #include "resident_studio.glsl"
 
 #include "resident_display.glsl"
+#include "resident_msaa.glsl"
 
 vec3 encodeSRGB(vec3 linearColor) {
+    if (PR_MSAA_COLOR_ABI==1u && PR_MSAA_LINEAR_OUTPUT==1u) return clamp(linearColor,0.0,1.0);
     vec3 x = clamp(linearColor, 0.0, 1.0);
     return mix(12.92*x, 1.055*pow(x, vec3(1.0/2.4))-0.055,
                greaterThan(x, vec3(0.0031308)));

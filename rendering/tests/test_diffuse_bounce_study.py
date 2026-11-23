@@ -68,8 +68,8 @@ class DiffuseBounceStudyTests(unittest.TestCase):
                 self.assertEqual(material["study-white"].base_color, (.7, .7, .7))
                 self.assertEqual(material["study-white"].metallic, 0.)
                 self.assertEqual(material["study-white"].roughness, 1.)
-                self.assertEqual(material["study-board"].base_color,
-                                 tuple(self.study.RED) if state.startswith("red") else (.177954,) * 3)
+                np.testing.assert_allclose(material["study-board"].base_color,
+                                 tuple(self.study.RED) if state.startswith("red") else (.177954,) * 3, rtol=0, atol=1e-15)
             # Real URDF finger origin and 35 mm prismatic displacement, rotated as a whole hand.
             nodes = {n.node_id: n.world_pose for n in base_frame.nodes}
             np.testing.assert_allclose(nodes["panda_leftfinger"].position_m, (0., -.035, .1216), atol=1e-15)
@@ -183,5 +183,22 @@ class DiffuseBounceStudyTests(unittest.TestCase):
             self.study.compare_sensors(a, b)
 
 
+    def test_retained_indirect_evidence_binds_ten_positive_diffuse_candidates(self):
+        from copy import deepcopy
+        actual = dict(indirect=dict(mode="diffuse_bounce",seed=0,samples_per_pixel=16,bounces=1),
+            device=dict(resident_indirect_info=dict(indirect_abi_version=1,supported=1,shader_compatible=1,
+                enabled=1,samples_per_pixel=16,seed=0,max_bounces=1,set_calls=1,receiver_count=10,
+                captures=12,rgb_captures=12)))
+        self.assertTrue(self.study.verify_indirect(actual,"diffuse_bounce"))
+        for field in ("receiver_count", "captures", "seed", "samples_per_pixel"):
+            altered = deepcopy(actual)
+            altered["device"]["resident_indirect_info"][field] += 1
+            with self.subTest(field=field), self.assertRaises(ValueError):
+                self.study.verify_indirect(altered,"diffuse_bounce")
+        none = dict(indirect=dict(mode="none",seed=0,samples_per_pixel=0,bounces=0),
+                    device=dict(resident_indirect_info=None))
+        self.assertTrue(self.study.verify_indirect(none,"none"))
+
 if __name__ == "__main__":
     unittest.main()
+

@@ -211,6 +211,13 @@ def summarize_scores(scores, *, registered_pose_ids, required_reveal_pose_ids):
         if p in by_id and by_id[p]['subsets']['reveal']['count'] < MIN_PIXELS:
             missing.append(f'reveal_target:{p}')
     pooled = {name: _pool([s['subsets'][name] for s in scores]) for name in SUBSETS}
+    # Only predeclared reveal poses decide that gate. Other observed reveals
+    # remain inspectable, but cannot supply or dilute the required evidence.
+    pooled['reveal'] = _pool([s['subsets']['reveal'] for s in scores if s['pose_id'] in reveals])
+    extras = [s for s in scores if s['pose_id'] not in reveals]
+    extra_reveal = {'pose_ids': [s['pose_id'] for s in extras],
+                    'pooled': _pool([s['subsets']['reveal'] for s in extras]),
+                    'scope': 'Additional observed reveals; excluded from registered reveal acceptance'}
     for name in SUBSETS:
         if pooled[name]['count'] < MIN_PIXELS:
             missing.append(f'pooled_target:{name}')
@@ -221,9 +228,18 @@ def summarize_scores(scores, *, registered_pose_ids, required_reveal_pose_ids):
         sufficient = row['count'] >= MIN_PIXELS
         passed = bool(sufficient and filtered <= limit * raw)
         ratio = filtered / raw if sufficient and raw > 0 else (1. if sufficient and filtered == 0 else None)
+        interpretation = 'relative_improvement' if limit < 1 else 'noninferiority'
+        if name == 'fingers' and sufficient and raw == 0:
+            passed = False
+            ratio = None
+            interpretation = 'exact_preservation_only' if filtered == 0 else 'introduced_error'
+            if filtered == 0:
+                missing.append('no_baseline_noise:fingers')
         gates[name] = {'passed': passed, 'limit': limit, 'rmse_ratio': ratio,
+                       'interpretation': interpretation,
                        'zero_raw_error': raw == 0 if sufficient else None,
-                       'rule': 'filtered_rmse <= limit * raw_rmse; zero raw requires zero filtered'}
+                       'rule': ('positive raw RMSE and filtered_rmse <= limit * raw_rmse' if name == 'fingers'
+                                else 'filtered_rmse <= limit * raw_rmse; zero raw requires zero filtered')}
     success = not missing and all(g['passed'] for g in gates.values())
     return {'schema': 'phymeo-guided-motion-summary-v1',
             'status': 'insufficient_evidence' if missing else ('passed' if success else 'failed'),
@@ -232,6 +248,7 @@ def summarize_scores(scores, *, registered_pose_ids, required_reveal_pose_ids):
             'registration': {'finger_ids': list(FINGER_IDS), 'erosion_radius': 1,
                              'edge_connectivity': 4, 'depth_edge_relative': DEPTH_EDGE_RELATIVE,
                              'minimum_pixels': MIN_PIXELS, 'rmse_limits': dict(THRESHOLDS)},
-            'pooled': pooled, 'gates': gates, 'poses': scores,
+            'pooled': pooled, 'extra_reveal': extra_reveal, 'gates': gates, 'poses': scores,
             'pooling': 'Pixel-weighted squared error; not mean of pose RMSE. Correlated pixels/poses are not treated as IID trials.',
             'evidence_boundary': 'Caller verifies matching poses, camera, geometry channels and actual blocker withdrawal. Metrics do not establish those identities or reference convergence.'}
+

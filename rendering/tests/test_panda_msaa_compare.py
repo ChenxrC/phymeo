@@ -200,5 +200,24 @@ class PairedFilmTests(unittest.TestCase):
             self.module.summarize_codec_errors([{"index": 1, "mae_rgb8": 0., "max_rgb8": 0}])
 
 
+    def test_video_probe_requires_full_frames_exact_clock_and_color_contract(self):
+        probe = {"streams": [{"codec_type": "video", "codec_name": "h264", "codec_tag_string": "avc1",
+            "width": 1280, "height": 768, "pix_fmt": "yuv420p", "nb_frames": "3",
+            "nb_read_frames": "3", "avg_frame_rate": "30/1", "r_frame_rate": "30/1",
+            "duration_ts": 1536, "time_base": "1/15360", "color_range": "tv",
+            "color_space": "bt709", "color_transfer": "iec61966-2-1", "color_primaries": "bt709",
+            "sample_aspect_ratio": "1:1"}], "format": {"duration": "0.100000"},
+            "frames": [{"best_effort_timestamp_time": v} for v in ("0.000000", "0.033333", "0.066667")]}
+        self.assertTrue(self.module.verify_probe(probe, width=1280, height=768, count=3)["contiguous_timestamps"])
+        for target in ("duplicate", "missing", "size", "range", "audio"):
+            with self.subTest(target=target):
+                bad = copy.deepcopy(probe)
+                if target == "duplicate": bad["frames"][1] = bad["frames"][0]
+                elif target == "missing": bad["frames"].pop()
+                elif target == "size": bad["streams"][0]["width"] = 640
+                elif target == "range": bad["streams"][0]["color_range"] = "pc"
+                else: bad["streams"].append({"codec_type": "audio"})
+                with self.assertRaises(ValueError):
+                    self.module.verify_probe(bad, width=1280, height=768, count=3)
 if __name__ == "__main__":
     unittest.main()

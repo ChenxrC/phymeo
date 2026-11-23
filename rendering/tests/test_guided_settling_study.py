@@ -51,7 +51,8 @@ class GuidedSettlingStudyTests(unittest.TestCase):
         count=ordinal*15+k
         return dict(spatial_filter=dict(mode="guided_settling",scope="settling-first-16-rgb-batches",
             last_capture_filtered=n<16,filtered_captures=count,last_filtered_fraction=actual,
-            scheduled_filtered_fraction=weight,last_batch=n,filtered_primary_samples=total),
+            scheduled_filtered_fraction=weight,last_batch=n,filtered_primary_samples=total,
+            last_filtered_primary_samples=16*n if n<16 else 0,guide_source="same-exposure-gpu-direct-pass"),
             device=dict(resident_settling_info=dict(settling_abi_version=1,enabled=1,last_batch=n,
                 last_capture_filtered=int(n<16),last_filtered_fraction=actual,
                 last_filtered_primary_samples=16*n if n<16 else 0,guide_valid=1,

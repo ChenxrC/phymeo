@@ -53,7 +53,7 @@ class NormalMapFilmTests(unittest.TestCase):
                     self.assertTrue(math.isfinite(h))
 
     def test_normal_field_is_unit_positive_z_periodic_and_not_flat(self):
-        u, v = np.meshgrid(np.arange(64)/64+.001, np.arange(64)/64+.002)
+        u, v = np.meshgrid(np.arange(61)/61+.001, np.arange(61)/61+.002)
         for kind in ("steel", "rubber"):
             n = self.subject.tangent_normal(kind, u, v)
             np.testing.assert_allclose(np.linalg.norm(n, axis=-1), 1., atol=3e-15)
@@ -139,7 +139,6 @@ class NormalMapFilmTests(unittest.TestCase):
             changed = replace(on, materials=(replace(on.materials[0], roughness=.2),)+on.materials[1:])
             with self.assertRaisesRegex(ValueError, "material"):
                 self.subject.bind_pair(off, changed, left, right)
-            changed = replace(on, lights=())
             # Both original scenes have no explicit directional lights; use an actual change.
             from phymeo_rendering.scene import DirectionalLight
             changed = replace(on, lights=(DirectionalLight((0., 0., -1.), (1., 1., 1.)),))

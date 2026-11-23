@@ -355,3 +355,15 @@ PR_API uint32_t pr_resident_spatial_abi_version();
 PR_API int pr_resident_set_spatial(void*,uint32_t,const uint32_t*,size_t,const uint32_t*,size_t);
 PR_API int pr_resident_spatial_info(void*,PrResidentSpatialInfo*);
 PR_API int pr_resident_read_spatial_guide(void*,void*,size_t);
+
+// Optional settling ABI1: immutable raw mean -> bounded display-only dispatch.
+struct PrResidentSettlingInfo {
+    uint32_t settling_abi_version,enabled,last_batch,last_capture_filtered;
+    float last_filtered_fraction;
+    uint32_t last_filtered_primary_samples,guide_valid,reserved;
+    uint64_t guide_draws,filtered_rgb_captures,filtered_primary_samples,filter_dispatches;
+};
+static_assert(sizeof(PrResidentSettlingInfo)==64,"settling info ABI");
+PR_API uint32_t pr_resident_settling_abi_version();
+PR_API int pr_resident_set_settling(void*,uint32_t,const uint32_t*,size_t,const uint32_t*,size_t,const uint32_t*,size_t);
+PR_API int pr_resident_settling_info(void*,PrResidentSettlingInfo*);

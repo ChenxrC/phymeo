@@ -31,7 +31,7 @@ from ._native_normal import pack_normal_maps, configure_normal_maps
 from ._native_reflection import reflection_declaration, configure_reflection
 from ._native_indirect import indirect_declaration, configure_indirect
 from ._native_progressive import configure_progressive
-from ._native_spatial import configure_spatial
+from ._native_spatial import configure_spatial, query_settling, settling_fraction
 from ._native_device import (
     NativeDevice,
     Parameters,
@@ -227,8 +227,14 @@ class _NativeDelegate:
         result=Capture(frame.key,frame.time_s,camera,
             _image_planes(raw,camera.width*camera.height,request.channels,attachment_mask))
         self.last_passes = tuple(stage.value for stage in plan)
-        if self.spatial_info is not None and Channel.RGB in request.channels and (progressive_reasons or not self.progressive_history.batches):
-            self.last_passes += ('spatial-direct-guide', 'spatial-first-batch-display')
+        if self.spatial_info is not None and Channel.RGB in request.channels:
+            n = 1 if progressive_reasons else self.progressive_history.batches + 1
+            if n == 1:
+                self.last_passes += ('spatial-direct-guide',)
+            if self.spatial_info['mode'] == 'guided_settling' and n < 16:
+                self.last_passes += ('settling-display-after-mean-barrier',)
+            elif self.spatial_info['mode'] == 'guided' and n == 1:
+                self.last_passes += ('spatial-first-batch-display',)
         self.last_request = dict(
             width=camera.width,
             height=camera.height,
@@ -319,6 +325,12 @@ class NativeRenderSession(ValidatedRenderSession):
         with self._lock:
             try:
                 result = super().capture(frame, request)
+                settling_info = None
+                spatial = getattr(self._delegate, 'spatial_info', None)
+                if spatial is not None and spatial['mode'] == 'guided_settling':
+                    # Diagnostics are part of publication: failure must discard
+                    # the just-computed RGB batch before HOST history commits.
+                    settling_info = query_settling(self._delegate.device)
             except BaseException:
                 if getattr(self._delegate, "_progressive_pending_publication", None) is not None:
                     device = self._delegate.device
@@ -326,6 +338,8 @@ class NativeRenderSession(ValidatedRenderSession):
                     self._delegate.progressive_history.reset('failed_capture')
                     if self._delegate.spatial_info is not None:
                         self._delegate.spatial_info['last_capture_filtered'] = False
+                        if self._delegate.spatial_info['mode'] == 'guided_settling':
+                            self._delegate.spatial_info.update(last_batch=0, last_filtered_fraction=0., scheduled_filtered_fraction=0., last_filtered_primary_samples=0)
                     self._delegate._progressive_pending_publication = None
                 raise
             pending = getattr(self._delegate, "_progressive_pending_publication", None)
@@ -336,6 +350,17 @@ class NativeRenderSession(ValidatedRenderSession):
             if spatial is not None:
                 filtered = pending is not None and self._delegate.progressive_history.batches == 1
                 spatial['last_capture_filtered'] = filtered
+                if spatial['mode'] == 'guided_settling':
+                    n = self._delegate.progressive_history.batches if pending is not None else 0
+                    info = settling_info
+                    filtered = n > 0 and n < 16
+                    spatial.update(
+                        last_batch=n, last_capture_filtered=filtered,
+                        last_filtered_fraction=info['last_filtered_fraction'],
+                        scheduled_filtered_fraction=settling_fraction(n) if n else 0.,
+                        last_filtered_primary_samples=16*n if filtered else 0,
+                    )
+                    spatial['filtered_primary_samples'] += 16*n if filtered else 0
                 spatial['filtered_captures'] += int(filtered)
             return result
 
@@ -351,6 +376,8 @@ class NativeRenderSession(ValidatedRenderSession):
             delegate.progressive_history.reset()
             if delegate.spatial_info is not None:
                 delegate.spatial_info['last_capture_filtered'] = False
+                if delegate.spatial_info['mode'] == 'guided_settling':
+                    delegate.spatial_info.update(last_batch=0, last_filtered_fraction=0., scheduled_filtered_fraction=0., last_filtered_primary_samples=0)
 
     def set_directional_lights(self, lights):
         """Atomically override 0..4 directional lights in a progressive session."""
@@ -371,7 +398,7 @@ class NativeRenderSession(ValidatedRenderSession):
             self._delegate.effective_lights = lights
 
     def read_spatial_guide(self):
-        """Copy the latest first-batch display-direct guide; never advances sampling."""
+        """Copy the latest filtered RGB exposure guide; never advances sampling."""
         with self._lock:
             self._check_open()
             delegate = self._delegate
@@ -441,6 +468,12 @@ class NativeBackend:
     Raw mean and later RGB batches use the original primary shader unchanged.
     A separate compute ABI and guide image are required; old devices
     never silently approximate it. read_spatial_guide is explicit debug readback.
+    spatial_filter='guided_settling' filters the complete unexposed raw mean
+    with fraction 1-sqrt((n-1)/15) for RGB batches n=1..15; n>=16 is unfiltered.
+    A second compute dispatch reads the finished mean after a real GPU barrier.
+    The guide belongs to RGB history, surviving sensor-only target recreation.
+    First output matches guided; the sixteenth onward matches none. Both anchors
+    preserve the raw mean and sensors exactly. This mode needs its own optional ABI.
     display_transform='pbr-neutral' requires a declared resident display ABI;
     default 'clip' preserves the previous output and never probes that extension.
     """
@@ -524,9 +557,9 @@ class NativeBackend:
         if not progressive and indirect_bounces != 1:
             raise UnsupportedRequestError('two diffuse bounces require progressive=True')
         if not isinstance(spatial_filter, str):
-            raise TypeError('spatial_filter must be none or guided')
-        if spatial_filter not in ('none', 'guided'):
-            raise ValueError('spatial_filter must be none or guided')
+            raise TypeError('spatial_filter must be none, guided or guided_settling')
+        if spatial_filter not in ('none', 'guided', 'guided_settling'):
+            raise ValueError('spatial_filter must be none, guided or guided_settling')
         if spatial_filter != 'none' and not progressive:
             raise UnsupportedRequestError('guided spatial filtering requires progressive=True')
         self.spatial_filter = spatial_filter
@@ -587,7 +620,8 @@ class NativeBackend:
             **({'reflection': True} if self.reflection_mode=='single_bounce' else {}),
             **({'indirect': True} if self.indirect_mode!='none' else {}),
             **({'progressive': True} if self.progressive else {}),
-            **({'spatial': True} if self.spatial_filter == 'guided' else {})
+            **({'spatial': True} if self.spatial_filter != 'none' else {}),
+            **({'settling': True} if self.spatial_filter == 'guided_settling' else {})
         )
         try:
             display_info = configure_display(device, self.display_transform)

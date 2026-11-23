@@ -88,6 +88,8 @@ def configure_progressive(device, enabled, bounces):
         version = device._lib.pr_resident_progressive_abi_version
         setter = (device._lib.pr_resident_set_spatial if getattr(device, '_spatial_requested', False)
                   else device._lib.pr_resident_set_progressive)
+        if getattr(device, '_settling_requested', False):
+            setter = device._lib.pr_resident_set_settling
         query = device._lib.pr_resident_progressive_info
         begin = device._lib.pr_resident_begin_progressive
         reset = device._lib.pr_resident_reset_progressive
@@ -98,7 +100,7 @@ def configure_progressive(device, enabled, bounces):
     version.restype = ct.c_uint32
     if version() != 1:
         raise BackendUnavailableError('unsupported progressive ABI')
-    filename = 'resident_spatial.comp.spv' if getattr(device, '_spatial_requested', False) else 'resident_progressive.comp.spv'
+    filename = 'resident_spatial.comp.spv' if getattr(device, '_spatial_requested', False) and not getattr(device, '_settling_requested', False) else 'resident_progressive.comp.spv'
     path = device.shader_directory / filename
     try:
         raw = path.read_bytes()
@@ -130,6 +132,18 @@ def configure_progressive(device, enabled, bounces):
         setter.argtypes += [ct.POINTER(ct.c_uint32), ct.c_size_t]
         arguments += [guide_words, len(guide_raw)]
         device.shader_sha256['spatial_guide_fragment'] = hashlib.sha256(guide_raw).hexdigest()
+    if getattr(device, '_settling_requested', False):
+        filter_path = device.shader_directory / 'resident_settling.comp.spv'
+        try:
+            filter_raw = filter_path.read_bytes()
+        except OSError as error:
+            raise BackendUnavailableError(f'settling display shader unavailable: {filter_path}') from error
+        if len(filter_raw) < 20 or len(filter_raw) % 4 or filter_raw[:4] != b'\x03\x02\x23\x07':
+            raise BackendUnavailableError('invalid settling display SPIR-V')
+        filter_words = (ct.c_uint32 * (len(filter_raw) // 4)).from_buffer_copy(filter_raw)
+        setter.argtypes += [ct.POINTER(ct.c_uint32), ct.c_size_t]
+        arguments += [filter_words, len(filter_raw)]
+        device.shader_sha256['settling_display_compute'] = hashlib.sha256(filter_raw).hexdigest()
     if setter(*arguments):
         raise BackendUnavailableError(device._error())
     device._progressive_query = query

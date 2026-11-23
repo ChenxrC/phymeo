@@ -76,3 +76,24 @@ python -B -m preview_compact_rigid_history.preview_media --result NEW/rigid-movi
 质量工具复用已经注册的五组几何 ID 区域及 59→60 刚体指尖对应，额外明确列右指 ID158 子区域。两份参考必须为不同非零 seed、每像素至少 8192 个原全率单跳 proposal、最终无滤波显示；检查原 trace、scene/material/light、实际 frame/camera、传感、实际加载 DLL/SPV 与解码网格。原封存 full-rate16 只作另外一列历史基线，其旧时间不混入本次公平 A/B。误差空间为逆 IEC sRGB 的 display-linear，不冒充 raw HDR。参考彼此差异超过既有噪声门时记证据不足。
 
 可选 contact sheet 是姿态 60 左臂、右指、白壳**固定 ID 边界框**内的原像素裁片，依次显示当前/历史/两独立参考。不按候选亮度挑位置、不改曝光、不放大插值、不替换影片像素。它用于看亮斑和残影，不能代替统计。影片复用父既有 FFmpeg/probe/full-decode 流程，仅播放这 300 张已测 PNG；30 Hz 播放时钟不代表渲染已达到 30 FPS。
+
+### 显式展示摄影机与工作室
+
+旧默认仍是 `--camera detail --studio-look recorded`；旧 Namespace 没有这两字段
+时也沿用原值。可选 `--camera sequence --studio-look soft-studio` 复用原 helper 的
+`apply_look` 和 `make_inputs`，并逐项核对已冻结 `film-near-studio/inputs.json`。
+这个具名场景没有独立方向光，面积灯变宽但保持原总功率，HDR、材质、曝光保持
+该冻结场景的真实声明。这里不再调整灯、复制相机算法或生成另一条机器人动画。
+
+```powershell
+python -B -m unittest preview_compact_rigid_history.test_preview -v
+python -B -m preview_compact_rigid_history.preview --prepared PATH/ec8-new/rigid --source-inputs PARENT/artifacts/rendering/nov24/film-near-studio/inputs.json --delivery PARENT/rendering/examples/preview_sparse_motion --channels rgb --camera sequence --studio-look soft-studio --device-index 1 --output NEW/eight-studio-film
+python -B -m preview_compact_rigid_history.preview_media --result NEW/eight-studio-film --delivery PARENT/rendering/examples/preview_sparse_motion --output NEW/eight-studio-media
+```
+
+仅一轮，当前/历史两 owner 使用相同 300 个真实录制姿态、灯光和相机序列；每档
+10 次预热后显式 reset。现有相机 ID、镜头、切镜阈值继续决定真实历史拒绝，
+逐帧 `history_reset_reasons` 与每档 `observed_history_resets` 记录实际结果，
+不为影片强制保留历史。RGB 的三处调试读回和 PNG 编码仍在 capture 计时外。
+影片名加入 `-sequence-soft-studio`，报告 `registered_quality_configuration=false`、
+`quality_claim=false`。这是展示外观，不能冒充 detail/recorded 的既有正式数值门。

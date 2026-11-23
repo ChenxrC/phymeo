@@ -1,7 +1,9 @@
 """Offline preview evidence must not disguise stale state or unequal sampling."""
 from copy import deepcopy
 import importlib
+from types import SimpleNamespace
 import unittest
+from unittest.mock import Mock
 
 
 class PreviewContracts(unittest.TestCase):
@@ -64,6 +66,55 @@ class PreviewContracts(unittest.TestCase):
     def test_reset_pair_requires_identical_rgb(self):
         a=self.record();b=deepcopy(a);b["rgb_sha256"]="f"*64
         with self.assertRaises(ValueError):self.p.verify_pair([a],[b],require_reset_rgb=True)
+
+    def test_presentation_defaults_preserve_old_namespace_and_cli(self):
+        self.assertEqual(self.p.presentation_options(SimpleNamespace()),("detail","recorded"))
+        argv=["--prepared","p","--source-inputs","i","--delivery","d","--output","o"]
+        self.assertEqual(self.p.presentation_options(self.p.parse_args(argv)),("detail","recorded"))
+        self.assertEqual(self.p.presentation_options(self.p.parse_args(argv+[
+            "--camera","sequence","--studio-look","soft-studio"])),("sequence","soft-studio"))
+
+    def test_new_presentation_reuses_declared_factory_and_camera_helpers(self):
+        frames=tuple(range(300));scene=object();studio=object();look_scene=object();look_studio=object()
+        declaration={"extent":[1280,720],"exposure":8.,"settings":{"area_light_grid":2}}
+        factory=SimpleNamespace(bind_scene=Mock(return_value=((object(),scene),frames,studio,"trace")))
+        shared=SimpleNamespace(apply_look=Mock(return_value=(look_scene,look_studio)),
+            base=SimpleNamespace(preset=Mock(return_value=declaration),make_inputs=Mock(return_value="inputs")))
+        for camera,look in (("detail","recorded"),("sequence","soft-studio")):
+            with self.subTest(camera=camera,look=look):
+                result=self.p.build_presentation(factory,shared,"geometry",SimpleNamespace(camera=camera,studio_look=look))
+                shared.apply_look.assert_called_with(scene,studio,look)
+                shared.base.make_inputs.assert_called_with(look_scene,frames,declaration,camera)
+                self.assertEqual(result,(look_scene,look_studio,"trace","inputs",declaration))
+        self.assertEqual(frames,tuple(range(300)))
+
+    def test_saved_presentation_cannot_change_camera_light_energy_or_grid(self):
+        declaration={"extent":[1280,720],"exposure":8.,"settings":{"area_light_grid":2}}
+        source=dict(camera="sequence",studio_look="soft-studio",declaration=declaration,area_light_grid=2)
+        self.p.verify_presentation_source(source,"sequence","soft-studio",declaration)
+        for key,value in (("camera","detail"),("studio_look","recorded"),("area_light_grid",8),
+                          ("declaration",dict(declaration,exposure=4.))):
+            with self.subTest(key=key),self.assertRaises(ValueError):
+                self.p.verify_presentation_source(dict(source,**{key:value}),"sequence","soft-studio",declaration)
+        self.p.verify_presentation_source({},"detail","recorded",declaration)
+        with self.assertRaises(ValueError):self.p.verify_presentation_source({},"sequence","soft-studio",declaration)
+
+    def test_display_movie_name_does_not_relabel_registered_numeric_configuration(self):
+        policy=dict(paths_per_anchor=8,area_light_grid=2,estimator="visibility-ratio")
+        old="rigid-t4-p8-g2-k25-r2-age4-visibility-ratio"
+        self.assertEqual(self.p.media_profile_name(policy,{}),old)
+        self.assertEqual(self.p.media_profile_name(policy,dict(camera="sequence",studio_look="soft-studio")),
+                         old+"-sequence-soft-studio")
+
+    def test_camera_cut_keeps_the_observed_reset_and_pair_binding(self):
+        values=[self.record(i) for i in range(3)]
+        values[1]["history_actual"]=dict(sequence=0,last_reset=True)
+        values[1]["history_reset_reasons"]=["camera_cut"]
+        values[2]["history_actual"]=dict(sequence=1,last_reset=False)
+        self.p.verify_chain(values,expected_indices=(0,1,2))
+        self.p.verify_pair(deepcopy(values),values,require_reset_rgb=True)
+        wrong=deepcopy(values);wrong[1]["camera_sha256"]="f"*64
+        with self.assertRaises(ValueError):self.p.verify_pair(wrong,values,require_reset_rgb=True)
 
 
 if __name__=="__main__":unittest.main()

@@ -23,8 +23,7 @@ def main():
     p.verify_chain(row["frames"])
     shared=p.load_delivery(args.delivery)
     policy=summary["contract"]
-    name=f"rigid-t4-p{policy['paths_per_anchor']}-g{policy['area_light_grid']}-k25-r2-age4"
-    if policy.get("estimator")=="visibility-ratio":name+="-visibility-ratio"
+    name=p.media_profile_name(policy,summary)
     view=args.output.resolve().with_name(args.output.name+"-source-view")
     view.mkdir(parents=True,exist_ok=False);folder=view/name;(folder/"frames").mkdir(parents=True)
     for frame in row["frames"]:
@@ -38,6 +37,8 @@ def main():
     borrowed.update(receipt=str((folder/"receipt.json").relative_to(view)),receipt_sha256=p.digest(folder/"receipt.json"))
     shutil.copyfile(root/"inputs.json",view/"inputs.json")
     p.save(view/"summary.json",dict(schema=shared.base.SCHEMA,status="complete",quick=False,
+        camera=summary.get("camera","detail"),studio_look=summary.get("studio_look","recorded"),
+        registered_quality_configuration=summary.get("registered_quality_configuration",True),quality_claim=False,
         inputs_sha256=summary["inputs_sha256"],requested_presets=[name],runs=[borrowed],
         source_rigid_summary=str(root/"summary.json"),source_rigid_summary_sha256=p.digest(root/"summary.json"),
         trajectory_scope="all300 original recorded Panda poses, per-ID short history; no new physics",

@@ -39,6 +39,46 @@ def clean_source(value):
     return value
 
 
+def presentation_options(args):
+    camera=getattr(args,"camera","detail")
+    look=getattr(args,"studio_look","recorded")
+    require(camera in ("detail","sequence") and look in ("recorded","soft-studio"),
+            "unsupported authored camera/studio presentation")
+    return camera,look
+
+
+def build_presentation(factory,shared,directory,args):
+    """Use the frozen helpers; no replacement animation, lighting or camera math."""
+    camera,look=presentation_options(args)
+    scenes,frames,studio,trace=factory.bind_scene(directory)
+    scene,studio=shared.apply_look(scenes[1],studio,look)
+    declaration=shared.base.preset("preview720")
+    inputs=shared.base.make_inputs(scene,frames,declaration,camera)
+    return scene,studio,trace,inputs,declaration
+
+
+def verify_presentation_source(source,camera,look,declaration):
+    require(source.get("camera","detail")==camera and source.get("studio_look","recorded")==look,
+            "saved camera/studio declaration differs")
+    if camera!="detail" or look!="recorded":
+        require(all(key in source for key in ("camera","studio_look","declaration","area_light_grid")),
+                "nondefault presentation needs an explicit frozen source declaration")
+    if "declaration" in source:
+        require(canonical(source["declaration"])==canonical(declaration),"saved render/exposure declaration differs")
+    if "area_light_grid" in source:
+        require(source["area_light_grid"]==declaration["settings"]["area_light_grid"],"saved area-light grid differs")
+    require(declaration["exposure"]==8.,"this bound capture uses the declared exposure8")
+
+
+def media_profile_name(policy,summary):
+    camera=summary.get("camera","detail");look=summary.get("studio_look","recorded")
+    require(camera in ("detail","sequence") and look in ("recorded","soft-studio"),"unknown captured presentation")
+    name=f"rigid-t4-p{policy['paths_per_anchor']}-g{policy['area_light_grid']}-k25-r2-age4"
+    if policy.get("estimator")=="visibility-ratio":name+="-visibility-ratio"
+    if camera!="detail" or look!="recorded":name+="-"+camera+"-"+look
+    return name
+
+
 def registered_source(value):
     records=value["actual_full_inputs"]
     require([r["pose_index"] for r in records]==list(POSES),"source needs exactly the ordered300 presented records")
@@ -88,21 +128,26 @@ def load_delivery(directory):
     return module
 
 
-def prepare_inputs(args,output,shared):
+def prepare_inputs(args,output,shared,policy=None):
     import panda_render_performance as factory
     source=read(args.source_inputs);by=registered_source(source)
-    scenes,frames,studio,trace=factory.bind_scene(output/"geometry")
-    scene=scenes[1]
+    camera,look=presentation_options(args)
+    scene,studio,trace,inputs,declaration=build_presentation(factory,shared,output/"geometry",args)
+    verify_presentation_source(source,camera,look,declaration)
+    if policy is not None:
+        require(policy["area_light_grid"]==declaration["settings"]["area_light_grid"],"prepared light sampling differs from frozen declaration")
     require(digest(trace)==source["trace_sha256"],"original trace SHA differs")
     require(clean_source(asdict(scene))==clean_source(source["scene"]) and
             clean_source(asdict(studio))==clean_source(source["studio"]),"registered scene/material/light differs")
-    inputs=shared.base.make_inputs(scene,frames,shared.base.preset("preview720"),"detail")
     for i,(frame,request) in inputs.items():
         require(frame_digest(frame)==frame_digest(by[i]["frame"]),f"original full frame differs at {i}")
         require(frame_digest(request.camera)==frame_digest(by[i]["camera"]),f"original camera differs at {i}")
     bindings=bind_presentations([inputs[i][0] for i in POSES],source["trace_sha256"])
     save(output/"inputs.json",dict(scene=asdict(scene),studio=asdict(studio),trace_sha256=digest(trace),
         actual_full_inputs=[dict(pose_index=i,frame=asdict(f),camera=asdict(q.camera),presentation=bindings[i]) for i,(f,q) in inputs.items()],
+        camera=camera,studio_look=look,declaration=declaration,area_light_grid=declaration["settings"]["area_light_grid"],
+        look_scope="recorded lighting unchanged" if look=="recorded" else
+            "same frozen soft-studio presentation: no directional source, panel_size_scale2 at same power, original HDR/material/exposure",
         source_inputs_path=str(args.source_inputs.resolve()),source_inputs_sha256=digest(args.source_inputs)))
     return scene,studio,inputs,bindings
 
@@ -180,6 +225,9 @@ def capture_owner(args,root,policy,shared,scene,studio,inputs,bindings,output,na
         row["phase_timing"]=shared.phase_statistics(row["frames"])
         row["profile"]=shared.base.profile_delta(before,previous,300)
         row["profile_scope"]="whole measured owner interval includes the three registered debug reads; per-frame deltas and capture timing exclude them"
+        row["observed_history_resets"]=[dict(pose_index=r["pose_index"],frame_key=r["frame_key"],
+            camera_sha256=r["camera_sha256"],sequence=r["history_actual"]["sequence"],reasons=r["history_reset_reasons"])
+            for r in row["frames"] if r["history_actual"]["last_reset"]]
         row["backend"]=owner.diagnostics();row["status"]="complete"
     except BaseException as error:
         problem=error;row.update(status="partial_failure",error=dict(type=type(error).__name__,message=str(error)))
@@ -204,8 +252,12 @@ def capture(args):
     root,manifest=activate(args.prepared)
     shared=load_delivery(args.delivery)
     output=args.output.resolve();output.mkdir(parents=True,exist_ok=False)
+    camera,look=presentation_options(args)
     dependencies=[Path(__file__),Path(shared.__file__),Path(shared.base.__file__),Path(shared.adapter.__file__)]
-    report=dict(schema=SCHEMA,status="preparing",resolution="720p",camera="detail",studio_look="recorded",
+    report=dict(schema=SCHEMA,status="preparing",resolution="720p",camera=camera,studio_look=look,
+        registered_quality_configuration=camera=="detail" and look=="recorded",quality_claim=False,
+        presentation_scope="registered numeric configuration" if camera=="detail" and look=="recorded" else
+            "authored viewing presentation; original numeric-quality acceptance does not transfer",
         contract=manifest["contract"],seed=args.seed,channels=args.channels,runs=[],
         source=dict(prepared=str(root),manifest_sha256=digest(root/"source-manifest.json"),
             library_sha256=digest(root/"build/phymeo_native.dll"),shaders={p.name:digest(p) for p in sorted((root/"build").glob("*.spv"))},
@@ -214,7 +266,7 @@ def capture(args):
         limitation="Single serial order; temporal local confidence cannot prove hidden secondary visibility. No quality claim before independent assessment.")
     save(output/"summary.json",report)
     try:
-        scene,studio,inputs,bindings=prepare_inputs(args,output,shared)
+        scene,studio,inputs,bindings=prepare_inputs(args,output,shared,manifest["contract"])
         report["inputs_sha256"]=digest(output/"inputs.json")
         producer_names=("preview_compact_rigid_history.runtime","preview_compact_rigid_history.state",
             "preview_compact_history.runtime","preview_compact_history.state","preview_compact.runtime",
@@ -238,19 +290,25 @@ def capture(args):
     finally:save(output/"summary.json",report)
 
 
-def main():
+def parse_args(argv=None):
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--prepared",type=Path,required=True)
     parser.add_argument("--source-inputs",type=Path,required=True)
     parser.add_argument("--delivery",type=Path,required=True,help="frozen parent's preview_sparse_motion directory")
     parser.add_argument("--output",type=Path,required=True)
     parser.add_argument("--channels",choices=("rgb","all"),default="all")
+    parser.add_argument("--camera",choices=("detail","sequence"),default="detail")
+    parser.add_argument("--studio-look",choices=("recorded","soft-studio"),default="recorded")
     parser.add_argument("--seed",type=int,default=0)
     parser.add_argument("--device-index",type=int,default=1)
     parser.add_argument("--validation",action="store_true")
     parser.add_argument("--reverse-order",action="store_true")
     parser.add_argument("--current-film",action="store_true")
-    capture(parser.parse_args())
+    return parser.parse_args(argv)
+
+
+def main():
+    capture(parse_args())
 
 
 if __name__=="__main__":main()

@@ -117,6 +117,8 @@ class PairedFilmTests(unittest.TestCase):
                 "p50_ms": 10., "p95_ms": 10., "max_ms": 10.,
                 "frame_sha256": [f"{i:064x}" for i in range(300)],
                 "profile": copy.deepcopy(protocol["profile"]), "backend": {
+                    "display_transform": "pbr-neutral", "exposure": 8.,
+                    "shadow_mode": "ray_query", "area_light_grid": 2,
                     "library_sha256": "a" * 64,
                     "msaa": {"requested_samples": samples, "actual_color_samples": samples, "sensor_samples": 1, "sensor_sampling": "deterministic pixel center", "resolve_space": "display-linear then IEC sRGB once" if samples == 4 else "none (single sample)"},
                     "device": {"closed": True, "resident_upload_calls": 1,
@@ -266,5 +268,13 @@ class PairedFilmTests(unittest.TestCase):
             self.assertTrue(receipt["complete_decode"])
             self.assertEqual(len(receipt["codec_error"]["per_frame"]),3)
             self.assertEqual(receipt["duration_s"],.1)
+    def test_actual_backend_display_lighting_cannot_hide_behind_profile_label(self):
+        for key, wrong in (("display_transform","clip"),("exposure",1.),
+                           ("shadow_mode","software"),("area_light_grid",8)):
+            with self.subTest(key=key):
+                protocol, one, four = self.protocol_and_receipts()
+                four["backend"][key] = wrong
+                with self.assertRaisesRegex(ValueError,"backend|profile"):
+                    self.module.compare_receipts(protocol,one,four)
 if __name__ == "__main__":
     unittest.main()

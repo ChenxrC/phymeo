@@ -34,6 +34,25 @@ def contract(limit=262144):
         primitive_gate=False)
 
 
+def distance_policy(policy,reflection,ratio):
+    local=policy.get('local_diffuse')
+    if local is None:
+        if 'PR_DIFFUSE_GUIDE_LIMIT' in reflection:raise ValueError('undeclared diffuse distance cap')
+        return dict(sparse_radius_m=None,rescue_radius_m=None,sparse_fade=None,
+            rescue='original full-distance 16-proposal radiance estimator',specular='unchanged primary mirror policy')
+    expected='#ifdef PR_PREVIEW_SPARSE_GUIDE\n#define PR_DIFFUSE_GUIDE_LIMIT 0.1200\n#else\n#define PR_DIFFUSE_GUIDE_LIMIT 3.402823466e38\n#endif'
+    if local.get('radius_m')!=.12 or local.get('marker')!=96 or local.get('fade')!='1-smoothstep(0,R,t)':
+        raise ValueError('only the frozen 120 mm local base is admitted')
+    if not reflection.startswith(expected) or reflection.count('direction,PR_DIFFUSE_GUIDE_LIMIT)')!=2:
+        raise ValueError('local guide ray bound/non-guide unlimited scope differs')
+    if 'PR_NEARFIELD_DIFFUSE_ABI' not in ratio or '1.0-smoothstep(0.0,PR_DIFFUSE_GUIDE_LIMIT,hit.previewDistance)' not in ratio:
+        raise ValueError('bound local hit fade is absent')
+    return dict(sparse_radius_m=.12,rescue_radius_m=None,sparse_fade='1-smoothstep(0,R,t)',
+        sparse_miss='directions beyond 120 mm use original environment/SH visibility model',
+        rescue='selected pixels replace local diffuse with original full-distance16 radiance, with real full-distance terminal hits',
+        specular='primary near-field mirror mode unchanged; not clipped to the 120 mm diffuse-guide radius',
+        model='generic spatial hybrid of local sparse and full-distance rescue, not a uniform full-distance integrator')
+
 def validate_counts(d):
     keys=('selected_pixels','fragment_invocations','traced_invocations','reconstructed_rescue_pixels',
           'filtered_neighbors','missing_rescue','budget_exhausted','max_invocations','invalid')
@@ -129,12 +148,22 @@ def patch_renderer(t):
     t=once(t,'std::array<VkDescriptorSetLayoutBinding, 16>', 'std::array<VkDescriptorSetLayoutBinding, 20>')
     t=once(t,'        layout.bindingCount=binding_count; layout.pBindings=bindings.data();',
         '        if(resident)for(uint32_t i=16;i<20;++i)bindings[binding_count++]={i,i==17?VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,1,VK_SHADER_STAGE_FRAGMENT_BIT,nullptr};\n'
+        '        if(resident){VkPhysicalDeviceProperties ep{};vkGetPhysicalDeviceProperties(physical,&ep);const auto& l=ep.limits;\n'
+        '            const uint32_t buffers=normal_info.shader_compatible?10u:9u;\n'
+        '            require(l.maxPerStageDescriptorSamplers>=9&&l.maxPerStageDescriptorSampledImages>=9&&\n'
+        '                l.maxDescriptorSetSamplers>=9&&l.maxDescriptorSetSampledImages>=9&&\n'
+        '                l.maxPerStageDescriptorStorageBuffers>=buffers&&l.maxDescriptorSetStorageBuffers>=buffers&&\n'
+        '                l.maxPerStageDescriptorUniformBuffers>=3&&l.maxDescriptorSetUniformBuffers>=3&&\n'
+        '                l.maxPerStageDescriptorStorageImages>=3&&l.maxDescriptorSetStorageImages>=3&&\n'
+        '                l.maxPerStageResources>=binding_count&&l.maxFragmentCombinedOutputResources>=buffers+1,\n'
+        '                "edge descriptor/resource limits unavailable");}\n'
         '        layout.bindingCount=binding_count; layout.pBindings=bindings.data();')
     t=once(t,'VkFramebuffer framebuffer{},guide_framebuffer{};', 'VkFramebuffer framebuffer{},guide_framebuffer{},edge_framebuffer{};')
     t=once(t,'        release(guide_framebuffer,',
         '        release(edge_framebuffer,[&](auto h){vkDestroyFramebuffer(c.device,h,nullptr);});\n        release(guide_framebuffer,')
     t=once(t,'require(named_shader_marker(code,bytes,88,"PR_PREVIEW_COMPACT_COMPUTE_ABI",5),',
         'require(named_shader_marker(code,bytes,98,"PR_PREVIEW_EDGE_COMPUTE_ABI",5)&&named_shader_marker(code,bytes,88,"PR_PREVIEW_COMPACT_COMPUTE_ABI",5),')
+    t=once(t,'c.sparse_captures,5,8,0,0,0','c.sparse_captures,5,9,0,0,0')
     return t+'\n'+(HERE/'edge_exports.inc').read_text(encoding='utf-8')
 
 
@@ -182,6 +211,9 @@ def prepare(base,output,adapter_root,limit=262144):
     compute=(base/'source/_shaders/resident_spatial.comp').read_text(encoding='utf-8')
     full=(base/'runtime/phymeo_rendering/backends/_shaders/resident_indirect.glsl').read_text(encoding='utf-8')
     if 'for(uint i=0u;i<16u;++i)' not in full or 'return sum*(1.0/16.0)' not in full:raise ValueError('bound original full-rate estimator missing')
+    policy['distance']=distance_policy(c,
+        (base/'source/_shaders/resident_reflection.glsl').read_text(encoding='utf-8'),
+        (base/'source/_shaders/preview_sparse_ratio.glsl').read_text(encoding='utf-8'))
     # Apply every strict transformation before creating any output.
     patched={'renderer.cpp':patch_renderer(paths['renderer.cpp']), 'resident.inc':patch_resident(paths['resident.inc']),
         'resident_progressive.inc':patch_progressive(paths['resident_progressive.inc']),
@@ -205,6 +237,7 @@ def prepare(base,output,adapter_root,limit=262144):
         target.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(source,target)
         adapters[str(source)]=sha256(source.read_bytes()).hexdigest()
     manifest=deepcopy(manifest);manifest.pop('compiled_sha256',None);manifest['contract']['edge_rescue']=policy
+    manifest['contract']['timing']='full primary + actual compact GI raster + K25 selection + full-extent selective16 raster + incoming filter/merge + requested copies; one owner'
     manifest['edge_source']={'base_package':str(base),'base_manifest_sha256':sha256(source_manifest.read_bytes()).hexdigest(),
         'full_estimator_sha256':sha256(full.encode()).hexdigest(),'adapter_source_sha256':adapters,
         'author_files_sha256':{p.name:sha256(p.read_bytes()).hexdigest() for p in HERE.iterdir() if p.suffix in ('.py','.glsl','.inc')}}
@@ -214,11 +247,27 @@ def prepare(base,output,adapter_root,limit=262144):
     return manifest
 
 
+def seal(output):
+    root=Path(output).resolve(strict=True);path=root/'source-manifest.json'
+    manifest=json.loads(path.read_text(encoding='utf-8'))
+    if manifest['contract'].get('edge_rescue',{}).get('schema')!=SCHEMA:raise ValueError('edge package required')
+    if 'compiled_sha256' in manifest:raise ValueError('already sealed; never overwrite compiled evidence')
+    for relative,expected in manifest['generated_sha256'].items():
+        if sha256((root/Path(relative.replace('\\','/'))).read_bytes()).hexdigest()!=expected:
+            raise ValueError('generated source changed before seal: '+relative)
+    files=[root/'build/phymeo_native.dll',*sorted((root/'build').glob('*.spv'))]
+    if not files[0].is_file() or not all((root/'build'/n).is_file() for n in ('resident_edge_rescue.frag.spv','resident_edge_rescue_normal.frag.spv','resident_spatial.comp.spv')):
+        raise ValueError('complete real build required')
+    manifest['compiled_sha256']={p.name:sha256(p.read_bytes()).hexdigest() for p in files}
+    path.write_text(json.dumps(manifest,indent=2),encoding='utf-8')
+    return manifest
+
+
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--base',required=True);parser.add_argument('--output',required=True)
-    parser.add_argument('--adapter-root',required=True);parser.add_argument('--max-invocations',type=int,default=262144)
-    a=parser.parse_args();m=prepare(a.base,a.output,a.adapter_root,a.max_invocations)
+    parser.add_argument('--base');parser.add_argument('--output',required=True);parser.add_argument('--seal',action='store_true')
+    parser.add_argument('--adapter-root');parser.add_argument('--max-invocations',type=int,default=262144)
+    a=parser.parse_args();m=seal(a.output) if a.seal else prepare(a.base,a.output,a.adapter_root,a.max_invocations)
     print(json.dumps({'output':str(Path(a.output).resolve()),'contract':m['contract']['edge_rescue']},indent=2))
 
 if __name__=='__main__':main()

@@ -23,6 +23,9 @@ def activate(directory):
     for relative,expected in manifest['generated_sha256'].items():
         path=root/Path(relative.replace('\\','/'))
         if sha256(path.read_bytes()).hexdigest()!=expected:raise ValueError('edge prepared source changed: '+relative)
+    if 'compiled_sha256' in manifest:
+        actual={p.name:sha256(p.read_bytes()).hexdigest() for p in [root/'build/phymeo_native.dll',*sorted((root/'build').glob('*.spv'))]}
+        if actual!=manifest['compiled_sha256']:raise ValueError('sealed edge binaries changed')
     if _BASE is None:
         for name in ('preview_sparse.runtime','preview_compact.runtime'):
             if name in sys.modules:raise RuntimeError('activate edge package before importing another compact adapter')
@@ -123,6 +126,9 @@ class EdgeSession:
         with self._lock:
             value=self.base.diagnostics();value['backend']='experimental-native-compact-edge-rescue-v1'
             value['edge_rescue']=deepcopy(self.last_edge)
+            value['actual']['edge_rescue']=deepcopy(self.last_edge)
+            if self.last_edge is not None and 'extra_primary_proposals' in self.last_edge:
+                value['actual']['total_primary_proposals']=value['actual']['primary_proposals']+self.last_edge['extra_primary_proposals']
             value['edge_shader']={'file':self.shader,'sha256':self.shader_hash}
             value['samples_scope']='compact low anchors *4 plus actual extra traced fragment invocations *16; not uniform spp or hardware ray count'
             if 'resident_profile' in value['device']:

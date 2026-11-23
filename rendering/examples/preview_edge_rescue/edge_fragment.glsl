@@ -1,3 +1,6 @@
+#ifdef PR_PREVIEW_SPARSE_GUIDE
+#error Edge rescue must use the full-distance branch, never the low-resolution guide branch.
+#endif
 // Full-rate selective incoming estimator. No ROI or object-specific policy.
 layout(early_fragment_tests) in;
 layout(constant_id=99) const uint PR_PREVIEW_EDGE_FRAGMENT_ABI=1u;

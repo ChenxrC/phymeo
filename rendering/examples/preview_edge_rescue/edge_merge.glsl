@@ -31,7 +31,7 @@ void edgeMerge(ivec2 pixel,ivec2 extent,vec4 primary) {
             if(dot(normal,decodeNormal(uint(sampleValue.a)))<.98)continue;
             if(any(greaterThan(abs(edgeCode(imageLoad(currentLinear,q).rgb)-guide),vec3(2.))))continue;
             if(!finiteRadiance(sampleValue.rgb)){atomicOr(status.invalid,8192u);continue;}
-            float weight=kernel[x+2]*kernel[y+2];sum+=weight*sampleValue.rgb;weights+=weight;++neighbors;
+            float weight=kernel[x+2]*kernel[y+2]*(1.0/256.0);sum+=weight*sampleValue.rgb;weights+=weight;++neighbors;
         }
         if(!(weights>0.)){atomicOr(status.invalid,16384u);return;}
         vec3 incoming=sum/weights;

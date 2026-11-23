@@ -1,0 +1,20 @@
+[
+  {
+    "path": "rendering/examples/near_reflection_film.py",
+    "source_commit": "9178a35cda996741847ab75c5eeaef12c3718f51",
+    "git_blob": "c125f3b12112ab4b896dc09956cb20ee0fef2f30",
+    "tested_sha256": "0508332b673dd3b08a7973117f66556ff36809cc88909ac370739bf7bbf94b72",
+    "integrated_working_sha256": "9cea57d4469a458a8e0e997ccf3912876930d469bb606ac21d0d2d4d5b036f8b",
+    "tested_crlf_count": 2,
+    "integrated_crlf_count": 0
+  },
+  {
+    "path": "rendering/examples/near_reflection_chart.py",
+    "source_commit": "39e9766e7211f93b46b7605e9667e22467ee9920",
+    "git_blob": "879238893c9ad8f777ad87193ee280224891e786",
+    "tested_sha256": "1caa30e6cce478be4b85735422c4f058d85f0b534c5d14661e50e8358df98706",
+    "integrated_working_sha256": "38782bab2b632be9e385bde00f98eb7592bce3969ede60b924c3a359842362db",
+    "tested_crlf_count": 2,
+    "integrated_crlf_count": 0
+  }
+]

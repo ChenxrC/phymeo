@@ -1,12 +1,12 @@
 # 渲染引擎 · 能力与实测导航
 
-这里收录 Windows／RTX 4060 Laptop 上的实测结果。日光成片与软硬阴影对照基线为 `9417f4f6`，随后补入粗糙度贴图、面积灯采样、4× MSAA 和材质法线贴图。可以在钢球与橡胶球的同一帧切换法线开关。[材质开关](normal-maps/index.html) · [全部影片](index.html) · [架构图](../architecture.html) · [自研 Vulkan 画质路线](../plans/2026-11-23-native-vulkan-quality.md) · [首版验收](../plans/09-acceptance.md)
+这里收录 Windows／RTX 4060 Laptop 上的实测结果。从日光成片与软硬阴影对照基线 `9417f4f6` 起，已补入粗糙度与法线贴图、面积灯采样、4× MSAA 和光滑金属的一次近场反射。可以在同一帧查看材质细节，以及真实物体移到画外后留下的倒影。[近场反射开关](near-reflections/index.html) · [材质开关](normal-maps/index.html) · [全部影片](index.html) · [架构图](../architecture.html) · [自研 Vulkan 画质路线](../plans/2026-11-23-native-vulkan-quality.md) · [首版验收](../plans/09-acceptance.md)
 
 ```mermaid
 flowchart LR
   A[Python 场景／只读物理快照桥] --> B[VisualScene + SceneFrame<br/>世界／重置代次／修订／tick／相位]
   B --> C[同帧 Camera<br/>固定或腕部标定]
-  C --> D[自研 Vulkan 光栅<br/>软件遍历或硬件阴影查询]
+  C --> D[自研 Vulkan 光栅<br/>阴影与可选一次镜面反射]
   C --> E[SAPIEN 参考<br/>光栅或路径追踪]
   D --> F[Capture：RGB／深度／ID／有效掩码]
   E -->|路径追踪仅 RGB| F
@@ -24,6 +24,7 @@ flowchart LR
 | 面积灯积分 | 软件／硬件两种求交分别实测 **2×2、4×4、8×8**；8×8 通过独立有限面积灯半影门，4×4 仅部分通过。[完整格点证据](r2/area-light-grid-results.json) | 此处是灯面采样密度，不是世界数量；高档画质与采集成本分别记录。 |
 | 材质与环境 | 不透明颜色图、UV 重复／双线性与线性粗糙度。16 块粗糙度标定对常量材质的最大 RGB8 差为自研 1、参考光栅 0、参考光追 0。[自研](r2/roughness-chart-native.json) · [参考光栅](r2/roughness-chart-sapien-raster.json) · [参考光追](r2/roughness-chart-sapien-pt.json) · [HDR 方向与反射](r2/native-ibl-calibration.json) | 颜色按 sRGB 解码，粗糙度按线性数据读取。透明、折射与材质参数拟合尚待开发。环境全景提供远场照明。 |
 | 自研切线空间法线图 | 线性 RGB、+Y、镜像 UV 手性。三块标定板共 24 个预定区域与解析 RGB8 预测一致。真实材质绕拍验证三帧的深度、实例 ID 与有效掩码逐字节一致。[标定与成本](normal-maps/README.md) · [同帧开关](normal-maps/index.html) | 用世界坐标与第一套 UV 重建切线。显式顶点切线、MikkTSpace 对齐、mip 过滤尚待开发。SAPIEN 参考路径会在绑定此贴图时明确报错。 |
+| 近场镜面反射 | 自研硬件射线查询使用当前实例与最近三角形。独立平面镜标定通过 1 px 边界门；钢球样片的画外帧中红块直接 ID 像素为 0，解析预测的镜内红区仍清晰可见。90 对画面的深度、ID、掩码逐字节相同。[同帧查看器](near-reflections/index.html) · [几何与性能实测](near-reflections/README.md) | 光滑金属、一次理想镜向、命中不透明表面。粗糙倒影、递归镜面与漫反射间接光待开发。 |
 | 显示与参考成像 | 自研在两种阴影求交、三档灯面密度下验证 Neutral 高光显示。SAPIEN 在同一原始 HDR 上保留 1600 个原先剪裁的像素。两种光栅均保留几何附件。[自研标定](r2/native-neutral-verification.json) · [参考标定](r2/reference-neutral-calibration.json) | SAPIEN 路径追踪发布 RGB。512 样本下夹爪近景仍有可见颗粒；本机 OIDN 及 OptiX 在实际采集阶段退出，高清片采用直接采样。[兼容性记录](r2/denoiser-probe.json) |
 | 分块与相机回放 | 647×419 离轴相机分九块，两个光栅后端分别与整图对照；全部 ID、有效掩码、RGB 一致，内部深度差 0。[标定读数](r3/README.md) · [同相机 1080p 动态片](r2/README.md) | 光追分块改变像素的随机序列。独立记录单图采集、传感差异和最终有损编码误差。 |
 | 单／多世界回放 | [R4](r4/README.md)：**1、2、8 世界 × 两相机**，每档 300 批，6,600 次曝光对照独跑，深度差 0、ID／掩码逐字相同，单世界 reset 不影响其他世界。 | 此全套是原软件阴影路径，未声称硬件阴影也完成 R4。逐世界、逐相机提交；渲染不推进物理，回放成功不等于控制任务成功。 |

@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>红块走出画面后，钢球还能看见它吗？ · Phymeo</title>
+<style>
+  :root { color-scheme:dark; background:#171a1c; color:#f3f2ee; font:16px/1.55 system-ui,sans-serif }
+  body { max-width:1200px; margin:0 auto; padding:20px clamp(12px,3vw,40px) 40px }
+  h1 { font-size:clamp(1.6rem,4vw,2.5rem); margin:.4em 0 .25em }
+  h2 { font-size:1.18rem; margin:1.5em 0 .4em }
+  p { margin:.4em 0 .9em; color:#d5d5d1 }
+  nav, fieldset, .moments { display:flex; flex-wrap:wrap; gap:.55em 1em; align-items:center }
+  a { color:#9cdaef }
+  fieldset { border:0; margin:1.2em 0 .5em; padding:0 }
+  legend { float:left; margin-right:.6em }
+  label,button { border:1px solid #6b7175; border-radius:.35em; padding:.25em .6em; cursor:pointer }
+  button { background:#242a2e; color:inherit; font:inherit }
+  label:has(input:checked) { border-color:#9cdaef; color:#bcf1ff }
+  #stage { width:100%; background:#101214; aspect-ratio:2562/768 }
+  main:has(#off:checked) #stage, main:has(#on:checked) #stage { aspect-ratio:1280/768 }
+  video { display:block; width:100%; height:100%; object-fit:cover }
+  main:has(#off:checked) video { object-position:left center }
+  main:has(#on:checked) video { object-position:right center }
+  .moments { margin-top:.65em }
+  .stills { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,28rem),1fr)); gap:1rem }
+  figure { margin:0 } img { display:block; width:100%; height:auto } figcaption { color:#d5d5d1; margin:.3em 0 }
+</style>
+<main>
+  <nav><a href="../index.html">全部回放</a><a href="README.md">测量与复现</a></nav>
+  <h1>红块走出画面后，钢球还能看见它吗？</h1>
+  <p>相机固定，红块向右移动。左边的钢球只反射环境；右边还会沿镜面方向寻找场景中的物体。先看红块本身，再看钢球上的小块红色。</p>
+  <fieldset>
+    <legend>观看方式</legend>
+    <label><input id="both" type="radio" name="view" checked> 并排</label>
+    <label><input id="off" type="radio" name="view"> 只看环境</label>
+    <label><input id="on" type="radio" name="view"> 加入近场反射</label>
+  </fieldset>
+  <div id="stage"><video id="film" playsinline controls preload="metadata" src="near-reflection-split.mp4">请用下方链接播放影片。</video></div>
+  <div class="moments" aria-label="暂停在测量时刻">
+    <button type="button" data-time="0.5">0.50 秒 · 红块在画内</button>
+    <button type="button" data-time="2.5">2.50 秒 · 红块在画外</button>
+  </div>
+  <p><a href="near-reflection-environment.mp4">环境版</a> · <a href="near-reflection-single-bounce.mp4">一次反射版</a> · <a href="near-reflection-split.mp4">并排影片</a></p>
+  <h2>同一时刻的钢球局部</h2>
+  <div class="stills">
+    <figure><a href="in-frame-pair.png"><img src="in-frame-pair.png" alt="红块在画内时，两种反射模式的钢球局部"></a><figcaption>画内时刻。对照两种模式中倒影的位置。</figcaption></figure>
+    <figure><a href="offscreen-pair.png"><img src="offscreen-pair.png" alt="红块在画外时，两种反射模式的钢球局部"></a><figcaption>画外时刻。相机已经看不到红块，检查右侧球面。</figcaption></figure>
+  </div>
+</main>
+<script>
+  const film = document.querySelector("#film");
+  let pendingTime = null;
+  function seekToMoment() {
+    if (pendingTime === null || film.readyState < HTMLMediaElement.HAVE_METADATA) return;
+    film.currentTime = pendingTime;
+    pendingTime = null;
+  }
+  film.addEventListener("loadedmetadata", seekToMoment);
+  for (const button of document.querySelectorAll("[data-time]")) {
+    button.addEventListener("click", () => {
+      film.pause();
+      pendingTime = Number(button.dataset.time);
+      seekToMoment();
+    });
+  }
+</script>
+</html>

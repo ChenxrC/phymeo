@@ -1,0 +1,3200 @@
+{
+  "mode": "single_bounce",
+  "status": "complete",
+  "captures": [
+    {
+      "index": 0,
+      "source_time_s": 0.0,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 0,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 30.701400013640523,
+      "file": "frames/0000.png",
+      "png_sha256": "1516aaabceca90213fd7f92e197e2edabd88679798ea3192b0217f7a0b2c485c",
+      "rgb_sha256": "d17801cacd5d70182bb9e6f32166fe22ff745e3e38cfab7303b4fa0901add29c",
+      "sensor_file": "sensors/0000.npz",
+      "sensor_sha256": "77f285ec56fa8de640b228ac4547e3df65058e2a52abce3aa207524852648b21",
+      "plane_sha256": {
+        "srgb8_rgb": "d17801cacd5d70182bb9e6f32166fe22ff745e3e38cfab7303b4fa0901add29c",
+        "forward_depth_m_f32": "1de8bacd4854fbc4c1656b08d9416aa3d07e96ec9fd2a740e13dce31241ab01c",
+        "instance_id_u32": "f791b62677efea818d364982573b05458bfc52c52edb6ca4e08a1c0ae8f2ea23",
+        "valid_u8": "83680cbe77ef82610738de800e7278d3323164b0765dca235c8f73dab1841bf7"
+      }
+    },
+    {
+      "index": 1,
+      "source_time_s": 0.03333333333333333,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 1,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 31.25300002284348,
+      "file": "frames/0001.png",
+      "png_sha256": "a9e8128a74217e354258a70fd23d234056991c6f0bbb098e238ae2312351c9f7",
+      "rgb_sha256": "bc627820634bf887d55b00ad3653471d3616be40a09a23985e8a81e8cfa673c3",
+      "sensor_file": "sensors/0001.npz",
+      "sensor_sha256": "2c838184a3b33f80859844321dff7d7b4db38dccddc763734c78f8481991e468",
+      "plane_sha256": {
+        "srgb8_rgb": "bc627820634bf887d55b00ad3653471d3616be40a09a23985e8a81e8cfa673c3",
+        "forward_depth_m_f32": "4ee404ea862fc7922e09deb4a949f23e64c636bccd2bfff3adf1f18c9122c79c",
+        "instance_id_u32": "fa283abf55400de1f10427d438865b57d423d968d510cec5d31b64925b2fe65f",
+        "valid_u8": "e0cd56e91d165f65814a7362ae309ccd0743a1c251532dd728e11b319c715eaf"
+      }
+    },
+    {
+      "index": 2,
+      "source_time_s": 0.06666666666666667,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 2,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 28.11939996900037,
+      "file": "frames/0002.png",
+      "png_sha256": "1ce35fc1549a7276f848c7678eb09641e0e8b5fd65661d71d8e1c8dc0209d9c6",
+      "rgb_sha256": "afa63d94168181bf7560065a5a628397a552f44b33f1d508145d8ece5538ed0f",
+      "sensor_file": "sensors/0002.npz",
+      "sensor_sha256": "b80ff3557ddc473edb472dd006c2f3fa6bb7f332d9745041b5c3fddd15778e2f",
+      "plane_sha256": {
+        "srgb8_rgb": "afa63d94168181bf7560065a5a628397a552f44b33f1d508145d8ece5538ed0f",
+        "forward_depth_m_f32": "56c66601fdadd04edebc557aeb3a818381fc22d62479e7b078154003741090ec",
+        "instance_id_u32": "2bbcd1931c07edc61b269c7502ef13a374474f3b1d3756f3d01222d3a1ca9b88",
+        "valid_u8": "a2d564741d477f86b6e692ab0a4712d010550fe59eaa40e905663b58361b8462"
+      }
+    },
+    {
+      "index": 3,
+      "source_time_s": 0.1,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 3,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 26.746299990918487,
+      "file": "frames/0003.png",
+      "png_sha256": "3f36811a8671855b44eb7d475556b59e286b4772e86e0a55062147d9f8ecf4cf",
+      "rgb_sha256": "49210054d063e201a812c7ff8ceeed611576ebff90057e33413e4e9ec6f77dc3",
+      "sensor_file": "sensors/0003.npz",
+      "sensor_sha256": "4e3d3a99a22b30b814f4467739b795ca06e8f31637759ea1fc5e578eed2eaafb",
+      "plane_sha256": {
+        "srgb8_rgb": "49210054d063e201a812c7ff8ceeed611576ebff90057e33413e4e9ec6f77dc3",
+        "forward_depth_m_f32": "d0743544ddee3fab712e8ab8031e617fc09a94ff46b3a787ff5595d85d907dfc",
+        "instance_id_u32": "841738b9358f9e516f3c3d31b5f4e390f4845380b761ef5f40cada46d4cebf16",
+        "valid_u8": "2750f8481ec70130ccaf3b98a44cca43f2b3f002a7fac172c76e1463d0cd796f"
+      }
+    },
+    {
+      "index": 4,
+      "source_time_s": 0.13333333333333333,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 4,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 28.352699999231845,
+      "file": "frames/0004.png",
+      "png_sha256": "74f38e51331a8313bfa1384ac8e80503a95285fd2c2d7babf8e9440d80116c4d",
+      "rgb_sha256": "9fe1e34e245b28582c8cff0396c736f7bbad79435ff5665b631fa8f13127462a",
+      "sensor_file": "sensors/0004.npz",
+      "sensor_sha256": "0a08cdab40ae2e385c63963a29c656cb8f605c19934d59e21db678c8a4449af9",
+      "plane_sha256": {
+        "srgb8_rgb": "9fe1e34e245b28582c8cff0396c736f7bbad79435ff5665b631fa8f13127462a",
+        "forward_depth_m_f32": "4c07d392dca0c7935b10d6155c73e3f288307837efead5e21e0b4db32d26f6dc",
+        "instance_id_u32": "175e4d8d55ed8b39da36e0d1c2508b2da9d83e2a6fe7aa4852f41bcac7763d07",
+        "valid_u8": "47c5beef6ecaa53ada4917fd0208bb2634c0907986ddd7e496ce117779bef383"
+      }
+    },
+    {
+      "index": 5,
+      "source_time_s": 0.16666666666666666,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 5,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 28.453900013118982,
+      "file": "frames/0005.png",
+      "png_sha256": "1885caa3de582bb28869c088d1de3ed08ddd1956ddc217528f25bef2a0c04bac",
+      "rgb_sha256": "ee4f79162c27ee68ad6b8eb000f937e5930f028e010dcaad5584fe1e76ba917d",
+      "sensor_file": "sensors/0005.npz",
+      "sensor_sha256": "cfec5e13a8f8d8a96288e3588cd3461091c744b25c6b41fa3cd64f83cfbee900",
+      "plane_sha256": {
+        "srgb8_rgb": "ee4f79162c27ee68ad6b8eb000f937e5930f028e010dcaad5584fe1e76ba917d",
+        "forward_depth_m_f32": "2748fe2d7ecb2df89ea2c43920cfa3fc6471b0e408670fd311ac8fe36acfb29b",
+        "instance_id_u32": "38201f165939e569cc317fc46af44d99d69cef44cf447a16a0c8410dd17c221f",
+        "valid_u8": "2ea754830c840de5a0a8c29a21d667c851f0e99fde79fa9c269c44d3fb4e13ae"
+      }
+    },
+    {
+      "index": 6,
+      "source_time_s": 0.2,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 6,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 27.823799988254905,
+      "file": "frames/0006.png",
+      "png_sha256": "d33bcca0894afb10f92cfe3fafc1593f231955021cf00ff886750501b42b73e7",
+      "rgb_sha256": "3cfbc36012491588383c3deca52fbd24171a02498f1c704fd473ca89d5c357d9",
+      "sensor_file": "sensors/0006.npz",
+      "sensor_sha256": "3e07f3c7ddb252801f34ff319c1dc2cb4c4ba5d0578656c8ad958bf6d679d521",
+      "plane_sha256": {
+        "srgb8_rgb": "3cfbc36012491588383c3deca52fbd24171a02498f1c704fd473ca89d5c357d9",
+        "forward_depth_m_f32": "3ac5cad14b125d5b0198be4a74b67b59cebd86bbf722c3e2c23c36e2dd44c1a4",
+        "instance_id_u32": "d58fe4070b43791e7b996e0c9ebf169eeaff37b0d28c3083c12db8abfcf0b9af",
+        "valid_u8": "ce9528cab5d53d9add4e9d7f25b4ef79b280728a54cf94f68554ba26729d65a7"
+      }
+    },
+    {
+      "index": 7,
+      "source_time_s": 0.23333333333333334,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 7,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 28.895099996589124,
+      "file": "frames/0007.png",
+      "png_sha256": "888d883ef00d1416da941e07ab30d77c49619ef4fd4eff988930895cbcb6386c",
+      "rgb_sha256": "6db749dcb156481e4c3b870bf6f2d4960be04b3eefeb844c749c78d65bb4ccd4",
+      "sensor_file": "sensors/0007.npz",
+      "sensor_sha256": "ba79e1083c0d12b0e9409e4ebfd0cb6e188d60a7e603cded76eb36d9071acd88",
+      "plane_sha256": {
+        "srgb8_rgb": "6db749dcb156481e4c3b870bf6f2d4960be04b3eefeb844c749c78d65bb4ccd4",
+        "forward_depth_m_f32": "e4154241ab864ad5c92298cacdf5752bd91b9ac41beb30337878086b3f1cc00f",
+        "instance_id_u32": "de6eb21177e26602e1595335533e2bfebc0af429e86d30a0b5c71b73acde38d3",
+        "valid_u8": "3d86a78f4e6e03e366e425dd85795660262ba0509f1b47911fa6c1320b5ec125"
+      }
+    },
+    {
+      "index": 8,
+      "source_time_s": 0.26666666666666666,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 8,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 27.713799965567887,
+      "file": "frames/0008.png",
+      "png_sha256": "0f4a0daf60b55a9940ecde4a90664e126dbf03f522bcfcda18f24d6392cfc078",
+      "rgb_sha256": "90ae51ef1e1ba9c7b242b5c2e8cb37de778d4232135a70ed20987211b21eca8f",
+      "sensor_file": "sensors/0008.npz",
+      "sensor_sha256": "d3d2732f7559ca7c4be1445b638e21191c3247ee45762c01b73b801be8a855e4",
+      "plane_sha256": {
+        "srgb8_rgb": "90ae51ef1e1ba9c7b242b5c2e8cb37de778d4232135a70ed20987211b21eca8f",
+        "forward_depth_m_f32": "5269c4255cf2c7d1e189aa9bb90f30d6e0ab4e1994497ac91f5efca55d539795",
+        "instance_id_u32": "54a79e9062ac3614a0a073efb8a18a5e2630fcc8df4a6a04aab0204feb7b0281",
+        "valid_u8": "20dec89311507dabdf556079584f8d2ab552e2b30c8b6e39a889bb322d9f1c5e"
+      }
+    },
+    {
+      "index": 9,
+      "source_time_s": 0.3,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 9,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 27.67180005321279,
+      "file": "frames/0009.png",
+      "png_sha256": "0664bedb83b74e7de35e0cfbf3d7801655ad5daf108d69960797b2f6ff313672",
+      "rgb_sha256": "c29359b849613e993c0883b845728ebc637e6fe2db263d50928a22742d21f98f",
+      "sensor_file": "sensors/0009.npz",
+      "sensor_sha256": "647a935624582229ac499924019eeb481e739dc4eb09011f62e51df780a1be4f",
+      "plane_sha256": {
+        "srgb8_rgb": "c29359b849613e993c0883b845728ebc637e6fe2db263d50928a22742d21f98f",
+        "forward_depth_m_f32": "7966fe2ce8ac3265603c9c992e105199421c0a35bb3c427bf9d1ef04b2e21425",
+        "instance_id_u32": "82b32e798ba8a0c5235a085609d3cf86fa2ac72382527eb23d6b9a5089f6cc53",
+        "valid_u8": "bc20bd3c851e68e4a0b5c1e909fced0fdd51b0fe7509aead359618087d26fb1e"
+      }
+    },
+    {
+      "index": 10,
+      "source_time_s": 0.3333333333333333,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 10,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 30.198899970855564,
+      "file": "frames/0010.png",
+      "png_sha256": "769c9067a2c8eb930069edd50c48bc54dda7dd6ab8583a17742ae2aadf803655",
+      "rgb_sha256": "352a0581ca4af150418a9cb6e5b91332e77c2be9cfb502aab5c2f9b18ac79f9b",
+      "sensor_file": "sensors/0010.npz",
+      "sensor_sha256": "856c257d3a24a4a68945161150b70eac8b09c7820ad219ea56e77a78e939299a",
+      "plane_sha256": {
+        "srgb8_rgb": "352a0581ca4af150418a9cb6e5b91332e77c2be9cfb502aab5c2f9b18ac79f9b",
+        "forward_depth_m_f32": "9eaa8d7b65a6f8034dcb5ec0b8e367ec88d94827c976b0862703e268e21d6da5",
+        "instance_id_u32": "6529ed2fd77fda7a7150b61f0cec181c2b2f7a99e0e31b8ff5773ae53dba3d0b",
+        "valid_u8": "2df2a587f8ee81504b592de49a81091b8c43c6f1e4f70d66aeccfd9952629628"
+      }
+    },
+    {
+      "index": 11,
+      "source_time_s": 0.36666666666666664,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 11,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 27.595599996857345,
+      "file": "frames/0011.png",
+      "png_sha256": "9b609abbfe0b65443e9a96fe845fb2b925c539acbab7b25e10888b77110cd8b7",
+      "rgb_sha256": "af366f3c2b739637e90c2a35b88a1aa26954bf887c7c2b695aadfa3f70633340",
+      "sensor_file": "sensors/0011.npz",
+      "sensor_sha256": "3e3c05fa461c39e52d64a8f8d00316832aa04bdfc2bf7a9e042222d6aacb45cd",
+      "plane_sha256": {
+        "srgb8_rgb": "af366f3c2b739637e90c2a35b88a1aa26954bf887c7c2b695aadfa3f70633340",
+        "forward_depth_m_f32": "4ef6342facc7d736d4fbe3c656b22855367e29a63cac0a774f4d6116a444c5ee",
+        "instance_id_u32": "2935b6e3b850a5192328d438dc80e9006ee2f9103a6f799ee676d1e1fd9999af",
+        "valid_u8": "5157c1245c15f2bbff9b0358934164cd188661c0feaeb7fe91b6f7d2a462418e"
+      }
+    },
+    {
+      "index": 12,
+      "source_time_s": 0.4,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 12,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 31.55060001881793,
+      "file": "frames/0012.png",
+      "png_sha256": "b8eae3a49d71f48bc4795882ff478a93ab86adfab97dbf4a801d829b9c257f8e",
+      "rgb_sha256": "8dd4317bafe04c831bc395d59afd5864f5ae569f84952911a7d1c0e88abe7ba0",
+      "sensor_file": "sensors/0012.npz",
+      "sensor_sha256": "23ccd50232761f73e2347deffdf56a311bbdafdcca7b9e5ba9ece2e75edd8913",
+      "plane_sha256": {
+        "srgb8_rgb": "8dd4317bafe04c831bc395d59afd5864f5ae569f84952911a7d1c0e88abe7ba0",
+        "forward_depth_m_f32": "d753c01edffd05b2dfd9f17aecb5ca516c56b08bec26ce310533affe712f0a4a",
+        "instance_id_u32": "b26a3ff019447e8b3515779f12dd473f3bd973c4c96dcaaac1208552b4538c0e",
+        "valid_u8": "87367159a32947d141026d89e37d0dfecbdfe7fb396ce36e4aa24e2fb93c92d2"
+      }
+    },
+    {
+      "index": 13,
+      "source_time_s": 0.43333333333333335,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 13,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 29.95360002387315,
+      "file": "frames/0013.png",
+      "png_sha256": "5b2ab6d55e8f75e1cfd7031591bf1eaa31cea6919fd5d73b8ac32de52de496cb",
+      "rgb_sha256": "16114ef25b387f189bf98ee4a56b6e4d6827e52599ee78ace4c73090a159bf0a",
+      "sensor_file": "sensors/0013.npz",
+      "sensor_sha256": "b398c89e1b023c77d9bac57f4734db7f640c07856e08cc510ffd35fd412949cb",
+      "plane_sha256": {
+        "srgb8_rgb": "16114ef25b387f189bf98ee4a56b6e4d6827e52599ee78ace4c73090a159bf0a",
+        "forward_depth_m_f32": "6bb68603e65b86c964c9e6018085f187315fc550e32508df481fa1b83262b426",
+        "instance_id_u32": "5a4975e40693e5acb27643ba74ec3cb24b1f9b2db62b91ef822cb8d777786b8a",
+        "valid_u8": "586925cc3ed6316c368740ab7628170415a2b0fe45976faef48e99a1a803cc4d"
+      }
+    },
+    {
+      "index": 14,
+      "source_time_s": 0.4666666666666667,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 14,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 30.616500007454306,
+      "file": "frames/0014.png",
+      "png_sha256": "98474b0254d9e413d47671e73323215429fd092d00fa187ab72b573d97ed045f",
+      "rgb_sha256": "00a9dd812380992dcb81914c275f1e9e8b0e38c26897adaa502b2f33f4a5bbe0",
+      "sensor_file": "sensors/0014.npz",
+      "sensor_sha256": "12153cb7f7bc54d89f3f97a2513d39bcac2f6d106814152a52559ab16089a558",
+      "plane_sha256": {
+        "srgb8_rgb": "00a9dd812380992dcb81914c275f1e9e8b0e38c26897adaa502b2f33f4a5bbe0",
+        "forward_depth_m_f32": "85b24d06f5dda5bca2986dc734ce12a96306089aab6128bdd82e07922a7c84d8",
+        "instance_id_u32": "87880119c05c076096aa6b3bc2e7c598d38fdd512ca00214e138c16b104e5a9e",
+        "valid_u8": "37fa5c9caa780a5862eb8afc70f851dc82c952672f0a22d0e05a3fc7ea8b7da1"
+      }
+    },
+    {
+      "index": 15,
+      "source_time_s": 0.5,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 15,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 29.206500039435923,
+      "file": "frames/0015.png",
+      "png_sha256": "17af26ab7f5e9626316e36f02a890202db3a00be2d9c8a65054617ceebdc7207",
+      "rgb_sha256": "709006a7c7718504a4b038109309d274c89879a7431f79918ed72f59edc6a6b7",
+      "sensor_file": "sensors/0015.npz",
+      "sensor_sha256": "d0c5000ca44a0e92bc075cd125949117507651c906d1bd9896db9fb57117ce3a",
+      "plane_sha256": {
+        "srgb8_rgb": "709006a7c7718504a4b038109309d274c89879a7431f79918ed72f59edc6a6b7",
+        "forward_depth_m_f32": "10617c678884e7af11890bf86f5447d5be88b24e61d4b9abcbd842001be93316",
+        "instance_id_u32": "0cf53a1b7760877ffc46a2b56616847fc22af5c9f777361f4242ec66a0e13048",
+        "valid_u8": "34107d5c677cbf856cf8b998f73cd67659cd9cf2d464b4a9f0a30c284759ec4e"
+      }
+    },
+    {
+      "index": 16,
+      "source_time_s": 0.5333333333333333,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 16,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 27.22160000121221,
+      "file": "frames/0016.png",
+      "png_sha256": "7501054d9f5ad27842a2d567024420063abedcf996e86ec963dd167eb3921748",
+      "rgb_sha256": "1bfe7b643af85b944c515cde1148750bb7899e7ddf15983541f0b44d6128af76",
+      "sensor_file": "sensors/0016.npz",
+      "sensor_sha256": "50f3a59eb7e9b11ab554be4639ff11c69afd265e5b209bd4fe05053562f27ae2",
+      "plane_sha256": {
+        "srgb8_rgb": "1bfe7b643af85b944c515cde1148750bb7899e7ddf15983541f0b44d6128af76",
+        "forward_depth_m_f32": "21751baa5ab669dffcc17c55675a9aac235abca4f65860c271b2b9af362032f5",
+        "instance_id_u32": "574e0722559c12a20c00922ca7b63770bae49ee49505b4decd1dcb74c0d8fb85",
+        "valid_u8": "77d9c9f7682cf4140a25886d61c81d8c3b43a31cffc100aa22b172221ab76f27"
+      }
+    },
+    {
+      "index": 17,
+      "source_time_s": 0.5666666666666667,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 17,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 31.19189996505156,
+      "file": "frames/0017.png",
+      "png_sha256": "628c8ac5c35e368fc1821088324e7a5767b4f434d7f5dc30688a00fe10da181c",
+      "rgb_sha256": "91700d893692a63fb11ef51c5849af2ac544c8210a08cba996118aa029005964",
+      "sensor_file": "sensors/0017.npz",
+      "sensor_sha256": "449df1b02602f42aa9a2a40768fb6d3fd7052cfd1460a428013a2a268f76ad50",
+      "plane_sha256": {
+        "srgb8_rgb": "91700d893692a63fb11ef51c5849af2ac544c8210a08cba996118aa029005964",
+        "forward_depth_m_f32": "7b112aa8a9dbfafa6cb96b3cadf2958c02722e4cc4ba8575a0a4547558962e51",
+        "instance_id_u32": "32155206a4522f47667c05efaa48a2cfb05b16cb51f711428a6a02f1fc20dc42",
+        "valid_u8": "13e02434cc48f522d8cc38e7ac17603884f4901a964350563189f76809f1252e"
+      }
+    },
+    {
+      "index": 18,
+      "source_time_s": 0.6,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 18,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 27.293200022540987,
+      "file": "frames/0018.png",
+      "png_sha256": "bb2fc12f11f5c47cedcec469b095d8df9e271666960070e2c19e62017fca8740",
+      "rgb_sha256": "11ade31bf9ff5ea01172792fd2b4c807d6db59d6f5728a79b93c7b7f6db95ddb",
+      "sensor_file": "sensors/0018.npz",
+      "sensor_sha256": "f3062761b9f31b13b8bafe16966e28490625e1b41ee4b809851696fa11b1d60c",
+      "plane_sha256": {
+        "srgb8_rgb": "11ade31bf9ff5ea01172792fd2b4c807d6db59d6f5728a79b93c7b7f6db95ddb",
+        "forward_depth_m_f32": "c52f099552263bba9c3f2de3969f54c47fbd9dfec9ae51ee2fe6d83618b21873",
+        "instance_id_u32": "f6cf3b27e6bd2db01a7d472f1db9222c6ffb14164f91e14d5d7dd6d4cb48716e",
+        "valid_u8": "32ffb6e11f755823fb6cd7c1268936ba717eac0b59832bf98718973ef39bd342"
+      }
+    },
+    {
+      "index": 19,
+      "source_time_s": 0.6333333333333333,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 19,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 28.61579996533692,
+      "file": "frames/0019.png",
+      "png_sha256": "c1f22f734dd8d255f67a0f48521042cfd43cb5e2156a1cdb0f00b651c5a0cf58",
+      "rgb_sha256": "8c0232141eabe39cbcc213ea81de95ba4e37d9eb557660554ceb92718850898d",
+      "sensor_file": "sensors/0019.npz",
+      "sensor_sha256": "3ae1f5d04105bb10d23731669fe6e1e0968c6c602ed1172eea37ca07ca9b7da0",
+      "plane_sha256": {
+        "srgb8_rgb": "8c0232141eabe39cbcc213ea81de95ba4e37d9eb557660554ceb92718850898d",
+        "forward_depth_m_f32": "89d33efa0d66a011d3e3c3865cb9eab699e213e3179531ef89e63febe876a687",
+        "instance_id_u32": "45da10d459f1eaa484a17e6c663ebe6b50c84d2fce173a584ae0085341b1504b",
+        "valid_u8": "38522de184498818f78762274bcf9eff3bbcafa22b0404f74a36e4129e7c070e"
+      }
+    },
+    {
+      "index": 20,
+      "source_time_s": 0.6666666666666666,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 20,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 27.878799999598414,
+      "file": "frames/0020.png",
+      "png_sha256": "34907f1ff9ca4fd23a21d47d8cf094dd9bf9e71cf90a81a8edef4c5179f31847",
+      "rgb_sha256": "b6847913fbb0d2373ca746cbeffe9ff856e8d88c2388c91734046eba3a124098",
+      "sensor_file": "sensors/0020.npz",
+      "sensor_sha256": "4bab3b48d456c8fb17b9602dfa7c2498150271b59bd8d3efb361ac1d46cc5455",
+      "plane_sha256": {
+        "srgb8_rgb": "b6847913fbb0d2373ca746cbeffe9ff856e8d88c2388c91734046eba3a124098",
+        "forward_depth_m_f32": "82c00f709dd509072503dd91f8c6380866971e52cbf8e65b5a0e89accede855a",
+        "instance_id_u32": "cffbfed51dfd41ee13da58d1407096bc61271aca0306c4f8d956965419ac4885",
+        "valid_u8": "930e582bfd6156f72490ad7eed5c6cfd9263327cf641b6510496bd29c62cea9b"
+      }
+    },
+    {
+      "index": 21,
+      "source_time_s": 0.7,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 21,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 28.29300001030788,
+      "file": "frames/0021.png",
+      "png_sha256": "037590b25ca7a421ee414206df3afbcaccfcf2ff9e0f9e5fff8f514ef8adf5c1",
+      "rgb_sha256": "78bc451315f0989ee71023d3f1b0b6f9a7ec16a0d3e934ba2c6208500fee3a89",
+      "sensor_file": "sensors/0021.npz",
+      "sensor_sha256": "04273336d7d5318bdfc20984f8bf6eab9a281bc115459017e763d36775916a37",
+      "plane_sha256": {
+        "srgb8_rgb": "78bc451315f0989ee71023d3f1b0b6f9a7ec16a0d3e934ba2c6208500fee3a89",
+        "forward_depth_m_f32": "31e4d9ae9ee169f950381f9a3f2bd5de440a7af20d57f703220bcdb22839ace4",
+        "instance_id_u32": "ce88d96517927acad282d7e5dc27c659542e9e9e38d3ae5ff4370eb5ee24f9bc",
+        "valid_u8": "48b4cc28eae1d0985aa8d1b160ad72bb554b73681f27b4fbdf5566e5d90c8c24"
+      }
+    },
+    {
+      "index": 22,
+      "source_time_s": 0.7333333333333333,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 22,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 27.598800021223724,
+      "file": "frames/0022.png",
+      "png_sha256": "b89244a409922fcc5a634ab9b55461305d2b205fa30ec7b040540a73cb2099b7",
+      "rgb_sha256": "e15b86fb7b5017ca814fa4b4d0368ffd5fd296923783544c7c0b43ac982ee256",
+      "sensor_file": "sensors/0022.npz",
+      "sensor_sha256": "21fbabb90a11eedec8a3c62fc373b3e04e10ada7548db8b5fe8a4d9ebd863f6d",
+      "plane_sha256": {
+        "srgb8_rgb": "e15b86fb7b5017ca814fa4b4d0368ffd5fd296923783544c7c0b43ac982ee256",
+        "forward_depth_m_f32": "8560bdc066eb182bfef38afbf199f845e0550e8d950a5263c0d822491c2410eb",
+        "instance_id_u32": "9c2af25c7243d62ed86be4c5eea28ad802c71021544b904900b26f2887568f8b",
+        "valid_u8": "2bb5a6e8e7e72db358f7cb7079520cde310b310ec88b04bd660d29493d56ce11"
+      }
+    },
+    {
+      "index": 23,
+      "source_time_s": 0.7666666666666667,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 23,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 27.030099998228252,
+      "file": "frames/0023.png",
+      "png_sha256": "bdf00cf68512f1d687ee7545e6094abb052030bd7b8d9fde035204b102b3cf99",
+      "rgb_sha256": "39819eb860b5072e019b1c18fb773c8ebcd4010ed4e0a9920c0140f4d1896565",
+      "sensor_file": "sensors/0023.npz",
+      "sensor_sha256": "441abf9f17151894dc44b6523800c1927815e5be92da879ba343517a61be9634",
+      "plane_sha256": {
+        "srgb8_rgb": "39819eb860b5072e019b1c18fb773c8ebcd4010ed4e0a9920c0140f4d1896565",
+        "forward_depth_m_f32": "773300f2177c2058195912732ae5543a48f8f12c55c7306460c990ce70971f2b",
+        "instance_id_u32": "c976a034440b21be59a212b0261dfa00d939b8192e906dac41b587ada3f7eed5",
+        "valid_u8": "ae6d64df947b47e1ad619953d4eaff81087e7d1684d57d05524c5a3dc99416ba"
+      }
+    },
+    {
+      "index": 24,
+      "source_time_s": 0.8,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 24,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 27.31189999030903,
+      "file": "frames/0024.png",
+      "png_sha256": "f61f4ebb4f844c3216aa499ff26341e67a08c2ca27f6ada9fb765dda45554579",
+      "rgb_sha256": "9fe8198bef5db2cc444232d0125be4e33e66153e667b1554a76ccae2cc2d94f1",
+      "sensor_file": "sensors/0024.npz",
+      "sensor_sha256": "c06734dbd06159507b70d4569ee12f0eb10ab5e530ea3303f8996f0e9b1d6fdc",
+      "plane_sha256": {
+        "srgb8_rgb": "9fe8198bef5db2cc444232d0125be4e33e66153e667b1554a76ccae2cc2d94f1",
+        "forward_depth_m_f32": "1a41349548efdac8824f76ca519822b3f34ec6fefc017503b4b36146422cd6de",
+        "instance_id_u32": "7e03d81054064f8225596e916b8758c29de8bfe54e3b69f8795893b1e4fce0ea",
+        "valid_u8": "3ccedda579391132929f190833cdd6ab99ace399b890e0ca77469e27e6dcae50"
+      }
+    },
+    {
+      "index": 25,
+      "source_time_s": 0.8333333333333334,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 25,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 27.694499993231148,
+      "file": "frames/0025.png",
+      "png_sha256": "0284cf59dcc8969b84ad021069cbb00eabc49dc50fb1c0afdf36d4ceefac9f63",
+      "rgb_sha256": "f765c0308cd85b588e9326d6685623fa5b03e03474245207749cca4f583d2363",
+      "sensor_file": "sensors/0025.npz",
+      "sensor_sha256": "2607fc768662ccf8369dcaf6bb17f0100a575833a588e915991ba9e96739337d",
+      "plane_sha256": {
+        "srgb8_rgb": "f765c0308cd85b588e9326d6685623fa5b03e03474245207749cca4f583d2363",
+        "forward_depth_m_f32": "9c699349f2c741faf96dc8677a07f70140e50a26d0958614b565bfbc3b2dc4aa",
+        "instance_id_u32": "c3f230455d670ef701dd71a2c290099915e217b7e5c5edadd24c8cf4e6f7a9c9",
+        "valid_u8": "ffda73b29c69b06378566378607ec721f9664671f58190a4747314e05b35117c"
+      }
+    },
+    {
+      "index": 26,
+      "source_time_s": 0.8666666666666667,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 26,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 27.97270001610741,
+      "file": "frames/0026.png",
+      "png_sha256": "ea94aff8031277c8b14bac41955bebb9d08ad26381e83fecb249bb51888758ff",
+      "rgb_sha256": "7d8a5c194d908295e35992353c52ccde875720f15c7c7e81bca5c0cd9e1756b4",
+      "sensor_file": "sensors/0026.npz",
+      "sensor_sha256": "e7f05b137b603150fd155e284352d214bbd8baacc7ed94d2a02073b33127b6b0",
+      "plane_sha256": {
+        "srgb8_rgb": "7d8a5c194d908295e35992353c52ccde875720f15c7c7e81bca5c0cd9e1756b4",
+        "forward_depth_m_f32": "7f421ce74f0ab03994ad374b988f0c8d1d3f675647baabf1b9da2fce7208ec94",
+        "instance_id_u32": "0751c872c485baf76e347ec13116a6556744c7c3a77b7ac4a5fb1a8549f81dca",
+        "valid_u8": "16f9635258e73f7574993b59b1eb0f2952646927219336058568478e48e10645"
+      }
+    },
+    {
+      "index": 27,
+      "source_time_s": 0.9,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 27,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 27.14010002091527,
+      "file": "frames/0027.png",
+      "png_sha256": "45ff1e8466480549eec6a89d87f9252deeee821e5c4e0da2822336594c182575",
+      "rgb_sha256": "d98a302a30146e7adbf4f0afe196a8e26a1054f42ec00dbbff825d95e771014c",
+      "sensor_file": "sensors/0027.npz",
+      "sensor_sha256": "02d5cd0192f53e783cd8ae8d8a8cef3d59176fb02410dd40d4633d89a84ed534",
+      "plane_sha256": {
+        "srgb8_rgb": "d98a302a30146e7adbf4f0afe196a8e26a1054f42ec00dbbff825d95e771014c",
+        "forward_depth_m_f32": "fb80b16a7f9fdc773e4677f218edf8faa8d04e4b41af762d05a6a7127a3f8496",
+        "instance_id_u32": "08170a77d2113310c6bba7c3b15074793aebc6d259ee55f1f1b08f7a9a4e3dda",
+        "valid_u8": "b8da159573dc25da7194037df4b3475907cfa8996dd9467b45b865bfc3b9f64b"
+      }
+    },
+    {
+      "index": 28,
+      "source_time_s": 0.9333333333333333,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 28,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 30.736700049601495,
+      "file": "frames/0028.png",
+      "png_sha256": "184bc41bcd4f217aaea275e4c1ce77195fe842eafef969e10dc6b033b35148b4",
+      "rgb_sha256": "3ead2196dd84bdbc9a5fdb37aefc7797f7c76945b474d2ef818e391155f4de2f",
+      "sensor_file": "sensors/0028.npz",
+      "sensor_sha256": "477f6c89ff8fcb25f3a4cc5965e73fbd7f81f497f48eac6504423cb079e082bc",
+      "plane_sha256": {
+        "srgb8_rgb": "3ead2196dd84bdbc9a5fdb37aefc7797f7c76945b474d2ef818e391155f4de2f",
+        "forward_depth_m_f32": "fa43bb5697201356f9b12960509bd8170baaef380c534cdcfd00948dd8a424fe",
+        "instance_id_u32": "bc8c3ffff41731c16fdd5ff9d344dcfff6aa40ed5d3bba3469dcb33d4bb9b212",
+        "valid_u8": "48be601d668ec31b9bfad5b2c12880f83e3285f595741604a0de6413415cc579"
+      }
+    },
+    {
+      "index": 29,
+      "source_time_s": 0.9666666666666667,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 29,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 27.935300022363663,
+      "file": "frames/0029.png",
+      "png_sha256": "4d0151bd3d97ec998e6f7de65e2f3bd17d3e533623f30f0a6c5a1d8f9d4dc6bd",
+      "rgb_sha256": "1e83c01861d68ed120e5aad9dba2f4266dc7a97f24ba9cfcc15ddf9fb19500b1",
+      "sensor_file": "sensors/0029.npz",
+      "sensor_sha256": "d9325412fb5e94f21da260321b7fb775e3675a790d3e46fb5833d298ec49cb6c",
+      "plane_sha256": {
+        "srgb8_rgb": "1e83c01861d68ed120e5aad9dba2f4266dc7a97f24ba9cfcc15ddf9fb19500b1",
+        "forward_depth_m_f32": "6be0b3a794a7f464db71b1240f0c0bdb42607c50f299dcc8fd0af1df9a1145bb",
+        "instance_id_u32": "da4b578018bbc47aababf95d132ceb639392223ba18b7387da90a1a8ec720728",
+        "valid_u8": "6d66c92f0ef4a72723dbfab6825341d15fff9b2095355600ddd831eb79d2e0fc"
+      }
+    },
+    {
+      "index": 30,
+      "source_time_s": 1.0,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 30,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 27.839699992910028,
+      "file": "frames/0030.png",
+      "png_sha256": "7250176aeb84ef881ea326a464cce459caf3281385d2d071bdbbb62142c10b8b",
+      "rgb_sha256": "5b295bb2e01d93ef41d79c59721dd1aef6661c5f86344ee5cb5077e0876c7fe2",
+      "sensor_file": "sensors/0030.npz",
+      "sensor_sha256": "d77b76d68034e9401298773e494fd7122c8bd103a9e815500f619b919902ae8f",
+      "plane_sha256": {
+        "srgb8_rgb": "5b295bb2e01d93ef41d79c59721dd1aef6661c5f86344ee5cb5077e0876c7fe2",
+        "forward_depth_m_f32": "9d0558b77635292a5121480f0ce969bdcba6c63e9d2f78e1ca86d7f1221bbcf3",
+        "instance_id_u32": "be2bc32e61c39311cc4292767e3739094a3b3bec140b03cec7a8cc17154ba7e5",
+        "valid_u8": "44ff5e29b4cc0bbbb5a3206b53ea6c5c268a03f2148f824d70f0f6f7b9343f98"
+      }
+    },
+    {
+      "index": 31,
+      "source_time_s": 1.0333333333333334,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 31,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 27.972400013823062,
+      "file": "frames/0031.png",
+      "png_sha256": "488176de603bf72487a467b1fc31a4faab869a3c6a6c0b0840c829888ea66940",
+      "rgb_sha256": "48d299319da0745a5722be56f109808e6f1c78a50a0d8dd7c7cc0081b3da5fda",
+      "sensor_file": "sensors/0031.npz",
+      "sensor_sha256": "1b25f70f6133a44719b3d13c9cfc66e558f10e6e9af09bea449230936e865b60",
+      "plane_sha256": {
+        "srgb8_rgb": "48d299319da0745a5722be56f109808e6f1c78a50a0d8dd7c7cc0081b3da5fda",
+        "forward_depth_m_f32": "0aaa943409e067bae807e6828985734a125861d5402b11c58d16e27540444780",
+        "instance_id_u32": "5509ceb61edfde186920a68b9b61c791834ba06705328f14c99393ddeaab4dac",
+        "valid_u8": "38d5d6c60f2e742d6a000825dcdb5377029bb272a33a0f9ac1a7186e32cb82f8"
+      }
+    },
+    {
+      "index": 32,
+      "source_time_s": 1.0666666666666667,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 32,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 28.008799999952316,
+      "file": "frames/0032.png",
+      "png_sha256": "76770255f430e1c9437f39d0cedc579b63ee463134b60452181716cde0a0eca8",
+      "rgb_sha256": "3f41d1c71beab85eb00c4e00cccfb9fb401d695e88bb30a20d527fe6d5863777",
+      "sensor_file": "sensors/0032.npz",
+      "sensor_sha256": "2f8aee109c5ca7cf296367fc3016a552a54ba5eb3184224ec2c818ef00e3d9e5",
+      "plane_sha256": {
+        "srgb8_rgb": "3f41d1c71beab85eb00c4e00cccfb9fb401d695e88bb30a20d527fe6d5863777",
+        "forward_depth_m_f32": "1914706428d7578e219c3806565c13c908bbb217811428cf096eddc01b97a894",
+        "instance_id_u32": "ce9302de57e10aef866c9a525e2e4a7c17a367f8632ae84fb453dc71468aca75",
+        "valid_u8": "9e2f0462fc61108302cb6bb94fec950fd3922a31679d1059a3dac2c3b4d70fe2"
+      }
+    },
+    {
+      "index": 33,
+      "source_time_s": 1.1,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 33,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 27.325699978973716,
+      "file": "frames/0033.png",
+      "png_sha256": "dd88961a1a8bbfe97ec6234c051dde072cd039b8e753265a6f93861f395c53c2",
+      "rgb_sha256": "b3af3c16949c8f2b7de7dd7ac1568c1378616393ff478105d1d986ca350df607",
+      "sensor_file": "sensors/0033.npz",
+      "sensor_sha256": "3a1e08a21e38971ea5e9c555a14655169010c09813fc979db972d9a343a359dc",
+      "plane_sha256": {
+        "srgb8_rgb": "b3af3c16949c8f2b7de7dd7ac1568c1378616393ff478105d1d986ca350df607",
+        "forward_depth_m_f32": "1aaca046ae95ce97218861232830c45be9ccfbe4a4e5083eb2941d3169b7c1f4",
+        "instance_id_u32": "327d9eb9b3cdf377fa4e3613773298d9665d14e122f6cac6e3335d6b8c6d4669",
+        "valid_u8": "5f757154ce39bb8567971113aa8937418923a5d3db702a60fb8693899d6eb65a"
+      }
+    },
+    {
+      "index": 34,
+      "source_time_s": 1.1333333333333333,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 34,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 31.278599984943867,
+      "file": "frames/0034.png",
+      "png_sha256": "6fd295404d8f1d25aca3307ff6d3c2aa9ed5557bbcd9d7e212c186b83b9b0220",
+      "rgb_sha256": "e04fd3a5b084acedb527e0d659be9e7354ee94e414ec79582db3930525d5cb7f",
+      "sensor_file": "sensors/0034.npz",
+      "sensor_sha256": "5bad202f0c26cc6f4895a876969ac6e97d78b8ca94f778316106f4ace29419a8",
+      "plane_sha256": {
+        "srgb8_rgb": "e04fd3a5b084acedb527e0d659be9e7354ee94e414ec79582db3930525d5cb7f",
+        "forward_depth_m_f32": "769f58cbac0cb7adc7fade35ab1b09de0419b7e329d1eeb22389e384d6a6b770",
+        "instance_id_u32": "2563c7365dd876b648eca73d685ccac4fb1d36d6906dd3bdcb270bebcfdfe7ad",
+        "valid_u8": "22af6d0fcad768f8e65a679439125dba29d23f9cc8712394beb57065bd5d1698"
+      }
+    },
+    {
+      "index": 35,
+      "source_time_s": 1.1666666666666667,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 35,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 27.34010003041476,
+      "file": "frames/0035.png",
+      "png_sha256": "30848ea50d3ac924d81853307f90881f18130ce6bb29448b14196255d5a2acdf",
+      "rgb_sha256": "ef6c5c7424417981a522a686976094baa3225e3bd3421aa4e0b7acce2596c19b",
+      "sensor_file": "sensors/0035.npz",
+      "sensor_sha256": "6bee922db26e617870e573d3b8ad0fae7879da7cd9ce9ffc0c34ddb6c4b9c27a",
+      "plane_sha256": {
+        "srgb8_rgb": "ef6c5c7424417981a522a686976094baa3225e3bd3421aa4e0b7acce2596c19b",
+        "forward_depth_m_f32": "c4c4b5680180cd7071d7ca857531221294385f1ac8857f690a68071a84396ed1",
+        "instance_id_u32": "72834146c4bde61bf4ada30ccba112fbb49cdd2afb27d48c34caa18ab871accc",
+        "valid_u8": "93d397a4ec4ff65f5485e732aeaf5c72b8963b88f4caab9033c33938ce3fed26"
+      }
+    },
+    {
+      "index": 36,
+      "source_time_s": 1.2,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 36,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 27.787800005171448,
+      "file": "frames/0036.png",
+      "png_sha256": "c51366fd7c5ae2ce69c3c745fe0afd0348c757adf33a47251f31d81247d5c888",
+      "rgb_sha256": "10a0eeb9b94dc26b89b7392f5a6b18484eec4557111b6a573dcfdb514f531c49",
+      "sensor_file": "sensors/0036.npz",
+      "sensor_sha256": "ec3c6673f67ff11336eab96d17dd9e8a98fa5e1e3ccbfba650ad113228b9ffdf",
+      "plane_sha256": {
+        "srgb8_rgb": "10a0eeb9b94dc26b89b7392f5a6b18484eec4557111b6a573dcfdb514f531c49",
+        "forward_depth_m_f32": "fab467165706a6c8d9b07762ecdc86c1a3d0e15844a868a9480b97b368ed23bf",
+        "instance_id_u32": "6886d23d3a759773d01f5dca6c3db663edb56cc3ec89bbdb8531c127b0bb3e36",
+        "valid_u8": "e5291f24c515c2a290d5b2a97cdef307c923b96f74935549b15733a9dbab6a5a"
+      }
+    },
+    {
+      "index": 37,
+      "source_time_s": 1.2333333333333334,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 37,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 27.72049995837733,
+      "file": "frames/0037.png",
+      "png_sha256": "74f57cdd21f870455b1d3a594bd0ade0fea210ff6ce58792468799e537dba6fa",
+      "rgb_sha256": "a46060e57d49f09d226cea87f6b6fae10c7326204dc3ea86ffaabc7713245f9a",
+      "sensor_file": "sensors/0037.npz",
+      "sensor_sha256": "87707712c68f8e74d32a89d8b8523cf928f32c64cf527d14993429dc1bdf508e",
+      "plane_sha256": {
+        "srgb8_rgb": "a46060e57d49f09d226cea87f6b6fae10c7326204dc3ea86ffaabc7713245f9a",
+        "forward_depth_m_f32": "a3dec042651b4d3efaabf3bcac85a7ea66ff7d60b4e5ffb52eeaa6523bf26b0f",
+        "instance_id_u32": "f045d0aae13c43b695b7766cf84656fa16a7a58bc890d611d174054cf908ce5a",
+        "valid_u8": "6032d8ca14abe8f30a6413bdf75a5420e73d3fef1fbd7ec73c0ebbe965d46d9a"
+      }
+    },
+    {
+      "index": 38,
+      "source_time_s": 1.2666666666666666,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 38,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 27.402900042943656,
+      "file": "frames/0038.png",
+      "png_sha256": "c40381239f4ee355def35ae4d3dd4a27242afbeedb1c26c82719157821b4f526",
+      "rgb_sha256": "6427d93ede8d17ecca561aa6fc03e0777d0e1a65794410fb2c649e99779de3cb",
+      "sensor_file": "sensors/0038.npz",
+      "sensor_sha256": "9031d6cfa19b1a3d603cf116279c687ecd4f48454aa1bb26535520bd65f24400",
+      "plane_sha256": {
+        "srgb8_rgb": "6427d93ede8d17ecca561aa6fc03e0777d0e1a65794410fb2c649e99779de3cb",
+        "forward_depth_m_f32": "f6bc134ec74fed7c022dee1596d0d3bfa1babd8c27c87891baa16f32ad478b79",
+        "instance_id_u32": "f8f4c2eb2b027709d8fa746d956f7e5b75e6484adabfdcb5034e266315d87243",
+        "valid_u8": "0e2c0f2b07e65e80353fdafef386a6280f428b8805d41bd2667a1842a4ab373a"
+      }
+    },
+    {
+      "index": 39,
+      "source_time_s": 1.3,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 39,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 27.07199996802956,
+      "file": "frames/0039.png",
+      "png_sha256": "5f0665b273eddcf0ab8e686274cad8d0b7da98224186d3a516d435b633b24baa",
+      "rgb_sha256": "e8789d8599c8bb68f17c3ab2430dcf4cc8bffdbd678594949e8084e6d03e2dfe",
+      "sensor_file": "sensors/0039.npz",
+      "sensor_sha256": "014d8ad72f017ff188b794f0e675f90926ecd7cdb81b56d28736de1f6a09373c",
+      "plane_sha256": {
+        "srgb8_rgb": "e8789d8599c8bb68f17c3ab2430dcf4cc8bffdbd678594949e8084e6d03e2dfe",
+        "forward_depth_m_f32": "f59fc8af8492c3f5e85a8f3cf63d4a2ae807f0282be292b2c370748c9e92c1fa",
+        "instance_id_u32": "5d960b303891f75ae1c2bdf05c374a669e5539ae25a10158cf9f01f9dc60ccb2",
+        "valid_u8": "cca8124377717649542838ef91e72f1ee79c563a4cba276a0e6ec7d4fb5c95e9"
+      }
+    },
+    {
+      "index": 40,
+      "source_time_s": 1.3333333333333333,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 40,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 26.382600015494972,
+      "file": "frames/0040.png",
+      "png_sha256": "b517d6ac4c478b5fe852dd471a9ed3228e0ff3832b3b075b0b59ed629814f99a",
+      "rgb_sha256": "be4c00dd381d7f6368f2862c591d4c2ab6e735ee59d75d750fc89d6658230ae5",
+      "sensor_file": "sensors/0040.npz",
+      "sensor_sha256": "d4155f2763dfbc7f882a6432ebf92db5a41bc863d4506b5b2524dd26d9b2a4c3",
+      "plane_sha256": {
+        "srgb8_rgb": "be4c00dd381d7f6368f2862c591d4c2ab6e735ee59d75d750fc89d6658230ae5",
+        "forward_depth_m_f32": "b7f2ebff182dff897764fe7a92f2450b7b333d62daf69595dc12a40cc3b6e65a",
+        "instance_id_u32": "e7f9c5909201c9b0c28110622f9eff3839e8766691e8cb93c5e4f2cf91e43211",
+        "valid_u8": "611e11d5b2cd9df9e3bbdb78aa4f87157ccacb3e9b72d0e6bddb230940270adf"
+      }
+    },
+    {
+      "index": 41,
+      "source_time_s": 1.3666666666666667,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 41,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 26.61090000765398,
+      "file": "frames/0041.png",
+      "png_sha256": "16725b9c49b6c0848251ef5d096a121038243a0b92ac21f8099663071d304568",
+      "rgb_sha256": "a7adc9ce407c17f7e93327e6bd8f8bba8aa579531e438b3c58786a10ab037059",
+      "sensor_file": "sensors/0041.npz",
+      "sensor_sha256": "e961c59c89c98a96a1dd3968f2068141ea70b13216a4c4cf691416926a9f9c9e",
+      "plane_sha256": {
+        "srgb8_rgb": "a7adc9ce407c17f7e93327e6bd8f8bba8aa579531e438b3c58786a10ab037059",
+        "forward_depth_m_f32": "3219deb8ad2df0053d8712c484019dad6bbd2c3c1899c35ec33acbda44b87659",
+        "instance_id_u32": "9989987ffe6090b84f6e806e88b78d2c533ac3e162200ed36139fdd43e9a3446",
+        "valid_u8": "1848836112c9ff300c63429bd538ec2f5387ae5ae614767a6549f2fa590bc3e8"
+      }
+    },
+    {
+      "index": 42,
+      "source_time_s": 1.4,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 42,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 28.516000020317733,
+      "file": "frames/0042.png",
+      "png_sha256": "d5b3249eca2241d1e714fd9f77c62d4b8435979e54cf5cdd71a04239f35022cc",
+      "rgb_sha256": "7853c211e14a459eeac63e400bb2a2b2f6d5827d858cbaf2a5462ed4bb9942d3",
+      "sensor_file": "sensors/0042.npz",
+      "sensor_sha256": "92b0b25acf05e135bb5d6e3ab73d6bb6e339c735d8f9d005d6d2aeec0a5791a0",
+      "plane_sha256": {
+        "srgb8_rgb": "7853c211e14a459eeac63e400bb2a2b2f6d5827d858cbaf2a5462ed4bb9942d3",
+        "forward_depth_m_f32": "c7c3d1f78f90c5c5fa51f306a33d2f3ea69925612a42f891afd45d9d50d5bfe3",
+        "instance_id_u32": "b4431383ba204c8dff1f9fd54813fa402e3542413be2d7548de4e3550a5b423f",
+        "valid_u8": "e62c4f01be35ffa52b018271a7a119d83844e1e6221902118d142411b1ade499"
+      }
+    },
+    {
+      "index": 43,
+      "source_time_s": 1.4333333333333333,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 43,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 28.484400012530386,
+      "file": "frames/0043.png",
+      "png_sha256": "63b59ff177bb2884be3d7366a863863e1c772f2cceec41ac691fd25cd1647f33",
+      "rgb_sha256": "3b204aa02cc30440280729b270d0dd3cb8ba449415d1fde5af794a67f515b6cb",
+      "sensor_file": "sensors/0043.npz",
+      "sensor_sha256": "e210d9c29a21b6f9a21c480a56b900052b98316403d133b132af49eebc55f31e",
+      "plane_sha256": {
+        "srgb8_rgb": "3b204aa02cc30440280729b270d0dd3cb8ba449415d1fde5af794a67f515b6cb",
+        "forward_depth_m_f32": "3276a9fc6792d1f23db0c76bfb8f66dd5831b6de0eb7a75df97376553b7ef59c",
+        "instance_id_u32": "a65c9d772dcf3c893b14d4d07936d6d71572ead754ad5b586d239313664dd908",
+        "valid_u8": "5942581292c790f9cba87d637f8d7230f6c391017e4ded872a982894bc832f41"
+      }
+    },
+    {
+      "index": 44,
+      "source_time_s": 1.4666666666666666,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 44,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 28.890800022054464,
+      "file": "frames/0044.png",
+      "png_sha256": "ab165d73ff0f6ca8ca5f8dc7708df59cf4dcb89d06b245c36c0c509466c1fd3c",
+      "rgb_sha256": "5c092efeeda4d5e8e8c098cfbc2d259a33f0e1e4d634716a2072780ec6c69875",
+      "sensor_file": "sensors/0044.npz",
+      "sensor_sha256": "b2aa7fc86bb8008b1bfe46f03112fe3a084a97c4b67d6603bc9a696345db7c89",
+      "plane_sha256": {
+        "srgb8_rgb": "5c092efeeda4d5e8e8c098cfbc2d259a33f0e1e4d634716a2072780ec6c69875",
+        "forward_depth_m_f32": "d590f32b4b77317119fef2b30395ace29329ef812220955c46259131c6d0049c",
+        "instance_id_u32": "e7ec530884fab940bcc25189951cce6844ec3d05f99a1ea9943b6f474251ae4d",
+        "valid_u8": "6c9b6d8e111580d030b3f0e02ddd96cfb85f92d7520673cb784d73bf9f9f18a8"
+      }
+    },
+    {
+      "index": 45,
+      "source_time_s": 1.5,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 45,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 31.10650001326576,
+      "file": "frames/0045.png",
+      "png_sha256": "0d0e476d86a7b4a4524d12447964bf8c86beff5bb82d4caeee6259c7ecba7111",
+      "rgb_sha256": "919ca9172bcc14114d18467cccb34a68f56f224aa7a52dba5a12d2f0be2d744a",
+      "sensor_file": "sensors/0045.npz",
+      "sensor_sha256": "1ba18d9ed44583ee816c334121990513db196536c537828bb1192ec3d5ad63cb",
+      "plane_sha256": {
+        "srgb8_rgb": "919ca9172bcc14114d18467cccb34a68f56f224aa7a52dba5a12d2f0be2d744a",
+        "forward_depth_m_f32": "4b01f92ffa236fef7a2885eaf455df00982d50bcfc91c925a3f7fe0b4c1e6778",
+        "instance_id_u32": "3472db572afd4310cbb0b3cc823ff34f1ca69772fb88f80c04c9ba61837ba427",
+        "valid_u8": "e397b9edcf883449a77bfca5e0f88418a58beecc4bb087d5c4aec7eb4d8ae2a7"
+      }
+    },
+    {
+      "index": 46,
+      "source_time_s": 1.5333333333333334,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 46,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 27.146300009917468,
+      "file": "frames/0046.png",
+      "png_sha256": "a5aaf06ff3da1521bebc6bc4e304c4e45a975323184842ed2ff7720e927fe9a5",
+      "rgb_sha256": "05a673a6e8af44de40d3dc6e0a828164bab281a9ed81bbfa73544fcf63df792e",
+      "sensor_file": "sensors/0046.npz",
+      "sensor_sha256": "1a52e25cd84d337567507956724cb4618594e6e02edd765ada29e23ab9312308",
+      "plane_sha256": {
+        "srgb8_rgb": "05a673a6e8af44de40d3dc6e0a828164bab281a9ed81bbfa73544fcf63df792e",
+        "forward_depth_m_f32": "0da5d143168b529d85e7b85392f31217100ccc89d59532b4a66c67ae8bfc2dc5",
+        "instance_id_u32": "fb7ee959de1655ca181795f6bca432c10987b4ef8b94445128a265710162ee2c",
+        "valid_u8": "e2ff7e6f22b11299fdb69733328f181028e19d745980ce9e17009ece17d55265"
+      }
+    },
+    {
+      "index": 47,
+      "source_time_s": 1.5666666666666667,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 47,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 26.850099966395646,
+      "file": "frames/0047.png",
+      "png_sha256": "f91a4407c1e619f1812e8ff1a1431da9bf72d99b2ac9074d708aeaac357d2893",
+      "rgb_sha256": "60aeff4efba1882bb880c4a43c34e82dfbd27f989fc2612acb474ca6c70e28fb",
+      "sensor_file": "sensors/0047.npz",
+      "sensor_sha256": "6a0ee9517f47f440bd4acf92ff409080f9028c2473c8e6f48c34a8caaa2c69d4",
+      "plane_sha256": {
+        "srgb8_rgb": "60aeff4efba1882bb880c4a43c34e82dfbd27f989fc2612acb474ca6c70e28fb",
+        "forward_depth_m_f32": "24925b29a3b8118800f7fde75c4cc4c07624b8e7bea77fbe7bddce26ce884840",
+        "instance_id_u32": "1c6c6aac65f459dca95dba102a10051aaffc372bc33f6bddc2cc531bab83651c",
+        "valid_u8": "4a973f5656af7081dc55b2c7e451b3da7e8c1e6a5a3b5988a64d7791f8a135cf"
+      }
+    },
+    {
+      "index": 48,
+      "source_time_s": 1.6,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 48,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 32.1741999941878,
+      "file": "frames/0048.png",
+      "png_sha256": "9943554dfa5b921f3c45d0a7ec065844c492b8530748ca9b5ecc41f5de780ff1",
+      "rgb_sha256": "74262833b425e2480734a0b4bfc9e833a94724365d9cf14909eadd9ddb1c138a",
+      "sensor_file": "sensors/0048.npz",
+      "sensor_sha256": "5b8b1227ce94fa6bf2eb2b218d3a77ef38271a0dd43947d900483f19ac7f7511",
+      "plane_sha256": {
+        "srgb8_rgb": "74262833b425e2480734a0b4bfc9e833a94724365d9cf14909eadd9ddb1c138a",
+        "forward_depth_m_f32": "6957186c3897b1ea1c3f5aef48cf79cded295a33105aa59de0ad2edc463fb38b",
+        "instance_id_u32": "702637a94acae9b08eee2f95db97a6276cc159f63225957a4752707b1878ee3d",
+        "valid_u8": "4e8a343dd8949046f5649a7d0627f9c9c56444e5115f1d5c1c30824903ca840d"
+      }
+    },
+    {
+      "index": 49,
+      "source_time_s": 1.6333333333333333,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 49,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 27.867099968716502,
+      "file": "frames/0049.png",
+      "png_sha256": "634a0069fc70d4da56df64d1235629204bc1b6038dcbf43143341f8ec8af736d",
+      "rgb_sha256": "b225e413b8f9d6aeda53004acb2d30ffa85503c0cfa5b347000b7bd377e6f5c3",
+      "sensor_file": "sensors/0049.npz",
+      "sensor_sha256": "4f08a1e5a1062d5c7ef0823a0f8e86fd31a2eb2117853641fa3cc70abc3c4a21",
+      "plane_sha256": {
+        "srgb8_rgb": "b225e413b8f9d6aeda53004acb2d30ffa85503c0cfa5b347000b7bd377e6f5c3",
+        "forward_depth_m_f32": "4834ea77ab82770a7b5652a99183a9b3396de2c8f602968d6f03cb77efe706cd",
+        "instance_id_u32": "9ee56ec69069ec0c9c8b6719492a64e031ce8126b72ee72e33a63d23eff384fb",
+        "valid_u8": "c0361bf2b4c88779052145930f1024a58f72c1746b9861b8901caae3c35526ad"
+      }
+    },
+    {
+      "index": 50,
+      "source_time_s": 1.6666666666666667,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 50,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 28.502499975729734,
+      "file": "frames/0050.png",
+      "png_sha256": "de9df89b521fe3d08dab333de0bc13663e7793363919dc985d55a69c1f865cb6",
+      "rgb_sha256": "cfcbef880ce2e04b8c72a971e7cb4ac6914ab28f1ee1f553c10479da1809c6de",
+      "sensor_file": "sensors/0050.npz",
+      "sensor_sha256": "51774a63dc2924b672a1719d21f79d12f326f081f0b397c99bb9e918a0636da9",
+      "plane_sha256": {
+        "srgb8_rgb": "cfcbef880ce2e04b8c72a971e7cb4ac6914ab28f1ee1f553c10479da1809c6de",
+        "forward_depth_m_f32": "9d72406a1b7baa87ab722557d37a1685833b75f127c0eaf7ef0d9404bc3b079e",
+        "instance_id_u32": "e4463d436ae572435629cdb72be04ff115d0c17155ec63570198b8fc01461e03",
+        "valid_u8": "febb32603eca3bad4da75693c0fd32fd31ee55a36ea2704f1ab465b744480d82"
+      }
+    },
+    {
+      "index": 51,
+      "source_time_s": 1.7,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 51,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 27.973399963229895,
+      "file": "frames/0051.png",
+      "png_sha256": "8efeb9711fe7bdc05c5c43897c884c097bedfa4b93d5f2e4b25f6eab6f68e134",
+      "rgb_sha256": "6e20f276c00888765b0d4b695214edcd6398fb5e6d91d2f49f450ed8e726ba2c",
+      "sensor_file": "sensors/0051.npz",
+      "sensor_sha256": "68088453393002b106111b583edfce42bd9f4026c889c158ecf57e45df772a05",
+      "plane_sha256": {
+        "srgb8_rgb": "6e20f276c00888765b0d4b695214edcd6398fb5e6d91d2f49f450ed8e726ba2c",
+        "forward_depth_m_f32": "26a5df087c2482aedea525752b3792b2c3d169703da29c3bb08feb3a18808fb8",
+        "instance_id_u32": "d8c96518e802789a2e028411f2f006671e847afe7b90f8fcdb32411b5ee3ea67",
+        "valid_u8": "d1716d7d4709e35e5e7ef9ebd579a702d1d60112901c0d6213dad921586ae421"
+      }
+    },
+    {
+      "index": 52,
+      "source_time_s": 1.7333333333333334,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 52,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 27.9354999656789,
+      "file": "frames/0052.png",
+      "png_sha256": "620fc9f7e373b42f20b80d7fecb15e2f666e519adb77e02adfbf633dfe2c244c",
+      "rgb_sha256": "5db0ebf081ce9705043e2cc2ffbc121f241d4f8f3be2a61db945ce3ddb9a2126",
+      "sensor_file": "sensors/0052.npz",
+      "sensor_sha256": "ae8bd01f42f570502bf1662d516c5b3184c7fbd46316a3871275f5b531e5a47a",
+      "plane_sha256": {
+        "srgb8_rgb": "5db0ebf081ce9705043e2cc2ffbc121f241d4f8f3be2a61db945ce3ddb9a2126",
+        "forward_depth_m_f32": "458302f87df05ce8f4b6559ca97843e7aaba002b74e4fa9322e9743647b2631b",
+        "instance_id_u32": "a1502ec11a2a3375fbf72609b99dc4c4599c0ddc36c4906e129869db54457a78",
+        "valid_u8": "8bdd937ad4998a6b9e18e8961822f36bdb5c51d4156b0b5cbb8047475666da5f"
+      }
+    },
+    {
+      "index": 53,
+      "source_time_s": 1.7666666666666666,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 53,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 27.216400019824505,
+      "file": "frames/0053.png",
+      "png_sha256": "ca2a0dbf914d584e2875ca4a88bc7d609dbd4673c3076ed19ce95269ccbb1423",
+      "rgb_sha256": "0a5453657729b7e6115ebe713ececd89be087ab0bcb94b855e5fc49b9ae9f94f",
+      "sensor_file": "sensors/0053.npz",
+      "sensor_sha256": "4de6e6f6c685a0cdd835c579b34e7c8ec74de2ad426ba509efdcbffd5fc9d5ba",
+      "plane_sha256": {
+        "srgb8_rgb": "0a5453657729b7e6115ebe713ececd89be087ab0bcb94b855e5fc49b9ae9f94f",
+        "forward_depth_m_f32": "dad57d7820694dfe904beb900fccbd0a18c3225beedec81401f1bb3127558aca",
+        "instance_id_u32": "bf1185e3a1c8a421f8503a9d64f0f50edeafcfc04025171ea398c1b4324d8b35",
+        "valid_u8": "0ff747ad3ec15c0507637ab6f13d0c2ae14901ecc8f99de02f324aeba085e085"
+      }
+    },
+    {
+      "index": 54,
+      "source_time_s": 1.8,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 54,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 29.038499982561916,
+      "file": "frames/0054.png",
+      "png_sha256": "50a86ebf64079b36ffd38910e8f33f6795001cd01f8480586584f725a726af78",
+      "rgb_sha256": "99c9a5a4253f220fc4d9e5763ee98a83b2094a7efb71b77d724d30e6e379f7f7",
+      "sensor_file": "sensors/0054.npz",
+      "sensor_sha256": "032c374501f6698d03fdc37095b2842c246bfdc55d9a18f9bb669ed9b267fdde",
+      "plane_sha256": {
+        "srgb8_rgb": "99c9a5a4253f220fc4d9e5763ee98a83b2094a7efb71b77d724d30e6e379f7f7",
+        "forward_depth_m_f32": "4e119f335f5c965eb8ecc4f1150f59fee9f75ddd9cfc46bfe8e22d87724e60cd",
+        "instance_id_u32": "d0be553efd005e65d126ae36848c19428e4793d7890aa53bc1a50b8897e866b5",
+        "valid_u8": "f49ec13b94e2fd439a2ef368d65d681e474d6f4e69479800f168d12ca2413226"
+      }
+    },
+    {
+      "index": 55,
+      "source_time_s": 1.8333333333333333,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 55,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 27.515599969774485,
+      "file": "frames/0055.png",
+      "png_sha256": "b8b8d8439f78ab10723b9c8a7d3867d7f9cfbed1477dbbda2d098ee0a9b42279",
+      "rgb_sha256": "e4acbb69862942e3091d00e3fdc0bb054a0aceb5d78aa0334eab72d8164d6999",
+      "sensor_file": "sensors/0055.npz",
+      "sensor_sha256": "032c374501f6698d03fdc37095b2842c246bfdc55d9a18f9bb669ed9b267fdde",
+      "plane_sha256": {
+        "srgb8_rgb": "e4acbb69862942e3091d00e3fdc0bb054a0aceb5d78aa0334eab72d8164d6999",
+        "forward_depth_m_f32": "4e119f335f5c965eb8ecc4f1150f59fee9f75ddd9cfc46bfe8e22d87724e60cd",
+        "instance_id_u32": "d0be553efd005e65d126ae36848c19428e4793d7890aa53bc1a50b8897e866b5",
+        "valid_u8": "f49ec13b94e2fd439a2ef368d65d681e474d6f4e69479800f168d12ca2413226"
+      }
+    },
+    {
+      "index": 56,
+      "source_time_s": 1.8666666666666667,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 56,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 29.684400011319667,
+      "file": "frames/0056.png",
+      "png_sha256": "864e39aec549a82657bd234043747491f0d32fd733ac2445f0cc054dafa5b86c",
+      "rgb_sha256": "a6262b7e43c834ce83c8ccd6f188fdf7c25298b3fbab42a623d9b8f372ff55e3",
+      "sensor_file": "sensors/0056.npz",
+      "sensor_sha256": "032c374501f6698d03fdc37095b2842c246bfdc55d9a18f9bb669ed9b267fdde",
+      "plane_sha256": {
+        "srgb8_rgb": "a6262b7e43c834ce83c8ccd6f188fdf7c25298b3fbab42a623d9b8f372ff55e3",
+        "forward_depth_m_f32": "4e119f335f5c965eb8ecc4f1150f59fee9f75ddd9cfc46bfe8e22d87724e60cd",
+        "instance_id_u32": "d0be553efd005e65d126ae36848c19428e4793d7890aa53bc1a50b8897e866b5",
+        "valid_u8": "f49ec13b94e2fd439a2ef368d65d681e474d6f4e69479800f168d12ca2413226"
+      }
+    },
+    {
+      "index": 57,
+      "source_time_s": 1.9,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 57,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 27.23920001881197,
+      "file": "frames/0057.png",
+      "png_sha256": "a4f0b612392014b7587d882a16fdff8d5c67856dbe8a2c77b593a734933ebe52",
+      "rgb_sha256": "97623f81d607055eaed9c7f417af93ce2ea11453244ddcbd7f6285c89ed71f82",
+      "sensor_file": "sensors/0057.npz",
+      "sensor_sha256": "032c374501f6698d03fdc37095b2842c246bfdc55d9a18f9bb669ed9b267fdde",
+      "plane_sha256": {
+        "srgb8_rgb": "97623f81d607055eaed9c7f417af93ce2ea11453244ddcbd7f6285c89ed71f82",
+        "forward_depth_m_f32": "4e119f335f5c965eb8ecc4f1150f59fee9f75ddd9cfc46bfe8e22d87724e60cd",
+        "instance_id_u32": "d0be553efd005e65d126ae36848c19428e4793d7890aa53bc1a50b8897e866b5",
+        "valid_u8": "f49ec13b94e2fd439a2ef368d65d681e474d6f4e69479800f168d12ca2413226"
+      }
+    },
+    {
+      "index": 58,
+      "source_time_s": 1.9333333333333333,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 58,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 28.183899994473904,
+      "file": "frames/0058.png",
+      "png_sha256": "5af3c04559b9840cdd4897d5315c24b9eb5901b87c077e614f9a40a6b36cf033",
+      "rgb_sha256": "5d66684cc95f48a5f1316bf5e6b702c3e50bdf577c95cc123f647fb20620dec1",
+      "sensor_file": "sensors/0058.npz",
+      "sensor_sha256": "032c374501f6698d03fdc37095b2842c246bfdc55d9a18f9bb669ed9b267fdde",
+      "plane_sha256": {
+        "srgb8_rgb": "5d66684cc95f48a5f1316bf5e6b702c3e50bdf577c95cc123f647fb20620dec1",
+        "forward_depth_m_f32": "4e119f335f5c965eb8ecc4f1150f59fee9f75ddd9cfc46bfe8e22d87724e60cd",
+        "instance_id_u32": "d0be553efd005e65d126ae36848c19428e4793d7890aa53bc1a50b8897e866b5",
+        "valid_u8": "f49ec13b94e2fd439a2ef368d65d681e474d6f4e69479800f168d12ca2413226"
+      }
+    },
+    {
+      "index": 59,
+      "source_time_s": 1.9666666666666666,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 59,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 27.921399974729866,
+      "file": "frames/0059.png",
+      "png_sha256": "654a4767f0d77f56980d83795d38b53d486b4a07532cd5d65c9c328948abc780",
+      "rgb_sha256": "dd6d2edd031c16f462066521863f967089957c8a788224dbb1afa80d1ee6aab6",
+      "sensor_file": "sensors/0059.npz",
+      "sensor_sha256": "032c374501f6698d03fdc37095b2842c246bfdc55d9a18f9bb669ed9b267fdde",
+      "plane_sha256": {
+        "srgb8_rgb": "dd6d2edd031c16f462066521863f967089957c8a788224dbb1afa80d1ee6aab6",
+        "forward_depth_m_f32": "4e119f335f5c965eb8ecc4f1150f59fee9f75ddd9cfc46bfe8e22d87724e60cd",
+        "instance_id_u32": "d0be553efd005e65d126ae36848c19428e4793d7890aa53bc1a50b8897e866b5",
+        "valid_u8": "f49ec13b94e2fd439a2ef368d65d681e474d6f4e69479800f168d12ca2413226"
+      }
+    },
+    {
+      "index": 60,
+      "source_time_s": 2.0,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 60,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 28.19509996334091,
+      "file": "frames/0060.png",
+      "png_sha256": "a62a065cdb438c87f59aa6c2d85f8c0607d58fb764ee56225df29e7b5e876c24",
+      "rgb_sha256": "0aa83d6ad1a01eaaf160d3381fff412a17278a1ccde6534dc4ddb8422467e33a",
+      "sensor_file": "sensors/0060.npz",
+      "sensor_sha256": "032c374501f6698d03fdc37095b2842c246bfdc55d9a18f9bb669ed9b267fdde",
+      "plane_sha256": {
+        "srgb8_rgb": "0aa83d6ad1a01eaaf160d3381fff412a17278a1ccde6534dc4ddb8422467e33a",
+        "forward_depth_m_f32": "4e119f335f5c965eb8ecc4f1150f59fee9f75ddd9cfc46bfe8e22d87724e60cd",
+        "instance_id_u32": "d0be553efd005e65d126ae36848c19428e4793d7890aa53bc1a50b8897e866b5",
+        "valid_u8": "f49ec13b94e2fd439a2ef368d65d681e474d6f4e69479800f168d12ca2413226"
+      }
+    },
+    {
+      "index": 61,
+      "source_time_s": 2.033333333333333,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 61,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 27.55479997722432,
+      "file": "frames/0061.png",
+      "png_sha256": "940f3955494270a2ada35f7e7139200be37a723b50f82dad4ff1799a24a318d3",
+      "rgb_sha256": "afd38ac6cfffe764496fef914ad73b14c3b799b70cb19b40c084af66f0d85b19",
+      "sensor_file": "sensors/0061.npz",
+      "sensor_sha256": "032c374501f6698d03fdc37095b2842c246bfdc55d9a18f9bb669ed9b267fdde",
+      "plane_sha256": {
+        "srgb8_rgb": "afd38ac6cfffe764496fef914ad73b14c3b799b70cb19b40c084af66f0d85b19",
+        "forward_depth_m_f32": "4e119f335f5c965eb8ecc4f1150f59fee9f75ddd9cfc46bfe8e22d87724e60cd",
+        "instance_id_u32": "d0be553efd005e65d126ae36848c19428e4793d7890aa53bc1a50b8897e866b5",
+        "valid_u8": "f49ec13b94e2fd439a2ef368d65d681e474d6f4e69479800f168d12ca2413226"
+      }
+    },
+    {
+      "index": 62,
+      "source_time_s": 2.066666666666667,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 62,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 28.593699971679598,
+      "file": "frames/0062.png",
+      "png_sha256": "cd0f12ca9d5512bdd10daeea485783e57c722ba9ab98e41076c0a7c3425aa917",
+      "rgb_sha256": "8911c6e82e042cd258c2bec292e53cfeaf2df3fa6c0b04a024f3ff654ae5ea95",
+      "sensor_file": "sensors/0062.npz",
+      "sensor_sha256": "032c374501f6698d03fdc37095b2842c246bfdc55d9a18f9bb669ed9b267fdde",
+      "plane_sha256": {
+        "srgb8_rgb": "8911c6e82e042cd258c2bec292e53cfeaf2df3fa6c0b04a024f3ff654ae5ea95",
+        "forward_depth_m_f32": "4e119f335f5c965eb8ecc4f1150f59fee9f75ddd9cfc46bfe8e22d87724e60cd",
+        "instance_id_u32": "d0be553efd005e65d126ae36848c19428e4793d7890aa53bc1a50b8897e866b5",
+        "valid_u8": "f49ec13b94e2fd439a2ef368d65d681e474d6f4e69479800f168d12ca2413226"
+      }
+    },
+    {
+      "index": 63,
+      "source_time_s": 2.1,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 63,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 29.024899995420128,
+      "file": "frames/0063.png",
+      "png_sha256": "1acc502becfdb67c52f8bf61cdb58e36ea2d18f92b39e37c14c2feb80632ad6a",
+      "rgb_sha256": "682cdce968dc79a39cf8c283a6d8c45c0a144c9275bf8a2cec256dab459bb881",
+      "sensor_file": "sensors/0063.npz",
+      "sensor_sha256": "032c374501f6698d03fdc37095b2842c246bfdc55d9a18f9bb669ed9b267fdde",
+      "plane_sha256": {
+        "srgb8_rgb": "682cdce968dc79a39cf8c283a6d8c45c0a144c9275bf8a2cec256dab459bb881",
+        "forward_depth_m_f32": "4e119f335f5c965eb8ecc4f1150f59fee9f75ddd9cfc46bfe8e22d87724e60cd",
+        "instance_id_u32": "d0be553efd005e65d126ae36848c19428e4793d7890aa53bc1a50b8897e866b5",
+        "valid_u8": "f49ec13b94e2fd439a2ef368d65d681e474d6f4e69479800f168d12ca2413226"
+      }
+    },
+    {
+      "index": 64,
+      "source_time_s": 2.1333333333333333,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 64,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 27.541999996174127,
+      "file": "frames/0064.png",
+      "png_sha256": "792cc09e089e9e6130fdb670195b4f1cd8f8c9552cb4be11e65e8ab716462816",
+      "rgb_sha256": "64bac689e04bf52fd7d57434726525e63e58bc27ad039a2188c5a850acd77b74",
+      "sensor_file": "sensors/0064.npz",
+      "sensor_sha256": "032c374501f6698d03fdc37095b2842c246bfdc55d9a18f9bb669ed9b267fdde",
+      "plane_sha256": {
+        "srgb8_rgb": "64bac689e04bf52fd7d57434726525e63e58bc27ad039a2188c5a850acd77b74",
+        "forward_depth_m_f32": "4e119f335f5c965eb8ecc4f1150f59fee9f75ddd9cfc46bfe8e22d87724e60cd",
+        "instance_id_u32": "d0be553efd005e65d126ae36848c19428e4793d7890aa53bc1a50b8897e866b5",
+        "valid_u8": "f49ec13b94e2fd439a2ef368d65d681e474d6f4e69479800f168d12ca2413226"
+      }
+    },
+    {
+      "index": 65,
+      "source_time_s": 2.1666666666666665,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 65,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 27.281400049105287,
+      "file": "frames/0065.png",
+      "png_sha256": "42f4631693ed8c59308ab19be8fca70ab493750daf5b887f7faaac43cb39571c",
+      "rgb_sha256": "8c2c6109bbe80cd5316da751fb452158892b74b150783cd8c6db49a0e43cc98e",
+      "sensor_file": "sensors/0065.npz",
+      "sensor_sha256": "032c374501f6698d03fdc37095b2842c246bfdc55d9a18f9bb669ed9b267fdde",
+      "plane_sha256": {
+        "srgb8_rgb": "8c2c6109bbe80cd5316da751fb452158892b74b150783cd8c6db49a0e43cc98e",
+        "forward_depth_m_f32": "4e119f335f5c965eb8ecc4f1150f59fee9f75ddd9cfc46bfe8e22d87724e60cd",
+        "instance_id_u32": "d0be553efd005e65d126ae36848c19428e4793d7890aa53bc1a50b8897e866b5",
+        "valid_u8": "f49ec13b94e2fd439a2ef368d65d681e474d6f4e69479800f168d12ca2413226"
+      }
+    },
+    {
+      "index": 66,
+      "source_time_s": 2.2,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 66,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 28.524900029879063,
+      "file": "frames/0066.png",
+      "png_sha256": "3f108f4115acc862838f1cd693f6548dd4c1028801b704203525b6251fefc981",
+      "rgb_sha256": "62ff134eb6e17c30a9eefc745de5d0c431dbb9ea0f4c5c2e41e78e116c6976d2",
+      "sensor_file": "sensors/0066.npz",
+      "sensor_sha256": "032c374501f6698d03fdc37095b2842c246bfdc55d9a18f9bb669ed9b267fdde",
+      "plane_sha256": {
+        "srgb8_rgb": "62ff134eb6e17c30a9eefc745de5d0c431dbb9ea0f4c5c2e41e78e116c6976d2",
+        "forward_depth_m_f32": "4e119f335f5c965eb8ecc4f1150f59fee9f75ddd9cfc46bfe8e22d87724e60cd",
+        "instance_id_u32": "d0be553efd005e65d126ae36848c19428e4793d7890aa53bc1a50b8897e866b5",
+        "valid_u8": "f49ec13b94e2fd439a2ef368d65d681e474d6f4e69479800f168d12ca2413226"
+      }
+    },
+    {
+      "index": 67,
+      "source_time_s": 2.2333333333333334,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 67,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 27.618199994321913,
+      "file": "frames/0067.png",
+      "png_sha256": "d0b541136dabe213a8c6b678630e6cca1ca987ac41042c96df0f3e8b897c1a58",
+      "rgb_sha256": "666b4a733e09239a100da054c73fee447cde9a45bd1a85c86390b1e255671e82",
+      "sensor_file": "sensors/0067.npz",
+      "sensor_sha256": "032c374501f6698d03fdc37095b2842c246bfdc55d9a18f9bb669ed9b267fdde",
+      "plane_sha256": {
+        "srgb8_rgb": "666b4a733e09239a100da054c73fee447cde9a45bd1a85c86390b1e255671e82",
+        "forward_depth_m_f32": "4e119f335f5c965eb8ecc4f1150f59fee9f75ddd9cfc46bfe8e22d87724e60cd",
+        "instance_id_u32": "d0be553efd005e65d126ae36848c19428e4793d7890aa53bc1a50b8897e866b5",
+        "valid_u8": "f49ec13b94e2fd439a2ef368d65d681e474d6f4e69479800f168d12ca2413226"
+      }
+    },
+    {
+      "index": 68,
+      "source_time_s": 2.2666666666666666,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 68,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 26.37079998385161,
+      "file": "frames/0068.png",
+      "png_sha256": "543c0601a53f1e2e83a2f76f09b0e2d606c14ac6a046b13c4d557373725eb56c",
+      "rgb_sha256": "5355017ca99b32fc5ffcf248c499dc4d247d14fee332ae88a6cc135f39cf91ed",
+      "sensor_file": "sensors/0068.npz",
+      "sensor_sha256": "032c374501f6698d03fdc37095b2842c246bfdc55d9a18f9bb669ed9b267fdde",
+      "plane_sha256": {
+        "srgb8_rgb": "5355017ca99b32fc5ffcf248c499dc4d247d14fee332ae88a6cc135f39cf91ed",
+        "forward_depth_m_f32": "4e119f335f5c965eb8ecc4f1150f59fee9f75ddd9cfc46bfe8e22d87724e60cd",
+        "instance_id_u32": "d0be553efd005e65d126ae36848c19428e4793d7890aa53bc1a50b8897e866b5",
+        "valid_u8": "f49ec13b94e2fd439a2ef368d65d681e474d6f4e69479800f168d12ca2413226"
+      }
+    },
+    {
+      "index": 69,
+      "source_time_s": 2.3,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 69,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 29.87519995076582,
+      "file": "frames/0069.png",
+      "png_sha256": "5d65de5bef9e49610f1dabe64dbafb0385f741409adbaeaef5e8bc0fbbccc7c1",
+      "rgb_sha256": "04a923f57c948182bd052c910405dc5fb48c609fa13b981dd66850d7dc0772d2",
+      "sensor_file": "sensors/0069.npz",
+      "sensor_sha256": "032c374501f6698d03fdc37095b2842c246bfdc55d9a18f9bb669ed9b267fdde",
+      "plane_sha256": {
+        "srgb8_rgb": "04a923f57c948182bd052c910405dc5fb48c609fa13b981dd66850d7dc0772d2",
+        "forward_depth_m_f32": "4e119f335f5c965eb8ecc4f1150f59fee9f75ddd9cfc46bfe8e22d87724e60cd",
+        "instance_id_u32": "d0be553efd005e65d126ae36848c19428e4793d7890aa53bc1a50b8897e866b5",
+        "valid_u8": "f49ec13b94e2fd439a2ef368d65d681e474d6f4e69479800f168d12ca2413226"
+      }
+    },
+    {
+      "index": 70,
+      "source_time_s": 2.3333333333333335,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 70,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 26.68670000275597,
+      "file": "frames/0070.png",
+      "png_sha256": "38477c56c1943aa9c8c85224d65dad4730f763926a1045e52c21a3fbfeb0960f",
+      "rgb_sha256": "e02e6f0bfc4059259b84d825ab882c2ad693024109ba9a935a8f8d39f8e56e16",
+      "sensor_file": "sensors/0070.npz",
+      "sensor_sha256": "032c374501f6698d03fdc37095b2842c246bfdc55d9a18f9bb669ed9b267fdde",
+      "plane_sha256": {
+        "srgb8_rgb": "e02e6f0bfc4059259b84d825ab882c2ad693024109ba9a935a8f8d39f8e56e16",
+        "forward_depth_m_f32": "4e119f335f5c965eb8ecc4f1150f59fee9f75ddd9cfc46bfe8e22d87724e60cd",
+        "instance_id_u32": "d0be553efd005e65d126ae36848c19428e4793d7890aa53bc1a50b8897e866b5",
+        "valid_u8": "f49ec13b94e2fd439a2ef368d65d681e474d6f4e69479800f168d12ca2413226"
+      }
+    },
+    {
+      "index": 71,
+      "source_time_s": 2.3666666666666667,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 71,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 28.13260001130402,
+      "file": "frames/0071.png",
+      "png_sha256": "d4d4f6eba6b332571870563873492aad6733a27bd3a5292fe3ef3ba530a09466",
+      "rgb_sha256": "46853a05658e0a943c68024193896f0f7f0fdbf8bac7d86fe1305b15b0c7ac7c",
+      "sensor_file": "sensors/0071.npz",
+      "sensor_sha256": "032c374501f6698d03fdc37095b2842c246bfdc55d9a18f9bb669ed9b267fdde",
+      "plane_sha256": {
+        "srgb8_rgb": "46853a05658e0a943c68024193896f0f7f0fdbf8bac7d86fe1305b15b0c7ac7c",
+        "forward_depth_m_f32": "4e119f335f5c965eb8ecc4f1150f59fee9f75ddd9cfc46bfe8e22d87724e60cd",
+        "instance_id_u32": "d0be553efd005e65d126ae36848c19428e4793d7890aa53bc1a50b8897e866b5",
+        "valid_u8": "f49ec13b94e2fd439a2ef368d65d681e474d6f4e69479800f168d12ca2413226"
+      }
+    },
+    {
+      "index": 72,
+      "source_time_s": 2.4,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 72,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 28.57720002066344,
+      "file": "frames/0072.png",
+      "png_sha256": "12315bbd8600735bf32c41d5dd4eb26cf09011be4f8140436463ee33d16f7ab2",
+      "rgb_sha256": "0722d4bfc13537e7da28d790a4144b2bedd3e2a9ae468c8f1657cacdf7056aab",
+      "sensor_file": "sensors/0072.npz",
+      "sensor_sha256": "032c374501f6698d03fdc37095b2842c246bfdc55d9a18f9bb669ed9b267fdde",
+      "plane_sha256": {
+        "srgb8_rgb": "0722d4bfc13537e7da28d790a4144b2bedd3e2a9ae468c8f1657cacdf7056aab",
+        "forward_depth_m_f32": "4e119f335f5c965eb8ecc4f1150f59fee9f75ddd9cfc46bfe8e22d87724e60cd",
+        "instance_id_u32": "d0be553efd005e65d126ae36848c19428e4793d7890aa53bc1a50b8897e866b5",
+        "valid_u8": "f49ec13b94e2fd439a2ef368d65d681e474d6f4e69479800f168d12ca2413226"
+      }
+    },
+    {
+      "index": 73,
+      "source_time_s": 2.433333333333333,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 73,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 28.057600022293627,
+      "file": "frames/0073.png",
+      "png_sha256": "1594b5f7cef364ad9b5d9ba8ef08f29dd41e98f6ffe85cfa177925679e635a16",
+      "rgb_sha256": "781c67b98691bc036c1928e2d074c5a69edb6d31b7fcfa48598bb705029e7993",
+      "sensor_file": "sensors/0073.npz",
+      "sensor_sha256": "032c374501f6698d03fdc37095b2842c246bfdc55d9a18f9bb669ed9b267fdde",
+      "plane_sha256": {
+        "srgb8_rgb": "781c67b98691bc036c1928e2d074c5a69edb6d31b7fcfa48598bb705029e7993",
+        "forward_depth_m_f32": "4e119f335f5c965eb8ecc4f1150f59fee9f75ddd9cfc46bfe8e22d87724e60cd",
+        "instance_id_u32": "d0be553efd005e65d126ae36848c19428e4793d7890aa53bc1a50b8897e866b5",
+        "valid_u8": "f49ec13b94e2fd439a2ef368d65d681e474d6f4e69479800f168d12ca2413226"
+      }
+    },
+    {
+      "index": 74,
+      "source_time_s": 2.466666666666667,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 74,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 28.34739995887503,
+      "file": "frames/0074.png",
+      "png_sha256": "ee4584b90eaef8fb9705664ed118f14c4941ae0ffdf56a08036cfc9c7623640d",
+      "rgb_sha256": "dd432e9c28c4d76c58b09c504a04a15d1c3fb61c31b6778252e416ed115a1a53",
+      "sensor_file": "sensors/0074.npz",
+      "sensor_sha256": "032c374501f6698d03fdc37095b2842c246bfdc55d9a18f9bb669ed9b267fdde",
+      "plane_sha256": {
+        "srgb8_rgb": "dd432e9c28c4d76c58b09c504a04a15d1c3fb61c31b6778252e416ed115a1a53",
+        "forward_depth_m_f32": "4e119f335f5c965eb8ecc4f1150f59fee9f75ddd9cfc46bfe8e22d87724e60cd",
+        "instance_id_u32": "d0be553efd005e65d126ae36848c19428e4793d7890aa53bc1a50b8897e866b5",
+        "valid_u8": "f49ec13b94e2fd439a2ef368d65d681e474d6f4e69479800f168d12ca2413226"
+      }
+    },
+    {
+      "index": 75,
+      "source_time_s": 2.5,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 75,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 27.75499998824671,
+      "file": "frames/0075.png",
+      "png_sha256": "8c009aca7eab55148c84d8b4a216df491fbb4eeaa123a4854bf60ec6b480aa93",
+      "rgb_sha256": "a4ad83e33707cd8f39da8f15285850835296c53cdfbfd925acd34808abdc32c7",
+      "sensor_file": "sensors/0075.npz",
+      "sensor_sha256": "032c374501f6698d03fdc37095b2842c246bfdc55d9a18f9bb669ed9b267fdde",
+      "plane_sha256": {
+        "srgb8_rgb": "a4ad83e33707cd8f39da8f15285850835296c53cdfbfd925acd34808abdc32c7",
+        "forward_depth_m_f32": "4e119f335f5c965eb8ecc4f1150f59fee9f75ddd9cfc46bfe8e22d87724e60cd",
+        "instance_id_u32": "d0be553efd005e65d126ae36848c19428e4793d7890aa53bc1a50b8897e866b5",
+        "valid_u8": "f49ec13b94e2fd439a2ef368d65d681e474d6f4e69479800f168d12ca2413226"
+      }
+    },
+    {
+      "index": 76,
+      "source_time_s": 2.533333333333333,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 76,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 28.06300000520423,
+      "file": "frames/0076.png",
+      "png_sha256": "7e1b38df9ff8aac9d4dde7342b9d0e90efac2a7cae3b3ddc44a2f29683db61d7",
+      "rgb_sha256": "ae0c2f02c7492130ad0b55ef701cee44f15c07d4c3ef401cfcb57a76c5574cb7",
+      "sensor_file": "sensors/0076.npz",
+      "sensor_sha256": "032c374501f6698d03fdc37095b2842c246bfdc55d9a18f9bb669ed9b267fdde",
+      "plane_sha256": {
+        "srgb8_rgb": "ae0c2f02c7492130ad0b55ef701cee44f15c07d4c3ef401cfcb57a76c5574cb7",
+        "forward_depth_m_f32": "4e119f335f5c965eb8ecc4f1150f59fee9f75ddd9cfc46bfe8e22d87724e60cd",
+        "instance_id_u32": "d0be553efd005e65d126ae36848c19428e4793d7890aa53bc1a50b8897e866b5",
+        "valid_u8": "f49ec13b94e2fd439a2ef368d65d681e474d6f4e69479800f168d12ca2413226"
+      }
+    },
+    {
+      "index": 77,
+      "source_time_s": 2.566666666666667,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 77,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 28.389899991452694,
+      "file": "frames/0077.png",
+      "png_sha256": "0e666a05e81a7cba5326dc7a6dfa438905ce4ace0542eb60098dc0459f47ab1d",
+      "rgb_sha256": "997c53bd498f9235b5e5f5c5cb0b157d08f83967e2848edccb2fd2b77851f320",
+      "sensor_file": "sensors/0077.npz",
+      "sensor_sha256": "032c374501f6698d03fdc37095b2842c246bfdc55d9a18f9bb669ed9b267fdde",
+      "plane_sha256": {
+        "srgb8_rgb": "997c53bd498f9235b5e5f5c5cb0b157d08f83967e2848edccb2fd2b77851f320",
+        "forward_depth_m_f32": "4e119f335f5c965eb8ecc4f1150f59fee9f75ddd9cfc46bfe8e22d87724e60cd",
+        "instance_id_u32": "d0be553efd005e65d126ae36848c19428e4793d7890aa53bc1a50b8897e866b5",
+        "valid_u8": "f49ec13b94e2fd439a2ef368d65d681e474d6f4e69479800f168d12ca2413226"
+      }
+    },
+    {
+      "index": 78,
+      "source_time_s": 2.6,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 78,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 27.101100014988333,
+      "file": "frames/0078.png",
+      "png_sha256": "b222ecb6e12590c34203337d2467fdba08782c459ad4b9a85604d03dbc510fe4",
+      "rgb_sha256": "825ead962387eecab96dedf9076d9dd23aab0ff39b1685644b1ac574c90dd7d0",
+      "sensor_file": "sensors/0078.npz",
+      "sensor_sha256": "032c374501f6698d03fdc37095b2842c246bfdc55d9a18f9bb669ed9b267fdde",
+      "plane_sha256": {
+        "srgb8_rgb": "825ead962387eecab96dedf9076d9dd23aab0ff39b1685644b1ac574c90dd7d0",
+        "forward_depth_m_f32": "4e119f335f5c965eb8ecc4f1150f59fee9f75ddd9cfc46bfe8e22d87724e60cd",
+        "instance_id_u32": "d0be553efd005e65d126ae36848c19428e4793d7890aa53bc1a50b8897e866b5",
+        "valid_u8": "f49ec13b94e2fd439a2ef368d65d681e474d6f4e69479800f168d12ca2413226"
+      }
+    },
+    {
+      "index": 79,
+      "source_time_s": 2.6333333333333333,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 79,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 27.30620000511408,
+      "file": "frames/0079.png",
+      "png_sha256": "e89e22b38e54e2900c20fdb5f63a57e87d0921dafdaf76a05e983ad7bb1aa3b8",
+      "rgb_sha256": "495047d10d730f6780095fbe4fc6ee855d88e61cc74d6aaf44c14b6df3b30d7d",
+      "sensor_file": "sensors/0079.npz",
+      "sensor_sha256": "032c374501f6698d03fdc37095b2842c246bfdc55d9a18f9bb669ed9b267fdde",
+      "plane_sha256": {
+        "srgb8_rgb": "495047d10d730f6780095fbe4fc6ee855d88e61cc74d6aaf44c14b6df3b30d7d",
+        "forward_depth_m_f32": "4e119f335f5c965eb8ecc4f1150f59fee9f75ddd9cfc46bfe8e22d87724e60cd",
+        "instance_id_u32": "d0be553efd005e65d126ae36848c19428e4793d7890aa53bc1a50b8897e866b5",
+        "valid_u8": "f49ec13b94e2fd439a2ef368d65d681e474d6f4e69479800f168d12ca2413226"
+      }
+    },
+    {
+      "index": 80,
+      "source_time_s": 2.6666666666666665,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 80,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 26.762800000142306,
+      "file": "frames/0080.png",
+      "png_sha256": "234345ac6145a1e01041e5c7e087eea722d09022aaa366e9ea771aaf18d257e3",
+      "rgb_sha256": "1c71f0200c3fe653011a7d28eadf71519bb9350acb10ca735d7dedf4a1a317be",
+      "sensor_file": "sensors/0080.npz",
+      "sensor_sha256": "032c374501f6698d03fdc37095b2842c246bfdc55d9a18f9bb669ed9b267fdde",
+      "plane_sha256": {
+        "srgb8_rgb": "1c71f0200c3fe653011a7d28eadf71519bb9350acb10ca735d7dedf4a1a317be",
+        "forward_depth_m_f32": "4e119f335f5c965eb8ecc4f1150f59fee9f75ddd9cfc46bfe8e22d87724e60cd",
+        "instance_id_u32": "d0be553efd005e65d126ae36848c19428e4793d7890aa53bc1a50b8897e866b5",
+        "valid_u8": "f49ec13b94e2fd439a2ef368d65d681e474d6f4e69479800f168d12ca2413226"
+      }
+    },
+    {
+      "index": 81,
+      "source_time_s": 2.7,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 81,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 27.183800004422665,
+      "file": "frames/0081.png",
+      "png_sha256": "65c3b63e372610284aab20e8bc46cb172efc8be1bf97c30162445f0b3dabf87a",
+      "rgb_sha256": "b2fecd2b67184ca91a876c81677b0b448ebdc808d10f034d46c381e8b34e4d3c",
+      "sensor_file": "sensors/0081.npz",
+      "sensor_sha256": "032c374501f6698d03fdc37095b2842c246bfdc55d9a18f9bb669ed9b267fdde",
+      "plane_sha256": {
+        "srgb8_rgb": "b2fecd2b67184ca91a876c81677b0b448ebdc808d10f034d46c381e8b34e4d3c",
+        "forward_depth_m_f32": "4e119f335f5c965eb8ecc4f1150f59fee9f75ddd9cfc46bfe8e22d87724e60cd",
+        "instance_id_u32": "d0be553efd005e65d126ae36848c19428e4793d7890aa53bc1a50b8897e866b5",
+        "valid_u8": "f49ec13b94e2fd439a2ef368d65d681e474d6f4e69479800f168d12ca2413226"
+      }
+    },
+    {
+      "index": 82,
+      "source_time_s": 2.7333333333333334,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 82,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 29.85749999061227,
+      "file": "frames/0082.png",
+      "png_sha256": "3f4e2294414403214b6883a1a9acbaf1eed76645f4856a3df44d04c5022b70bf",
+      "rgb_sha256": "344eff53369bb79a366d9e38491c93b2541db8289fa3bcc4f24e63be63c0a3b6",
+      "sensor_file": "sensors/0082.npz",
+      "sensor_sha256": "032c374501f6698d03fdc37095b2842c246bfdc55d9a18f9bb669ed9b267fdde",
+      "plane_sha256": {
+        "srgb8_rgb": "344eff53369bb79a366d9e38491c93b2541db8289fa3bcc4f24e63be63c0a3b6",
+        "forward_depth_m_f32": "4e119f335f5c965eb8ecc4f1150f59fee9f75ddd9cfc46bfe8e22d87724e60cd",
+        "instance_id_u32": "d0be553efd005e65d126ae36848c19428e4793d7890aa53bc1a50b8897e866b5",
+        "valid_u8": "f49ec13b94e2fd439a2ef368d65d681e474d6f4e69479800f168d12ca2413226"
+      }
+    },
+    {
+      "index": 83,
+      "source_time_s": 2.7666666666666666,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 83,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 26.281600003130734,
+      "file": "frames/0083.png",
+      "png_sha256": "0f277e7ecc358f48066da7f41f261e7f205a1af9ccab3fa06912c4b1a420b87b",
+      "rgb_sha256": "b458055b4d627fc035b8f335d85cf6725d8efd366207fe8f128f86d3ba5d122b",
+      "sensor_file": "sensors/0083.npz",
+      "sensor_sha256": "032c374501f6698d03fdc37095b2842c246bfdc55d9a18f9bb669ed9b267fdde",
+      "plane_sha256": {
+        "srgb8_rgb": "b458055b4d627fc035b8f335d85cf6725d8efd366207fe8f128f86d3ba5d122b",
+        "forward_depth_m_f32": "4e119f335f5c965eb8ecc4f1150f59fee9f75ddd9cfc46bfe8e22d87724e60cd",
+        "instance_id_u32": "d0be553efd005e65d126ae36848c19428e4793d7890aa53bc1a50b8897e866b5",
+        "valid_u8": "f49ec13b94e2fd439a2ef368d65d681e474d6f4e69479800f168d12ca2413226"
+      }
+    },
+    {
+      "index": 84,
+      "source_time_s": 2.8,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 84,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 27.090499992482364,
+      "file": "frames/0084.png",
+      "png_sha256": "199892af7883233dad90efee26d47b13f2b9aa4185b947c779e0fcf1ffdc072b",
+      "rgb_sha256": "c58d8ebcbc591f85709128d73583e82dd6502672be1b339b6ce6b57ac21dcf7a",
+      "sensor_file": "sensors/0084.npz",
+      "sensor_sha256": "032c374501f6698d03fdc37095b2842c246bfdc55d9a18f9bb669ed9b267fdde",
+      "plane_sha256": {
+        "srgb8_rgb": "c58d8ebcbc591f85709128d73583e82dd6502672be1b339b6ce6b57ac21dcf7a",
+        "forward_depth_m_f32": "4e119f335f5c965eb8ecc4f1150f59fee9f75ddd9cfc46bfe8e22d87724e60cd",
+        "instance_id_u32": "d0be553efd005e65d126ae36848c19428e4793d7890aa53bc1a50b8897e866b5",
+        "valid_u8": "f49ec13b94e2fd439a2ef368d65d681e474d6f4e69479800f168d12ca2413226"
+      }
+    },
+    {
+      "index": 85,
+      "source_time_s": 2.8333333333333335,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 85,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 27.771499997470528,
+      "file": "frames/0085.png",
+      "png_sha256": "386eae58fd30ac7e0856a7daaaf4d7ade7b6c07816d6e3a722664620b3bc1a3c",
+      "rgb_sha256": "3b8fb9e359d6176900050597f870d38ced57dc78b7793f20a8e67fe7a3ce3e4f",
+      "sensor_file": "sensors/0085.npz",
+      "sensor_sha256": "032c374501f6698d03fdc37095b2842c246bfdc55d9a18f9bb669ed9b267fdde",
+      "plane_sha256": {
+        "srgb8_rgb": "3b8fb9e359d6176900050597f870d38ced57dc78b7793f20a8e67fe7a3ce3e4f",
+        "forward_depth_m_f32": "4e119f335f5c965eb8ecc4f1150f59fee9f75ddd9cfc46bfe8e22d87724e60cd",
+        "instance_id_u32": "d0be553efd005e65d126ae36848c19428e4793d7890aa53bc1a50b8897e866b5",
+        "valid_u8": "f49ec13b94e2fd439a2ef368d65d681e474d6f4e69479800f168d12ca2413226"
+      }
+    },
+    {
+      "index": 86,
+      "source_time_s": 2.8666666666666667,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 86,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 29.918599990196526,
+      "file": "frames/0086.png",
+      "png_sha256": "b75bbe385bae021ee8d6b20a2296dccc8058ab7930da9f9cefd61b7ad501a6d4",
+      "rgb_sha256": "265af9384708fa84c85cd9f62d74e490ed383c8978d914c88770ec7a72b415d9",
+      "sensor_file": "sensors/0086.npz",
+      "sensor_sha256": "032c374501f6698d03fdc37095b2842c246bfdc55d9a18f9bb669ed9b267fdde",
+      "plane_sha256": {
+        "srgb8_rgb": "265af9384708fa84c85cd9f62d74e490ed383c8978d914c88770ec7a72b415d9",
+        "forward_depth_m_f32": "4e119f335f5c965eb8ecc4f1150f59fee9f75ddd9cfc46bfe8e22d87724e60cd",
+        "instance_id_u32": "d0be553efd005e65d126ae36848c19428e4793d7890aa53bc1a50b8897e866b5",
+        "valid_u8": "f49ec13b94e2fd439a2ef368d65d681e474d6f4e69479800f168d12ca2413226"
+      }
+    },
+    {
+      "index": 87,
+      "source_time_s": 2.9,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 87,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 26.86449995962903,
+      "file": "frames/0087.png",
+      "png_sha256": "7903dfa1ab92c9d6910013f4d73f7d0c285770279457dc93568df8564692d31b",
+      "rgb_sha256": "8cbbcf81377117379ec85f4729ccea98d7494fce848339f2d097c8e1fff6dd6c",
+      "sensor_file": "sensors/0087.npz",
+      "sensor_sha256": "032c374501f6698d03fdc37095b2842c246bfdc55d9a18f9bb669ed9b267fdde",
+      "plane_sha256": {
+        "srgb8_rgb": "8cbbcf81377117379ec85f4729ccea98d7494fce848339f2d097c8e1fff6dd6c",
+        "forward_depth_m_f32": "4e119f335f5c965eb8ecc4f1150f59fee9f75ddd9cfc46bfe8e22d87724e60cd",
+        "instance_id_u32": "d0be553efd005e65d126ae36848c19428e4793d7890aa53bc1a50b8897e866b5",
+        "valid_u8": "f49ec13b94e2fd439a2ef368d65d681e474d6f4e69479800f168d12ca2413226"
+      }
+    },
+    {
+      "index": 88,
+      "source_time_s": 2.933333333333333,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 88,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 31.151800008956343,
+      "file": "frames/0088.png",
+      "png_sha256": "3e6d4b6daa0e8d9590dfaacec8d61a6908478d037f106ccb5b6ab7a7e7232eee",
+      "rgb_sha256": "1edf6f3297f4f88fe92df9a46e151cb3aaff5d6720a9946271900cd6bfdc564a",
+      "sensor_file": "sensors/0088.npz",
+      "sensor_sha256": "032c374501f6698d03fdc37095b2842c246bfdc55d9a18f9bb669ed9b267fdde",
+      "plane_sha256": {
+        "srgb8_rgb": "1edf6f3297f4f88fe92df9a46e151cb3aaff5d6720a9946271900cd6bfdc564a",
+        "forward_depth_m_f32": "4e119f335f5c965eb8ecc4f1150f59fee9f75ddd9cfc46bfe8e22d87724e60cd",
+        "instance_id_u32": "d0be553efd005e65d126ae36848c19428e4793d7890aa53bc1a50b8897e866b5",
+        "valid_u8": "f49ec13b94e2fd439a2ef368d65d681e474d6f4e69479800f168d12ca2413226"
+      }
+    },
+    {
+      "index": 89,
+      "source_time_s": 2.966666666666667,
+      "frame_key": {
+        "scene_key": "near-reflection-optical-fixture-v1",
+        "world_id": "optical-fixture",
+        "epoch": 0,
+        "revision": 0,
+        "tick": 89,
+        "phase": "authored"
+      },
+      "capture_wall_ms": 29.0586999617517,
+      "file": "frames/0089.png",
+      "png_sha256": "6907c645a55def9f68e464aff8df7e15108bf1efd21448075f57343c604b6092",
+      "rgb_sha256": "1734d6f9355c7d46191376fd81c0bb7e854033fce4676caf69d7efb078bdbc75",
+      "sensor_file": "sensors/0089.npz",
+      "sensor_sha256": "032c374501f6698d03fdc37095b2842c246bfdc55d9a18f9bb669ed9b267fdde",
+      "plane_sha256": {
+        "srgb8_rgb": "1734d6f9355c7d46191376fd81c0bb7e854033fce4676caf69d7efb078bdbc75",
+        "forward_depth_m_f32": "4e119f335f5c965eb8ecc4f1150f59fee9f75ddd9cfc46bfe8e22d87724e60cd",
+        "instance_id_u32": "d0be553efd005e65d126ae36848c19428e4793d7890aa53bc1a50b8897e866b5",
+        "valid_u8": "f49ec13b94e2fd439a2ef368d65d681e474d6f4e69479800f168d12ca2413226"
+      }
+    }
+  ],
+  "capture_ms": [
+    30.701400013640523,
+    31.25300002284348,
+    28.11939996900037,
+    26.746299990918487,
+    28.352699999231845,
+    28.453900013118982,
+    27.823799988254905,
+    28.895099996589124,
+    27.713799965567887,
+    27.67180005321279,
+    30.198899970855564,
+    27.595599996857345,
+    31.55060001881793,
+    29.95360002387315,
+    30.616500007454306,
+    29.206500039435923,
+    27.22160000121221,
+    31.19189996505156,
+    27.293200022540987,
+    28.61579996533692,
+    27.878799999598414,
+    28.29300001030788,
+    27.598800021223724,
+    27.030099998228252,
+    27.31189999030903,
+    27.694499993231148,
+    27.97270001610741,
+    27.14010002091527,
+    30.736700049601495,
+    27.935300022363663,
+    27.839699992910028,
+    27.972400013823062,
+    28.008799999952316,
+    27.325699978973716,
+    31.278599984943867,
+    27.34010003041476,
+    27.787800005171448,
+    27.72049995837733,
+    27.402900042943656,
+    27.07199996802956,
+    26.382600015494972,
+    26.61090000765398,
+    28.516000020317733,
+    28.484400012530386,
+    28.890800022054464,
+    31.10650001326576,
+    27.146300009917468,
+    26.850099966395646,
+    32.1741999941878,
+    27.867099968716502,
+    28.502499975729734,
+    27.973399963229895,
+    27.9354999656789,
+    27.216400019824505,
+    29.038499982561916,
+    27.515599969774485,
+    29.684400011319667,
+    27.23920001881197,
+    28.183899994473904,
+    27.921399974729866,
+    28.19509996334091,
+    27.55479997722432,
+    28.593699971679598,
+    29.024899995420128,
+    27.541999996174127,
+    27.281400049105287,
+    28.524900029879063,
+    27.618199994321913,
+    26.37079998385161,
+    29.87519995076582,
+    26.68670000275597,
+    28.13260001130402,
+    28.57720002066344,
+    28.057600022293627,
+    28.34739995887503,
+    27.75499998824671,
+    28.06300000520423,
+    28.389899991452694,
+    27.101100014988333,
+    27.30620000511408,
+    26.762800000142306,
+    27.183800004422665,
+    29.85749999061227,
+    26.281600003130734,
+    27.090499992482364,
+    27.771499997470528,
+    29.918599990196526,
+    26.86449995962903,
+    31.151800008956343,
+    29.0586999617517
+  ],
+  "open_ms": 4152.469200023916,
+  "timing": {
+    "p50_ms": 27.935300022363663,
+    "p95_ms": 31.19189996505156,
+    "mean_ms": 28.274383331881836,
+    "max_ms": 32.1741999941878,
+    "worst_frame": 48,
+    "over_33_3": 0
+  },
+  "backend_before_close": {
+    "backend": "phymeo-native-vulkan",
+    "path": "raster",
+    "device": {
+      "abi_version": 2,
+      "device_index": 1,
+      "api_version": 4206881,
+      "driver_version": 2374090752,
+      "vendor_id": 4318,
+      "device_id": 10464,
+      "device_type": 2,
+      "max_width": 32768,
+      "max_height": 32768,
+      "max_vertices": 1048576,
+      "validation_errors": 0,
+      "validation_warnings": 0,
+      "captures": 95,
+      "device_name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "device_uuid": "3b78d98198a3be57a8cb4d72fdfbfa96",
+      "closed": false,
+      "validation_enabled": false,
+      "live_contexts": 1,
+      "live_frames": 1,
+      "live_resources": 77,
+      "resident_abi_version": 1,
+      "resident_max_vertices": 1048576,
+      "resident_max_indices": 1572864,
+      "resident_max_meshes": 1024,
+      "resident_max_instances": 1024,
+      "resident_max_bvh_nodes": 262144,
+      "resident_max_instanced_triangles": 1048576,
+      "resident_vertex_count": 8090,
+      "resident_index_count": 48420,
+      "resident_mesh_count": 2,
+      "resident_instance_count": 2,
+      "resident_bvh_nodes": 4098,
+      "resident_instanced_triangles": 16140,
+      "resident_loaded": 1,
+      "resident_poisoned": 0,
+      "resident_reserved": 0,
+      "resident_upload_calls": 1,
+      "resident_geometry_upload_bytes": 649424,
+      "resident_transform_upload_bytes": 24320,
+      "resident_parameter_upload_bytes": 25984,
+      "resident_captures": 95,
+      "resident_shadow_node_budget": 0,
+      "resident_target_rebuilds": 1,
+      "resident_host_transform_input_bytes": 12160,
+      "resident_render_planes_available": true,
+      "resident_environment_available": true,
+      "resident_environment_abi_version": 1,
+      "resident_environment_info": {
+        "environment_abi_version": 1,
+        "supported": 1,
+        "shader_compatible": 1,
+        "max_side": 1024,
+        "max_mip_levels": 11,
+        "side": 256,
+        "mip_levels": 9,
+        "loaded": 1,
+        "format": 109,
+        "cube_layers": 6,
+        "sh_coefficients": 9,
+        "axis_transform": 1,
+        "diffuse_basis": 1,
+        "max_rgba_bytes": 134217728,
+        "source_rgba_bytes": 8388576,
+        "image_upload_bytes": 8388600,
+        "parameter_upload_bytes": 320,
+        "upload_calls": 1,
+        "rgb_captures_with_environment": 95,
+        "sky_draws": 95,
+        "capture_scope": "successful RGB captures with an uploaded directional environment; sky draw count is not foreground pixel count",
+        "snapshot": "last live query; final GPU allocations are reported by teardown telemetry"
+      },
+      "resident_texture_available": true,
+      "resident_linear_roughness_available": true,
+      "resident_texture_abi_version": 1,
+      "resident_texture_info": {
+        "texture_abi_version": 1,
+        "max_textures": 64,
+        "max_width": 2048,
+        "max_height": 2048,
+        "max_layers": 64,
+        "texture_count": 0,
+        "array_width": 1,
+        "array_height": 1,
+        "array_layers": 1,
+        "uv_count": 0,
+        "bound_instances": 0,
+        "loaded": 0,
+        "sampler_filter": 1,
+        "mip_levels": 1,
+        "format": 43,
+        "max_array_bytes": 134217728,
+        "source_rgba_bytes": 0,
+        "padded_rgba_bytes": 4,
+        "metadata_upload_bytes": 24,
+        "upload_calls": 0,
+        "image_upload_bytes": 4,
+        "rgb_captures_with_textures": 0,
+        "capture_scope": "successful RGB captures with bound texture instances, not visible textured pixel count",
+        "upload_scope": "cumulative actual texture image and metadata GPU writes, including default white sentinel; excluded from geometry_upload_bytes",
+        "snapshot": "last live query, not final allocation state; teardown verified by allocation telemetry"
+      },
+      "resident_normal_info": null,
+      "resident_reflection_info": {
+        "reflection_abi_version": 1,
+        "supported": 1,
+        "shader_compatible": 1,
+        "enabled": 1,
+        "max_bounces": 1,
+        "receiver_count": 1,
+        "set_calls": 1,
+        "metallic_min": 0.9900000095367432,
+        "roughness_max": 0.10000000149011612,
+        "captures": 95,
+        "rgb_captures": 95,
+        "capture_scope": "successful captures after enable; RGB counter is not actual ray/hit count",
+        "snapshot": "last live query retained after close; allocation teardown uses resident telemetry"
+      },
+      "resident_readback": {
+        "readback_abi_version": 1,
+        "memory_type_index": 3,
+        "memory_property_flags": 14,
+        "persistent_mapped": 1,
+        "last_channel_mask": 15,
+        "capacity_bytes": 11980800,
+        "copied_bytes": 1138176000,
+        "map_calls": 1,
+        "unmap_calls": 0,
+        "host_visible": true,
+        "host_coherent": true,
+        "host_cached": true,
+        "device_local": false,
+        "snapshot": "last live query, not final mapping state; teardown verified by allocation telemetry",
+        "capacity_scope": "logical Vulkan readback buffer capacity, not total VkDeviceMemory allocation size"
+      },
+      "resident_profile": {
+        "profile_abi_version": 1,
+        "timestamp_supported": 1,
+        "timestamp_valid_bits": 64,
+        "tlas_node_count": 0,
+        "timestamp_period_ns": 1.0,
+        "captures": 95,
+        "host_prepare_ns": 226800,
+        "host_upload_ns": 1811700,
+        "host_record_ns": 9410700,
+        "host_submit_ns": 5461000,
+        "host_wait_ns": 1087308200,
+        "host_readback_ns": 88265700,
+        "gpu_render_ns": 315159104,
+        "gpu_copy_ns": 680445600,
+        "gpu_total_ns": 995604704,
+        "tlas_upload_bytes": 0,
+        "timestamp_samples": 95,
+        "scope": "cumulative successful captures including warmup; excludes initial static geometry upload",
+        "gpu_scope": "Vulkan timestamps: TLAS build/update + raster, shadow queries, single-bounce reflection and terminal lighting; then attachment copies",
+        "snapshot": "last live query, retained after close; final ownership is checked by telemetry"
+      },
+      "resident_telemetry": {
+        "telemetry_abi_version": 1,
+        "device_luid_valid": 1,
+        "device_node_mask": 1,
+        "device_local_bytes_current": 27246688,
+        "device_local_bytes_peak": 27246688,
+        "device_local_bytes_allocated": 27249952,
+        "host_visible_bytes_current": 11981968,
+        "host_visible_bytes_peak": 11981968,
+        "host_visible_bytes_allocated": 21020340,
+        "readback_bytes": 1138176000,
+        "fence_wait_wall_ns": 1105743100,
+        "fence_wait_calls": 100,
+        "submissions": 100,
+        "allocation_count": 30,
+        "free_count": 6,
+        "device_luid_hex": "ef22010000000000",
+        "final_after_destroy": false,
+        "allocation_scope": "this context explicit VkDeviceMemory allocations; not driver total VRAM",
+        "wait_scope": "host wall time blocked in fence waits, including upload; not GPU kernel time"
+      },
+      "resident_studio_available": true,
+      "resident_msaa": null,
+      "resident_ray_query_abi_version": 1,
+      "resident_ray_query_info": {
+        "ray_query_abi_version": 1,
+        "enabled": 1,
+        "blas_count": 2,
+        "tlas_instance_count": 2,
+        "primitive_count": 16140,
+        "loaded": 1,
+        "poisoned": 0,
+        "max_meshes": 1024,
+        "max_instances": 1024,
+        "max_triangles": 524288,
+        "build_flags": 4,
+        "update_flags": 5,
+        "trace_flags": 6,
+        "max_acceleration_bytes": 536870912,
+        "acceleration_buffer_bytes": 1136384,
+        "scratch_buffer_bytes": 342911,
+        "blas_builds": 2,
+        "tlas_builds": 1,
+        "tlas_updates": 94,
+        "instance_upload_bytes": 12160,
+        "shadow_captures": 95,
+        "capture_scope": "successful RGB-requested captures, not ray count or visible shadow pixel count",
+        "buffer_scope": "logical AS and scratch buffer bytes; actual VkDeviceMemory allocation telemetry is separate",
+        "update_scope": "each capture builds or updates TLAS, including two cameras at the same frame key",
+        "upload_scope": "additional VkAccelerationStructureInstanceKHR records, 64 bytes per instance per capture; not the ordinary forward/inverse matrix buffer",
+        "snapshot": "last live query, retained after close; final allocation teardown is reported by resident telemetry"
+      }
+    },
+    "library_path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-reflection\\build-reflection\\phymeo_native.dll",
+    "library_sha256": "a61302d39c3f165ac7dbd5bada9fbd3fb9021a0054cf38473d971e085815c057",
+    "shader_sha256": {
+      "vert": "b1069d14f062dcf3b441d1c44286068b92754557dbe8ce8327e9407cd7c0ec82",
+      "frag": "285620726ccfd8e87fbed17269b269dec5ac52a23eb7eb2d4d5f2bd30e6e432d",
+      "environment_sky_vert": "d9bbb44453660efa44c1f5f6c2861102b62f6b23b400400fac7d7f3faa02b798",
+      "environment_sky_frag": "d1f64fe50290ec0e905830c3d556d8d24ceced8c9a1665155fe5406ee59232b7"
+    },
+    "scene_key": "near-reflection-optical-fixture-v1",
+    "decoded_geometry_sha256": "1bc5e8d8c918f1b6c9270621ce5f0c54ac5b42a18dc0cd3b9fa0519b52224140",
+    "triangles": 16140,
+    "light_count": 1,
+    "max_lights": 4,
+    "max_triangles": 1048576,
+    "resident": true,
+    "shadow_mode": "ray_query",
+    "area_light_grid": 2,
+    "area_light_samples_per_panel": 4,
+    "area_light_brdf_samples_per_panel": 8,
+    "geometry_residency": "static indexed meshes; per-frame instance matrices",
+    "msaa": {
+      "requested_samples": 1,
+      "actual_color_samples": 1,
+      "sensor_samples": 1,
+      "resolve_space": "none (single sample)",
+      "sensor_sampling": "deterministic pixel center"
+    },
+    "primary_visibility": "single-sample Vulkan raster, two-sided opaque triangles",
+    "lighting": "native GGX/Smith/Schlick plus explicit resident studio shader",
+    "studio": {
+      "preset": "neutral-area-studio-v1",
+      "center_m": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale_m": 0.85,
+      "panel_size_scale": 1.0,
+      "panel_strength": 0.125,
+      "panels": [
+        {
+          "name": "key",
+          "position_m": [
+            -1.0199999809265137,
+            -1.190000057220459,
+            1.5299999713897705
+          ],
+          "half_u_world_m": [
+            -0.36944764852523804,
+            0.5430523157119751,
+            0.17607559263706207
+          ],
+          "half_v_world_m": [
+            0.32656532526016235,
+            0.12105196714401245,
+            0.3118617534637451
+          ],
+          "emission_direction_world": [
+            0.4656903154237997,
+            0.543305367994433,
+            -0.6985354731356995
+          ],
+          "half_size_m": [
+            0.68,
+            0.4675
+          ],
+          "radiance_linear_rgb": [
+            0.75,
+            0.75,
+            0.75
+          ],
+          "visible_geometry": false
+        },
+        {
+          "name": "fill",
+          "position_m": [
+            1.190000057220459,
+            0.5950000286102295,
+            1.0199999809265137
+          ],
+          "half_u_world_m": [
+            0.19609002768993378,
+            0.3126589357852936,
+            -0.4111560881137848
+          ],
+          "half_v_world_m": [
+            0.41372841596603394,
+            -0.506038248538971,
+            -0.1874941736459732
+          ],
+          "emission_direction_world": [
+            -0.7098281771887514,
+            -0.3549140885943757,
+            -0.6084241518760726
+          ],
+          "half_size_m": [
+            0.5525,
+            0.68
+          ],
+          "radiance_linear_rgb": [
+            0.3125,
+            0.3125,
+            0.3125
+          ],
+          "visible_geometry": false
+        }
+      ],
+      "basis_sources": [
+        {
+          "url": "https://github.com/haosulab/SAPIEN/blob/8360d517770f24f00bacef7d906ddf1380b8967c/src/sapien_renderer/light_component.cpp",
+          "fact": "internalUpdate composes entity global pose with POSE_GL_TO_ROS before setting the renderer light transform"
+        },
+        {
+          "url": "https://github.com/haosulab/sapien-vulkan-2/blob/62e2511930e43db9fc7d384a49da4f374b35f701/src/scene/light.cpp",
+          "fact": "centered rectangle half width along GL +X, half height along GL +Y at shape angle pi/2"
+        },
+        {
+          "reference": "installed SAPIEN 3.0.3 public headers and shipped rt shader",
+          "pose_header_sha256": "122446114db45d1ad78e47394a31e86cb6c01efc07f1a30bcf657d81f64dce0e",
+          "rt_shading_sha256": "4f7421b369f75e14fa22dc623b770f346800b8c05470fc5d682ccb4f2d52efc4",
+          "fact": "GL_TO_ROS quaternion wxyz=(-.5,-.5,.5,.5); RT shader uses cross(edge0,edge1) dotted with point-to-light"
+        }
+      ],
+      "basis": "entity shortest_rotation(+X to direction); halfU=R*(0,width,0), halfV=R*(0,0,height); U cross V emits",
+      "rectangle_equivalence": "same authored pi/2 rectangle; first GL edge reflected for emission-oriented normal",
+      "arithmetic_scope": "FP64 host basis packed to FP32; not bitwise equivalence to SAPIEN FP32 quaternion/trigonometric evaluation",
+      "environment": {
+        "source_requested_radiance": 0.125,
+        "radiance_linear_rgb": [
+          0.125,
+          0.125,
+          0.125
+        ],
+        "enabled": true,
+        "quantization": "same RGBE shared 8-bit mantissa decode as reference uniform HDR",
+        "source_hdr_sha256": "ab52b11ca03fa82cac04dac82f6ae4a976f7131e0433c106cafe166b950317eb",
+        "active_lighting": false,
+        "replaced_by": "directional environment map"
+      },
+      "declared_scene_lights": "retained unchanged",
+      "units": "metres; relative linear radiance, not calibrated photometric lux",
+      "evaluation": "native resident studio shader; distinct estimator from SAPIEN reference path tracing",
+      "payload_bytes": 144,
+      "payload_sha256": "adec08b5264ff9b4c1ef8c5c3406185b42d5649b8602ae3d263f23e97642610d"
+    },
+    "environment": {
+      "source_sha256": "a125ada38fc602025326f29b68df09531bb16f899f1973b03d9ac5ac98142548",
+      "input_size": [
+        1024,
+        512
+      ],
+      "strength": 0.0625,
+      "yaw_degrees": 25.0,
+      "peak_linear_radiance": 67.0,
+      "prefilter_roughness": "mip/(levels-1)",
+      "ggx_directions_per_texel": 128,
+      "gloss": "split-sum radiance prefilter, V=N, normalized positive N.L",
+      "orientation": "world Z up; Vulkan sampler ray.xzy; positive yaw turns +X toward +Y",
+      "diffuse": "world XYZ real SH9; exact texel solid-angle projection; irradiance divided by pi",
+      "rgba_sha256": "23145ed654a52e262a3f8bf4a67bb697dd7096537693e8e24f5b2d3fdd1f12f3",
+      "diffuse_sh_sha256": "9ae5d3d3181f2590dd1002b947cde397e1508d5d99147bed636c2e49e8f77b76",
+      "side": 256,
+      "mip_levels": 9,
+      "rgba_bytes": 8388576,
+      "diffuse_sh_bytes": 144,
+      "native_axis_transform": "world xyz -> sampler xzy; SH basis remains world xyz",
+      "native_face_order": [
+        "+X",
+        "-X",
+        "+Y",
+        "-Y",
+        "+Z",
+        "-Z"
+      ],
+      "native_layout": "level-major, then six faces, top-row-first RGBA32F little endian",
+      "native_roughness": "perceptual roughness r -> mip LOD r*(levels-1); no second prefilter",
+      "native_diffuse": "shared normalized real SH9 coefficients already include Lambert convolution / pi",
+      "native_environment_precedence": "map replaces uniform scalar environment; rectangular panels and scene lights remain"
+    },
+    "shadows": "GPU fragment Vulkan hardware ray queries against BLAS/TLAS; primary visibility remains raster",
+    "shadow_bias_m": 1e-05,
+    "minimum_perceptual_roughness": 0.045,
+    "exposure": 8.0,
+    "display": "nonnegative linear exposure, Khronos PBR Neutral, then IEC sRGB once",
+    "display_transform": "pbr-neutral",
+    "display_transform_abi": 1,
+    "display_transform_source": "https://github.com/KhronosGroup/ToneMapping/blob/b5a2eed5ddf6c2227090449399de9c7affb9e4c9/PBR_Neutral/pbrNeutral.glsl",
+    "readback": "explicit synchronous host-visible staging after fence; actual flags in resident_readback when available",
+    "readback_channels_mode": "compact requested attachments",
+    "published_ownership": "immutable CPU bytes; private resident host buffer may be reused after each copy",
+    "attachment_formats": [
+      "RGBA8_UNORM",
+      "R32_SFLOAT",
+      "R32_UINT",
+      "R8_UINT"
+    ],
+    "last_passes": [
+      "visibility",
+      "shadows",
+      "lighting",
+      "display_transform",
+      "sensor_export"
+    ],
+    "last_request": {
+      "width": 1280,
+      "height": 720,
+      "channels": [
+        "srgb8_rgb",
+        "forward_depth_m_f32",
+        "instance_id_u32",
+        "valid_u8"
+      ],
+      "native_attachment_mask": 15,
+      "native_output_bytes": 11980800
+    },
+    "stage_execution": "visibility raster + fused fragment shadows/lighting/display/sensors",
+    "lifecycle_counts": "DLL-wide owned contexts, frames, and explicit Vulkan handles; pools own descriptor sets",
+    "path_trace": false,
+    "textures": false,
+    "texture_assets": null,
+    "normal_maps": null,
+    "reflection": {
+      "mode": "single_bounce",
+      "bounces": 1,
+      "receiver_instances": [
+        {
+          "instance_id": 1,
+          "material_id": "mirror-steel",
+          "metallic_fp32": 1.0,
+          "authored_roughness_fp32": 0.03999999910593033
+        }
+      ],
+      "receiver_policy": "opaque; uploaded FP32 metallic>=.99 and authored roughness<=.10",
+      "roughness_policy": "image is linear [0,1] multiplier; admission uses authored factor; ideal unblurred direction, no rough-reflection integration",
+      "terminal_lighting": "nearest real TLAS triangle: original directional + studio + environment; no recursive reflection",
+      "miss_policy": "original specular environment; zero if no environment; direct lighting retained",
+      "normal_policy": "shading normal determines reflection; primary world-position derivative face normal controls launch bias/inward rejection; terminal triangle-face normal controls hit bias; original primary shadow bias unchanged",
+      "geometry_policy": "same complete BLAS/TLAS, current matrices, barycentric material/primary UV; no screen-space cache"
+    },
+    "physics_steps": 0
+  },
+  "journal_sha256": "d5e9950a8669399a3c5c738f4ab119c618053100f0b60bcd357428207e6a91a8",
+  "backend": {
+    "backend": "phymeo-native-vulkan",
+    "path": "raster",
+    "device": {
+      "abi_version": 2,
+      "device_index": 1,
+      "api_version": 4206881,
+      "driver_version": 2374090752,
+      "vendor_id": 4318,
+      "device_id": 10464,
+      "device_type": 2,
+      "max_width": 32768,
+      "max_height": 32768,
+      "max_vertices": 1048576,
+      "validation_errors": 0,
+      "validation_warnings": 0,
+      "captures": 95,
+      "device_name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "device_uuid": "3b78d98198a3be57a8cb4d72fdfbfa96",
+      "closed": true,
+      "validation_enabled": false,
+      "live_contexts": 0,
+      "live_frames": 0,
+      "live_resources": 0,
+      "resident_abi_version": 1,
+      "resident_max_vertices": 1048576,
+      "resident_max_indices": 1572864,
+      "resident_max_meshes": 1024,
+      "resident_max_instances": 1024,
+      "resident_max_bvh_nodes": 262144,
+      "resident_max_instanced_triangles": 1048576,
+      "resident_vertex_count": 8090,
+      "resident_index_count": 48420,
+      "resident_mesh_count": 2,
+      "resident_instance_count": 2,
+      "resident_bvh_nodes": 4098,
+      "resident_instanced_triangles": 16140,
+      "resident_loaded": 1,
+      "resident_poisoned": 0,
+      "resident_reserved": 0,
+      "resident_upload_calls": 1,
+      "resident_geometry_upload_bytes": 649424,
+      "resident_transform_upload_bytes": 24320,
+      "resident_parameter_upload_bytes": 25984,
+      "resident_captures": 95,
+      "resident_shadow_node_budget": 0,
+      "resident_target_rebuilds": 1,
+      "resident_host_transform_input_bytes": 12160,
+      "resident_render_planes_available": true,
+      "resident_environment_available": true,
+      "resident_environment_abi_version": 1,
+      "resident_environment_info": {
+        "environment_abi_version": 1,
+        "supported": 1,
+        "shader_compatible": 1,
+        "max_side": 1024,
+        "max_mip_levels": 11,
+        "side": 256,
+        "mip_levels": 9,
+        "loaded": 1,
+        "format": 109,
+        "cube_layers": 6,
+        "sh_coefficients": 9,
+        "axis_transform": 1,
+        "diffuse_basis": 1,
+        "max_rgba_bytes": 134217728,
+        "source_rgba_bytes": 8388576,
+        "image_upload_bytes": 8388600,
+        "parameter_upload_bytes": 320,
+        "upload_calls": 1,
+        "rgb_captures_with_environment": 95,
+        "sky_draws": 95,
+        "capture_scope": "successful RGB captures with an uploaded directional environment; sky draw count is not foreground pixel count",
+        "snapshot": "last live query; final GPU allocations are reported by teardown telemetry"
+      },
+      "resident_texture_available": true,
+      "resident_linear_roughness_available": true,
+      "resident_texture_abi_version": 1,
+      "resident_texture_info": {
+        "texture_abi_version": 1,
+        "max_textures": 64,
+        "max_width": 2048,
+        "max_height": 2048,
+        "max_layers": 64,
+        "texture_count": 0,
+        "array_width": 1,
+        "array_height": 1,
+        "array_layers": 1,
+        "uv_count": 0,
+        "bound_instances": 0,
+        "loaded": 0,
+        "sampler_filter": 1,
+        "mip_levels": 1,
+        "format": 43,
+        "max_array_bytes": 134217728,
+        "source_rgba_bytes": 0,
+        "padded_rgba_bytes": 4,
+        "metadata_upload_bytes": 24,
+        "upload_calls": 0,
+        "image_upload_bytes": 4,
+        "rgb_captures_with_textures": 0,
+        "capture_scope": "successful RGB captures with bound texture instances, not visible textured pixel count",
+        "upload_scope": "cumulative actual texture image and metadata GPU writes, including default white sentinel; excluded from geometry_upload_bytes",
+        "snapshot": "last live query, not final allocation state; teardown verified by allocation telemetry"
+      },
+      "resident_normal_info": null,
+      "resident_reflection_info": {
+        "reflection_abi_version": 1,
+        "supported": 1,
+        "shader_compatible": 1,
+        "enabled": 1,
+        "max_bounces": 1,
+        "receiver_count": 1,
+        "set_calls": 1,
+        "metallic_min": 0.9900000095367432,
+        "roughness_max": 0.10000000149011612,
+        "captures": 95,
+        "rgb_captures": 95,
+        "capture_scope": "successful captures after enable; RGB counter is not actual ray/hit count",
+        "snapshot": "last live query retained after close; allocation teardown uses resident telemetry"
+      },
+      "resident_readback": {
+        "readback_abi_version": 1,
+        "memory_type_index": 3,
+        "memory_property_flags": 14,
+        "persistent_mapped": 1,
+        "last_channel_mask": 15,
+        "capacity_bytes": 11980800,
+        "copied_bytes": 1138176000,
+        "map_calls": 1,
+        "unmap_calls": 0,
+        "host_visible": true,
+        "host_coherent": true,
+        "host_cached": true,
+        "device_local": false,
+        "snapshot": "last live query, not final mapping state; teardown verified by allocation telemetry",
+        "capacity_scope": "logical Vulkan readback buffer capacity, not total VkDeviceMemory allocation size"
+      },
+      "resident_profile": {
+        "profile_abi_version": 1,
+        "timestamp_supported": 1,
+        "timestamp_valid_bits": 64,
+        "tlas_node_count": 0,
+        "timestamp_period_ns": 1.0,
+        "captures": 95,
+        "host_prepare_ns": 226800,
+        "host_upload_ns": 1811700,
+        "host_record_ns": 9410700,
+        "host_submit_ns": 5461000,
+        "host_wait_ns": 1087308200,
+        "host_readback_ns": 88265700,
+        "gpu_render_ns": 315159104,
+        "gpu_copy_ns": 680445600,
+        "gpu_total_ns": 995604704,
+        "tlas_upload_bytes": 0,
+        "timestamp_samples": 95,
+        "scope": "cumulative successful captures including warmup; excludes initial static geometry upload",
+        "gpu_scope": "Vulkan timestamps: TLAS build/update + raster, shadow queries, single-bounce reflection and terminal lighting; then attachment copies",
+        "snapshot": "last live query, retained after close; final ownership is checked by telemetry"
+      },
+      "resident_telemetry": {
+        "telemetry_abi_version": 1,
+        "device_luid_valid": 1,
+        "device_node_mask": 1,
+        "device_local_bytes_current": 0,
+        "device_local_bytes_peak": 27246688,
+        "device_local_bytes_allocated": 27249952,
+        "host_visible_bytes_current": 0,
+        "host_visible_bytes_peak": 11981968,
+        "host_visible_bytes_allocated": 21020340,
+        "readback_bytes": 1138176000,
+        "fence_wait_wall_ns": 1105743100,
+        "fence_wait_calls": 100,
+        "submissions": 100,
+        "allocation_count": 30,
+        "free_count": 30,
+        "device_luid_hex": "ef22010000000000",
+        "final_after_destroy": true,
+        "allocation_scope": "this context explicit VkDeviceMemory allocations; not driver total VRAM",
+        "wait_scope": "host wall time blocked in fence waits, including upload; not GPU kernel time"
+      },
+      "resident_studio_available": true,
+      "resident_msaa": null,
+      "resident_ray_query_abi_version": 1,
+      "resident_ray_query_info": {
+        "ray_query_abi_version": 1,
+        "enabled": 1,
+        "blas_count": 2,
+        "tlas_instance_count": 2,
+        "primitive_count": 16140,
+        "loaded": 1,
+        "poisoned": 0,
+        "max_meshes": 1024,
+        "max_instances": 1024,
+        "max_triangles": 524288,
+        "build_flags": 4,
+        "update_flags": 5,
+        "trace_flags": 6,
+        "max_acceleration_bytes": 536870912,
+        "acceleration_buffer_bytes": 1136384,
+        "scratch_buffer_bytes": 342911,
+        "blas_builds": 2,
+        "tlas_builds": 1,
+        "tlas_updates": 94,
+        "instance_upload_bytes": 12160,
+        "shadow_captures": 95,
+        "capture_scope": "successful RGB-requested captures, not ray count or visible shadow pixel count",
+        "buffer_scope": "logical AS and scratch buffer bytes; actual VkDeviceMemory allocation telemetry is separate",
+        "update_scope": "each capture builds or updates TLAS, including two cameras at the same frame key",
+        "upload_scope": "additional VkAccelerationStructureInstanceKHR records, 64 bytes per instance per capture; not the ordinary forward/inverse matrix buffer",
+        "snapshot": "last live query, retained after close; final allocation teardown is reported by resident telemetry"
+      }
+    },
+    "library_path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-reflection\\build-reflection\\phymeo_native.dll",
+    "library_sha256": "a61302d39c3f165ac7dbd5bada9fbd3fb9021a0054cf38473d971e085815c057",
+    "shader_sha256": {
+      "vert": "b1069d14f062dcf3b441d1c44286068b92754557dbe8ce8327e9407cd7c0ec82",
+      "frag": "285620726ccfd8e87fbed17269b269dec5ac52a23eb7eb2d4d5f2bd30e6e432d",
+      "environment_sky_vert": "d9bbb44453660efa44c1f5f6c2861102b62f6b23b400400fac7d7f3faa02b798",
+      "environment_sky_frag": "d1f64fe50290ec0e905830c3d556d8d24ceced8c9a1665155fe5406ee59232b7"
+    },
+    "scene_key": "near-reflection-optical-fixture-v1",
+    "decoded_geometry_sha256": "1bc5e8d8c918f1b6c9270621ce5f0c54ac5b42a18dc0cd3b9fa0519b52224140",
+    "triangles": 16140,
+    "light_count": 1,
+    "max_lights": 4,
+    "max_triangles": 1048576,
+    "resident": true,
+    "shadow_mode": "ray_query",
+    "area_light_grid": 2,
+    "area_light_samples_per_panel": 4,
+    "area_light_brdf_samples_per_panel": 8,
+    "geometry_residency": "static indexed meshes; per-frame instance matrices",
+    "msaa": {
+      "requested_samples": 1,
+      "actual_color_samples": 1,
+      "sensor_samples": 1,
+      "resolve_space": "none (single sample)",
+      "sensor_sampling": "deterministic pixel center"
+    },
+    "primary_visibility": "single-sample Vulkan raster, two-sided opaque triangles",
+    "lighting": "native GGX/Smith/Schlick plus explicit resident studio shader",
+    "studio": {
+      "preset": "neutral-area-studio-v1",
+      "center_m": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale_m": 0.85,
+      "panel_size_scale": 1.0,
+      "panel_strength": 0.125,
+      "panels": [
+        {
+          "name": "key",
+          "position_m": [
+            -1.0199999809265137,
+            -1.190000057220459,
+            1.5299999713897705
+          ],
+          "half_u_world_m": [
+            -0.36944764852523804,
+            0.5430523157119751,
+            0.17607559263706207
+          ],
+          "half_v_world_m": [
+            0.32656532526016235,
+            0.12105196714401245,
+            0.3118617534637451
+          ],
+          "emission_direction_world": [
+            0.4656903154237997,
+            0.543305367994433,
+            -0.6985354731356995
+          ],
+          "half_size_m": [
+            0.68,
+            0.4675
+          ],
+          "radiance_linear_rgb": [
+            0.75,
+            0.75,
+            0.75
+          ],
+          "visible_geometry": false
+        },
+        {
+          "name": "fill",
+          "position_m": [
+            1.190000057220459,
+            0.5950000286102295,
+            1.0199999809265137
+          ],
+          "half_u_world_m": [
+            0.19609002768993378,
+            0.3126589357852936,
+            -0.4111560881137848
+          ],
+          "half_v_world_m": [
+            0.41372841596603394,
+            -0.506038248538971,
+            -0.1874941736459732
+          ],
+          "emission_direction_world": [
+            -0.7098281771887514,
+            -0.3549140885943757,
+            -0.6084241518760726
+          ],
+          "half_size_m": [
+            0.5525,
+            0.68
+          ],
+          "radiance_linear_rgb": [
+            0.3125,
+            0.3125,
+            0.3125
+          ],
+          "visible_geometry": false
+        }
+      ],
+      "basis_sources": [
+        {
+          "url": "https://github.com/haosulab/SAPIEN/blob/8360d517770f24f00bacef7d906ddf1380b8967c/src/sapien_renderer/light_component.cpp",
+          "fact": "internalUpdate composes entity global pose with POSE_GL_TO_ROS before setting the renderer light transform"
+        },
+        {
+          "url": "https://github.com/haosulab/sapien-vulkan-2/blob/62e2511930e43db9fc7d384a49da4f374b35f701/src/scene/light.cpp",
+          "fact": "centered rectangle half width along GL +X, half height along GL +Y at shape angle pi/2"
+        },
+        {
+          "reference": "installed SAPIEN 3.0.3 public headers and shipped rt shader",
+          "pose_header_sha256": "122446114db45d1ad78e47394a31e86cb6c01efc07f1a30bcf657d81f64dce0e",
+          "rt_shading_sha256": "4f7421b369f75e14fa22dc623b770f346800b8c05470fc5d682ccb4f2d52efc4",
+          "fact": "GL_TO_ROS quaternion wxyz=(-.5,-.5,.5,.5); RT shader uses cross(edge0,edge1) dotted with point-to-light"
+        }
+      ],
+      "basis": "entity shortest_rotation(+X to direction); halfU=R*(0,width,0), halfV=R*(0,0,height); U cross V emits",
+      "rectangle_equivalence": "same authored pi/2 rectangle; first GL edge reflected for emission-oriented normal",
+      "arithmetic_scope": "FP64 host basis packed to FP32; not bitwise equivalence to SAPIEN FP32 quaternion/trigonometric evaluation",
+      "environment": {
+        "source_requested_radiance": 0.125,
+        "radiance_linear_rgb": [
+          0.125,
+          0.125,
+          0.125
+        ],
+        "enabled": true,
+        "quantization": "same RGBE shared 8-bit mantissa decode as reference uniform HDR",
+        "source_hdr_sha256": "ab52b11ca03fa82cac04dac82f6ae4a976f7131e0433c106cafe166b950317eb",
+        "active_lighting": false,
+        "replaced_by": "directional environment map"
+      },
+      "declared_scene_lights": "retained unchanged",
+      "units": "metres; relative linear radiance, not calibrated photometric lux",
+      "evaluation": "native resident studio shader; distinct estimator from SAPIEN reference path tracing",
+      "payload_bytes": 144,
+      "payload_sha256": "adec08b5264ff9b4c1ef8c5c3406185b42d5649b8602ae3d263f23e97642610d"
+    },
+    "environment": {
+      "source_sha256": "a125ada38fc602025326f29b68df09531bb16f899f1973b03d9ac5ac98142548",
+      "input_size": [
+        1024,
+        512
+      ],
+      "strength": 0.0625,
+      "yaw_degrees": 25.0,
+      "peak_linear_radiance": 67.0,
+      "prefilter_roughness": "mip/(levels-1)",
+      "ggx_directions_per_texel": 128,
+      "gloss": "split-sum radiance prefilter, V=N, normalized positive N.L",
+      "orientation": "world Z up; Vulkan sampler ray.xzy; positive yaw turns +X toward +Y",
+      "diffuse": "world XYZ real SH9; exact texel solid-angle projection; irradiance divided by pi",
+      "rgba_sha256": "23145ed654a52e262a3f8bf4a67bb697dd7096537693e8e24f5b2d3fdd1f12f3",
+      "diffuse_sh_sha256": "9ae5d3d3181f2590dd1002b947cde397e1508d5d99147bed636c2e49e8f77b76",
+      "side": 256,
+      "mip_levels": 9,
+      "rgba_bytes": 8388576,
+      "diffuse_sh_bytes": 144,
+      "native_axis_transform": "world xyz -> sampler xzy; SH basis remains world xyz",
+      "native_face_order": [
+        "+X",
+        "-X",
+        "+Y",
+        "-Y",
+        "+Z",
+        "-Z"
+      ],
+      "native_layout": "level-major, then six faces, top-row-first RGBA32F little endian",
+      "native_roughness": "perceptual roughness r -> mip LOD r*(levels-1); no second prefilter",
+      "native_diffuse": "shared normalized real SH9 coefficients already include Lambert convolution / pi",
+      "native_environment_precedence": "map replaces uniform scalar environment; rectangular panels and scene lights remain"
+    },
+    "shadows": "GPU fragment Vulkan hardware ray queries against BLAS/TLAS; primary visibility remains raster",
+    "shadow_bias_m": 1e-05,
+    "minimum_perceptual_roughness": 0.045,
+    "exposure": 8.0,
+    "display": "nonnegative linear exposure, Khronos PBR Neutral, then IEC sRGB once",
+    "display_transform": "pbr-neutral",
+    "display_transform_abi": 1,
+    "display_transform_source": "https://github.com/KhronosGroup/ToneMapping/blob/b5a2eed5ddf6c2227090449399de9c7affb9e4c9/PBR_Neutral/pbrNeutral.glsl",
+    "readback": "explicit synchronous host-visible staging after fence; actual flags in resident_readback when available",
+    "readback_channels_mode": "compact requested attachments",
+    "published_ownership": "immutable CPU bytes; private resident host buffer may be reused after each copy",
+    "attachment_formats": [
+      "RGBA8_UNORM",
+      "R32_SFLOAT",
+      "R32_UINT",
+      "R8_UINT"
+    ],
+    "last_passes": [
+      "visibility",
+      "shadows",
+      "lighting",
+      "display_transform",
+      "sensor_export"
+    ],
+    "last_request": {
+      "width": 1280,
+      "height": 720,
+      "channels": [
+        "srgb8_rgb",
+        "forward_depth_m_f32",
+        "instance_id_u32",
+        "valid_u8"
+      ],
+      "native_attachment_mask": 15,
+      "native_output_bytes": 11980800
+    },
+    "stage_execution": "visibility raster + fused fragment shadows/lighting/display/sensors",
+    "lifecycle_counts": "DLL-wide owned contexts, frames, and explicit Vulkan handles; pools own descriptor sets",
+    "path_trace": false,
+    "textures": false,
+    "texture_assets": null,
+    "normal_maps": null,
+    "reflection": {
+      "mode": "single_bounce",
+      "bounces": 1,
+      "receiver_instances": [
+        {
+          "instance_id": 1,
+          "material_id": "mirror-steel",
+          "metallic_fp32": 1.0,
+          "authored_roughness_fp32": 0.03999999910593033
+        }
+      ],
+      "receiver_policy": "opaque; uploaded FP32 metallic>=.99 and authored roughness<=.10",
+      "roughness_policy": "image is linear [0,1] multiplier; admission uses authored factor; ideal unblurred direction, no rough-reflection integration",
+      "terminal_lighting": "nearest real TLAS triangle: original directional + studio + environment; no recursive reflection",
+      "miss_policy": "original specular environment; zero if no environment; direct lighting retained",
+      "normal_policy": "shading normal determines reflection; primary world-position derivative face normal controls launch bias/inward rejection; terminal triangle-face normal controls hit bias; original primary shadow bias unchanged",
+      "geometry_policy": "same complete BLAS/TLAS, current matrices, barycentric material/primary UV; no screen-space cache"
+    },
+    "physics_steps": 0
+  },
+  "close": {
+    "closed": true,
+    "telemetry": {
+      "telemetry_abi_version": 1,
+      "device_luid_valid": 1,
+      "device_node_mask": 1,
+      "device_local_bytes_current": 0,
+      "device_local_bytes_peak": 27246688,
+      "device_local_bytes_allocated": 27249952,
+      "host_visible_bytes_current": 0,
+      "host_visible_bytes_peak": 11981968,
+      "host_visible_bytes_allocated": 21020340,
+      "readback_bytes": 1138176000,
+      "fence_wait_wall_ns": 1105743100,
+      "fence_wait_calls": 100,
+      "submissions": 100,
+      "allocation_count": 30,
+      "free_count": 30,
+      "device_luid_hex": "ef22010000000000",
+      "final_after_destroy": true,
+      "allocation_scope": "this context explicit VkDeviceMemory allocations; not driver total VRAM",
+      "wait_scope": "host wall time blocked in fence waits, including upload; not GPU kernel time"
+    }
+  }
+}

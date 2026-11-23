@@ -118,6 +118,7 @@ def inspect_wheel(path, rendering_root=None):
                  "_shaders/native.vert", "_shaders/native.frag", "_shaders/resident.vert", "_shaders/resident.frag"):
         require(native_prefix + name)
     checked_sources = []
+    omitted_source_controls = {}
     if rendering_root is not None:
         root = Path(rendering_root).resolve()
         package = root / "src/phymeo_rendering"
@@ -128,7 +129,16 @@ def inspect_wheel(path, rendering_root=None):
                 checked_sources.append(name)
         for source in sorted((root / "assets/panda").rglob("*")):
             if source.is_file():
-                require(ASSET_PREFIX + source.relative_to(root / "assets/panda").as_posix(), sha256(source.read_bytes()))
+                relative = source.relative_to(root / "assets/panda").as_posix()
+                digest = sha256(source.read_bytes())
+                # Exact root Git controls affect checkout behavior, not the
+                # installed asset. Manifest resources were already required
+                # above. All other dotfiles and nested names remain mandatory;
+                # if a Git control is packaged, its bytes are checked too.
+                if relative in {".gitattributes", ".gitignore"} and ASSET_PREFIX + relative not in files:
+                    omitted_source_controls[relative] = digest
+                else:
+                    require(ASSET_PREFIX + relative, digest)
     return {
         "schema": "phymeo-rendering-wheel-audit-v1", "file": str(path), "sha256": sha256(path.read_bytes()),
         "version": metadata.get("Version"), "tag": "py3-none-any", "platform_binaries": [],
@@ -136,7 +146,8 @@ def inspect_wheel(path, rendering_root=None):
         "native_sources": sorted(n for n in files if n.startswith(native_prefix + "_native/") or n.startswith(native_prefix + "_shaders/")),
         "source_files_compared": checked_sources,
         "panda": {"manifest_sha256": MANIFEST_SHA256, "files_verified": len(resources) + 1,
-                  "instances": len(manifest["instances"]), "meshes": len(manifest["meshes"])},
+                  "instances": len(manifest["instances"]), "meshes": len(manifest["meshes"]),
+                  "source_control_files_omitted": omitted_source_controls},
     }
 
 

@@ -119,9 +119,9 @@ class PairedFilmTests(unittest.TestCase):
                 "profile": copy.deepcopy(protocol["profile"]), "backend": {
                     "display_transform": "pbr-neutral", "exposure": 8.,
                     "shadow_mode": "ray_query", "area_light_grid": 2,
-                    "library_sha256": "a" * 64,
+                    "library_sha256": "a" * 64, "decoded_geometry_sha256": "b" * 64,
                     "msaa": {"requested_samples": samples, "actual_color_samples": samples, "sensor_samples": 1, "sensor_sampling": "deterministic pixel center", "resolve_space": "display-linear then IEC sRGB once" if samples == 4 else "none (single sample)"},
-                    "device": {"closed": True, "resident_upload_calls": 1,
+                    "device": {"closed": True, "device_uuid": "same-device", "resident_upload_calls": 1,
                         "resident_captures": 310, "live_contexts": 0, "live_frames": 0,
                         "live_resources": 0, "validation_errors": 0}}})
         return protocol, receipts[0], receipts[1]
@@ -275,6 +275,14 @@ class PairedFilmTests(unittest.TestCase):
                 protocol, one, four = self.protocol_and_receipts()
                 four["backend"][key] = wrong
                 with self.assertRaisesRegex(ValueError,"backend|profile"):
+                    self.module.compare_receipts(protocol,one,four)
+    def test_actual_geometry_or_physical_device_change_rejects(self):
+        for key in ("geometry", "device"):
+            with self.subTest(key=key):
+                protocol, one, four = self.protocol_and_receipts()
+                if key == "geometry": four["backend"]["decoded_geometry_sha256"] = "d" * 64
+                else: four["backend"]["device"]["device_uuid"] = "other-device"
+                with self.assertRaisesRegex(ValueError,"geometry|device|backend"):
                     self.module.compare_receipts(protocol,one,four)
 if __name__ == "__main__":
     unittest.main()

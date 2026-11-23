@@ -128,6 +128,18 @@ class GuidedMotionMetricsTests(unittest.TestCase):
                     (3 * (a['count'] + b['count']))) ** .5
         self.assertAlmostEqual(report['pooled']['fingers']['raw']['rmse'], expected)
 
+    def test_integer_pose_identity_and_unchanged_later_batch_are_explicit(self):
+        data = inputs(15)
+        data['filtered_rgb8'] = data['raw_rgb8'].copy()
+        score = metrics.score_pose(**data)
+        report = metrics.summarize_scores([score], registered_pose_ids=[15],
+                                          required_reveal_pose_ids=[15])
+        self.assertEqual(score['pose_id'], 15)
+        self.assertEqual(score['subsets']['fingers']['rmse_change_sign'], 'unchanged')
+        self.assertTrue(score['subsets']['fingers']['filtered_equals_raw'])
+        self.assertEqual(report['status'], 'failed')
+        self.assertEqual(report['gates']['fingers']['rmse_ratio'], 1.)
+
     def test_shape_type_and_nonfinite_foreground_rejected(self):
         for field, value in [('raw_rgb8', np.zeros((16, 24, 3), dtype=np.float32)),
                              ('reference_rgb8', np.zeros((1, 24, 3), dtype=np.uint8)),
@@ -160,3 +172,4 @@ class GuidedMotionMetricsTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+

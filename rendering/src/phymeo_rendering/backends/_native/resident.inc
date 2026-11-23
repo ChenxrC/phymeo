@@ -37,6 +37,7 @@ struct ResidentEnvironment {
     VkPipeline sky_pipeline{};
     VkShaderModule sky_vertex{},sky_fragment{};
     bool display_compatible=false;
+    bool msaa_compatible=false;
     explicit ResidentEnvironment(Context& context):c(context) {}
     ~ResidentEnvironment() {
         release(sky_pipeline,[&](auto h){vkDestroyPipeline(c.device,h,nullptr);});
@@ -275,6 +276,7 @@ uint64_t upload_static(Context& c, const std::vector<StaticUpload>& uploads) {
 #include "resident_textures.inc"
 #include "resident_environment.inc"
 #include "resident_rayquery.inc"
+#include "resident_msaa.inc"
 
 void resident_upload(Context& c, const PrResidentVertex* vertices, uint32_t vertex_count,
                      const uint32_t* indices, uint32_t index_count,
@@ -568,6 +570,7 @@ std::vector<GpuBvhNode> resident_tlas(const ResidentState& state,
 
 void resident_target(Context& c, ResidentState& state, uint32_t width, uint32_t height) {
     if (state.target && state.width == width && state.height == height) return;
+    if (c.msaa_state) c.msaa_state->target.reset();
     const auto& info = c.resident_properties;
     uint64_t errors_before = c.errors.load();
     auto frame = std::make_unique<FrameResources>(c);
@@ -706,12 +709,15 @@ void resident_render(Context& c, const float* matrices, uint32_t instance_count,
             "resident scene is not loaded or context failed; open an explicit new session");
     validate_resident_params(c, params, width, height, output, output_bytes, channel_mask, compact);
     auto& state = *c.resident_state;
+    const bool msaa_color=c.msaa_info.requested_samples==4 && params.counts[2]!=0;
+    const bool center_pass=!msaa_color || (channel_mask&14u)!=0;
     auto transforms = resident_transforms(state, matrices, instance_count);
     auto tlas = c.ray_query ? std::vector<GpuBvhNode>{} : resident_tlas(state, transforms);
     const auto upload_begin=HostClock::now();
     try {
     resident_target(c, state, width, height);
     auto& frame = *state.target;
+    if (msaa_color) msaa_prepare(c,frame,width,height);
     require(frame.readback_mapping && output_bytes<=frame.readback_capacity,
             "resident readback target capacity mismatch");
     auto& info = c.resident_properties;
@@ -758,6 +764,8 @@ void resident_render(Context& c, const float* matrices, uint32_t instance_count,
     vkCmdPipelineBarrier(frame.commands, VK_PIPELINE_STAGE_HOST_BIT,
         VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
         0, nullptr, static_cast<uint32_t>(inputs.size()), inputs.data(), 0, nullptr);
+    VkDeviceSize offset=0;
+    if (center_pass) {
     std::array<VkClearValue, 5> clear{};
     clear[0].color.float32[3] = 1;
     if (c.studio.environment[3] != 0 && params.counts[2] != 0) {
@@ -780,12 +788,12 @@ void resident_render(Context& c, const float* matrices, uint32_t instance_count,
     VkRect2D scissor{{0,0},{width,height}};
     vkCmdSetViewport(frame.commands, 0, 1, &viewport);
     vkCmdSetScissor(frame.commands, 0, 1, &scissor);
-    VkDeviceSize offset = 0;
+    offset = 0;
     vkCmdBindVertexBuffers(frame.commands, 0, 1, &state.vertices.handle, &offset);
     vkCmdBindIndexBuffer(frame.commands, state.indices.handle, 0, VK_INDEX_TYPE_UINT32);
     vkCmdBindDescriptorSets(frame.commands, VK_PIPELINE_BIND_POINT_GRAPHICS, c.pipeline_layout,
                            0, 1, &state.descriptor_set, 0, nullptr);
-    if (c.environment_info.loaded && params.counts[2]) {
+    if (c.environment_info.loaded && params.counts[2] && !msaa_color) {
         vkCmdBindPipeline(frame.commands,VK_PIPELINE_BIND_POINT_GRAPHICS,state.environment->sky_pipeline);
         vkCmdDraw(frame.commands,3,1,0,0);
         vkCmdBindPipeline(frame.commands,VK_PIPELINE_BIND_POINT_GRAPHICS,c.pipeline);
@@ -796,6 +804,8 @@ void resident_render(Context& c, const float* matrices, uint32_t instance_count,
                          static_cast<int32_t>(mesh.first_vertex), slot);
     }
     vkCmdEndRenderPass(frame.commands);
+    }
+    if (msaa_color) msaa_record(c,frame,params);
     if (frame.timestamps)
         vkCmdWriteTimestamp(frame.commands,VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,frame.timestamps,1);
     const size_t bytes_per_pixel[]{4,4,4,1};
@@ -876,6 +886,8 @@ void resident_render(Context& c, const float* matrices, uint32_t instance_count,
         state.acceleration->built=true;
         if (params.counts[2]) ++c.ray_info.shadow_captures;
     }
+    if (msaa_color) { ++c.msaa_info.color_passes; ++c.msaa_info.resolve_passes; }
+    if (center_pass) ++c.msaa_info.center_passes;
     ++c.properties.captures; ++info.captures;
     } catch (...) {
         c.poisoned = true; // a failed GPU operation cannot publish or be silently retried

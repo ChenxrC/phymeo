@@ -26,7 +26,7 @@ foreach(configuration DEBUG RELEASE RELWITHDEBINFO MINSIZEREL)
     RUNTIME_OUTPUT_DIRECTORY_${configuration} "${CMAKE_BINARY_DIR}"
     LIBRARY_OUTPUT_DIRECTORY_${configuration} "${CMAKE_BINARY_DIR}")
 endforeach()
-foreach(program native resident resident_sky resident_rayquery)
+foreach(program native resident resident_sky resident_rayquery resident_msaa_resolve)
   foreach(stage vert frag)
     set(source "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/${program}.${stage}")
     set(shader_options --target-env vulkan1.1)
@@ -38,7 +38,8 @@ foreach(program native resident resident_sky resident_rayquery)
     set(shader_dependencies "${source}")
     if((program STREQUAL "resident" OR program STREQUAL "resident_sky" OR program STREQUAL "resident_rayquery") AND stage STREQUAL "frag")
       list(APPEND shader_dependencies "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident_environment.glsl"
-        "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident_display.glsl")
+        "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident_display.glsl"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident_msaa.glsl")
     endif()
     if((program STREQUAL "resident" OR program STREQUAL "resident_rayquery") AND stage STREQUAL "frag")
       list(APPEND shader_dependencies "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident_studio.glsl")
@@ -61,7 +62,8 @@ foreach(program resident resident_rayquery)
     set(shader_dependencies "${source}"
       "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident_environment.glsl"
       "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident_studio.glsl"
-      "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident_display.glsl")
+      "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident_display.glsl"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident_msaa.glsl")
     if(program STREQUAL "resident_rayquery")
       set(shader_options --target-env vulkan1.2 --glsl-version 460 -DPR_RESIDENT_RAY_QUERY=1 -DPR_STUDIO_AREA_GRID=${grid})
       list(APPEND shader_dependencies "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident_rayquery.glsl")

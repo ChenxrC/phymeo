@@ -26,6 +26,7 @@ from ._native_studio import pack_studio
 from ._native_texture import pack_textures
 from ._native_environment import pack_environment
 from ._native_display import configure_display
+from ._native_msaa import configure_msaa
 from ._native_device import (
     NativeDevice,
     Parameters,
@@ -147,10 +148,11 @@ def _image_planes(raw, pixels, channels, attachment_mask):
 
 
 class _NativeDelegate:
-    def __init__(self, scene, meshes, device, exposure, *, resident=False, studio=None, textures=None, environment=None, shadow_mode='software', area_light_grid=2, display_info=None):
+    def __init__(self, scene, meshes, device, exposure, *, resident=False, studio=None, textures=None, environment=None, shadow_mode='software', area_light_grid=2, display_info=None, msaa_info=None):
         self.scene, self.meshes, self.device, self.exposure = scene, meshes, device, exposure
         self.display_info = display_info or {'display_transform':'clip', 'display_transform_abi':None}
         self.resident = resident
+        self.msaa_info = msaa_info or configure_msaa(None, 1)
         self.studio = deepcopy(studio)
         self.textures = deepcopy(textures)
         self.environment = deepcopy(environment)
@@ -232,7 +234,9 @@ class _NativeDelegate:
             area_light_brdf_samples_per_panel=8,
             geometry_residency=('static indexed meshes; per-frame instance matrices' if self.resident
                                 else 'expanded world triangles per capture'),
-            primary_visibility="single-sample Vulkan raster, two-sided opaque triangles",
+            msaa=dict(self.msaa_info),
+            primary_visibility=("4-sample Vulkan color raster; independent pixel-center sensors" if self.msaa_info["actual_color_samples"]==4 else
+                                "single-sample Vulkan raster, two-sided opaque triangles"),
             lighting=('native GGX/Smith/Schlick plus explicit resident studio shader' if self.studio else
                       'direct GGX/Smith/Schlick metallic-roughness; no ambient or IBL'),
             studio=deepcopy(self.studio),
@@ -308,6 +312,7 @@ class NativeBackend:
         shadow_mode='software',
         area_light_grid=2,
         display_transform='clip',
+        msaa_samples=1,
     ):
         if isinstance(device_index, bool) or not isinstance(device_index, int):
             raise TypeError("device_index must be an integer, not bool")
@@ -323,6 +328,13 @@ class NativeBackend:
         if display_transform != 'clip' and not resident:
             raise ValueError('pbr-neutral display_transform requires resident=True')
         self.display_transform = display_transform
+        if type(msaa_samples) is not int:
+            raise TypeError('msaa_samples must be a strict integer, not bool')
+        if msaa_samples not in (1,4):
+            raise ValueError('msaa_samples must be 1 or 4')
+        if msaa_samples!=1 and not resident:
+            raise UnsupportedRequestError('4x MSAA requires resident=True')
+        self.msaa_samples=msaa_samples
         if type(area_light_grid) is not int:
             raise TypeError('area_light_grid must be an integer, not bool')
         if area_light_grid not in (2, 4, 8):
@@ -409,8 +421,9 @@ class NativeBackend:
                     environment_info = environment.diagnostics
                     studio_info['environment']['active_lighting'] = False
                     studio_info['environment']['replaced_by'] = 'directional environment map'
+            msaa_info = configure_msaa(device, self.msaa_samples)
             return NativeRenderSession(scene, _NativeDelegate(
-                scene, meshes, device, self.exposure, resident=self.resident, studio=studio_info, textures=texture_info, environment=environment_info, shadow_mode=self.shadow_mode, area_light_grid=self.area_light_grid, display_info=display_info))
+                scene, meshes, device, self.exposure, resident=self.resident, studio=studio_info, textures=texture_info, environment=environment_info, shadow_mode=self.shadow_mode, area_light_grid=self.area_light_grid, display_info=display_info, msaa_info=msaa_info))
         except BaseException as primary:
             try:
                 device.close()

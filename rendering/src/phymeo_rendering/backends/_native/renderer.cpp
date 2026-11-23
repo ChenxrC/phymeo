@@ -60,10 +60,15 @@ struct Image { VkImage handle{}; VkDeviceMemory memory{}; VkImageView view{}; Al
 #include "resident_display.inc"
 #include "resident_rayquery_types.inc"
 struct ResidentState;
+struct MsaaState;
+struct Context;
+void probe_msaa(Context&,const VkPhysicalDeviceLimits&);
 struct Context {
     bool resident = false;
     bool surface_maps_compatible = false;
     bool display_compatible = false;
+    PrResidentMsaaInfo msaa_info{};
+    std::shared_ptr<MsaaState> msaa_state;
     uint32_t display_transform = 0;
     bool ray_query = false;
     RayDispatch ray;
@@ -103,12 +108,14 @@ struct Context {
         texture_info.texture_abi_version=1;
         environment_info.environment_abi_version=1;
         ray_info.ray_query_abi_version=1;
+        msaa_info.msaa_abi_version=1; msaa_info.requested_samples=msaa_info.color_samples=msaa_info.sensor_samples=1;
     }
     ~Context() { shutdown(); --live_contexts; }
     VkResult shutdown() noexcept {
         VkResult waited = VK_SUCCESS;
         if (device) {
             waited = vkDeviceWaitIdle(device);
+            msaa_state.reset(); // framebuffers refer to the resident final color image
             resident_state.reset(); // dependent buffers/targets die before VkDevice
             release(pipeline, [&](auto h) { vkDestroyPipeline(device,h,nullptr); });
             release(pipeline_layout, [&](auto h) { vkDestroyPipelineLayout(device,h,nullptr); });
@@ -212,13 +219,15 @@ struct Context {
         std::memcpy(mapped, source, bytes);
         vkUnmapMemory(device, buffer.memory);
     }
-    void make_image(Image& value, uint32_t width, uint32_t height, VkFormat format, bool depth) {
+    void make_image(Image& value, uint32_t width, uint32_t height, VkFormat format, bool depth, VkSampleCountFlagBits samples=VK_SAMPLE_COUNT_1_BIT,
+                    VkImageUsageFlags extra_usage=0) {
         VkImageCreateInfo create{VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO};
         create.imageType = VK_IMAGE_TYPE_2D; create.format = format;
         create.extent = {width, height, 1}; create.mipLevels = 1; create.arrayLayers = 1;
-        create.samples = VK_SAMPLE_COUNT_1_BIT; create.tiling = VK_IMAGE_TILING_OPTIMAL;
+        create.samples = samples; create.tiling = VK_IMAGE_TILING_OPTIMAL;
         create.usage = depth ? VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT :
             (VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+        create.usage |= extra_usage;
         create.sharingMode = VK_SHARING_MODE_EXCLUSIVE; create.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         acquire(value.handle, "vkCreateImage", [&](auto* output) { return vkCreateImage(device, &create, nullptr, output); });
         VkMemoryRequirements needed{}; vkGetImageMemoryRequirements(device, value.handle, &needed);
@@ -239,6 +248,7 @@ struct Context {
         resident = resident_path; ray_query=hardware_shadow;
         surface_maps_compatible=resident && surface_maps_shader_marker(frag,frag_bytes);
         display_compatible=resident && display_shader_marker(frag,frag_bytes);
+        msaa_info.shader_compatible=resident && named_shader_marker(frag,frag_bytes,59,"PR_MSAA_COLOR_ABI");
         require(!ray_query || resident,"ray-query shadows require resident geometry");
         if (ray_query) {
             auto interface=spirv_interface(frag,frag_bytes,4);
@@ -292,6 +302,7 @@ struct Context {
         if (ray_query) identity.pNext=&acceleration_limits;
         vkGetPhysicalDeviceProperties2(physical, &description);
         const auto& p = description.properties;
+        if (resident) probe_msaa(*this,p.limits);
         VkPhysicalDeviceFeatures available_features{};
         vkGetPhysicalDeviceFeatures(physical,&available_features);
         const std::array<const char*,3> ray_extensions{VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
@@ -1022,4 +1033,21 @@ int pr_resident_set_display_transform(void* handle,uint32_t mode) {
         c.display_transform=mode;
         return 0;
     } catch (const std::exception& error) { last_error=error.what(); return -1; }
+}
+
+uint32_t pr_resident_msaa_abi_version() { return 1; }
+int pr_resident_msaa_info(void* handle,PrResidentMsaaInfo* output) {
+    if(!handle || !output) { last_error="null resident MSAA info"; return -1; }
+    auto& c=*static_cast<Context*>(handle);
+    if(!c.resident) { last_error="not a resident MSAA context"; return -1; }
+    *output=c.msaa_info;
+    return 0;
+}
+int pr_resident_set_msaa(void* handle,uint32_t samples,const uint32_t* vert,size_t vert_bytes,
+                        const uint32_t* frag,size_t frag_bytes) {
+    try {
+        require(handle,"null resident MSAA context");
+        resident_set_msaa(*static_cast<Context*>(handle),samples,vert,vert_bytes,frag,frag_bytes);
+        return 0;
+    } catch(const std::exception& error) { last_error=error.what(); return -1; }
 }

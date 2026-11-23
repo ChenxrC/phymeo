@@ -157,6 +157,8 @@ void resident_set_environment(Context& c,const PrResidentEnvironment& config,con
     require(fragment.valid && fragment.main && fragment.bindings==sky_bindings && fragment.locations==1,
         "resident sky fragment SPIR-V has incompatible stage/interface");
     const bool display_compatible=display_shader_marker(frag,frag_bytes);
+    const bool msaa_compatible=named_shader_marker(frag,frag_bytes,59,"PR_MSAA_COLOR_ABI");
+    require(c.msaa_info.requested_samples!=4 || msaa_compatible,"resident sky lacks MSAA color ABI marker");
     require(c.display_transform!=1 || display_compatible,
         "resident sky fragment lacks named display-transform ABI marker" );
     // All deterministic input/ABI checks above precede any resource allocation.
@@ -165,6 +167,7 @@ void resident_set_environment(Context& c,const PrResidentEnvironment& config,con
         auto resource=upload_environment_resource(c,config,rgba,rgba_bytes,VK_FORMAT_R32G32B32A32_SFLOAT,true);
         make_sky_pipeline(c,*resource,vert,vert_bytes,frag,frag_bytes);
         resource->display_compatible=display_compatible;
+        resource->msaa_compatible=msaa_compatible;
         require(c.errors.load()==errors_before,"Vulkan validation failed during environment upload");
         c.resident_state->environment=std::move(resource);
     } catch (...) { c.poisoned=true; throw; }

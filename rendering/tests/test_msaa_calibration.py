@@ -108,6 +108,7 @@ class PublicDeviceAcceptance(unittest.TestCase):
                 device_index=int(os.environ.get('PHYMEO_NATIVE_DEVICE_INDEX','1')),validation=True)
             self.assertTrue(report['acceptance']['edge_mae_25_percent'])
             self.assertTrue(report['acceptance']['motion_error_20_percent'])
+            self.assertTrue(report['acceptance']['linear_resolve'])
             self.assertTrue(report['acceptance']['centre_sensors'])
             self.assertTrue(report['acceptance']['request_combinations'])
             self.assertTrue(report['acceptance']['resize_and_reset'])
@@ -116,3 +117,4 @@ class PublicDeviceAcceptance(unittest.TestCase):
 
 if __name__=='__main__':
     unittest.main()
+

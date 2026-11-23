@@ -2,6 +2,9 @@
 import copy
 import importlib
 import json
+from hashlib import sha256
+import os
+import shutil
 from pathlib import Path
 import sys
 import tempfile
@@ -219,5 +222,49 @@ class PairedFilmTests(unittest.TestCase):
                 else: bad["streams"].append({"codec_type": "audio"})
                 with self.assertRaises(ValueError):
                     self.module.verify_probe(bad, width=1280, height=768, count=3)
+    def test_new_media_directory_preserves_a_previous_partial_encode(self):
+        protocol, one, four = self.protocol_and_receipts()
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary) / "capture"
+            root.mkdir()
+            (root / "protocol.json").write_text(json.dumps(protocol), encoding="utf-8")
+            for number, receipt in ((1,one),(4,four)):
+                directory=root/f"{number}x"; directory.mkdir()
+                (directory/"capture.json").write_text(json.dumps(receipt), encoding="utf-8")
+            original=root/"panda-msaa-split.mp4"; original.write_bytes(b"original-partial-output")
+            destination=Path(temporary)/"new-media"
+            def encode(source, mode, target, receipts, **tools):
+                self.assertEqual(source,root.resolve())
+                self.assertEqual(target.parent,destination.resolve())
+                target.write_bytes(b"new-tested-media-boundary")
+                return {"file":target.name,"complete_decode":True}
+            with patch.object(self.module,"_encode_one",side_effect=encode), \
+                 patch.object(self.module,"_run",return_value="host codec test"), \
+                 patch.object(self.module.shutil,"which",side_effect=lambda name:name):
+                self.module.encode_pair(root,videos="split",media_output=destination)
+                with self.assertRaises(FileExistsError):
+                    self.module.encode_pair(root,videos="split",media_output=destination)
+            self.assertEqual(original.read_bytes(),b"original-partial-output")
+            self.assertTrue((destination/"encoding.json").is_file())
+
+    @unittest.skipUnless(os.environ.get("PHYMEO_MSAA_CODEC_TEST") == "1", "explicit serial FFmpeg HOST slot")
+    def test_three_real_encoded_frames_have_square_pixels_and_decode_completely(self):
+        from PIL import Image
+        tools={name:shutil.which(name) for name in ("ffmpeg","ffprobe")}
+        self.assertTrue(all(tools.values()),"real FFmpeg tools required")
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary); directory=root/"1x/frames"; directory.mkdir(parents=True)
+            hashes=[]
+            for index in range(3):
+                image=Image.new("RGB",(1280,720),(32+index*40,100,180))
+                hashes.append(sha256(image.tobytes()).hexdigest())
+                image.save(directory/f"{index:04d}.png")
+            receipt=self.module._encode_one(root,"1",root/"three.mp4",
+                {1:{"frame_sha256":hashes}},count=3,**tools)
+            self.assertEqual(receipt["stream"]["sample_aspect_ratio"],"1:1")
+            self.assertEqual(receipt["frames"],3)
+            self.assertTrue(receipt["complete_decode"])
+            self.assertEqual(len(receipt["codec_error"]["per_frame"]),3)
+            self.assertEqual(receipt["duration_s"],.1)
 if __name__ == "__main__":
     unittest.main()

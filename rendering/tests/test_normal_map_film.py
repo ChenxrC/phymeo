@@ -68,8 +68,8 @@ class NormalMapFilmTests(unittest.TestCase):
         from PIL import Image
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            first = self.subject.make_textures(root/"first", side=256)
-            second = self.subject.make_textures(root/"second", side=256)
+            first = self.subject.make_textures(root/"first", side=1024)
+            second = self.subject.make_textures(root/"second", side=1024)
             for kind in ("steel", "rubber"):
                 a, b = first[kind], second[kind]
                 self.assertEqual(a["sha256"], b["sha256"])
@@ -78,11 +78,11 @@ class NormalMapFilmTests(unittest.TestCase):
                 path = Path(a["file"])
                 self.assertEqual(sha256(path.read_bytes()).hexdigest(), a["sha256"])
                 with Image.open(path) as image:
-                    self.assertEqual((image.mode, image.size), ("RGB", (256, 256)))
+                    self.assertEqual((image.mode, image.size), ("RGB", (1024, 1024)))
                     rgb = np.asarray(image)
                 # Independently reconstruct the chosen texel from its declared centre.
                 x, y = 37, 91
-                n = self.subject.tangent_normal(kind, (x+.5)/256, (y+.5)/256)
+                n = self.subject.tangent_normal(kind, (x+.5)/1024, (y+.5)/1024)
                 expected = np.floor((n+1)*127.5+.5).astype(np.uint8)
                 np.testing.assert_array_equal(rgb[y, x], expected)
                 self.assertGreater(np.unique(rgb.reshape(-1, 3), axis=0).shape[0], 8)
@@ -214,6 +214,34 @@ class NormalMapFilmTests(unittest.TestCase):
             changed["streams"][0][field] = value
             with self.assertRaises(ValueError):
                 self.subject.verify_movie(changed, split=True)
+
+
+
+    def test_actual_normal_diagnostics_bind_slots_sources_and_real_gpu_captures(self):
+        textures = {kind: dict(sha256=letter*64, rgb8_sha256=number*64, size=[1024, 1024])
+                    for kind, letter, number in (("steel", "a", "1"), ("rubber", "b", "2"))}
+        normal = dict(strength=1., instance_slots=[2**32-1, 0, 1, 2**32-1, 2**32-1],
+            textures=[dict(source_sha256=textures[k]["sha256"],
+                           rgb8_sha256=textures[k]["rgb8_sha256"], width=1024, height=1024)
+                      for k in ("steel", "rubber")])
+        backend = dict(normal_maps=normal, device={"resident_normal_info": dict(
+            loaded=1, texture_count=2, bound_instances=2, upload_calls=1,
+            rgb_captures_with_normals=128, normal_abi_version=1, mip_levels=1)})
+        self.assertTrue(self.subject.verify_normal_binding(backend, textures, mode="on"))
+        for change in ("slot", "source", "captures"):
+            bad = deepcopy(backend)
+            if change == "slot":
+                bad["normal_maps"]["instance_slots"][1:3] = [1, 0]
+            elif change == "source":
+                bad["normal_maps"]["textures"][0]["source_sha256"] = "c"*64
+            else:
+                bad["device"]["resident_normal_info"]["rgb_captures_with_normals"] = 0
+            with self.assertRaisesRegex(ValueError, "normal"):
+                self.subject.verify_normal_binding(bad, textures, mode="on")
+        self.assertTrue(self.subject.verify_normal_binding(
+            {"normal_maps": None, "device": {"resident_normal_info": None}}, textures, mode="off"))
+        with self.assertRaises(ValueError):
+            self.subject.verify_normal_binding(backend, textures, mode="off")
 
 
 if __name__ == "__main__":

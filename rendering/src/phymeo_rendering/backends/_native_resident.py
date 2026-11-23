@@ -126,7 +126,7 @@ class ResidentReadbackInfo(ct.Structure):
 class ResidentDevice(NativeDevice):
     _shader_prefix = 'resident'
 
-    def __init__(self, *args, area_light_grid=2, normal_maps=False, reflection=False, indirect=False):
+    def __init__(self, *args, area_light_grid=2, normal_maps=False, reflection=False, indirect=False, progressive=False):
         if type(area_light_grid) is not int or area_light_grid not in (2, 4, 8):
             raise ValueError('area_light_grid must be 2, 4 or 8')
         if type(normal_maps) is not bool:
@@ -134,6 +134,8 @@ class ResidentDevice(NativeDevice):
         if type(reflection) is not bool: raise TypeError('reflection must be bool')
         if type(indirect) is not bool:raise TypeError('indirect must be bool')
         self._indirect_requested=indirect
+        if type(progressive) is not bool: raise TypeError("progressive must be bool")
+        self._progressive_requested=progressive
         self._reflection_requested=reflection
         self._normal_maps_requested = normal_maps
         self._area_light_grid = area_light_grid
@@ -169,6 +171,7 @@ class ResidentDevice(NativeDevice):
         prefix=self._shader_prefix+('_normal' if getattr(self,'_normal_maps_requested',False) else '')
         if stage=='frag' and getattr(self,'_reflection_requested',False): prefix+='_reflection'
         if stage=='frag' and getattr(self,'_indirect_requested',False):prefix+='_indirect'
+        if stage=='frag' and getattr(self,'_progressive_requested',False):prefix+='_progressive'
         grid=f'_area{self._area_light_grid}' if stage=='frag' and self._area_light_grid!=2 else ''
         return f'{prefix}{grid}.{stage}.spv'
 
@@ -177,6 +180,14 @@ class ResidentDevice(NativeDevice):
         if tuple(map(ct.sizeof, (ResidentVertex, ResidentMesh, ResidentInstance, ResidentInfo))) != (32,16,48,128):
             raise BackendUnavailableError('resident C ABI structure layout mismatch')
         lib = self._lib
+        if self._progressive_requested:
+            version = getattr(lib, 'pr_resident_progressive_abi_version', None)
+            if version is None:
+                raise BackendUnavailableError('native progressive ABI unavailable')
+            version.argtypes = []
+            version.restype = ct.c_uint32
+            if version() != 1:
+                raise BackendUnavailableError('unsupported native progressive ABI')
         if self._indirect_requested:
             version=getattr(lib,'pr_resident_indirect_abi_version',None)
             if version is None:raise BackendUnavailableError('native indirect ABI unavailable')
@@ -390,6 +401,8 @@ class ResidentDevice(NativeDevice):
             value=ResidentIndirectInfo()
             if self._indirect_info_function(self._handle,ct.byref(value)):raise RuntimeError(self._error())
             self._indirect_info=indirect_info(value)
+        from ._native_progressive import query_progressive
+        result['resident_progressive_info'] = query_progressive(self)
         result['resident_indirect_info']=dict(self._indirect_info) if getattr(self,'_indirect_info',None) is not None else None
         result['resident_readback'] = dict(self._readback) if self._readback is not None else None
         result['resident_profile'] = dict(self._profile) if self._profile is not None else None
@@ -428,7 +441,8 @@ class ResidentDevice(NativeDevice):
             raise TypeError('environment upload must be EnvironmentUpload')
         shaders=[]; hashes={}
         for stage in ('vert','frag'):
-            path=self.shader_directory/f'resident_sky.{stage}.spv'
+            suffix = '_progressive' if stage == 'frag' and self._progressive_requested else ''
+            path=self.shader_directory/f'resident_sky{suffix}.{stage}.spv'
             try:
                 with path.open('rb') as stream: raw=stream.read(4*1024*1024+1)
             except OSError as error:

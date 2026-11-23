@@ -18,7 +18,7 @@ from ..assets import TexturedMaterial
 from ..outputs import Capture, Channel, ImagePlane
 from ..studio import StudioLighting
 from ..pipeline import DefaultPassPlanner, RenderPath
-from ..scene import VisualScene, compose_pose
+from ..scene import VisualScene, DirectionalLight, compose_pose
 from . import BackendUnavailableError, UnsupportedRequestError, ValidatedRenderSession
 from ._native_resident import ResidentDevice, pack_scene
 from ._native_ray_query import RayQueryResidentDevice
@@ -30,6 +30,7 @@ from ._native_msaa import configure_msaa
 from ._native_normal import pack_normal_maps, configure_normal_maps
 from ._native_reflection import reflection_declaration, configure_reflection
 from ._native_indirect import indirect_declaration, configure_indirect
+from ._native_progressive import configure_progressive
 from ._native_device import (
     NativeDevice,
     Parameters,
@@ -102,7 +103,7 @@ def _instance_matrices(scene, frame):
     return result
 
 
-def _parameters(scene, request, triangle_count, exposure):
+def _parameters(scene, request, triangle_count, exposure, *, lights=None):
     camera = request.camera
     rotation = _rotation(camera.world_pose)
     position = camera.world_pose.position_m
@@ -121,11 +122,12 @@ def _parameters(scene, request, triangle_count, exposure):
     result.intrinsics[:] = (camera.fx_px, camera.fy_px, camera.cx_px, camera.cy_px)
     result.clipping[:] = (camera.width, camera.height, camera.near_m, camera.far_m)
     result.camera[:] = (*position, 1.0)
-    for index, light in enumerate(scene.lights):
+    lights = scene.lights if lights is None else lights
+    for index, light in enumerate(lights):
         length = math.hypot(*light.direction)
         result.light_directions[index][:] = (*(x / length for x in light.direction), 0.0)
         result.light_colors[index][:] = (*light.illuminance, 0.0)
-    result.counts[:] = (len(scene.lights), triangle_count, int(Channel.RGB in request.channels), 0)
+    result.counts[:] = (len(lights), triangle_count, int(Channel.RGB in request.channels), 0)
     result.options[:] = (exposure, 1e-5, 0.0, 0.0)
     validate_parameters(result)
     return result
@@ -151,7 +153,7 @@ def _image_planes(raw, pixels, channels, attachment_mask):
 
 
 class _NativeDelegate:
-    def __init__(self, scene, meshes, device, exposure, *, resident=False, studio=None, textures=None, environment=None, shadow_mode='software', area_light_grid=2, display_info=None, msaa_info=None, normal_info=None, reflection_info=None, indirect_info=None):
+    def __init__(self, scene, meshes, device, exposure, *, resident=False, studio=None, textures=None, environment=None, shadow_mode='software', area_light_grid=2, display_info=None, msaa_info=None, normal_info=None, reflection_info=None, indirect_info=None, progressive_history=None):
         self.scene, self.meshes, self.device, self.exposure = scene, meshes, device, exposure
         self.display_info = display_info or {'display_transform':'clip', 'display_transform_abi':None}
         self.resident = resident
@@ -161,6 +163,9 @@ class _NativeDelegate:
         self.normal_info = deepcopy(normal_info)
         self.reflection_info = deepcopy(reflection_info)
         self.indirect_info = deepcopy(indirect_info)
+        self.progressive_history = progressive_history
+        self._progressive_pending_publication = None
+        self.effective_lights = scene.lights
         self.environment = deepcopy(environment)
         self.shadow_mode = shadow_mode
         self.area_light_grid = area_light_grid
@@ -185,7 +190,7 @@ class _NativeDelegate:
         ):
             return False
         try:
-            _parameters(self.scene, request, self.triangles, self.exposure)
+            _parameters(self.scene, request, self.triangles, self.exposure, lights=self.effective_lights)
         except (ValueError, OverflowError):
             return False
         return True
@@ -197,9 +202,20 @@ class _NativeDelegate:
             _instance_matrices(self.scene, frame) if self.resident
             else _vertices(self.scene, self.meshes, frame)
         )
-        parameters = _parameters(self.scene, request, self.triangles, self.exposure)
+        parameters = _parameters(self.scene, request, self.triangles, self.exposure, lights=self.effective_lights)
         if self.resident:
             parameters.counts[3] = len(self.scene.instances)
+        progressive_key = None
+        progressive_reasons = []
+        effective_lights = tuple(
+            (tuple(parameters.light_directions[i]), tuple(parameters.light_colors[i]))
+            for i in range(parameters.counts[0])
+        )
+        if self.progressive_history is not None and Channel.RGB in request.channels:
+            progressive_key, progressive_reasons = self.progressive_history.prepare(frame, camera, effective_lights)
+            self._progressive_pending_publication = (progressive_key, progressive_reasons)
+            if self.device._progressive_begin(self.device._handle, int(bool(progressive_reasons))):
+                raise RuntimeError(self.device._error())
         attachment_mask=15
         if self.resident and self.limits.get('resident_render_planes_available',False):
             attachment_mask=sum(1<<index for index,channel in enumerate(Channel) if channel in request.channels)
@@ -215,6 +231,7 @@ class _NativeDelegate:
             channels=[channel.value for channel in request.channels],
             native_attachment_mask=attachment_mask,
             native_output_bytes=len(raw),
+            effective_directional_lights=[dict(direction=list(direction[:3]),illuminance=list(color[:3])) for direction,color in effective_lights],
         )
         return result
 
@@ -229,7 +246,8 @@ class _NativeDelegate:
             scene_key=self.scene.key,
             decoded_geometry_sha256=self.geometry_sha256,
             triangles=self.triangles,
-            light_count=len(self.scene.lights),
+            light_count=len(self.effective_lights),
+            effective_directional_lights=[dict(direction=light.direction,illuminance=light.illuminance) for light in self.effective_lights],
             max_lights=4,
             max_triangles=(self.limits.get('resident_max_instanced_triangles') if self.resident
                            else self.limits['max_vertices'] // 3),
@@ -261,10 +279,10 @@ class _NativeDelegate:
             readback_channels_mode=('compact requested attachments' if self.resident and self.limits.get('resident_render_planes_available',False)
                                     else 'legacy all attachments'),
             published_ownership='immutable CPU bytes; private resident host buffer may be reused after each copy',
-            attachment_formats=["RGBA8_UNORM", "R32_SFLOAT", "R32_UINT", "R8_UINT"],
+            attachment_formats=["RGBA32F -> GPU mean -> RGBA8_UNORM" if self.progressive_history else "RGBA8_UNORM", "R32_SFLOAT", "R32_UINT", "R8_UINT"],
             last_passes=list(self.last_passes),
             last_request=self.last_request,
-            stage_execution="visibility raster + fused fragment shadows/lighting/display/sensors",
+            stage_execution=("visibility raster + bounded indirect lighting/sensors + GPU linear mean/display compute" if self.progressive_history else "visibility raster + fused fragment shadows/lighting/display/sensors"),
             lifecycle_counts="DLL-wide owned contexts, frames, and explicit Vulkan handles; pools own descriptor sets",
             path_trace=False,
             textures=self.textures is not None,
@@ -272,6 +290,7 @@ class _NativeDelegate:
             normal_maps=deepcopy(self.normal_info),
             reflection=deepcopy(self.reflection_info),
             indirect=deepcopy(self.indirect_info),
+            progressive=self.progressive_history.diagnostics() if self.progressive_history else None,
             physics_steps=0,
         )
 
@@ -286,6 +305,71 @@ class NativeRenderSession(ValidatedRenderSession):
         with self._lock:
             return self._delegate.diagnostics()
 
+
+    def capture(self, frame, request):
+        # Native computation completes before the public Capture/scene gates.
+        # Commit HOST history only after those gates; a rejected publication
+        # discards the GPU mean rather than carrying unpublished data forward.
+        with self._lock:
+            try:
+                result = super().capture(frame, request)
+            except BaseException:
+                if getattr(self._delegate, "_progressive_pending_publication", None) is not None:
+                    device = self._delegate.device
+                    device._progressive_reset(device._handle)
+                    self._delegate.progressive_history.reset('failed_capture')
+                    self._delegate._progressive_pending_publication = None
+                raise
+            pending = getattr(self._delegate, "_progressive_pending_publication", None)
+            if pending is not None:
+                self._delegate.progressive_history.commit(*pending)
+                self._delegate._progressive_pending_publication = None
+            return result
+
+    def reset_accumulation(self):
+        """Discard this session's progressive history; next RGB repeats batch zero."""
+        with self._lock:
+            self._check_open()
+            delegate = self._delegate
+            if delegate.progressive_history is None:
+                raise UnsupportedRequestError('reset_accumulation requires progressive=True')
+            if delegate.device._progressive_reset(delegate.device._handle):
+                raise RuntimeError(delegate.device._error())
+            delegate.progressive_history.reset()
+
+    def set_directional_lights(self, lights):
+        """Atomically override 0..4 directional lights in a progressive session."""
+        with self._lock:
+            self._check_open()
+            if self._delegate.progressive_history is None:
+                raise UnsupportedRequestError('set_directional_lights requires progressive=True')
+            if not isinstance(lights, tuple) or any(not isinstance(light, DirectionalLight) for light in lights):
+                raise TypeError('lights must be a tuple of DirectionalLight')
+            if len(lights) > 4:
+                raise ValueError('at most four directional lights are supported')
+            for light in lights:
+                DirectionalLight(light.direction, light.illuminance)
+                length = math.hypot(*light.direction)
+                values = (*[x / length for x in light.direction], *light.illuminance)
+                if any(not math.isfinite(ct.c_float(x).value) for x in values):
+                    raise ValueError('directional light is not finite in FP32')
+            self._delegate.effective_lights = lights
+
+    def read_linear_mean(self):
+        """Read the current GPU mean without a new exposure or sample batch."""
+        with self._lock:
+            self._check_open()
+            delegate = self._delegate
+            history = delegate.progressive_history
+            if history is None or not history.batches:
+                raise UnsupportedRequestError('read_linear_mean requires an accumulated RGB exposure')
+            width, height = history.key['extent']
+            output = (ct.c_ubyte * (width * height * 16))()
+            if delegate.device._progressive_read(delegate.device._handle, output, ct.sizeof(output)):
+                raise RuntimeError(delegate.device._error())
+            return dict(width=width, height=height, batches=history.batches,
+                        primary_samples_per_pixel=16 * history.batches,
+                        format='RGBA32F_LE', space='scene-linear-before-exposure', data=bytes(output))
 
 class NativeBackend:
     """Open one real Vulkan raster session; unsupported paths never fall back.
@@ -312,6 +396,15 @@ class NativeBackend:
     cosine samples of terminal nearest-hit light / raw environment. uint32 seed
     is stable at pixel XY, with no frame accumulation. Requires hardware resident
     shaders; may combine with single_bounce specular. Default none needs no ABI.
+    progressive=True adds GPU RGBA32F scene-linear averaging before exposure and
+    display, with indirect_bounces=1 or 2 and sixteen primary paths per batch.
+    The second hop takes only one continuation per path. This opt-in requires
+    MSAA1 and compatible compute/fragment/sky artifacts. Up to 4096 static RGB
+    batches accumulate; camera/world/epoch/extent/node/light changes reset them.
+    Non-RGB captures leave history alone. reset_accumulation starts batch zero;
+    read_linear_mean explicitly copies the last accepted RGB mean without a new
+    exposure. Static materials/panels belong to a session; direction lights may
+    be changed atomically with set_directional_lights in progressive sessions.
     display_transform='pbr-neutral' requires a declared resident display ABI;
     default 'clip' preserves the previous output and never probes that extension.
     """
@@ -333,6 +426,8 @@ class NativeBackend:
         reflection_mode='environment',
         indirect_mode='none',
         indirect_seed=0,
+        progressive=False,
+        indirect_bounces=1,
     ):
         if isinstance(device_index, bool) or not isinstance(device_index, int):
             raise TypeError("device_index must be an integer, not bool")
@@ -381,6 +476,18 @@ class NativeBackend:
         if indirect_mode!='none' and (not resident or shadow_mode!='ray_query'):
             raise UnsupportedRequestError('diffuse_bounce requires resident=True and shadow_mode=ray_query')
         self.indirect_mode,self.indirect_seed=indirect_mode,indirect_seed
+        if type(progressive) is not bool:
+            raise TypeError('progressive must be bool')
+        if type(indirect_bounces) is not int:
+            raise TypeError('indirect_bounces must be an integer, not bool')
+        if indirect_bounces not in (1, 2):
+            raise ValueError('indirect_bounces must be 1 or 2')
+        if progressive and (not resident or shadow_mode != 'ray_query' or indirect_mode != 'diffuse_bounce' or msaa_samples != 1):
+            raise UnsupportedRequestError('progressive requires resident ray_query diffuse_bounce with msaa_samples=1')
+        if not progressive and indirect_bounces != 1:
+            raise UnsupportedRequestError('two diffuse bounces require progressive=True')
+        self.progressive = progressive
+        self.indirect_bounces = indirect_bounces
         self.shadow_mode = shadow_mode
         self.area_light_grid = area_light_grid
         if studio is not None:
@@ -434,7 +541,8 @@ class NativeBackend:
             **({'area_light_grid': self.area_light_grid} if self.area_light_grid != 2 else {}),
             **({'normal_maps': True} if has_normal_maps else {}),
             **({'reflection': True} if self.reflection_mode=='single_bounce' else {}),
-            **({'indirect': True} if self.indirect_mode!='none' else {})
+            **({'indirect': True} if self.indirect_mode!='none' else {}),
+            **({'progressive': True} if self.progressive else {})
         )
         try:
             display_info = configure_display(device, self.display_transform)
@@ -467,8 +575,17 @@ class NativeBackend:
             reflection_info=configure_reflection(device,reflection)
             indirect_info=configure_indirect(device,indirect)
             msaa_info = configure_msaa(device, self.msaa_samples)
+            progressive_history = configure_progressive(device, self.progressive, self.indirect_bounces)
+            if self.progressive:
+                indirect_info = dict(indirect_info)
+                indirect_info['bounces'] = self.indirect_bounces
+                indirect_info['terminal_lighting'] = (
+                    'bounded 16 primary paths; optional one cosine continuation at each first hit; '
+                    'replace that hit diffuse IBL, retain direct/specular environment; final hit never recurses'
+                )
+                indirect_info['seed_scope'] = 'seed + capture-local pixel + 0-based batch; state changes reset batch zero'
             return NativeRenderSession(scene, _NativeDelegate(
-                scene, meshes, device, self.exposure, resident=self.resident, studio=studio_info, textures=texture_info, environment=environment_info, shadow_mode=self.shadow_mode, area_light_grid=self.area_light_grid, display_info=display_info, msaa_info=msaa_info, normal_info=normal_info, reflection_info=reflection_info, indirect_info=indirect_info))
+                scene, meshes, device, self.exposure, resident=self.resident, studio=studio_info, textures=texture_info, environment=environment_info, shadow_mode=self.shadow_mode, area_light_grid=self.area_light_grid, display_info=display_info, msaa_info=msaa_info, normal_info=normal_info, reflection_info=reflection_info, indirect_info=indirect_info, progressive_history=progressive_history))
         except BaseException as primary:
             try:
                 device.close()

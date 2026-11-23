@@ -327,3 +327,18 @@ static_assert(sizeof(PrResidentIndirectInfo)==64,"indirect info ABI");
 PR_API uint32_t pr_resident_indirect_abi_version();
 PR_API int pr_resident_indirect_info(void* context,PrResidentIndirectInfo* output);
 PR_API int pr_resident_set_indirect(void* context,uint32_t mode,uint32_t seed);
+
+// Optional progressive ABI1. Counters describe published RGB batches, not hits.
+struct PrResidentProgressiveInfo {
+    uint32_t progressive_abi_version, supported, shader_compatible, enabled;
+    uint32_t bounces, max_batches, batches, last_batch_index;
+    uint32_t seed, samples_per_batch, width, height, reserved[4];
+    uint64_t rgb_captures, reset_calls, mean_readbacks, mean_readback_bytes, status_readback_bytes, reserved64[3];
+};
+static_assert(sizeof(PrResidentProgressiveInfo)==128,"progressive info ABI");
+PR_API uint32_t pr_resident_progressive_abi_version();
+PR_API int pr_resident_set_progressive(void*,uint32_t,const uint32_t*,size_t);
+PR_API int pr_resident_progressive_info(void*,PrResidentProgressiveInfo*);
+PR_API int pr_resident_begin_progressive(void*,uint32_t);
+PR_API int pr_resident_reset_progressive(void*);
+PR_API int pr_resident_read_progressive_mean(void*,void*,size_t);

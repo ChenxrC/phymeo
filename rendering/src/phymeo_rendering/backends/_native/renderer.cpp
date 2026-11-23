@@ -61,6 +61,7 @@ struct Image { VkImage handle{}; VkDeviceMemory memory{}; VkImageView view{}; Al
 #include "resident_rayquery_types.inc"
 struct ResidentState;
 struct MsaaState;
+struct ProgressiveState;
 struct Context;
 void probe_msaa(Context&,const VkPhysicalDeviceLimits&);
 struct Context {
@@ -71,6 +72,8 @@ struct Context {
     PrResidentNormalInfo normal_info{};
     PrResidentReflectionInfo reflection_info{};
     PrResidentIndirectInfo indirect_info{};
+    PrResidentProgressiveInfo progressive_info{};
+    std::shared_ptr<ProgressiveState> progressive_state;
     std::shared_ptr<MsaaState> msaa_state;
     uint32_t display_transform = 0;
     bool ray_query = false;
@@ -110,6 +113,7 @@ struct Context {
         readback_info.readback_abi_version=1; readback_info.memory_type_index=UINT32_MAX;
         texture_info.texture_abi_version=1;
         normal_info.normal_abi_version=1;
+        progressive_info.progressive_abi_version=1;
         indirect_info.indirect_abi_version=1;indirect_info.samples_per_pixel=16;indirect_info.max_bounces=1;
         reflection_info.reflection_abi_version=1; reflection_info.max_bounces=1;
         reflection_info.metallic_min=.99f; reflection_info.roughness_max=.10f;
@@ -123,6 +127,7 @@ struct Context {
         if (device) {
             waited = vkDeviceWaitIdle(device);
             msaa_state.reset(); // framebuffers refer to the resident final color image
+            progressive_state.reset();
             resident_state.reset(); // dependent buffers/targets die before VkDevice
             release(pipeline, [&](auto h) { vkDestroyPipeline(device,h,nullptr); });
             release(pipeline_layout, [&](auto h) { vkDestroyPipelineLayout(device,h,nullptr); });
@@ -140,6 +145,9 @@ struct Context {
         }
         release(instance, [&](auto h) { vkDestroyInstance(h,nullptr); });
         return waited;
+    }
+    VkFormat attachment_format(size_t i) const {
+        return i==0 && progressive_info.shader_compatible ? VK_FORMAT_R32G32B32A32_SFLOAT : FORMATS[i];
     }
     void info(PrInfo* output) const {
         *output = properties;
@@ -267,6 +275,9 @@ struct Context {
         indirect_info.shader_compatible=resident && named_shader_marker(frag,frag_bytes,65,"PR_INDIRECT_ABI");
         require(!indirect_info.shader_compatible || ray_query,"diffuse indirect requires explicit hardware ray-query context");
         indirect_info.supported=indirect_info.shader_compatible && ray_query;
+        progressive_info.shader_compatible=resident && named_shader_marker(frag,frag_bytes,66,"PR_PROGRESSIVE_ABI");
+        require(!progressive_info.shader_compatible || (ray_query&&indirect_info.shader_compatible),"progressive shader requires explicit indirect ray-query context");
+        progressive_info.supported=progressive_info.shader_compatible;
         surface_maps_compatible=resident && surface_maps_shader_marker(frag,frag_bytes);
         display_compatible=resident && display_shader_marker(frag,frag_bytes);
         msaa_info.shader_compatible=resident && named_shader_marker(frag,frag_bytes,59,"PR_MSAA_COLOR_ABI");
@@ -465,10 +476,19 @@ struct Context {
         if (identity.deviceLUIDValid) std::memcpy(telemetry.device_luid, identity.deviceLUID, 8);
         std::memcpy(properties.device_name, p.deviceName, sizeof(properties.device_name));
         for (size_t i=0; i<FORMATS.size(); ++i) {
-            VkFormatProperties format{}; vkGetPhysicalDeviceFormatProperties(physical, FORMATS[i], &format);
+            VkFormatProperties format{}; vkGetPhysicalDeviceFormatProperties(physical, attachment_format(i), &format);
             VkFormatFeatureFlags needed = i == 4 ? VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT :
                 (VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_TRANSFER_SRC_BIT);
             require((format.optimalTilingFeatures & needed) == needed, "required attachment format unavailable");
+        }
+        if(progressive_info.shader_compatible) {
+            require(p.limits.maxPerStageDescriptorStorageImages>=3 && p.limits.maxDescriptorSetStorageImages>=3,
+                    "progressive needs three compute storage images");
+            for(auto fmt:{VK_FORMAT_R32G32B32A32_SFLOAT,VK_FORMAT_R8G8B8A8_UNORM}) {
+                VkFormatProperties fp{};vkGetPhysicalDeviceFormatProperties(physical,fmt,&fp);
+                const auto needed=VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT|VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT|VK_FORMAT_FEATURE_TRANSFER_SRC_BIT;
+                require((fp.optimalTilingFeatures&needed)==needed,"progressive storage/color format unsupported");
+            }
         }
         vkGetPhysicalDeviceMemoryProperties(physical, &memory_properties);
         vkGetPhysicalDeviceQueueFamilyProperties(physical, &count, nullptr);
@@ -478,6 +498,7 @@ struct Context {
         for (uint32_t i=0; i<count; ++i) if (queues[i].queueCount &&
             (queues[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)) { queue_family=i; break; }
         require(queue_family < count, "graphics queue unavailable");
+        require(!progressive_info.shader_compatible || (queues[queue_family].queueFlags&VK_QUEUE_COMPUTE_BIT),"progressive needs a graphics+compute queue");
         if (resident) {
             profile.timestamp_valid_bits = queues[queue_family].timestampValidBits;
             profile.timestamp_supported = profile.timestamp_valid_bits != 0 ? 1u : 0u;
@@ -551,7 +572,7 @@ struct Context {
         std::array<VkAttachmentDescription, 5> attachments{};
         std::array<VkAttachmentReference, 4> colors{};
         for (uint32_t i=0; i<5; ++i) {
-            auto& value = attachments[i]; value.format=FORMATS[i]; value.samples=VK_SAMPLE_COUNT_1_BIT;
+            auto& value = attachments[i]; value.format=attachment_format(i); value.samples=VK_SAMPLE_COUNT_1_BIT;
             value.loadOp=VK_ATTACHMENT_LOAD_OP_CLEAR; value.storeOp=VK_ATTACHMENT_STORE_OP_STORE;
             value.stencilLoadOp=VK_ATTACHMENT_LOAD_OP_DONT_CARE; value.stencilStoreOp=VK_ATTACHMENT_STORE_OP_DONT_CARE;
             value.initialLayout=VK_IMAGE_LAYOUT_UNDEFINED;
@@ -1152,5 +1173,38 @@ int pr_resident_set_indirect(void* handle,uint32_t mode,uint32_t seed) {
         for(const auto& instance:c.resident_state->instances)
             if(instance.material[0]<1.f && (instance.color_roughness[0]>0.f||instance.color_roughness[1]>0.f||instance.color_roughness[2]>0.f)) ++receivers;
         info.receiver_count=receivers;info.seed=seed;info.enabled=1;++info.set_calls;return 0;
+    }catch(const std::exception& error){last_error=error.what();return -1;}
+}
+
+uint32_t pr_resident_progressive_abi_version(){return 1;}
+int pr_resident_progressive_info(void* handle,PrResidentProgressiveInfo* output){
+    if(!handle||!output){last_error="null progressive info";return -1;}
+    *output=static_cast<Context*>(handle)->progressive_info;return 0;
+}
+int pr_resident_set_progressive(void* handle,uint32_t bounces,const uint32_t* code,size_t bytes){
+    try{require(handle,"null progressive context");progressive_setup(*static_cast<Context*>(handle),bounces,code,bytes);return 0;}
+    catch(const std::exception& error){last_error=error.what();return -1;}
+}
+int pr_resident_begin_progressive(void* handle,uint32_t reset){
+    try{
+        require(handle,"null progressive context");auto& c=*static_cast<Context*>(handle);
+        require(c.progressive_info.enabled&&!c.poisoned&&reset<=1,"invalid progressive begin");
+        require(reset||c.progressive_info.batches<4096,"progressive maximum 4096 batches reached");
+        c.progressive_state->armed=true;c.progressive_state->pending_reset=reset!=0;return 0;
+    }catch(const std::exception& error){last_error=error.what();return -1;}
+}
+int pr_resident_reset_progressive(void* handle){
+    try{
+        require(handle,"null progressive context");auto& c=*static_cast<Context*>(handle);
+        require(c.progressive_info.enabled&&!c.poisoned,"progressive reset requires valid enabled session");
+        c.progressive_info.batches=0;c.progressive_info.last_batch_index=0;++c.progressive_info.reset_calls;
+        c.progressive_state->armed=false;c.progressive_state->pending_reset=true;return 0;
+    }catch(const std::exception& error){last_error=error.what();return -1;}
+}
+int pr_resident_read_progressive_mean(void* handle,void* output,size_t bytes){
+    try{
+        require(handle,"null progressive context");auto& c=*static_cast<Context*>(handle);
+        require(c.progressive_info.enabled,"progressive mean unavailable");
+        progressive_read(c,output,bytes);return 0;
     }catch(const std::exception& error){last_error=error.what();return -1;}
 }

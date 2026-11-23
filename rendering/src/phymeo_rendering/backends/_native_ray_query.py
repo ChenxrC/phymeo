@@ -77,6 +77,8 @@ class RayQueryResidentDevice(ResidentDevice):
             result['resident_profile']['gpu_scope']='Vulkan timestamps: TLAS build/update + raster, shadow queries, single-bounce reflection and terminal lighting; then attachment copies'
         if getattr(self,'_indirect_requested',False) and result.get('resident_profile') is not None:
             result['resident_profile']['gpu_scope']='Vulkan timestamps: TLAS update/build + raster, shadows, 16-sample diffuse indirect and optional specular reflection with terminal lighting; then attachment copies'
+        if getattr(self,'_progressive_requested',False) and result.get('resident_profile') is not None:
+            result['resident_profile']['gpu_scope']='render timestamp interval: TLAS + raster + bounded one/two-bounce paths + GPU scene-linear mean/display compute + 4-byte status copy; copy interval: requested planes; explicit mean readback is separate'
         result['resident_ray_query_abi_version']=1
         result['resident_ray_query_info']=dict(self._ray_query_info)
         return result

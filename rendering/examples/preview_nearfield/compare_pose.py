@@ -27,12 +27,19 @@ def read_pose(directory, role):
         if samples not in (8192, 65536) or receipt["primary_proposals_per_pixel"] != samples:
             raise ValueError("unexpected reference sample count")
         title = f"完整一跳参考   /   {samples} 样本"
-    elif role == "history":
+    elif role in ("history", "filtered"):
         contract = receipt["backend"]["contract"]
         paths = contract["paths_per_anchor"]
         if receipt["name"] != "rigid-history" or "local_diffuse" in contract or paths not in (4, 8):
             raise ValueError("expected full-distance rigid-history capture")
         title = f"完整距离＋短历史   /   {paths} 路"
+        if role == "filtered":
+            policy = contract.get("lowres_filter", {})
+            if paths != 8 or policy.get("marker") != 100 or policy.get("stride") != 2:
+                raise ValueError("expected the recorded eight-proposal filtered preset")
+            title = "完整距离八路   /   间接光预滤波"
+        elif "lowres_filter" in contract:
+            raise ValueError("expected the original unfiltered history preset")
     elif role == "local":
         contract = receipt["backend"]["contract"]
         if contract["local_diffuse"]["radius_m"] != .12 or contract["paths_per_anchor"] != 4:
@@ -45,10 +52,13 @@ def read_pose(directory, role):
 
 def compare(args):
     first, second = ("local", "history") if args.motion_presets else ("baseline", "local")
+    if args.lowres_filter:
+        first, second = "history", "filtered"
+    show_arm = args.motion_presets or args.lowres_filter
     inputs = [read_pose(args.baseline, first), read_pose(args.candidate, second), read_pose(args.reference, "reference")]
     if any(key != inputs[0][1] for _, key, _ in inputs):
         raise ValueError("different pose, time, state or camera")
-    board = Image.new("RGB", (1280, 870 if args.motion_presets else 694), "#192026")
+    board = Image.new("RGB", (1280, 870 if show_arm else 694), "#192026")
     draw = ImageDraw.Draw(board)
     bold = ImageFont.truetype(str(args.font), 26)
     normal = ImageFont.truetype(str(args.font), 20)
@@ -63,7 +73,7 @@ def compare(args):
         board.paste(image.crop((420,157,820,313)),(x,387))
         draw.text((x,553),"夹指与方块   ·   原像素",font=small,fill="#e0e6df")
         board.paste(image.crop((422,321,822,427)),(x,582))
-        if args.motion_presets:
+        if show_arm:
             draw.text((x,700),"左臂与内侧阴影   ·   原像素",font=small,fill="#e0e6df")
             board.paste(image.crop((0,350,400,487)),(x,728))
     if args.output.exists():
@@ -73,8 +83,11 @@ def compare(args):
 
 if __name__ == "__main__":
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--motion-presets", action="store_true",
+    mode=parser.add_mutually_exclusive_group()
+    mode.add_argument("--motion-presets", action="store_true",
                         help="compare the near-field and full-distance history presets using their actual receipts")
+    mode.add_argument("--lowres-filter", action="store_true",
+                      help="compare the original full-distance history preset and its filtered variant")
     for name in ("baseline","candidate","reference","output","font"):
         parser.add_argument("--"+name,type=Path,required=True)
     compare(parser.parse_args())

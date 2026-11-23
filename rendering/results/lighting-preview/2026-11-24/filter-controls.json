@@ -1,0 +1,152 @@
+{
+  "schema": "phymeo-lowrate-filter-controls-v1",
+  "rooms": {
+    "status": "complete",
+    "cases": {
+      "room": {
+        "geometry": {
+          "forward_depth_m_f32": "2a086a4ab09559e2435af74495f88e384ac386119fcac36b5c6df56c84888db1",
+          "instance_id_u32": "8a9c8f2684507c98e22b77ba03698b4fc28f98afabb132debad4cd62817f086a",
+          "valid_u8": "f9de1ef79c9d385cf14b1a1b1fd761391f3e985ce004b1a5942cb94a9275ba17"
+        },
+        "rgb_sha256": "e9045cc7a5b483fd84e6214fc21941f947868c3113076d8066300a7d5474c583",
+        "filter_sha256": "4db61ae687127d8e43361721957453b9015ed7df72eeff254bc4d61c9b879ad5",
+        "traced_cells": 576,
+        "max_original_display_code": 47,
+        "filtered_min": 0.002630493836477399,
+        "filtered_max": 0.012349694967269897,
+        "proposals": 4608
+      },
+      "chromatic": {
+        "geometry": {
+          "forward_depth_m_f32": "2a086a4ab09559e2435af74495f88e384ac386119fcac36b5c6df56c84888db1",
+          "instance_id_u32": "8a9c8f2684507c98e22b77ba03698b4fc28f98afabb132debad4cd62817f086a",
+          "valid_u8": "f9de1ef79c9d385cf14b1a1b1fd761391f3e985ce004b1a5942cb94a9275ba17"
+        },
+        "rgb_sha256": "c0a5aecf48db7817c9dc662b128b63f09e7232fd2b600ce9516aa21575c3eec6",
+        "filter_sha256": "fddbad8ce2bf678c4baf1808c998357c59bfd33342095ea301d39a031a4514e2",
+        "traced_cells": 576,
+        "max_original_display_code": 83,
+        "filtered_min": 0.00016989500727504492,
+        "filtered_max": 0.019116541370749474,
+        "proposals": 4608
+      },
+      "zero-light": {
+        "geometry": {
+          "forward_depth_m_f32": "2a086a4ab09559e2435af74495f88e384ac386119fcac36b5c6df56c84888db1",
+          "instance_id_u32": "8a9c8f2684507c98e22b77ba03698b4fc28f98afabb132debad4cd62817f086a",
+          "valid_u8": "f9de1ef79c9d385cf14b1a1b1fd761391f3e985ce004b1a5942cb94a9275ba17"
+        },
+        "rgb_sha256": "0a182a88ffcf20dcc892515a01db9af1a707814b982b9c21e1d9b3b4b203ceef",
+        "filter_sha256": "c530c609ce4613314b2c0285265ba385b92807ad8ba1b082d72cc2d616057cb9",
+        "traced_cells": 576,
+        "max_original_display_code": 0,
+        "filtered_min": 0.0,
+        "filtered_max": 0.0,
+        "proposals": 4608
+      }
+    },
+    "geometry_equal": true,
+    "changed_low_cells": 576,
+    "maximum_color_difference": 0.011059081181883812
+  },
+  "thin_mode": "recorded",
+  "modes": {
+    "baseline": {
+      "presented_frames": 16,
+      "report_sha256": "9fdf09616553d35d85f7f44fc8630b71ed4440348c1b3c4e17c79c51514f52b2",
+      "mask_sha256": "ac41656759371a9d73a3c9bf32e41f717c9edcb3775e9d03113f550a3faa1407",
+      "pixels_and_reference_rgb_sha256": "6f4db9990a1eae8ea1d944220da67d18f990c61ca5d78a800f7d6580291d70f5",
+      "registered": {
+        "pixels": 69,
+        "versus_independent_references": [
+          {
+            "pixels": 69,
+            "rmse": 0.027379430758495294,
+            "signed_rgb": [
+              -0.017876722321560002,
+              -0.013858884671134499,
+              -0.013858884671134499
+            ],
+            "signed_luminance": -0.01471307695561496,
+            "maximum_absolute_error": 0.06633132203014888,
+            "space": "inverse-sRGB of published RGB8 (display-linear), not scene radiance"
+          },
+          {
+            "pixels": 69,
+            "rmse": 0.027367436807310228,
+            "signed_rgb": [
+              -0.01719226021228084,
+              -0.013174910520695766,
+              -0.013174910520695766
+            ],
+            "signed_luminance": -0.014028999065126752,
+            "maximum_absolute_error": 0.06633132203014888,
+            "space": "inverse-sRGB of published RGB8 (display-linear), not scene radiance"
+          }
+        ],
+        "reference_disagreement": {
+          "pixels": 69,
+          "rmse": 0.0036717074552390858,
+          "signed_rgb": [
+            0.0006844621092791578,
+            0.0006839741504387305,
+            0.0006839741504387305
+          ],
+          "signed_luminance": 0.0006840778904882054,
+          "maximum_absolute_error": 0.008024568191642378,
+          "space": "inverse-sRGB of published RGB8 (display-linear), not scene radiance"
+        }
+      }
+    },
+    "filtered": {
+      "presented_frames": 16,
+      "report_sha256": "fd6f23168f7081a69ead3a9ad19aa018335b5ec66f216e1247000c80db51d8dc",
+      "mask_sha256": "ac41656759371a9d73a3c9bf32e41f717c9edcb3775e9d03113f550a3faa1407",
+      "pixels_and_reference_rgb_sha256": "6f4db9990a1eae8ea1d944220da67d18f990c61ca5d78a800f7d6580291d70f5",
+      "registered": {
+        "pixels": 69,
+        "versus_independent_references": [
+          {
+            "pixels": 69,
+            "rmse": 0.027379430758495294,
+            "signed_rgb": [
+              -0.017876722321560002,
+              -0.013858884671134499,
+              -0.013858884671134499
+            ],
+            "signed_luminance": -0.01471307695561496,
+            "maximum_absolute_error": 0.06633132203014888,
+            "space": "inverse-sRGB of published RGB8 (display-linear), not scene radiance"
+          },
+          {
+            "pixels": 69,
+            "rmse": 0.027367436807310228,
+            "signed_rgb": [
+              -0.01719226021228084,
+              -0.013174910520695766,
+              -0.013174910520695766
+            ],
+            "signed_luminance": -0.014028999065126752,
+            "maximum_absolute_error": 0.06633132203014888,
+            "space": "inverse-sRGB of published RGB8 (display-linear), not scene radiance"
+          }
+        ],
+        "reference_disagreement": {
+          "pixels": 69,
+          "rmse": 0.0036717074552390858,
+          "signed_rgb": [
+            0.0006844621092791578,
+            0.0006839741504387305,
+            0.0006839741504387305
+          ],
+          "signed_luminance": 0.0006840778904882054,
+          "maximum_absolute_error": 0.008024568191642378,
+          "space": "inverse-sRGB of published RGB8 (display-linear), not scene radiance"
+        }
+      }
+    }
+  },
+  "thin_summary_sha256": "45b35a4d732ed15b34e58f719d504cc99c970c9e2cc8a4630fb86850bb324f29",
+  "room_summary_sha256": "8a68fd9ffe0843785bc3b3b5159185960ba03e13f6805ed23d7af03ae09f2e40"
+}

@@ -1,6 +1,6 @@
-# 最后一个低率间接光过滤候选（marker100）
+# 完整距离一跳运动预览的间接光滤波
 
-仅作者代码，尚未编译/实测。保留已接受 ec8r2/rigid 原包。无自动回退、无新默认。
+本实验档已在 RTX 4060 Laptop GPU 编译并实际回放 300 个 Panda 姿态。720p 固定机位两轮 RGB 为 37.22 / 37.49 FPS，P95 为 30.92 / 30.84 ms。左臂块平均亮度误差在预登记的六项比较中下降 14.26%–15.71%。四通道 P95 为 37.82 / 38.12 ms。它可通过下方入口显式选用。[实拍影片和逐项验收](../../results/lighting-preview/2026-11-24/README.md)
 
 固定单 pass、低格 3×3、步长2、[1,2,1]外积权重。720p仅320×180调度。
 它抑制比相邻格更大的采样斑驳，但保守地要求中心、邻格及两者间的低格矩形
@@ -45,7 +45,13 @@ guide/ray/history二进制逐字不变。runtime再次检查实际DLL/SPV与seal
 低格RGBA、low depth/ID/valid及SHA，检查alpha逐字、记录实际改变格数和最大RGB差；
 没有变化也如实报告。原driver继续保存完整incoming/history/linear、RGB、三传感、
 计数、close和失败前缀。新wrapper/driver源hash在独立debug/producer.json。
-这不是已证画质提升：不改变baseline既有记录，也不把过滤后raw称无偏估计。
+滤波后缓冲保存的是有偏估计。三个登记姿态中的原始低率输入和处理结果可与独立的高采样参考分别比较。
+
+本次在单个检出中通过了 10 项 HOST 合同。生成器重建出的 117 份运行时和原生源文件与用于采集影片的构建输入逐字节一致。用下列入口可单独复测无光照与变材质的封闭室，三例仅需一次曝光。实测关闭照明后 576 个被追踪位置与显示输出均为零，更换墙面材质后，576 个低分辨率位置的入射光发生变化，三张几何通道在三次曝光中逐字相同。
+
+```powershell
+& $python -B -m preview_lowres_filter.verify_rooms --prepared $new --device-index 1 --output "$new-room-check"
+```
 
 ## 冻结筛选
 

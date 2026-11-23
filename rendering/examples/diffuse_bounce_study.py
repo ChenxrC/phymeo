@@ -288,6 +288,10 @@ def verify_indirect(backend, mode):
     return True
 
 
+def capture_request(camera):
+    return CaptureRequest(camera=camera, path=RenderPath.RASTER, channels=tuple(Channel))
+
+
 def _capture(root, state, mode, case, backend):
     from PIL import Image
     scene, frame, camera = case
@@ -296,8 +300,8 @@ def _capture(root, state, mode, case, backend):
     result = dict(state=state,mode=mode,status="opening",capture_ms=[],repeated_hashes=[])
     session = None; first = None
     try:
-        session = backend.open(scene)
-        request = CaptureRequest(camera, tuple(Channel), RenderPath.RASTER)
+        session = backend.open_scene(scene)
+        request = capture_request(camera)
         for index in range(12):
             start = perf_counter(); capture = session.capture(frame, request); duration = (perf_counter()-start)*1000
             if capture.frame_key != frame.key or capture.time_s != 0. or capture.camera != camera:
@@ -494,6 +498,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 

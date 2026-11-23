@@ -199,6 +199,31 @@ class DiffuseBounceStudyTests(unittest.TestCase):
                     device=dict(resident_indirect_info=None))
         self.assertTrue(self.study.verify_indirect(none,"none"))
 
+    def test_capture_uses_public_open_scene_before_any_device_work(self):
+        from phymeo_rendering.backends.native import NativeBackend
+        class StopBeforeDevice(RuntimeError):
+            pass
+        class AdmissionOnly(NativeBackend):
+            def open_scene(self, scene):
+                raise StopBeforeDevice("deliberate public admission boundary")
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            cases = self.study.build_cases(root/"geometry")
+            with self.assertRaisesRegex(StopBeforeDevice, "public admission boundary"):
+                self.study._capture(root,"red","none",cases["red"],AdmissionOnly(resident=True))
+
+    def test_capture_request_uses_real_public_path_and_four_channels(self):
+        from phymeo_rendering.outputs import Channel
+        from phymeo_rendering.pipeline import RenderPath, validate_capture_request
+        with tempfile.TemporaryDirectory() as temporary:
+            camera = self.study.build_cases(Path(temporary))["red"][2]
+            request = self.study.capture_request(camera)
+            validate_capture_request(request)
+            self.assertEqual(request.camera,camera)
+            self.assertEqual(request.path,RenderPath.RASTER)
+            self.assertEqual(request.channels,tuple(Channel))
+
 if __name__ == "__main__":
     unittest.main()
+
 

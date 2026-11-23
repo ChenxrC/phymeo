@@ -360,6 +360,7 @@ def capture(args):
                               shaders={p.name: digest(p) for p in sorted(args.shader_directory.glob("*.spv"))}),
                   platform=dict(system=platform.platform(), python=sys.version, device_index=args.device_index),
                   camera=args.camera, validation=args.validation, nominal_playback_fps=FPS,
+                  studio_look=args.studio_look, panel_grid=args.panel_grid,
                   trajectory_scope="six registered diagnostic samples" if args.quick else "all 300 source states in order",
                   quality_acceptance="not evaluated: no independent high-sample/reference ROI gate in this runner",
                   realtime_claim=False, runs=[], requested_presets=args.presets, requested_channels=args.channels)
@@ -368,7 +369,14 @@ def capture(args):
         with TemporaryDirectory(prefix="phymeo-motion-preview-") as temp:
             scenes, frames, studio, trace = bench.bind_scene(Path(temp) / "geometry")
             scene = scenes[1]
+            if args.studio_look in ("wide-panels", "soft-studio"):
+                studio = replace(studio, panel_size_scale=2.)
+            if args.studio_look == "soft-studio":
+                scene = replace(scene, key=scene.key + ":no-directional", lights=())
             declarations = [preset(name) for name in args.presets]
+            for declaration in declarations:
+                declaration["settings"]["area_light_grid"] = args.panel_grid
+                declaration["studio_look"] = args.studio_look
             all_inputs = {p["name"]: make_inputs(scene, frames, p, args.camera) for p in declarations}
             binding = dict(scene=asdict(scene), studio=asdict(studio),
                            source_trace=dict(file=str(trace), sha256=digest(trace)),
@@ -494,6 +502,10 @@ def main():
     cap.add_argument("--presets", nargs="+", choices=NAMES, default=["preview720"])
     cap.add_argument("--channels", nargs="+", choices=("rgb", "all"), default=["rgb", "all"])
     cap.add_argument("--camera", choices=("fixed", "wide", "detail", "sequence"), default="detail")
+    cap.add_argument("--studio-look", choices=("recorded", "wide-panels", "soft-studio"),
+                     default="recorded", help="wider panels preserve emitted power; soft-studio also removes the directional lamp")
+    cap.add_argument("--panel-grid", type=int, choices=(2, 4, 8), default=2,
+                     help="area-light grid on primary and secondary surfaces")
     cap.add_argument("--settle-batches", type=int, choices=(0, 16), default=16)
     cap.add_argument("--validation", action="store_true")
     enc = sub.add_parser("encode")

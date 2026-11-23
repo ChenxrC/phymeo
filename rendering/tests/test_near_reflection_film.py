@@ -184,6 +184,30 @@ class NearReflectionFilmTests(unittest.TestCase):
             self.subject.verify_movie(wrong, split=True)
 
 
+
+    def test_actual_reflection_diagnostics_bind_receiver_and_successful_calls(self):
+        import struct
+        fp32 = lambda x: struct.unpack("<f", struct.pack("<f", x))[0]
+        backend = dict(reflection=dict(mode="single_bounce", bounces=1, receiver_instances=[
+            dict(instance_id=1, material_id="mirror-steel", metallic_fp32=1.,
+                 authored_roughness_fp32=fp32(.04))]),
+            device={"resident_reflection_info": dict(enabled=1, supported=1, shader_compatible=1,
+                reflection_abi_version=1, max_bounces=1, receiver_count=1, set_calls=1,
+                captures=95, rgb_captures=95, metallic_min=fp32(.99), roughness_max=fp32(.10))})
+        self.assertTrue(self.subject.verify_reflection_binding(backend, mode="single_bounce"))
+        for field in ("receiver_count", "captures", "enabled"):
+            bad = deepcopy(backend)
+            bad["device"]["resident_reflection_info"][field] = 0
+            with self.assertRaises(ValueError):
+                self.subject.verify_reflection_binding(bad, mode="single_bounce")
+        bad = deepcopy(backend); bad["reflection"]["receiver_instances"][0]["instance_id"] = 2
+        with self.assertRaises(ValueError):
+            self.subject.verify_reflection_binding(bad, mode="single_bounce")
+        self.assertTrue(self.subject.verify_reflection_binding(dict(
+            reflection=dict(mode="environment", bounces=0, receiver_instances=[]),
+            device={"resident_reflection_info": None}), mode="environment"))
+
+
 if __name__ == "__main__":
     unittest.main()
 

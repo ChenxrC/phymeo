@@ -153,6 +153,59 @@ def _image_planes(raw, pixels, channels, attachment_mask):
     return tuple(ImagePlane(channel,values[channel]) for channel in channels)
 
 
+def _environment_sampling_diagnostics(device_info, indirect, progressive):
+    """Interpret actual optional native flags, never a filename or requested HDR."""
+    evidence = device_info.get('resident_environment_info')
+    environment = evidence or {}
+    compatible = bool(environment.get('importance_shader_compatible', False))
+    active = bool(environment.get('importance_active', False))
+    diffuse = indirect is not None and indirect.get('mode') == 'diffuse_bounce'
+    if active and not (compatible and environment.get('loaded') and diffuse and progressive is not None):
+        raise RuntimeError('active environment importance lacks a compatible progressive diffuse session')
+    if active:
+        mode = 'cosine-environment-balance-mis'
+        state = 'uploaded-nonconstant-positive-map'
+    elif not diffuse:
+        mode = 'not-applicable'
+        state = 'diffuse-indirect-disabled'
+    elif not compatible:
+        mode = 'stratified-cosine'
+        state = 'compatible-native-evidence-unavailable'
+    elif not environment.get('loaded'):
+        mode = 'stratified-cosine'
+        state = 'directional-map-not-loaded'
+    else:
+        mode = 'stratified-cosine'
+        state = 'uploaded-producer-inactive-constant-or-black-map'
+    two_hops = diffuse and progressive is not None and progressive.bounces == 2
+    secondary = 'none'
+    if two_hops:
+        secondary = ('equal-probability cosine/environment mixture' if active else 'cosine hemisphere')
+    return dict(
+        mode=mode,
+        shader_compatible=compatible,
+        active=active,
+        native_evidence_available=evidence is not None,
+        activation_state=state,
+        primary_cosine_samples=8 if active else (16 if diffuse else 0),
+        primary_environment_samples=8 if active else 0,
+        second_hop_proposal=secondary,
+        sample_scope=(
+            'proposal budgets per RGB batch and eligible diffuse pixel, not measured rays or hits; '
+            'second hop takes one continuation, not another sixteen-way fanout'
+        ),
+        density=(
+            'adjacent FP32 cubemap CDF difference divided by texel UV area, '
+            'converted to solid-angle density with the inverse cube UV-to-solid-angle Jacobian; '
+            'balance mixture q=0.5*(cosine_pdf+environment_pdf)' if active else None
+        ),
+        source_scope=(
+            'queried device resident_environment_info flags; no capability inference '
+            'from HDR presence, shader filename, library age, or image appearance'
+        ),
+    )
+
+
 class _NativeDelegate:
     def __init__(self, scene, meshes, device, exposure, *, resident=False, studio=None, textures=None, environment=None, shadow_mode='software', area_light_grid=2, display_info=None, msaa_info=None, normal_info=None, reflection_info=None, indirect_info=None, progressive_history=None, spatial_info=None):
         self.scene, self.meshes, self.device, self.exposure = scene, meshes, device, exposure
@@ -246,10 +299,63 @@ class _NativeDelegate:
         return result
 
     def diagnostics(self):
+        device_info = self.device.info()
+        sampling = _environment_sampling_diagnostics(
+            device_info, self.indirect_info, self.progressive_history)
+        indirect = deepcopy(self.indirect_info)
+        if sampling['active']:
+            indirect['estimator'] = (
+                'balance MIS: rho_d * sum(Li * cosine_pdf / '
+                '[0.5*(cosine_pdf+environment_pdf)])/16; '
+                'eight stratified cosine and eight stratified cubemap CDF primary proposals'
+            )
+        if indirect is not None and indirect.get('mode') == 'diffuse_bounce' and self.progressive_history is not None:
+            bounces = self.progressive_history.bounces
+            if bounces == 2:
+                continuation = sampling['second_hop_proposal']
+                terminal = (
+                    'two diffuse bounces: nearest first hit retains local direct lighting and '
+                    'specular environment; replaces its diffuse IBL with one ' + continuation +
+                    ' continuation, not a sixteen-way fanout; final hit evaluates original '
+                    'direct/studio/environment lighting; final hit never recurses'
+                )
+            else:
+                terminal = (
+                    'one diffuse bounce: nearest current real TLAS hit evaluates original '
+                    'direct/studio/environment lighting; final hit never recurses'
+                )
+            proposal = 'cosine/environment proposals' if sampling['active'] else 'shading-normal cosine proposals'
+            spatial_mode = self.spatial_info['mode'] if self.spatial_info is not None else 'none'
+            spatial_scope = {
+                'none': 'unfiltered display',
+                'guided': 'first/reset RGB batch only',
+                'guided_settling': 'scheduled blend for RGB batches 1..15, zero from batch 16',
+            }[spatial_mode]
+            indirect.update(
+                bounces=bounces,
+                terminal_lighting=terminal,
+                seed_scope=(
+                    'uint32 seed + capture-local pixel XY + sample index + 0-based batch; '
+                    'state changes reset batch zero; deterministic replay at the same state and seed'
+                ),
+                geometry_policy=(
+                    proposal + ' clipped by shading hemisphere and oriented true face; '
+                    'inward/degenerate sample=0, denominator stays 16; '
+                    'secondary continuation uses the nearest hit current material and geometry'
+                ),
+                limitations=(
+                    '16 primary proposals per batch and at most ' + str(bounces) +
+                    ' diffuse bounces; terminal environment uses local IBL rather than further traced bounces; '
+                    'state-reset GPU linear mean with explicit raw RGBA32F readback; '
+                    'display-only ' + spatial_mode + ' (' + spatial_scope +
+                    ') leaves the raw mean and sensors unchanged; finite-sample noise remains; '
+                    'no temporal reprojection across changing states'
+                ),
+            )
         return dict(
             backend="phymeo-native-vulkan",
             path="raster",
-            device=self.device.info(),
+            device=device_info,
             library_path=str(self.device.library_path),
             library_sha256=self.device.library_sha256,
             shader_sha256=dict(self.device.shader_sha256),
@@ -299,7 +405,8 @@ class _NativeDelegate:
             texture_assets=deepcopy(self.textures),
             normal_maps=deepcopy(self.normal_info),
             reflection=deepcopy(self.reflection_info),
-            indirect=deepcopy(self.indirect_info),
+            indirect=indirect,
+            environment_sampling=sampling,
             progressive=self.progressive_history.diagnostics() if self.progressive_history else None,
             spatial_filter=(deepcopy(self.spatial_info) if self.spatial_info is not None else
                             dict(mode='none', last_capture_filtered=False, filtered_captures=0)),
@@ -450,8 +557,12 @@ class NativeBackend:
     lighting, misses keep the environment. No rough reflection or recursion.
     indirect_mode='diffuse_bounce' replaces diffuse IBL with sixteen stratified
     cosine samples of terminal nearest-hit light / raw environment. uint32 seed
-    is stable at pixel XY, with no frame accumulation. Requires hardware resident
-    shaders; may combine with single_bounce specular. Default none needs no ABI.
+    is stable at pixel XY, with no frame accumulation. Compatible progressive
+    shaders and nonconstant positive directional maps instead use an 8+8 cosine/
+    environment balance-MIS proposal budget; diagnostics expose actual native
+    compatibility and activation separately. Constant/black maps and genuinely
+    old shaders retain cosine sampling. Requires hardware resident shaders;
+    may combine with single_bounce specular. Default none needs no ABI.
     progressive=True adds GPU RGBA32F scene-linear averaging before exposure and
     display, with indirect_bounces=1 or 2 and sixteen primary paths per batch.
     The second hop takes only one continuation per path. This opt-in requires
@@ -659,10 +770,7 @@ class NativeBackend:
             if self.progressive:
                 indirect_info = dict(indirect_info)
                 indirect_info['bounces'] = self.indirect_bounces
-                indirect_info['terminal_lighting'] = (
-                    'bounded 16 primary paths; optional one cosine continuation at each first hit; '
-                    'replace that hit diffuse IBL, retain direct/specular environment; final hit never recurses'
-                )
+
                 indirect_info['seed_scope'] = 'seed + capture-local pixel + 0-based batch; state changes reset batch zero'
             return NativeRenderSession(scene, _NativeDelegate(
                 scene, meshes, device, self.exposure, resident=self.resident, studio=studio_info, textures=texture_info, environment=environment_info, shadow_mode=self.shadow_mode, area_light_grid=self.area_light_grid, display_info=display_info, msaa_info=msaa_info, normal_info=normal_info, reflection_info=reflection_info, indirect_info=indirect_info, progressive_history=progressive_history, spatial_info=spatial_info))

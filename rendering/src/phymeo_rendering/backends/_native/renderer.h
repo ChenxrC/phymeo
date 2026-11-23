@@ -204,6 +204,8 @@ struct PrResidentEnvironment {
 struct PrResidentEnvironmentInfo {
     uint32_t environment_abi_version, supported, shader_compatible, max_side, max_mip_levels;
     uint32_t side, mip_levels, loaded, format, cube_layers, sh_coefficients, axis_transform, diffuse_basis;
+    // Optional readback flags. Older binaries return zero for both.
+    // [0] progressive fragment understands cubemap CDF, [1] active uploaded CDF.
     uint32_t reserved[3];
     uint64_t max_rgba_bytes, source_rgba_bytes, image_upload_bytes, parameter_upload_bytes;
     uint64_t upload_calls, rgb_captures_with_environment, sky_draws, reserved64;

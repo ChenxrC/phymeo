@@ -283,6 +283,10 @@ struct Context {
         progressive_info.shader_compatible=resident && named_shader_marker(frag,frag_bytes,66,"PR_PROGRESSIVE_ABI");
         require(!progressive_info.shader_compatible || (ray_query&&indirect_info.shader_compatible),"progressive shader requires explicit indirect ray-query context");
         progressive_info.supported=progressive_info.shader_compatible;
+        // Reserved environment info words expose optional producer/consumer
+        // compatibility without changing either public structure size.
+        environment_info.reserved[0]=progressive_info.shader_compatible &&
+            named_shader_marker(frag,frag_bytes,72,"PR_ENVIRONMENT_CDF_ABI");
         spatial_info.shader_compatible=progressive_info.shader_compatible;
         require(!spatial_info.shader_compatible||progressive_info.shader_compatible,"spatial guide requires progressive shader");
         spatial_info.supported=spatial_info.shader_compatible;

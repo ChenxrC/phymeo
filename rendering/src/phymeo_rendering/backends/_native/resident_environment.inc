@@ -1,8 +1,22 @@
 // Explicit directional environment resources, uploaded once. No file I/O,
 // resizing, convolution, shader compilation or hidden renderer fallback.
+#include "resident_environment_importance.inc"
 std::unique_ptr<ResidentEnvironment> upload_environment_resource(Context& c,
     const PrResidentEnvironment& configuration,const void* rgba,size_t rgba_bytes,
-    VkFormat format,bool enabled) {
+    VkFormat format,bool enabled,bool* importance_enabled=nullptr) {
+    // Old/direct shaders keep the original byte-for-byte upload and have no
+    // CDF preparation cost. Compute on cached HOST storage, never by
+    // repeatedly reading potentially uncached Vulkan staging memory.
+    std::vector<float> private_rgba;
+    const void* upload_rgba=rgba;
+    bool importance_active=false;
+    if (enabled && format==VK_FORMAT_R32G32B32A32_SFLOAT && c.environment_info.reserved[0]!=0u) {
+        private_rgba.resize(rgba_bytes/sizeof(float));
+        std::memcpy(private_rgba.data(),rgba,rgba_bytes);
+        importance_active=pr_environment_importance::populate(
+            configuration.side,configuration.mip_levels,private_rgba.data(),rgba_bytes);
+        upload_rgba=private_rgba.data();
+    }
     auto result=std::make_unique<ResidentEnvironment>(c);
     const uint32_t side=configuration.side,levels=configuration.mip_levels;
     VkImageCreateInfo image{VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO};
@@ -33,14 +47,20 @@ std::unique_ptr<ResidentEnvironment> upload_environment_resource(Context& c,
         VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     PrResidentEnvironment uniform=configuration;
     uniform.reserved[0]=enabled ? 1u : 0u; // private GPU enabled word; caller must pass 0
+    uniform.reserved[1]=importance_active ? 1u : 0u; // config.w: usable cubemap CDF
     FrameResources staging(c);
     const size_t total=rgba_bytes+sizeof(uniform);
     c.make_buffer(staging.vertices,total,VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
     void* mapped=nullptr;
     check(vkMapMemory(c.device,staging.vertices.memory,0,total,0,&mapped),"resident environment staging map");
-    std::memcpy(mapped,rgba,rgba_bytes);
-    std::memcpy(static_cast<uint8_t*>(mapped)+rgba_bytes,&uniform,sizeof(uniform));
-    vkUnmapMemory(c.device,staging.vertices.memory);
+    {
+        // The probability producer has already finished. Keep mapping lifetime
+        // scoped so future throwing staging work cannot leave memory mapped.
+        auto unmap=[&](void*) noexcept { vkUnmapMemory(c.device,staging.vertices.memory); };
+        std::unique_ptr<void,decltype(unmap)> mapping(mapped,unmap);
+        std::memcpy(mapped,upload_rgba,rgba_bytes);
+        std::memcpy(static_cast<uint8_t*>(mapped)+rgba_bytes,&uniform,sizeof(uniform));
+    }
     make_commands(c,staging);
     VkCommandBufferBeginInfo begin{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
     begin.flags=VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
@@ -76,6 +96,7 @@ std::unique_ptr<ResidentEnvironment> upload_environment_resource(Context& c,
         0,0,nullptr,1,&uniform_barrier,1,&barrier);
     check(vkEndCommandBuffer(staging.commands),"resident environment upload end");
     submit_and_wait(c,staging);
+    if (importance_enabled) *importance_enabled=importance_active;
     return result;
 }
 
@@ -165,8 +186,9 @@ void resident_set_environment(Context& c,const PrResidentEnvironment& config,con
         "resident sky fragment lacks named display-transform ABI marker" );
     // All deterministic input/ABI checks above precede any resource allocation.
     uint64_t errors_before=c.errors.load();
+    bool importance_active=false;
     try {
-        auto resource=upload_environment_resource(c,config,rgba,rgba_bytes,VK_FORMAT_R32G32B32A32_SFLOAT,true);
+        auto resource=upload_environment_resource(c,config,rgba,rgba_bytes,VK_FORMAT_R32G32B32A32_SFLOAT,true,&importance_active);
         make_sky_pipeline(c,*resource,vert,vert_bytes,frag,frag_bytes);
         resource->display_compatible=display_compatible;
         resource->msaa_compatible=msaa_compatible;
@@ -174,6 +196,7 @@ void resident_set_environment(Context& c,const PrResidentEnvironment& config,con
         c.resident_state->environment=std::move(resource);
     } catch (...) { c.poisoned=true; throw; }
     info.side=config.side; info.mip_levels=levels; info.loaded=1; info.format=VK_FORMAT_R32G32B32A32_SFLOAT;
+    info.reserved[1]=importance_active ? 1u : 0u;
     info.source_rgba_bytes=rgba_bytes; info.image_upload_bytes+=rgba_bytes;
     info.parameter_upload_bytes+=sizeof(config); ++info.upload_calls;
 }

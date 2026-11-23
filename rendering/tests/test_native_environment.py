@@ -57,6 +57,7 @@ class EnvironmentLifecycle(unittest.TestCase):
     def owner(self,root):
         from phymeo_rendering.backends._native_resident import ResidentDevice
         owner=ResidentDevice.__new__(ResidentDevice)
+        owner._progressive_requested=False
         owner._handle=123; owner._uploaded=True; owner._has_captured=False; owner._environment_set=False
         owner._environment_function=None; owner.shader_directory=Path(root); owner.shader_sha256={}
         return owner

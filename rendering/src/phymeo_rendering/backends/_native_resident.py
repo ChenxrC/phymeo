@@ -346,12 +346,43 @@ class ResidentDevice(NativeDevice):
         self._profile['snapshot'] = 'last live query, retained after close; final ownership is checked by telemetry'
 
     def _remember_environment_info(self, value):
-        if value.environment_abi_version!=1:
+        if value.environment_abi_version != 1:
             raise RuntimeError('unsupported resident environment ABI')
-        self._environment_info={name:int(getattr(value,name)) for name,_ in ResidentEnvironmentInfo._fields_
-                                if name not in ('reserved','reserved64')}
-        self._environment_info['capture_scope']='successful RGB captures with an uploaded directional environment; sky draw count is not foreground pixel count'
-        self._environment_info['snapshot']='last live query; final GPU allocations are reported by teardown telemetry'
+        compatible = int(value.reserved[0])
+        active = int(value.reserved[1])
+        if compatible not in (0, 1) or active not in (0, 1):
+            raise RuntimeError('unsupported resident environment importance flags')
+        if active and not (compatible and value.loaded and value.supported and value.shader_compatible):
+            raise RuntimeError('inconsistent resident environment importance activation')
+        result = {
+            name: int(getattr(value, name))
+            for name, _ in ResidentEnvironmentInfo._fields_
+            if name not in ('reserved', 'reserved64')
+        }
+        result.update(
+            importance_shader_compatible=bool(compatible),
+            importance_active=bool(active),
+            importance_scope=(
+                'native configuration flags: named progressive cubemap-CDF shader '
+                'compatibility (SpecId72), and successfully uploaded nonconstant positive-mass map; '
+                'not a ray, sample, visibility or capture counter; legacy reserved zeros remain valid'
+            ),
+            importance_mass_scope=(
+                'private upload alpha: footprint-filtered max RGB times exact cube-texel solid angle; '
+                'L0 inclusive FP32 cubemap CDF, L1 strict inverse-directory indices; '
+                'adjacent stored CDF differences define the proposal; '
+                'original public RGBA and every RGB mip unchanged'
+                if compatible else
+                'no compatible cubemap CDF producer receipt; private-alpha representation unclaimed'
+            ),
+            capture_scope=(
+                'successful RGB captures with an uploaded directional environment; '
+                'sky draw count is not foreground pixel count'
+            ),
+            snapshot='last live query; final GPU allocations are reported by teardown telemetry',
+        )
+        # A corrupt optional receipt must not replace the last valid snapshot.
+        self._environment_info = result
     def _remember_texture_info(self, value):
         if value.texture_abi_version!=1:
             raise RuntimeError('unsupported resident texture ABI')

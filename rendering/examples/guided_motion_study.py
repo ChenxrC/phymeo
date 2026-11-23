@@ -350,8 +350,14 @@ def _scores(root):
     return result
 
 
-def _media(root):
+def webp_available(features):
+    # Pillow 12 removed webp_anim; WebP is the installed codec module.
+    return features.check_module("webp")
+
+
+def _media(root,destination=None):
     from PIL import Image,ImageDraw,ImageFont,features
+    destination=root if destination is None else destination
     font=ImageFont.load_default(size=20);outputs=[]
     width,height=512,384
     for pose in REFERENCES:
@@ -363,17 +369,17 @@ def _media(root):
             for i,(name,label) in enumerate(items):
                 with Image.open(root/name) as im:canvas.paste(im.crop(original.CROP),(i*(width+2),48))
                 ImageDraw.Draw(canvas).text((i*(width+2)+8,15),label,font=font,fill="white")
-            name=f"pose-{pose:04d}-b{batch:04d}-comparison.png";canvas.save(root/name);outputs.append(name)
+            name=f"pose-{pose:04d}-b{batch:04d}-comparison.png";canvas.save(destination/name);outputs.append(name)
     animations={}
-    if features.check("webp_anim"):
+    if webp_available(features):
         durations=[round((i+1)*1000/12)-round(i*1000/12) for i in POSES]
         for mode in ("none","guided"):
             frames=[]
             for pose in POSES:
                 with Image.open(root/image_name(mode,pose,1)) as im:frames.append(im.convert("RGB").copy())
             name=f"motion-{mode}.webp"
-            frames[0].save(root/name,save_all=True,append_images=frames[1:],duration=durations,loop=0,lossless=True,method=6)
-            with Image.open(root/name) as animation:
+            frames[0].save(destination/name,save_all=True,append_images=frames[1:],duration=durations,loop=0,lossless=True,method=6)
+            with Image.open(destination/name) as animation:
                 if animation.n_frames!=25:raise ValueError("lossless animation lost motion poses")
                 actual=[]
                 for i,source in enumerate(frames):
@@ -381,11 +387,44 @@ def _media(root):
                     if decoded.tobytes()!=source.tobytes():raise ValueError("lossless animation changed public RGB")
                     actual.append(animation.info["duration"])
                 if actual!=durations:raise ValueError("animation viewing timing differs")
-            animations[mode]=dict(file=name,sha256=_hash(root/name),frames=25,durations_ms=durations,
+            animations[mode]=dict(file=name,sha256=_hash(destination/name),frames=25,durations_ms=durations,
                 size=[1280,960],lossless_decode_exact=True,scope="12-Hz viewing rhythm, not measured renderer throughput")
     else:animations["not_verified"]="This Pillow build has no animated WebP; all original lossless PNG frames remain available"
     return dict(comparisons=outputs,animations=animations,crop=list(original.CROP),resized=False)
 
+
+def rebuild_media(source,destination):
+    """Re-encode bound saved PNGs without opening a backend or editing originals."""
+    from PIL import Image
+    source=Path(source).resolve();destination=Path(destination).resolve()
+    summary=json.loads((source/"summary.json").read_text(encoding="utf-8-sig"))
+    if summary.get("status") not in ("complete","quality_gate_failed") or summary.get("protocol_sha256")!=_hash(source/"protocol.json"):
+        raise ValueError("complete bound capture required for media-only export")
+    bindings={}
+    for mode in ("none","guided","reference"):
+        receipt=source/mode/"receipt.json"
+        owner=json.loads(receipt.read_text(encoding="utf-8-sig"))
+        if owner.get("status")!="complete":raise ValueError("incomplete capture owner")
+        for row in owner["captures"]:
+            if "png" not in row:continue
+            path=source/row["png"]
+            if _hash(path)!=row["png_sha256"]:raise ValueError("original PNG bytes changed")
+            with Image.open(path) as im:
+                if im.size!=(1280,960) or sha256(im.convert("RGB").tobytes()).hexdigest()!=row["plane_sha256"][Channel.RGB.value]:
+                    raise ValueError("saved PNG no longer equals the actual public RGB")
+            bindings[row["png"]]=row["png_sha256"]
+    destination.mkdir(parents=True,exist_ok=False)
+    report=dict(schema="phymeo-guided-motion-media-v1",status="encoding",capture_directory=str(source),
+        capture_summary_sha256=_hash(source/"summary.json"),capture_protocol_sha256=_hash(source/"protocol.json"),
+        script_sha256=_hash(__file__),source_png_sha256=bindings,new_public_captures=0)
+    try:
+        report["media"]=_media(source,destination)
+        if any(_hash(source/name)!=digest for name,digest in bindings.items()):raise ValueError("original PNG changed during encoding")
+        report["status"]="complete" if set(report["media"]["animations"])=={"none","guided"} else "media_not_verified"
+    except BaseException as error:
+        report.update(status="failed",error=dict(type=type(error).__name__,message=str(error)));raise
+    finally:_json(destination/"receipt.json",report)
+    return report
 
 def run(output,library,*,device_index=1,shader_directory=None):
     output=Path(output).resolve();library=Path(library).resolve();output.mkdir(parents=True,exist_ok=False)
@@ -440,9 +479,16 @@ def run(output,library,*,device_index=1,shader_directory=None):
 
 def main():
     p=argparse.ArgumentParser(description=__doc__)
-    p.add_argument("--output",type=Path,required=True);p.add_argument("--library",type=Path,required=True)
+    p.add_argument("--output",type=Path,required=True);p.add_argument("--library",type=Path)
+    p.add_argument("--media-only",type=Path,help="Existing completed capture; encode into a fresh output without rendering")
     p.add_argument("--device-index",type=int,default=1);p.add_argument("--shader-directory",type=Path)
-    args=p.parse_args();result=run(args.output,args.library,device_index=args.device_index,shader_directory=args.shader_directory)
+    args=p.parse_args()
+    if args.media_only is not None:
+        if args.library is not None:p.error("media-only does not open a rendering library")
+        result=rebuild_media(args.media_only,args.output)
+    else:
+        if args.library is None:p.error("capture requires --library")
+        result=run(args.output,args.library,device_index=args.device_index,shader_directory=args.shader_directory)
     print(json.dumps(dict(status=result["status"],output=str(args.output.resolve()))))
     if result["status"]!="complete":raise SystemExit(2)
 

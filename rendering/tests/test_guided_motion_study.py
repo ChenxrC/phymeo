@@ -170,5 +170,13 @@ class GuidedMotionStudyTests(unittest.TestCase):
                 self.study.image_name(*args)
 
 
+    def test_webp_probe_uses_supported_module_not_removed_animation_feature(self):
+        class Features:
+            @staticmethod
+            def check_module(name):
+                if name!="webp":raise AssertionError("wrong feature namespace")
+                return True
+        self.assertTrue(self.study.webp_available(Features))
+
 if __name__=="__main__":
     unittest.main()

@@ -42,7 +42,8 @@ foreach(program native resident resident_sky resident_rayquery resident_msaa_res
         "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident_msaa.glsl")
     endif()
     if((program STREQUAL "resident" OR program STREQUAL "resident_rayquery") AND stage STREQUAL "frag")
-      list(APPEND shader_dependencies "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident_studio.glsl")
+      list(APPEND shader_dependencies "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident_studio.glsl"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident_normal.glsl")
     endif()
     if(program STREQUAL "resident_rayquery" AND stage STREQUAL "frag")
       list(APPEND shader_dependencies "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident_rayquery.glsl")
@@ -62,6 +63,7 @@ foreach(program resident resident_rayquery)
     set(shader_dependencies "${source}"
       "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident_environment.glsl"
       "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident_studio.glsl"
+      "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident_normal.glsl"
       "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident_display.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident_msaa.glsl")
     if(program STREQUAL "resident_rayquery")
@@ -76,5 +78,38 @@ foreach(program resident resident_rayquery)
   endforeach()
 endforeach()
 
+# Optional normal-map pipelines carry their own descriptor/resource contract.
+# Plain scenes keep the original shaders and the original device limits.
+foreach(program resident resident_rayquery)
+  foreach(stage vert frag)
+    set(source "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident.${stage}")
+    set(shader_options --target-env vulkan1.1 -DPR_RESIDENT_NORMAL_MAPS=1)
+    if(program STREQUAL "resident_rayquery")
+      set(shader_options --target-env vulkan1.2 --glsl-version 460 -DPR_RESIDENT_RAY_QUERY=1 -DPR_RESIDENT_NORMAL_MAPS=1)
+    endif()
+    set(grids 2)
+    if(stage STREQUAL "frag")
+      set(grids 2 4 8)
+    endif()
+    foreach(grid ${grids})
+      set(suffix "")
+      if(NOT grid EQUAL 2)
+        set(suffix "_area${grid}")
+      endif()
+      set(output "${CMAKE_BINARY_DIR}/${program}_normal${suffix}.${stage}.spv")
+      add_custom_command(OUTPUT "${output}"
+        COMMAND "${GLSLANG_VALIDATOR}" -V ${shader_options} -DPR_STUDIO_AREA_GRID=${grid} "${source}" -o "${output}"
+        DEPENDS "${source}"
+          "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident_normal.glsl"
+          "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident_environment.glsl"
+          "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident_studio.glsl"
+          "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident_rayquery.glsl"
+          "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident_display.glsl"
+          "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident_msaa.glsl"
+        VERBATIM)
+      list(APPEND shader_outputs "${output}")
+    endforeach()
+  endforeach()
+endforeach()
 add_custom_target(native_shaders ALL DEPENDS ${shader_outputs})
 add_dependencies(phymeo_native native_shaders)

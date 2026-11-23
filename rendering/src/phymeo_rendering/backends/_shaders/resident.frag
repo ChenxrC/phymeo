@@ -130,6 +130,9 @@ bool occluded(vec3 worldOrigin, vec3 worldDirection, float tMax) {
 #include "resident_rayquery.glsl"
 #endif
 
+#ifdef PR_RESIDENT_NORMAL_MAPS
+#include "resident_normal.glsl"
+#endif
 #include "resident_environment.glsl"
 #define PR_RESIDENT_DIRECTIONAL_ENVIRONMENT
 #include "resident_studio.glsl"
@@ -164,10 +167,21 @@ void main() {
         // multiplier only: no blending, discard, depth or validity change.
         if (PR_SURFACE_MAPS_ABI==1u) surfaceRoughness*=texel.a;
     }
-    if (u.counts.z != 0u) {
-        vec3 N = normalize(worldNormal);
-        vec3 V = normalize(u.camera.xyz-worldPosition);
-        if (dot(N,V) < 0.0) N = -N; // Opaque, two-sided authored triangles.
+    vec3 Ng = normalize(worldNormal);
+    vec3 V = normalize(u.camera.xyz-worldPosition);
+#ifdef PR_RESIDENT_NORMAL_MAPS
+    vec3 N = residentShadingNormal(Ng);
+    // Build the tangent frame with authored N, then flip the complete normal
+    // on the original two-sided face sign (glTF double-sided normal semantics).
+    if (dot(Ng,V) < 0.0) { Ng = -Ng; N = -N; }
+    bool mappedNormal = PR_NORMAL_MAPS_ABI==1u && normalData.words[4u+ids.y]!=0xffffffffu;
+    bool shadingFacesView = !mappedNormal || dot(N,V)>0.0;
+#else
+    if (dot(Ng,V) < 0.0) Ng = -Ng;
+    vec3 N = Ng;
+    bool shadingFacesView = true;
+#endif
+    if (u.counts.z != 0u && shadingFacesView) {
         float nv = max(dot(N,V), 1e-5);
         float metallic = metalRough.x;
         // Explicit finite GGX lobe: perceptual roughness minimum 0.045.
@@ -177,7 +191,7 @@ void main() {
         for (uint i=0u; i<u.counts.x; ++i) {
             vec3 L = normalize(-u.lightDirections[i].xyz);
             float nl = max(dot(N,L), 0.0);
-            if (nl <= 0.0 || occluded(worldPosition+N*u.options.y, L, 3.402823466e38)) continue;
+            if (nl <= 0.0 || occluded(worldPosition+Ng*u.options.y, L, 3.402823466e38)) continue;
             vec3 H = normalize(V+L);
             float nh = max(dot(N,H), 0.0);
             float vh = max(dot(V,H), 0.0);
@@ -191,11 +205,8 @@ void main() {
             color += (diffuse+specular)*u.lightColors[i].rgb*nl;
         }
     }
-    if (u.counts.z != 0u && (studio.environment.w != 0.0 || residentEnvironmentEnabled())) {
-        vec3 N = normalize(worldNormal);
-        vec3 V = normalize(u.camera.xyz-worldPosition);
-        if (dot(N,V) < 0.0) N = -N;
-        color += residentStudioRadiance(worldPosition,N,V,albedo,metalRough.x,surfaceRoughness);
+    if (u.counts.z != 0u && shadingFacesView && (studio.environment.w != 0.0 || residentEnvironmentEnabled())) {
+        color += residentStudioRadiance(worldPosition,N,Ng,V,albedo,metalRough.x,surfaceRoughness);
     }
     rgb = vec4(encodeSRGB(residentDisplayLinear(color*u.options.x,u.options.z)), 1.0);
 }

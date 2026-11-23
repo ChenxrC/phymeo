@@ -87,6 +87,8 @@ struct ResidentState {
     std::vector<std::array<float, 6>> bounds;
     std::unique_ptr<FrameResources> target;
     std::unique_ptr<ResidentTextures> textures;
+    std::unique_ptr<ResidentTextures> normal_maps;
+    std::vector<uint32_t> normal_validation_indices;
     std::unique_ptr<ResidentEnvironment> environment;
     std::unique_ptr<ResidentAcceleration> acceleration;
     VkDescriptorSet descriptor_set{};
@@ -95,6 +97,7 @@ struct ResidentState {
     ~ResidentState() {
         target.reset();
         textures.reset();
+        normal_maps.reset();
         environment.reset();
         acceleration.reset();
         for (auto* buffer : {&vertices, &indices, &meshes_buffer, &instances_buffer, &nodes, &transforms, &tlas, &studio}) {
@@ -274,6 +277,7 @@ uint64_t upload_static(Context& c, const std::vector<StaticUpload>& uploads) {
 }
 
 #include "resident_textures.inc"
+#include "resident_normal.inc"
 #include "resident_environment.inc"
 #include "resident_rayquery.inc"
 #include "resident_msaa.inc"
@@ -350,6 +354,7 @@ void resident_upload(Context& c, const PrResidentVertex* vertices, uint32_t vert
                                  box.maximum[0], box.maximum[1], box.maximum[2]});
     }
     if (instance_count) state->instances.assign(instances, instances+instance_count);
+    if (c.normal_info.shader_compatible) state->normal_validation_indices=reordered;
     uint64_t node_budget = 0;
     for (const auto& instance : state->instances)
         node_budget += state->meshes[instance.mesh_index].node_count;
@@ -390,6 +395,12 @@ void resident_upload(Context& c, const PrResidentVertex* vertices, uint32_t vert
     texture_info.array_width=texture_info.array_height=texture_info.array_layers=1;
     texture_info.padded_rgba_bytes=4; texture_info.image_upload_bytes+=4;
     texture_info.metadata_upload_bytes+=plain_metadata.size()*sizeof(uint32_t);
+    if (c.normal_info.shader_compatible) {
+        state->normal_maps=upload_texture_resource(c,1,1,1,std::vector<uint8_t>{128,128,255,255},plain_metadata,VK_FORMAT_R8G8B8A8_UNORM);
+        c.normal_info.array_width=c.normal_info.array_height=c.normal_info.array_layers=1;
+        c.normal_info.padded_rgba_bytes=4; c.normal_info.image_upload_bytes+=4;
+        c.normal_info.metadata_upload_bytes+=plain_metadata.size()*sizeof(uint32_t);
+    }
     PrResidentEnvironment default_environment{};
     default_environment.side=1; default_environment.mip_levels=1;
     const std::array<uint8_t,24> black_cube{0,0,0,255,0,0,0,255,0,0,0,255,
@@ -600,6 +611,7 @@ void resident_target(Context& c, ResidentState& state, uint32_t width, uint32_t 
         {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 8}, {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 3},
         {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,2},{VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR,1}}};
     VkDescriptorPoolCreateInfo pool{VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO};
+    if (c.normal_info.shader_compatible) { ++sizes[0].descriptorCount; ++sizes[2].descriptorCount; }
     pool.maxSets = 1; pool.poolSizeCount = c.ray_query ? 4u : 3u; pool.pPoolSizes = sizes.data();
     acquire(frame->descriptors, "resident descriptor pool", [&](auto* out) {
         return vkCreateDescriptorPool(c.device, &pool, nullptr, out);
@@ -626,7 +638,7 @@ void resident_target(Context& c, ResidentState& state, uint32_t width, uint32_t 
     }};
     VkDescriptorImageInfo image{state.textures->sampler,state.textures->image.view,VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
     VkDescriptorImageInfo environment_image{state.environment->sampler,state.environment->image.view,VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
-    std::array<VkWriteDescriptorSet, 14> writes{};
+    std::array<VkWriteDescriptorSet, 16> writes{};
     VkWriteDescriptorSetAccelerationStructureKHR acceleration_write{VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR};
     if (c.ray_query) {
         acceleration_write.accelerationStructureCount=1;
@@ -645,7 +657,19 @@ void resident_target(Context& c, ResidentState& state, uint32_t width, uint32_t 
             writes[i].pImageInfo=i==9 ? &image : &environment_image;
         } else writes[i].pBufferInfo=&buffers[i];
     }
-    vkUpdateDescriptorSets(c.device, c.ray_query ? 14u : 13u, writes.data(), 0, nullptr);
+    uint32_t write_count=c.ray_query ? 14u : 13u;
+    VkDescriptorImageInfo normal_image{}; VkDescriptorBufferInfo normal_buffer{};
+    if (c.normal_info.shader_compatible) {
+        normal_image={state.normal_maps->sampler,state.normal_maps->image.view,VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
+        normal_buffer={state.normal_maps->metadata.handle,0,state.normal_maps->metadata_bytes};
+        auto& image_write=writes[write_count++]; image_write.sType=VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        image_write.dstSet=set; image_write.dstBinding=14; image_write.descriptorCount=1;
+        image_write.descriptorType=VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER; image_write.pImageInfo=&normal_image;
+        auto& metadata_write=writes[write_count++]; metadata_write.sType=VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        metadata_write.dstSet=set; metadata_write.dstBinding=15; metadata_write.descriptorCount=1;
+        metadata_write.descriptorType=VK_DESCRIPTOR_TYPE_STORAGE_BUFFER; metadata_write.pBufferInfo=&normal_buffer;
+    }
+    vkUpdateDescriptorSets(c.device,write_count,writes.data(),0,nullptr);
     make_commands(c, *frame);
     if (c.profile.timestamp_supported) {
         VkQueryPoolCreateInfo query{VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO};
@@ -875,6 +899,7 @@ void resident_render(Context& c, const float* matrices, uint32_t instance_count,
     profile.host_wait_ns+=timing.wait; profile.host_readback_ns+=elapsed_ns(readback_begin);
     profile.gpu_render_ns+=gpu_render; profile.gpu_copy_ns+=gpu_copy; profile.gpu_total_ns+=gpu_total;
     profile.timestamp_samples+=timestamp_samples; profile.tlas_upload_bytes+=tlas.size()*sizeof(GpuBvhNode);
+    if (c.normal_info.loaded && params.counts[2]) ++c.normal_info.rgb_captures_with_normals;
     if (c.texture_info.loaded && params.counts[2]) ++c.texture_info.rgb_captures_with_textures;
     if (c.environment_info.loaded && params.counts[2]) {
         ++c.environment_info.rgb_captures_with_environment;

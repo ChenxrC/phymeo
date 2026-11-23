@@ -68,6 +68,7 @@ struct Context {
     bool surface_maps_compatible = false;
     bool display_compatible = false;
     PrResidentMsaaInfo msaa_info{};
+    PrResidentNormalInfo normal_info{};
     std::shared_ptr<MsaaState> msaa_state;
     uint32_t display_transform = 0;
     bool ray_query = false;
@@ -106,6 +107,7 @@ struct Context {
         ++live_contexts; telemetry.telemetry_abi_version=1; profile.profile_abi_version=1;
         readback_info.readback_abi_version=1; readback_info.memory_type_index=UINT32_MAX;
         texture_info.texture_abi_version=1;
+        normal_info.normal_abi_version=1;
         environment_info.environment_abi_version=1;
         ray_info.ray_query_abi_version=1;
         msaa_info.msaa_abi_version=1; msaa_info.requested_samples=msaa_info.color_samples=msaa_info.sensor_samples=1;
@@ -246,6 +248,14 @@ struct Context {
     void init(uint32_t selected, bool validation, const uint32_t* vert, size_t vert_bytes,
               const uint32_t* frag, size_t frag_bytes, bool resident_path = false, bool hardware_shadow = false) {
         resident = resident_path; ray_query=hardware_shadow;
+        normal_info.shader_compatible=resident && named_shader_marker(frag,frag_bytes,62,"PR_NORMAL_MAPS_ABI") &&
+            named_shader_marker(vert,vert_bytes,63,"PR_NORMAL_VERTEX_ABI",0);
+        if (resident) {
+            const auto vs=spirv_interface(vert,vert_bytes,0),fs=spirv_interface(frag,frag_bytes,4);
+            const uint64_t normal_bindings=(1ull<<14)|(1ull<<15);
+            require(!((vs.bindings|fs.bindings)&normal_bindings) || normal_info.shader_compatible,
+                    "normal-map vertex/fragment bundle ABI is missing or incompatible");
+        }
         surface_maps_compatible=resident && surface_maps_shader_marker(frag,frag_bytes);
         display_compatible=resident && display_shader_marker(frag,frag_bytes);
         msaa_info.shader_compatible=resident && named_shader_marker(frag,frag_bytes,59,"PR_MSAA_COLOR_ABI");
@@ -382,6 +392,23 @@ struct Context {
             texture.max_height=std::min({2048u,p.limits.maxImageDimension2D-2,texture_limits.maxExtent.height-2});
             texture.max_array_bytes=std::min<uint64_t>(128ull*1024*1024,texture_limits.maxResourceSize);
             texture.sampler_filter=VK_FILTER_LINEAR; texture.mip_levels=1; texture.format=VK_FORMAT_R8G8B8A8_SRGB;
+            if (normal_info.shader_compatible) {
+                require(p.limits.maxPerStageDescriptorStorageBuffers>=9 && p.limits.maxDescriptorSetStorageBuffers>=9 &&
+                        p.limits.maxPerStageDescriptorSamplers>=3 && p.limits.maxDescriptorSetSamplers>=3,
+                        "normal-map shader descriptor capacity unavailable");
+                VkFormatProperties normal_format{}; VkImageFormatProperties normal_limits{};
+                vkGetPhysicalDeviceFormatProperties(physical,VK_FORMAT_R8G8B8A8_UNORM,&normal_format);
+                auto normal_result=vkGetPhysicalDeviceImageFormatProperties(physical,VK_FORMAT_R8G8B8A8_UNORM,VK_IMAGE_TYPE_2D,
+                    VK_IMAGE_TILING_OPTIMAL,VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,0,&normal_limits);
+                require(normal_result==VK_SUCCESS && (normal_format.optimalTilingFeatures&features)==features &&
+                        normal_limits.maxExtent.width>2 && normal_limits.maxExtent.height>2,"normal-map linear UNORM format unavailable");
+                normal_info.max_textures=std::min({64u,p.limits.maxImageArrayLayers,normal_limits.maxArrayLayers});
+                normal_info.max_layers=normal_info.max_textures;
+                normal_info.max_width=std::min({2048u,p.limits.maxImageDimension2D-2,normal_limits.maxExtent.width-2});
+                normal_info.max_height=std::min({2048u,p.limits.maxImageDimension2D-2,normal_limits.maxExtent.height-2});
+                normal_info.max_array_bytes=std::min<uint64_t>(128ull*1024*1024,normal_limits.maxResourceSize);
+                normal_info.sampler_filter=VK_FILTER_LINEAR; normal_info.mip_levels=1; normal_info.format=VK_FORMAT_R8G8B8A8_UNORM;
+            }
             auto& environment=environment_info;
             const auto fragment_interface=spirv_interface(frag,frag_bytes,4);
             environment.shader_compatible=fragment_interface.valid && fragment_interface.main &&
@@ -476,7 +503,7 @@ struct Context {
         pool.queueFamilyIndex = queue_family; pool.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT |
             (resident ? VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT : 0u);
         acquire(command_pool, "vkCreateCommandPool", [&](auto* output) { return vkCreateCommandPool(device, &pool, nullptr, output); });
-        std::array<VkDescriptorSetLayoutBinding, 14> bindings{};
+        std::array<VkDescriptorSetLayoutBinding, 16> bindings{};
         bindings[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
         bindings[1] = {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1,
                        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
@@ -500,7 +527,12 @@ struct Context {
             bindings[12]={12,VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,1,VK_SHADER_STAGE_FRAGMENT_BIT,nullptr};
         }
         if (ray_query) bindings[13]={13,VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR,1,VK_SHADER_STAGE_FRAGMENT_BIT,nullptr};
-        layout.bindingCount = ray_query ? 14u : (resident ? 13u : 2u); layout.pBindings = bindings.data();
+        uint32_t binding_count=ray_query ? 14u : (resident ? 13u : 2u);
+        if (normal_info.shader_compatible) {
+            bindings[binding_count++]={14,VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,1,VK_SHADER_STAGE_FRAGMENT_BIT,nullptr};
+            bindings[binding_count++]={15,VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,1,VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,nullptr};
+        }
+        layout.bindingCount=binding_count; layout.pBindings=bindings.data();
         acquire(descriptor_layout, "descriptor layout", [&](auto* output) { return vkCreateDescriptorSetLayout(device, &layout, nullptr, output); });
         VkPipelineLayoutCreateInfo pipeline_info{VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO};
         pipeline_info.setLayoutCount = 1; pipeline_info.pSetLayouts = &descriptor_layout;
@@ -1048,6 +1080,23 @@ int pr_resident_set_msaa(void* handle,uint32_t samples,const uint32_t* vert,size
     try {
         require(handle,"null resident MSAA context");
         resident_set_msaa(*static_cast<Context*>(handle),samples,vert,vert_bytes,frag,frag_bytes);
+        return 0;
+    } catch(const std::exception& error) { last_error=error.what(); return -1; }
+}
+
+uint32_t pr_resident_normal_maps_abi_version() { return 1; }
+int pr_resident_normal_info(void* handle,PrResidentNormalInfo* output) {
+    if(!handle || !output) { last_error="null resident normal-map info"; return -1; }
+    auto& c=*static_cast<Context*>(handle);
+    if(!c.resident) { last_error="normal-map info requires resident context"; return -1; }
+    *output=c.normal_info; return 0;
+}
+int pr_resident_set_normal_maps(void* handle,const PrResidentTexture* textures,uint32_t texture_count,
+    const uint8_t* rgba,size_t rgba_bytes,const PrResidentUV* uv,uint32_t uv_count,
+    const uint32_t* slots,uint32_t instance_count) {
+    try {
+        require(handle,"null normal-map context");
+        resident_set_normal_maps(*static_cast<Context*>(handle),textures,texture_count,rgba,rgba_bytes,uv,uv_count,slots,instance_count);
         return 0;
     } catch(const std::exception& error) { last_error=error.what(); return -1; }
 }

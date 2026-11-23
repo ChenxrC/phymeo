@@ -284,3 +284,20 @@ PR_API int pr_resident_msaa_info(void* context,PrResidentMsaaInfo* output);
 PR_API int pr_resident_set_msaa(void* context,uint32_t samples,
     const uint32_t* resolve_vert,size_t resolve_vert_bytes,
     const uint32_t* resolve_frag,size_t resolve_frag_bytes);
+
+// Optional linear tangent-space normal-map extension v1. Fixed strength 1,
+// glTF +Y; independent from sRGB/roughness resources. Complete UV table and
+// per-instance slots use the same packed record ABI as color textures.
+struct PrResidentNormalInfo {
+    uint32_t normal_abi_version,max_textures,max_width,max_height,max_layers;
+    uint32_t texture_count,array_width,array_height,array_layers,uv_count;
+    uint32_t bound_instances,loaded,sampler_filter,mip_levels,format,shader_compatible;
+    uint64_t max_array_bytes,source_rgba_bytes,padded_rgba_bytes,metadata_upload_bytes;
+    uint64_t upload_calls,image_upload_bytes,rgb_captures_with_normals,reserved64;
+};
+static_assert(sizeof(PrResidentNormalInfo)==128,"normal-map info ABI");
+PR_API uint32_t pr_resident_normal_maps_abi_version();
+PR_API int pr_resident_normal_info(void* context,PrResidentNormalInfo* output);
+PR_API int pr_resident_set_normal_maps(void* context,
+    const PrResidentTexture* textures,uint32_t texture_count,const uint8_t* rgba,size_t rgba_bytes,
+    const PrResidentUV* uv,uint32_t uv_count,const uint32_t* instance_slots,uint32_t instance_count);

@@ -27,6 +27,7 @@ from ._native_texture import pack_textures
 from ._native_environment import pack_environment
 from ._native_display import configure_display
 from ._native_msaa import configure_msaa
+from ._native_normal import pack_normal_maps, configure_normal_maps
 from ._native_device import (
     NativeDevice,
     Parameters,
@@ -148,13 +149,14 @@ def _image_planes(raw, pixels, channels, attachment_mask):
 
 
 class _NativeDelegate:
-    def __init__(self, scene, meshes, device, exposure, *, resident=False, studio=None, textures=None, environment=None, shadow_mode='software', area_light_grid=2, display_info=None, msaa_info=None):
+    def __init__(self, scene, meshes, device, exposure, *, resident=False, studio=None, textures=None, environment=None, shadow_mode='software', area_light_grid=2, display_info=None, msaa_info=None, normal_info=None):
         self.scene, self.meshes, self.device, self.exposure = scene, meshes, device, exposure
         self.display_info = display_info or {'display_transform':'clip', 'display_transform_abi':None}
         self.resident = resident
         self.msaa_info = msaa_info or configure_msaa(None, 1)
         self.studio = deepcopy(studio)
         self.textures = deepcopy(textures)
+        self.normal_info = deepcopy(normal_info)
         self.environment = deepcopy(environment)
         self.shadow_mode = shadow_mode
         self.area_light_grid = area_light_grid
@@ -263,6 +265,7 @@ class _NativeDelegate:
             path_trace=False,
             textures=self.textures is not None,
             texture_assets=deepcopy(self.textures),
+            normal_maps=deepcopy(self.normal_info),
             physics_steps=0,
         )
 
@@ -390,9 +393,13 @@ class NativeBackend:
             raise UnsupportedRequestError("native raster currently supports at most 4096 triangles")
         device_type = (RayQueryResidentDevice if self.shadow_mode=='ray_query' else
                        (ResidentDevice if self.resident else NativeDevice))
+        bound_materials={instance.material_id for instance in scene.instances}
+        has_normal_maps=any(isinstance(material,TexturedMaterial) and material.normal_map is not None
+                            and material.id in bound_materials for material in scene.materials)
         device = device_type(
             self.library_path, self.shader_directory, self.device_index, self.validation,
-            **({'area_light_grid': self.area_light_grid} if self.area_light_grid != 2 else {})
+            **({'area_light_grid': self.area_light_grid} if self.area_light_grid != 2 else {}),
+            **({'normal_maps': True} if has_normal_maps else {})
         )
         try:
             display_info = configure_display(device, self.display_transform)
@@ -421,9 +428,10 @@ class NativeBackend:
                     environment_info = environment.diagnostics
                     studio_info['environment']['active_lighting'] = False
                     studio_info['environment']['replaced_by'] = 'directional environment map'
+            normal_info = configure_normal_maps(device, pack_normal_maps(scene, meshes, device.info())) if self.resident else None
             msaa_info = configure_msaa(device, self.msaa_samples)
             return NativeRenderSession(scene, _NativeDelegate(
-                scene, meshes, device, self.exposure, resident=self.resident, studio=studio_info, textures=texture_info, environment=environment_info, shadow_mode=self.shadow_mode, area_light_grid=self.area_light_grid, display_info=display_info, msaa_info=msaa_info))
+                scene, meshes, device, self.exposure, resident=self.resident, studio=studio_info, textures=texture_info, environment=environment_info, shadow_mode=self.shadow_mode, area_light_grid=self.area_light_grid, display_info=display_info, msaa_info=msaa_info, normal_info=normal_info))
         except BaseException as primary:
             try:
                 device.close()

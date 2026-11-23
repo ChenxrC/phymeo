@@ -45,7 +45,8 @@ def pack_textures(scene, decoded, info=None):
     only. Plain vertices retain zero UV and instances use UINT32_MAX.
     """
     materials={material.id:material for material in scene.materials}
-    bound=[item for item in scene.instances if isinstance(materials[item.material_id],TexturedMaterial)]
+    bound=[item for item in scene.instances if isinstance(materials[item.material_id],TexturedMaterial) and
+           (materials[item.material_id].base_color_map is not None or materials[item.material_id].roughness_map is not None)]
     if not bound:
         return None
     for item in bound:
@@ -124,7 +125,7 @@ def pack_textures(scene, decoded, info=None):
     for index,item in enumerate(scene.instances):
         material=materials[item.material_id]
         slots[index]=(by_key[(material.base_color_map,material.roughness_map)]
-                      if isinstance(material,TexturedMaterial) else 2**32-1)
+                      if isinstance(material,TexturedMaterial) and (material.base_color_map is not None or material.roughness_map is not None) else 2**32-1)
     diagnostics=dict(textures=texture_rows,source_rgba_bytes=raw_size,
         padded_array_bytes=(width+2)*(height+2)*len(images)*4,
         array_width=width+2,array_height=height+2,array_layers=len(images),

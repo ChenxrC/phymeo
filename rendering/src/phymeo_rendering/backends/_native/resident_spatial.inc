@@ -2,7 +2,7 @@
 // raw radiance. Same command buffer, uniform, matrices, assets and TLAS; the
 // three sensor writes are disabled. Cost includes direct-light shadow queries.
 void spatial_setup(Context& c,uint32_t bounces,const uint32_t* compute,size_t compute_bytes,
-                   const uint32_t* fragment,size_t fragment_bytes) {
+                   const uint32_t* fragment,size_t fragment_bytes,bool settling=false) {
     require(c.progressive_info.shader_compatible&&c.resident_state&&!c.progressive_info.enabled,
             "spatial requires an unconfigured progressive session");
     auto interface=spirv_interface(fragment,fragment_bytes,4);
@@ -23,7 +23,7 @@ void spatial_setup(Context& c,uint32_t bounces,const uint32_t* compute,size_t co
         VkFormatProperties sampled{};vkGetPhysicalDeviceFormatProperties(c.physical,format,&sampled);
         require(sampled.optimalTilingFeatures&VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT,"spatial guide/sensor sampling unavailable");
     }
-    progressive_setup(c,bounces,compute,compute_bytes,true);
+    progressive_setup(c,bounces,compute,compute_bytes,true,settling);
     auto& state=*c.progressive_state;
     try {
         std::array<VkAttachmentDescription,5> attachments{};
@@ -90,7 +90,7 @@ void spatial_setup(Context& c,uint32_t bounces,const uint32_t* compute,size_t co
 void spatial_record_guide(Context& c,FrameResources& frame,uint32_t width,uint32_t height) {
     auto& state=*c.progressive_state;
     if(!frame.guide_framebuffer){
-        const std::array<VkImageView,5> views{frame.images[5].view,frame.images[1].view,frame.images[2].view,frame.images[3].view,frame.images[4].view};
+        const std::array<VkImageView,5> views{c.settling_info.enabled?state.retained_guide.view:frame.images[5].view,frame.images[1].view,frame.images[2].view,frame.images[3].view,frame.images[4].view};
         VkFramebufferCreateInfo framebuffer{VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO};
         framebuffer.renderPass=state.guide_pass;framebuffer.attachmentCount=5;framebuffer.pAttachments=views.data();
         framebuffer.width=width;framebuffer.height=height;framebuffer.layers=1;
@@ -105,5 +105,25 @@ void spatial_record_guide(Context& c,FrameResources& frame,uint32_t width,uint32
         const auto& mesh=c.resident_state->meshes[c.resident_state->instances[slot].mesh_index];
         vkCmdDrawIndexed(frame.commands,mesh.index_count,1,mesh.first_index,static_cast<int32_t>(mesh.first_vertex),slot);
     }
-    vkCmdEndRenderPass(frame.commands);frame.guide_initialized=true;
+    vkCmdEndRenderPass(frame.commands);frame.guide_initialized=true;if(c.settling_info.enabled)c.settling_info.guide_valid=1;
+}
+
+void settling_setup(Context& c,uint32_t bounces,const uint32_t* mean,size_t mean_bytes,
+                    const uint32_t* guide,size_t guide_bytes,const uint32_t* filter,size_t filter_bytes) {
+    const auto interface=spirv_interface(filter,filter_bytes,5);
+    require(interface.valid&&interface.main&&interface.bindings==254u&&
+            named_shader_marker(filter,filter_bytes,70,"PR_SETTLING_DISPLAY_ABI",5),
+            "settling display compute ABI unavailable");
+    spatial_setup(c,bounces,mean,mean_bytes,guide,guide_bytes,true);
+    auto& state=*c.progressive_state;
+    try {
+        VkShaderModuleCreateInfo module{VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO};module.codeSize=filter_bytes;module.pCode=filter;
+        acquire(state.settling_shader,"settling display shader",[&](auto* out){return vkCreateShaderModule(c.device,&module,nullptr,out);});
+        VkComputePipelineCreateInfo pipeline{VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO};
+        pipeline.stage={VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO};pipeline.stage.stage=VK_SHADER_STAGE_COMPUTE_BIT;
+        pipeline.stage.module=state.settling_shader;pipeline.stage.pName="main";pipeline.layout=state.pipeline_layout;
+        VkPipeline temporary{};auto status=vkCreateComputePipelines(c.device,VK_NULL_HANDLE,1,&pipeline,nullptr,&temporary);
+        if(temporary){state.settling_pipeline=temporary;++live_resources;}check(status,"settling display pipeline");
+        c.settling_info.enabled=1;
+    }catch(...){c.poisoned=true;throw;}
 }

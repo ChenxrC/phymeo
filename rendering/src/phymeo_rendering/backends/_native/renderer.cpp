@@ -74,6 +74,7 @@ struct Context {
     PrResidentIndirectInfo indirect_info{};
     PrResidentProgressiveInfo progressive_info{};
     PrResidentSpatialInfo spatial_info{};
+    PrResidentSettlingInfo settling_info{};
     std::shared_ptr<ProgressiveState> progressive_state;
     std::shared_ptr<MsaaState> msaa_state;
     uint32_t display_transform = 0;
@@ -116,6 +117,7 @@ struct Context {
         normal_info.normal_abi_version=1;
         progressive_info.progressive_abi_version=1;
         spatial_info.spatial_abi_version=1;
+        settling_info.settling_abi_version=1;
         indirect_info.indirect_abi_version=1;indirect_info.samples_per_pixel=16;indirect_info.max_bounces=1;
         reflection_info.reflection_abi_version=1; reflection_info.max_bounces=1;
         reflection_info.metallic_min=.99f; reflection_info.roughness_max=.10f;
@@ -1207,7 +1209,7 @@ int pr_resident_reset_progressive(void* handle){
         require(handle,"null progressive context");auto& c=*static_cast<Context*>(handle);
         require(c.progressive_info.enabled&&!c.poisoned,"progressive reset requires valid enabled session");
         c.progressive_info.batches=0;c.progressive_info.last_batch_index=0;++c.progressive_info.reset_calls;
-        c.progressive_state->armed=false;c.progressive_state->pending_reset=true;c.spatial_info.last_capture_filtered=0;return 0;
+        c.progressive_state->armed=false;c.progressive_state->pending_reset=true;c.spatial_info.last_capture_filtered=0;c.settling_info.guide_valid=0;c.settling_info.last_capture_filtered=0;c.settling_info.last_filtered_fraction=0;c.settling_info.last_batch=0;c.settling_info.last_filtered_primary_samples=0;return 0;
     }catch(const std::exception& error){last_error=error.what();return -1;}
 }
 int pr_resident_read_progressive_mean(void* handle,void* output,size_t bytes){
@@ -1229,5 +1231,15 @@ int pr_resident_set_spatial(void* handle,uint32_t bounces,const uint32_t* code,s
 }
 int pr_resident_read_spatial_guide(void* handle,void* output,size_t bytes){
     try{require(handle,"null spatial context");spatial_read(*static_cast<Context*>(handle),output,bytes);return 0;}
+    catch(const std::exception& e){last_error=e.what();return -1;}
+}
+uint32_t pr_resident_settling_abi_version(){return 1;}
+int pr_resident_settling_info(void* handle,PrResidentSettlingInfo* output){
+    if(!handle||!output){last_error="null settling info";return -1;}
+    *output=static_cast<Context*>(handle)->settling_info;return 0;
+}
+int pr_resident_set_settling(void* handle,uint32_t bounces,const uint32_t* mean,size_t mean_bytes,
+    const uint32_t* guide,size_t guide_bytes,const uint32_t* filter,size_t filter_bytes){
+    try{require(handle,"null settling context");settling_setup(*static_cast<Context*>(handle),bounces,mean,mean_bytes,guide,guide_bytes,filter,filter_bytes);return 0;}
     catch(const std::exception& e){last_error=e.what();return -1;}
 }

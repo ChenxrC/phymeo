@@ -1,0 +1,56 @@
+#version 450
+#extension GL_GOOGLE_include_directive : require
+layout(local_size_x=8,local_size_y=8) in;
+layout(constant_id=70) const uint PR_SETTLING_DISPLAY_ABI=1u;
+layout(set=0,binding=1,rgba32f) readonly uniform image2D meanLinear;
+layout(set=0,binding=2,rgba8) writeonly uniform image2D displayColor;
+layout(set=0,binding=3,std430) buffer Status { uint invalid; } status;
+layout(set=0,binding=4) uniform sampler2D directGuide;
+layout(set=0,binding=5) uniform sampler2D forwardDepth;
+layout(set=0,binding=6) uniform usampler2D instanceIds;
+layout(set=0,binding=7) uniform usampler2D coverage;
+layout(push_constant) uniform Push { uint width,height,batch,mode; float exposure,filteredFraction; } p;
+#include "resident_display.glsl"
+const int weights[5]=int[5](1,4,6,4,1);
+bool finiteRadiance(vec3 value) {
+    return !any(isnan(value))&&!any(isinf(value))&&!any(lessThan(value,vec3(0.0)));
+}
+void main() {
+    ivec2 pixel=ivec2(gl_GlobalInvocationID.xy);
+    if(pixel.x>=p.width||pixel.y>=p.height)return;
+    vec3 mean=imageLoad(meanLinear,pixel).rgb;
+    if(PR_SETTLING_DISPLAY_ABI!=1u||!finiteRadiance(mean)){atomicOr(status.invalid,4u);return;}
+    vec3 shown=mean;
+    if(p.filteredFraction>0.0) {
+        uint id=texelFetch(instanceIds,pixel,0).r;
+        if(id!=0u && texelFetch(coverage,pixel,0).r!=0u) {
+            float z=texelFetch(forwardDepth,pixel,0).r;
+            if(isnan(z)||isinf(z)||z<=0.0){atomicOr(status.invalid,2u);return;}
+            ivec3 guide=ivec3(round(texelFetch(directGuide,pixel,0).rgb*255.0));
+            precise vec3 sum=vec3(0.0);
+            float total=0.0;
+            for(int y=-2;y<=2;++y)for(int x=-2;x<=2;++x) {
+                ivec2 q=pixel+ivec2(x,y);
+                if(any(lessThan(q,ivec2(0)))||q.x>=p.width||q.y>=p.height)continue;
+                if(texelFetch(instanceIds,q,0).r!=id||texelFetch(coverage,q,0).r==0u)continue;
+                float qz=texelFetch(forwardDepth,q,0).r;
+                if(isnan(qz)||isinf(qz)||qz<=0.0){atomicOr(status.invalid,2u);continue;}
+                if(abs(z-qz)>.003*min(z,qz))continue;
+                ivec3 difference=abs(guide-ivec3(round(texelFetch(directGuide,q,0).rgb*255.0)));
+                if(any(greaterThan(difference,ivec3(2))))continue;
+                vec3 sampleValue=imageLoad(meanLinear,q).rgb;
+                if(!finiteRadiance(sampleValue)){atomicOr(status.invalid,1u);continue;}
+                float weight=float(weights[y+2]*weights[x+2])*(1.0/256.0);
+                sum+=sampleValue*weight;total+=weight;
+            }
+            vec3 filtered=sum/total;
+            // Exact first anchor; convex mixing avoids subtraction overflow.
+            shown=p.filteredFraction==1.0?filtered:
+                mean*(1.0-p.filteredFraction)+filtered*p.filteredFraction;
+        }
+    }
+    if(!finiteRadiance(shown)){atomicOr(status.invalid,4u);return;}
+    vec3 color=clamp(residentDisplayLinear(shown*p.exposure,float(p.mode)),0.0,1.0);
+    color=mix(12.92*color,1.055*pow(color,vec3(1.0/2.4))-.055,greaterThan(color,vec3(.0031308)));
+    imageStore(displayColor,pixel,vec4(color,1.0));
+}

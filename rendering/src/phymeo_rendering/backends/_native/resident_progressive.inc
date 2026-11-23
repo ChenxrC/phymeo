@@ -12,7 +12,9 @@ struct ProgressiveState {
     VkRenderPass guide_pass{};
     VkPipeline guide_pipeline{};
     VkShaderModule guide_fragment{};
-    Image mean{},display{};
+    VkShaderModule settling_shader{};
+    VkPipeline settling_pipeline{};
+    Image mean{},display{},retained_guide{};
     Buffer status{},readback{};
     void* mapping{};
     uint32_t width{},height{};
@@ -20,7 +22,7 @@ struct ProgressiveState {
     explicit ProgressiveState(Context& owner):c(owner) {}
     void clear_targets() noexcept {
         release(pool,[&](auto h){vkDestroyDescriptorPool(c.device,h,nullptr);});set={};
-        for(auto* image:{&mean,&display}) {
+        for(auto* image:{&mean,&display,&retained_guide}) {
             release(image->view,[&](auto h){vkDestroyImageView(c.device,h,nullptr);});
             release(image->handle,[&](auto h){vkDestroyImage(c.device,h,nullptr);});
             c.free_memory(image->memory,image->allocation);
@@ -30,10 +32,12 @@ struct ProgressiveState {
             release(buffer->handle,[&](auto h){vkDestroyBuffer(c.device,h,nullptr);});
             c.free_memory(buffer->memory,buffer->allocation);
         }
-        width=height=0;initialized=false;
+        width=height=0;initialized=false;c.settling_info.guide_valid=0;
     }
     ~ProgressiveState() {
         clear_targets();
+        release(settling_pipeline,[&](auto h){vkDestroyPipeline(c.device,h,nullptr);});
+        release(settling_shader,[&](auto h){vkDestroyShaderModule(c.device,h,nullptr);});
         release(guide_pipeline,[&](auto h){vkDestroyPipeline(c.device,h,nullptr);});
         release(guide_fragment,[&](auto h){vkDestroyShaderModule(c.device,h,nullptr);});
         release(guide_pass,[&](auto h){vkDestroyRenderPass(c.device,h,nullptr);});
@@ -45,7 +49,7 @@ struct ProgressiveState {
     }
 };
 
-void progressive_setup(Context& c,uint32_t bounces,const uint32_t* code,size_t bytes,bool guided=false) {
+void progressive_setup(Context& c,uint32_t bounces,const uint32_t* code,size_t bytes,bool guided=false,bool settling=false) {
     require(c.progressive_info.supported&&c.progressive_info.shader_compatible&&c.indirect_info.enabled,
             "progressive requires explicit compatible indirect hardware shader");
     require(c.resident_state&&!c.poisoned&&!c.properties.captures&&!c.progressive_info.enabled,
@@ -53,8 +57,8 @@ void progressive_setup(Context& c,uint32_t bounces,const uint32_t* code,size_t b
     require((bounces==1||bounces==2)&&c.msaa_info.requested_samples==1,"progressive supports one/two bounces and MSAA1");
     require(!guided||c.spatial_info.shader_compatible,"spatial fragment/compute ABI mismatch");
     const auto interface=spirv_interface(code,bytes,5);
-    require(interface.valid&&interface.main&&interface.bindings==(guided?255u:15u)&&
-            named_shader_marker(code,bytes,guided?69:67,guided?"PR_SPATIAL_MEAN_ABI":"PR_PROGRESSIVE_MEAN_ABI",5),"progressive compute shader ABI unavailable");
+    require(interface.valid&&interface.main&&interface.bindings==((guided&&!settling)?255u:15u)&&
+            named_shader_marker(code,bytes,(guided&&!settling)?69:67,(guided&&!settling)?"PR_SPATIAL_MEAN_ABI":"PR_PROGRESSIVE_MEAN_ABI",5),"progressive compute shader ABI unavailable");
     auto state=std::make_shared<ProgressiveState>(c);
     std::array<VkDescriptorSetLayoutBinding,8> bindings{};
     const uint32_t binding_count=guided?8u:4u;
@@ -63,7 +67,7 @@ void progressive_setup(Context& c,uint32_t bounces,const uint32_t* code,size_t b
     VkDescriptorSetLayoutCreateInfo layout{VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO};
     layout.bindingCount=binding_count;layout.pBindings=bindings.data();
     acquire(state->layout,"progressive descriptor layout",[&](auto* out){return vkCreateDescriptorSetLayout(c.device,&layout,nullptr,out);});
-    VkPushConstantRange range{VK_SHADER_STAGE_COMPUTE_BIT,0,20};
+    VkPushConstantRange range{VK_SHADER_STAGE_COMPUTE_BIT,0,settling?24u:20u};
     VkPipelineLayoutCreateInfo pipeline_layout{VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO};
     pipeline_layout.setLayoutCount=1;pipeline_layout.pSetLayouts=&state->layout;
     pipeline_layout.pushConstantRangeCount=1;pipeline_layout.pPushConstantRanges=&range;
@@ -96,6 +100,7 @@ void progressive_prepare(Context& c,FrameResources& frame,uint32_t width,uint32_
         state.clear_targets();
         c.make_image(state.mean,width,height,VK_FORMAT_R32G32B32A32_SFLOAT,false,VK_SAMPLE_COUNT_1_BIT,VK_IMAGE_USAGE_STORAGE_BIT);
         c.make_image(state.display,width,height,VK_FORMAT_R8G8B8A8_UNORM,false,VK_SAMPLE_COUNT_1_BIT,VK_IMAGE_USAGE_STORAGE_BIT);
+        if(c.settling_info.enabled)c.make_image(state.retained_guide,width,height,VK_FORMAT_R8G8B8A8_UNORM,false,VK_SAMPLE_COUNT_1_BIT,VK_IMAGE_USAGE_SAMPLED_BIT);
         c.make_buffer(state.status,4,VK_BUFFER_USAGE_STORAGE_BUFFER_BIT|VK_BUFFER_USAGE_TRANSFER_DST_BIT|VK_BUFFER_USAGE_TRANSFER_SRC_BIT,VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
         std::array<VkDescriptorPoolSize,3> sizes{{{VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,3},{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,1},{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,4}}};
         VkDescriptorPoolCreateInfo pool{VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO};
@@ -122,7 +127,7 @@ void progressive_prepare(Context& c,FrameResources& frame,uint32_t width,uint32_
         std::array<VkDescriptorImageInfo,4> sampled{};
         std::array<VkWriteDescriptorSet,4> extra{};
         for(uint32_t i=0;i<4;++i){
-            sampled[i]={state.sampler,frame.images[indices[i]].view,VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
+            sampled[i]={state.sampler,i==0&&c.settling_info.enabled?state.retained_guide.view:frame.images[indices[i]].view,VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
             auto& w=extra[i];w.sType=VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;w.dstSet=state.set;
             w.dstBinding=4+i;w.descriptorCount=1;w.descriptorType=VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;w.pImageInfo=&sampled[i];
         }
@@ -148,8 +153,8 @@ void progressive_record(Context& c,FrameResources& frame,const PrParams& params,
     std::array<VkImageMemoryBarrier,4> guide_barriers{};
     if(c.spatial_info.enabled) {
         const uint32_t indices[4]={5,1,2,3};
-        for(uint32_t i=0;i<4;++i)guide_barriers[i]=progressive_barrier(frame.images[indices[i]].handle,
-            (i==0&&!frame.guide_initialized)?VK_IMAGE_LAYOUT_UNDEFINED:VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+        for(uint32_t i=0;i<4;++i)guide_barriers[i]=progressive_barrier(i==0&&c.settling_info.enabled?state.retained_guide.handle:frame.images[indices[i]].handle,
+            (i==0&&!(c.settling_info.enabled?c.settling_info.guide_valid:frame.guide_initialized))?VK_IMAGE_LAYOUT_UNDEFINED:VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
             VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,VK_ACCESS_SHADER_READ_BIT);
         frame.guide_initialized=true;
         vkCmdPipelineBarrier(commands,VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
@@ -161,11 +166,24 @@ void progressive_record(Context& c,FrameResources& frame,const PrParams& params,
     status.srcQueueFamilyIndex=status.dstQueueFamilyIndex=VK_QUEUE_FAMILY_IGNORED;
     status.srcAccessMask=VK_ACCESS_TRANSFER_WRITE_BIT;status.dstAccessMask=VK_ACCESS_SHADER_READ_BIT|VK_ACCESS_SHADER_WRITE_BIT;
     vkCmdPipelineBarrier(commands,VK_PIPELINE_STAGE_TRANSFER_BIT,VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,0,0,nullptr,1,&status,0,nullptr);
-    struct Push {uint32_t width,height,batch,mode;float exposure;} push{state.width,state.height,batch,c.display_transform,params.options[0]};
+    struct Push {uint32_t width,height,batch,mode;float exposure,fraction;} push{state.width,state.height,batch,c.display_transform,params.options[0],batch<15?1.f-std::sqrt(static_cast<float>(batch)/15.f):0.f};
     vkCmdBindPipeline(commands,VK_PIPELINE_BIND_POINT_COMPUTE,state.pipeline);
     vkCmdBindDescriptorSets(commands,VK_PIPELINE_BIND_POINT_COMPUTE,state.pipeline_layout,0,1,&state.set,0,nullptr);
-    vkCmdPushConstants(commands,state.pipeline_layout,VK_SHADER_STAGE_COMPUTE_BIT,0,sizeof(push),&push);
+    vkCmdPushConstants(commands,state.pipeline_layout,VK_SHADER_STAGE_COMPUTE_BIT,0,c.settling_info.enabled?24u:20u,&push);
     vkCmdDispatch(commands,(state.width+7)/8,(state.height+7)/8,1);
+    if(c.settling_info.enabled&&batch<15) {
+        // Separate dispatch: every workgroup sees the complete immutable mean.
+        auto mean_ready=progressive_barrier(state.mean.handle,VK_IMAGE_LAYOUT_GENERAL,VK_IMAGE_LAYOUT_GENERAL,
+            VK_ACCESS_SHADER_WRITE_BIT,VK_ACCESS_SHADER_READ_BIT);
+        auto display_ready=progressive_barrier(state.display.handle,VK_IMAGE_LAYOUT_GENERAL,VK_IMAGE_LAYOUT_GENERAL,
+            VK_ACCESS_SHADER_WRITE_BIT,VK_ACCESS_SHADER_WRITE_BIT);
+        const std::array<VkImageMemoryBarrier,2> ready{mean_ready,display_ready};
+        status.srcAccessMask=VK_ACCESS_SHADER_WRITE_BIT;status.dstAccessMask=VK_ACCESS_SHADER_READ_BIT|VK_ACCESS_SHADER_WRITE_BIT;
+        vkCmdPipelineBarrier(commands,VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+            0,0,nullptr,1,&status,2,ready.data());
+        vkCmdBindPipeline(commands,VK_PIPELINE_BIND_POINT_COMPUTE,state.settling_pipeline);
+        vkCmdDispatch(commands,(state.width+7)/8,(state.height+7)/8,1);
+    }
     auto after=progressive_barrier(state.display.handle,VK_IMAGE_LAYOUT_GENERAL,VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,VK_ACCESS_SHADER_WRITE_BIT,VK_ACCESS_TRANSFER_READ_BIT);
     status.srcAccessMask=VK_ACCESS_SHADER_WRITE_BIT;status.dstAccessMask=VK_ACCESS_TRANSFER_READ_BIT;
     vkCmdPipelineBarrier(commands,VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,VK_PIPELINE_STAGE_TRANSFER_BIT,0,0,nullptr,1,&status,1,&after);
@@ -230,7 +248,7 @@ void spatial_read(Context& c,void* output,size_t bytes) {
         VkCommandBufferBeginInfo begin{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};begin.flags=VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
         check(vkBeginCommandBuffer(frame.commands,&begin),"spatial read begin");
         VkBufferImageCopy copy{};copy.imageSubresource={VK_IMAGE_ASPECT_COLOR_BIT,0,0,1};copy.imageExtent={state.width,state.height,1};
-        vkCmdCopyImageToBuffer(frame.commands,frame.images[5].handle,VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,state.readback.handle,1,&copy);
+        vkCmdCopyImageToBuffer(frame.commands,(c.settling_info.enabled?state.retained_guide.handle:frame.images[5].handle),VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,state.readback.handle,1,&copy);
         VkBufferMemoryBarrier host{VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER};host.buffer=state.readback.handle;host.size=bytes;
         host.srcQueueFamilyIndex=host.dstQueueFamilyIndex=VK_QUEUE_FAMILY_IGNORED;host.srcAccessMask=VK_ACCESS_TRANSFER_WRITE_BIT;host.dstAccessMask=VK_ACCESS_HOST_READ_BIT;
         vkCmdPipelineBarrier(frame.commands,VK_PIPELINE_STAGE_TRANSFER_BIT,VK_PIPELINE_STAGE_HOST_BIT,0,0,nullptr,1,&host,0,nullptr);

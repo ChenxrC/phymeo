@@ -598,7 +598,7 @@ void resident_target(Context& c, ResidentState& state, uint32_t width, uint32_t 
     frame->readback_mapping=readback_mapping; // own a mapping only after VK_SUCCESS
     ++c.readback_info.map_calls;
     std::array<VkImageView, 6> views{};
-    for (uint32_t i = 0; i < (c.spatial_info.enabled?6u:5u); ++i) {
+    for (uint32_t i = 0; i < (c.spatial_info.enabled&&!c.settling_info.enabled?6u:5u); ++i) {
         c.make_image(frame->images[i], width, height, c.attachment_format(i), i == 4, VK_SAMPLE_COUNT_1_BIT,
             (i==0 && c.progressive_info.shader_compatible?VK_IMAGE_USAGE_STORAGE_BIT:0) | (c.spatial_info.enabled && i!=0 && i!=4?VK_IMAGE_USAGE_SAMPLED_BIT:0));
         views[i] = frame->images[i].view;
@@ -927,9 +927,21 @@ void resident_render(Context& c, const float* matrices, uint32_t instance_count,
     profile.gpu_render_ns+=gpu_render; profile.gpu_copy_ns+=gpu_copy; profile.gpu_total_ns+=gpu_total;
     profile.timestamp_samples+=timestamp_samples; profile.tlas_upload_bytes+=tlas.size()*sizeof(GpuBvhNode);
     if(c.spatial_info.enabled) {
-        c.spatial_info.last_capture_filtered=progressive_rgb&&progressive_batch==0;
+        c.spatial_info.last_capture_filtered=progressive_rgb&&(c.settling_info.enabled?progressive_batch<15:progressive_batch==0);
         if(progressive_rgb)++c.spatial_info.rgb_captures;
         if(c.spatial_info.last_capture_filtered)++c.spatial_info.filtered_rgb_captures;
+    }
+    if(c.settling_info.enabled) {
+        auto& settling=c.settling_info;
+        settling.last_batch=progressive_rgb?progressive_batch+1:0;
+        settling.last_capture_filtered=progressive_rgb&&progressive_batch<15;
+        settling.last_filtered_fraction=settling.last_capture_filtered?1.f-std::sqrt(static_cast<float>(progressive_batch)/15.f):0.f;
+        settling.last_filtered_primary_samples=settling.last_capture_filtered?16*(progressive_batch+1):0;
+        if(progressive_rgb&&progressive_batch==0)++settling.guide_draws;
+        if(settling.last_capture_filtered){
+            ++settling.filtered_rgb_captures;++settling.filter_dispatches;
+            settling.filtered_primary_samples+=settling.last_filtered_primary_samples;
+        }
     }
     if(progressive_rgb) {
         auto& progressive=c.progressive_info;

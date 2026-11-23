@@ -103,7 +103,7 @@ class PublicDeviceAcceptance(unittest.TestCase):
     def test_public_msaa_coverage_motion_and_centre_sensors(self):
         with tempfile.TemporaryDirectory() as temporary:
             report=calibration.run_experiment(
-                Path(os.environ['PHYMEO_NATIVE_MSAA_LIBRARY']),Path(temporary),
+                Path(os.environ['PHYMEO_NATIVE_MSAA_LIBRARY']),Path(temporary)/'run',
                 shaders=Path(os.environ['PHYMEO_NATIVE_MSAA_SHADERS']) if os.environ.get('PHYMEO_NATIVE_MSAA_SHADERS') else None,
                 device_index=int(os.environ.get('PHYMEO_NATIVE_DEVICE_INDEX','1')),validation=True)
             self.assertTrue(report['acceptance']['edge_mae_25_percent'])
@@ -117,4 +117,5 @@ class PublicDeviceAcceptance(unittest.TestCase):
 
 if __name__=='__main__':
     unittest.main()
+
 

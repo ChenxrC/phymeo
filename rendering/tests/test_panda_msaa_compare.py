@@ -1,5 +1,6 @@
 """HOST contract tests for one frozen Panda AA comparison; no device claims."""
 import copy
+from contextlib import nullcontext
 import importlib
 import json
 from hashlib import sha256
@@ -254,7 +255,9 @@ class PairedFilmTests(unittest.TestCase):
         from PIL import Image
         tools={name:shutil.which(name) for name in ("ffmpeg","ffprobe")}
         self.assertTrue(all(tools.values()),"real FFmpeg tools required")
-        with tempfile.TemporaryDirectory() as temporary:
+        retained = os.environ.get("PHYMEO_MSAA_CODEC_ARTIFACT")
+        context = nullcontext(retained) if retained else tempfile.TemporaryDirectory()
+        with context as temporary:
             root=Path(temporary); directory=root/"1x/frames"; directory.mkdir(parents=True)
             hashes=[]
             for index in range(3):

@@ -85,6 +85,16 @@ def compare_receipts(protocol, one, four):
         backend, device = receipt["backend"], receipt["backend"]["device"]
         if backend.get("library_sha256") != protocol["library_sha256"]:
             raise ValueError("capture uses a foreign native DLL")
+        for key, value in (("display_transform", "pbr-neutral"), ("exposure", 8.),
+                           ("shadow_mode", "ray_query"), ("area_light_grid", 2)):
+            if backend.get(key) != value:
+                raise ValueError(f"actual backend {key} differs from frozen profile")
+        for key in ("scene_key", "decoded_geometry_sha256", "triangles", "light_count",
+                    "studio", "environment", "textures"):
+            if backend.get(key) != one["backend"].get(key):
+                raise ValueError(f"paired backend geometry/material/lighting differs: {key}")
+        if not device.get("device_uuid") or device["device_uuid"] != one["backend"]["device"].get("device_uuid"):
+            raise ValueError("paired physical device differs")
         msaa = backend.get("msaa", {})
         resolve = "display-linear then IEC sRGB once" if samples == 4 else "none (single sample)"
         if any(msaa.get(key) != value for key, value in
@@ -128,8 +138,9 @@ def verify_probe(probe, *, width, height, count, fps=30):
     expected = dict(codec_name="h264", codec_tag_string="avc1", pix_fmt="yuv420p", width=width,
         height=height, color_range="tv", color_space="bt709", color_transfer="iec61966-2-1",
         color_primaries="bt709", sample_aspect_ratio="1:1")
-    if any(stream.get(k) != v for k, v in expected.items()):
-        raise ValueError("video size/codec/color contract mismatch")
+    mismatch = {k: {"actual": stream.get(k), "expected": v} for k,v in expected.items() if stream.get(k) != v}
+    if mismatch:
+        raise ValueError(f"video size/codec/color contract mismatch: {mismatch}")
     if any(int(stream.get(k, -1)) != count for k in ("nb_frames", "nb_read_frames")):
         raise ValueError("incomplete decoded frame count")
     if any(Fraction(stream[k]) != fps for k in ("avg_frame_rate", "r_frame_rate")):
@@ -289,12 +300,13 @@ def _run(command):
     return result.stdout
 
 
-def _encode_one(root, mode, target, receipts, ffmpeg, ffprobe):
+def _encode_one(root, mode, target, receipts, ffmpeg, ffprobe, *, count=300):
     import numpy as np
     from _panda_movie_encode import _faststart
     width, height = (2562,768) if mode == "split" else (1280,768)
-    filters = ("scale=in_range=full:out_range=limited:out_color_matrix=bt709:"
-               "flags=bicubic+accurate_rnd+full_chroma_int,format=yuv420p")
+    filters = ("setsar=1,scale=in_range=full:out_range=limited:out_color_matrix=bt709:"
+               "flags=bicubic+accurate_rnd+full_chroma_int,format=yuv420p,"
+               "setparams=range=limited:color_primaries=bt709:color_trc=iec61966-2-1:colorspace=bt709")
     command = [ffmpeg, "-hide_banner", "-loglevel", "error", "-nostdin", "-n",
         "-f", "rawvideo", "-pixel_format", "rgb24", "-video_size", f"{width}x{height}",
         "-framerate", "30", "-i", "pipe:0", "-an", "-vf", filters,
@@ -307,7 +319,7 @@ def _encode_one(root, mode, target, receipts, ffmpeg, ffprobe):
         process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL,
             stderr=errors, creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0)
         try:
-            for i in range(300):
+            for i in range(count):
                 data = _compose(root, mode, i, receipts).tobytes()
                 hashes.append(sha256(data).hexdigest())
                 process.stdin.write(data)
@@ -321,7 +333,8 @@ def _encode_one(root, mode, target, receipts, ffmpeg, ffprobe):
         "stream=codec_type,codec_name,codec_tag_string,pix_fmt,width,height,avg_frame_rate,r_frame_rate,"
         "time_base,duration_ts,nb_frames,nb_read_frames,color_range,color_space,color_transfer,"
         "color_primaries,sample_aspect_ratio:frame=best_effort_timestamp_time:format=duration", "-of", "json", target]))
-    report = verify_probe(probe, width=width, height=height, count=300)
+    _json(target.with_suffix(".probe.json"), probe)
+    report = verify_probe(probe, width=width, height=height, count=count)
     rows = []
     log = target.with_suffix(".decode.log")
     # Decode all actual encoded frames, comparing the exact RGB encode inputs.
@@ -334,11 +347,11 @@ def _encode_one(root, mode, target, receipts, ffmpeg, ffprobe):
             stdin=subprocess.DEVNULL, stderr=errors,
             creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0)
         try:
-            count = width*height*3
-            for i in range(300):
+            frame_bytes = width*height*3
+            for i in range(count):
                 pieces, have = [], 0
-                while have < count:
-                    part = process.stdout.read(count-have)
+                while have < frame_bytes:
+                    part = process.stdout.read(frame_bytes-have)
                     if not part:
                         raise ValueError("truncated decoded frame")
                     pieces.append(part); have += len(part)
@@ -361,41 +374,52 @@ def _encode_one(root, mode, target, receipts, ffmpeg, ffprobe):
     return report
 
 
-def encode_pair(root, *, videos="both"):
+def encode_pair(root, *, videos="both", media_output=None):
     root = Path(root).resolve()
     if videos not in ("none", "toggle", "split", "both"):
         raise ValueError("unknown video selection")
     protocol = json.loads((root / "protocol.json").read_text())
     receipts = {n: json.loads((root/f"{n}x/capture.json").read_text()) for n in (1,4)}
     compare_receipts(protocol, receipts[1], receipts[4])
+    media = root if media_output is None else Path(media_output).resolve()
+    if media_output is not None:
+        media.mkdir(parents=True, exist_ok=False)
     tools = {name: shutil.which(name) for name in ("ffmpeg", "ffprobe")}
     if not all(tools.values()):
         raise RuntimeError("ffmpeg and ffprobe are required for video output")
     modes = [] if videos == "none" else ["1", "4"] if videos == "toggle" else ["split"]
     if videos == "both": modes = ["1", "4", "split"]
-    report = dict(schema="phymeo-panda-msaa-codec-v1", movies={},
+    report = dict(schema="phymeo-panda-msaa-codec-v1", movies={}, source_directory=str(root), media_directory=str(media),
         input_protocol_sha256=_hash(root/"protocol.json"), source_color="sRGB RGB8 unchanged",
         conversion="BT.709 matrix, full RGB to limited YUV420, sRGB transfer retained; no display transform",
         labels="Pillow embedded default font, external 48px band; no source-image labels",
         tools={name: _run([exe,"-version"]).splitlines()[0] for name,exe in tools.items()})
     for mode in modes:
-        target = root / ("panda-msaa-split.mp4" if mode == "split" else f"panda-msaa-{mode}x.mp4")
+        target = media / ("panda-msaa-split.mp4" if mode == "split" else f"panda-msaa-{mode}x.mp4")
         if target.exists():
             raise FileExistsError(f"preserve existing movie: {target}")
         report["movies"][mode] = _encode_one(root, mode, target, receipts, **tools)
-        _json(root / "encoding.json", report)
+        _json(media / "encoding.json", report)
     if videos in ("toggle", "both"):
-        (root/"compare.html").write_text('''<!doctype html><meta charset="utf-8"><title>Panda 1x / 4x MSAA</title>
-<style>body{background:#17191e;color:#eee;font:18px sans-serif;max-width:1280px;margin:24px auto}video{width:100%}button{font:inherit;padding:8px}</style>
-<h1>Same frame: 1x / 4x MSAA</h1><p>Only coverage sampling changes. Look at the fingers during 0.5–2.3 s. PNG crops are 1:1; H.264 is lossy.</p>
-<button id="swap">Show 4x</button><span id="label"> 1x</span>
+        from urllib.parse import quote
+        links = [quote(Path(os.path.relpath(root/f"finger-1to1-{n}x.png", media)).as_posix())
+                 for n in (1,4)]
+        page = '''<!doctype html><meta charset="utf-8"><title>Panda 1× / 4× MSAA 同帧对照</title>
+<style>body{background:#17191e;color:#eee;font:18px sans-serif;max-width:1280px;margin:24px auto}video{width:100%}button{font:inherit;padding:8px}a{color:#9ddcff}</style>
+<h1>Panda：同一时刻切换 1× / 4× MSAA</h1>
+<p>两档使用相同姿态、相机、材质和光照，只改变覆盖采样数。请在 0.5–2.3 秒观察夹指轮廓。视频为有损 H.264；原尺寸 PNG 保留实际像素。</p>
+<p><a href="@CROP1@">查看 1× 原尺寸夹指 PNG</a> · <a href="@CROP4@">查看 4× 原尺寸夹指 PNG</a></p>
+<button id="swap">切换到 4×</button><span id="label"> 当前 1×</span>
 <video id="a" controls preload="auto" src="panda-msaa-1x.mp4"></video>
 <video id="b" controls preload="auto" src="panda-msaa-4x.mp4" hidden></video>
 <script>let current=document.getElementById('a'),other=document.getElementById('b');
-document.getElementById('swap').onclick=()=>{const playing=!current.paused,t=current.currentTime;current.pause();
-other.currentTime=t;current.hidden=true;other.hidden=false;[current,other]=[other,current];
-document.getElementById('label').textContent=current.id==='a'?' 1x':' 4x';
-document.getElementById('swap').textContent=current.id==='a'?'Show 4x':'Show 1x';if(playing)current.play();};</script>''', encoding="utf-8")
+const button=document.getElementById('swap');button.onclick=async()=>{button.disabled=true;
+const playing=!current.paused,t=current.currentTime;current.pause();other.pause();
+if(Math.abs(other.currentTime-t)>1e-6||other.readyState<2){const ready=new Promise(resolve=>other.addEventListener('seeked',resolve,{once:true}));other.currentTime=t;await ready;}
+current.hidden=true;other.hidden=false;[current,other]=[other,current];
+document.getElementById('label').textContent=current.id==='a'?' 当前 1×':' 当前 4×';
+button.textContent=current.id==='a'?'切换到 4×':'切换到 1×';button.disabled=false;if(playing)current.play();};</script>'''
+        (media/"compare.html").write_text(page.replace("@CROP1@",links[0]).replace("@CROP4@",links[1]), encoding="utf-8")
     return report
 
 
@@ -407,9 +431,12 @@ if __name__ == "__main__":
     parser.add_argument("--device-index", type=int, default=1)
     parser.add_argument("--videos", choices=("none","toggle","split","both"), default="both")
     parser.add_argument("--encode-only", action="store_true")
+    parser.add_argument("--media-output", type=Path, help="new media directory for encode-only recovery; original PNGs stay in --output")
     args = parser.parse_args()
     if args.encode_only:
-        encode_pair(args.output, videos=args.videos)
+        encode_pair(args.output, videos=args.videos, media_output=args.media_output)
+    elif args.media_output is not None:
+        parser.error("--media-output is used with --encode-only")
     elif args.library is None:
         parser.error("--library is required for capture")
     else:

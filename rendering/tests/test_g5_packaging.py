@@ -160,6 +160,45 @@ class G5PackagingTests(unittest.TestCase):
         self.assertEqual(report["platform_binaries"], [])
         self.assertEqual(report["base_dependencies"], [])
 
+    def test_git_root_controls_are_not_required_distribution_assets(self):
+        files = dict(self.files)
+        omitted = {}
+        for name in (".gitattributes", ".gitignore"):
+            omitted[name] = hashlib.sha256(files.pop(PREFIX+name)).hexdigest()
+        report = self.inspect(files)
+        self.assertEqual(report["panda"]["source_control_files_omitted"], omitted)
+        self.assertEqual(report["panda"]["manifest_sha256"], panda_visuals._MANIFEST_SHA256)
+        # Inclusion is allowed only with the original bytes; the exception is
+        # not permission to alter files or bypass their RECORD verification.
+        files[PREFIX+".gitattributes"] = b"altered Git rules"
+        with self.assertRaisesRegex(ValueError, "digest|SHA256"):
+            self.inspect(files)
+
+    def test_other_hidden_and_nested_control_files_remain_byte_checked(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)/"rendering"
+            assets = root/"assets/panda"
+            assets.mkdir(parents=True)
+            path = Path(temporary)/"candidate.whl"
+            # These unlisted source files are deliberately absent from the
+            # wheel. A generic dotfile/.git-prefix/name filter must not pass.
+            for relative in (".private-license", ".git-data", "meshes/.gitattributes", "original/.gitignore"):
+                with self.subTest(relative=relative):
+                    original = assets/relative
+                    original.parent.mkdir(parents=True, exist_ok=True)
+                    original.write_bytes(b"required asset bytes")
+                    files = dict(self.files)
+                    path.write_bytes(wheel_bytes(files))
+                    with self.assertRaisesRegex(ValueError, "missing"):
+                        driver().inspect_wheel(path, root)
+                    files[PREFIX+relative] = b"changed despite valid RECORD"
+                    path.write_bytes(wheel_bytes(files))
+                    with self.assertRaisesRegex(ValueError, "digest|SHA256"):
+                        driver().inspect_wheel(path, root)
+                    files[PREFIX+relative] = original.read_bytes()
+                    path.write_bytes(wheel_bytes(files))
+                    driver().inspect_wheel(path, root)
+                    original.unlink()
     def test_source_wheel_rejects_missing_include_shader_or_asset(self):
         examples = ("phymeo_rendering/backends/_native/resident.inc",
                     "phymeo_rendering/backends/_shaders/native.vert",

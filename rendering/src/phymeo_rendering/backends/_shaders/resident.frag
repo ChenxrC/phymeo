@@ -136,6 +136,9 @@ bool occluded(vec3 worldOrigin, vec3 worldDirection, float tMax) {
 #include "resident_environment.glsl"
 #define PR_RESIDENT_DIRECTIONAL_ENVIRONMENT
 #include "resident_studio.glsl"
+#ifdef PR_RESIDENT_REFLECTION
+#include "resident_reflection.glsl"
+#endif
 
 #include "resident_display.glsl"
 #include "resident_msaa.glsl"
@@ -169,6 +172,17 @@ void main() {
     }
     vec3 Ng = normalize(worldNormal);
     vec3 V = normalize(u.camera.xyz-worldPosition);
+#ifdef PR_RESIDENT_REFLECTION
+    // Evaluate derivatives uniformly, before material/view/receiver branches.
+    // This is the rasterized triangle face, independent of smooth vertex Ns.
+    vec3 reflectionFace=cross(dFdx(worldPosition),dFdy(worldPosition));
+    float faceScale=max(abs(reflectionFace.x),max(abs(reflectionFace.y),abs(reflectionFace.z)));
+    bool reflectionFaceValid=!any(isnan(reflectionFace))&&!any(isinf(reflectionFace))&&faceScale>0.0;
+    if(reflectionFaceValid) {
+        reflectionFace=normalize(reflectionFace/faceScale);
+        if(dot(reflectionFace,V)<0.0) reflectionFace=-reflectionFace;
+    }
+#endif
 #ifdef PR_RESIDENT_NORMAL_MAPS
     vec3 N = residentShadingNormal(Ng);
     // Build the tangent frame with authored N, then flip the complete normal
@@ -181,6 +195,19 @@ void main() {
     vec3 N = Ng;
     bool shadingFacesView = true;
 #endif
+#ifdef PR_RESIDENT_REFLECTION
+    if(u.counts.z!=0u && shadingFacesView)
+        color+=reflectionDirect(worldPosition,N,Ng,V,albedo,metalRough.x,surfaceRoughness);
+    bool reflected=false;vec3 reflectedRadiance=vec3(0.0);
+    // Eligibility uses the original uploaded factor, never the image-multiplied
+    // roughness. The latter still governs the unchanged local BRDF.
+    Instance receiver=scene.instances[ids.y];
+    if(u.counts.z!=0u && shadingFacesView && reflectionFaceValid &&
+       receiver.material.x>=.99 && receiver.colorRoughness.w<=.10)
+        reflected=residentNearReflection(worldPosition,N,reflectionFace,V,reflectedRadiance);
+    if(u.counts.z!=0u && shadingFacesView && (reflected || studio.environment.w!=0.0 || residentEnvironmentEnabled()))
+        color+=residentStudioRadiance(worldPosition,N,Ng,V,albedo,metalRough.x,surfaceRoughness,reflected,reflectedRadiance);
+#else
     if (u.counts.z != 0u && shadingFacesView) {
         float nv = max(dot(N,V), 1e-5);
         float metallic = metalRough.x;
@@ -208,5 +235,6 @@ void main() {
     if (u.counts.z != 0u && shadingFacesView && (studio.environment.w != 0.0 || residentEnvironmentEnabled())) {
         color += residentStudioRadiance(worldPosition,N,Ng,V,albedo,metalRough.x,surfaceRoughness);
     }
+#endif
     rgb = vec4(encodeSRGB(residentDisplayLinear(color*u.options.x,u.options.z)), 1.0);
 }

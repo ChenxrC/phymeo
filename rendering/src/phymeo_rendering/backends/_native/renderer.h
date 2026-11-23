@@ -301,3 +301,16 @@ PR_API int pr_resident_normal_info(void* context,PrResidentNormalInfo* output);
 PR_API int pr_resident_set_normal_maps(void* context,
     const PrResidentTexture* textures,uint32_t texture_count,const uint8_t* rgba,size_t rgba_bytes,
     const PrResidentUV* uv,uint32_t uv_count,const uint32_t* instance_slots,uint32_t instance_count);
+
+// Optional one ideal specular bounce. Shader marker64 and hardware TLAS are
+// mandatory. Setter is one-shot after geometry, before any capture.
+struct PrResidentReflectionInfo {
+    uint32_t reflection_abi_version,supported,shader_compatible,enabled;
+    uint32_t max_bounces,receiver_count,set_calls,reserved;
+    float metallic_min,roughness_max,reserved_f[2];
+    uint64_t captures,rgb_captures;
+};
+static_assert(sizeof(PrResidentReflectionInfo)==64,"reflection info ABI");
+PR_API uint32_t pr_resident_reflection_abi_version();
+PR_API int pr_resident_reflection_info(void* context,PrResidentReflectionInfo* output);
+PR_API int pr_resident_set_reflection(void* context,uint32_t mode);

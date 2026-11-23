@@ -69,6 +69,7 @@ struct Context {
     bool display_compatible = false;
     PrResidentMsaaInfo msaa_info{};
     PrResidentNormalInfo normal_info{};
+    PrResidentReflectionInfo reflection_info{};
     std::shared_ptr<MsaaState> msaa_state;
     uint32_t display_transform = 0;
     bool ray_query = false;
@@ -108,6 +109,8 @@ struct Context {
         readback_info.readback_abi_version=1; readback_info.memory_type_index=UINT32_MAX;
         texture_info.texture_abi_version=1;
         normal_info.normal_abi_version=1;
+        reflection_info.reflection_abi_version=1; reflection_info.max_bounces=1;
+        reflection_info.metallic_min=.99f; reflection_info.roughness_max=.10f;
         environment_info.environment_abi_version=1;
         ray_info.ray_query_abi_version=1;
         msaa_info.msaa_abi_version=1; msaa_info.requested_samples=msaa_info.color_samples=msaa_info.sensor_samples=1;
@@ -256,6 +259,9 @@ struct Context {
             require(!((vs.bindings|fs.bindings)&normal_bindings) || normal_info.shader_compatible,
                     "normal-map vertex/fragment bundle ABI is missing or incompatible");
         }
+        reflection_info.shader_compatible=resident && named_shader_marker(frag,frag_bytes,64,"PR_REFLECTION_ABI");
+        require(!reflection_info.shader_compatible || ray_query,"reflection shader requires explicit hardware ray-query context");
+        reflection_info.supported=reflection_info.shader_compatible && ray_query;
         surface_maps_compatible=resident && surface_maps_shader_marker(frag,frag_bytes);
         display_compatible=resident && display_shader_marker(frag,frag_bytes);
         msaa_info.shader_compatible=resident && named_shader_marker(frag,frag_bytes,59,"PR_MSAA_COLOR_ABI");
@@ -1099,4 +1105,26 @@ int pr_resident_set_normal_maps(void* handle,const PrResidentTexture* textures,u
         resident_set_normal_maps(*static_cast<Context*>(handle),textures,texture_count,rgba,rgba_bytes,uv,uv_count,slots,instance_count);
         return 0;
     } catch(const std::exception& error) { last_error=error.what(); return -1; }
+}
+uint32_t pr_resident_reflection_abi_version() { return 1; }
+int pr_resident_reflection_info(void* handle,PrResidentReflectionInfo* output) {
+    if(!handle || !output) { last_error="null resident reflection info"; return -1; }
+    auto& c=*static_cast<Context*>(handle);
+    if(!c.resident) { last_error="reflection info requires resident context"; return -1; }
+    *output=c.reflection_info;return 0;
+}
+int pr_resident_set_reflection(void* handle,uint32_t mode) {
+    try {
+        require(handle,"null reflection context"); auto& c=*static_cast<Context*>(handle);
+        auto& info=c.reflection_info;
+        require(mode==1,"unsupported reflection mode");
+        require(c.resident && c.ray_query && c.resident_state && !c.poisoned,"reflection requires loaded hardware ray-query geometry");
+        require(info.supported && info.shader_compatible,"reflection shader ABI unavailable; no fallback");
+        require(!info.enabled && !c.properties.captures,"reflection is immutable after enable or capture");
+        uint32_t receivers=0;
+        for(const auto& instance:c.resident_state->instances)
+            if(instance.material[0]>=info.metallic_min && instance.color_roughness[3]<=info.roughness_max) ++receivers;
+        // Zero receivers is a valid explicit capability-enabled scene.
+        info.receiver_count=receivers;info.enabled=1;++info.set_calls;return 0;
+    } catch(const std::exception& error) { last_error=error.what();return -1; }
 }

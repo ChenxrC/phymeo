@@ -126,11 +126,13 @@ class ResidentReadbackInfo(ct.Structure):
 class ResidentDevice(NativeDevice):
     _shader_prefix = 'resident'
 
-    def __init__(self, *args, area_light_grid=2, normal_maps=False):
+    def __init__(self, *args, area_light_grid=2, normal_maps=False, reflection=False):
         if type(area_light_grid) is not int or area_light_grid not in (2, 4, 8):
             raise ValueError('area_light_grid must be 2, 4 or 8')
         if type(normal_maps) is not bool:
             raise TypeError('normal_maps must be bool')
+        if type(reflection) is not bool: raise TypeError('reflection must be bool')
+        self._reflection_requested=reflection
         self._normal_maps_requested = normal_maps
         self._area_light_grid = area_light_grid
         self._resident_info = {}
@@ -163,6 +165,7 @@ class ResidentDevice(NativeDevice):
 
     def _shader_filename(self, stage):
         prefix=self._shader_prefix+('_normal' if getattr(self,'_normal_maps_requested',False) else '')
+        if stage=='frag' and getattr(self,'_reflection_requested',False): prefix+='_reflection'
         grid=f'_area{self._area_light_grid}' if stage=='frag' and self._area_light_grid!=2 else ''
         return f'{prefix}{grid}.{stage}.spv'
 
@@ -171,6 +174,11 @@ class ResidentDevice(NativeDevice):
         if tuple(map(ct.sizeof, (ResidentVertex, ResidentMesh, ResidentInstance, ResidentInfo))) != (32,16,48,128):
             raise BackendUnavailableError('resident C ABI structure layout mismatch')
         lib = self._lib
+        if self._reflection_requested:
+            version=getattr(lib,'pr_resident_reflection_abi_version',None)
+            if version is None: raise BackendUnavailableError('native reflection ABI is unavailable')
+            version.argtypes=[];version.restype=ct.c_uint32
+            if version()!=1: raise BackendUnavailableError('native reflection ABI is unsupported')
         if self._normal_maps_requested:
             version=getattr(lib,'pr_resident_normal_maps_abi_version',None)
             if version is None:
@@ -363,6 +371,12 @@ class ResidentDevice(NativeDevice):
             if self._normal_info_function(self._handle,ct.byref(value)): raise RuntimeError(self._error())
             self._normal_info=normal_info(value)
         result['resident_normal_info']=dict(self._normal_info) if getattr(self,'_normal_info',None) is not None else None
+        if getattr(self,'_reflection_info_function',None) is not None and self._handle:
+            from ._native_reflection import ResidentReflectionInfo,reflection_info
+            value=ResidentReflectionInfo()
+            if self._reflection_info_function(self._handle,ct.byref(value)): raise RuntimeError(self._error())
+            self._reflection_info=reflection_info(value)
+        result['resident_reflection_info']=dict(self._reflection_info) if getattr(self,'_reflection_info',None) is not None else None
         result['resident_readback'] = dict(self._readback) if self._readback is not None else None
         result['resident_profile'] = dict(self._profile) if self._profile is not None else None
         result['resident_telemetry'] = dict(self._telemetry) if self._telemetry is not None else None

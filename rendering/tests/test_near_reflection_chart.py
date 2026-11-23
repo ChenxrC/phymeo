@@ -103,6 +103,36 @@ class MirrorOracleTests(unittest.TestCase):
         self.assertFalse(chart.sensor_equal(before, after))
 
 
+    def test_world_reset_keeps_a_and_b_distinct_and_matches_independent_pose(self):
+        base = {'RGB': b'base', **{k: b'a' for k in chart.SENSORS}}
+        moved = {'RGB': b'moved', **{k: b'a' for k in chart.SENSORS}}
+        readings = {('single_bounce', i): v for i, v in ((0, base), (1, moved), (4, moved), (5, base), (6, moved))}
+        self.assertTrue(all(chart.replay_checks(readings).values()))
+        readings[('single_bounce', 6)] = base
+        self.assertFalse(all(chart.replay_checks(readings).values()))
+        for i in (1, 4, 6):
+            readings[('single_bounce', i)] = base
+        self.assertFalse(all(chart.replay_checks(readings).values()))
+
+    def test_offscreen_requires_no_primary_red_id_and_actual_reflected_red(self):
+        labels = chart.expected_labels('base')
+        planes = {'RGB': synthetic(labels), 'INSTANCE_ID': (10).to_bytes(4, 'little') * (chart.WIDTH * chart.HEIGHT)}
+        self.assertTrue(chart.offscreen_check(planes, labels)['passed'])
+        planes['INSTANCE_ID'] = (1).to_bytes(4, 'little') + planes['INSTANCE_ID'][4:]
+        self.assertFalse(chart.offscreen_check(planes, labels)['passed'])
+        planes['INSTANCE_ID'] = (10).to_bytes(4, 'little') * (chart.WIDTH * chart.HEIGHT)
+        planes['RGB'] = bytes((45, 45, 45)) * (chart.WIDTH * chart.HEIGHT)
+        self.assertFalse(chart.offscreen_check(planes, labels)['passed'])
+
+    def test_close_without_actual_telemetry_does_not_claim_memory_returned(self):
+        device = dict(closed=True, validation_errors=0, live_contexts=0, live_frames=0, live_resources=0)
+        self.assertFalse(chart.closed({'device': device}))
+        device['resident_telemetry'] = dict(final_after_destroy=True, device_local_bytes_current=0,
+            host_visible_bytes_current=0, allocation_count=4, free_count=4)
+        self.assertTrue(chart.closed({'device': device}))
+        device['resident_telemetry']['device_local_bytes_current'] = 4
+        self.assertFalse(chart.closed({'device': device}))
+
 @unittest.skipUnless(os.environ.get('PHYMEO_NEAR_REFLECTION_DLL'), 'actual new ray-query reflection DLL required')
 class MirrorDeviceTests(unittest.TestCase):
     def test_public_nearest_moving_offscreen_miss_reset_and_sensor_contract(self):
@@ -118,3 +148,4 @@ class MirrorDeviceTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+

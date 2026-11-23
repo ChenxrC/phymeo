@@ -63,3 +63,17 @@ $helper="$parent/rendering/examples/preview_sparse_motion/run.py"
 ```
 
 评分仍是同一已登记全距离一跳1024spp参考；近场混合模型差异必须保留在解释中，不能称无偏全距离积分。`--candidate-only`没有本次baseline四通道组，原评分器会按原证据门拒绝正式配对评分，不静默借未绑定旧结果。
+### 仅候选双轮 + 明确复用已存基线
+
+最新 `owned-preset-r2/local` 的原生布局、K25和距离分支与前包相同；生成器保留其CPU自有平面发布代码及guide诊断位。请优先直接指定它为新包base。只捕获新候选时：
+
+```powershell
+& $py "$author/build_source.py" --base "$parent/artifacts/rendering/nov24/owned-preset-r2/local" --output <全新edge-near包> --adapter-root $adapters
+# 同上构建后 --seal；不覆盖已有edge包。
+& $py "$author/motion.py" --motion-helper $helper capture --prepared <新edge-near包> --baseline-library <与原归档和参考完全同SHA的全率DLL> --baseline-shaders <其完整SPV目录> --output <新候选结果目录> --candidate-only --channels rgb all --rounds 2 --resolution 720p --camera detail --studio-look recorded --poses 59 60 149 --film sparse
+& $py "$author/motion.py" --motion-helper $helper score <新候选结果目录> --baseline-archive <此前完整baseline所在summary.json或目录> --references "$parent/artifacts/rendering/nov24/ref1/summary.json" "$parent/artifacts/rendering/nov24/ref2/summary.json" --output <全新评分JSON>
+```
+
+候选组第二轮顺序为all→rgb，各组原10暖身+300。baseline-library在仅候选模式只是原模型/参考的明确绑定，不触发旧全率capture。
+
+`--baseline-archive`只接收已有 `phymeo-preview-sparse-motion-v1` 内完整baseline16 rgb/all两组。先核原receipt、输入文件/source SHA、实际16/seed0/一跳/逐帧1batch、实际曝光和显示、同场景灯光材质、原300 state/camera/time、全三传感每帧SHA（RGB组绑定自身all组），再让**原ROI/参考/时间对应reader**读取各自原目录。只在内存组合已校验对照名册，不写或伪造任何capture记录；输出明确列历史baseline来源、两类时段成本分开，不称同期交错测量。两份不同seed的真实1024spp参考仍严格核模型/几何。缺必需证据会拒绝，不猜baseline、不重采、不替换数值门。

@@ -120,6 +120,7 @@ def main(argv=None):
     enc=sub.add_parser('encode');enc.add_argument('result',type=Path);enc.add_argument('--media-output',type=Path,required=True)
     score=sub.add_parser('score');score.add_argument('result',type=Path)
     score.add_argument('--references',type=Path,nargs='+',required=True);score.add_argument('--output',type=Path,required=True)
+    score.add_argument('--baseline-archive',type=Path,help='actual prior baseline summary.json or directory; never recapture or relabel it')
     a=p.parse_args(argv);run=configure(a.motion_helper)
     prior=list(sys.path)
     try:
@@ -136,7 +137,10 @@ def execute(a,run):
         try:
             sys.modules['run']=run
             assess=load(a.motion_helper.parent/'assess.py','edge_registered_assessment')
-            return assess.main(['--result',str(a.result),'--references',*[str(v) for v in a.references],'--output',str(a.output)])
+            archived=load(HERE/'archived_score.py','edge_archived_baseline')
+            if a.baseline_archive is not None:return archived.score(a,run,assess)
+            references=[archived.summary_path(v).parent for v in a.references]
+            return assess.main(['--result',str(a.result),'--references',*[str(v) for v in references],'--output',str(a.output)])
         finally:
             if previous is None:sys.modules.pop('run',None)
             else:sys.modules['run']=previous

@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>夹爪停稳后的五次曝光 · Phymeo</title>
+<style>
+  :root{color-scheme:dark;font:16px/1.55 "Microsoft YaHei UI",system-ui,sans-serif;background:#171b1e;color:#f2f2eb}
+  *{box-sizing:border-box}body{margin:0 auto;max-width:1640px;padding:clamp(14px,3vw,44px)}
+  a{color:#bce0dc}h1{font-size:clamp(1.6rem,3vw,2.45rem);line-height:1.25;font-weight:580;margin:.6em 0 .2em}
+  p{margin:.4em 0 1.15em;color:#cfd7d6}nav,.controls,.batches{display:flex;align-items:center;gap:.45em .8em;flex-wrap:wrap}
+  .controls,.batches{margin:.6em 0}button,select{font:inherit;color:inherit;background:#26302f;border:1px solid #71807e;border-radius:4px;padding:.28em .7em}
+  button{cursor:pointer}button[aria-pressed=true]{background:#294442;border-color:#a4d9cd}input{accent-color:#a4d9cd}
+  button:focus-visible,select:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid #bce0dc;outline-offset:3px}
+  .images{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}figure{margin:0}
+  figure a{display:block;position:relative;overflow:hidden;background:#0d1011;aspect-ratio:4/3}
+  figure img{display:block;width:100%;height:auto}.crop img{position:absolute;width:250%;top:-75%;left:-75%}
+  figcaption{margin:.4em 0 .85em}.ref{max-width:calc((100% - 12px)/2)}
+  summary{cursor:pointer;margin:.7em 0;color:#c0e3df}#measurement{font-variant-numeric:tabular-nums}#error{color:#ffd4a0}
+  @media(max-width:680px){.images{grid-template-columns:1fr}.ref{max-width:100%}}
+</style>
+<main>
+  <nav><a href="../index.html">渲染回放</a><a href="README.md">实测与复现</a><a href="../guided-motion/index.html">运动中的首帧</a></nav>
+  <h1>夹爪停稳后，暗面还会突然变粗糙吗？</h1>
+  <p>先点第 1 批，再点第 2 批，看指尖的暗红面。停稳后姿态和光照保持相同。左边立即关掉滤波，右边随采样增加逐步减弱滤波。点击图片可查看全幅原图。</p>
+  <div class="controls">
+    <label>停稳姿态 <select id="pose"><option value="0">0 · 遮挡前</option><option value="15" selected>15 · 遮挡板移开中</option><option value="24">24 · 遮挡后</option></select></label>
+    <label><input id="whole" type="checkbox"> 全幅</label>
+  </div>
+  <div class="batches" role="group" aria-label="固定姿态的累计采样批数">
+    <span>累计曝光</span>
+    <button type="button" data-n="1">第 1 批</button>
+    <button type="button" data-n="2" aria-pressed="true">第 2 批</button>
+    <button type="button" data-n="4">第 4 批</button>
+    <button type="button" data-n="8">第 8 批</button>
+    <button type="button" data-n="16">第 16 批</button>
+    <button type="button" id="sequence">依次慢放</button>
+  </div>
+  <p id="measurement" aria-live="polite"></p><p id="error" hidden role="alert"></p>
+  <section id="pictures" class="crop">
+    <div class="images">
+      <figure><a id="old"></a><figcaption>旧模式 · 首批滤波后立即关闭</figcaption></figure>
+      <figure><a id="settling"></a><figcaption>新模式 · 随采样增加逐步减弱</figcaption></figure>
+    </div>
+    <details id="detail"><summary>同姿态的独立参考 · 每像素 1024 个样本</summary>
+      <figure class="ref"><a id="reference"></a></figure>
+    </details>
+  </section>
+</main>
+<script src="measurements.js"></script>
+<script>
+  const byId = id => document.getElementById(id);
+  const steps = [1,2,4,8,16];
+  const buttons = Array.from(document.querySelectorAll("button[data-n]"));
+  const pictures = byId("pictures");
+  let selected = 2, generation = 0, playing = false, timer;
+  const pad = value => String(value).padStart(4,"0");
+  function stop() {
+    playing = false;
+    clearTimeout(timer);
+    byId("sequence").textContent = "依次慢放";
+    byId("sequence").setAttribute("aria-pressed","false");
+  }
+  async function read(slot, path, label) {
+    const image = new Image();
+    image.alt = label;
+    image.src = path;
+    await image.decode();
+    if (image.naturalWidth !== 1280 || image.naturalHeight !== 960) throw Error(path);
+    return {slot,image,path};
+  }
+  async function show() {
+    clearTimeout(timer);
+    const revision = ++generation, n = selected, pose = byId("pose").value;
+    const base = "pose-" + pad(pose), frame = base + "-b" + pad(n) + ".png";
+    try {
+      const ready = await Promise.all([
+        read("old","old/"+frame,"旧模式，第 "+n+" 批"),
+        read("settling","settling/"+frame,"新模式，第 "+n+" 批"),
+        read("reference","reference/"+base+".png","独立高采样参考，姿态 "+pose)
+      ]);
+      if (revision !== generation) return;
+      for (const {slot,image,path} of ready) {
+        const link=byId(slot); link.href=path; link.replaceChildren(image);
+      }
+      for(const button of buttons) button.setAttribute("aria-pressed",String(Number(button.dataset.n)===n));
+      const values = settlingMeasurements[pose][n];
+      byId("measurement").textContent = "每像素 "+(n*16)+" 个样本。此姿态两指对参考的误差（越低越好）：左 "+values[0].toFixed(5)+"，右 "+values[1].toFixed(5)+"。";
+      pictures.dataset.pose=pose; pictures.dataset.batch=n; byId("error").hidden=true;
+      if (playing) timer=setTimeout(()=>{
+        const i=steps.indexOf(n);
+        if(i===steps.length-1) return stop();
+        selected=steps[i+1]; show();
+      },800);
+    } catch(error) {
+      if(revision!==generation)return;
+      stop(); byId("error").textContent="此组原图或读数加载失败，请检查本页旁的采集文件。"; byId("error").hidden=false;
+    }
+  }
+  for(const button of buttons) button.addEventListener("click",()=>{stop();selected=Number(button.dataset.n);show();});
+  byId("pose").addEventListener("change",()=>{stop();show();});
+  byId("whole").addEventListener("change",()=>pictures.classList.toggle("crop",!byId("whole").checked));
+  byId("sequence").addEventListener("click",()=>{
+    if(playing)return stop();
+    selected=1; playing=true; byId("sequence").textContent="暂停"; byId("sequence").setAttribute("aria-pressed","true"); show();
+  });
+  show();
+</script>
+</html>

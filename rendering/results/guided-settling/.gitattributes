@@ -1,0 +1,4 @@
+*.png binary
+*.json binary
+*.npz binary
+*.gltf binary

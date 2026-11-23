@@ -1,0 +1,76 @@
+{
+  "comparison_source_crops_matched": true,
+  "independent_finger_rms_checked": 30,
+  "input": "Published RGB8 PNG and exact IDs 156/158 from the bound motion archive. Per-finger 3x3 erosion; inverse sRGB and independent pooled arithmetic.",
+  "crop_xyxy": [
+    384,
+    288,
+    896,
+    672
+  ],
+  "comparison_size": [
+    1040,
+    432
+  ],
+  "crop_sha256": {
+    "0": "cf5a1917bda86fcc1ad3e71f0b8c26002558ecb1118476202c58bbc5bc22d12b",
+    "528": "2b6dcc2047cd0894dba9ea50d4c343c23a3076a0ea5fc348f02647df49cf8260"
+  },
+  "timing_groups": "n=1, n=2..15, n=16..17, over the three main poses; linear-interpolated percentiles of full public capture wall ms.",
+  "cycles": {
+    "raw": {
+      "first": {
+        "n": 3,
+        "p50_ms": 62.12829996366054,
+        "p95_ms": 72.4075599689968
+      },
+      "during": {
+        "n": 42,
+        "p50_ms": 63.25944999116473,
+        "p95_ms": 74.34751002874691
+      },
+      "mature": {
+        "n": 6,
+        "p50_ms": 67.93235003715381,
+        "p95_ms": 73.17487501131836
+      },
+      "device_allocated_peak_bytes": 65822672
+    },
+    "old": {
+      "first": {
+        "n": 3,
+        "p50_ms": 61.34889996610582,
+        "p95_ms": 76.43217998556793
+      },
+      "during": {
+        "n": 42,
+        "p50_ms": 64.07295001554303,
+        "p95_ms": 71.38831000775097
+      },
+      "mature": {
+        "n": 6,
+        "p50_ms": 63.27514999429695,
+        "p95_ms": 70.62007502827328
+      },
+      "device_allocated_peak_bytes": 71065552
+    },
+    "settling": {
+      "first": {
+        "n": 3,
+        "p50_ms": 63.14859999110922,
+        "p95_ms": 83.49255999200977
+      },
+      "during": {
+        "n": 42,
+        "p50_ms": 61.9165500102099,
+        "p95_ms": 70.5412349605467
+      },
+      "mature": {
+        "n": 6,
+        "p50_ms": 58.6118999926839,
+        "p95_ms": 63.31342498015147
+      },
+      "device_allocated_peak_bytes": 71065552
+    }
+  }
+}

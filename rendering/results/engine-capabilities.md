@@ -1,6 +1,6 @@
 # 渲染引擎 · 能力与实测导航
 
-当前证据来自 Windows／RTX 4060 Laptop：日光成片与软硬阴影对照基线 `9417f4f6`，另含随后接受的粗糙度贴图、面积灯格点记录。先看[同步影片入口](index.html)，实现全图见[架构图](../architecture.html)。已验功能列于下表，抗锯齿的实测边界及后续材质与光追功能列于[自研 Vulkan 画质路线](../plans/2026-11-23-native-vulkan-quality.md)。[模块计划](../plans/README.md) · [首版验收](../plans/09-acceptance.md)
+这里收录 Windows／RTX 4060 Laptop 上的实测结果。日光成片与软硬阴影对照基线为 `9417f4f6`，随后补入粗糙度贴图、面积灯采样、4× MSAA 和材质法线贴图。可以在钢球与橡胶球的同一帧切换法线开关。[材质开关](normal-maps/index.html) · [全部影片](index.html) · [架构图](../architecture.html) · [自研 Vulkan 画质路线](../plans/2026-11-23-native-vulkan-quality.md) · [首版验收](../plans/09-acceptance.md)
 
 ```mermaid
 flowchart LR
@@ -22,7 +22,8 @@ flowchart LR
 | 帧、相机与输出 | 两种光栅均发布 sRGB8、米制前向深度、小端 uint32 ID、有效掩码；[R3 固定／腕部十曝光](r3/README.md)内部 ID 错误 0，标记最大误差 0.541 px，深度误差均小于 2 mm。 | 不混用世界、reset、修订或物理时相；背景深度 +∞、ID 0。输出为主机拥有的不可变字节，未宣称 GPU 零拷贝。 |
 | 自研实时渲染 | 完整 Panda 网格常驻、直接 PBR、面积灯、方向 HDR 环境。相同 300 帧 720p、2×2 灯面样本，[软件阴影 p95 41.62 ms](r2/daylight-software-camera.json)，[硬件阴影 10.65 ms](r2/daylight-hardware-camera.json)。 | 硬件模式显式请求 `ray_query`，主可见性仍是光栅；不支持设备拒绝，不回退。未实现自研路径追踪。 |
 | 面积灯积分 | 软件／硬件两种求交分别实测 **2×2、4×4、8×8**；8×8 通过独立有限面积灯半影门，4×4 仅部分通过。[完整格点证据](r2/area-light-grid-results.json) | 此处是灯面采样密度，不是世界数量；高档画质与采集成本分别记录。 |
-| 材质与环境 | 不透明 base-color 贴图、UV 重复／双线性与线性粗糙度通道。16 块粗糙度标定对常量材质的最大 RGB8 差：[自研 1](r2/roughness-chart-native.json)／[参考光栅 0](r2/roughness-chart-sapien-raster.json)／[参考光追 0](r2/roughness-chart-sapien-pt.json)。[HDR 方向与反射](r2/native-ibl-calibration.json)有独立采样核对。 | 颜色图按 sRGB 解码，粗糙度按线性数据读取；暂无 normal map、透明／折射或真实材质参数拟合保证。环境全景无近场几何深度。 |
+| 材质与环境 | 不透明颜色图、UV 重复／双线性与线性粗糙度。16 块粗糙度标定对常量材质的最大 RGB8 差为自研 1、参考光栅 0、参考光追 0。[自研](r2/roughness-chart-native.json) · [参考光栅](r2/roughness-chart-sapien-raster.json) · [参考光追](r2/roughness-chart-sapien-pt.json) · [HDR 方向与反射](r2/native-ibl-calibration.json) | 颜色按 sRGB 解码，粗糙度按线性数据读取。透明、折射与材质参数拟合尚待开发。环境全景提供远场照明。 |
+| 自研切线空间法线图 | 线性 RGB、+Y、镜像 UV 手性。三块标定板共 24 个预定区域与解析 RGB8 预测一致。真实材质绕拍验证三帧的深度、实例 ID 与有效掩码逐字节一致。[标定与成本](normal-maps/README.md) · [同帧开关](normal-maps/index.html) | 用世界坐标与第一套 UV 重建切线。显式顶点切线、MikkTSpace 对齐、mip 过滤尚待开发。SAPIEN 参考路径会在绑定此贴图时明确报错。 |
 | 显示与参考成像 | 自研在两种阴影求交、三档灯面密度下验证 Neutral 高光显示。SAPIEN 在同一原始 HDR 上保留 1600 个原先剪裁的像素。两种光栅均保留几何附件。[自研标定](r2/native-neutral-verification.json) · [参考标定](r2/reference-neutral-calibration.json) | SAPIEN 路径追踪发布 RGB。512 样本下夹爪近景仍有可见颗粒；本机 OIDN 及 OptiX 在实际采集阶段退出，高清片采用直接采样。[兼容性记录](r2/denoiser-probe.json) |
 | 分块与相机回放 | 647×419 离轴相机分九块，两个光栅后端分别与整图对照；全部 ID、有效掩码、RGB 一致，内部深度差 0。[标定读数](r3/README.md) · [同相机 1080p 动态片](r2/README.md) | 光追分块改变像素的随机序列。独立记录单图采集、传感差异和最终有损编码误差。 |
 | 单／多世界回放 | [R4](r4/README.md)：**1、2、8 世界 × 两相机**，每档 300 批，6,600 次曝光对照独跑，深度差 0、ID／掩码逐字相同，单世界 reset 不影响其他世界。 | 此全套是原软件阴影路径，未声称硬件阴影也完成 R4。逐世界、逐相机提交；渲染不推进物理，回放成功不等于控制任务成功。 |

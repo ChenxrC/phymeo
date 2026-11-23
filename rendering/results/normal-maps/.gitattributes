@@ -1,0 +1,6 @@
+*.json binary
+*.jsonl binary
+*.png binary
+*.mp4 binary
+*.zip binary
+*.npz binary

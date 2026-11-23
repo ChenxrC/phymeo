@@ -1,0 +1,12 @@
+{
+  "original_value": "b1f33c260621f3b8bb8f56ff4cd30a99b2426d905b1710ae6a6dcd848deebaed",
+  "schema": "phymeo-author-command-receipt-erratum-v1",
+  "explanation": "Only the final PowerShell logging expression used the prior MSAA receipt path. The pre-execution guard read the explicit new ProofFile, checked its source_commit and each current artifact hash. The in-process protocol independently pins the new DLL and all shaders. Original result, protocol, PNGs and timing remain unchanged; no recapture.",
+  "original_result_sha256": "7193cd9d2aafe166d153266bf197e803152cdfcd626ec8a1bbd9d4a93e59da5b",
+  "source_commit": "a193c7bf2c48419a66d3487320ffde8f37eea583",
+  "correct_path": "C:/Users/38347/.codex/worktrees/render-resident-native/phymeo/artifacts/rendering/native-normal/author-validation.json",
+  "field": "backend_receipt_sha256",
+  "original_driver_sha256": "0360d79506bbb892e822aaf658c8f37d0a9502926522177b51ccf9851494b2d8",
+  "correct_sha256": "34e76e3d208d6219610b496a25c085e72a41d169dc136bba9edf0d40fe7e230e",
+  "verified_compiled_artifacts": 23
+}

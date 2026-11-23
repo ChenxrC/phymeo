@@ -1,0 +1,20 @@
+{
+  "backend_commit": "a193c7bf2c48419a66d3487320ffde8f37eea583",
+  "argv": [
+    "-B",
+    "C:\\Users\\38347\\.codex\\worktrees\\render-g5-package\\phymeo\\rendering\\examples\\normal_map_film.py",
+    "--output",
+    "C:\\Users\\38347\\.codex\\worktrees\\render-g5-package\\phymeo\\artifacts\\rendering\\normal-film\\capture-01",
+    "--library",
+    "C:/Users/38347/.codex/worktrees/render-resident-native/phymeo/artifacts/rendering/native-normal/build-normal/phymeo_native.dll",
+    "--device-index",
+    "1",
+    "--no-video"
+  ],
+  "backend_receipt_sha256": "b1f33c260621f3b8bb8f56ff4cd30a99b2426d905b1710ae6a6dcd848deebaed",
+  "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "end": "2026-11-23T03:59:49.2696959Z",
+  "source": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\rendering\\src",
+  "start": "2026-11-23T03:59:16.7110022Z",
+  "exit_code": 0
+}

@@ -1,0 +1,54 @@
+{
+  "steel": {
+    "file": "C:\\Users\\38347\\.codex\\worktrees\\render-g5-package\\phymeo\\artifacts\\rendering\\normal-film\\capture-01\\textures\\steel-normal.png",
+    "sha256": "a3382e36c86d366f4faa83163ebbe1587e38d80955ba86bac29cdb6c067804f3",
+    "rgb8_sha256": "2ff56a9fc592758fde0931d274a0b32f7ab4725a02a468e1b083fb0d3439e64d",
+    "size": [
+      1024,
+      1024
+    ],
+    "source": "authored analytic height derivatives; not a scan",
+    "transfer": "linear RGB8 normal data, no sRGB decode",
+    "encoding": "floor((unit_normal+1)*127.5+0.5); no special 128 bias cancellation",
+    "sampling": "texel centres, top-row-first; bilinear repeat, mip 0",
+    "direction": "+T: increasing azimuth U; +B: north-to-south V; +Z: outward",
+    "derivation": "normalize(-dh/dx,-dh/dy,1); height_and_slopes in hash-bound script",
+    "reference_chart_m": [
+      0.6911503837897545,
+      0.34557519189487723
+    ],
+    "physical_limit": "chart metric at equator; no displacement or measured BRDF claim",
+    "periods_uv": [
+      64,
+      0
+    ],
+    "slope_parameter": 0.22,
+    "generator_sha256": "9a01be3827fcdbafe107d96df4bb99fb1380b7662773feee88245ec309a9b353"
+  },
+  "rubber": {
+    "file": "C:\\Users\\38347\\.codex\\worktrees\\render-g5-package\\phymeo\\artifacts\\rendering\\normal-film\\capture-01\\textures\\rubber-normal.png",
+    "sha256": "804b21a8d9b4402c9f852f39a099ce43324b92d53610eee7f96c878105a1cb59",
+    "rgb8_sha256": "df6007ddfad87b69c98c8cf26168d5b08b44df2be877c3b32b95a6260bcc06b8",
+    "size": [
+      1024,
+      1024
+    ],
+    "source": "authored analytic height derivatives; not a scan",
+    "transfer": "linear RGB8 normal data, no sRGB decode",
+    "encoding": "floor((unit_normal+1)*127.5+0.5); no special 128 bias cancellation",
+    "sampling": "texel centres, top-row-first; bilinear repeat, mip 0",
+    "direction": "+T: increasing azimuth U; +B: north-to-south V; +Z: outward",
+    "derivation": "normalize(-dh/dx,-dh/dy,1); height_and_slopes in hash-bound script",
+    "reference_chart_m": [
+      0.6911503837897545,
+      0.34557519189487723
+    ],
+    "physical_limit": "chart metric at equator; no displacement or measured BRDF claim",
+    "periods_uv": [
+      48,
+      24
+    ],
+    "slope_parameter": 0.35,
+    "generator_sha256": "9a01be3827fcdbafe107d96df4bb99fb1380b7662773feee88245ec309a9b353"
+  }
+}

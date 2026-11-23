@@ -1,0 +1,2745 @@
+{
+  "mode": "on",
+  "status": "complete",
+  "captures": [
+    {
+      "index": 0,
+      "source_tick": 60,
+      "source_time_s": 2.0,
+      "movie_pts_s": 0.0,
+      "capture_wall_ms": 17.830400029197335,
+      "file": "frames/0000.png",
+      "png_sha256": "f699eafb2dd8d6a2959f872b1101dce9603647c2407150f47cf2965484bd66dc",
+      "rgb_sha256": "8bf3d9ab40333dc1a33ea508e6964d3cfcb1259cd5521fb5878f378ec097f94f"
+    },
+    {
+      "index": 1,
+      "source_tick": 61,
+      "source_time_s": 2.033333333333333,
+      "movie_pts_s": 0.03333333333333333,
+      "capture_wall_ms": 16.431499971076846,
+      "file": "frames/0001.png",
+      "png_sha256": "ca80cbd41ebc4db1338c9adf25b427d3aa15204fa53eab9db287b0c85fc518a8",
+      "rgb_sha256": "89b4efbd0c0126692fc5c5873102c9c49d8ccea9e2b1f396f3a2af60b531280c"
+    },
+    {
+      "index": 2,
+      "source_tick": 62,
+      "source_time_s": 2.066666666666667,
+      "movie_pts_s": 0.06666666666666667,
+      "capture_wall_ms": 15.952899993862957,
+      "file": "frames/0002.png",
+      "png_sha256": "eeb08ad767af59e8d8aa4c7c0e0bbd6c6e16168c49ba8b2a60e7caa91845aa6e",
+      "rgb_sha256": "0b0c5f0218751aa93bf1c9c7eca6e84f4bb208bd3aab3ce91efb97e127d7d858"
+    },
+    {
+      "index": 3,
+      "source_tick": 63,
+      "source_time_s": 2.1,
+      "movie_pts_s": 0.1,
+      "capture_wall_ms": 16.204699990339577,
+      "file": "frames/0003.png",
+      "png_sha256": "c271ff5ee38c50adb89d48d365c7da3372cfb549aa4bd892ca515a9a96f954a4",
+      "rgb_sha256": "a14412d76a76eec85bccced2a03863d7af7e512dddce3454ee0192cd4879afa0"
+    },
+    {
+      "index": 4,
+      "source_tick": 64,
+      "source_time_s": 2.1333333333333333,
+      "movie_pts_s": 0.13333333333333333,
+      "capture_wall_ms": 15.723699994850904,
+      "file": "frames/0004.png",
+      "png_sha256": "47bd65ca9421cf4a1e85219f448fb83cf8e072f87c1843844ae938c85cac4fb0",
+      "rgb_sha256": "26bffd25f2f136ded7083c24dafa36d826baf3446520c83f9e6fe2e2fc983241"
+    },
+    {
+      "index": 5,
+      "source_tick": 65,
+      "source_time_s": 2.1666666666666665,
+      "movie_pts_s": 0.16666666666666666,
+      "capture_wall_ms": 16.145899950060993,
+      "file": "frames/0005.png",
+      "png_sha256": "202d2c644063225333ff6cb2bc06e7e4a5bd821030f8d45372614bed5e617b17",
+      "rgb_sha256": "ee6acaf7ef056fad69d2d5d9532694420b45acbef908925759ced3e2da986ccc"
+    },
+    {
+      "index": 6,
+      "source_tick": 66,
+      "source_time_s": 2.2,
+      "movie_pts_s": 0.2,
+      "capture_wall_ms": 16.285100020468235,
+      "file": "frames/0006.png",
+      "png_sha256": "171efdd229a57c8e0b0648f5137fb0e8d12119f9ea4b95b7ec4d001e8e83cf6a",
+      "rgb_sha256": "472c7c10c2a47f6775522be608b1fb32fdbea34fd04f5b9cda72986bbed50ac4"
+    },
+    {
+      "index": 7,
+      "source_tick": 67,
+      "source_time_s": 2.2333333333333334,
+      "movie_pts_s": 0.23333333333333334,
+      "capture_wall_ms": 15.997099981177598,
+      "file": "frames/0007.png",
+      "png_sha256": "7c44751a4c6bdcefa0c9923871825dd96dd43cc222c7479b383366e8d0f58861",
+      "rgb_sha256": "8e371d495cc14da0554e3eba38fa10f8b2e19e8ffe97d8ed493847fbcd769ace"
+    },
+    {
+      "index": 8,
+      "source_tick": 68,
+      "source_time_s": 2.2666666666666666,
+      "movie_pts_s": 0.26666666666666666,
+      "capture_wall_ms": 16.254000016488135,
+      "file": "frames/0008.png",
+      "png_sha256": "95da641b43e47881d50cb2a6664c9302d303efad2948fb880925b2752da5ddd4",
+      "rgb_sha256": "780d2e476efffd12cc1aab7863ef48eee2ebf78f246b09015d104c33f203b807"
+    },
+    {
+      "index": 9,
+      "source_tick": 69,
+      "source_time_s": 2.3,
+      "movie_pts_s": 0.3,
+      "capture_wall_ms": 16.018700029235333,
+      "file": "frames/0009.png",
+      "png_sha256": "6607ef8cfd1e8f3e524020497ca93b96491a89b975031e944f8d60572059f9de",
+      "rgb_sha256": "d83b7f3c2b6cc56b8b6a81eb71ebec978e75d044a95bc6e95e6ff766e9ae5261"
+    },
+    {
+      "index": 10,
+      "source_tick": 70,
+      "source_time_s": 2.3333333333333335,
+      "movie_pts_s": 0.3333333333333333,
+      "capture_wall_ms": 16.314199951011688,
+      "file": "frames/0010.png",
+      "png_sha256": "27d980e33ed16d473717b5bf41a73c5952d43bc23465092a130af21e6d414da4",
+      "rgb_sha256": "54c1a5d04efafcb40f863b915ad22fa077ab1332239e7062731efb1d772e63a4"
+    },
+    {
+      "index": 11,
+      "source_tick": 71,
+      "source_time_s": 2.3666666666666667,
+      "movie_pts_s": 0.36666666666666664,
+      "capture_wall_ms": 16.784699982963502,
+      "file": "frames/0011.png",
+      "png_sha256": "722e9160437fe188a0d505613a74560afc26a4f4f2dea3b8c83c67e5b86f5f4c",
+      "rgb_sha256": "41a475402161aa22b374c84ffad838fd683e1cd9e0d06fb2e1b00251415c0d71"
+    },
+    {
+      "index": 12,
+      "source_tick": 72,
+      "source_time_s": 2.4,
+      "movie_pts_s": 0.4,
+      "capture_wall_ms": 15.910199959762394,
+      "file": "frames/0012.png",
+      "png_sha256": "5fa1bc5b2c741b0a240bffb330b996b97e9b930d25044790dec4b8cfdb1fde53",
+      "rgb_sha256": "a1867bc1a6ec8302963704c67617618b22c87f8b379183516ac283e21ae181ad"
+    },
+    {
+      "index": 13,
+      "source_tick": 73,
+      "source_time_s": 2.433333333333333,
+      "movie_pts_s": 0.43333333333333335,
+      "capture_wall_ms": 15.587400004733354,
+      "file": "frames/0013.png",
+      "png_sha256": "68b314fd8248bb2715c2f4c7705af1f8ae5958f3dcd2ed12971204fda4c57e68",
+      "rgb_sha256": "8cbc990ff01249a11cccd3a9bbe0f18049be5ac5abea12c72ba305715dc1f4b8"
+    },
+    {
+      "index": 14,
+      "source_tick": 74,
+      "source_time_s": 2.466666666666667,
+      "movie_pts_s": 0.4666666666666667,
+      "capture_wall_ms": 15.858699975069612,
+      "file": "frames/0014.png",
+      "png_sha256": "b76e24d1f71a05d339fa855e36e2b0ad4ddd07d8e7b01a284a980084ae8dc80b",
+      "rgb_sha256": "24c950a367da684b5d5b0d4be652a86e3d7b3dc23df2d1528e7ad5c8def46842"
+    },
+    {
+      "index": 15,
+      "source_tick": 75,
+      "source_time_s": 2.5,
+      "movie_pts_s": 0.5,
+      "capture_wall_ms": 16.857400012668222,
+      "file": "frames/0015.png",
+      "png_sha256": "a5919a4f2b4a36d8cca26e6b52d9d03a1d5a5f504acaf87872111702b6dd9327",
+      "rgb_sha256": "b427434102d03cc4af897facc11f91bbcfb1b14dccfc51694cf03480b4c4d597"
+    },
+    {
+      "index": 16,
+      "source_tick": 76,
+      "source_time_s": 2.533333333333333,
+      "movie_pts_s": 0.5333333333333333,
+      "capture_wall_ms": 15.77900000847876,
+      "file": "frames/0016.png",
+      "png_sha256": "cbb74953d745b354a8db113e308e95f8d8a4c14e715e3012f286f86e42743322",
+      "rgb_sha256": "07c1e8845908e2e9262d77165e16666150d60e5d05090356ef3c4f7405516388"
+    },
+    {
+      "index": 17,
+      "source_tick": 77,
+      "source_time_s": 2.566666666666667,
+      "movie_pts_s": 0.5666666666666667,
+      "capture_wall_ms": 15.584600041620433,
+      "file": "frames/0017.png",
+      "png_sha256": "4b1663e2efdc7555648e8ed5a5f8d505cc48b93cfbe6a4f4be20670e035a7bc4",
+      "rgb_sha256": "9b1512c85401ad86e6591391ecf8d4cf2be5eeb720b6cd05d0ea9ad0b9d727cd"
+    },
+    {
+      "index": 18,
+      "source_tick": 78,
+      "source_time_s": 2.6,
+      "movie_pts_s": 0.6,
+      "capture_wall_ms": 17.319200036581606,
+      "file": "frames/0018.png",
+      "png_sha256": "e321df985b78109d659363f123f4d64ef46a20188db5f8bcab3a373875a8e054",
+      "rgb_sha256": "c6224b65b57c740d439c2b05f2699ea468e0c349f2603da3c3a20f2fbe920b9d"
+    },
+    {
+      "index": 19,
+      "source_tick": 79,
+      "source_time_s": 2.6333333333333333,
+      "movie_pts_s": 0.6333333333333333,
+      "capture_wall_ms": 15.60590002918616,
+      "file": "frames/0019.png",
+      "png_sha256": "eb3965afcd184b18858b63f559f2b57c2de7d013998f427f0237dc1575f200d3",
+      "rgb_sha256": "8aa2876073addce4935832072ff3d08e3c1380922c6869f4aeb0759c5b9df0e1"
+    },
+    {
+      "index": 20,
+      "source_tick": 80,
+      "source_time_s": 2.6666666666666665,
+      "movie_pts_s": 0.6666666666666666,
+      "capture_wall_ms": 15.569399984087795,
+      "file": "frames/0020.png",
+      "png_sha256": "807298619805463cca5ff83c01935d39c9c154d5017db53436a922b0bfb0b914",
+      "rgb_sha256": "bd4d4727596c747c24cbacfc6b704162f78d88e8d69b46341c6ec68416722d69"
+    },
+    {
+      "index": 21,
+      "source_tick": 81,
+      "source_time_s": 2.7,
+      "movie_pts_s": 0.7,
+      "capture_wall_ms": 15.710200008470565,
+      "file": "frames/0021.png",
+      "png_sha256": "67708100bea0c83c1bcca9758c2597b14c6962884051ae9400effa6f80a7247f",
+      "rgb_sha256": "1da92c22408e397cee03f6557438dc72cb7915b9b79d24788c362efa7bcaf565"
+    },
+    {
+      "index": 22,
+      "source_tick": 82,
+      "source_time_s": 2.7333333333333334,
+      "movie_pts_s": 0.7333333333333333,
+      "capture_wall_ms": 18.443699984345585,
+      "file": "frames/0022.png",
+      "png_sha256": "c0aee9a5bc0a5ad113da6936e6f992a14c57c39f82b628a91836f22b6b264dfb",
+      "rgb_sha256": "57c71ebe0528ee6ed062f8cd5b8f69ac61d9a533b3694904f5acd4cd4cefa241"
+    },
+    {
+      "index": 23,
+      "source_tick": 83,
+      "source_time_s": 2.7666666666666666,
+      "movie_pts_s": 0.7666666666666667,
+      "capture_wall_ms": 15.285600034985691,
+      "file": "frames/0023.png",
+      "png_sha256": "befa3c8ae050065c5b4dcb28ac64cc5d32900fcc43d975dd2d0105f68576292f",
+      "rgb_sha256": "0cf6ff90180f8910d11cb0e3ed568c3814ad37fc698a663e5a62a62e2c529e80"
+    },
+    {
+      "index": 24,
+      "source_tick": 84,
+      "source_time_s": 2.8,
+      "movie_pts_s": 0.8,
+      "capture_wall_ms": 15.876199991907924,
+      "file": "frames/0024.png",
+      "png_sha256": "e87528cf96974212f08e49f100beb88acda4202d7c600dd4c3ab55af6597d1c4",
+      "rgb_sha256": "28bc2995c715b66dfe9590e6eb73ee8634ab48d3ce2a3faf7a19a970b3622d8b"
+    },
+    {
+      "index": 25,
+      "source_tick": 85,
+      "source_time_s": 2.8333333333333335,
+      "movie_pts_s": 0.8333333333333334,
+      "capture_wall_ms": 16.10639999853447,
+      "file": "frames/0025.png",
+      "png_sha256": "9a8844e54f37a38a77e4674f419cba4dfe974f16a287b10d707b075eb4f9892e",
+      "rgb_sha256": "f6f26836994c693d783935748bfb00b38d03cd453cd454783a1ba829b0f9e552"
+    },
+    {
+      "index": 26,
+      "source_tick": 86,
+      "source_time_s": 2.8666666666666667,
+      "movie_pts_s": 0.8666666666666667,
+      "capture_wall_ms": 15.845299989450723,
+      "file": "frames/0026.png",
+      "png_sha256": "10d983538e1147f55d748127ec856a2528f4d6bb2c9e04ecc70e743ef7a1adb4",
+      "rgb_sha256": "aa02e2d38f1639c9d67c820229134d44110e4ef59f12fddd39eaa6d9b0b1a7dc"
+    },
+    {
+      "index": 27,
+      "source_tick": 87,
+      "source_time_s": 2.9,
+      "movie_pts_s": 0.9,
+      "capture_wall_ms": 17.181300034280866,
+      "file": "frames/0027.png",
+      "png_sha256": "5f3966a5928cb43f95f67925fe428cc4590d541583e8d0686827d81633445ecf",
+      "rgb_sha256": "6a1204711541574cd7c297c722bbfc7e2c36ab9bd7cdb9685013287ab2c01e51"
+    },
+    {
+      "index": 28,
+      "source_tick": 88,
+      "source_time_s": 2.933333333333333,
+      "movie_pts_s": 0.9333333333333333,
+      "capture_wall_ms": 15.777900000102818,
+      "file": "frames/0028.png",
+      "png_sha256": "cab4809456b637034a30dba84f557b2dca4671103fb4dc3baf98ac7517078c8e",
+      "rgb_sha256": "4230ec9f336e8879670158f6214ef5ce1952ca87f05cc11717638daf9e1b0cf5"
+    },
+    {
+      "index": 29,
+      "source_tick": 89,
+      "source_time_s": 2.966666666666667,
+      "movie_pts_s": 0.9666666666666667,
+      "capture_wall_ms": 15.932699956465513,
+      "file": "frames/0029.png",
+      "png_sha256": "2e48ae3969fff3707f65fedab82eb8e290916d6dc14966aa7a8fab1b3ad2fc29",
+      "rgb_sha256": "5894c53ecde2b4d8f60f53e90608f7d2c3dd1e5cd7d829fd8e8418c6dc0ece77"
+    },
+    {
+      "index": 30,
+      "source_tick": 90,
+      "source_time_s": 3.0,
+      "movie_pts_s": 1.0,
+      "capture_wall_ms": 15.756299952045083,
+      "file": "frames/0030.png",
+      "png_sha256": "bb50f698774b9e6752a6e47c641871051bd23a26ab0bad964d69fcd16dbac772",
+      "rgb_sha256": "288542ea1da376cb7b4ff561876947f5e6ed2165ee8fb3126247c5fd4af38014"
+    },
+    {
+      "index": 31,
+      "source_tick": 91,
+      "source_time_s": 3.033333333333333,
+      "movie_pts_s": 1.0333333333333334,
+      "capture_wall_ms": 15.978200011886656,
+      "file": "frames/0031.png",
+      "png_sha256": "37406aebb6054628c1d7281e5a5ee8b18683d3c8c82e8f2e848a3b28410910be",
+      "rgb_sha256": "2a93df01162cf9356889d671e842f7dfda0261143f309f00b478ab03ef263150"
+    },
+    {
+      "index": 32,
+      "source_tick": 92,
+      "source_time_s": 3.066666666666667,
+      "movie_pts_s": 1.0666666666666667,
+      "capture_wall_ms": 15.444499964360148,
+      "file": "frames/0032.png",
+      "png_sha256": "83fe3828e5c8e54508da842ac277fa5f0bdf9f5330b62cbf3b8475a55108f9b0",
+      "rgb_sha256": "b52e4809b9cc33f3c32c19d23917e50e9a49e07d8a38454cfd501e8c8ec52d55"
+    },
+    {
+      "index": 33,
+      "source_tick": 93,
+      "source_time_s": 3.1,
+      "movie_pts_s": 1.1,
+      "capture_wall_ms": 15.99540002644062,
+      "file": "frames/0033.png",
+      "png_sha256": "719ae38a4f007bbea0f3c579e6583b8d7ed154d08070c69f2e840890f633e11a",
+      "rgb_sha256": "89c382789d6d9ce398080a9109d36d15055d648bc3ddbcdf2fb09de266919b04"
+    },
+    {
+      "index": 34,
+      "source_tick": 94,
+      "source_time_s": 3.1333333333333333,
+      "movie_pts_s": 1.1333333333333333,
+      "capture_wall_ms": 16.11379999667406,
+      "file": "frames/0034.png",
+      "png_sha256": "73b0c55d59b7400b719c39d7706fd57669e55291e0976f90fd73e49f98d18371",
+      "rgb_sha256": "e094ac7ac391ff0fd540ecd0fba51d0f71eec243f5b4365ffcb7acb7f146da2b"
+    },
+    {
+      "index": 35,
+      "source_tick": 95,
+      "source_time_s": 3.1666666666666665,
+      "movie_pts_s": 1.1666666666666667,
+      "capture_wall_ms": 16.729199967812747,
+      "file": "frames/0035.png",
+      "png_sha256": "ad67f21234d7218d9b969a76de941aea0937b0b702e5839d61985656280c3a95",
+      "rgb_sha256": "3e97944f6c209e5c948e810a3b542e3af32934d890c5367ddc60fe50e80de0ba"
+    },
+    {
+      "index": 36,
+      "source_tick": 96,
+      "source_time_s": 3.2,
+      "movie_pts_s": 1.2,
+      "capture_wall_ms": 16.92879997426644,
+      "file": "frames/0036.png",
+      "png_sha256": "db4f281e6b643348f3f861bec6ce9f1721b9859aaadf9a587fffed0d0ae9c934",
+      "rgb_sha256": "1f629ec245eb1ce5aef925223e3c42ddb10417ff53e4ffec254528ae6bdb80c8"
+    },
+    {
+      "index": 37,
+      "source_tick": 97,
+      "source_time_s": 3.2333333333333334,
+      "movie_pts_s": 1.2333333333333334,
+      "capture_wall_ms": 17.524200025945902,
+      "file": "frames/0037.png",
+      "png_sha256": "37fba840cade5caa21f27225cffa0d925f2f9548695256d86a0da4132e4f958b",
+      "rgb_sha256": "5af417f9ca88962d513c56bf97a0384c296b5b90329ed42b96bfcacaae1b0c5b"
+    },
+    {
+      "index": 38,
+      "source_tick": 98,
+      "source_time_s": 3.2666666666666666,
+      "movie_pts_s": 1.2666666666666666,
+      "capture_wall_ms": 16.758899961132556,
+      "file": "frames/0038.png",
+      "png_sha256": "360f317f7bf45aec92f4266d4c13da7e8b3688535eea6951557e77753e2a62a5",
+      "rgb_sha256": "aaea3c2b4fc902accecd69732e0cd01e7b041ff72b52abbfe1560249319e9e1b"
+    },
+    {
+      "index": 39,
+      "source_tick": 99,
+      "source_time_s": 3.3,
+      "movie_pts_s": 1.3,
+      "capture_wall_ms": 20.51589998882264,
+      "file": "frames/0039.png",
+      "png_sha256": "ed4946a9cc6e6417237274d57dc76ddc1b979bb7c973346acf50885b6d326978",
+      "rgb_sha256": "4bd71eb10feb355d6ac636518a69e2613a7687314115b92f8c73d9a8f479c660"
+    },
+    {
+      "index": 40,
+      "source_tick": 100,
+      "source_time_s": 3.3333333333333335,
+      "movie_pts_s": 1.3333333333333333,
+      "capture_wall_ms": 16.304399992804974,
+      "file": "frames/0040.png",
+      "png_sha256": "5dfee4211b55faa7f5a48770514a246d379fd71e21678f90da68fda81500b574",
+      "rgb_sha256": "a017d9de8677442839f534d0203483bf26e3151f3fccb5687a1f3abae845bc4f"
+    },
+    {
+      "index": 41,
+      "source_tick": 101,
+      "source_time_s": 3.3666666666666667,
+      "movie_pts_s": 1.3666666666666667,
+      "capture_wall_ms": 16.264399979263544,
+      "file": "frames/0041.png",
+      "png_sha256": "d2c9b49c92e30e809fd9bbadcd2cf56481f82b89388363cfbab03f3df14efe5c",
+      "rgb_sha256": "11b4dc56dccb7b0aefb8b4d365dc8ec415f4a998c98ecd0ba882a255fff3e45b"
+    },
+    {
+      "index": 42,
+      "source_tick": 102,
+      "source_time_s": 3.4,
+      "movie_pts_s": 1.4,
+      "capture_wall_ms": 16.523899976164103,
+      "file": "frames/0042.png",
+      "png_sha256": "b81a76e97727c6f6763ffa5912604a347219a1df0474cc793dedbbfbed3c9bb2",
+      "rgb_sha256": "afb5b007d3b6e2e4ffd7a9f4bafc3084d3419adbce5b2097ad796195c947983e"
+    },
+    {
+      "index": 43,
+      "source_tick": 103,
+      "source_time_s": 3.433333333333333,
+      "movie_pts_s": 1.4333333333333333,
+      "capture_wall_ms": 17.607000016141683,
+      "file": "frames/0043.png",
+      "png_sha256": "afc1898503fca29a3c37f4711e9d6aba76b1a47a80a4d989748f5ef6429758af",
+      "rgb_sha256": "57a819c8c64e4a292502eed9b60635906eaf177ac3b2ee8f283c084c548eecca"
+    },
+    {
+      "index": 44,
+      "source_tick": 104,
+      "source_time_s": 3.466666666666667,
+      "movie_pts_s": 1.4666666666666666,
+      "capture_wall_ms": 16.895900014787912,
+      "file": "frames/0044.png",
+      "png_sha256": "bfbb9b8348e0108fd4f9dfb935765864a54b1ab8bea081a74ab45a466186e4a5",
+      "rgb_sha256": "bab8345edc7634bdff87ced7e225c6eaeb715a8d42459b058014d8b198c6c214"
+    },
+    {
+      "index": 45,
+      "source_tick": 105,
+      "source_time_s": 3.5,
+      "movie_pts_s": 1.5,
+      "capture_wall_ms": 16.000500007066876,
+      "file": "frames/0045.png",
+      "png_sha256": "e2e28aa080a0fc9669e378d05c58cfce97406e6a15bed7da987d296b0cb23b5e",
+      "rgb_sha256": "39bd07aca97eb1360c1b412df7904e56d216f8549d2d26145067065d0fab86a4"
+    },
+    {
+      "index": 46,
+      "source_tick": 106,
+      "source_time_s": 3.533333333333333,
+      "movie_pts_s": 1.5333333333333334,
+      "capture_wall_ms": 16.96890004677698,
+      "file": "frames/0046.png",
+      "png_sha256": "d6c623aeedd91d7bc2249b527c322631d05428a1a4c7b7fbe6a5c3e4f24a3254",
+      "rgb_sha256": "0eec304ed98306d409fa0afbf3326a6e2f8bbb02d32acfe1b062937b8730f90f"
+    },
+    {
+      "index": 47,
+      "source_tick": 107,
+      "source_time_s": 3.566666666666667,
+      "movie_pts_s": 1.5666666666666667,
+      "capture_wall_ms": 16.260200005490333,
+      "file": "frames/0047.png",
+      "png_sha256": "62e1a92e70d9b1a0569bbae3e3b6ef0a044a4e94fa3c52f0bb0bfdfd7db7001b",
+      "rgb_sha256": "d59da38b5045dde8b35be6e4d59ff3f053141e69d6779faa182e4caf265773d7"
+    },
+    {
+      "index": 48,
+      "source_tick": 108,
+      "source_time_s": 3.6,
+      "movie_pts_s": 1.6,
+      "capture_wall_ms": 16.095200029667467,
+      "file": "frames/0048.png",
+      "png_sha256": "125cb7b84f6b8b7ec0d53e8d53e7913793552573db2ec658e3f8aca3534e9938",
+      "rgb_sha256": "ee207863369b8426666631df111a2758f312e25abb4331ff08f50196f8bbe820"
+    },
+    {
+      "index": 49,
+      "source_tick": 109,
+      "source_time_s": 3.6333333333333333,
+      "movie_pts_s": 1.6333333333333333,
+      "capture_wall_ms": 16.176700009964406,
+      "file": "frames/0049.png",
+      "png_sha256": "c0790ee872291b61af042b1c6454c0c34691b321777908f6f81744fccac8b62b",
+      "rgb_sha256": "d5828726a1273bb27b5aaee0d0d97b93cd4d243d8403f682d7b2746686d8f0fe"
+    },
+    {
+      "index": 50,
+      "source_tick": 110,
+      "source_time_s": 3.6666666666666665,
+      "movie_pts_s": 1.6666666666666667,
+      "capture_wall_ms": 16.30509999813512,
+      "file": "frames/0050.png",
+      "png_sha256": "1c11e0ddee88fca9d919e25340ff9a4049dce2eeacbca3ee22b4de93e8487e98",
+      "rgb_sha256": "b46c2304975dcbdc787eeb3d0f37b7cc63d8f21824eb530be28a8aadcbe71ae6"
+    },
+    {
+      "index": 51,
+      "source_tick": 111,
+      "source_time_s": 3.7,
+      "movie_pts_s": 1.7,
+      "capture_wall_ms": 16.421700012870133,
+      "file": "frames/0051.png",
+      "png_sha256": "5ed96dfa33699514b80286c8c17416a0d490d8738ff4920edcb2da2a6df993bc",
+      "rgb_sha256": "05a490f0b973ba175a59adf050f0f7b815d4b0a4aecd2e13392c039a130ff5fd"
+    },
+    {
+      "index": 52,
+      "source_tick": 112,
+      "source_time_s": 3.7333333333333334,
+      "movie_pts_s": 1.7333333333333334,
+      "capture_wall_ms": 16.110599972307682,
+      "file": "frames/0052.png",
+      "png_sha256": "736e2d309df6947786a2b11347e9968c5490a1045520db1c1839c1cee35919a3",
+      "rgb_sha256": "206d13de6bc3f0445b9d4254e155921afce849bde42ad72e57f04ea904d26654"
+    },
+    {
+      "index": 53,
+      "source_tick": 113,
+      "source_time_s": 3.7666666666666666,
+      "movie_pts_s": 1.7666666666666666,
+      "capture_wall_ms": 16.252100002020597,
+      "file": "frames/0053.png",
+      "png_sha256": "d77513ca43750d0bc25209702b112fba122a0a69ba21e3549a2c4429ac986581",
+      "rgb_sha256": "31be0152663c6a518ee369158880c57611d27a4eaf4df606d6246a9f1d6fed90"
+    },
+    {
+      "index": 54,
+      "source_tick": 114,
+      "source_time_s": 3.8,
+      "movie_pts_s": 1.8,
+      "capture_wall_ms": 16.758100013248622,
+      "file": "frames/0054.png",
+      "png_sha256": "bde2107d8b93f286ddb317c3760099a3beeb68a5ef742823a18f397e020a6fca",
+      "rgb_sha256": "3bf774888e68c38c84cc6cbba1fd941d4f635d2e259268d5b772b5bda6f86bfa"
+    },
+    {
+      "index": 55,
+      "source_tick": 115,
+      "source_time_s": 3.8333333333333335,
+      "movie_pts_s": 1.8333333333333333,
+      "capture_wall_ms": 16.264599980786443,
+      "file": "frames/0055.png",
+      "png_sha256": "dfd5a9171523f09ffe4f5ecaef12710183d30e9b7d41c26afcef12d8594ceb5d",
+      "rgb_sha256": "eff4446943781116427203d4b78eda5dc4457b45804947ae6da065da8189c892"
+    },
+    {
+      "index": 56,
+      "source_tick": 116,
+      "source_time_s": 3.8666666666666667,
+      "movie_pts_s": 1.8666666666666667,
+      "capture_wall_ms": 20.1484999852255,
+      "file": "frames/0056.png",
+      "png_sha256": "4f6e84e092c62afb8d7e20980e16ac9b924d0cc4f0c5d7b3efb1f63c8d88eb54",
+      "rgb_sha256": "94bb555080fcc709a0c5cd8873c7fe6a66c5a1605fd149bdb24baf1b4da156bc"
+    },
+    {
+      "index": 57,
+      "source_tick": 117,
+      "source_time_s": 3.9,
+      "movie_pts_s": 1.9,
+      "capture_wall_ms": 16.33480004966259,
+      "file": "frames/0057.png",
+      "png_sha256": "ab2dbcbd1241ca877260614c40d02263b7dfcf67add65f4bb43dde063f84ede2",
+      "rgb_sha256": "fe986fe16220bcf5a2df84fa7db4a15e3ef7bb14f1ec6bc06ef189739bd53ae7"
+    },
+    {
+      "index": 58,
+      "source_tick": 118,
+      "source_time_s": 3.933333333333333,
+      "movie_pts_s": 1.9333333333333333,
+      "capture_wall_ms": 16.197499993722886,
+      "file": "frames/0058.png",
+      "png_sha256": "c38b700802cda8b6b7357fc52a68c1d38ee12f15e9b3cdd33eda7dfae5cb9172",
+      "rgb_sha256": "e5e5341ce17bfb33f9ab259777ba9cf04f2ee23d7990edcbcfda4bee8cf01a73"
+    },
+    {
+      "index": 59,
+      "source_tick": 119,
+      "source_time_s": 3.966666666666667,
+      "movie_pts_s": 1.9666666666666666,
+      "capture_wall_ms": 16.284800018183887,
+      "file": "frames/0059.png",
+      "png_sha256": "16f45d307efa975e6bf4c231eee05d43df87c160ec05a9ec51549b3795456681",
+      "rgb_sha256": "6b025ed9728f8785263fe97d47dd452cd2959db5955f013e7a80ca94337720f5"
+    },
+    {
+      "index": 60,
+      "source_tick": 120,
+      "source_time_s": 4.0,
+      "movie_pts_s": 2.0,
+      "capture_wall_ms": 17.516000021714717,
+      "file": "frames/0060.png",
+      "png_sha256": "c64a2d3e629ad1bec4010d66fad0bd6e3ecc7aff02a93c6565659257467432a6",
+      "rgb_sha256": "33b762b41d9cdbdb4837114e560e398682db3425009dd0380f1bdd60323b1291"
+    },
+    {
+      "index": 61,
+      "source_tick": 121,
+      "source_time_s": 4.033333333333333,
+      "movie_pts_s": 2.033333333333333,
+      "capture_wall_ms": 16.05179999023676,
+      "file": "frames/0061.png",
+      "png_sha256": "59f4eb47a5c3bb303a967e861da332d8cc8c18582bf3779377b1067a8293d873",
+      "rgb_sha256": "8beb6d0ca591e7205d87287823b97718bf11db327f49b4ac4c978186d773479f"
+    },
+    {
+      "index": 62,
+      "source_tick": 122,
+      "source_time_s": 4.066666666666666,
+      "movie_pts_s": 2.066666666666667,
+      "capture_wall_ms": 17.391800007317215,
+      "file": "frames/0062.png",
+      "png_sha256": "4b650ba042f6c01fa35b5c8e0819149473f6fa64f5cfa80c676e42d9400ce637",
+      "rgb_sha256": "01808b7c0b5a267a68005b00a63c4f1868b745802f10526bd3f2f75c3e281f15"
+    },
+    {
+      "index": 63,
+      "source_tick": 123,
+      "source_time_s": 4.1,
+      "movie_pts_s": 2.1,
+      "capture_wall_ms": 16.25899999635294,
+      "file": "frames/0063.png",
+      "png_sha256": "9892fc7b4d784be7b57aadc900aa381df6e6205c0e2ad29462ef8b2ad2063459",
+      "rgb_sha256": "d685197152854875b173cfcb381c6b043eb9babfa02ff998a21d329ce0758114"
+    },
+    {
+      "index": 64,
+      "source_tick": 124,
+      "source_time_s": 4.133333333333334,
+      "movie_pts_s": 2.1333333333333333,
+      "capture_wall_ms": 17.196700035128742,
+      "file": "frames/0064.png",
+      "png_sha256": "101930b9055be3e6d4f2a9154135c80bf3979cfaf1f85d9cb0eede971032cf11",
+      "rgb_sha256": "802e0c7847c5d413e5444abe58d0ce01e100d109e0143bf6a853e8aaebd73b35"
+    },
+    {
+      "index": 65,
+      "source_tick": 125,
+      "source_time_s": 4.166666666666667,
+      "movie_pts_s": 2.1666666666666665,
+      "capture_wall_ms": 16.15380001021549,
+      "file": "frames/0065.png",
+      "png_sha256": "ebdc8d94319e16951c45b57fbab80bd537ad8794349eea2fa8633d5961f6b4bc",
+      "rgb_sha256": "45bf4e9327aec94fb90422602de2649244e82da28fde786f259200cd9ebf49f9"
+    },
+    {
+      "index": 66,
+      "source_tick": 126,
+      "source_time_s": 4.2,
+      "movie_pts_s": 2.2,
+      "capture_wall_ms": 16.503899998497218,
+      "file": "frames/0066.png",
+      "png_sha256": "f332885fa1389275c47eeeeabab1dd83ed222d206b2f8d57e6869bffba55c9b2",
+      "rgb_sha256": "badd87fcb6c1a9604caf453488efb8980711cb82d99b3b0454e8305944e309a8"
+    },
+    {
+      "index": 67,
+      "source_tick": 127,
+      "source_time_s": 4.233333333333333,
+      "movie_pts_s": 2.2333333333333334,
+      "capture_wall_ms": 17.9140999680385,
+      "file": "frames/0067.png",
+      "png_sha256": "a4f10bad8514e5e148b6d2716fd0e96d5b8070c6cf2516cd3b5df997512cca9e",
+      "rgb_sha256": "99c37c2b5fb851ea08886c4e17264f9e325cf042b1e2120e102bff83627108e4"
+    },
+    {
+      "index": 68,
+      "source_tick": 128,
+      "source_time_s": 4.266666666666667,
+      "movie_pts_s": 2.2666666666666666,
+      "capture_wall_ms": 15.932600013911724,
+      "file": "frames/0068.png",
+      "png_sha256": "d6dcf5be2d740d7634a497f572e888c9110e09e8de20a2e1c7e48cc0116f55c0",
+      "rgb_sha256": "12f5254eb1c82b6c524d076c221bf90bbc576419993ea37bb0d7f36f5f55a871"
+    },
+    {
+      "index": 69,
+      "source_tick": 129,
+      "source_time_s": 4.3,
+      "movie_pts_s": 2.3,
+      "capture_wall_ms": 16.513000009581447,
+      "file": "frames/0069.png",
+      "png_sha256": "7cb3c4eb704b4bb521521818c56fc8ff3d7b4eae5f72bebb58a4284c79aaab3a",
+      "rgb_sha256": "04c44e43220a650087afe694649574f145fa8890191973ed06f939ff5174f102"
+    },
+    {
+      "index": 70,
+      "source_tick": 130,
+      "source_time_s": 4.333333333333333,
+      "movie_pts_s": 2.3333333333333335,
+      "capture_wall_ms": 17.58049998898059,
+      "file": "frames/0070.png",
+      "png_sha256": "fdc6ef7297a9ef3af06ce0656fac8d62630485c17c99bffb29fc07e8c4668a10",
+      "rgb_sha256": "8e8bba9bc6beb2c948b472569456f08ab5bd0ed3f012bb7d72697e53a983b981"
+    },
+    {
+      "index": 71,
+      "source_tick": 131,
+      "source_time_s": 4.366666666666666,
+      "movie_pts_s": 2.3666666666666667,
+      "capture_wall_ms": 16.118100029416382,
+      "file": "frames/0071.png",
+      "png_sha256": "1f471a37dd82a8467feb73aabd7bbe1dbfc0f40e4620cd789191f5a97aa2d69d",
+      "rgb_sha256": "104b75a03e91f16f91e5292c76f68d0d123ea19f2f19211c3f03d42b1138d034"
+    },
+    {
+      "index": 72,
+      "source_tick": 132,
+      "source_time_s": 4.4,
+      "movie_pts_s": 2.4,
+      "capture_wall_ms": 17.548699979670346,
+      "file": "frames/0072.png",
+      "png_sha256": "8ebae79333b57636989a110c8d5a8b9400fbfa68bafe157f8bf6fb0fccf958fd",
+      "rgb_sha256": "c76b5b02a120a077cb4b922a6beabca03725e7fcfa2864c4ae950790abc6f25c"
+    },
+    {
+      "index": 73,
+      "source_tick": 133,
+      "source_time_s": 4.433333333333334,
+      "movie_pts_s": 2.433333333333333,
+      "capture_wall_ms": 16.095900034997612,
+      "file": "frames/0073.png",
+      "png_sha256": "c099da363ced57ff1bc1749527523d6fabc456f2e3ae0d6d71e223adcc8ff768",
+      "rgb_sha256": "f0e20e011e7692ba668154100a3b6b4a2c9f556e581e502e5361ae8ceb478d60"
+    },
+    {
+      "index": 74,
+      "source_tick": 134,
+      "source_time_s": 4.466666666666667,
+      "movie_pts_s": 2.466666666666667,
+      "capture_wall_ms": 15.63380000879988,
+      "file": "frames/0074.png",
+      "png_sha256": "155d18bfef26b28d7b15c5787c1fe499f4334b3d106b4b21c0627c190a9f2e53",
+      "rgb_sha256": "50e90c223786ade2b1a2f41ab82fbed160da0e5493508fc267d73651afa51aaf"
+    },
+    {
+      "index": 75,
+      "source_tick": 135,
+      "source_time_s": 4.5,
+      "movie_pts_s": 2.5,
+      "capture_wall_ms": 19.220600021071732,
+      "file": "frames/0075.png",
+      "png_sha256": "f88f030fe0efa0ffa0e96f77ef3fd91f791c7d1896c383759ba290515ca0b846",
+      "rgb_sha256": "862baf7ebcfa4bf6662d592d9b1f9a6c4c418c415f2942a2bc0973220c235a0d"
+    },
+    {
+      "index": 76,
+      "source_tick": 136,
+      "source_time_s": 4.533333333333333,
+      "movie_pts_s": 2.533333333333333,
+      "capture_wall_ms": 16.1896999925375,
+      "file": "frames/0076.png",
+      "png_sha256": "c2d266a27c0332bd8a09f0a0494a2a2872498d3f4a41f6b227c5c575a9f8abc6",
+      "rgb_sha256": "2c8979befce498146c32d61579ad96623c4327a05d4ebbd3675d20c0f75c6f4e"
+    },
+    {
+      "index": 77,
+      "source_tick": 137,
+      "source_time_s": 4.566666666666666,
+      "movie_pts_s": 2.566666666666667,
+      "capture_wall_ms": 16.557599999941885,
+      "file": "frames/0077.png",
+      "png_sha256": "457fafa2c3ffcb3b7979c47639ea1a1936157da993a6440b3e917a7cc842b2a8",
+      "rgb_sha256": "239e619c5ebd35c2ecfbca7ced6f7f0ad3024cc618b9d139feb9573845fe21bc"
+    },
+    {
+      "index": 78,
+      "source_tick": 138,
+      "source_time_s": 4.6,
+      "movie_pts_s": 2.6,
+      "capture_wall_ms": 15.891499991994351,
+      "file": "frames/0078.png",
+      "png_sha256": "e7e751f2c41755a4550fe9ce25edcc97b4a17925d43848bf4696f30d40e2a0ab",
+      "rgb_sha256": "a8aab513a70ae80fb932f58c2a927b84f8aa361d8dbea21c87713e7ef870d4e2"
+    },
+    {
+      "index": 79,
+      "source_tick": 139,
+      "source_time_s": 4.633333333333334,
+      "movie_pts_s": 2.6333333333333333,
+      "capture_wall_ms": 16.2090000230819,
+      "file": "frames/0079.png",
+      "png_sha256": "52d3212a5e65ccd4aa6efc1cc027db7a42b0af118bdd0ec4cacf7d8610d2bf91",
+      "rgb_sha256": "97d54ecc196a0630784f190411c25113d70cb3f00709f9f27c1dd854c1cd80fc"
+    },
+    {
+      "index": 80,
+      "source_tick": 140,
+      "source_time_s": 4.666666666666667,
+      "movie_pts_s": 2.6666666666666665,
+      "capture_wall_ms": 16.055300016887486,
+      "file": "frames/0080.png",
+      "png_sha256": "d0302f2b4336ce52a0aad9f6240c02914aba367e772bcd249f986baa8876d008",
+      "rgb_sha256": "831f7658447ce9e3833b352df8b34532aa522462087d4aa488b7e3e08d8cd89f"
+    },
+    {
+      "index": 81,
+      "source_tick": 141,
+      "source_time_s": 4.7,
+      "movie_pts_s": 2.7,
+      "capture_wall_ms": 15.828599978704005,
+      "file": "frames/0081.png",
+      "png_sha256": "861dd313b33dd77402ef1203020ebe7644f224be6beda03f3810899586c546cf",
+      "rgb_sha256": "2fbf0491f746d9949b89a8dcf9b2e92cff87d7f44e51ad28d2ac38a51b3a9d62"
+    },
+    {
+      "index": 82,
+      "source_tick": 142,
+      "source_time_s": 4.733333333333333,
+      "movie_pts_s": 2.7333333333333334,
+      "capture_wall_ms": 16.433599987067282,
+      "file": "frames/0082.png",
+      "png_sha256": "0e0906c232300adaad1f8e52a1d5159919008c916bc7a52bb2e6faceed9541c6",
+      "rgb_sha256": "ba49e3848138149bed28553ac0b64f34246a6499e088bd1303070da1fa4b6ff8"
+    },
+    {
+      "index": 83,
+      "source_tick": 143,
+      "source_time_s": 4.766666666666667,
+      "movie_pts_s": 2.7666666666666666,
+      "capture_wall_ms": 16.227199987042695,
+      "file": "frames/0083.png",
+      "png_sha256": "28727f74e0ac1256d881016fa53183f745aa25795bfeb93322953de85f59d113",
+      "rgb_sha256": "20f89933ee977e02adce61a4b28c17934cbdee45c61f28dc3d4246ee405982f2"
+    },
+    {
+      "index": 84,
+      "source_tick": 144,
+      "source_time_s": 4.8,
+      "movie_pts_s": 2.8,
+      "capture_wall_ms": 16.303899988997728,
+      "file": "frames/0084.png",
+      "png_sha256": "17f57a2766626c04b6dfd20bd1be1db3b8e9fb3626046928db571cb3389c9ee7",
+      "rgb_sha256": "777df2ae36a12dcd1727bdac537be88e3194e97378aca385283d109ba2cf334c"
+    },
+    {
+      "index": 85,
+      "source_tick": 145,
+      "source_time_s": 4.833333333333333,
+      "movie_pts_s": 2.8333333333333335,
+      "capture_wall_ms": 16.281899996101856,
+      "file": "frames/0085.png",
+      "png_sha256": "4165520daae579f1e0f913828c421c127579e60b55c26e42a3c442d64a26bad6",
+      "rgb_sha256": "1523da0ebe73c41dfb876b856f04089a26eaa85ca59ff28a6e5cbe0c231673ee"
+    },
+    {
+      "index": 86,
+      "source_tick": 146,
+      "source_time_s": 4.866666666666666,
+      "movie_pts_s": 2.8666666666666667,
+      "capture_wall_ms": 18.41630000853911,
+      "file": "frames/0086.png",
+      "png_sha256": "0011115315fb3840481fed866fae1821ec5980812735d9636aa74941173e0cda",
+      "rgb_sha256": "39caadd186dfbb43821129fcde672751830b40b55c613663b1512feb3658cbd1"
+    },
+    {
+      "index": 87,
+      "source_tick": 147,
+      "source_time_s": 4.9,
+      "movie_pts_s": 2.9,
+      "capture_wall_ms": 18.657400039955974,
+      "file": "frames/0087.png",
+      "png_sha256": "10419c2c1f142f4ca715c7f1527ed658902b1863cba3145eaf8d2376638f9bd2",
+      "rgb_sha256": "feb09871a58a2395ff091c95bbeadb3ea7e5294187f1ae15ac6ea8f3bfdb3756"
+    },
+    {
+      "index": 88,
+      "source_tick": 148,
+      "source_time_s": 4.933333333333334,
+      "movie_pts_s": 2.933333333333333,
+      "capture_wall_ms": 17.089900036808103,
+      "file": "frames/0088.png",
+      "png_sha256": "dfdb3be5466481e9dc80e8573ed446ea33460e3b489968fe96ebb83d2d09cf56",
+      "rgb_sha256": "a61ea4e10c0929a83922b749cb8601046ca7492bec7b74bc4d2ff200a6aa1197"
+    },
+    {
+      "index": 89,
+      "source_tick": 149,
+      "source_time_s": 4.966666666666667,
+      "movie_pts_s": 2.966666666666667,
+      "capture_wall_ms": 16.729399969335645,
+      "file": "frames/0089.png",
+      "png_sha256": "47947e731b8129e7030a8a4c07406cd3bde4915e062b981dbd22fff09b49a3cd",
+      "rgb_sha256": "de1325f947da07023f805c61b2915919366cb6a104a1f9a3dadb45f428aebcbe"
+    },
+    {
+      "index": 90,
+      "source_tick": 150,
+      "source_time_s": 5.0,
+      "movie_pts_s": 3.0,
+      "capture_wall_ms": 16.437300015240908,
+      "file": "frames/0090.png",
+      "png_sha256": "8e6b617df4753547d850b7fee9bc1edd965fd6cf2dfa3e8ca133d6745ae42dfd",
+      "rgb_sha256": "eb3306cfb72e5d1360cde5e2b31c14b1b1e6ea0dab3f959b6c1b9f6cadeb0284"
+    },
+    {
+      "index": 91,
+      "source_tick": 151,
+      "source_time_s": 5.033333333333333,
+      "movie_pts_s": 3.033333333333333,
+      "capture_wall_ms": 16.485299973282963,
+      "file": "frames/0091.png",
+      "png_sha256": "6b96d9475a2ae5935816b16af5287e81634dc9ac58ca1b720700cc450aff5465",
+      "rgb_sha256": "d7a959e88e5a11df4ee05cbe069e8784654e5a9c6065dec9a9ec423d57c33045"
+    },
+    {
+      "index": 92,
+      "source_tick": 152,
+      "source_time_s": 5.066666666666666,
+      "movie_pts_s": 3.066666666666667,
+      "capture_wall_ms": 16.323200019542128,
+      "file": "frames/0092.png",
+      "png_sha256": "3d5492c8a0377a77d52c536a792fd22fd66079cf90b01958dbcb29670ce50b32",
+      "rgb_sha256": "b69e90de22993911e53d3972a986940f7caca1d33c5c3b0c8b49698f2bfbaaa7"
+    },
+    {
+      "index": 93,
+      "source_tick": 153,
+      "source_time_s": 5.1,
+      "movie_pts_s": 3.1,
+      "capture_wall_ms": 16.482500010170043,
+      "file": "frames/0093.png",
+      "png_sha256": "d80203937c3d3daeeb5aeb618c2499a0705718ee9b14243c7ebc3bc2c7a45411",
+      "rgb_sha256": "470fa264fcfd88d11abc4bc7413c0039943327afdca36b7ca47739f6fc87fd68"
+    },
+    {
+      "index": 94,
+      "source_tick": 154,
+      "source_time_s": 5.133333333333334,
+      "movie_pts_s": 3.1333333333333333,
+      "capture_wall_ms": 16.247799969278276,
+      "file": "frames/0094.png",
+      "png_sha256": "62a607a8822da237c87d24b04639ee83defd7d5f66cacc048e5182076c1cfe28",
+      "rgb_sha256": "efcad103da6d33e3b29bf5fd58c0cdfd7249ff8263c4b06d4d6c58e2476271f3"
+    },
+    {
+      "index": 95,
+      "source_tick": 155,
+      "source_time_s": 5.166666666666667,
+      "movie_pts_s": 3.1666666666666665,
+      "capture_wall_ms": 16.184000007342547,
+      "file": "frames/0095.png",
+      "png_sha256": "490060b5830697089e190a86761b4a62cdfc760c4f9d028a5cf45931c00a738d",
+      "rgb_sha256": "6fbb9b54f78b3e582527007ca218bc7fc23d9ab2147ef28661fac9039ee4e2f6"
+    },
+    {
+      "index": 96,
+      "source_tick": 156,
+      "source_time_s": 5.2,
+      "movie_pts_s": 3.2,
+      "capture_wall_ms": 16.329800011590123,
+      "file": "frames/0096.png",
+      "png_sha256": "ecc283260178149d16ed34a7f8458610b3749f3ef2838d00478690dd1c3c09b7",
+      "rgb_sha256": "01e5efe0ece57d33e0afee3da38139e5c09209bf259e92c3fba45d2b4be7064d"
+    },
+    {
+      "index": 97,
+      "source_tick": 157,
+      "source_time_s": 5.233333333333333,
+      "movie_pts_s": 3.2333333333333334,
+      "capture_wall_ms": 18.986099981702864,
+      "file": "frames/0097.png",
+      "png_sha256": "fe30be198d96b58fc3e1c0e1bc65057d718676d00967ce75808c2ab5899167c1",
+      "rgb_sha256": "31e9a4dc8bb83a9dbc85596937bf72cfce0a066fb81199b57df79f0e8e4e7ae4"
+    },
+    {
+      "index": 98,
+      "source_tick": 158,
+      "source_time_s": 5.266666666666667,
+      "movie_pts_s": 3.2666666666666666,
+      "capture_wall_ms": 18.128000025171787,
+      "file": "frames/0098.png",
+      "png_sha256": "c35c5a75583abb355209fd0eb2b326c1c9ca608b5430dcd2ec50f4e5be13a4a9",
+      "rgb_sha256": "4c8d29866063acbe994ed2a58f30ff52c45005198869b9b12380dbbeb72d7422"
+    },
+    {
+      "index": 99,
+      "source_tick": 159,
+      "source_time_s": 5.3,
+      "movie_pts_s": 3.3,
+      "capture_wall_ms": 17.138099996373057,
+      "file": "frames/0099.png",
+      "png_sha256": "9b5ab57d17ccb152796b6b1f98eb572a65de01dc197c5f8366b75febc3576bc2",
+      "rgb_sha256": "ba177d719f2b6c02f26b7b6ac0d994166dd2d62fc8b49cea7eba80e683f1666e"
+    },
+    {
+      "index": 100,
+      "source_tick": 160,
+      "source_time_s": 5.333333333333333,
+      "movie_pts_s": 3.3333333333333335,
+      "capture_wall_ms": 17.4604999483563,
+      "file": "frames/0100.png",
+      "png_sha256": "0f7f3fcc00eb206dc8435b99184dad9c16b430a81ef5e2e0f9d681feb4535852",
+      "rgb_sha256": "975956cd1dae0b9f5faae597ac4a3dcdfaf04918595c3f15eae293e57e137854"
+    },
+    {
+      "index": 101,
+      "source_tick": 161,
+      "source_time_s": 5.366666666666666,
+      "movie_pts_s": 3.3666666666666667,
+      "capture_wall_ms": 16.52559998910874,
+      "file": "frames/0101.png",
+      "png_sha256": "7483515a006d66d5118b0d804ff2204b91600c747459cb7154a4996a4cd5a6c8",
+      "rgb_sha256": "9b695f2ebe379e70d38584a6f3b833a573bead9a2d5ffb48c53dca174f0991bf"
+    },
+    {
+      "index": 102,
+      "source_tick": 162,
+      "source_time_s": 5.4,
+      "movie_pts_s": 3.4,
+      "capture_wall_ms": 17.218799970578402,
+      "file": "frames/0102.png",
+      "png_sha256": "bcd53841c4be31019a82b0f6b96fe7e02ec859452b68f27d6662b076ef1a34c9",
+      "rgb_sha256": "3152f76872cedeab3ddbdb942b4856d130ce4c04badf57ce70920d8aae9e7ad0"
+    },
+    {
+      "index": 103,
+      "source_tick": 163,
+      "source_time_s": 5.433333333333334,
+      "movie_pts_s": 3.433333333333333,
+      "capture_wall_ms": 16.419600055087358,
+      "file": "frames/0103.png",
+      "png_sha256": "1cc93494a1773b871e64cd643345d7a7d46e9a92780b4b7ded6e928dfc3ee19b",
+      "rgb_sha256": "ad8272cdb160fcfcade3e07c8e2419f593317accad98fee69c3a6a36c2081ce5"
+    },
+    {
+      "index": 104,
+      "source_tick": 164,
+      "source_time_s": 5.466666666666667,
+      "movie_pts_s": 3.466666666666667,
+      "capture_wall_ms": 17.926300002727658,
+      "file": "frames/0104.png",
+      "png_sha256": "c22874acd397aabbefdc4b5720d5135e6ca3096338e41965fc09bb342858570b",
+      "rgb_sha256": "7a0f23bd609ed6a9e818a2f04cede9d2831b5f03051ae12d2c749192cb4c8518"
+    },
+    {
+      "index": 105,
+      "source_tick": 165,
+      "source_time_s": 5.5,
+      "movie_pts_s": 3.5,
+      "capture_wall_ms": 18.27579998644069,
+      "file": "frames/0105.png",
+      "png_sha256": "d72ebebf1102b1061f991e177efb944316df829e9d5e22adb6c392f3acd3db72",
+      "rgb_sha256": "46779cb95a3cd8565b66ddfb5beaa7a4f480d306b0d4ecb48811a8e77d8154b4"
+    },
+    {
+      "index": 106,
+      "source_tick": 166,
+      "source_time_s": 5.533333333333333,
+      "movie_pts_s": 3.533333333333333,
+      "capture_wall_ms": 16.45169995026663,
+      "file": "frames/0106.png",
+      "png_sha256": "0014e75179a7eb0f54fd337efceaf4c806191385eb8b2e9dc70fc0e54a713db3",
+      "rgb_sha256": "d50c94281f1cbaf5a19101f9e3b7607e1f46738bd7832c9527f615af264fc57c"
+    },
+    {
+      "index": 107,
+      "source_tick": 167,
+      "source_time_s": 5.566666666666666,
+      "movie_pts_s": 3.566666666666667,
+      "capture_wall_ms": 16.4812000002712,
+      "file": "frames/0107.png",
+      "png_sha256": "36bcc1ad3dbcfb2abb06eda0d200b27098e9ae23414a5a6a6eed9896508df410",
+      "rgb_sha256": "a191b2ecd23e61a41cdeeb3d863fc379801fc06bb1bc7e042bde22db507f95d2"
+    },
+    {
+      "index": 108,
+      "source_tick": 168,
+      "source_time_s": 5.6,
+      "movie_pts_s": 3.6,
+      "capture_wall_ms": 16.677199979312718,
+      "file": "frames/0108.png",
+      "png_sha256": "867fe1331fd1f59e0c0375680089ecfd76ae64783303157ef303b9425fd13bde",
+      "rgb_sha256": "63ac092efd735094b274bd6134b32aeac74fa6d28012f639cb641cac3339e59d"
+    },
+    {
+      "index": 109,
+      "source_tick": 169,
+      "source_time_s": 5.633333333333334,
+      "movie_pts_s": 3.6333333333333333,
+      "capture_wall_ms": 16.806999978143722,
+      "file": "frames/0109.png",
+      "png_sha256": "d0f574bb4cd57401718a67caaac36fd21d4db5929ed677e54772a1ac0bcebc1e",
+      "rgb_sha256": "85822e02534c253ae3238c429707bfc0656d4048a6a1cdc672ea617c1652ab27"
+    },
+    {
+      "index": 110,
+      "source_tick": 170,
+      "source_time_s": 5.666666666666667,
+      "movie_pts_s": 3.6666666666666665,
+      "capture_wall_ms": 16.59670000663027,
+      "file": "frames/0110.png",
+      "png_sha256": "0331f3373d052eb62b092281deeedf2eced18e64080c4e92269b3789d9c78f83",
+      "rgb_sha256": "b3e4906e29ea40969b657f6d1deb5ae6edb970f7998e57cd75b4688fa0c182ea"
+    },
+    {
+      "index": 111,
+      "source_tick": 171,
+      "source_time_s": 5.7,
+      "movie_pts_s": 3.7,
+      "capture_wall_ms": 17.052699986379594,
+      "file": "frames/0111.png",
+      "png_sha256": "17e63cf1ef5fa1e296753f54201de14b9244ac47ff95ceccdcc96b2186328643",
+      "rgb_sha256": "53b54ba1741479a74d9be6d53de563ef05b11a4422d60f20eba2ab6ac44e3092"
+    },
+    {
+      "index": 112,
+      "source_tick": 172,
+      "source_time_s": 5.733333333333333,
+      "movie_pts_s": 3.7333333333333334,
+      "capture_wall_ms": 17.064200015738606,
+      "file": "frames/0112.png",
+      "png_sha256": "aebc109fd12d6c3b7010c07307919de4b37a0cdb62fd263f3a79ff74b21618f1",
+      "rgb_sha256": "d07f14f2cb17a96a2118c2ab071bdf84ea314f99f6316fac8d083fe2319051d1"
+    },
+    {
+      "index": 113,
+      "source_tick": 173,
+      "source_time_s": 5.766666666666667,
+      "movie_pts_s": 3.7666666666666666,
+      "capture_wall_ms": 16.931199992541224,
+      "file": "frames/0113.png",
+      "png_sha256": "678e9e34a2891f9809c04ef077a1eea6dcb8c8c3d3de476cf72c47a66f07c9fc",
+      "rgb_sha256": "8b84c39d79888d8bc23cfe9897f747446f463e693baf72732d4e9e85b0cbabb0"
+    },
+    {
+      "index": 114,
+      "source_tick": 174,
+      "source_time_s": 5.8,
+      "movie_pts_s": 3.8,
+      "capture_wall_ms": 17.32879999326542,
+      "file": "frames/0114.png",
+      "png_sha256": "84659fa3c1c6b66762aaa9a87dbbf9497331ff17f71f1c173d7de9b22eb9d344",
+      "rgb_sha256": "c085ab231144d80470a876c34aa1c9b0829b45733573b4528e962a5ae3684fb5"
+    },
+    {
+      "index": 115,
+      "source_tick": 175,
+      "source_time_s": 5.833333333333333,
+      "movie_pts_s": 3.8333333333333335,
+      "capture_wall_ms": 17.14680000441149,
+      "file": "frames/0115.png",
+      "png_sha256": "76fba83705f046c398b9c300489712c937d5dd993392ab1dae4d029251f760c4",
+      "rgb_sha256": "ec4b74c0176dea1cd44cbd4156117ab03d7ca49fb502e7e814f94e77e8a0ca3f"
+    },
+    {
+      "index": 116,
+      "source_tick": 176,
+      "source_time_s": 5.866666666666666,
+      "movie_pts_s": 3.8666666666666667,
+      "capture_wall_ms": 18.123799993190914,
+      "file": "frames/0116.png",
+      "png_sha256": "a7692a1d333daf34cb0fce92fe2af9228b211df80361d310ec96cc5eb1418178",
+      "rgb_sha256": "625cf52432f6f4eaa9f4356f92d778e2889d43b3b97e3699eb7a870da0b62a4a"
+    },
+    {
+      "index": 117,
+      "source_tick": 177,
+      "source_time_s": 5.9,
+      "movie_pts_s": 3.9,
+      "capture_wall_ms": 16.790800029411912,
+      "file": "frames/0117.png",
+      "png_sha256": "337ce22b61e87af8ade32c58d856e9aeb319099d8eb7e71720fcc160bb526fa1",
+      "rgb_sha256": "08cb03decf4e0cd35d3b3c645660d5b47cc42e21917fdc3323bc33f3e9daf455"
+    },
+    {
+      "index": 118,
+      "source_tick": 178,
+      "source_time_s": 5.933333333333334,
+      "movie_pts_s": 3.933333333333333,
+      "capture_wall_ms": 16.248999978415668,
+      "file": "frames/0118.png",
+      "png_sha256": "425b89fcdb894ed8cf6f8aadc8c364e42aab2e48a8b1a734b773a790635f4be8",
+      "rgb_sha256": "70efcaa1c09eca5e62f8897e97d09a467075e8a0264731d335f53aa93514f9f2"
+    },
+    {
+      "index": 119,
+      "source_tick": 179,
+      "source_time_s": 5.966666666666667,
+      "movie_pts_s": 3.966666666666667,
+      "capture_wall_ms": 16.640700050629675,
+      "file": "frames/0119.png",
+      "png_sha256": "abd9a518aa78211a84a9f233dfa55e5e4dbdeca261c468a92390c56a4b021ac0",
+      "rgb_sha256": "899d86f8e1ed1386563191d38e2344f437e68fe4307501d8606fb377d1fe3b64"
+    }
+  ],
+  "sensor_scouts": [
+    {
+      "index": 0,
+      "file": "sensor-0000.npz",
+      "sha256": "ca2482bce8bc03aa3ff1d183880365f23ea1727f1a8437ce55e0b0455e7957fd",
+      "plane_sha256": {
+        "srgb8_rgb": "8bf3d9ab40333dc1a33ea508e6964d3cfcb1259cd5521fb5878f378ec097f94f",
+        "forward_depth_m_f32": "43f0022659a9ad1f6b3475a7497c2c5ebec7b36b931386b57f725faea1a1f316",
+        "instance_id_u32": "550914e2ef51f30cc9a3106152cdc362491ffee8d41b5e3dbacb08ecc1a1054d",
+        "valid_u8": "8a82fbeddcced02b95377af6a434831a53e239d803ba401d3502ff16aa50588a"
+      },
+      "specimens": {
+        "1": {
+          "label": "Mirror steel | r = 0.045",
+          "visible_pixels": 20077,
+          "bbox_xyxy": [
+            270,
+            324,
+            431,
+            481
+          ],
+          "projected_centre_xyz": [
+            352.0625009834525,
+            402.4772687961731,
+            1.6508089114785114
+          ],
+          "mean_srgb8": [
+            97.39443143896,
+            92.28201424515615,
+            79.22124819445136
+          ],
+          "p95_max_srgb8": 249.0,
+          "fraction_any_channel_255": 0.0004980823828261194,
+          "forward_depth_range_m": [
+            1.540877342224121,
+            1.66904616355896
+          ]
+        },
+        "2": {
+          "label": "Rough steel | r = 0.45",
+          "visible_pixels": 17900,
+          "bbox_xyxy": [
+            472,
+            307,
+            622,
+            457
+          ],
+          "projected_centre_xyz": [
+            548.1646021781658,
+            382.1179612121095,
+            1.7252962024059555
+          ],
+          "mean_srgb8": [
+            140.70307262569833,
+            139.7958659217877,
+            130.76150837988826
+          ],
+          "p95_max_srgb8": 238.0,
+          "fraction_any_channel_255": 0.0,
+          "forward_depth_range_m": [
+            1.6153676509857178,
+            1.7268154621124268
+          ]
+        },
+        "3": {
+          "label": "Matte rubber | r = 0.85",
+          "visible_pixels": 16453,
+          "bbox_xyxy": [
+            656,
+            291,
+            800,
+            435
+          ],
+          "projected_centre_xyz": [
+            728.0346239952429,
+            363.4438670692323,
+            1.7997834933333998
+          ],
+          "mean_srgb8": [
+            28.28699933142892,
+            32.44946210417553,
+            29.14532304139063
+          ],
+          "p95_max_srgb8": 46.0,
+          "fraction_any_channel_255": 0.0,
+          "forward_depth_range_m": [
+            1.6898537874221802,
+            1.801539421081543
+          ]
+        },
+        "4": {
+          "label": "Scanned wood | color + roughness",
+          "visible_pixels": 30171,
+          "bbox_xyxy": [
+            822,
+            216,
+            994,
+            418
+          ],
+          "projected_centre_xyz": [
+            906.404702668917,
+            316.9165598511422,
+            1.8866089538846105
+          ],
+          "mean_srgb8": [
+            58.1476914918299,
+            30.717245036624572,
+            9.377415398892976
+          ],
+          "p95_max_srgb8": 87.0,
+          "fraction_any_channel_255": 0.0,
+          "forward_depth_range_m": [
+            1.775488018989563,
+            1.9435207843780518
+          ]
+        }
+      }
+    },
+    {
+      "index": 60,
+      "file": "sensor-0060.npz",
+      "sha256": "f2b0262e9818545be7821e9b21d87fd2060e38eb76364c81656cb95478b20b1e",
+      "plane_sha256": {
+        "srgb8_rgb": "33b762b41d9cdbdb4837114e560e398682db3425009dd0380f1bdd60323b1291",
+        "forward_depth_m_f32": "17f174ebc8026e9dcc2d564bb94e5f59ec0f55a98a5227edb40aa0b1b39d68e1",
+        "instance_id_u32": "5102c7c9216e6a72559f4ac6d480a5f09a2eaf76096798c29537e91de92f8f31",
+        "valid_u8": "1034d32837be4b18d9e53ccd3449337cbfa22fd084b9c85a6b2874d3dd659bdf"
+      },
+      "specimens": {
+        "1": {
+          "label": "Mirror steel | r = 0.045",
+          "visible_pixels": 17552,
+          "bbox_xyxy": [
+            282,
+            299,
+            433,
+            445
+          ],
+          "projected_centre_xyz": [
+            358.9812857972273,
+            372.32373874818984,
+            1.7635775211280291
+          ],
+          "mean_srgb8": [
+            97.0897903372835,
+            91.95630127620784,
+            78.87585460346399
+          ],
+          "p95_max_srgb8": 249.0,
+          "fraction_any_channel_255": 0.00039881494986326345,
+          "forward_depth_range_m": [
+            1.6536242961883545,
+            1.7815701961517334
+          ]
+        },
+        "2": {
+          "label": "Rough steel | r = 0.45",
+          "visible_pixels": 17136,
+          "bbox_xyxy": [
+            472,
+            299,
+            619,
+            445
+          ],
+          "projected_centre_xyz": [
+            546.2903366465735,
+            372.49695631821737,
+            1.7628857389557948
+          ],
+          "mean_srgb8": [
+            140.7107843137255,
+            139.7359943977591,
+            130.6768790849673
+          ],
+          "p95_max_srgb8": 238.0,
+          "fraction_any_channel_255": 0.0,
+          "forward_depth_range_m": [
+            1.6529364585876465,
+            1.7635343074798584
+          ]
+        },
+        "3": {
+          "label": "Matte rubber | r = 0.85",
+          "visible_pixels": 17147,
+          "bbox_xyxy": [
+            660,
+            299,
+            807,
+            445
+          ],
+          "projected_centre_xyz": [
+            733.7464508331611,
+            372.6703098878338,
+            1.7621939567835607
+          ],
+          "mean_srgb8": [
+            27.73972123403511,
+            31.596722458739137,
+            27.81816061118563
+          ],
+          "p95_max_srgb8": 45.0,
+          "fraction_any_channel_255": 0.0,
+          "forward_depth_range_m": [
+            1.6522440910339355,
+            1.763427734375
+          ]
+        },
+        "4": {
+          "label": "Scanned wood | color + roughness",
+          "visible_pixels": 35812,
+          "bbox_xyxy": [
+            848,
+            241,
+            1041,
+            442
+          ],
+          "projected_centre_xyz": [
+            940.6192660282823,
+            343.1495834565442,
+            1.766554136087399
+          ],
+          "mean_srgb8": [
+            51.55936557578465,
+            20.95967832011616,
+            2.5882665028482075
+          ],
+          "p95_max_srgb8": 75.0,
+          "fraction_any_channel_255": 0.0,
+          "forward_depth_range_m": [
+            1.6870501041412354,
+            1.840050458908081
+          ]
+        }
+      }
+    },
+    {
+      "index": 119,
+      "file": "sensor-0119.npz",
+      "sha256": "1560eff2d147b3c0fb38772734a4e31fe79520563bc23dc4c6d97527f889dc13",
+      "plane_sha256": {
+        "srgb8_rgb": "899d86f8e1ed1386563191d38e2344f437e68fe4307501d8606fb377d1fe3b64",
+        "forward_depth_m_f32": "8bb31d93cb82dc855e5810e148be33b9b1b40ac355e591575ea63e58980c85cc",
+        "instance_id_u32": "3fec50c034b62b108c777f93b6ddfada608cf3fd894f3acbd6503b1e45c25437",
+        "valid_u8": "1869bd6026ce6424ff26cf6d96e77928c3b55ea906a931f00edd2637772ade02"
+      },
+      "specimens": {
+        "1": {
+          "label": "Mirror steel | r = 0.045",
+          "visible_pixels": 15447,
+          "bbox_xyxy": [
+            315,
+            277,
+            455,
+            415
+          ],
+          "projected_centre_xyz": [
+            386.392147112933,
+            346.2540650520262,
+            1.8742707842608437
+          ],
+          "mean_srgb8": [
+            96.48740855829611,
+            91.38674176215446,
+            78.31410629895773
+          ],
+          "p95_max_srgb8": 249.0,
+          "fraction_any_channel_255": 0.0004531624263611057,
+          "forward_depth_range_m": [
+            1.7643420696258545,
+            1.8885093927383423
+          ]
+        },
+        "2": {
+          "label": "Rough steel | r = 0.45",
+          "visible_pixels": 16453,
+          "bbox_xyxy": [
+            479,
+            291,
+            623,
+            435
+          ],
+          "projected_centre_xyz": [
+            551.9653760047571,
+            363.44386706923217,
+            1.7997834933333996
+          ],
+          "mean_srgb8": [
+            140.3700237038838,
+            139.3214611317085,
+            130.18021029599464
+          ],
+          "p95_max_srgb8": 239.0,
+          "fraction_any_channel_255": 0.0,
+          "forward_depth_range_m": [
+            1.6898537874221802,
+            1.8015491962432861
+          ]
+        },
+        "3": {
+          "label": "Matte rubber | r = 0.85",
+          "visible_pixels": 17900,
+          "bbox_xyxy": [
+            657,
+            307,
+            807,
+            457
+          ],
+          "projected_centre_xyz": [
+            731.8353978218341,
+            382.1179612121094,
+            1.7252962024059555
+          ],
+          "mean_srgb8": [
+            27.056312849162012,
+            30.622011173184358,
+            26.288212290502795
+          ],
+          "p95_max_srgb8": 45.0,
+          "fraction_any_channel_255": 0.0,
+          "forward_depth_range_m": [
+            1.6153676509857178,
+            1.7268180847167969
+          ]
+        },
+        "4": {
+          "label": "Scanned wood | color + roughness",
+          "visible_pixels": 40939,
+          "bbox_xyxy": [
+            854,
+            257,
+            1061,
+            489
+          ],
+          "projected_centre_xyz": [
+            953.2387523930313,
+            373.02392186045216,
+            1.6471855187606828
+          ],
+          "mean_srgb8": [
+            50.42138303329344,
+            19.52754097559784,
+            1.3557976501624367
+          ],
+          "p95_max_srgb8": 73.0,
+          "fraction_any_channel_255": 0.0,
+          "forward_depth_range_m": [
+            1.535665512084961,
+            1.7043027877807617
+          ]
+        }
+      }
+    }
+  ],
+  "capture_ms": [
+    17.830400029197335,
+    16.431499971076846,
+    15.952899993862957,
+    16.204699990339577,
+    15.723699994850904,
+    16.145899950060993,
+    16.285100020468235,
+    15.997099981177598,
+    16.254000016488135,
+    16.018700029235333,
+    16.314199951011688,
+    16.784699982963502,
+    15.910199959762394,
+    15.587400004733354,
+    15.858699975069612,
+    16.857400012668222,
+    15.77900000847876,
+    15.584600041620433,
+    17.319200036581606,
+    15.60590002918616,
+    15.569399984087795,
+    15.710200008470565,
+    18.443699984345585,
+    15.285600034985691,
+    15.876199991907924,
+    16.10639999853447,
+    15.845299989450723,
+    17.181300034280866,
+    15.777900000102818,
+    15.932699956465513,
+    15.756299952045083,
+    15.978200011886656,
+    15.444499964360148,
+    15.99540002644062,
+    16.11379999667406,
+    16.729199967812747,
+    16.92879997426644,
+    17.524200025945902,
+    16.758899961132556,
+    20.51589998882264,
+    16.304399992804974,
+    16.264399979263544,
+    16.523899976164103,
+    17.607000016141683,
+    16.895900014787912,
+    16.000500007066876,
+    16.96890004677698,
+    16.260200005490333,
+    16.095200029667467,
+    16.176700009964406,
+    16.30509999813512,
+    16.421700012870133,
+    16.110599972307682,
+    16.252100002020597,
+    16.758100013248622,
+    16.264599980786443,
+    20.1484999852255,
+    16.33480004966259,
+    16.197499993722886,
+    16.284800018183887,
+    17.516000021714717,
+    16.05179999023676,
+    17.391800007317215,
+    16.25899999635294,
+    17.196700035128742,
+    16.15380001021549,
+    16.503899998497218,
+    17.9140999680385,
+    15.932600013911724,
+    16.513000009581447,
+    17.58049998898059,
+    16.118100029416382,
+    17.548699979670346,
+    16.095900034997612,
+    15.63380000879988,
+    19.220600021071732,
+    16.1896999925375,
+    16.557599999941885,
+    15.891499991994351,
+    16.2090000230819,
+    16.055300016887486,
+    15.828599978704005,
+    16.433599987067282,
+    16.227199987042695,
+    16.303899988997728,
+    16.281899996101856,
+    18.41630000853911,
+    18.657400039955974,
+    17.089900036808103,
+    16.729399969335645,
+    16.437300015240908,
+    16.485299973282963,
+    16.323200019542128,
+    16.482500010170043,
+    16.247799969278276,
+    16.184000007342547,
+    16.329800011590123,
+    18.986099981702864,
+    18.128000025171787,
+    17.138099996373057,
+    17.4604999483563,
+    16.52559998910874,
+    17.218799970578402,
+    16.419600055087358,
+    17.926300002727658,
+    18.27579998644069,
+    16.45169995026663,
+    16.4812000002712,
+    16.677199979312718,
+    16.806999978143722,
+    16.59670000663027,
+    17.052699986379594,
+    17.064200015738606,
+    16.931199992541224,
+    17.32879999326542,
+    17.14680000441149,
+    18.123799993190914,
+    16.790800029411912,
+    16.248999978415668,
+    16.640700050629675
+  ],
+  "open_ms": 4316.323700011708,
+  "timing": {
+    "p50_ms": 16.329800011590123,
+    "p95_ms": 18.41630000853911,
+    "mean_ms": 16.64588499988895,
+    "max_ms": 20.51589998882264,
+    "worst_frame": 39,
+    "over_33_3": 0
+  },
+  "backend_before_close": {
+    "backend": "phymeo-native-vulkan",
+    "path": "raster",
+    "device": {
+      "abi_version": 2,
+      "device_index": 1,
+      "api_version": 4206881,
+      "driver_version": 2374090752,
+      "vendor_id": 4318,
+      "device_id": 10464,
+      "device_type": 2,
+      "max_width": 32768,
+      "max_height": 32768,
+      "max_vertices": 1048576,
+      "validation_errors": 0,
+      "validation_warnings": 0,
+      "captures": 128,
+      "device_name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "device_uuid": "3b78d98198a3be57a8cb4d72fdfbfa96",
+      "closed": false,
+      "validation_enabled": false,
+      "live_contexts": 1,
+      "live_frames": 1,
+      "live_resources": 86,
+      "resident_abi_version": 1,
+      "resident_max_vertices": 1048576,
+      "resident_max_indices": 1572864,
+      "resident_max_meshes": 1024,
+      "resident_max_instances": 1024,
+      "resident_max_bvh_nodes": 262144,
+      "resident_max_instanced_triangles": 1048576,
+      "resident_vertex_count": 4799,
+      "resident_index_count": 27144,
+      "resident_mesh_count": 3,
+      "resident_instance_count": 5,
+      "resident_bvh_nodes": 3717,
+      "resident_instanced_triangles": 27096,
+      "resident_loaded": 1,
+      "resident_poisoned": 0,
+      "resident_reserved": 0,
+      "resident_upload_calls": 1,
+      "resident_geometry_upload_bytes": 440896,
+      "resident_transform_upload_bytes": 81920,
+      "resident_parameter_upload_bytes": 34960,
+      "resident_captures": 128,
+      "resident_shadow_node_budget": 0,
+      "resident_target_rebuilds": 1,
+      "resident_host_transform_input_bytes": 40960,
+      "resident_render_planes_available": true,
+      "resident_environment_available": true,
+      "resident_environment_abi_version": 1,
+      "resident_environment_info": {
+        "environment_abi_version": 1,
+        "supported": 1,
+        "shader_compatible": 1,
+        "max_side": 1024,
+        "max_mip_levels": 11,
+        "side": 256,
+        "mip_levels": 9,
+        "loaded": 1,
+        "format": 109,
+        "cube_layers": 6,
+        "sh_coefficients": 9,
+        "axis_transform": 1,
+        "diffuse_basis": 1,
+        "max_rgba_bytes": 134217728,
+        "source_rgba_bytes": 8388576,
+        "image_upload_bytes": 8388600,
+        "parameter_upload_bytes": 320,
+        "upload_calls": 1,
+        "rgb_captures_with_environment": 128,
+        "sky_draws": 128,
+        "capture_scope": "successful RGB captures with an uploaded directional environment; sky draw count is not foreground pixel count",
+        "snapshot": "last live query; final GPU allocations are reported by teardown telemetry"
+      },
+      "resident_texture_available": true,
+      "resident_linear_roughness_available": true,
+      "resident_texture_abi_version": 1,
+      "resident_texture_info": {
+        "texture_abi_version": 1,
+        "max_textures": 64,
+        "max_width": 2048,
+        "max_height": 2048,
+        "max_layers": 64,
+        "texture_count": 1,
+        "array_width": 1026,
+        "array_height": 1026,
+        "array_layers": 1,
+        "uv_count": 4799,
+        "bound_instances": 1,
+        "loaded": 1,
+        "sampler_filter": 1,
+        "mip_levels": 1,
+        "format": 43,
+        "max_array_bytes": 134217728,
+        "source_rgba_bytes": 4194304,
+        "padded_rgba_bytes": 4210704,
+        "metadata_upload_bytes": 38472,
+        "upload_calls": 1,
+        "image_upload_bytes": 4210708,
+        "rgb_captures_with_textures": 128,
+        "capture_scope": "successful RGB captures with bound texture instances, not visible textured pixel count",
+        "upload_scope": "cumulative actual texture image and metadata GPU writes, including default white sentinel; excluded from geometry_upload_bytes",
+        "snapshot": "last live query, not final allocation state; teardown verified by allocation telemetry"
+      },
+      "resident_normal_info": {
+        "normal_abi_version": 1,
+        "max_textures": 64,
+        "max_width": 2048,
+        "max_height": 2048,
+        "max_layers": 64,
+        "texture_count": 2,
+        "array_width": 1026,
+        "array_height": 1026,
+        "array_layers": 2,
+        "uv_count": 4799,
+        "bound_instances": 2,
+        "loaded": 1,
+        "sampler_filter": 1,
+        "mip_levels": 1,
+        "format": 37,
+        "shader_compatible": 1,
+        "max_array_bytes": 134217728,
+        "source_rgba_bytes": 8388608,
+        "padded_rgba_bytes": 8421408,
+        "metadata_upload_bytes": 38480,
+        "upload_calls": 1,
+        "image_upload_bytes": 8421412,
+        "rgb_captures_with_normals": 128,
+        "upload_scope": "normal image and metadata writes, including sentinel; excluded from geometry/color uploads",
+        "capture_scope": "successful RGB captures with bound normal maps; not visible pixel count"
+      },
+      "resident_readback": {
+        "readback_abi_version": 1,
+        "memory_type_index": 3,
+        "memory_property_flags": 14,
+        "persistent_mapped": 1,
+        "last_channel_mask": 15,
+        "capacity_bytes": 11980800,
+        "copied_bytes": 496742400,
+        "map_calls": 1,
+        "unmap_calls": 0,
+        "host_visible": true,
+        "host_coherent": true,
+        "host_cached": true,
+        "device_local": false,
+        "snapshot": "last live query, not final mapping state; teardown verified by allocation telemetry",
+        "capacity_scope": "logical Vulkan readback buffer capacity, not total VkDeviceMemory allocation size"
+      },
+      "resident_profile": {
+        "profile_abi_version": 1,
+        "timestamp_supported": 1,
+        "timestamp_valid_bits": 64,
+        "tlas_node_count": 0,
+        "timestamp_period_ns": 1.0,
+        "captures": 128,
+        "host_prepare_ns": 280400,
+        "host_upload_ns": 1917800,
+        "host_record_ns": 12944600,
+        "host_submit_ns": 7123900,
+        "host_wait_ns": 1584060800,
+        "host_readback_ns": 45558400,
+        "gpu_render_ns": 1159973184,
+        "gpu_copy_ns": 301838016,
+        "gpu_total_ns": 1461811200,
+        "tlas_upload_bytes": 0,
+        "timestamp_samples": 128,
+        "scope": "cumulative successful captures including warmup; excludes initial static geometry upload",
+        "gpu_scope": "Vulkan timestamps: TLAS build/update plus raster and fragment shadows, then attachment copies; not fragment-only time",
+        "snapshot": "last live query, retained after close; final ownership is checked by telemetry"
+      },
+      "resident_telemetry": {
+        "telemetry_abi_version": 1,
+        "device_luid_valid": 1,
+        "device_node_mask": 1,
+        "device_local_bytes_current": 40848480,
+        "device_local_bytes_peak": 40848480,
+        "device_local_bytes_allocated": 40852864,
+        "host_visible_bytes_current": 11982896,
+        "host_visible_bytes_peak": 11982896,
+        "host_visible_bytes_allocated": 33521784,
+        "readback_bytes": 496742400,
+        "fence_wait_wall_ns": 1609622900,
+        "fence_wait_calls": 136,
+        "submissions": 136,
+        "allocation_count": 40,
+        "free_count": 13,
+        "device_luid_hex": "ef22010000000000",
+        "final_after_destroy": false,
+        "allocation_scope": "this context explicit VkDeviceMemory allocations; not driver total VRAM",
+        "wait_scope": "host wall time blocked in fence waits, including upload; not GPU kernel time"
+      },
+      "resident_studio_available": true,
+      "resident_msaa": null,
+      "resident_ray_query_abi_version": 1,
+      "resident_ray_query_info": {
+        "ray_query_abi_version": 1,
+        "enabled": 1,
+        "blas_count": 3,
+        "tlas_instance_count": 5,
+        "primitive_count": 9048,
+        "loaded": 1,
+        "poisoned": 0,
+        "max_meshes": 1024,
+        "max_instances": 1024,
+        "max_triangles": 524288,
+        "build_flags": 4,
+        "update_flags": 5,
+        "trace_flags": 6,
+        "max_acceleration_bytes": 536870912,
+        "acceleration_buffer_bytes": 643712,
+        "scratch_buffer_bytes": 192767,
+        "blas_builds": 3,
+        "tlas_builds": 1,
+        "tlas_updates": 127,
+        "instance_upload_bytes": 40960,
+        "shadow_captures": 128,
+        "capture_scope": "successful RGB-requested captures, not ray count or visible shadow pixel count",
+        "buffer_scope": "logical AS and scratch buffer bytes; actual VkDeviceMemory allocation telemetry is separate",
+        "update_scope": "each capture builds or updates TLAS, including two cameras at the same frame key",
+        "upload_scope": "additional VkAccelerationStructureInstanceKHR records, 64 bytes per instance per capture; not the ordinary forward/inverse matrix buffer",
+        "snapshot": "last live query, retained after close; final allocation teardown is reported by resident telemetry"
+      }
+    },
+    "library_path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-normal\\build-normal\\phymeo_native.dll",
+    "library_sha256": "83dcbf6a92c2ccc2cbf8ea16a4e63e5ef6ab96ce66e0734a398e2c4bad6756b6",
+    "shader_sha256": {
+      "vert": "f4babe286e92561226bbb0382b03e582f2eb87ee5603fc34f6bcd8f22c793109",
+      "frag": "c6e66b1a95b58a4ff707a1d783918f65cc2f690c4734b07498ac64a4770c38dd",
+      "environment_sky_vert": "d9bbb44453660efa44c1f5f6c2861102b62f6b23b400400fac7d7f3faa02b798",
+      "environment_sky_frag": "d1f64fe50290ec0e905830c3d556d8d24ceced8c9a1665155fe5406ee59232b7"
+    },
+    "scene_key": "authored-normal-map-on-v1",
+    "decoded_geometry_sha256": "67c4ef8ed712ba3775a3920494869125b5b3fe51009fa46964e28cde3229af36",
+    "triangles": 27096,
+    "light_count": 0,
+    "max_lights": 4,
+    "max_triangles": 1048576,
+    "resident": true,
+    "shadow_mode": "ray_query",
+    "area_light_grid": 2,
+    "area_light_samples_per_panel": 4,
+    "area_light_brdf_samples_per_panel": 8,
+    "geometry_residency": "static indexed meshes; per-frame instance matrices",
+    "msaa": {
+      "requested_samples": 1,
+      "actual_color_samples": 1,
+      "sensor_samples": 1,
+      "resolve_space": "none (single sample)",
+      "sensor_sampling": "deterministic pixel center"
+    },
+    "primary_visibility": "single-sample Vulkan raster, two-sided opaque triangles",
+    "lighting": "native GGX/Smith/Schlick plus explicit resident studio shader",
+    "studio": {
+      "preset": "neutral-area-studio-v1",
+      "center_m": [
+        0.0,
+        0.0,
+        0.13
+      ],
+      "scale_m": 0.85,
+      "panel_size_scale": 1.0,
+      "panel_strength": 0.125,
+      "panels": [
+        {
+          "name": "key",
+          "position_m": [
+            -1.0199999809265137,
+            -1.190000057220459,
+            1.659999966621399
+          ],
+          "half_u_world_m": [
+            -0.36944764852523804,
+            0.5430523157119751,
+            0.17607559263706207
+          ],
+          "half_v_world_m": [
+            0.32656532526016235,
+            0.12105196714401245,
+            0.3118617534637451
+          ],
+          "emission_direction_world": [
+            0.4656903154237997,
+            0.543305367994433,
+            -0.6985354731356995
+          ],
+          "half_size_m": [
+            0.68,
+            0.4675
+          ],
+          "radiance_linear_rgb": [
+            0.75,
+            0.75,
+            0.75
+          ],
+          "visible_geometry": false
+        },
+        {
+          "name": "fill",
+          "position_m": [
+            1.190000057220459,
+            0.5950000286102295,
+            1.149999976158142
+          ],
+          "half_u_world_m": [
+            0.19609002768993378,
+            0.3126589357852936,
+            -0.4111560881137848
+          ],
+          "half_v_world_m": [
+            0.41372841596603394,
+            -0.506038248538971,
+            -0.1874941736459732
+          ],
+          "emission_direction_world": [
+            -0.7098281771887514,
+            -0.3549140885943757,
+            -0.6084241518760726
+          ],
+          "half_size_m": [
+            0.5525,
+            0.68
+          ],
+          "radiance_linear_rgb": [
+            0.3125,
+            0.3125,
+            0.3125
+          ],
+          "visible_geometry": false
+        }
+      ],
+      "basis_sources": [
+        {
+          "url": "https://github.com/haosulab/SAPIEN/blob/8360d517770f24f00bacef7d906ddf1380b8967c/src/sapien_renderer/light_component.cpp",
+          "fact": "internalUpdate composes entity global pose with POSE_GL_TO_ROS before setting the renderer light transform"
+        },
+        {
+          "url": "https://github.com/haosulab/sapien-vulkan-2/blob/62e2511930e43db9fc7d384a49da4f374b35f701/src/scene/light.cpp",
+          "fact": "centered rectangle half width along GL +X, half height along GL +Y at shape angle pi/2"
+        },
+        {
+          "reference": "installed SAPIEN 3.0.3 public headers and shipped rt shader",
+          "pose_header_sha256": "122446114db45d1ad78e47394a31e86cb6c01efc07f1a30bcf657d81f64dce0e",
+          "rt_shading_sha256": "4f7421b369f75e14fa22dc623b770f346800b8c05470fc5d682ccb4f2d52efc4",
+          "fact": "GL_TO_ROS quaternion wxyz=(-.5,-.5,.5,.5); RT shader uses cross(edge0,edge1) dotted with point-to-light"
+        }
+      ],
+      "basis": "entity shortest_rotation(+X to direction); halfU=R*(0,width,0), halfV=R*(0,0,height); U cross V emits",
+      "rectangle_equivalence": "same authored pi/2 rectangle; first GL edge reflected for emission-oriented normal",
+      "arithmetic_scope": "FP64 host basis packed to FP32; not bitwise equivalence to SAPIEN FP32 quaternion/trigonometric evaluation",
+      "environment": {
+        "source_requested_radiance": 0.125,
+        "radiance_linear_rgb": [
+          0.125,
+          0.125,
+          0.125
+        ],
+        "enabled": true,
+        "quantization": "same RGBE shared 8-bit mantissa decode as reference uniform HDR",
+        "source_hdr_sha256": "ab52b11ca03fa82cac04dac82f6ae4a976f7131e0433c106cafe166b950317eb",
+        "active_lighting": false,
+        "replaced_by": "directional environment map"
+      },
+      "declared_scene_lights": "retained unchanged",
+      "units": "metres; relative linear radiance, not calibrated photometric lux",
+      "evaluation": "native resident studio shader; distinct estimator from SAPIEN reference path tracing",
+      "payload_bytes": 144,
+      "payload_sha256": "e27730721a5c1de0ff3d9c4db359735b5487aff5d96f2a2f2f1275cba064db26"
+    },
+    "environment": {
+      "source_sha256": "a125ada38fc602025326f29b68df09531bb16f899f1973b03d9ac5ac98142548",
+      "input_size": [
+        1024,
+        512
+      ],
+      "strength": 0.0625,
+      "yaw_degrees": 25.0,
+      "peak_linear_radiance": 67.0,
+      "prefilter_roughness": "mip/(levels-1)",
+      "ggx_directions_per_texel": 128,
+      "gloss": "split-sum radiance prefilter, V=N, normalized positive N.L",
+      "orientation": "world Z up; Vulkan sampler ray.xzy; positive yaw turns +X toward +Y",
+      "diffuse": "world XYZ real SH9; exact texel solid-angle projection; irradiance divided by pi",
+      "rgba_sha256": "23145ed654a52e262a3f8bf4a67bb697dd7096537693e8e24f5b2d3fdd1f12f3",
+      "diffuse_sh_sha256": "9ae5d3d3181f2590dd1002b947cde397e1508d5d99147bed636c2e49e8f77b76",
+      "side": 256,
+      "mip_levels": 9,
+      "rgba_bytes": 8388576,
+      "diffuse_sh_bytes": 144,
+      "native_axis_transform": "world xyz -> sampler xzy; SH basis remains world xyz",
+      "native_face_order": [
+        "+X",
+        "-X",
+        "+Y",
+        "-Y",
+        "+Z",
+        "-Z"
+      ],
+      "native_layout": "level-major, then six faces, top-row-first RGBA32F little endian",
+      "native_roughness": "perceptual roughness r -> mip LOD r*(levels-1); no second prefilter",
+      "native_diffuse": "shared normalized real SH9 coefficients already include Lambert convolution / pi",
+      "native_environment_precedence": "map replaces uniform scalar environment; rectangular panels and scene lights remain"
+    },
+    "shadows": "GPU fragment Vulkan hardware ray queries against BLAS/TLAS; primary visibility remains raster",
+    "shadow_bias_m": 1e-05,
+    "minimum_perceptual_roughness": 0.045,
+    "exposure": 8.0,
+    "display": "nonnegative linear exposure, Khronos PBR Neutral, then IEC sRGB once",
+    "display_transform": "pbr-neutral",
+    "display_transform_abi": 1,
+    "display_transform_source": "https://github.com/KhronosGroup/ToneMapping/blob/b5a2eed5ddf6c2227090449399de9c7affb9e4c9/PBR_Neutral/pbrNeutral.glsl",
+    "readback": "explicit synchronous host-visible staging after fence; actual flags in resident_readback when available",
+    "readback_channels_mode": "compact requested attachments",
+    "published_ownership": "immutable CPU bytes; private resident host buffer may be reused after each copy",
+    "attachment_formats": [
+      "RGBA8_UNORM",
+      "R32_SFLOAT",
+      "R32_UINT",
+      "R8_UINT"
+    ],
+    "last_passes": [
+      "visibility",
+      "shadows",
+      "lighting",
+      "display_transform",
+      "sensor_export"
+    ],
+    "last_request": {
+      "width": 1280,
+      "height": 720,
+      "channels": [
+        "srgb8_rgb",
+        "forward_depth_m_f32",
+        "instance_id_u32",
+        "valid_u8"
+      ],
+      "native_attachment_mask": 15,
+      "native_output_bytes": 11980800
+    },
+    "stage_execution": "visibility raster + fused fragment shadows/lighting/display/sensors",
+    "lifecycle_counts": "DLL-wide owned contexts, frames, and explicit Vulkan handles; pools own descriptor sets",
+    "path_trace": false,
+    "textures": true,
+    "texture_assets": {
+      "textures": [
+        {
+          "uri": "file:///C:/Users/38347/.codex/worktrees/render-g5-package/phymeo/rendering/examples/materials/wood_table_001_diff_1k.jpg",
+          "source_sha256": "460dd08d240f4a1f02982415048c3c5c200f385db212da18dc7e2df68bf4d0be",
+          "width": 1024,
+          "height": 1024,
+          "first_byte": 0,
+          "rgb8_sha256": "bce2d660b1735b3b00d2872d1b9ba297e16148b570259931ab640d47ec624084",
+          "roughness": {
+            "uri": "file:///C:/Users/38347/.codex/worktrees/render-g5-package/phymeo/rendering/examples/materials/wood_table_001_rough_1k.jpg",
+            "source_sha256": "a2ca9ae89dfe7b8e2e5e92f0aa43467845417de8a50205b5852ef0d57c7624f9",
+            "channel": "r",
+            "transfer": "linear"
+          }
+        }
+      ],
+      "source_rgba_bytes": 4194304,
+      "padded_array_bytes": 4210704,
+      "array_width": 1026,
+      "array_height": 1026,
+      "array_layers": 1,
+      "uv_count": 4799,
+      "instance_slots": [
+        4294967295,
+        4294967295,
+        4294967295,
+        0,
+        4294967295
+      ],
+      "uv_fp32_sha256": "64897b25acd17c39f575941282812bd79b9f4a4baa7485695afe94cacb96fd15",
+      "image_encoding": "top-row-first sRGB8 color, linear UNORM roughness or constant one in A",
+      "material_factor": "linear base_color multiplied after sRGB texel decode in native shader",
+      "sampler": "bilinear repeat, mip level 0, one wrap guard texel on each side; no resizing",
+      "admission": "native limits and device-reported lower limits; no alternate renderer"
+    },
+    "normal_maps": {
+      "textures": [
+        {
+          "uri": "file:///C:/Users/38347/.codex/worktrees/render-g5-package/phymeo/artifacts/rendering/normal-film/capture-01/textures/steel-normal.png",
+          "source_sha256": "a3382e36c86d366f4faa83163ebbe1587e38d80955ba86bac29cdb6c067804f3",
+          "rgb8_sha256": "2ff56a9fc592758fde0931d274a0b32f7ab4725a02a468e1b083fb0d3439e64d",
+          "width": 1024,
+          "height": 1024
+        },
+        {
+          "uri": "file:///C:/Users/38347/.codex/worktrees/render-g5-package/phymeo/artifacts/rendering/normal-film/capture-01/textures/rubber-normal.png",
+          "source_sha256": "804b21a8d9b4402c9f852f39a099ce43324b92d53610eee7f96c878105a1cb59",
+          "rgb8_sha256": "df6007ddfad87b69c98c8cf26168d5b08b44df2be877c3b32b95a6260bcc06b8",
+          "width": 1024,
+          "height": 1024
+        }
+      ],
+      "strength": 1.0,
+      "encoding": "linear RGB8 UNORM, normalize(2*c-1), glTF +Y",
+      "tangent_frame": "primary UV derivatives; Gram-Schmidt tangent; mirrored handedness from dP/dv; no explicit TANGENT support",
+      "degenerate_policy": "reject singular/ill-conditioned source UV; singular screen derivatives or zero sampled vector fall back to geometric shading normal",
+      "sampler": "bilinear repeat, mip0, top-row-first; one wrap guard on each side",
+      "source_rgba_bytes": 8388608,
+      "padded_array_bytes": 8421408,
+      "uv_fp32_sha256": "e4b51e42130b4db317e2e0364163722a0f8a9c23bfe827491c8fa26c3f501bb7",
+      "instance_slots": [
+        4294967295,
+        0,
+        1,
+        4294967295,
+        4294967295
+      ],
+      "geometry_and_sensor_policy": "shading normal only; unchanged geometry, original shadow bias normal, pixel-center sensors"
+    },
+    "physics_steps": 0
+  },
+  "journal_sha256": "9e741b5b2f43fceee33214ae947ac2ddb7dd41d81a53c7028dd6d98256b6ac05",
+  "backend": {
+    "backend": "phymeo-native-vulkan",
+    "path": "raster",
+    "device": {
+      "abi_version": 2,
+      "device_index": 1,
+      "api_version": 4206881,
+      "driver_version": 2374090752,
+      "vendor_id": 4318,
+      "device_id": 10464,
+      "device_type": 2,
+      "max_width": 32768,
+      "max_height": 32768,
+      "max_vertices": 1048576,
+      "validation_errors": 0,
+      "validation_warnings": 0,
+      "captures": 128,
+      "device_name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "device_uuid": "3b78d98198a3be57a8cb4d72fdfbfa96",
+      "closed": true,
+      "validation_enabled": false,
+      "live_contexts": 0,
+      "live_frames": 0,
+      "live_resources": 0,
+      "resident_abi_version": 1,
+      "resident_max_vertices": 1048576,
+      "resident_max_indices": 1572864,
+      "resident_max_meshes": 1024,
+      "resident_max_instances": 1024,
+      "resident_max_bvh_nodes": 262144,
+      "resident_max_instanced_triangles": 1048576,
+      "resident_vertex_count": 4799,
+      "resident_index_count": 27144,
+      "resident_mesh_count": 3,
+      "resident_instance_count": 5,
+      "resident_bvh_nodes": 3717,
+      "resident_instanced_triangles": 27096,
+      "resident_loaded": 1,
+      "resident_poisoned": 0,
+      "resident_reserved": 0,
+      "resident_upload_calls": 1,
+      "resident_geometry_upload_bytes": 440896,
+      "resident_transform_upload_bytes": 81920,
+      "resident_parameter_upload_bytes": 34960,
+      "resident_captures": 128,
+      "resident_shadow_node_budget": 0,
+      "resident_target_rebuilds": 1,
+      "resident_host_transform_input_bytes": 40960,
+      "resident_render_planes_available": true,
+      "resident_environment_available": true,
+      "resident_environment_abi_version": 1,
+      "resident_environment_info": {
+        "environment_abi_version": 1,
+        "supported": 1,
+        "shader_compatible": 1,
+        "max_side": 1024,
+        "max_mip_levels": 11,
+        "side": 256,
+        "mip_levels": 9,
+        "loaded": 1,
+        "format": 109,
+        "cube_layers": 6,
+        "sh_coefficients": 9,
+        "axis_transform": 1,
+        "diffuse_basis": 1,
+        "max_rgba_bytes": 134217728,
+        "source_rgba_bytes": 8388576,
+        "image_upload_bytes": 8388600,
+        "parameter_upload_bytes": 320,
+        "upload_calls": 1,
+        "rgb_captures_with_environment": 128,
+        "sky_draws": 128,
+        "capture_scope": "successful RGB captures with an uploaded directional environment; sky draw count is not foreground pixel count",
+        "snapshot": "last live query; final GPU allocations are reported by teardown telemetry"
+      },
+      "resident_texture_available": true,
+      "resident_linear_roughness_available": true,
+      "resident_texture_abi_version": 1,
+      "resident_texture_info": {
+        "texture_abi_version": 1,
+        "max_textures": 64,
+        "max_width": 2048,
+        "max_height": 2048,
+        "max_layers": 64,
+        "texture_count": 1,
+        "array_width": 1026,
+        "array_height": 1026,
+        "array_layers": 1,
+        "uv_count": 4799,
+        "bound_instances": 1,
+        "loaded": 1,
+        "sampler_filter": 1,
+        "mip_levels": 1,
+        "format": 43,
+        "max_array_bytes": 134217728,
+        "source_rgba_bytes": 4194304,
+        "padded_rgba_bytes": 4210704,
+        "metadata_upload_bytes": 38472,
+        "upload_calls": 1,
+        "image_upload_bytes": 4210708,
+        "rgb_captures_with_textures": 128,
+        "capture_scope": "successful RGB captures with bound texture instances, not visible textured pixel count",
+        "upload_scope": "cumulative actual texture image and metadata GPU writes, including default white sentinel; excluded from geometry_upload_bytes",
+        "snapshot": "last live query, not final allocation state; teardown verified by allocation telemetry"
+      },
+      "resident_normal_info": {
+        "normal_abi_version": 1,
+        "max_textures": 64,
+        "max_width": 2048,
+        "max_height": 2048,
+        "max_layers": 64,
+        "texture_count": 2,
+        "array_width": 1026,
+        "array_height": 1026,
+        "array_layers": 2,
+        "uv_count": 4799,
+        "bound_instances": 2,
+        "loaded": 1,
+        "sampler_filter": 1,
+        "mip_levels": 1,
+        "format": 37,
+        "shader_compatible": 1,
+        "max_array_bytes": 134217728,
+        "source_rgba_bytes": 8388608,
+        "padded_rgba_bytes": 8421408,
+        "metadata_upload_bytes": 38480,
+        "upload_calls": 1,
+        "image_upload_bytes": 8421412,
+        "rgb_captures_with_normals": 128,
+        "upload_scope": "normal image and metadata writes, including sentinel; excluded from geometry/color uploads",
+        "capture_scope": "successful RGB captures with bound normal maps; not visible pixel count"
+      },
+      "resident_readback": {
+        "readback_abi_version": 1,
+        "memory_type_index": 3,
+        "memory_property_flags": 14,
+        "persistent_mapped": 1,
+        "last_channel_mask": 15,
+        "capacity_bytes": 11980800,
+        "copied_bytes": 496742400,
+        "map_calls": 1,
+        "unmap_calls": 0,
+        "host_visible": true,
+        "host_coherent": true,
+        "host_cached": true,
+        "device_local": false,
+        "snapshot": "last live query, not final mapping state; teardown verified by allocation telemetry",
+        "capacity_scope": "logical Vulkan readback buffer capacity, not total VkDeviceMemory allocation size"
+      },
+      "resident_profile": {
+        "profile_abi_version": 1,
+        "timestamp_supported": 1,
+        "timestamp_valid_bits": 64,
+        "tlas_node_count": 0,
+        "timestamp_period_ns": 1.0,
+        "captures": 128,
+        "host_prepare_ns": 280400,
+        "host_upload_ns": 1917800,
+        "host_record_ns": 12944600,
+        "host_submit_ns": 7123900,
+        "host_wait_ns": 1584060800,
+        "host_readback_ns": 45558400,
+        "gpu_render_ns": 1159973184,
+        "gpu_copy_ns": 301838016,
+        "gpu_total_ns": 1461811200,
+        "tlas_upload_bytes": 0,
+        "timestamp_samples": 128,
+        "scope": "cumulative successful captures including warmup; excludes initial static geometry upload",
+        "gpu_scope": "Vulkan timestamps: TLAS build/update plus raster and fragment shadows, then attachment copies; not fragment-only time",
+        "snapshot": "last live query, retained after close; final ownership is checked by telemetry"
+      },
+      "resident_telemetry": {
+        "telemetry_abi_version": 1,
+        "device_luid_valid": 1,
+        "device_node_mask": 1,
+        "device_local_bytes_current": 0,
+        "device_local_bytes_peak": 40848480,
+        "device_local_bytes_allocated": 40852864,
+        "host_visible_bytes_current": 0,
+        "host_visible_bytes_peak": 11982896,
+        "host_visible_bytes_allocated": 33521784,
+        "readback_bytes": 496742400,
+        "fence_wait_wall_ns": 1609622900,
+        "fence_wait_calls": 136,
+        "submissions": 136,
+        "allocation_count": 40,
+        "free_count": 40,
+        "device_luid_hex": "ef22010000000000",
+        "final_after_destroy": true,
+        "allocation_scope": "this context explicit VkDeviceMemory allocations; not driver total VRAM",
+        "wait_scope": "host wall time blocked in fence waits, including upload; not GPU kernel time"
+      },
+      "resident_studio_available": true,
+      "resident_msaa": null,
+      "resident_ray_query_abi_version": 1,
+      "resident_ray_query_info": {
+        "ray_query_abi_version": 1,
+        "enabled": 1,
+        "blas_count": 3,
+        "tlas_instance_count": 5,
+        "primitive_count": 9048,
+        "loaded": 1,
+        "poisoned": 0,
+        "max_meshes": 1024,
+        "max_instances": 1024,
+        "max_triangles": 524288,
+        "build_flags": 4,
+        "update_flags": 5,
+        "trace_flags": 6,
+        "max_acceleration_bytes": 536870912,
+        "acceleration_buffer_bytes": 643712,
+        "scratch_buffer_bytes": 192767,
+        "blas_builds": 3,
+        "tlas_builds": 1,
+        "tlas_updates": 127,
+        "instance_upload_bytes": 40960,
+        "shadow_captures": 128,
+        "capture_scope": "successful RGB-requested captures, not ray count or visible shadow pixel count",
+        "buffer_scope": "logical AS and scratch buffer bytes; actual VkDeviceMemory allocation telemetry is separate",
+        "update_scope": "each capture builds or updates TLAS, including two cameras at the same frame key",
+        "upload_scope": "additional VkAccelerationStructureInstanceKHR records, 64 bytes per instance per capture; not the ordinary forward/inverse matrix buffer",
+        "snapshot": "last live query, retained after close; final allocation teardown is reported by resident telemetry"
+      }
+    },
+    "library_path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-normal\\build-normal\\phymeo_native.dll",
+    "library_sha256": "83dcbf6a92c2ccc2cbf8ea16a4e63e5ef6ab96ce66e0734a398e2c4bad6756b6",
+    "shader_sha256": {
+      "vert": "f4babe286e92561226bbb0382b03e582f2eb87ee5603fc34f6bcd8f22c793109",
+      "frag": "c6e66b1a95b58a4ff707a1d783918f65cc2f690c4734b07498ac64a4770c38dd",
+      "environment_sky_vert": "d9bbb44453660efa44c1f5f6c2861102b62f6b23b400400fac7d7f3faa02b798",
+      "environment_sky_frag": "d1f64fe50290ec0e905830c3d556d8d24ceced8c9a1665155fe5406ee59232b7"
+    },
+    "scene_key": "authored-normal-map-on-v1",
+    "decoded_geometry_sha256": "67c4ef8ed712ba3775a3920494869125b5b3fe51009fa46964e28cde3229af36",
+    "triangles": 27096,
+    "light_count": 0,
+    "max_lights": 4,
+    "max_triangles": 1048576,
+    "resident": true,
+    "shadow_mode": "ray_query",
+    "area_light_grid": 2,
+    "area_light_samples_per_panel": 4,
+    "area_light_brdf_samples_per_panel": 8,
+    "geometry_residency": "static indexed meshes; per-frame instance matrices",
+    "msaa": {
+      "requested_samples": 1,
+      "actual_color_samples": 1,
+      "sensor_samples": 1,
+      "resolve_space": "none (single sample)",
+      "sensor_sampling": "deterministic pixel center"
+    },
+    "primary_visibility": "single-sample Vulkan raster, two-sided opaque triangles",
+    "lighting": "native GGX/Smith/Schlick plus explicit resident studio shader",
+    "studio": {
+      "preset": "neutral-area-studio-v1",
+      "center_m": [
+        0.0,
+        0.0,
+        0.13
+      ],
+      "scale_m": 0.85,
+      "panel_size_scale": 1.0,
+      "panel_strength": 0.125,
+      "panels": [
+        {
+          "name": "key",
+          "position_m": [
+            -1.0199999809265137,
+            -1.190000057220459,
+            1.659999966621399
+          ],
+          "half_u_world_m": [
+            -0.36944764852523804,
+            0.5430523157119751,
+            0.17607559263706207
+          ],
+          "half_v_world_m": [
+            0.32656532526016235,
+            0.12105196714401245,
+            0.3118617534637451
+          ],
+          "emission_direction_world": [
+            0.4656903154237997,
+            0.543305367994433,
+            -0.6985354731356995
+          ],
+          "half_size_m": [
+            0.68,
+            0.4675
+          ],
+          "radiance_linear_rgb": [
+            0.75,
+            0.75,
+            0.75
+          ],
+          "visible_geometry": false
+        },
+        {
+          "name": "fill",
+          "position_m": [
+            1.190000057220459,
+            0.5950000286102295,
+            1.149999976158142
+          ],
+          "half_u_world_m": [
+            0.19609002768993378,
+            0.3126589357852936,
+            -0.4111560881137848
+          ],
+          "half_v_world_m": [
+            0.41372841596603394,
+            -0.506038248538971,
+            -0.1874941736459732
+          ],
+          "emission_direction_world": [
+            -0.7098281771887514,
+            -0.3549140885943757,
+            -0.6084241518760726
+          ],
+          "half_size_m": [
+            0.5525,
+            0.68
+          ],
+          "radiance_linear_rgb": [
+            0.3125,
+            0.3125,
+            0.3125
+          ],
+          "visible_geometry": false
+        }
+      ],
+      "basis_sources": [
+        {
+          "url": "https://github.com/haosulab/SAPIEN/blob/8360d517770f24f00bacef7d906ddf1380b8967c/src/sapien_renderer/light_component.cpp",
+          "fact": "internalUpdate composes entity global pose with POSE_GL_TO_ROS before setting the renderer light transform"
+        },
+        {
+          "url": "https://github.com/haosulab/sapien-vulkan-2/blob/62e2511930e43db9fc7d384a49da4f374b35f701/src/scene/light.cpp",
+          "fact": "centered rectangle half width along GL +X, half height along GL +Y at shape angle pi/2"
+        },
+        {
+          "reference": "installed SAPIEN 3.0.3 public headers and shipped rt shader",
+          "pose_header_sha256": "122446114db45d1ad78e47394a31e86cb6c01efc07f1a30bcf657d81f64dce0e",
+          "rt_shading_sha256": "4f7421b369f75e14fa22dc623b770f346800b8c05470fc5d682ccb4f2d52efc4",
+          "fact": "GL_TO_ROS quaternion wxyz=(-.5,-.5,.5,.5); RT shader uses cross(edge0,edge1) dotted with point-to-light"
+        }
+      ],
+      "basis": "entity shortest_rotation(+X to direction); halfU=R*(0,width,0), halfV=R*(0,0,height); U cross V emits",
+      "rectangle_equivalence": "same authored pi/2 rectangle; first GL edge reflected for emission-oriented normal",
+      "arithmetic_scope": "FP64 host basis packed to FP32; not bitwise equivalence to SAPIEN FP32 quaternion/trigonometric evaluation",
+      "environment": {
+        "source_requested_radiance": 0.125,
+        "radiance_linear_rgb": [
+          0.125,
+          0.125,
+          0.125
+        ],
+        "enabled": true,
+        "quantization": "same RGBE shared 8-bit mantissa decode as reference uniform HDR",
+        "source_hdr_sha256": "ab52b11ca03fa82cac04dac82f6ae4a976f7131e0433c106cafe166b950317eb",
+        "active_lighting": false,
+        "replaced_by": "directional environment map"
+      },
+      "declared_scene_lights": "retained unchanged",
+      "units": "metres; relative linear radiance, not calibrated photometric lux",
+      "evaluation": "native resident studio shader; distinct estimator from SAPIEN reference path tracing",
+      "payload_bytes": 144,
+      "payload_sha256": "e27730721a5c1de0ff3d9c4db359735b5487aff5d96f2a2f2f1275cba064db26"
+    },
+    "environment": {
+      "source_sha256": "a125ada38fc602025326f29b68df09531bb16f899f1973b03d9ac5ac98142548",
+      "input_size": [
+        1024,
+        512
+      ],
+      "strength": 0.0625,
+      "yaw_degrees": 25.0,
+      "peak_linear_radiance": 67.0,
+      "prefilter_roughness": "mip/(levels-1)",
+      "ggx_directions_per_texel": 128,
+      "gloss": "split-sum radiance prefilter, V=N, normalized positive N.L",
+      "orientation": "world Z up; Vulkan sampler ray.xzy; positive yaw turns +X toward +Y",
+      "diffuse": "world XYZ real SH9; exact texel solid-angle projection; irradiance divided by pi",
+      "rgba_sha256": "23145ed654a52e262a3f8bf4a67bb697dd7096537693e8e24f5b2d3fdd1f12f3",
+      "diffuse_sh_sha256": "9ae5d3d3181f2590dd1002b947cde397e1508d5d99147bed636c2e49e8f77b76",
+      "side": 256,
+      "mip_levels": 9,
+      "rgba_bytes": 8388576,
+      "diffuse_sh_bytes": 144,
+      "native_axis_transform": "world xyz -> sampler xzy; SH basis remains world xyz",
+      "native_face_order": [
+        "+X",
+        "-X",
+        "+Y",
+        "-Y",
+        "+Z",
+        "-Z"
+      ],
+      "native_layout": "level-major, then six faces, top-row-first RGBA32F little endian",
+      "native_roughness": "perceptual roughness r -> mip LOD r*(levels-1); no second prefilter",
+      "native_diffuse": "shared normalized real SH9 coefficients already include Lambert convolution / pi",
+      "native_environment_precedence": "map replaces uniform scalar environment; rectangular panels and scene lights remain"
+    },
+    "shadows": "GPU fragment Vulkan hardware ray queries against BLAS/TLAS; primary visibility remains raster",
+    "shadow_bias_m": 1e-05,
+    "minimum_perceptual_roughness": 0.045,
+    "exposure": 8.0,
+    "display": "nonnegative linear exposure, Khronos PBR Neutral, then IEC sRGB once",
+    "display_transform": "pbr-neutral",
+    "display_transform_abi": 1,
+    "display_transform_source": "https://github.com/KhronosGroup/ToneMapping/blob/b5a2eed5ddf6c2227090449399de9c7affb9e4c9/PBR_Neutral/pbrNeutral.glsl",
+    "readback": "explicit synchronous host-visible staging after fence; actual flags in resident_readback when available",
+    "readback_channels_mode": "compact requested attachments",
+    "published_ownership": "immutable CPU bytes; private resident host buffer may be reused after each copy",
+    "attachment_formats": [
+      "RGBA8_UNORM",
+      "R32_SFLOAT",
+      "R32_UINT",
+      "R8_UINT"
+    ],
+    "last_passes": [
+      "visibility",
+      "shadows",
+      "lighting",
+      "display_transform",
+      "sensor_export"
+    ],
+    "last_request": {
+      "width": 1280,
+      "height": 720,
+      "channels": [
+        "srgb8_rgb",
+        "forward_depth_m_f32",
+        "instance_id_u32",
+        "valid_u8"
+      ],
+      "native_attachment_mask": 15,
+      "native_output_bytes": 11980800
+    },
+    "stage_execution": "visibility raster + fused fragment shadows/lighting/display/sensors",
+    "lifecycle_counts": "DLL-wide owned contexts, frames, and explicit Vulkan handles; pools own descriptor sets",
+    "path_trace": false,
+    "textures": true,
+    "texture_assets": {
+      "textures": [
+        {
+          "uri": "file:///C:/Users/38347/.codex/worktrees/render-g5-package/phymeo/rendering/examples/materials/wood_table_001_diff_1k.jpg",
+          "source_sha256": "460dd08d240f4a1f02982415048c3c5c200f385db212da18dc7e2df68bf4d0be",
+          "width": 1024,
+          "height": 1024,
+          "first_byte": 0,
+          "rgb8_sha256": "bce2d660b1735b3b00d2872d1b9ba297e16148b570259931ab640d47ec624084",
+          "roughness": {
+            "uri": "file:///C:/Users/38347/.codex/worktrees/render-g5-package/phymeo/rendering/examples/materials/wood_table_001_rough_1k.jpg",
+            "source_sha256": "a2ca9ae89dfe7b8e2e5e92f0aa43467845417de8a50205b5852ef0d57c7624f9",
+            "channel": "r",
+            "transfer": "linear"
+          }
+        }
+      ],
+      "source_rgba_bytes": 4194304,
+      "padded_array_bytes": 4210704,
+      "array_width": 1026,
+      "array_height": 1026,
+      "array_layers": 1,
+      "uv_count": 4799,
+      "instance_slots": [
+        4294967295,
+        4294967295,
+        4294967295,
+        0,
+        4294967295
+      ],
+      "uv_fp32_sha256": "64897b25acd17c39f575941282812bd79b9f4a4baa7485695afe94cacb96fd15",
+      "image_encoding": "top-row-first sRGB8 color, linear UNORM roughness or constant one in A",
+      "material_factor": "linear base_color multiplied after sRGB texel decode in native shader",
+      "sampler": "bilinear repeat, mip level 0, one wrap guard texel on each side; no resizing",
+      "admission": "native limits and device-reported lower limits; no alternate renderer"
+    },
+    "normal_maps": {
+      "textures": [
+        {
+          "uri": "file:///C:/Users/38347/.codex/worktrees/render-g5-package/phymeo/artifacts/rendering/normal-film/capture-01/textures/steel-normal.png",
+          "source_sha256": "a3382e36c86d366f4faa83163ebbe1587e38d80955ba86bac29cdb6c067804f3",
+          "rgb8_sha256": "2ff56a9fc592758fde0931d274a0b32f7ab4725a02a468e1b083fb0d3439e64d",
+          "width": 1024,
+          "height": 1024
+        },
+        {
+          "uri": "file:///C:/Users/38347/.codex/worktrees/render-g5-package/phymeo/artifacts/rendering/normal-film/capture-01/textures/rubber-normal.png",
+          "source_sha256": "804b21a8d9b4402c9f852f39a099ce43324b92d53610eee7f96c878105a1cb59",
+          "rgb8_sha256": "df6007ddfad87b69c98c8cf26168d5b08b44df2be877c3b32b95a6260bcc06b8",
+          "width": 1024,
+          "height": 1024
+        }
+      ],
+      "strength": 1.0,
+      "encoding": "linear RGB8 UNORM, normalize(2*c-1), glTF +Y",
+      "tangent_frame": "primary UV derivatives; Gram-Schmidt tangent; mirrored handedness from dP/dv; no explicit TANGENT support",
+      "degenerate_policy": "reject singular/ill-conditioned source UV; singular screen derivatives or zero sampled vector fall back to geometric shading normal",
+      "sampler": "bilinear repeat, mip0, top-row-first; one wrap guard on each side",
+      "source_rgba_bytes": 8388608,
+      "padded_array_bytes": 8421408,
+      "uv_fp32_sha256": "e4b51e42130b4db317e2e0364163722a0f8a9c23bfe827491c8fa26c3f501bb7",
+      "instance_slots": [
+        4294967295,
+        0,
+        1,
+        4294967295,
+        4294967295
+      ],
+      "geometry_and_sensor_policy": "shading normal only; unchanged geometry, original shadow bias normal, pixel-center sensors"
+    },
+    "physics_steps": 0
+  },
+  "close": {
+    "closed": true,
+    "telemetry": {
+      "telemetry_abi_version": 1,
+      "device_luid_valid": 1,
+      "device_node_mask": 1,
+      "device_local_bytes_current": 0,
+      "device_local_bytes_peak": 40848480,
+      "device_local_bytes_allocated": 40852864,
+      "host_visible_bytes_current": 0,
+      "host_visible_bytes_peak": 11982896,
+      "host_visible_bytes_allocated": 33521784,
+      "readback_bytes": 496742400,
+      "fence_wait_wall_ns": 1609622900,
+      "fence_wait_calls": 136,
+      "submissions": 136,
+      "allocation_count": 40,
+      "free_count": 40,
+      "device_luid_hex": "ef22010000000000",
+      "final_after_destroy": true,
+      "allocation_scope": "this context explicit VkDeviceMemory allocations; not driver total VRAM",
+      "wait_scope": "host wall time blocked in fence waits, including upload; not GPU kernel time"
+    }
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "tested_working_sha256": "9a01be3827fcdbafe107d96df4bb99fb1380b7662773feee88245ec309a9b353",
+  "integrated_working_sha256": "a9051b2a7f76aa4158d31d7c2cfb98ec555f1fefcecf8ed4bb7cc25456b54121",
+  "tested_git_blob": "d70b8f6f9430f699d258fe2ee1a92a4a5961cf5a",
+  "parent_git_blob": "d70b8f6f9430f699d258fe2ee1a92a4a5961cf5a",
+  "tested_crlf": 2,
+  "integrated_crlf": 0,
+  "equal_after_crlf_to_lf": true
+}

@@ -1,0 +1,5088 @@
+{
+  "schema": "phymeo-native-normal-chart-v1",
+  "status": "passed",
+  "physics_steps": 0,
+  "registration": {
+    "extent": [
+      480,
+      240
+    ],
+    "panel_rois": "fixed 24x24 integer squares before rendering",
+    "linear_decode": "normalize(2*linear_RGB8/255-1), including the true 128 quantization bias",
+    "flat_max_rgb8": 1,
+    "analytic_max_rgb8": 2,
+    "predicted_min_direction_margin_rgb8": 8,
+    "direction_contrast_tolerance_rgb8": 4,
+    "albedo": 0.28,
+    "metallic": 0.0,
+    "roughness": 1.0,
+    "light_intensity": 2.0,
+    "exposure": 1.0,
+    "display_transform": "clip",
+    "msaa_samples": 1,
+    "reference": "independent authored triangle/UV tangent frame, actual ray-plane point, closed rough GGX",
+    "normal_strength": 1.0,
+    "normal_convention": "+Y; do not flip green or sample as sRGB"
+  },
+  "library": {
+    "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-normal\\build-normal\\phymeo_native.dll",
+    "sha256": "83dcbf6a92c2ccc2cbf8ea16a4e63e5ef6ab96ce66e0734a398e2c4bad6756b6"
+  },
+  "script_sha256": "5f3260a5dad8e705efb0a23de12dc4f7c538699bc1d0d90cec945cf66dac98df",
+  "public_source": {
+    "file": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\rendering\\src\\phymeo_rendering\\backends\\native.py",
+    "sha256": "7cd01254566e1c2f8579b8025bef1312b37c161498c1997fd2b6df36d260c8f8"
+  },
+  "panels": {
+    "flat": {
+      "id": 1,
+      "positions": [
+        [
+          -0.6399999856948853,
+          -0.23999999463558197,
+          0.0
+        ],
+        [
+          -0.3199999928474426,
+          -0.23999999463558197,
+          0.0
+        ],
+        [
+          -0.3199999928474426,
+          0.23999999463558197,
+          0.0
+        ],
+        [
+          -0.6399999856948853,
+          0.23999999463558197,
+          0.0
+        ]
+      ],
+      "normal": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "uv": [
+        [
+          0.0,
+          0.0
+        ],
+        [
+          1.0,
+          0.0
+        ],
+        [
+          1.0,
+          1.0
+        ],
+        [
+          0.0,
+          1.0
+        ]
+      ],
+      "centre": [
+        -0.47999998927116394,
+        0.0,
+        0.0
+      ],
+      "roi": [
+        84,
+        108,
+        108,
+        132
+      ],
+      "geometry_rotation_y_degrees": 0.0
+    },
+    "tilted": {
+      "id": 2,
+      "positions": [
+        [
+          -0.14500924944877625,
+          -0.23999999463558197,
+          0.06761892139911652
+        ],
+        [
+          0.14500924944877625,
+          -0.23999999463558197,
+          -0.06761892139911652
+        ],
+        [
+          0.14500924944877625,
+          0.23999999463558197,
+          -0.06761892139911652
+        ],
+        [
+          -0.14500924944877625,
+          0.23999999463558197,
+          0.06761892139911652
+        ]
+      ],
+      "normal": [
+        0.4226182699203491,
+        0.0,
+        0.9063078165054321
+      ],
+      "uv": [
+        [
+          0.0,
+          0.0
+        ],
+        [
+          1.0,
+          0.0
+        ],
+        [
+          1.0,
+          1.0
+        ],
+        [
+          0.0,
+          1.0
+        ]
+      ],
+      "centre": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "roi": [
+        228,
+        108,
+        252,
+        132
+      ],
+      "geometry_rotation_y_degrees": 25.0
+    },
+    "mirror": {
+      "id": 3,
+      "positions": [
+        [
+          0.3199999928474426,
+          -0.23999999463558197,
+          0.0
+        ],
+        [
+          0.6399999856948853,
+          -0.23999999463558197,
+          0.0
+        ],
+        [
+          0.6399999856948853,
+          0.23999999463558197,
+          0.0
+        ],
+        [
+          0.3199999928474426,
+          0.23999999463558197,
+          0.0
+        ]
+      ],
+      "normal": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "uv": [
+        [
+          1.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0
+        ],
+        [
+          1.0,
+          1.0
+        ]
+      ],
+      "centre": [
+        0.47999998927116394,
+        0.0,
+        0.0
+      ],
+      "roi": [
+        372,
+        108,
+        396,
+        132
+      ],
+      "geometry_rotation_y_degrees": 0.0
+    }
+  },
+  "normal_rgb8": {
+    "flat": [
+      128,
+      128,
+      255
+    ],
+    "direction": [
+      204,
+      166,
+      230
+    ],
+    "positive-y": [
+      128,
+      204,
+      230
+    ]
+  },
+  "lights_toward_source": {
+    "plus": [
+      0.6,
+      0.3,
+      0.7416198487095663
+    ],
+    "minus": [
+      -0.6,
+      -0.3,
+      0.7416198487095663
+    ]
+  },
+  "captures": {
+    "none-plus": {
+      "camera": {
+        "id": "chart",
+        "frame_key": {
+          "scene_key": "normal-chart-none-plus",
+          "world_id": "authored-chart",
+          "epoch": 0,
+          "revision": 0,
+          "tick": 0,
+          "phase": "authored"
+        },
+        "world_pose": {
+          "position_m": [
+            0.0,
+            0.0,
+            2.0
+          ],
+          "orientation_xyzw": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        "width": 480,
+        "height": 240,
+        "fx_px": 600.0,
+        "fy_px": 600.0,
+        "cx_px": 240.0,
+        "cy_px": 120.0,
+        "near_m": 0.01,
+        "far_m": 10.0
+      },
+      "frame": {
+        "key": {
+          "scene_key": "normal-chart-none-plus",
+          "world_id": "authored-chart",
+          "epoch": 0,
+          "revision": 0,
+          "tick": 0,
+          "phase": "authored"
+        },
+        "time_s": 0.0,
+        "nodes": [
+          {
+            "node_id": "flat",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          },
+          {
+            "node_id": "tilted",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          },
+          {
+            "node_id": "mirror",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          }
+        ]
+      },
+      "material": {
+        "id": "chart",
+        "base_color": [
+          0.28,
+          0.28,
+          0.28
+        ],
+        "metallic": 0.0,
+        "roughness": 1.0
+      },
+      "scene": {
+        "key": "normal-chart-none-plus",
+        "meshes": [
+          {
+            "id": "flat",
+            "uri": "file:///C:/Users/38347/.codex/worktrees/render-g1-scene/phymeo/artifacts/rendering/normal-chart/run-01/geometry/flat.gltf"
+          },
+          {
+            "id": "tilted",
+            "uri": "file:///C:/Users/38347/.codex/worktrees/render-g1-scene/phymeo/artifacts/rendering/normal-chart/run-01/geometry/tilted.gltf"
+          },
+          {
+            "id": "mirror",
+            "uri": "file:///C:/Users/38347/.codex/worktrees/render-g1-scene/phymeo/artifacts/rendering/normal-chart/run-01/geometry/mirror.gltf"
+          }
+        ],
+        "materials": [
+          {
+            "id": "chart",
+            "base_color": [
+              0.28,
+              0.28,
+              0.28
+            ],
+            "metallic": 0.0,
+            "roughness": 1.0
+          }
+        ],
+        "instances": [
+          {
+            "id": 1,
+            "mesh_id": "flat",
+            "material_id": "chart",
+            "node_id": "flat",
+            "local_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          },
+          {
+            "id": 2,
+            "mesh_id": "tilted",
+            "material_id": "chart",
+            "node_id": "tilted",
+            "local_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          },
+          {
+            "id": 3,
+            "mesh_id": "mirror",
+            "material_id": "chart",
+            "node_id": "mirror",
+            "local_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          }
+        ],
+        "lights": [
+          {
+            "direction": [
+              -0.6,
+              -0.3,
+              -0.7416198487095663
+            ],
+            "illuminance": [
+              2.0,
+              2.0,
+              2.0
+            ]
+          }
+        ]
+      },
+      "wall_ms": {
+        "rgb": 4.357300000265241,
+        "mixed": 3.589099971577525,
+        "sensors": 1.9598000217229128
+      },
+      "request_agreement": true,
+      "image": "none-plus.png",
+      "png_sha256": "668d43644303b73d12f93ae3aaf06ef2f7dabaf51416dad9b7a671c8cfa12412",
+      "plane_sha256": {
+        "RGB": "233eb77463254bcdf24efa0241ec323e636d971930327910dc4b9e040181193c",
+        "FORWARD_DEPTH": "49abe314e8f2c0faf45ffa772ba70327a3beb87961b79fb1d63ed6c211728c85",
+        "INSTANCE_ID": "6092cc4b218884ae6e60877c78afe70a3d360fef7a2f95584b26cb98ef896e91",
+        "VALID": "65a4a3ec867ddf9bee14066402cf299c9b19c9b4c5cc11b00a5991bd1f5d225e"
+      },
+      "panels": {
+        "flat": {
+          "roi": [
+            84,
+            108,
+            108,
+            132
+          ],
+          "actual_mean_rgb8": 102.0,
+          "predicted_mean_rgb8": 102.0,
+          "analytic_max_rgb8_error": 0,
+          "analytic_mae_rgb8": 0.0,
+          "predicted_world_normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "predicted_linear_range": [
+            0.1323947766767899,
+            0.13241881146877188
+          ],
+          "predicted_rgb8_sha256": "60ef9acb74b8a041f9614cf2d1f1f2ebd84e2afb47267cef2f3ac5e32f10bcb3"
+        },
+        "tilted": {
+          "roi": [
+            228,
+            108,
+            252,
+            132
+          ],
+          "actual_mean_rgb8": 113.0,
+          "predicted_mean_rgb8": 113.0,
+          "analytic_max_rgb8_error": 0,
+          "analytic_mae_rgb8": 0.0,
+          "predicted_world_normal": [
+            0.42261825717221474,
+            0.0,
+            0.9063077891669693
+          ],
+          "predicted_linear_range": [
+            0.16480488655190423,
+            0.16486001701865668
+          ],
+          "predicted_rgb8_sha256": "12e4f99c24871b27a764f5bc6d2168604d5b5e1bac3fc64da95d798594ee8f01"
+        },
+        "mirror": {
+          "roi": [
+            372,
+            108,
+            396,
+            132
+          ],
+          "actual_mean_rgb8": 102.0,
+          "predicted_mean_rgb8": 102.0,
+          "analytic_max_rgb8_error": 0,
+          "analytic_mae_rgb8": 0.0,
+          "predicted_world_normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "predicted_linear_range": [
+            0.1323948430066598,
+            0.13241892497441277
+          ],
+          "predicted_rgb8_sha256": "60ef9acb74b8a041f9614cf2d1f1f2ebd84e2afb47267cef2f3ac5e32f10bcb3"
+        }
+      }
+    },
+    "none-minus": {
+      "camera": {
+        "id": "chart",
+        "frame_key": {
+          "scene_key": "normal-chart-none-minus",
+          "world_id": "authored-chart",
+          "epoch": 0,
+          "revision": 0,
+          "tick": 0,
+          "phase": "authored"
+        },
+        "world_pose": {
+          "position_m": [
+            0.0,
+            0.0,
+            2.0
+          ],
+          "orientation_xyzw": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        "width": 480,
+        "height": 240,
+        "fx_px": 600.0,
+        "fy_px": 600.0,
+        "cx_px": 240.0,
+        "cy_px": 120.0,
+        "near_m": 0.01,
+        "far_m": 10.0
+      },
+      "frame": {
+        "key": {
+          "scene_key": "normal-chart-none-minus",
+          "world_id": "authored-chart",
+          "epoch": 0,
+          "revision": 0,
+          "tick": 0,
+          "phase": "authored"
+        },
+        "time_s": 0.0,
+        "nodes": [
+          {
+            "node_id": "flat",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          },
+          {
+            "node_id": "tilted",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          },
+          {
+            "node_id": "mirror",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          }
+        ]
+      },
+      "material": {
+        "id": "chart",
+        "base_color": [
+          0.28,
+          0.28,
+          0.28
+        ],
+        "metallic": 0.0,
+        "roughness": 1.0
+      },
+      "scene": {
+        "key": "normal-chart-none-minus",
+        "meshes": [
+          {
+            "id": "flat",
+            "uri": "file:///C:/Users/38347/.codex/worktrees/render-g1-scene/phymeo/artifacts/rendering/normal-chart/run-01/geometry/flat.gltf"
+          },
+          {
+            "id": "tilted",
+            "uri": "file:///C:/Users/38347/.codex/worktrees/render-g1-scene/phymeo/artifacts/rendering/normal-chart/run-01/geometry/tilted.gltf"
+          },
+          {
+            "id": "mirror",
+            "uri": "file:///C:/Users/38347/.codex/worktrees/render-g1-scene/phymeo/artifacts/rendering/normal-chart/run-01/geometry/mirror.gltf"
+          }
+        ],
+        "materials": [
+          {
+            "id": "chart",
+            "base_color": [
+              0.28,
+              0.28,
+              0.28
+            ],
+            "metallic": 0.0,
+            "roughness": 1.0
+          }
+        ],
+        "instances": [
+          {
+            "id": 1,
+            "mesh_id": "flat",
+            "material_id": "chart",
+            "node_id": "flat",
+            "local_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          },
+          {
+            "id": 2,
+            "mesh_id": "tilted",
+            "material_id": "chart",
+            "node_id": "tilted",
+            "local_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          },
+          {
+            "id": 3,
+            "mesh_id": "mirror",
+            "material_id": "chart",
+            "node_id": "mirror",
+            "local_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          }
+        ],
+        "lights": [
+          {
+            "direction": [
+              0.6,
+              0.3,
+              -0.7416198487095663
+            ],
+            "illuminance": [
+              2.0,
+              2.0,
+              2.0
+            ]
+          }
+        ]
+      },
+      "wall_ms": {
+        "rgb": 2.369699999690056,
+        "mixed": 2.4811000330373645,
+        "sensors": 1.6803000471554697
+      },
+      "request_agreement": true,
+      "image": "none-minus.png",
+      "png_sha256": "8ff1ec941db250ebc170df36e970d00c6f18e91027078e75fbc0e055115846ff",
+      "plane_sha256": {
+        "RGB": "1f95251fab3235f264a1a637093c1598d754c985f92e1fd90aefe39496e8798b",
+        "FORWARD_DEPTH": "49abe314e8f2c0faf45ffa772ba70327a3beb87961b79fb1d63ed6c211728c85",
+        "INSTANCE_ID": "6092cc4b218884ae6e60877c78afe70a3d360fef7a2f95584b26cb98ef896e91",
+        "VALID": "65a4a3ec867ddf9bee14066402cf299c9b19c9b4c5cc11b00a5991bd1f5d225e"
+      },
+      "panels": {
+        "flat": {
+          "roi": [
+            84,
+            108,
+            108,
+            132
+          ],
+          "actual_mean_rgb8": 102.0,
+          "predicted_mean_rgb8": 102.0,
+          "analytic_max_rgb8_error": 0,
+          "analytic_mae_rgb8": 0.0,
+          "predicted_world_normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "predicted_linear_range": [
+            0.1323948430066598,
+            0.13241892497441277
+          ],
+          "predicted_rgb8_sha256": "60ef9acb74b8a041f9614cf2d1f1f2ebd84e2afb47267cef2f3ac5e32f10bcb3"
+        },
+        "tilted": {
+          "roi": [
+            228,
+            108,
+            252,
+            132
+          ],
+          "actual_mean_rgb8": 78.0,
+          "predicted_mean_rgb8": 78.0,
+          "analytic_max_rgb8_error": 0,
+          "analytic_mae_rgb8": 0.0,
+          "predicted_world_normal": [
+            0.42261825717221474,
+            0.0,
+            0.9063077891669693
+          ],
+          "predicted_linear_range": [
+            0.07555144286287241,
+            0.0755852725966422
+          ],
+          "predicted_rgb8_sha256": "7b0d936ea76b2530886adff69be4847bdc0c3fbb4a047cd1e1c91bece9d1608e"
+        },
+        "mirror": {
+          "roi": [
+            372,
+            108,
+            396,
+            132
+          ],
+          "actual_mean_rgb8": 102.0,
+          "predicted_mean_rgb8": 102.0,
+          "analytic_max_rgb8_error": 0,
+          "analytic_mae_rgb8": 0.0,
+          "predicted_world_normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "predicted_linear_range": [
+            0.1323947766767899,
+            0.13241881146877188
+          ],
+          "predicted_rgb8_sha256": "60ef9acb74b8a041f9614cf2d1f1f2ebd84e2afb47267cef2f3ac5e32f10bcb3"
+        }
+      }
+    },
+    "flat-plus": {
+      "camera": {
+        "id": "chart",
+        "frame_key": {
+          "scene_key": "normal-chart-flat-plus",
+          "world_id": "authored-chart",
+          "epoch": 0,
+          "revision": 0,
+          "tick": 0,
+          "phase": "authored"
+        },
+        "world_pose": {
+          "position_m": [
+            0.0,
+            0.0,
+            2.0
+          ],
+          "orientation_xyzw": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        "width": 480,
+        "height": 240,
+        "fx_px": 600.0,
+        "fy_px": 600.0,
+        "cx_px": 240.0,
+        "cy_px": 120.0,
+        "near_m": 0.01,
+        "far_m": 10.0
+      },
+      "frame": {
+        "key": {
+          "scene_key": "normal-chart-flat-plus",
+          "world_id": "authored-chart",
+          "epoch": 0,
+          "revision": 0,
+          "tick": 0,
+          "phase": "authored"
+        },
+        "time_s": 0.0,
+        "nodes": [
+          {
+            "node_id": "flat",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          },
+          {
+            "node_id": "tilted",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          },
+          {
+            "node_id": "mirror",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          }
+        ]
+      },
+      "material": {
+        "id": "chart",
+        "base_color": [
+          0.28,
+          0.28,
+          0.28
+        ],
+        "metallic": 0.0,
+        "roughness": 1.0,
+        "base_color_map": null,
+        "roughness_map": null,
+        "normal_map": {
+          "uri": "file:///C:/Users/38347/.codex/worktrees/render-g1-scene/phymeo/artifacts/rendering/normal-chart/run-01/flat.png",
+          "sha256": "6b6414829ea0a07e7598459eff854e3b07b11a658bfba4eedb162a150659e78f"
+        }
+      },
+      "scene": {
+        "key": "normal-chart-flat-plus",
+        "meshes": [
+          {
+            "id": "flat",
+            "uri": "file:///C:/Users/38347/.codex/worktrees/render-g1-scene/phymeo/artifacts/rendering/normal-chart/run-01/geometry/flat.gltf"
+          },
+          {
+            "id": "tilted",
+            "uri": "file:///C:/Users/38347/.codex/worktrees/render-g1-scene/phymeo/artifacts/rendering/normal-chart/run-01/geometry/tilted.gltf"
+          },
+          {
+            "id": "mirror",
+            "uri": "file:///C:/Users/38347/.codex/worktrees/render-g1-scene/phymeo/artifacts/rendering/normal-chart/run-01/geometry/mirror.gltf"
+          }
+        ],
+        "materials": [
+          {
+            "id": "chart",
+            "base_color": [
+              0.28,
+              0.28,
+              0.28
+            ],
+            "metallic": 0.0,
+            "roughness": 1.0,
+            "base_color_map": null,
+            "roughness_map": null,
+            "normal_map": {
+              "uri": "file:///C:/Users/38347/.codex/worktrees/render-g1-scene/phymeo/artifacts/rendering/normal-chart/run-01/flat.png",
+              "sha256": "6b6414829ea0a07e7598459eff854e3b07b11a658bfba4eedb162a150659e78f"
+            }
+          }
+        ],
+        "instances": [
+          {
+            "id": 1,
+            "mesh_id": "flat",
+            "material_id": "chart",
+            "node_id": "flat",
+            "local_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          },
+          {
+            "id": 2,
+            "mesh_id": "tilted",
+            "material_id": "chart",
+            "node_id": "tilted",
+            "local_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          },
+          {
+            "id": 3,
+            "mesh_id": "mirror",
+            "material_id": "chart",
+            "node_id": "mirror",
+            "local_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          }
+        ],
+        "lights": [
+          {
+            "direction": [
+              -0.6,
+              -0.3,
+              -0.7416198487095663
+            ],
+            "illuminance": [
+              2.0,
+              2.0,
+              2.0
+            ]
+          }
+        ]
+      },
+      "wall_ms": {
+        "rgb": 2.676699950825423,
+        "mixed": 2.7151000103913248,
+        "sensors": 1.8146000220440328
+      },
+      "request_agreement": true,
+      "image": "flat-plus.png",
+      "png_sha256": "668d43644303b73d12f93ae3aaf06ef2f7dabaf51416dad9b7a671c8cfa12412",
+      "plane_sha256": {
+        "RGB": "233eb77463254bcdf24efa0241ec323e636d971930327910dc4b9e040181193c",
+        "FORWARD_DEPTH": "49abe314e8f2c0faf45ffa772ba70327a3beb87961b79fb1d63ed6c211728c85",
+        "INSTANCE_ID": "6092cc4b218884ae6e60877c78afe70a3d360fef7a2f95584b26cb98ef896e91",
+        "VALID": "65a4a3ec867ddf9bee14066402cf299c9b19c9b4c5cc11b00a5991bd1f5d225e"
+      },
+      "panels": {
+        "flat": {
+          "roi": [
+            84,
+            108,
+            108,
+            132
+          ],
+          "actual_mean_rgb8": 102.0,
+          "predicted_mean_rgb8": 102.0,
+          "analytic_max_rgb8_error": 0,
+          "analytic_mae_rgb8": 0.0,
+          "predicted_world_normal": [
+            0.003921508320212722,
+            0.003921508320212722,
+            0.9999846216542477
+          ],
+          "predicted_linear_range": [
+            0.13300935966508545,
+            0.1330332787892132
+          ],
+          "predicted_rgb8_sha256": "60ef9acb74b8a041f9614cf2d1f1f2ebd84e2afb47267cef2f3ac5e32f10bcb3"
+        },
+        "tilted": {
+          "roi": [
+            228,
+            108,
+            252,
+            132
+          ],
+          "actual_mean_rgb8": 113.0,
+          "predicted_mean_rgb8": 113.0,
+          "analytic_max_rgb8_error": 0,
+          "analytic_mae_rgb8": 0.0,
+          "predicted_world_normal": [
+            0.4261658515384266,
+            0.003921508320212723,
+            0.904636550640655
+          ],
+          "predicted_linear_range": [
+            0.1651710948387002,
+            0.16522712829459704
+          ],
+          "predicted_rgb8_sha256": "12e4f99c24871b27a764f5bc6d2168604d5b5e1bac3fc64da95d798594ee8f01"
+        },
+        "mirror": {
+          "roi": [
+            372,
+            108,
+            396,
+            132
+          ],
+          "actual_mean_rgb8": 102.0,
+          "predicted_mean_rgb8": 102.0,
+          "analytic_max_rgb8_error": 0,
+          "analytic_mae_rgb8": 0.0,
+          "predicted_world_normal": [
+            -0.003921508320212722,
+            0.003921508320212722,
+            0.9999846216542477
+          ],
+          "predicted_linear_range": [
+            0.13218419816792984,
+            0.13220807859467484
+          ],
+          "predicted_rgb8_sha256": "60ef9acb74b8a041f9614cf2d1f1f2ebd84e2afb47267cef2f3ac5e32f10bcb3"
+        }
+      }
+    },
+    "flat-minus": {
+      "camera": {
+        "id": "chart",
+        "frame_key": {
+          "scene_key": "normal-chart-flat-minus",
+          "world_id": "authored-chart",
+          "epoch": 0,
+          "revision": 0,
+          "tick": 0,
+          "phase": "authored"
+        },
+        "world_pose": {
+          "position_m": [
+            0.0,
+            0.0,
+            2.0
+          ],
+          "orientation_xyzw": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        "width": 480,
+        "height": 240,
+        "fx_px": 600.0,
+        "fy_px": 600.0,
+        "cx_px": 240.0,
+        "cy_px": 120.0,
+        "near_m": 0.01,
+        "far_m": 10.0
+      },
+      "frame": {
+        "key": {
+          "scene_key": "normal-chart-flat-minus",
+          "world_id": "authored-chart",
+          "epoch": 0,
+          "revision": 0,
+          "tick": 0,
+          "phase": "authored"
+        },
+        "time_s": 0.0,
+        "nodes": [
+          {
+            "node_id": "flat",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          },
+          {
+            "node_id": "tilted",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          },
+          {
+            "node_id": "mirror",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          }
+        ]
+      },
+      "material": {
+        "id": "chart",
+        "base_color": [
+          0.28,
+          0.28,
+          0.28
+        ],
+        "metallic": 0.0,
+        "roughness": 1.0,
+        "base_color_map": null,
+        "roughness_map": null,
+        "normal_map": {
+          "uri": "file:///C:/Users/38347/.codex/worktrees/render-g1-scene/phymeo/artifacts/rendering/normal-chart/run-01/flat.png",
+          "sha256": "6b6414829ea0a07e7598459eff854e3b07b11a658bfba4eedb162a150659e78f"
+        }
+      },
+      "scene": {
+        "key": "normal-chart-flat-minus",
+        "meshes": [
+          {
+            "id": "flat",
+            "uri": "file:///C:/Users/38347/.codex/worktrees/render-g1-scene/phymeo/artifacts/rendering/normal-chart/run-01/geometry/flat.gltf"
+          },
+          {
+            "id": "tilted",
+            "uri": "file:///C:/Users/38347/.codex/worktrees/render-g1-scene/phymeo/artifacts/rendering/normal-chart/run-01/geometry/tilted.gltf"
+          },
+          {
+            "id": "mirror",
+            "uri": "file:///C:/Users/38347/.codex/worktrees/render-g1-scene/phymeo/artifacts/rendering/normal-chart/run-01/geometry/mirror.gltf"
+          }
+        ],
+        "materials": [
+          {
+            "id": "chart",
+            "base_color": [
+              0.28,
+              0.28,
+              0.28
+            ],
+            "metallic": 0.0,
+            "roughness": 1.0,
+            "base_color_map": null,
+            "roughness_map": null,
+            "normal_map": {
+              "uri": "file:///C:/Users/38347/.codex/worktrees/render-g1-scene/phymeo/artifacts/rendering/normal-chart/run-01/flat.png",
+              "sha256": "6b6414829ea0a07e7598459eff854e3b07b11a658bfba4eedb162a150659e78f"
+            }
+          }
+        ],
+        "instances": [
+          {
+            "id": 1,
+            "mesh_id": "flat",
+            "material_id": "chart",
+            "node_id": "flat",
+            "local_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          },
+          {
+            "id": 2,
+            "mesh_id": "tilted",
+            "material_id": "chart",
+            "node_id": "tilted",
+            "local_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          },
+          {
+            "id": 3,
+            "mesh_id": "mirror",
+            "material_id": "chart",
+            "node_id": "mirror",
+            "local_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          }
+        ],
+        "lights": [
+          {
+            "direction": [
+              0.6,
+              0.3,
+              -0.7416198487095663
+            ],
+            "illuminance": [
+              2.0,
+              2.0,
+              2.0
+            ]
+          }
+        ]
+      },
+      "wall_ms": {
+        "rgb": 2.5384000036865473,
+        "mixed": 2.7960999868810177,
+        "sensors": 1.761999970767647
+      },
+      "request_agreement": true,
+      "image": "flat-minus.png",
+      "png_sha256": "172d990e746d2828200d9894b1d5794d3fa8cfd4fb63ccd1b4bde5fe6b6d33d9",
+      "plane_sha256": {
+        "RGB": "f48437ac946d1d5c7cdc77e407bc2312ec5a5eda3b6e802f3cbaa7e48ff829e8",
+        "FORWARD_DEPTH": "49abe314e8f2c0faf45ffa772ba70327a3beb87961b79fb1d63ed6c211728c85",
+        "INSTANCE_ID": "6092cc4b218884ae6e60877c78afe70a3d360fef7a2f95584b26cb98ef896e91",
+        "VALID": "65a4a3ec867ddf9bee14066402cf299c9b19c9b4c5cc11b00a5991bd1f5d225e"
+      },
+      "panels": {
+        "flat": {
+          "roi": [
+            84,
+            108,
+            108,
+            132
+          ],
+          "actual_mean_rgb8": 102.0,
+          "predicted_mean_rgb8": 102.0,
+          "analytic_max_rgb8_error": 0,
+          "analytic_mae_rgb8": 0.0,
+          "predicted_world_normal": [
+            0.003921508320212722,
+            0.003921508320212722,
+            0.9999846216542477
+          ],
+          "predicted_linear_range": [
+            0.13177154842387642,
+            0.13179536918916143
+          ],
+          "predicted_rgb8_sha256": "60ef9acb74b8a041f9614cf2d1f1f2ebd84e2afb47267cef2f3ac5e32f10bcb3"
+        },
+        "tilted": {
+          "roi": [
+            228,
+            108,
+            252,
+            132
+          ],
+          "actual_mean_rgb8": 77.0,
+          "predicted_mean_rgb8": 77.0,
+          "analytic_max_rgb8_error": 0,
+          "analytic_mae_rgb8": 0.0,
+          "predicted_world_normal": [
+            0.4261658515384266,
+            0.003921508320212723,
+            0.904636550640655
+          ],
+          "predicted_linear_range": [
+            0.07474689368976764,
+            0.07478096788911408
+          ],
+          "predicted_rgb8_sha256": "a3d9b7a76b86ebc57a40510cf30cc4251aab9383e34965912375375ddb4a35a3"
+        },
+        "mirror": {
+          "roi": [
+            372,
+            108,
+            396,
+            132
+          ],
+          "actual_mean_rgb8": 102.0,
+          "predicted_mean_rgb8": 102.0,
+          "analytic_max_rgb8_error": 0,
+          "analytic_mae_rgb8": 0.0,
+          "predicted_world_normal": [
+            -0.003921508320212722,
+            0.003921508320212722,
+            0.9999846216542477
+          ],
+          "predicted_linear_range": [
+            0.1325967594844459,
+            0.13262063514465475
+          ],
+          "predicted_rgb8_sha256": "60ef9acb74b8a041f9614cf2d1f1f2ebd84e2afb47267cef2f3ac5e32f10bcb3"
+        }
+      }
+    },
+    "direction-plus": {
+      "camera": {
+        "id": "chart",
+        "frame_key": {
+          "scene_key": "normal-chart-direction-plus",
+          "world_id": "authored-chart",
+          "epoch": 0,
+          "revision": 0,
+          "tick": 0,
+          "phase": "authored"
+        },
+        "world_pose": {
+          "position_m": [
+            0.0,
+            0.0,
+            2.0
+          ],
+          "orientation_xyzw": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        "width": 480,
+        "height": 240,
+        "fx_px": 600.0,
+        "fy_px": 600.0,
+        "cx_px": 240.0,
+        "cy_px": 120.0,
+        "near_m": 0.01,
+        "far_m": 10.0
+      },
+      "frame": {
+        "key": {
+          "scene_key": "normal-chart-direction-plus",
+          "world_id": "authored-chart",
+          "epoch": 0,
+          "revision": 0,
+          "tick": 0,
+          "phase": "authored"
+        },
+        "time_s": 0.0,
+        "nodes": [
+          {
+            "node_id": "flat",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          },
+          {
+            "node_id": "tilted",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          },
+          {
+            "node_id": "mirror",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          }
+        ]
+      },
+      "material": {
+        "id": "chart",
+        "base_color": [
+          0.28,
+          0.28,
+          0.28
+        ],
+        "metallic": 0.0,
+        "roughness": 1.0,
+        "base_color_map": null,
+        "roughness_map": null,
+        "normal_map": {
+          "uri": "file:///C:/Users/38347/.codex/worktrees/render-g1-scene/phymeo/artifacts/rendering/normal-chart/run-01/direction.png",
+          "sha256": "ffd8aa8ac4d6c2b8860a9bc5343c1f87997e7ab0285e6859ff086b3b6c86f6ca"
+        }
+      },
+      "scene": {
+        "key": "normal-chart-direction-plus",
+        "meshes": [
+          {
+            "id": "flat",
+            "uri": "file:///C:/Users/38347/.codex/worktrees/render-g1-scene/phymeo/artifacts/rendering/normal-chart/run-01/geometry/flat.gltf"
+          },
+          {
+            "id": "tilted",
+            "uri": "file:///C:/Users/38347/.codex/worktrees/render-g1-scene/phymeo/artifacts/rendering/normal-chart/run-01/geometry/tilted.gltf"
+          },
+          {
+            "id": "mirror",
+            "uri": "file:///C:/Users/38347/.codex/worktrees/render-g1-scene/phymeo/artifacts/rendering/normal-chart/run-01/geometry/mirror.gltf"
+          }
+        ],
+        "materials": [
+          {
+            "id": "chart",
+            "base_color": [
+              0.28,
+              0.28,
+              0.28
+            ],
+            "metallic": 0.0,
+            "roughness": 1.0,
+            "base_color_map": null,
+            "roughness_map": null,
+            "normal_map": {
+              "uri": "file:///C:/Users/38347/.codex/worktrees/render-g1-scene/phymeo/artifacts/rendering/normal-chart/run-01/direction.png",
+              "sha256": "ffd8aa8ac4d6c2b8860a9bc5343c1f87997e7ab0285e6859ff086b3b6c86f6ca"
+            }
+          }
+        ],
+        "instances": [
+          {
+            "id": 1,
+            "mesh_id": "flat",
+            "material_id": "chart",
+            "node_id": "flat",
+            "local_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          },
+          {
+            "id": 2,
+            "mesh_id": "tilted",
+            "material_id": "chart",
+            "node_id": "tilted",
+            "local_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          },
+          {
+            "id": 3,
+            "mesh_id": "mirror",
+            "material_id": "chart",
+            "node_id": "mirror",
+            "local_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          }
+        ],
+        "lights": [
+          {
+            "direction": [
+              -0.6,
+              -0.3,
+              -0.7416198487095663
+            ],
+            "illuminance": [
+              2.0,
+              2.0,
+              2.0
+            ]
+          }
+        ]
+      },
+      "wall_ms": {
+        "rgb": 2.6585999876260757,
+        "mixed": 2.544500050134957,
+        "sensors": 1.6899000038392842
+      },
+      "request_agreement": true,
+      "image": "direction-plus.png",
+      "png_sha256": "9dd39fdb64ac297f56f5108262dbcb6338c880f8e0c6b2f16e4efbff61590590",
+      "plane_sha256": {
+        "RGB": "90c253285c6370c8e6ef6a34c35d7e17c9a8f7e7c9654071332107ca71dc6408",
+        "FORWARD_DEPTH": "49abe314e8f2c0faf45ffa772ba70327a3beb87961b79fb1d63ed6c211728c85",
+        "INSTANCE_ID": "6092cc4b218884ae6e60877c78afe70a3d360fef7a2f95584b26cb98ef896e91",
+        "VALID": "65a4a3ec867ddf9bee14066402cf299c9b19c9b4c5cc11b00a5991bd1f5d225e"
+      },
+      "panels": {
+        "flat": {
+          "roi": [
+            84,
+            108,
+            108,
+            132
+          ],
+          "actual_mean_rgb8": 117.0,
+          "predicted_mean_rgb8": 117.0,
+          "analytic_max_rgb8_error": 0,
+          "analytic_mae_rgb8": 0.0,
+          "predicted_world_normal": [
+            0.572736526602184,
+            0.28823995129652397,
+            0.7673920781271092
+          ],
+          "predicted_linear_range": [
+            0.17771908231660213,
+            0.17780712694592601
+          ],
+          "predicted_rgb8_sha256": "fbe0cae7830c4b546a8f22a29863e1c3185544edfb8af5bc650a2e939c951b8e"
+        },
+        "tilted": {
+          "roi": [
+            228,
+            108,
+            252,
+            132
+          ],
+          "actual_mean_rgb8": 114.0,
+          "predicted_mean_rgb8": 114.0,
+          "analytic_max_rgb8_error": 0,
+          "analytic_mae_rgb8": 0.0,
+          "predicted_world_normal": [
+            0.8433894778258375,
+            0.28823995129652397,
+            0.45344450506014367
+          ],
+          "predicted_linear_range": [
+            0.16725124671900252,
+            0.1675031176511615
+          ],
+          "predicted_rgb8_sha256": "aef6d7260bbedcd15c59389e29d38e4c83ddfbb2d28d000b62435367ec82923d"
+        },
+        "mirror": {
+          "roi": [
+            372,
+            108,
+            396,
+            132
+          ],
+          "actual_mean_rgb8": 67.0,
+          "predicted_mean_rgb8": 67.0,
+          "analytic_max_rgb8_error": 0,
+          "analytic_mae_rgb8": 0.0,
+          "predicted_world_normal": [
+            -0.572736526602184,
+            0.28823995129652397,
+            0.7673920781271092
+          ],
+          "predicted_linear_range": [
+            0.056581898502262105,
+            0.056623718147846766
+          ],
+          "predicted_rgb8_sha256": "a003ac8c6b9563fb76e41458a095474fc556e31cc3e5c364061b7fb539bd04e5"
+        }
+      }
+    },
+    "direction-minus": {
+      "camera": {
+        "id": "chart",
+        "frame_key": {
+          "scene_key": "normal-chart-direction-minus",
+          "world_id": "authored-chart",
+          "epoch": 0,
+          "revision": 0,
+          "tick": 0,
+          "phase": "authored"
+        },
+        "world_pose": {
+          "position_m": [
+            0.0,
+            0.0,
+            2.0
+          ],
+          "orientation_xyzw": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        "width": 480,
+        "height": 240,
+        "fx_px": 600.0,
+        "fy_px": 600.0,
+        "cx_px": 240.0,
+        "cy_px": 120.0,
+        "near_m": 0.01,
+        "far_m": 10.0
+      },
+      "frame": {
+        "key": {
+          "scene_key": "normal-chart-direction-minus",
+          "world_id": "authored-chart",
+          "epoch": 0,
+          "revision": 0,
+          "tick": 0,
+          "phase": "authored"
+        },
+        "time_s": 0.0,
+        "nodes": [
+          {
+            "node_id": "flat",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          },
+          {
+            "node_id": "tilted",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          },
+          {
+            "node_id": "mirror",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          }
+        ]
+      },
+      "material": {
+        "id": "chart",
+        "base_color": [
+          0.28,
+          0.28,
+          0.28
+        ],
+        "metallic": 0.0,
+        "roughness": 1.0,
+        "base_color_map": null,
+        "roughness_map": null,
+        "normal_map": {
+          "uri": "file:///C:/Users/38347/.codex/worktrees/render-g1-scene/phymeo/artifacts/rendering/normal-chart/run-01/direction.png",
+          "sha256": "ffd8aa8ac4d6c2b8860a9bc5343c1f87997e7ab0285e6859ff086b3b6c86f6ca"
+        }
+      },
+      "scene": {
+        "key": "normal-chart-direction-minus",
+        "meshes": [
+          {
+            "id": "flat",
+            "uri": "file:///C:/Users/38347/.codex/worktrees/render-g1-scene/phymeo/artifacts/rendering/normal-chart/run-01/geometry/flat.gltf"
+          },
+          {
+            "id": "tilted",
+            "uri": "file:///C:/Users/38347/.codex/worktrees/render-g1-scene/phymeo/artifacts/rendering/normal-chart/run-01/geometry/tilted.gltf"
+          },
+          {
+            "id": "mirror",
+            "uri": "file:///C:/Users/38347/.codex/worktrees/render-g1-scene/phymeo/artifacts/rendering/normal-chart/run-01/geometry/mirror.gltf"
+          }
+        ],
+        "materials": [
+          {
+            "id": "chart",
+            "base_color": [
+              0.28,
+              0.28,
+              0.28
+            ],
+            "metallic": 0.0,
+            "roughness": 1.0,
+            "base_color_map": null,
+            "roughness_map": null,
+            "normal_map": {
+              "uri": "file:///C:/Users/38347/.codex/worktrees/render-g1-scene/phymeo/artifacts/rendering/normal-chart/run-01/direction.png",
+              "sha256": "ffd8aa8ac4d6c2b8860a9bc5343c1f87997e7ab0285e6859ff086b3b6c86f6ca"
+            }
+          }
+        ],
+        "instances": [
+          {
+            "id": 1,
+            "mesh_id": "flat",
+            "material_id": "chart",
+            "node_id": "flat",
+            "local_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          },
+          {
+            "id": 2,
+            "mesh_id": "tilted",
+            "material_id": "chart",
+            "node_id": "tilted",
+            "local_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          },
+          {
+            "id": 3,
+            "mesh_id": "mirror",
+            "material_id": "chart",
+            "node_id": "mirror",
+            "local_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          }
+        ],
+        "lights": [
+          {
+            "direction": [
+              0.6,
+              0.3,
+              -0.7416198487095663
+            ],
+            "illuminance": [
+              2.0,
+              2.0,
+              2.0
+            ]
+          }
+        ]
+      },
+      "wall_ms": {
+        "rgb": 2.6018000207841396,
+        "mixed": 2.9947999864816666,
+        "sensors": 1.5937000280246139
+      },
+      "request_agreement": true,
+      "image": "direction-minus.png",
+      "png_sha256": "18cb6d1cf59954b267cac0ebd9cb4489204dd2e3af77388249a6744065f09233",
+      "plane_sha256": {
+        "RGB": "7c7add609c631595d875d0c8e03db8d00cd951d4e24ef23af32ee70ba97bc83e",
+        "FORWARD_DEPTH": "49abe314e8f2c0faf45ffa772ba70327a3beb87961b79fb1d63ed6c211728c85",
+        "INSTANCE_ID": "6092cc4b218884ae6e60877c78afe70a3d360fef7a2f95584b26cb98ef896e91",
+        "VALID": "65a4a3ec867ddf9bee14066402cf299c9b19c9b4c5cc11b00a5991bd1f5d225e"
+      },
+      "panels": {
+        "flat": {
+          "roi": [
+            84,
+            108,
+            108,
+            132
+          ],
+          "actual_mean_rgb8": 44.0,
+          "predicted_mean_rgb8": 44.0,
+          "analytic_max_rgb8_error": 0,
+          "analytic_mae_rgb8": 0.0,
+          "predicted_world_normal": [
+            0.572736526602184,
+            0.28823995129652397,
+            0.7673920781271092
+          ],
+          "predicted_linear_range": [
+            0.025429108261932783,
+            0.02545048365932651
+          ],
+          "predicted_rgb8_sha256": "9444be5b71f156819021b55e86505c1d93c47f8244a6f81d30abb3dd340ee6fc"
+        },
+        "tilted": {
+          "roi": [
+            228,
+            108,
+            252,
+            132
+          ],
+          "actual_mean_rgb8": 0.0,
+          "predicted_mean_rgb8": 0.0,
+          "analytic_max_rgb8_error": 0,
+          "analytic_mae_rgb8": 0.0,
+          "predicted_world_normal": [
+            0.8433894778258375,
+            0.28823995129652397,
+            0.45344450506014367
+          ],
+          "predicted_linear_range": [
+            0.0,
+            0.0
+          ],
+          "predicted_rgb8_sha256": "7636c9f8da9a82f9a9fcd804a25795a9c900e1c7e19f7442a7b113c8ccd64eb2"
+        },
+        "mirror": {
+          "roi": [
+            372,
+            108,
+            396,
+            132
+          ],
+          "actual_mean_rgb8": 107.0,
+          "predicted_mean_rgb8": 107.0,
+          "analytic_max_rgb8_error": 0,
+          "analytic_mae_rgb8": 0.0,
+          "predicted_world_normal": [
+            -0.572736526602184,
+            0.28823995129652397,
+            0.7673920781271092
+          ],
+          "predicted_linear_range": [
+            0.14748671244833184,
+            0.1475664134934637
+          ],
+          "predicted_rgb8_sha256": "a85de801d97d97537e59d7d8a19dae58e5d3ecbb428a20b63b0f27a1ba134b49"
+        }
+      }
+    },
+    "positive-y-plus": {
+      "camera": {
+        "id": "chart",
+        "frame_key": {
+          "scene_key": "normal-chart-positive-y-plus",
+          "world_id": "authored-chart",
+          "epoch": 0,
+          "revision": 0,
+          "tick": 0,
+          "phase": "authored"
+        },
+        "world_pose": {
+          "position_m": [
+            0.0,
+            0.0,
+            2.0
+          ],
+          "orientation_xyzw": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        "width": 480,
+        "height": 240,
+        "fx_px": 600.0,
+        "fy_px": 600.0,
+        "cx_px": 240.0,
+        "cy_px": 120.0,
+        "near_m": 0.01,
+        "far_m": 10.0
+      },
+      "frame": {
+        "key": {
+          "scene_key": "normal-chart-positive-y-plus",
+          "world_id": "authored-chart",
+          "epoch": 0,
+          "revision": 0,
+          "tick": 0,
+          "phase": "authored"
+        },
+        "time_s": 0.0,
+        "nodes": [
+          {
+            "node_id": "flat",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          },
+          {
+            "node_id": "tilted",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          },
+          {
+            "node_id": "mirror",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          }
+        ]
+      },
+      "material": {
+        "id": "chart",
+        "base_color": [
+          0.28,
+          0.28,
+          0.28
+        ],
+        "metallic": 0.0,
+        "roughness": 1.0,
+        "base_color_map": null,
+        "roughness_map": null,
+        "normal_map": {
+          "uri": "file:///C:/Users/38347/.codex/worktrees/render-g1-scene/phymeo/artifacts/rendering/normal-chart/run-01/positive-y.png",
+          "sha256": "6787a9659a5b036dda1d80b393650abf62a4d386e1f629a17101a042b57c7d48"
+        }
+      },
+      "scene": {
+        "key": "normal-chart-positive-y-plus",
+        "meshes": [
+          {
+            "id": "flat",
+            "uri": "file:///C:/Users/38347/.codex/worktrees/render-g1-scene/phymeo/artifacts/rendering/normal-chart/run-01/geometry/flat.gltf"
+          },
+          {
+            "id": "tilted",
+            "uri": "file:///C:/Users/38347/.codex/worktrees/render-g1-scene/phymeo/artifacts/rendering/normal-chart/run-01/geometry/tilted.gltf"
+          },
+          {
+            "id": "mirror",
+            "uri": "file:///C:/Users/38347/.codex/worktrees/render-g1-scene/phymeo/artifacts/rendering/normal-chart/run-01/geometry/mirror.gltf"
+          }
+        ],
+        "materials": [
+          {
+            "id": "chart",
+            "base_color": [
+              0.28,
+              0.28,
+              0.28
+            ],
+            "metallic": 0.0,
+            "roughness": 1.0,
+            "base_color_map": null,
+            "roughness_map": null,
+            "normal_map": {
+              "uri": "file:///C:/Users/38347/.codex/worktrees/render-g1-scene/phymeo/artifacts/rendering/normal-chart/run-01/positive-y.png",
+              "sha256": "6787a9659a5b036dda1d80b393650abf62a4d386e1f629a17101a042b57c7d48"
+            }
+          }
+        ],
+        "instances": [
+          {
+            "id": 1,
+            "mesh_id": "flat",
+            "material_id": "chart",
+            "node_id": "flat",
+            "local_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          },
+          {
+            "id": 2,
+            "mesh_id": "tilted",
+            "material_id": "chart",
+            "node_id": "tilted",
+            "local_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          },
+          {
+            "id": 3,
+            "mesh_id": "mirror",
+            "material_id": "chart",
+            "node_id": "mirror",
+            "local_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          }
+        ],
+        "lights": [
+          {
+            "direction": [
+              -0.6,
+              -0.3,
+              -0.7416198487095663
+            ],
+            "illuminance": [
+              2.0,
+              2.0,
+              2.0
+            ]
+          }
+        ]
+      },
+      "wall_ms": {
+        "rgb": 2.7720999787561595,
+        "mixed": 2.640900027472526,
+        "sensors": 1.8237000331282616
+      },
+      "request_agreement": true,
+      "image": "positive-y-plus.png",
+      "png_sha256": "f7a9ed024377ad7df46269ec401e4e9efdd28643560e1c915e84a0b519a5e957",
+      "plane_sha256": {
+        "RGB": "562f8a03a37ae5577f74d9dcb515690744d8c8eb8e4602079e0e27488ae70288",
+        "FORWARD_DEPTH": "49abe314e8f2c0faf45ffa772ba70327a3beb87961b79fb1d63ed6c211728c85",
+        "INSTANCE_ID": "6092cc4b218884ae6e60877c78afe70a3d360fef7a2f95584b26cb98ef896e91",
+        "VALID": "65a4a3ec867ddf9bee14066402cf299c9b19c9b4c5cc11b00a5991bd1f5d225e"
+      },
+      "panels": {
+        "flat": {
+          "roi": [
+            84,
+            108,
+            108,
+            132
+          ],
+          "actual_mean_rgb8": 104.0,
+          "predicted_mean_rgb8": 104.0,
+          "analytic_max_rgb8_error": 0,
+          "analytic_mae_rgb8": 0.0,
+          "predicted_world_normal": [
+            0.003909263518193691,
+            0.5981173182836368,
+            0.8013990212297094
+          ],
+          "predicted_linear_range": [
+            0.13901234287336744,
+            0.13911392567953348
+          ],
+          "predicted_rgb8_sha256": "05f7516441fab3ea8166f5281faad291678b6519dd0c813591aba3202b5e76d3"
+        },
+        "tilted": {
+          "roi": [
+            228,
+            108,
+            252,
+            132
+          ],
+          "actual_mean_rgb8": 113.0,
+          "predicted_mean_rgb8": 113.0,
+          "analytic_max_rgb8_error": 0,
+          "analytic_mae_rgb8": 0.0,
+          "predicted_world_normal": [
+            0.3422288536280637,
+            0.5981173182836368,
+            0.7246620490363851
+          ],
+          "predicted_linear_range": [
+            0.164820926815191,
+            0.16496900539494436
+          ],
+          "predicted_rgb8_sha256": "12e4f99c24871b27a764f5bc6d2168604d5b5e1bac3fc64da95d798594ee8f01"
+        },
+        "mirror": {
+          "roi": [
+            372,
+            108,
+            396,
+            132
+          ],
+          "actual_mean_rgb8": 104.0,
+          "predicted_mean_rgb8": 104.0,
+          "analytic_max_rgb8_error": 0,
+          "analytic_mae_rgb8": 0.0,
+          "predicted_world_normal": [
+            -0.003909263518193691,
+            0.5981173182836368,
+            0.8013990212297094
+          ],
+          "predicted_linear_range": [
+            0.1381886363084244,
+            0.1382900588148798
+          ],
+          "predicted_rgb8_sha256": "05f7516441fab3ea8166f5281faad291678b6519dd0c813591aba3202b5e76d3"
+        }
+      }
+    },
+    "positive-y-minus": {
+      "camera": {
+        "id": "chart",
+        "frame_key": {
+          "scene_key": "normal-chart-positive-y-minus",
+          "world_id": "authored-chart",
+          "epoch": 0,
+          "revision": 0,
+          "tick": 0,
+          "phase": "authored"
+        },
+        "world_pose": {
+          "position_m": [
+            0.0,
+            0.0,
+            2.0
+          ],
+          "orientation_xyzw": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        "width": 480,
+        "height": 240,
+        "fx_px": 600.0,
+        "fy_px": 600.0,
+        "cx_px": 240.0,
+        "cy_px": 120.0,
+        "near_m": 0.01,
+        "far_m": 10.0
+      },
+      "frame": {
+        "key": {
+          "scene_key": "normal-chart-positive-y-minus",
+          "world_id": "authored-chart",
+          "epoch": 0,
+          "revision": 0,
+          "tick": 0,
+          "phase": "authored"
+        },
+        "time_s": 0.0,
+        "nodes": [
+          {
+            "node_id": "flat",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          },
+          {
+            "node_id": "tilted",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          },
+          {
+            "node_id": "mirror",
+            "world_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          }
+        ]
+      },
+      "material": {
+        "id": "chart",
+        "base_color": [
+          0.28,
+          0.28,
+          0.28
+        ],
+        "metallic": 0.0,
+        "roughness": 1.0,
+        "base_color_map": null,
+        "roughness_map": null,
+        "normal_map": {
+          "uri": "file:///C:/Users/38347/.codex/worktrees/render-g1-scene/phymeo/artifacts/rendering/normal-chart/run-01/positive-y.png",
+          "sha256": "6787a9659a5b036dda1d80b393650abf62a4d386e1f629a17101a042b57c7d48"
+        }
+      },
+      "scene": {
+        "key": "normal-chart-positive-y-minus",
+        "meshes": [
+          {
+            "id": "flat",
+            "uri": "file:///C:/Users/38347/.codex/worktrees/render-g1-scene/phymeo/artifacts/rendering/normal-chart/run-01/geometry/flat.gltf"
+          },
+          {
+            "id": "tilted",
+            "uri": "file:///C:/Users/38347/.codex/worktrees/render-g1-scene/phymeo/artifacts/rendering/normal-chart/run-01/geometry/tilted.gltf"
+          },
+          {
+            "id": "mirror",
+            "uri": "file:///C:/Users/38347/.codex/worktrees/render-g1-scene/phymeo/artifacts/rendering/normal-chart/run-01/geometry/mirror.gltf"
+          }
+        ],
+        "materials": [
+          {
+            "id": "chart",
+            "base_color": [
+              0.28,
+              0.28,
+              0.28
+            ],
+            "metallic": 0.0,
+            "roughness": 1.0,
+            "base_color_map": null,
+            "roughness_map": null,
+            "normal_map": {
+              "uri": "file:///C:/Users/38347/.codex/worktrees/render-g1-scene/phymeo/artifacts/rendering/normal-chart/run-01/positive-y.png",
+              "sha256": "6787a9659a5b036dda1d80b393650abf62a4d386e1f629a17101a042b57c7d48"
+            }
+          }
+        ],
+        "instances": [
+          {
+            "id": 1,
+            "mesh_id": "flat",
+            "material_id": "chart",
+            "node_id": "flat",
+            "local_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          },
+          {
+            "id": 2,
+            "mesh_id": "tilted",
+            "material_id": "chart",
+            "node_id": "tilted",
+            "local_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          },
+          {
+            "id": 3,
+            "mesh_id": "mirror",
+            "material_id": "chart",
+            "node_id": "mirror",
+            "local_pose": {
+              "position_m": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          }
+        ],
+        "lights": [
+          {
+            "direction": [
+              0.6,
+              0.3,
+              -0.7416198487095663
+            ],
+            "illuminance": [
+              2.0,
+              2.0,
+              2.0
+            ]
+          }
+        ]
+      },
+      "wall_ms": {
+        "rgb": 2.2323000011965632,
+        "mixed": 3.088099998421967,
+        "sensors": 2.2119000204838812
+      },
+      "request_agreement": true,
+      "image": "positive-y-minus.png",
+      "png_sha256": "560c7f653e98680c77040c5a448333f2dc512b589df3dc1666e15550dd759c09",
+      "plane_sha256": {
+        "RGB": "a0cdc2cae35b06f14fe8e8e9058c1b2f23c0e7eacf771d747898861f3c70eb41",
+        "FORWARD_DEPTH": "49abe314e8f2c0faf45ffa772ba70327a3beb87961b79fb1d63ed6c211728c85",
+        "INSTANCE_ID": "6092cc4b218884ae6e60877c78afe70a3d360fef7a2f95584b26cb98ef896e91",
+        "VALID": "65a4a3ec867ddf9bee14066402cf299c9b19c9b4c5cc11b00a5991bd1f5d225e"
+      },
+      "panels": {
+        "flat": {
+          "roi": [
+            84,
+            108,
+            108,
+            132
+          ],
+          "actual_mean_rgb8": 77.0,
+          "predicted_mean_rgb8": 77.0,
+          "analytic_max_rgb8_error": 0,
+          "analytic_mae_rgb8": 0.0,
+          "predicted_world_normal": [
+            0.003909263518193691,
+            0.5981173182836368,
+            0.8013990212297094
+          ],
+          "predicted_linear_range": [
+            0.07474247458578899,
+            0.07481050003248002
+          ],
+          "predicted_rgb8_sha256": "a3d9b7a76b86ebc57a40510cf30cc4251aab9383e34965912375375ddb4a35a3"
+        },
+        "tilted": {
+          "roi": [
+            228,
+            108,
+            252,
+            132
+          ],
+          "actual_mean_rgb8": 47.0,
+          "predicted_mean_rgb8": 47.0,
+          "analytic_max_rgb8_error": 0,
+          "analytic_mae_rgb8": 0.0,
+          "predicted_world_normal": [
+            0.3422288536280637,
+            0.5981173182836368,
+            0.7246620490363851
+          ],
+          "predicted_linear_range": [
+            0.028057731156218988,
+            0.028098584592146023
+          ],
+          "predicted_rgb8_sha256": "95605eb1c05f66621d9c2f4b91945e644d68687741a1b2853ccde2ad28a442ae"
+        },
+        "mirror": {
+          "roi": [
+            372,
+            108,
+            396,
+            132
+          ],
+          "actual_mean_rgb8": 78.0,
+          "predicted_mean_rgb8": 78.0,
+          "analytic_max_rgb8_error": 0,
+          "analytic_mae_rgb8": 0.0,
+          "predicted_world_normal": [
+            -0.003909263518193691,
+            0.5981173182836368,
+            0.8013990212297094
+          ],
+          "predicted_linear_range": [
+            0.0755780535460119,
+            0.07564649215742626
+          ],
+          "predicted_rgb8_sha256": "7b0d936ea76b2530886adff69be4847bdc0c3fbb4a047cd1e1c91bece9d1608e"
+        }
+      }
+    }
+  },
+  "cleanup": [
+    {
+      "label": "none-plus",
+      "passed": true,
+      "diagnostics": {
+        "backend": "phymeo-native-vulkan",
+        "path": "raster",
+        "device": {
+          "abi_version": 2,
+          "device_index": 1,
+          "api_version": 4206881,
+          "driver_version": 2374090752,
+          "vendor_id": 4318,
+          "device_id": 10464,
+          "device_type": 2,
+          "max_width": 32768,
+          "max_height": 32768,
+          "max_vertices": 1048576,
+          "validation_errors": 0,
+          "validation_warnings": 0,
+          "captures": 3,
+          "device_name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+          "device_uuid": "3b78d98198a3be57a8cb4d72fdfbfa96",
+          "closed": true,
+          "validation_enabled": true,
+          "live_contexts": 0,
+          "live_frames": 0,
+          "live_resources": 0,
+          "resident_abi_version": 1,
+          "resident_max_vertices": 1048576,
+          "resident_max_indices": 1572864,
+          "resident_max_meshes": 1024,
+          "resident_max_instances": 1024,
+          "resident_max_bvh_nodes": 262144,
+          "resident_max_instanced_triangles": 1048576,
+          "resident_vertex_count": 12,
+          "resident_index_count": 18,
+          "resident_mesh_count": 3,
+          "resident_instance_count": 3,
+          "resident_bvh_nodes": 3,
+          "resident_instanced_triangles": 6,
+          "resident_loaded": 1,
+          "resident_poisoned": 0,
+          "resident_reserved": 0,
+          "resident_upload_calls": 1,
+          "resident_geometry_upload_bytes": 840,
+          "resident_transform_upload_bytes": 1152,
+          "resident_parameter_upload_bytes": 960,
+          "resident_captures": 3,
+          "resident_shadow_node_budget": 8,
+          "resident_target_rebuilds": 1,
+          "resident_host_transform_input_bytes": 576,
+          "resident_render_planes_available": true,
+          "resident_environment_available": true,
+          "resident_environment_abi_version": 1,
+          "resident_environment_info": {
+            "environment_abi_version": 1,
+            "supported": 1,
+            "shader_compatible": 1,
+            "max_side": 1024,
+            "max_mip_levels": 11,
+            "side": 0,
+            "mip_levels": 0,
+            "loaded": 0,
+            "format": 43,
+            "cube_layers": 6,
+            "sh_coefficients": 9,
+            "axis_transform": 1,
+            "diffuse_basis": 1,
+            "max_rgba_bytes": 134217728,
+            "source_rgba_bytes": 0,
+            "image_upload_bytes": 24,
+            "parameter_upload_bytes": 160,
+            "upload_calls": 0,
+            "rgb_captures_with_environment": 0,
+            "sky_draws": 0,
+            "capture_scope": "successful RGB captures with an uploaded directional environment; sky draw count is not foreground pixel count",
+            "snapshot": "last live query; final GPU allocations are reported by teardown telemetry"
+          },
+          "resident_texture_available": true,
+          "resident_linear_roughness_available": true,
+          "resident_texture_abi_version": 1,
+          "resident_texture_info": {
+            "texture_abi_version": 1,
+            "max_textures": 64,
+            "max_width": 2048,
+            "max_height": 2048,
+            "max_layers": 64,
+            "texture_count": 0,
+            "array_width": 1,
+            "array_height": 1,
+            "array_layers": 1,
+            "uv_count": 0,
+            "bound_instances": 0,
+            "loaded": 0,
+            "sampler_filter": 1,
+            "mip_levels": 1,
+            "format": 43,
+            "max_array_bytes": 134217728,
+            "source_rgba_bytes": 0,
+            "padded_rgba_bytes": 4,
+            "metadata_upload_bytes": 28,
+            "upload_calls": 0,
+            "image_upload_bytes": 4,
+            "rgb_captures_with_textures": 0,
+            "capture_scope": "successful RGB captures with bound texture instances, not visible textured pixel count",
+            "upload_scope": "cumulative actual texture image and metadata GPU writes, including default white sentinel; excluded from geometry_upload_bytes",
+            "snapshot": "last live query, not final allocation state; teardown verified by allocation telemetry"
+          },
+          "resident_normal_info": null,
+          "resident_readback": {
+            "readback_abi_version": 1,
+            "memory_type_index": 3,
+            "memory_property_flags": 14,
+            "persistent_mapped": 1,
+            "last_channel_mask": 14,
+            "capacity_bytes": 1497600,
+            "copied_bytes": 2995200,
+            "map_calls": 1,
+            "unmap_calls": 0,
+            "host_visible": true,
+            "host_coherent": true,
+            "host_cached": true,
+            "device_local": false,
+            "snapshot": "last live query, not final mapping state; teardown verified by allocation telemetry",
+            "capacity_scope": "logical Vulkan readback buffer capacity, not total VkDeviceMemory allocation size"
+          },
+          "resident_profile": {
+            "profile_abi_version": 1,
+            "timestamp_supported": 1,
+            "timestamp_valid_bits": 64,
+            "tlas_node_count": 5,
+            "timestamp_period_ns": 1.0,
+            "captures": 3,
+            "host_prepare_ns": 21500,
+            "host_upload_ns": 1419300,
+            "host_record_ns": 1963800,
+            "host_submit_ns": 168600,
+            "host_wait_ns": 723200,
+            "host_readback_ns": 306000,
+            "gpu_render_ns": 159936,
+            "gpu_copy_ns": 242176,
+            "gpu_total_ns": 402112,
+            "tlas_upload_bytes": 720,
+            "timestamp_samples": 3,
+            "scope": "cumulative successful captures including warmup; excludes initial static geometry upload",
+            "gpu_scope": "Vulkan timestamps: raster plus fragment work, then attachment copies; no per-light kernel claim",
+            "snapshot": "last live query, retained after close; final ownership is checked by telemetry"
+          },
+          "resident_telemetry": {
+            "telemetry_abi_version": 1,
+            "device_luid_valid": 1,
+            "device_node_mask": 1,
+            "device_local_bytes_current": 0,
+            "device_local_bytes_peak": 2101808,
+            "device_local_bytes_allocated": 2101808,
+            "host_visible_bytes_current": 0,
+            "host_visible_bytes_peak": 1498736,
+            "host_visible_bytes_allocated": 1499792,
+            "readback_bytes": 2995200,
+            "fence_wait_wall_ns": 1124500,
+            "fence_wait_calls": 6,
+            "submissions": 6,
+            "allocation_count": 22,
+            "free_count": 22,
+            "device_luid_hex": "ef22010000000000",
+            "final_after_destroy": true,
+            "allocation_scope": "this context explicit VkDeviceMemory allocations; not driver total VRAM",
+            "wait_scope": "host wall time blocked in fence waits, including upload; not GPU kernel time"
+          },
+          "resident_studio_available": true,
+          "resident_msaa": null
+        },
+        "library_path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-normal\\build-normal\\phymeo_native.dll",
+        "library_sha256": "83dcbf6a92c2ccc2cbf8ea16a4e63e5ef6ab96ce66e0734a398e2c4bad6756b6",
+        "shader_sha256": {
+          "vert": "b1cb30601e2f8ff78e7a14818d3253ec95806b4ba22039b106927ffa4ca86810",
+          "frag": "72215fcebf7e1af6a1af1be9258f9b5a5411dac1bf108a699ff6ad3d7bb20ab5"
+        },
+        "scene_key": "normal-chart-none-plus",
+        "decoded_geometry_sha256": "60ea54657af7c607007053a01a339bd215c53bdefe751bfbca68637bea9c9155",
+        "triangles": 6,
+        "light_count": 1,
+        "max_lights": 4,
+        "max_triangles": 1048576,
+        "resident": true,
+        "shadow_mode": "software",
+        "area_light_grid": 2,
+        "area_light_samples_per_panel": 4,
+        "area_light_brdf_samples_per_panel": 8,
+        "geometry_residency": "static indexed meshes; per-frame instance matrices",
+        "msaa": {
+          "requested_samples": 1,
+          "actual_color_samples": 1,
+          "sensor_samples": 1,
+          "resolve_space": "none (single sample)",
+          "sensor_sampling": "deterministic pixel center"
+        },
+        "primary_visibility": "single-sample Vulkan raster, two-sided opaque triangles",
+        "lighting": "direct GGX/Smith/Schlick metallic-roughness; no ambient or IBL",
+        "studio": null,
+        "environment": null,
+        "shadows": "GPU fragment hard-shadow mesh BVH rays",
+        "shadow_bias_m": 1e-05,
+        "minimum_perceptual_roughness": 0.045,
+        "exposure": 1.0,
+        "display": "clamp linear exposure to [0,1], then IEC sRGB once",
+        "display_transform": "clip",
+        "display_transform_abi": null,
+        "readback": "explicit synchronous host-visible staging after fence; actual flags in resident_readback when available",
+        "readback_channels_mode": "compact requested attachments",
+        "published_ownership": "immutable CPU bytes; private resident host buffer may be reused after each copy",
+        "attachment_formats": [
+          "RGBA8_UNORM",
+          "R32_SFLOAT",
+          "R32_UINT",
+          "R8_UINT"
+        ],
+        "last_passes": [
+          "visibility",
+          "sensor_export"
+        ],
+        "last_request": {
+          "width": 480,
+          "height": 240,
+          "channels": [
+            "forward_depth_m_f32",
+            "instance_id_u32",
+            "valid_u8"
+          ],
+          "native_attachment_mask": 14,
+          "native_output_bytes": 1036800
+        },
+        "stage_execution": "visibility raster + fused fragment shadows/lighting/display/sensors",
+        "lifecycle_counts": "DLL-wide owned contexts, frames, and explicit Vulkan handles; pools own descriptor sets",
+        "path_trace": false,
+        "textures": false,
+        "texture_assets": null,
+        "normal_maps": null,
+        "physics_steps": 0
+      }
+    },
+    {
+      "label": "none-minus",
+      "passed": true,
+      "diagnostics": {
+        "backend": "phymeo-native-vulkan",
+        "path": "raster",
+        "device": {
+          "abi_version": 2,
+          "device_index": 1,
+          "api_version": 4206881,
+          "driver_version": 2374090752,
+          "vendor_id": 4318,
+          "device_id": 10464,
+          "device_type": 2,
+          "max_width": 32768,
+          "max_height": 32768,
+          "max_vertices": 1048576,
+          "validation_errors": 0,
+          "validation_warnings": 0,
+          "captures": 3,
+          "device_name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+          "device_uuid": "3b78d98198a3be57a8cb4d72fdfbfa96",
+          "closed": true,
+          "validation_enabled": true,
+          "live_contexts": 0,
+          "live_frames": 0,
+          "live_resources": 0,
+          "resident_abi_version": 1,
+          "resident_max_vertices": 1048576,
+          "resident_max_indices": 1572864,
+          "resident_max_meshes": 1024,
+          "resident_max_instances": 1024,
+          "resident_max_bvh_nodes": 262144,
+          "resident_max_instanced_triangles": 1048576,
+          "resident_vertex_count": 12,
+          "resident_index_count": 18,
+          "resident_mesh_count": 3,
+          "resident_instance_count": 3,
+          "resident_bvh_nodes": 3,
+          "resident_instanced_triangles": 6,
+          "resident_loaded": 1,
+          "resident_poisoned": 0,
+          "resident_reserved": 0,
+          "resident_upload_calls": 1,
+          "resident_geometry_upload_bytes": 840,
+          "resident_transform_upload_bytes": 1152,
+          "resident_parameter_upload_bytes": 960,
+          "resident_captures": 3,
+          "resident_shadow_node_budget": 8,
+          "resident_target_rebuilds": 1,
+          "resident_host_transform_input_bytes": 576,
+          "resident_render_planes_available": true,
+          "resident_environment_available": true,
+          "resident_environment_abi_version": 1,
+          "resident_environment_info": {
+            "environment_abi_version": 1,
+            "supported": 1,
+            "shader_compatible": 1,
+            "max_side": 1024,
+            "max_mip_levels": 11,
+            "side": 0,
+            "mip_levels": 0,
+            "loaded": 0,
+            "format": 43,
+            "cube_layers": 6,
+            "sh_coefficients": 9,
+            "axis_transform": 1,
+            "diffuse_basis": 1,
+            "max_rgba_bytes": 134217728,
+            "source_rgba_bytes": 0,
+            "image_upload_bytes": 24,
+            "parameter_upload_bytes": 160,
+            "upload_calls": 0,
+            "rgb_captures_with_environment": 0,
+            "sky_draws": 0,
+            "capture_scope": "successful RGB captures with an uploaded directional environment; sky draw count is not foreground pixel count",
+            "snapshot": "last live query; final GPU allocations are reported by teardown telemetry"
+          },
+          "resident_texture_available": true,
+          "resident_linear_roughness_available": true,
+          "resident_texture_abi_version": 1,
+          "resident_texture_info": {
+            "texture_abi_version": 1,
+            "max_textures": 64,
+            "max_width": 2048,
+            "max_height": 2048,
+            "max_layers": 64,
+            "texture_count": 0,
+            "array_width": 1,
+            "array_height": 1,
+            "array_layers": 1,
+            "uv_count": 0,
+            "bound_instances": 0,
+            "loaded": 0,
+            "sampler_filter": 1,
+            "mip_levels": 1,
+            "format": 43,
+            "max_array_bytes": 134217728,
+            "source_rgba_bytes": 0,
+            "padded_rgba_bytes": 4,
+            "metadata_upload_bytes": 28,
+            "upload_calls": 0,
+            "image_upload_bytes": 4,
+            "rgb_captures_with_textures": 0,
+            "capture_scope": "successful RGB captures with bound texture instances, not visible textured pixel count",
+            "upload_scope": "cumulative actual texture image and metadata GPU writes, including default white sentinel; excluded from geometry_upload_bytes",
+            "snapshot": "last live query, not final allocation state; teardown verified by allocation telemetry"
+          },
+          "resident_normal_info": null,
+          "resident_readback": {
+            "readback_abi_version": 1,
+            "memory_type_index": 3,
+            "memory_property_flags": 14,
+            "persistent_mapped": 1,
+            "last_channel_mask": 14,
+            "capacity_bytes": 1497600,
+            "copied_bytes": 2995200,
+            "map_calls": 1,
+            "unmap_calls": 0,
+            "host_visible": true,
+            "host_coherent": true,
+            "host_cached": true,
+            "device_local": false,
+            "snapshot": "last live query, not final mapping state; teardown verified by allocation telemetry",
+            "capacity_scope": "logical Vulkan readback buffer capacity, not total VkDeviceMemory allocation size"
+          },
+          "resident_profile": {
+            "profile_abi_version": 1,
+            "timestamp_supported": 1,
+            "timestamp_valid_bits": 64,
+            "tlas_node_count": 5,
+            "timestamp_period_ns": 1.0,
+            "captures": 3,
+            "host_prepare_ns": 12000,
+            "host_upload_ns": 974000,
+            "host_record_ns": 488200,
+            "host_submit_ns": 133300,
+            "host_wait_ns": 598000,
+            "host_readback_ns": 194000,
+            "gpu_render_ns": 163008,
+            "gpu_copy_ns": 240160,
+            "gpu_total_ns": 403168,
+            "tlas_upload_bytes": 720,
+            "timestamp_samples": 3,
+            "scope": "cumulative successful captures including warmup; excludes initial static geometry upload",
+            "gpu_scope": "Vulkan timestamps: raster plus fragment work, then attachment copies; no per-light kernel claim",
+            "snapshot": "last live query, retained after close; final ownership is checked by telemetry"
+          },
+          "resident_telemetry": {
+            "telemetry_abi_version": 1,
+            "device_luid_valid": 1,
+            "device_node_mask": 1,
+            "device_local_bytes_current": 0,
+            "device_local_bytes_peak": 2101808,
+            "device_local_bytes_allocated": 2101808,
+            "host_visible_bytes_current": 0,
+            "host_visible_bytes_peak": 1498736,
+            "host_visible_bytes_allocated": 1499792,
+            "readback_bytes": 2995200,
+            "fence_wait_wall_ns": 951100,
+            "fence_wait_calls": 6,
+            "submissions": 6,
+            "allocation_count": 22,
+            "free_count": 22,
+            "device_luid_hex": "ef22010000000000",
+            "final_after_destroy": true,
+            "allocation_scope": "this context explicit VkDeviceMemory allocations; not driver total VRAM",
+            "wait_scope": "host wall time blocked in fence waits, including upload; not GPU kernel time"
+          },
+          "resident_studio_available": true,
+          "resident_msaa": null
+        },
+        "library_path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-normal\\build-normal\\phymeo_native.dll",
+        "library_sha256": "83dcbf6a92c2ccc2cbf8ea16a4e63e5ef6ab96ce66e0734a398e2c4bad6756b6",
+        "shader_sha256": {
+          "vert": "b1cb30601e2f8ff78e7a14818d3253ec95806b4ba22039b106927ffa4ca86810",
+          "frag": "72215fcebf7e1af6a1af1be9258f9b5a5411dac1bf108a699ff6ad3d7bb20ab5"
+        },
+        "scene_key": "normal-chart-none-minus",
+        "decoded_geometry_sha256": "60ea54657af7c607007053a01a339bd215c53bdefe751bfbca68637bea9c9155",
+        "triangles": 6,
+        "light_count": 1,
+        "max_lights": 4,
+        "max_triangles": 1048576,
+        "resident": true,
+        "shadow_mode": "software",
+        "area_light_grid": 2,
+        "area_light_samples_per_panel": 4,
+        "area_light_brdf_samples_per_panel": 8,
+        "geometry_residency": "static indexed meshes; per-frame instance matrices",
+        "msaa": {
+          "requested_samples": 1,
+          "actual_color_samples": 1,
+          "sensor_samples": 1,
+          "resolve_space": "none (single sample)",
+          "sensor_sampling": "deterministic pixel center"
+        },
+        "primary_visibility": "single-sample Vulkan raster, two-sided opaque triangles",
+        "lighting": "direct GGX/Smith/Schlick metallic-roughness; no ambient or IBL",
+        "studio": null,
+        "environment": null,
+        "shadows": "GPU fragment hard-shadow mesh BVH rays",
+        "shadow_bias_m": 1e-05,
+        "minimum_perceptual_roughness": 0.045,
+        "exposure": 1.0,
+        "display": "clamp linear exposure to [0,1], then IEC sRGB once",
+        "display_transform": "clip",
+        "display_transform_abi": null,
+        "readback": "explicit synchronous host-visible staging after fence; actual flags in resident_readback when available",
+        "readback_channels_mode": "compact requested attachments",
+        "published_ownership": "immutable CPU bytes; private resident host buffer may be reused after each copy",
+        "attachment_formats": [
+          "RGBA8_UNORM",
+          "R32_SFLOAT",
+          "R32_UINT",
+          "R8_UINT"
+        ],
+        "last_passes": [
+          "visibility",
+          "sensor_export"
+        ],
+        "last_request": {
+          "width": 480,
+          "height": 240,
+          "channels": [
+            "forward_depth_m_f32",
+            "instance_id_u32",
+            "valid_u8"
+          ],
+          "native_attachment_mask": 14,
+          "native_output_bytes": 1036800
+        },
+        "stage_execution": "visibility raster + fused fragment shadows/lighting/display/sensors",
+        "lifecycle_counts": "DLL-wide owned contexts, frames, and explicit Vulkan handles; pools own descriptor sets",
+        "path_trace": false,
+        "textures": false,
+        "texture_assets": null,
+        "normal_maps": null,
+        "physics_steps": 0
+      }
+    },
+    {
+      "label": "flat-plus",
+      "passed": true,
+      "diagnostics": {
+        "backend": "phymeo-native-vulkan",
+        "path": "raster",
+        "device": {
+          "abi_version": 2,
+          "device_index": 1,
+          "api_version": 4206881,
+          "driver_version": 2374090752,
+          "vendor_id": 4318,
+          "device_id": 10464,
+          "device_type": 2,
+          "max_width": 32768,
+          "max_height": 32768,
+          "max_vertices": 1048576,
+          "validation_errors": 0,
+          "validation_warnings": 0,
+          "captures": 3,
+          "device_name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+          "device_uuid": "3b78d98198a3be57a8cb4d72fdfbfa96",
+          "closed": true,
+          "validation_enabled": true,
+          "live_contexts": 0,
+          "live_frames": 0,
+          "live_resources": 0,
+          "resident_abi_version": 1,
+          "resident_max_vertices": 1048576,
+          "resident_max_indices": 1572864,
+          "resident_max_meshes": 1024,
+          "resident_max_instances": 1024,
+          "resident_max_bvh_nodes": 262144,
+          "resident_max_instanced_triangles": 1048576,
+          "resident_vertex_count": 12,
+          "resident_index_count": 18,
+          "resident_mesh_count": 3,
+          "resident_instance_count": 3,
+          "resident_bvh_nodes": 3,
+          "resident_instanced_triangles": 6,
+          "resident_loaded": 1,
+          "resident_poisoned": 0,
+          "resident_reserved": 0,
+          "resident_upload_calls": 1,
+          "resident_geometry_upload_bytes": 840,
+          "resident_transform_upload_bytes": 1152,
+          "resident_parameter_upload_bytes": 960,
+          "resident_captures": 3,
+          "resident_shadow_node_budget": 8,
+          "resident_target_rebuilds": 1,
+          "resident_host_transform_input_bytes": 576,
+          "resident_render_planes_available": true,
+          "resident_environment_available": true,
+          "resident_environment_abi_version": 1,
+          "resident_environment_info": {
+            "environment_abi_version": 1,
+            "supported": 1,
+            "shader_compatible": 1,
+            "max_side": 1024,
+            "max_mip_levels": 11,
+            "side": 0,
+            "mip_levels": 0,
+            "loaded": 0,
+            "format": 43,
+            "cube_layers": 6,
+            "sh_coefficients": 9,
+            "axis_transform": 1,
+            "diffuse_basis": 1,
+            "max_rgba_bytes": 134217728,
+            "source_rgba_bytes": 0,
+            "image_upload_bytes": 24,
+            "parameter_upload_bytes": 160,
+            "upload_calls": 0,
+            "rgb_captures_with_environment": 0,
+            "sky_draws": 0,
+            "capture_scope": "successful RGB captures with an uploaded directional environment; sky draw count is not foreground pixel count",
+            "snapshot": "last live query; final GPU allocations are reported by teardown telemetry"
+          },
+          "resident_texture_available": true,
+          "resident_linear_roughness_available": true,
+          "resident_texture_abi_version": 1,
+          "resident_texture_info": {
+            "texture_abi_version": 1,
+            "max_textures": 64,
+            "max_width": 2048,
+            "max_height": 2048,
+            "max_layers": 64,
+            "texture_count": 0,
+            "array_width": 1,
+            "array_height": 1,
+            "array_layers": 1,
+            "uv_count": 0,
+            "bound_instances": 0,
+            "loaded": 0,
+            "sampler_filter": 1,
+            "mip_levels": 1,
+            "format": 43,
+            "max_array_bytes": 134217728,
+            "source_rgba_bytes": 0,
+            "padded_rgba_bytes": 4,
+            "metadata_upload_bytes": 28,
+            "upload_calls": 0,
+            "image_upload_bytes": 4,
+            "rgb_captures_with_textures": 0,
+            "capture_scope": "successful RGB captures with bound texture instances, not visible textured pixel count",
+            "upload_scope": "cumulative actual texture image and metadata GPU writes, including default white sentinel; excluded from geometry_upload_bytes",
+            "snapshot": "last live query, not final allocation state; teardown verified by allocation telemetry"
+          },
+          "resident_normal_info": {
+            "normal_abi_version": 1,
+            "max_textures": 64,
+            "max_width": 2048,
+            "max_height": 2048,
+            "max_layers": 64,
+            "texture_count": 1,
+            "array_width": 4,
+            "array_height": 4,
+            "array_layers": 1,
+            "uv_count": 12,
+            "bound_instances": 3,
+            "loaded": 1,
+            "sampler_filter": 1,
+            "mip_levels": 1,
+            "format": 37,
+            "shader_compatible": 1,
+            "max_array_bytes": 134217728,
+            "source_rgba_bytes": 16,
+            "padded_rgba_bytes": 64,
+            "metadata_upload_bytes": 160,
+            "upload_calls": 1,
+            "image_upload_bytes": 68,
+            "rgb_captures_with_normals": 2,
+            "upload_scope": "normal image and metadata writes, including sentinel; excluded from geometry/color uploads",
+            "capture_scope": "successful RGB captures with bound normal maps; not visible pixel count"
+          },
+          "resident_readback": {
+            "readback_abi_version": 1,
+            "memory_type_index": 3,
+            "memory_property_flags": 14,
+            "persistent_mapped": 1,
+            "last_channel_mask": 14,
+            "capacity_bytes": 1497600,
+            "copied_bytes": 2995200,
+            "map_calls": 1,
+            "unmap_calls": 0,
+            "host_visible": true,
+            "host_coherent": true,
+            "host_cached": true,
+            "device_local": false,
+            "snapshot": "last live query, not final mapping state; teardown verified by allocation telemetry",
+            "capacity_scope": "logical Vulkan readback buffer capacity, not total VkDeviceMemory allocation size"
+          },
+          "resident_profile": {
+            "profile_abi_version": 1,
+            "timestamp_supported": 1,
+            "timestamp_valid_bits": 64,
+            "tlas_node_count": 5,
+            "timestamp_period_ns": 1.0,
+            "captures": 3,
+            "host_prepare_ns": 12800,
+            "host_upload_ns": 1280200,
+            "host_record_ns": 549100,
+            "host_submit_ns": 164600,
+            "host_wait_ns": 684000,
+            "host_readback_ns": 258300,
+            "gpu_render_ns": 179680,
+            "gpu_copy_ns": 250848,
+            "gpu_total_ns": 430528,
+            "tlas_upload_bytes": 720,
+            "timestamp_samples": 3,
+            "scope": "cumulative successful captures including warmup; excludes initial static geometry upload",
+            "gpu_scope": "Vulkan timestamps: raster plus fragment work, then attachment copies; no per-light kernel claim",
+            "snapshot": "last live query, retained after close; final ownership is checked by telemetry"
+          },
+          "resident_telemetry": {
+            "telemetry_abi_version": 1,
+            "device_luid_valid": 1,
+            "device_node_mask": 1,
+            "device_local_bytes_current": 0,
+            "device_local_bytes_peak": 2102464,
+            "device_local_bytes_allocated": 2103008,
+            "host_visible_bytes_current": 0,
+            "host_visible_bytes_peak": 1498736,
+            "host_visible_bytes_allocated": 1500020,
+            "readback_bytes": 2995200,
+            "fence_wait_wall_ns": 1221000,
+            "fence_wait_calls": 8,
+            "submissions": 8,
+            "allocation_count": 28,
+            "free_count": 28,
+            "device_luid_hex": "ef22010000000000",
+            "final_after_destroy": true,
+            "allocation_scope": "this context explicit VkDeviceMemory allocations; not driver total VRAM",
+            "wait_scope": "host wall time blocked in fence waits, including upload; not GPU kernel time"
+          },
+          "resident_studio_available": true,
+          "resident_msaa": null
+        },
+        "library_path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-normal\\build-normal\\phymeo_native.dll",
+        "library_sha256": "83dcbf6a92c2ccc2cbf8ea16a4e63e5ef6ab96ce66e0734a398e2c4bad6756b6",
+        "shader_sha256": {
+          "vert": "45c2f2a0fd75c130f949fbebdf43033e4999a4a67c55e2c6b2eb99e4310eaa9c",
+          "frag": "7fa538382ace5b300fa213618ef4a0d602cb79a2d1abc844f08bd78245be45ce"
+        },
+        "scene_key": "normal-chart-flat-plus",
+        "decoded_geometry_sha256": "60ea54657af7c607007053a01a339bd215c53bdefe751bfbca68637bea9c9155",
+        "triangles": 6,
+        "light_count": 1,
+        "max_lights": 4,
+        "max_triangles": 1048576,
+        "resident": true,
+        "shadow_mode": "software",
+        "area_light_grid": 2,
+        "area_light_samples_per_panel": 4,
+        "area_light_brdf_samples_per_panel": 8,
+        "geometry_residency": "static indexed meshes; per-frame instance matrices",
+        "msaa": {
+          "requested_samples": 1,
+          "actual_color_samples": 1,
+          "sensor_samples": 1,
+          "resolve_space": "none (single sample)",
+          "sensor_sampling": "deterministic pixel center"
+        },
+        "primary_visibility": "single-sample Vulkan raster, two-sided opaque triangles",
+        "lighting": "direct GGX/Smith/Schlick metallic-roughness; no ambient or IBL",
+        "studio": null,
+        "environment": null,
+        "shadows": "GPU fragment hard-shadow mesh BVH rays",
+        "shadow_bias_m": 1e-05,
+        "minimum_perceptual_roughness": 0.045,
+        "exposure": 1.0,
+        "display": "clamp linear exposure to [0,1], then IEC sRGB once",
+        "display_transform": "clip",
+        "display_transform_abi": null,
+        "readback": "explicit synchronous host-visible staging after fence; actual flags in resident_readback when available",
+        "readback_channels_mode": "compact requested attachments",
+        "published_ownership": "immutable CPU bytes; private resident host buffer may be reused after each copy",
+        "attachment_formats": [
+          "RGBA8_UNORM",
+          "R32_SFLOAT",
+          "R32_UINT",
+          "R8_UINT"
+        ],
+        "last_passes": [
+          "visibility",
+          "sensor_export"
+        ],
+        "last_request": {
+          "width": 480,
+          "height": 240,
+          "channels": [
+            "forward_depth_m_f32",
+            "instance_id_u32",
+            "valid_u8"
+          ],
+          "native_attachment_mask": 14,
+          "native_output_bytes": 1036800
+        },
+        "stage_execution": "visibility raster + fused fragment shadows/lighting/display/sensors",
+        "lifecycle_counts": "DLL-wide owned contexts, frames, and explicit Vulkan handles; pools own descriptor sets",
+        "path_trace": false,
+        "textures": false,
+        "texture_assets": null,
+        "normal_maps": {
+          "textures": [
+            {
+              "uri": "file:///C:/Users/38347/.codex/worktrees/render-g1-scene/phymeo/artifacts/rendering/normal-chart/run-01/flat.png",
+              "source_sha256": "6b6414829ea0a07e7598459eff854e3b07b11a658bfba4eedb162a150659e78f",
+              "rgb8_sha256": "84ab88bd92a2b90742add197e511c81a992c63c7e1fcbf3e6448aaa7ece2fa66",
+              "width": 2,
+              "height": 2
+            }
+          ],
+          "strength": 1.0,
+          "encoding": "linear RGB8 UNORM, normalize(2*c-1), glTF +Y",
+          "tangent_frame": "primary UV derivatives; Gram-Schmidt tangent; mirrored handedness from dP/dv; no explicit TANGENT support",
+          "degenerate_policy": "reject singular/ill-conditioned source UV; singular screen derivatives or zero sampled vector fall back to geometric shading normal",
+          "sampler": "bilinear repeat, mip0, top-row-first; one wrap guard on each side",
+          "source_rgba_bytes": 16,
+          "padded_array_bytes": 64,
+          "uv_fp32_sha256": "796f307d5439d4d5318621eb594f4f6ecf218e544a747ac0cfa01d41003dc776",
+          "instance_slots": [
+            0,
+            0,
+            0
+          ],
+          "geometry_and_sensor_policy": "shading normal only; unchanged geometry, original shadow bias normal, pixel-center sensors"
+        },
+        "physics_steps": 0
+      }
+    },
+    {
+      "label": "flat-minus",
+      "passed": true,
+      "diagnostics": {
+        "backend": "phymeo-native-vulkan",
+        "path": "raster",
+        "device": {
+          "abi_version": 2,
+          "device_index": 1,
+          "api_version": 4206881,
+          "driver_version": 2374090752,
+          "vendor_id": 4318,
+          "device_id": 10464,
+          "device_type": 2,
+          "max_width": 32768,
+          "max_height": 32768,
+          "max_vertices": 1048576,
+          "validation_errors": 0,
+          "validation_warnings": 0,
+          "captures": 3,
+          "device_name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+          "device_uuid": "3b78d98198a3be57a8cb4d72fdfbfa96",
+          "closed": true,
+          "validation_enabled": true,
+          "live_contexts": 0,
+          "live_frames": 0,
+          "live_resources": 0,
+          "resident_abi_version": 1,
+          "resident_max_vertices": 1048576,
+          "resident_max_indices": 1572864,
+          "resident_max_meshes": 1024,
+          "resident_max_instances": 1024,
+          "resident_max_bvh_nodes": 262144,
+          "resident_max_instanced_triangles": 1048576,
+          "resident_vertex_count": 12,
+          "resident_index_count": 18,
+          "resident_mesh_count": 3,
+          "resident_instance_count": 3,
+          "resident_bvh_nodes": 3,
+          "resident_instanced_triangles": 6,
+          "resident_loaded": 1,
+          "resident_poisoned": 0,
+          "resident_reserved": 0,
+          "resident_upload_calls": 1,
+          "resident_geometry_upload_bytes": 840,
+          "resident_transform_upload_bytes": 1152,
+          "resident_parameter_upload_bytes": 960,
+          "resident_captures": 3,
+          "resident_shadow_node_budget": 8,
+          "resident_target_rebuilds": 1,
+          "resident_host_transform_input_bytes": 576,
+          "resident_render_planes_available": true,
+          "resident_environment_available": true,
+          "resident_environment_abi_version": 1,
+          "resident_environment_info": {
+            "environment_abi_version": 1,
+            "supported": 1,
+            "shader_compatible": 1,
+            "max_side": 1024,
+            "max_mip_levels": 11,
+            "side": 0,
+            "mip_levels": 0,
+            "loaded": 0,
+            "format": 43,
+            "cube_layers": 6,
+            "sh_coefficients": 9,
+            "axis_transform": 1,
+            "diffuse_basis": 1,
+            "max_rgba_bytes": 134217728,
+            "source_rgba_bytes": 0,
+            "image_upload_bytes": 24,
+            "parameter_upload_bytes": 160,
+            "upload_calls": 0,
+            "rgb_captures_with_environment": 0,
+            "sky_draws": 0,
+            "capture_scope": "successful RGB captures with an uploaded directional environment; sky draw count is not foreground pixel count",
+            "snapshot": "last live query; final GPU allocations are reported by teardown telemetry"
+          },
+          "resident_texture_available": true,
+          "resident_linear_roughness_available": true,
+          "resident_texture_abi_version": 1,
+          "resident_texture_info": {
+            "texture_abi_version": 1,
+            "max_textures": 64,
+            "max_width": 2048,
+            "max_height": 2048,
+            "max_layers": 64,
+            "texture_count": 0,
+            "array_width": 1,
+            "array_height": 1,
+            "array_layers": 1,
+            "uv_count": 0,
+            "bound_instances": 0,
+            "loaded": 0,
+            "sampler_filter": 1,
+            "mip_levels": 1,
+            "format": 43,
+            "max_array_bytes": 134217728,
+            "source_rgba_bytes": 0,
+            "padded_rgba_bytes": 4,
+            "metadata_upload_bytes": 28,
+            "upload_calls": 0,
+            "image_upload_bytes": 4,
+            "rgb_captures_with_textures": 0,
+            "capture_scope": "successful RGB captures with bound texture instances, not visible textured pixel count",
+            "upload_scope": "cumulative actual texture image and metadata GPU writes, including default white sentinel; excluded from geometry_upload_bytes",
+            "snapshot": "last live query, not final allocation state; teardown verified by allocation telemetry"
+          },
+          "resident_normal_info": {
+            "normal_abi_version": 1,
+            "max_textures": 64,
+            "max_width": 2048,
+            "max_height": 2048,
+            "max_layers": 64,
+            "texture_count": 1,
+            "array_width": 4,
+            "array_height": 4,
+            "array_layers": 1,
+            "uv_count": 12,
+            "bound_instances": 3,
+            "loaded": 1,
+            "sampler_filter": 1,
+            "mip_levels": 1,
+            "format": 37,
+            "shader_compatible": 1,
+            "max_array_bytes": 134217728,
+            "source_rgba_bytes": 16,
+            "padded_rgba_bytes": 64,
+            "metadata_upload_bytes": 160,
+            "upload_calls": 1,
+            "image_upload_bytes": 68,
+            "rgb_captures_with_normals": 2,
+            "upload_scope": "normal image and metadata writes, including sentinel; excluded from geometry/color uploads",
+            "capture_scope": "successful RGB captures with bound normal maps; not visible pixel count"
+          },
+          "resident_readback": {
+            "readback_abi_version": 1,
+            "memory_type_index": 3,
+            "memory_property_flags": 14,
+            "persistent_mapped": 1,
+            "last_channel_mask": 14,
+            "capacity_bytes": 1497600,
+            "copied_bytes": 2995200,
+            "map_calls": 1,
+            "unmap_calls": 0,
+            "host_visible": true,
+            "host_coherent": true,
+            "host_cached": true,
+            "device_local": false,
+            "snapshot": "last live query, not final mapping state; teardown verified by allocation telemetry",
+            "capacity_scope": "logical Vulkan readback buffer capacity, not total VkDeviceMemory allocation size"
+          },
+          "resident_profile": {
+            "profile_abi_version": 1,
+            "timestamp_supported": 1,
+            "timestamp_valid_bits": 64,
+            "tlas_node_count": 5,
+            "timestamp_period_ns": 1.0,
+            "captures": 3,
+            "host_prepare_ns": 13200,
+            "host_upload_ns": 1207600,
+            "host_record_ns": 516000,
+            "host_submit_ns": 153200,
+            "host_wait_ns": 622600,
+            "host_readback_ns": 210400,
+            "gpu_render_ns": 180864,
+            "gpu_copy_ns": 239680,
+            "gpu_total_ns": 420544,
+            "tlas_upload_bytes": 720,
+            "timestamp_samples": 3,
+            "scope": "cumulative successful captures including warmup; excludes initial static geometry upload",
+            "gpu_scope": "Vulkan timestamps: raster plus fragment work, then attachment copies; no per-light kernel claim",
+            "snapshot": "last live query, retained after close; final ownership is checked by telemetry"
+          },
+          "resident_telemetry": {
+            "telemetry_abi_version": 1,
+            "device_luid_valid": 1,
+            "device_node_mask": 1,
+            "device_local_bytes_current": 0,
+            "device_local_bytes_peak": 2102464,
+            "device_local_bytes_allocated": 2103008,
+            "host_visible_bytes_current": 0,
+            "host_visible_bytes_peak": 1498736,
+            "host_visible_bytes_allocated": 1500020,
+            "readback_bytes": 2995200,
+            "fence_wait_wall_ns": 1084200,
+            "fence_wait_calls": 8,
+            "submissions": 8,
+            "allocation_count": 28,
+            "free_count": 28,
+            "device_luid_hex": "ef22010000000000",
+            "final_after_destroy": true,
+            "allocation_scope": "this context explicit VkDeviceMemory allocations; not driver total VRAM",
+            "wait_scope": "host wall time blocked in fence waits, including upload; not GPU kernel time"
+          },
+          "resident_studio_available": true,
+          "resident_msaa": null
+        },
+        "library_path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-normal\\build-normal\\phymeo_native.dll",
+        "library_sha256": "83dcbf6a92c2ccc2cbf8ea16a4e63e5ef6ab96ce66e0734a398e2c4bad6756b6",
+        "shader_sha256": {
+          "vert": "45c2f2a0fd75c130f949fbebdf43033e4999a4a67c55e2c6b2eb99e4310eaa9c",
+          "frag": "7fa538382ace5b300fa213618ef4a0d602cb79a2d1abc844f08bd78245be45ce"
+        },
+        "scene_key": "normal-chart-flat-minus",
+        "decoded_geometry_sha256": "60ea54657af7c607007053a01a339bd215c53bdefe751bfbca68637bea9c9155",
+        "triangles": 6,
+        "light_count": 1,
+        "max_lights": 4,
+        "max_triangles": 1048576,
+        "resident": true,
+        "shadow_mode": "software",
+        "area_light_grid": 2,
+        "area_light_samples_per_panel": 4,
+        "area_light_brdf_samples_per_panel": 8,
+        "geometry_residency": "static indexed meshes; per-frame instance matrices",
+        "msaa": {
+          "requested_samples": 1,
+          "actual_color_samples": 1,
+          "sensor_samples": 1,
+          "resolve_space": "none (single sample)",
+          "sensor_sampling": "deterministic pixel center"
+        },
+        "primary_visibility": "single-sample Vulkan raster, two-sided opaque triangles",
+        "lighting": "direct GGX/Smith/Schlick metallic-roughness; no ambient or IBL",
+        "studio": null,
+        "environment": null,
+        "shadows": "GPU fragment hard-shadow mesh BVH rays",
+        "shadow_bias_m": 1e-05,
+        "minimum_perceptual_roughness": 0.045,
+        "exposure": 1.0,
+        "display": "clamp linear exposure to [0,1], then IEC sRGB once",
+        "display_transform": "clip",
+        "display_transform_abi": null,
+        "readback": "explicit synchronous host-visible staging after fence; actual flags in resident_readback when available",
+        "readback_channels_mode": "compact requested attachments",
+        "published_ownership": "immutable CPU bytes; private resident host buffer may be reused after each copy",
+        "attachment_formats": [
+          "RGBA8_UNORM",
+          "R32_SFLOAT",
+          "R32_UINT",
+          "R8_UINT"
+        ],
+        "last_passes": [
+          "visibility",
+          "sensor_export"
+        ],
+        "last_request": {
+          "width": 480,
+          "height": 240,
+          "channels": [
+            "forward_depth_m_f32",
+            "instance_id_u32",
+            "valid_u8"
+          ],
+          "native_attachment_mask": 14,
+          "native_output_bytes": 1036800
+        },
+        "stage_execution": "visibility raster + fused fragment shadows/lighting/display/sensors",
+        "lifecycle_counts": "DLL-wide owned contexts, frames, and explicit Vulkan handles; pools own descriptor sets",
+        "path_trace": false,
+        "textures": false,
+        "texture_assets": null,
+        "normal_maps": {
+          "textures": [
+            {
+              "uri": "file:///C:/Users/38347/.codex/worktrees/render-g1-scene/phymeo/artifacts/rendering/normal-chart/run-01/flat.png",
+              "source_sha256": "6b6414829ea0a07e7598459eff854e3b07b11a658bfba4eedb162a150659e78f",
+              "rgb8_sha256": "84ab88bd92a2b90742add197e511c81a992c63c7e1fcbf3e6448aaa7ece2fa66",
+              "width": 2,
+              "height": 2
+            }
+          ],
+          "strength": 1.0,
+          "encoding": "linear RGB8 UNORM, normalize(2*c-1), glTF +Y",
+          "tangent_frame": "primary UV derivatives; Gram-Schmidt tangent; mirrored handedness from dP/dv; no explicit TANGENT support",
+          "degenerate_policy": "reject singular/ill-conditioned source UV; singular screen derivatives or zero sampled vector fall back to geometric shading normal",
+          "sampler": "bilinear repeat, mip0, top-row-first; one wrap guard on each side",
+          "source_rgba_bytes": 16,
+          "padded_array_bytes": 64,
+          "uv_fp32_sha256": "796f307d5439d4d5318621eb594f4f6ecf218e544a747ac0cfa01d41003dc776",
+          "instance_slots": [
+            0,
+            0,
+            0
+          ],
+          "geometry_and_sensor_policy": "shading normal only; unchanged geometry, original shadow bias normal, pixel-center sensors"
+        },
+        "physics_steps": 0
+      }
+    },
+    {
+      "label": "direction-plus",
+      "passed": true,
+      "diagnostics": {
+        "backend": "phymeo-native-vulkan",
+        "path": "raster",
+        "device": {
+          "abi_version": 2,
+          "device_index": 1,
+          "api_version": 4206881,
+          "driver_version": 2374090752,
+          "vendor_id": 4318,
+          "device_id": 10464,
+          "device_type": 2,
+          "max_width": 32768,
+          "max_height": 32768,
+          "max_vertices": 1048576,
+          "validation_errors": 0,
+          "validation_warnings": 0,
+          "captures": 3,
+          "device_name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+          "device_uuid": "3b78d98198a3be57a8cb4d72fdfbfa96",
+          "closed": true,
+          "validation_enabled": true,
+          "live_contexts": 0,
+          "live_frames": 0,
+          "live_resources": 0,
+          "resident_abi_version": 1,
+          "resident_max_vertices": 1048576,
+          "resident_max_indices": 1572864,
+          "resident_max_meshes": 1024,
+          "resident_max_instances": 1024,
+          "resident_max_bvh_nodes": 262144,
+          "resident_max_instanced_triangles": 1048576,
+          "resident_vertex_count": 12,
+          "resident_index_count": 18,
+          "resident_mesh_count": 3,
+          "resident_instance_count": 3,
+          "resident_bvh_nodes": 3,
+          "resident_instanced_triangles": 6,
+          "resident_loaded": 1,
+          "resident_poisoned": 0,
+          "resident_reserved": 0,
+          "resident_upload_calls": 1,
+          "resident_geometry_upload_bytes": 840,
+          "resident_transform_upload_bytes": 1152,
+          "resident_parameter_upload_bytes": 960,
+          "resident_captures": 3,
+          "resident_shadow_node_budget": 8,
+          "resident_target_rebuilds": 1,
+          "resident_host_transform_input_bytes": 576,
+          "resident_render_planes_available": true,
+          "resident_environment_available": true,
+          "resident_environment_abi_version": 1,
+          "resident_environment_info": {
+            "environment_abi_version": 1,
+            "supported": 1,
+            "shader_compatible": 1,
+            "max_side": 1024,
+            "max_mip_levels": 11,
+            "side": 0,
+            "mip_levels": 0,
+            "loaded": 0,
+            "format": 43,
+            "cube_layers": 6,
+            "sh_coefficients": 9,
+            "axis_transform": 1,
+            "diffuse_basis": 1,
+            "max_rgba_bytes": 134217728,
+            "source_rgba_bytes": 0,
+            "image_upload_bytes": 24,
+            "parameter_upload_bytes": 160,
+            "upload_calls": 0,
+            "rgb_captures_with_environment": 0,
+            "sky_draws": 0,
+            "capture_scope": "successful RGB captures with an uploaded directional environment; sky draw count is not foreground pixel count",
+            "snapshot": "last live query; final GPU allocations are reported by teardown telemetry"
+          },
+          "resident_texture_available": true,
+          "resident_linear_roughness_available": true,
+          "resident_texture_abi_version": 1,
+          "resident_texture_info": {
+            "texture_abi_version": 1,
+            "max_textures": 64,
+            "max_width": 2048,
+            "max_height": 2048,
+            "max_layers": 64,
+            "texture_count": 0,
+            "array_width": 1,
+            "array_height": 1,
+            "array_layers": 1,
+            "uv_count": 0,
+            "bound_instances": 0,
+            "loaded": 0,
+            "sampler_filter": 1,
+            "mip_levels": 1,
+            "format": 43,
+            "max_array_bytes": 134217728,
+            "source_rgba_bytes": 0,
+            "padded_rgba_bytes": 4,
+            "metadata_upload_bytes": 28,
+            "upload_calls": 0,
+            "image_upload_bytes": 4,
+            "rgb_captures_with_textures": 0,
+            "capture_scope": "successful RGB captures with bound texture instances, not visible textured pixel count",
+            "upload_scope": "cumulative actual texture image and metadata GPU writes, including default white sentinel; excluded from geometry_upload_bytes",
+            "snapshot": "last live query, not final allocation state; teardown verified by allocation telemetry"
+          },
+          "resident_normal_info": {
+            "normal_abi_version": 1,
+            "max_textures": 64,
+            "max_width": 2048,
+            "max_height": 2048,
+            "max_layers": 64,
+            "texture_count": 1,
+            "array_width": 4,
+            "array_height": 4,
+            "array_layers": 1,
+            "uv_count": 12,
+            "bound_instances": 3,
+            "loaded": 1,
+            "sampler_filter": 1,
+            "mip_levels": 1,
+            "format": 37,
+            "shader_compatible": 1,
+            "max_array_bytes": 134217728,
+            "source_rgba_bytes": 16,
+            "padded_rgba_bytes": 64,
+            "metadata_upload_bytes": 160,
+            "upload_calls": 1,
+            "image_upload_bytes": 68,
+            "rgb_captures_with_normals": 2,
+            "upload_scope": "normal image and metadata writes, including sentinel; excluded from geometry/color uploads",
+            "capture_scope": "successful RGB captures with bound normal maps; not visible pixel count"
+          },
+          "resident_readback": {
+            "readback_abi_version": 1,
+            "memory_type_index": 3,
+            "memory_property_flags": 14,
+            "persistent_mapped": 1,
+            "last_channel_mask": 14,
+            "capacity_bytes": 1497600,
+            "copied_bytes": 2995200,
+            "map_calls": 1,
+            "unmap_calls": 0,
+            "host_visible": true,
+            "host_coherent": true,
+            "host_cached": true,
+            "device_local": false,
+            "snapshot": "last live query, not final mapping state; teardown verified by allocation telemetry",
+            "capacity_scope": "logical Vulkan readback buffer capacity, not total VkDeviceMemory allocation size"
+          },
+          "resident_profile": {
+            "profile_abi_version": 1,
+            "timestamp_supported": 1,
+            "timestamp_valid_bits": 64,
+            "tlas_node_count": 5,
+            "timestamp_period_ns": 1.0,
+            "captures": 3,
+            "host_prepare_ns": 12500,
+            "host_upload_ns": 1377900,
+            "host_record_ns": 519100,
+            "host_submit_ns": 144800,
+            "host_wait_ns": 631500,
+            "host_readback_ns": 196900,
+            "gpu_render_ns": 181056,
+            "gpu_copy_ns": 240352,
+            "gpu_total_ns": 421408,
+            "tlas_upload_bytes": 720,
+            "timestamp_samples": 3,
+            "scope": "cumulative successful captures including warmup; excludes initial static geometry upload",
+            "gpu_scope": "Vulkan timestamps: raster plus fragment work, then attachment copies; no per-light kernel claim",
+            "snapshot": "last live query, retained after close; final ownership is checked by telemetry"
+          },
+          "resident_telemetry": {
+            "telemetry_abi_version": 1,
+            "device_luid_valid": 1,
+            "device_node_mask": 1,
+            "device_local_bytes_current": 0,
+            "device_local_bytes_peak": 2102464,
+            "device_local_bytes_allocated": 2103008,
+            "host_visible_bytes_current": 0,
+            "host_visible_bytes_peak": 1498736,
+            "host_visible_bytes_allocated": 1500020,
+            "readback_bytes": 2995200,
+            "fence_wait_wall_ns": 1214000,
+            "fence_wait_calls": 8,
+            "submissions": 8,
+            "allocation_count": 28,
+            "free_count": 28,
+            "device_luid_hex": "ef22010000000000",
+            "final_after_destroy": true,
+            "allocation_scope": "this context explicit VkDeviceMemory allocations; not driver total VRAM",
+            "wait_scope": "host wall time blocked in fence waits, including upload; not GPU kernel time"
+          },
+          "resident_studio_available": true,
+          "resident_msaa": null
+        },
+        "library_path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-normal\\build-normal\\phymeo_native.dll",
+        "library_sha256": "83dcbf6a92c2ccc2cbf8ea16a4e63e5ef6ab96ce66e0734a398e2c4bad6756b6",
+        "shader_sha256": {
+          "vert": "45c2f2a0fd75c130f949fbebdf43033e4999a4a67c55e2c6b2eb99e4310eaa9c",
+          "frag": "7fa538382ace5b300fa213618ef4a0d602cb79a2d1abc844f08bd78245be45ce"
+        },
+        "scene_key": "normal-chart-direction-plus",
+        "decoded_geometry_sha256": "60ea54657af7c607007053a01a339bd215c53bdefe751bfbca68637bea9c9155",
+        "triangles": 6,
+        "light_count": 1,
+        "max_lights": 4,
+        "max_triangles": 1048576,
+        "resident": true,
+        "shadow_mode": "software",
+        "area_light_grid": 2,
+        "area_light_samples_per_panel": 4,
+        "area_light_brdf_samples_per_panel": 8,
+        "geometry_residency": "static indexed meshes; per-frame instance matrices",
+        "msaa": {
+          "requested_samples": 1,
+          "actual_color_samples": 1,
+          "sensor_samples": 1,
+          "resolve_space": "none (single sample)",
+          "sensor_sampling": "deterministic pixel center"
+        },
+        "primary_visibility": "single-sample Vulkan raster, two-sided opaque triangles",
+        "lighting": "direct GGX/Smith/Schlick metallic-roughness; no ambient or IBL",
+        "studio": null,
+        "environment": null,
+        "shadows": "GPU fragment hard-shadow mesh BVH rays",
+        "shadow_bias_m": 1e-05,
+        "minimum_perceptual_roughness": 0.045,
+        "exposure": 1.0,
+        "display": "clamp linear exposure to [0,1], then IEC sRGB once",
+        "display_transform": "clip",
+        "display_transform_abi": null,
+        "readback": "explicit synchronous host-visible staging after fence; actual flags in resident_readback when available",
+        "readback_channels_mode": "compact requested attachments",
+        "published_ownership": "immutable CPU bytes; private resident host buffer may be reused after each copy",
+        "attachment_formats": [
+          "RGBA8_UNORM",
+          "R32_SFLOAT",
+          "R32_UINT",
+          "R8_UINT"
+        ],
+        "last_passes": [
+          "visibility",
+          "sensor_export"
+        ],
+        "last_request": {
+          "width": 480,
+          "height": 240,
+          "channels": [
+            "forward_depth_m_f32",
+            "instance_id_u32",
+            "valid_u8"
+          ],
+          "native_attachment_mask": 14,
+          "native_output_bytes": 1036800
+        },
+        "stage_execution": "visibility raster + fused fragment shadows/lighting/display/sensors",
+        "lifecycle_counts": "DLL-wide owned contexts, frames, and explicit Vulkan handles; pools own descriptor sets",
+        "path_trace": false,
+        "textures": false,
+        "texture_assets": null,
+        "normal_maps": {
+          "textures": [
+            {
+              "uri": "file:///C:/Users/38347/.codex/worktrees/render-g1-scene/phymeo/artifacts/rendering/normal-chart/run-01/direction.png",
+              "source_sha256": "ffd8aa8ac4d6c2b8860a9bc5343c1f87997e7ab0285e6859ff086b3b6c86f6ca",
+              "rgb8_sha256": "529e42f18992f7f43364e241aef020297f740ab1ba2b27626d20865a1d430cab",
+              "width": 2,
+              "height": 2
+            }
+          ],
+          "strength": 1.0,
+          "encoding": "linear RGB8 UNORM, normalize(2*c-1), glTF +Y",
+          "tangent_frame": "primary UV derivatives; Gram-Schmidt tangent; mirrored handedness from dP/dv; no explicit TANGENT support",
+          "degenerate_policy": "reject singular/ill-conditioned source UV; singular screen derivatives or zero sampled vector fall back to geometric shading normal",
+          "sampler": "bilinear repeat, mip0, top-row-first; one wrap guard on each side",
+          "source_rgba_bytes": 16,
+          "padded_array_bytes": 64,
+          "uv_fp32_sha256": "796f307d5439d4d5318621eb594f4f6ecf218e544a747ac0cfa01d41003dc776",
+          "instance_slots": [
+            0,
+            0,
+            0
+          ],
+          "geometry_and_sensor_policy": "shading normal only; unchanged geometry, original shadow bias normal, pixel-center sensors"
+        },
+        "physics_steps": 0
+      }
+    },
+    {
+      "label": "direction-minus",
+      "passed": true,
+      "diagnostics": {
+        "backend": "phymeo-native-vulkan",
+        "path": "raster",
+        "device": {
+          "abi_version": 2,
+          "device_index": 1,
+          "api_version": 4206881,
+          "driver_version": 2374090752,
+          "vendor_id": 4318,
+          "device_id": 10464,
+          "device_type": 2,
+          "max_width": 32768,
+          "max_height": 32768,
+          "max_vertices": 1048576,
+          "validation_errors": 0,
+          "validation_warnings": 0,
+          "captures": 3,
+          "device_name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+          "device_uuid": "3b78d98198a3be57a8cb4d72fdfbfa96",
+          "closed": true,
+          "validation_enabled": true,
+          "live_contexts": 0,
+          "live_frames": 0,
+          "live_resources": 0,
+          "resident_abi_version": 1,
+          "resident_max_vertices": 1048576,
+          "resident_max_indices": 1572864,
+          "resident_max_meshes": 1024,
+          "resident_max_instances": 1024,
+          "resident_max_bvh_nodes": 262144,
+          "resident_max_instanced_triangles": 1048576,
+          "resident_vertex_count": 12,
+          "resident_index_count": 18,
+          "resident_mesh_count": 3,
+          "resident_instance_count": 3,
+          "resident_bvh_nodes": 3,
+          "resident_instanced_triangles": 6,
+          "resident_loaded": 1,
+          "resident_poisoned": 0,
+          "resident_reserved": 0,
+          "resident_upload_calls": 1,
+          "resident_geometry_upload_bytes": 840,
+          "resident_transform_upload_bytes": 1152,
+          "resident_parameter_upload_bytes": 960,
+          "resident_captures": 3,
+          "resident_shadow_node_budget": 8,
+          "resident_target_rebuilds": 1,
+          "resident_host_transform_input_bytes": 576,
+          "resident_render_planes_available": true,
+          "resident_environment_available": true,
+          "resident_environment_abi_version": 1,
+          "resident_environment_info": {
+            "environment_abi_version": 1,
+            "supported": 1,
+            "shader_compatible": 1,
+            "max_side": 1024,
+            "max_mip_levels": 11,
+            "side": 0,
+            "mip_levels": 0,
+            "loaded": 0,
+            "format": 43,
+            "cube_layers": 6,
+            "sh_coefficients": 9,
+            "axis_transform": 1,
+            "diffuse_basis": 1,
+            "max_rgba_bytes": 134217728,
+            "source_rgba_bytes": 0,
+            "image_upload_bytes": 24,
+            "parameter_upload_bytes": 160,
+            "upload_calls": 0,
+            "rgb_captures_with_environment": 0,
+            "sky_draws": 0,
+            "capture_scope": "successful RGB captures with an uploaded directional environment; sky draw count is not foreground pixel count",
+            "snapshot": "last live query; final GPU allocations are reported by teardown telemetry"
+          },
+          "resident_texture_available": true,
+          "resident_linear_roughness_available": true,
+          "resident_texture_abi_version": 1,
+          "resident_texture_info": {
+            "texture_abi_version": 1,
+            "max_textures": 64,
+            "max_width": 2048,
+            "max_height": 2048,
+            "max_layers": 64,
+            "texture_count": 0,
+            "array_width": 1,
+            "array_height": 1,
+            "array_layers": 1,
+            "uv_count": 0,
+            "bound_instances": 0,
+            "loaded": 0,
+            "sampler_filter": 1,
+            "mip_levels": 1,
+            "format": 43,
+            "max_array_bytes": 134217728,
+            "source_rgba_bytes": 0,
+            "padded_rgba_bytes": 4,
+            "metadata_upload_bytes": 28,
+            "upload_calls": 0,
+            "image_upload_bytes": 4,
+            "rgb_captures_with_textures": 0,
+            "capture_scope": "successful RGB captures with bound texture instances, not visible textured pixel count",
+            "upload_scope": "cumulative actual texture image and metadata GPU writes, including default white sentinel; excluded from geometry_upload_bytes",
+            "snapshot": "last live query, not final allocation state; teardown verified by allocation telemetry"
+          },
+          "resident_normal_info": {
+            "normal_abi_version": 1,
+            "max_textures": 64,
+            "max_width": 2048,
+            "max_height": 2048,
+            "max_layers": 64,
+            "texture_count": 1,
+            "array_width": 4,
+            "array_height": 4,
+            "array_layers": 1,
+            "uv_count": 12,
+            "bound_instances": 3,
+            "loaded": 1,
+            "sampler_filter": 1,
+            "mip_levels": 1,
+            "format": 37,
+            "shader_compatible": 1,
+            "max_array_bytes": 134217728,
+            "source_rgba_bytes": 16,
+            "padded_rgba_bytes": 64,
+            "metadata_upload_bytes": 160,
+            "upload_calls": 1,
+            "image_upload_bytes": 68,
+            "rgb_captures_with_normals": 2,
+            "upload_scope": "normal image and metadata writes, including sentinel; excluded from geometry/color uploads",
+            "capture_scope": "successful RGB captures with bound normal maps; not visible pixel count"
+          },
+          "resident_readback": {
+            "readback_abi_version": 1,
+            "memory_type_index": 3,
+            "memory_property_flags": 14,
+            "persistent_mapped": 1,
+            "last_channel_mask": 14,
+            "capacity_bytes": 1497600,
+            "copied_bytes": 2995200,
+            "map_calls": 1,
+            "unmap_calls": 0,
+            "host_visible": true,
+            "host_coherent": true,
+            "host_cached": true,
+            "device_local": false,
+            "snapshot": "last live query, not final mapping state; teardown verified by allocation telemetry",
+            "capacity_scope": "logical Vulkan readback buffer capacity, not total VkDeviceMemory allocation size"
+          },
+          "resident_profile": {
+            "profile_abi_version": 1,
+            "timestamp_supported": 1,
+            "timestamp_valid_bits": 64,
+            "tlas_node_count": 5,
+            "timestamp_period_ns": 1.0,
+            "captures": 3,
+            "host_prepare_ns": 13000,
+            "host_upload_ns": 1188000,
+            "host_record_ns": 513100,
+            "host_submit_ns": 147600,
+            "host_wait_ns": 625700,
+            "host_readback_ns": 202500,
+            "gpu_render_ns": 165248,
+            "gpu_copy_ns": 245632,
+            "gpu_total_ns": 410880,
+            "tlas_upload_bytes": 720,
+            "timestamp_samples": 3,
+            "scope": "cumulative successful captures including warmup; excludes initial static geometry upload",
+            "gpu_scope": "Vulkan timestamps: raster plus fragment work, then attachment copies; no per-light kernel claim",
+            "snapshot": "last live query, retained after close; final ownership is checked by telemetry"
+          },
+          "resident_telemetry": {
+            "telemetry_abi_version": 1,
+            "device_luid_valid": 1,
+            "device_node_mask": 1,
+            "device_local_bytes_current": 0,
+            "device_local_bytes_peak": 2102464,
+            "device_local_bytes_allocated": 2103008,
+            "host_visible_bytes_current": 0,
+            "host_visible_bytes_peak": 1498736,
+            "host_visible_bytes_allocated": 1500020,
+            "readback_bytes": 2995200,
+            "fence_wait_wall_ns": 1079500,
+            "fence_wait_calls": 8,
+            "submissions": 8,
+            "allocation_count": 28,
+            "free_count": 28,
+            "device_luid_hex": "ef22010000000000",
+            "final_after_destroy": true,
+            "allocation_scope": "this context explicit VkDeviceMemory allocations; not driver total VRAM",
+            "wait_scope": "host wall time blocked in fence waits, including upload; not GPU kernel time"
+          },
+          "resident_studio_available": true,
+          "resident_msaa": null
+        },
+        "library_path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-normal\\build-normal\\phymeo_native.dll",
+        "library_sha256": "83dcbf6a92c2ccc2cbf8ea16a4e63e5ef6ab96ce66e0734a398e2c4bad6756b6",
+        "shader_sha256": {
+          "vert": "45c2f2a0fd75c130f949fbebdf43033e4999a4a67c55e2c6b2eb99e4310eaa9c",
+          "frag": "7fa538382ace5b300fa213618ef4a0d602cb79a2d1abc844f08bd78245be45ce"
+        },
+        "scene_key": "normal-chart-direction-minus",
+        "decoded_geometry_sha256": "60ea54657af7c607007053a01a339bd215c53bdefe751bfbca68637bea9c9155",
+        "triangles": 6,
+        "light_count": 1,
+        "max_lights": 4,
+        "max_triangles": 1048576,
+        "resident": true,
+        "shadow_mode": "software",
+        "area_light_grid": 2,
+        "area_light_samples_per_panel": 4,
+        "area_light_brdf_samples_per_panel": 8,
+        "geometry_residency": "static indexed meshes; per-frame instance matrices",
+        "msaa": {
+          "requested_samples": 1,
+          "actual_color_samples": 1,
+          "sensor_samples": 1,
+          "resolve_space": "none (single sample)",
+          "sensor_sampling": "deterministic pixel center"
+        },
+        "primary_visibility": "single-sample Vulkan raster, two-sided opaque triangles",
+        "lighting": "direct GGX/Smith/Schlick metallic-roughness; no ambient or IBL",
+        "studio": null,
+        "environment": null,
+        "shadows": "GPU fragment hard-shadow mesh BVH rays",
+        "shadow_bias_m": 1e-05,
+        "minimum_perceptual_roughness": 0.045,
+        "exposure": 1.0,
+        "display": "clamp linear exposure to [0,1], then IEC sRGB once",
+        "display_transform": "clip",
+        "display_transform_abi": null,
+        "readback": "explicit synchronous host-visible staging after fence; actual flags in resident_readback when available",
+        "readback_channels_mode": "compact requested attachments",
+        "published_ownership": "immutable CPU bytes; private resident host buffer may be reused after each copy",
+        "attachment_formats": [
+          "RGBA8_UNORM",
+          "R32_SFLOAT",
+          "R32_UINT",
+          "R8_UINT"
+        ],
+        "last_passes": [
+          "visibility",
+          "sensor_export"
+        ],
+        "last_request": {
+          "width": 480,
+          "height": 240,
+          "channels": [
+            "forward_depth_m_f32",
+            "instance_id_u32",
+            "valid_u8"
+          ],
+          "native_attachment_mask": 14,
+          "native_output_bytes": 1036800
+        },
+        "stage_execution": "visibility raster + fused fragment shadows/lighting/display/sensors",
+        "lifecycle_counts": "DLL-wide owned contexts, frames, and explicit Vulkan handles; pools own descriptor sets",
+        "path_trace": false,
+        "textures": false,
+        "texture_assets": null,
+        "normal_maps": {
+          "textures": [
+            {
+              "uri": "file:///C:/Users/38347/.codex/worktrees/render-g1-scene/phymeo/artifacts/rendering/normal-chart/run-01/direction.png",
+              "source_sha256": "ffd8aa8ac4d6c2b8860a9bc5343c1f87997e7ab0285e6859ff086b3b6c86f6ca",
+              "rgb8_sha256": "529e42f18992f7f43364e241aef020297f740ab1ba2b27626d20865a1d430cab",
+              "width": 2,
+              "height": 2
+            }
+          ],
+          "strength": 1.0,
+          "encoding": "linear RGB8 UNORM, normalize(2*c-1), glTF +Y",
+          "tangent_frame": "primary UV derivatives; Gram-Schmidt tangent; mirrored handedness from dP/dv; no explicit TANGENT support",
+          "degenerate_policy": "reject singular/ill-conditioned source UV; singular screen derivatives or zero sampled vector fall back to geometric shading normal",
+          "sampler": "bilinear repeat, mip0, top-row-first; one wrap guard on each side",
+          "source_rgba_bytes": 16,
+          "padded_array_bytes": 64,
+          "uv_fp32_sha256": "796f307d5439d4d5318621eb594f4f6ecf218e544a747ac0cfa01d41003dc776",
+          "instance_slots": [
+            0,
+            0,
+            0
+          ],
+          "geometry_and_sensor_policy": "shading normal only; unchanged geometry, original shadow bias normal, pixel-center sensors"
+        },
+        "physics_steps": 0
+      }
+    },
+    {
+      "label": "positive-y-plus",
+      "passed": true,
+      "diagnostics": {
+        "backend": "phymeo-native-vulkan",
+        "path": "raster",
+        "device": {
+          "abi_version": 2,
+          "device_index": 1,
+          "api_version": 4206881,
+          "driver_version": 2374090752,
+          "vendor_id": 4318,
+          "device_id": 10464,
+          "device_type": 2,
+          "max_width": 32768,
+          "max_height": 32768,
+          "max_vertices": 1048576,
+          "validation_errors": 0,
+          "validation_warnings": 0,
+          "captures": 3,
+          "device_name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+          "device_uuid": "3b78d98198a3be57a8cb4d72fdfbfa96",
+          "closed": true,
+          "validation_enabled": true,
+          "live_contexts": 0,
+          "live_frames": 0,
+          "live_resources": 0,
+          "resident_abi_version": 1,
+          "resident_max_vertices": 1048576,
+          "resident_max_indices": 1572864,
+          "resident_max_meshes": 1024,
+          "resident_max_instances": 1024,
+          "resident_max_bvh_nodes": 262144,
+          "resident_max_instanced_triangles": 1048576,
+          "resident_vertex_count": 12,
+          "resident_index_count": 18,
+          "resident_mesh_count": 3,
+          "resident_instance_count": 3,
+          "resident_bvh_nodes": 3,
+          "resident_instanced_triangles": 6,
+          "resident_loaded": 1,
+          "resident_poisoned": 0,
+          "resident_reserved": 0,
+          "resident_upload_calls": 1,
+          "resident_geometry_upload_bytes": 840,
+          "resident_transform_upload_bytes": 1152,
+          "resident_parameter_upload_bytes": 960,
+          "resident_captures": 3,
+          "resident_shadow_node_budget": 8,
+          "resident_target_rebuilds": 1,
+          "resident_host_transform_input_bytes": 576,
+          "resident_render_planes_available": true,
+          "resident_environment_available": true,
+          "resident_environment_abi_version": 1,
+          "resident_environment_info": {
+            "environment_abi_version": 1,
+            "supported": 1,
+            "shader_compatible": 1,
+            "max_side": 1024,
+            "max_mip_levels": 11,
+            "side": 0,
+            "mip_levels": 0,
+            "loaded": 0,
+            "format": 43,
+            "cube_layers": 6,
+            "sh_coefficients": 9,
+            "axis_transform": 1,
+            "diffuse_basis": 1,
+            "max_rgba_bytes": 134217728,
+            "source_rgba_bytes": 0,
+            "image_upload_bytes": 24,
+            "parameter_upload_bytes": 160,
+            "upload_calls": 0,
+            "rgb_captures_with_environment": 0,
+            "sky_draws": 0,
+            "capture_scope": "successful RGB captures with an uploaded directional environment; sky draw count is not foreground pixel count",
+            "snapshot": "last live query; final GPU allocations are reported by teardown telemetry"
+          },
+          "resident_texture_available": true,
+          "resident_linear_roughness_available": true,
+          "resident_texture_abi_version": 1,
+          "resident_texture_info": {
+            "texture_abi_version": 1,
+            "max_textures": 64,
+            "max_width": 2048,
+            "max_height": 2048,
+            "max_layers": 64,
+            "texture_count": 0,
+            "array_width": 1,
+            "array_height": 1,
+            "array_layers": 1,
+            "uv_count": 0,
+            "bound_instances": 0,
+            "loaded": 0,
+            "sampler_filter": 1,
+            "mip_levels": 1,
+            "format": 43,
+            "max_array_bytes": 134217728,
+            "source_rgba_bytes": 0,
+            "padded_rgba_bytes": 4,
+            "metadata_upload_bytes": 28,
+            "upload_calls": 0,
+            "image_upload_bytes": 4,
+            "rgb_captures_with_textures": 0,
+            "capture_scope": "successful RGB captures with bound texture instances, not visible textured pixel count",
+            "upload_scope": "cumulative actual texture image and metadata GPU writes, including default white sentinel; excluded from geometry_upload_bytes",
+            "snapshot": "last live query, not final allocation state; teardown verified by allocation telemetry"
+          },
+          "resident_normal_info": {
+            "normal_abi_version": 1,
+            "max_textures": 64,
+            "max_width": 2048,
+            "max_height": 2048,
+            "max_layers": 64,
+            "texture_count": 1,
+            "array_width": 4,
+            "array_height": 4,
+            "array_layers": 1,
+            "uv_count": 12,
+            "bound_instances": 3,
+            "loaded": 1,
+            "sampler_filter": 1,
+            "mip_levels": 1,
+            "format": 37,
+            "shader_compatible": 1,
+            "max_array_bytes": 134217728,
+            "source_rgba_bytes": 16,
+            "padded_rgba_bytes": 64,
+            "metadata_upload_bytes": 160,
+            "upload_calls": 1,
+            "image_upload_bytes": 68,
+            "rgb_captures_with_normals": 2,
+            "upload_scope": "normal image and metadata writes, including sentinel; excluded from geometry/color uploads",
+            "capture_scope": "successful RGB captures with bound normal maps; not visible pixel count"
+          },
+          "resident_readback": {
+            "readback_abi_version": 1,
+            "memory_type_index": 3,
+            "memory_property_flags": 14,
+            "persistent_mapped": 1,
+            "last_channel_mask": 14,
+            "capacity_bytes": 1497600,
+            "copied_bytes": 2995200,
+            "map_calls": 1,
+            "unmap_calls": 0,
+            "host_visible": true,
+            "host_coherent": true,
+            "host_cached": true,
+            "device_local": false,
+            "snapshot": "last live query, not final mapping state; teardown verified by allocation telemetry",
+            "capacity_scope": "logical Vulkan readback buffer capacity, not total VkDeviceMemory allocation size"
+          },
+          "resident_profile": {
+            "profile_abi_version": 1,
+            "timestamp_supported": 1,
+            "timestamp_valid_bits": 64,
+            "tlas_node_count": 5,
+            "timestamp_period_ns": 1.0,
+            "captures": 3,
+            "host_prepare_ns": 12000,
+            "host_upload_ns": 1376800,
+            "host_record_ns": 535900,
+            "host_submit_ns": 160600,
+            "host_wait_ns": 671600,
+            "host_readback_ns": 219100,
+            "gpu_render_ns": 182080,
+            "gpu_copy_ns": 244128,
+            "gpu_total_ns": 426208,
+            "tlas_upload_bytes": 720,
+            "timestamp_samples": 3,
+            "scope": "cumulative successful captures including warmup; excludes initial static geometry upload",
+            "gpu_scope": "Vulkan timestamps: raster plus fragment work, then attachment copies; no per-light kernel claim",
+            "snapshot": "last live query, retained after close; final ownership is checked by telemetry"
+          },
+          "resident_telemetry": {
+            "telemetry_abi_version": 1,
+            "device_luid_valid": 1,
+            "device_node_mask": 1,
+            "device_local_bytes_current": 0,
+            "device_local_bytes_peak": 2102464,
+            "device_local_bytes_allocated": 2103008,
+            "host_visible_bytes_current": 0,
+            "host_visible_bytes_peak": 1498736,
+            "host_visible_bytes_allocated": 1500020,
+            "readback_bytes": 2995200,
+            "fence_wait_wall_ns": 1259300,
+            "fence_wait_calls": 8,
+            "submissions": 8,
+            "allocation_count": 28,
+            "free_count": 28,
+            "device_luid_hex": "ef22010000000000",
+            "final_after_destroy": true,
+            "allocation_scope": "this context explicit VkDeviceMemory allocations; not driver total VRAM",
+            "wait_scope": "host wall time blocked in fence waits, including upload; not GPU kernel time"
+          },
+          "resident_studio_available": true,
+          "resident_msaa": null
+        },
+        "library_path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-normal\\build-normal\\phymeo_native.dll",
+        "library_sha256": "83dcbf6a92c2ccc2cbf8ea16a4e63e5ef6ab96ce66e0734a398e2c4bad6756b6",
+        "shader_sha256": {
+          "vert": "45c2f2a0fd75c130f949fbebdf43033e4999a4a67c55e2c6b2eb99e4310eaa9c",
+          "frag": "7fa538382ace5b300fa213618ef4a0d602cb79a2d1abc844f08bd78245be45ce"
+        },
+        "scene_key": "normal-chart-positive-y-plus",
+        "decoded_geometry_sha256": "60ea54657af7c607007053a01a339bd215c53bdefe751bfbca68637bea9c9155",
+        "triangles": 6,
+        "light_count": 1,
+        "max_lights": 4,
+        "max_triangles": 1048576,
+        "resident": true,
+        "shadow_mode": "software",
+        "area_light_grid": 2,
+        "area_light_samples_per_panel": 4,
+        "area_light_brdf_samples_per_panel": 8,
+        "geometry_residency": "static indexed meshes; per-frame instance matrices",
+        "msaa": {
+          "requested_samples": 1,
+          "actual_color_samples": 1,
+          "sensor_samples": 1,
+          "resolve_space": "none (single sample)",
+          "sensor_sampling": "deterministic pixel center"
+        },
+        "primary_visibility": "single-sample Vulkan raster, two-sided opaque triangles",
+        "lighting": "direct GGX/Smith/Schlick metallic-roughness; no ambient or IBL",
+        "studio": null,
+        "environment": null,
+        "shadows": "GPU fragment hard-shadow mesh BVH rays",
+        "shadow_bias_m": 1e-05,
+        "minimum_perceptual_roughness": 0.045,
+        "exposure": 1.0,
+        "display": "clamp linear exposure to [0,1], then IEC sRGB once",
+        "display_transform": "clip",
+        "display_transform_abi": null,
+        "readback": "explicit synchronous host-visible staging after fence; actual flags in resident_readback when available",
+        "readback_channels_mode": "compact requested attachments",
+        "published_ownership": "immutable CPU bytes; private resident host buffer may be reused after each copy",
+        "attachment_formats": [
+          "RGBA8_UNORM",
+          "R32_SFLOAT",
+          "R32_UINT",
+          "R8_UINT"
+        ],
+        "last_passes": [
+          "visibility",
+          "sensor_export"
+        ],
+        "last_request": {
+          "width": 480,
+          "height": 240,
+          "channels": [
+            "forward_depth_m_f32",
+            "instance_id_u32",
+            "valid_u8"
+          ],
+          "native_attachment_mask": 14,
+          "native_output_bytes": 1036800
+        },
+        "stage_execution": "visibility raster + fused fragment shadows/lighting/display/sensors",
+        "lifecycle_counts": "DLL-wide owned contexts, frames, and explicit Vulkan handles; pools own descriptor sets",
+        "path_trace": false,
+        "textures": false,
+        "texture_assets": null,
+        "normal_maps": {
+          "textures": [
+            {
+              "uri": "file:///C:/Users/38347/.codex/worktrees/render-g1-scene/phymeo/artifacts/rendering/normal-chart/run-01/positive-y.png",
+              "source_sha256": "6787a9659a5b036dda1d80b393650abf62a4d386e1f629a17101a042b57c7d48",
+              "rgb8_sha256": "72fa173555c4b9297d7ba3a3cd50a3674a9d3b767143f9ca30e5c1e081e1b3a2",
+              "width": 2,
+              "height": 2
+            }
+          ],
+          "strength": 1.0,
+          "encoding": "linear RGB8 UNORM, normalize(2*c-1), glTF +Y",
+          "tangent_frame": "primary UV derivatives; Gram-Schmidt tangent; mirrored handedness from dP/dv; no explicit TANGENT support",
+          "degenerate_policy": "reject singular/ill-conditioned source UV; singular screen derivatives or zero sampled vector fall back to geometric shading normal",
+          "sampler": "bilinear repeat, mip0, top-row-first; one wrap guard on each side",
+          "source_rgba_bytes": 16,
+          "padded_array_bytes": 64,
+          "uv_fp32_sha256": "796f307d5439d4d5318621eb594f4f6ecf218e544a747ac0cfa01d41003dc776",
+          "instance_slots": [
+            0,
+            0,
+            0
+          ],
+          "geometry_and_sensor_policy": "shading normal only; unchanged geometry, original shadow bias normal, pixel-center sensors"
+        },
+        "physics_steps": 0
+      }
+    },
+    {
+      "label": "positive-y-minus",
+      "passed": true,
+      "diagnostics": {
+        "backend": "phymeo-native-vulkan",
+        "path": "raster",
+        "device": {
+          "abi_version": 2,
+          "device_index": 1,
+          "api_version": 4206881,
+          "driver_version": 2374090752,
+          "vendor_id": 4318,
+          "device_id": 10464,
+          "device_type": 2,
+          "max_width": 32768,
+          "max_height": 32768,
+          "max_vertices": 1048576,
+          "validation_errors": 0,
+          "validation_warnings": 0,
+          "captures": 3,
+          "device_name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+          "device_uuid": "3b78d98198a3be57a8cb4d72fdfbfa96",
+          "closed": true,
+          "validation_enabled": true,
+          "live_contexts": 0,
+          "live_frames": 0,
+          "live_resources": 0,
+          "resident_abi_version": 1,
+          "resident_max_vertices": 1048576,
+          "resident_max_indices": 1572864,
+          "resident_max_meshes": 1024,
+          "resident_max_instances": 1024,
+          "resident_max_bvh_nodes": 262144,
+          "resident_max_instanced_triangles": 1048576,
+          "resident_vertex_count": 12,
+          "resident_index_count": 18,
+          "resident_mesh_count": 3,
+          "resident_instance_count": 3,
+          "resident_bvh_nodes": 3,
+          "resident_instanced_triangles": 6,
+          "resident_loaded": 1,
+          "resident_poisoned": 0,
+          "resident_reserved": 0,
+          "resident_upload_calls": 1,
+          "resident_geometry_upload_bytes": 840,
+          "resident_transform_upload_bytes": 1152,
+          "resident_parameter_upload_bytes": 960,
+          "resident_captures": 3,
+          "resident_shadow_node_budget": 8,
+          "resident_target_rebuilds": 1,
+          "resident_host_transform_input_bytes": 576,
+          "resident_render_planes_available": true,
+          "resident_environment_available": true,
+          "resident_environment_abi_version": 1,
+          "resident_environment_info": {
+            "environment_abi_version": 1,
+            "supported": 1,
+            "shader_compatible": 1,
+            "max_side": 1024,
+            "max_mip_levels": 11,
+            "side": 0,
+            "mip_levels": 0,
+            "loaded": 0,
+            "format": 43,
+            "cube_layers": 6,
+            "sh_coefficients": 9,
+            "axis_transform": 1,
+            "diffuse_basis": 1,
+            "max_rgba_bytes": 134217728,
+            "source_rgba_bytes": 0,
+            "image_upload_bytes": 24,
+            "parameter_upload_bytes": 160,
+            "upload_calls": 0,
+            "rgb_captures_with_environment": 0,
+            "sky_draws": 0,
+            "capture_scope": "successful RGB captures with an uploaded directional environment; sky draw count is not foreground pixel count",
+            "snapshot": "last live query; final GPU allocations are reported by teardown telemetry"
+          },
+          "resident_texture_available": true,
+          "resident_linear_roughness_available": true,
+          "resident_texture_abi_version": 1,
+          "resident_texture_info": {
+            "texture_abi_version": 1,
+            "max_textures": 64,
+            "max_width": 2048,
+            "max_height": 2048,
+            "max_layers": 64,
+            "texture_count": 0,
+            "array_width": 1,
+            "array_height": 1,
+            "array_layers": 1,
+            "uv_count": 0,
+            "bound_instances": 0,
+            "loaded": 0,
+            "sampler_filter": 1,
+            "mip_levels": 1,
+            "format": 43,
+            "max_array_bytes": 134217728,
+            "source_rgba_bytes": 0,
+            "padded_rgba_bytes": 4,
+            "metadata_upload_bytes": 28,
+            "upload_calls": 0,
+            "image_upload_bytes": 4,
+            "rgb_captures_with_textures": 0,
+            "capture_scope": "successful RGB captures with bound texture instances, not visible textured pixel count",
+            "upload_scope": "cumulative actual texture image and metadata GPU writes, including default white sentinel; excluded from geometry_upload_bytes",
+            "snapshot": "last live query, not final allocation state; teardown verified by allocation telemetry"
+          },
+          "resident_normal_info": {
+            "normal_abi_version": 1,
+            "max_textures": 64,
+            "max_width": 2048,
+            "max_height": 2048,
+            "max_layers": 64,
+            "texture_count": 1,
+            "array_width": 4,
+            "array_height": 4,
+            "array_layers": 1,
+            "uv_count": 12,
+            "bound_instances": 3,
+            "loaded": 1,
+            "sampler_filter": 1,
+            "mip_levels": 1,
+            "format": 37,
+            "shader_compatible": 1,
+            "max_array_bytes": 134217728,
+            "source_rgba_bytes": 16,
+            "padded_rgba_bytes": 64,
+            "metadata_upload_bytes": 160,
+            "upload_calls": 1,
+            "image_upload_bytes": 68,
+            "rgb_captures_with_normals": 2,
+            "upload_scope": "normal image and metadata writes, including sentinel; excluded from geometry/color uploads",
+            "capture_scope": "successful RGB captures with bound normal maps; not visible pixel count"
+          },
+          "resident_readback": {
+            "readback_abi_version": 1,
+            "memory_type_index": 3,
+            "memory_property_flags": 14,
+            "persistent_mapped": 1,
+            "last_channel_mask": 14,
+            "capacity_bytes": 1497600,
+            "copied_bytes": 2995200,
+            "map_calls": 1,
+            "unmap_calls": 0,
+            "host_visible": true,
+            "host_coherent": true,
+            "host_cached": true,
+            "device_local": false,
+            "snapshot": "last live query, not final mapping state; teardown verified by allocation telemetry",
+            "capacity_scope": "logical Vulkan readback buffer capacity, not total VkDeviceMemory allocation size"
+          },
+          "resident_profile": {
+            "profile_abi_version": 1,
+            "timestamp_supported": 1,
+            "timestamp_valid_bits": 64,
+            "tlas_node_count": 5,
+            "timestamp_period_ns": 1.0,
+            "captures": 3,
+            "host_prepare_ns": 13600,
+            "host_upload_ns": 915100,
+            "host_record_ns": 513400,
+            "host_submit_ns": 146900,
+            "host_wait_ns": 660300,
+            "host_readback_ns": 242700,
+            "gpu_render_ns": 182688,
+            "gpu_copy_ns": 241248,
+            "gpu_total_ns": 423936,
+            "tlas_upload_bytes": 720,
+            "timestamp_samples": 3,
+            "scope": "cumulative successful captures including warmup; excludes initial static geometry upload",
+            "gpu_scope": "Vulkan timestamps: raster plus fragment work, then attachment copies; no per-light kernel claim",
+            "snapshot": "last live query, retained after close; final ownership is checked by telemetry"
+          },
+          "resident_telemetry": {
+            "telemetry_abi_version": 1,
+            "device_luid_valid": 1,
+            "device_node_mask": 1,
+            "device_local_bytes_current": 0,
+            "device_local_bytes_peak": 2102464,
+            "device_local_bytes_allocated": 2103008,
+            "host_visible_bytes_current": 0,
+            "host_visible_bytes_peak": 1498736,
+            "host_visible_bytes_allocated": 1500020,
+            "readback_bytes": 2995200,
+            "fence_wait_wall_ns": 1374400,
+            "fence_wait_calls": 8,
+            "submissions": 8,
+            "allocation_count": 28,
+            "free_count": 28,
+            "device_luid_hex": "ef22010000000000",
+            "final_after_destroy": true,
+            "allocation_scope": "this context explicit VkDeviceMemory allocations; not driver total VRAM",
+            "wait_scope": "host wall time blocked in fence waits, including upload; not GPU kernel time"
+          },
+          "resident_studio_available": true,
+          "resident_msaa": null
+        },
+        "library_path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-normal\\build-normal\\phymeo_native.dll",
+        "library_sha256": "83dcbf6a92c2ccc2cbf8ea16a4e63e5ef6ab96ce66e0734a398e2c4bad6756b6",
+        "shader_sha256": {
+          "vert": "45c2f2a0fd75c130f949fbebdf43033e4999a4a67c55e2c6b2eb99e4310eaa9c",
+          "frag": "7fa538382ace5b300fa213618ef4a0d602cb79a2d1abc844f08bd78245be45ce"
+        },
+        "scene_key": "normal-chart-positive-y-minus",
+        "decoded_geometry_sha256": "60ea54657af7c607007053a01a339bd215c53bdefe751bfbca68637bea9c9155",
+        "triangles": 6,
+        "light_count": 1,
+        "max_lights": 4,
+        "max_triangles": 1048576,
+        "resident": true,
+        "shadow_mode": "software",
+        "area_light_grid": 2,
+        "area_light_samples_per_panel": 4,
+        "area_light_brdf_samples_per_panel": 8,
+        "geometry_residency": "static indexed meshes; per-frame instance matrices",
+        "msaa": {
+          "requested_samples": 1,
+          "actual_color_samples": 1,
+          "sensor_samples": 1,
+          "resolve_space": "none (single sample)",
+          "sensor_sampling": "deterministic pixel center"
+        },
+        "primary_visibility": "single-sample Vulkan raster, two-sided opaque triangles",
+        "lighting": "direct GGX/Smith/Schlick metallic-roughness; no ambient or IBL",
+        "studio": null,
+        "environment": null,
+        "shadows": "GPU fragment hard-shadow mesh BVH rays",
+        "shadow_bias_m": 1e-05,
+        "minimum_perceptual_roughness": 0.045,
+        "exposure": 1.0,
+        "display": "clamp linear exposure to [0,1], then IEC sRGB once",
+        "display_transform": "clip",
+        "display_transform_abi": null,
+        "readback": "explicit synchronous host-visible staging after fence; actual flags in resident_readback when available",
+        "readback_channels_mode": "compact requested attachments",
+        "published_ownership": "immutable CPU bytes; private resident host buffer may be reused after each copy",
+        "attachment_formats": [
+          "RGBA8_UNORM",
+          "R32_SFLOAT",
+          "R32_UINT",
+          "R8_UINT"
+        ],
+        "last_passes": [
+          "visibility",
+          "sensor_export"
+        ],
+        "last_request": {
+          "width": 480,
+          "height": 240,
+          "channels": [
+            "forward_depth_m_f32",
+            "instance_id_u32",
+            "valid_u8"
+          ],
+          "native_attachment_mask": 14,
+          "native_output_bytes": 1036800
+        },
+        "stage_execution": "visibility raster + fused fragment shadows/lighting/display/sensors",
+        "lifecycle_counts": "DLL-wide owned contexts, frames, and explicit Vulkan handles; pools own descriptor sets",
+        "path_trace": false,
+        "textures": false,
+        "texture_assets": null,
+        "normal_maps": {
+          "textures": [
+            {
+              "uri": "file:///C:/Users/38347/.codex/worktrees/render-g1-scene/phymeo/artifacts/rendering/normal-chart/run-01/positive-y.png",
+              "source_sha256": "6787a9659a5b036dda1d80b393650abf62a4d386e1f629a17101a042b57c7d48",
+              "rgb8_sha256": "72fa173555c4b9297d7ba3a3cd50a3674a9d3b767143f9ca30e5c1e081e1b3a2",
+              "width": 2,
+              "height": 2
+            }
+          ],
+          "strength": 1.0,
+          "encoding": "linear RGB8 UNORM, normalize(2*c-1), glTF +Y",
+          "tangent_frame": "primary UV derivatives; Gram-Schmidt tangent; mirrored handedness from dP/dv; no explicit TANGENT support",
+          "degenerate_policy": "reject singular/ill-conditioned source UV; singular screen derivatives or zero sampled vector fall back to geometric shading normal",
+          "sampler": "bilinear repeat, mip0, top-row-first; one wrap guard on each side",
+          "source_rgba_bytes": 16,
+          "padded_array_bytes": 64,
+          "uv_fp32_sha256": "796f307d5439d4d5318621eb594f4f6ecf218e544a747ac0cfa01d41003dc776",
+          "instance_slots": [
+            0,
+            0,
+            0
+          ],
+          "geometry_and_sensor_policy": "shading normal only; unchanged geometry, original shadow bias normal, pixel-center sensors"
+        },
+        "physics_steps": 0
+      }
+    }
+  ],
+  "acceptance": {
+    "flat_within_one_rgb8": true,
+    "analytic_within_two_rgb8": true,
+    "direction_and_margin": true,
+    "positive_y_handedness": true,
+    "geometry_bytes_unchanged": true,
+    "request_combinations": true,
+    "cleanup": true
+  },
+  "geometry_sha256": {
+    "flat.gltf": "ecf404f1463a6272a4de351cb3a22717a24717438f1cd0bedb310f1fffec2c57",
+    "mirror.gltf": "a22bae4ff16d43c2202209ecf2a6b6d0fccac877d31cedea79fafdc273112192",
+    "tilted.gltf": "8b0b2dae625ac2cf8ee3ea3a426c9f84f4d2d8b4755613f1da2c85d94754fe43"
+  },
+  "normal_map_sources": {
+    "flat": {
+      "uri": "file:///C:/Users/38347/.codex/worktrees/render-g1-scene/phymeo/artifacts/rendering/normal-chart/run-01/flat.png",
+      "sha256": "6b6414829ea0a07e7598459eff854e3b07b11a658bfba4eedb162a150659e78f"
+    },
+    "direction": {
+      "uri": "file:///C:/Users/38347/.codex/worktrees/render-g1-scene/phymeo/artifacts/rendering/normal-chart/run-01/direction.png",
+      "sha256": "ffd8aa8ac4d6c2b8860a9bc5343c1f87997e7ab0285e6859ff086b3b6c86f6ca"
+    },
+    "positive-y": {
+      "uri": "file:///C:/Users/38347/.codex/worktrees/render-g1-scene/phymeo/artifacts/rendering/normal-chart/run-01/positive-y.png",
+      "sha256": "6787a9659a5b036dda1d80b393650abf62a4d386e1f629a17101a042b57c7d48"
+    }
+  },
+  "flat_results": {
+    "flat-plus": {
+      "max_rgb8_error": 0,
+      "mean_absolute_rgb8_error": 0.0,
+      "passed": true
+    },
+    "tilted-plus": {
+      "max_rgb8_error": 0,
+      "mean_absolute_rgb8_error": 0.0,
+      "passed": true
+    },
+    "mirror-plus": {
+      "max_rgb8_error": 0,
+      "mean_absolute_rgb8_error": 0.0,
+      "passed": true
+    },
+    "flat-minus": {
+      "max_rgb8_error": 0,
+      "mean_absolute_rgb8_error": 0.0,
+      "passed": true
+    },
+    "tilted-minus": {
+      "max_rgb8_error": 1,
+      "mean_absolute_rgb8_error": 1.0,
+      "passed": true
+    },
+    "mirror-minus": {
+      "max_rgb8_error": 0,
+      "mean_absolute_rgb8_error": 0.0,
+      "passed": true
+    }
+  },
+  "direction_results": {
+    "direction-flat": {
+      "predicted_signed_rgb8_difference": 73.0,
+      "actual_signed_rgb8_difference": 73.0,
+      "predicted_margin_rgb8": 73.0,
+      "contrast_error_rgb8": 0.0,
+      "passed": true
+    },
+    "direction-tilted": {
+      "predicted_signed_rgb8_difference": 114.0,
+      "actual_signed_rgb8_difference": 114.0,
+      "predicted_margin_rgb8": 114.0,
+      "contrast_error_rgb8": 0.0,
+      "passed": true
+    },
+    "direction-mirror": {
+      "predicted_signed_rgb8_difference": -40.0,
+      "actual_signed_rgb8_difference": -40.0,
+      "predicted_margin_rgb8": 40.0,
+      "contrast_error_rgb8": 0.0,
+      "passed": true
+    },
+    "positive-y-flat": {
+      "predicted_signed_rgb8_difference": 27.0,
+      "actual_signed_rgb8_difference": 27.0,
+      "predicted_margin_rgb8": 27.0,
+      "contrast_error_rgb8": 0.0,
+      "passed": true
+    },
+    "positive-y-tilted": {
+      "predicted_signed_rgb8_difference": 66.0,
+      "actual_signed_rgb8_difference": 66.0,
+      "predicted_margin_rgb8": 66.0,
+      "contrast_error_rgb8": 0.0,
+      "passed": true
+    },
+    "positive-y-mirror": {
+      "predicted_signed_rgb8_difference": 26.0,
+      "actual_signed_rgb8_difference": 26.0,
+      "predicted_margin_rgb8": 26.0,
+      "contrast_error_rgb8": 0.0,
+      "passed": true
+    }
+  },
+  "wrong_convention_negative_controls": {
+    "omit_handedness": {
+      "predicted_signed_rgb8_difference": -27.0,
+      "actual_signed_rgb8_difference": 26.0,
+      "predicted_margin_rgb8": 27.0,
+      "contrast_error_rgb8": 53.0,
+      "passed": false
+    },
+    "flip_green": {
+      "predicted_signed_rgb8_difference": -27.0,
+      "actual_signed_rgb8_difference": 26.0,
+      "predicted_margin_rgb8": 27.0,
+      "contrast_error_rgb8": 53.0,
+      "passed": false
+    }
+  },
+  "sensor_checks": {
+    "none-plus": true,
+    "none-minus": true,
+    "flat-plus": true,
+    "flat-minus": true,
+    "direction-plus": true,
+    "direction-minus": true,
+    "positive-y-plus": true,
+    "positive-y-minus": true
+  },
+  "elapsed_wall_s": 1.1523053999990225,
+  "imported_sources": {
+    "phymeo_rendering": {
+      "file": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\rendering\\src\\phymeo_rendering\\__init__.py",
+      "sha256": "a8d0dc81b7c896fa6abb80e25a026d7155acf1d99f29feb712a8558ed9d9d23e"
+    },
+    "phymeo_rendering.assets": {
+      "file": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\rendering\\src\\phymeo_rendering\\assets.py",
+      "sha256": "280f0eb86cb86ba6b5505053dc3802fbc354236786f2c013922ebad22e508789"
+    },
+    "phymeo_rendering.scene": {
+      "file": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\rendering\\src\\phymeo_rendering\\scene.py",
+      "sha256": "75c88f029bd54f206f074ad3f4012d078aa25a766cd5a0e7350b13d83d117be9"
+    },
+    "phymeo_rendering.cameras": {
+      "file": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\rendering\\src\\phymeo_rendering\\cameras.py",
+      "sha256": "9f6584d62bebb85775296cd79fc1bbcb43214f41c1a2df3282703676f8531ab6"
+    },
+    "phymeo_rendering.outputs": {
+      "file": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\rendering\\src\\phymeo_rendering\\outputs.py",
+      "sha256": "c0a8d5571144116b3a70d4c476aed1bc3797c3c3d05ad9079dd0c6bd09adf4de"
+    },
+    "phymeo_rendering.pipeline": {
+      "file": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\rendering\\src\\phymeo_rendering\\pipeline.py",
+      "sha256": "01344e5ac31dfcc36cebb1487c8766c3f48bc3caa72f3c226db8c24b5bdcfd3e"
+    },
+    "phymeo_rendering.backends": {
+      "file": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\rendering\\src\\phymeo_rendering\\backends\\__init__.py",
+      "sha256": "8fe6585b36124e34a317fe8d114e5a46a798d7acf214cbed4eab71d5ec6a03b4"
+    },
+    "phymeo_rendering.mesh_data": {
+      "file": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\rendering\\src\\phymeo_rendering\\mesh_data.py",
+      "sha256": "35ca4ba27f203d9bf3892cd13050c803f6c20e76408c61b1d0755929441f4709"
+    },
+    "phymeo_rendering._environment_ibl": {
+      "file": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\rendering\\src\\phymeo_rendering\\_environment_ibl.py",
+      "sha256": "8fbf40f27ab4ea439908f3564b9a68dc35b810fda47893c116ff4d425e2c304b"
+    },
+    "phymeo_rendering.environment": {
+      "file": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\rendering\\src\\phymeo_rendering\\environment.py",
+      "sha256": "63e272eb87c398f48323d4a7974b5f818027edb6ad880367bae921895c783588"
+    },
+    "phymeo_rendering.backends._sapien_studio": {
+      "file": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\rendering\\src\\phymeo_rendering\\backends\\_sapien_studio.py",
+      "sha256": "c3f4565a523c82a1d7a2b43c0579aeb0146b364cefaebe6e2cc500d98a3465bf"
+    },
+    "phymeo_rendering.studio": {
+      "file": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\rendering\\src\\phymeo_rendering\\studio.py",
+      "sha256": "719e1e7b462f107bf20b76f01c8ef88d2a15f6657e373ac6b87e5a4145129a17"
+    },
+    "phymeo_rendering.backends._native_studio": {
+      "file": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\rendering\\src\\phymeo_rendering\\backends\\_native_studio.py",
+      "sha256": "7a5c7f1907daf0efa94be3b455858bbcb4ce74227bae5dc2c78d873c936ba3c8"
+    },
+    "phymeo_rendering.backends._native_texture": {
+      "file": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\rendering\\src\\phymeo_rendering\\backends\\_native_texture.py",
+      "sha256": "7f9109d08b2ce211dfb6ec580ca6a0cb9b35cb701ce6033442bed259ed357c4d"
+    },
+    "phymeo_rendering.backends._native_environment": {
+      "file": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\rendering\\src\\phymeo_rendering\\backends\\_native_environment.py",
+      "sha256": "020bb47e88ac1772fd8c6111455c41cb96fa4c4914cf263f966215ac441ee9ce"
+    },
+    "phymeo_rendering.backends._native_device": {
+      "file": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\rendering\\src\\phymeo_rendering\\backends\\_native_device.py",
+      "sha256": "3601d2626f83b722731564b62df2b2862bda2c2945483b60258cb9e682b1aa50"
+    },
+    "phymeo_rendering.backends._native_resident": {
+      "file": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\rendering\\src\\phymeo_rendering\\backends\\_native_resident.py",
+      "sha256": "36be2777301c345c9185540d472cefe50f671081b17bac543c3a296add07c562"
+    },
+    "phymeo_rendering.backends._native_ray_query": {
+      "file": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\rendering\\src\\phymeo_rendering\\backends\\_native_ray_query.py",
+      "sha256": "bf487eb50d4cd54af76da301318261f3822b35ab3248502d458a772137c9ac36"
+    },
+    "phymeo_rendering.backends._native_display": {
+      "file": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\rendering\\src\\phymeo_rendering\\backends\\_native_display.py",
+      "sha256": "572fc890c2e344f2f34bb9af866ccac160052098fd41bcf2838bd98971e05844"
+    },
+    "phymeo_rendering.backends._native_msaa": {
+      "file": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\rendering\\src\\phymeo_rendering\\backends\\_native_msaa.py",
+      "sha256": "4e0490af2370a624a2d3510ef09ed9f7c7747279f59b247c4cead1601ceb4094"
+    },
+    "phymeo_rendering.backends._native_normal": {
+      "file": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\rendering\\src\\phymeo_rendering\\backends\\_native_normal.py",
+      "sha256": "08c28e7d58289b907a51faad3afdf8f8794d7aaadd73d651d26491b5199145a4"
+    },
+    "phymeo_rendering.backends.native": {
+      "file": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\rendering\\src\\phymeo_rendering\\backends\\native.py",
+      "sha256": "7cd01254566e1c2f8579b8025bef1312b37c161498c1997fd2b6df36d260c8f8"
+    },
+    "phymeo_rendering.texture_data": {
+      "file": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\rendering\\src\\phymeo_rendering\\texture_data.py",
+      "sha256": "b1ee65c0fbe2d71afc451fbec8e51c8af24c94e8ca5baf9e66717f13c68bc315"
+    }
+  }
+}

@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>钢面拉丝与橡胶颗粒 · Phymeo</title>
+<style>
+  :root { color-scheme:dark; background:#171a1c; color:#f3f2ee; font:16px/1.55 system-ui,sans-serif }
+  body { max-width:1200px; margin:0 auto; padding:20px clamp(12px,3vw,40px) 40px }
+  h1 { font-size:clamp(1.6rem,4vw,2.6rem); margin:.3em 0 }
+  h2 { font-size:1.2rem; margin:1.5em 0 .4em }
+  p { margin:.45em 0 1em; color:#d5d5d1 }
+  a { color:#9cdaef } nav { display:flex; flex-wrap:wrap; gap:1.1em }
+  fieldset { border:0; padding:0; margin:1em 0 .65em; display:flex; flex-wrap:wrap; gap:.5em }
+  legend { float:left; padding:.3em .6em .3em 0 }
+  label { padding:.2em .6em; border:1px solid #666; border-radius:.35em; cursor:pointer }
+  label:has(input:checked) { border-color:#9cdaef; color:#b5eaff }
+  #stage { width:100%; aspect-ratio:2562/768; background:#111 }
+  main:has(#off:checked) #stage, main:has(#on:checked) #stage { aspect-ratio:1280/768 }
+  video { display:block; width:100%; height:100%; object-fit:cover }
+  main:has(#off:checked) video { object-position:left center }
+  main:has(#on:checked) video { object-position:right center }
+  .swatches { display:flex; flex-wrap:wrap; gap:clamp(1rem,4vw,3rem) }
+  figure { margin:0 } figure img { display:block; max-width:100%; height:auto }
+  figcaption { margin:.35em 0; color:#d5d5d1; font-size:.9rem }
+</style>
+<main>
+  <nav><a href="../index.html">全部回放</a><a href="README.md">测试与性能</a></nav>
+  <h1>钢面拉丝与橡胶颗粒</h1>
+  <p>先看钢球上的高光，再看橡胶球表面的颗粒。两边共用同一段相机运动、同一套照明和网格。左边关闭法线贴图，右边开启。</p>
+  <fieldset>
+    <legend>观看方式</legend>
+    <label><input id="both" name="view" type="radio" checked> 并排</label>
+    <label><input id="off" name="view" type="radio"> 只看关闭</label>
+    <label><input id="on" name="view" type="radio"> 只看开启</label>
+  </fieldset>
+  <div id="stage"><video controls playsinline preload="metadata" src="normal-map-split.mp4">可使用下方影片链接播放。</video></div>
+  <p>切换时保留当前帧。也可直接打开 <a href="normal-map-off.mp4">关闭版</a>、<a href="normal-map-on.mp4">开启版</a>或<a href="normal-map-split.mp4">并排影片</a>。</p>
+  <h2>同一帧的无损局部</h2>
+  <div class="swatches">
+    <figure><a href="steel-pair.png"><img width="386" height="240" src="steel-pair.png" alt="拉丝钢球的同帧局部，左关右开"></a><figcaption>拉丝钢 · 左关右开</figcaption></figure>
+    <figure><a href="rubber-pair.png"><img width="386" height="240" src="rubber-pair.png" alt="橡胶球的同帧局部，左关右开"></a><figcaption>橡胶 · 左关右开</figcaption></figure>
+  </div>
+</main>
+</html>

@@ -1,6 +1,6 @@
 # 渲染引擎 · 能力与实测导航
 
-当前证据来自 Windows／RTX 4060 Laptop：日光成片与软硬阴影对照基线 `9417f4f6`，另含随后接受的粗糙度贴图、面积灯格点记录。先看[同步影片入口](index.html)，实现全图见[架构图](../architecture.html)。已验功能列于下表，开发中的抗锯齿、材质与光追功能列于[自研 Vulkan 画质路线](../plans/2026-11-23-native-vulkan-quality.md)。[模块计划](../plans/README.md) · [首版验收](../plans/09-acceptance.md)
+当前证据来自 Windows／RTX 4060 Laptop：日光成片与软硬阴影对照基线 `9417f4f6`，另含随后接受的粗糙度贴图、面积灯格点记录。先看[同步影片入口](index.html)，实现全图见[架构图](../architecture.html)。已验功能列于下表，抗锯齿的实测边界及后续材质与光追功能列于[自研 Vulkan 画质路线](../plans/2026-11-23-native-vulkan-quality.md)。[模块计划](../plans/README.md) · [首版验收](../plans/09-acceptance.md)
 
 ```mermaid
 flowchart LR
@@ -17,6 +17,7 @@ flowchart LR
 
 | 能力 | 已实测与可打开证据 | 边界 |
 | --- | --- | --- |
+| 轮廓抗锯齿 | 自研驻留式 Vulkan 新增可选 4× MSAA。固定斜边的覆盖误差下降 **64.91%**，深度、ID、掩码与 1× 逐字节一致。[标定与 Panda 回放](msaa/README.md) | 亚像素细杆的帧间误差下降 **14.95%**，20% 的运动改善门槛仍开放。首版独立安装记录对应原 1× 构建。 |
 | 动态材质展示 | [车间光下的 8 秒绕拍](r2/material-orbit/material-orbit.mp4)让两颗相同几何的钢球、哑光橡胶和扫描木板同时入镜。48° 相机行程，192 帧均经解码核对。[交付记录](r2/material-orbit/delivery-audit.json) | 几何、光源与曝光固定，镜头运动用于观察反射。Panda 的物体运动另见抓放片。 |
 | 帧、相机与输出 | 两种光栅均发布 sRGB8、米制前向深度、小端 uint32 ID、有效掩码；[R3 固定／腕部十曝光](r3/README.md)内部 ID 错误 0，标记最大误差 0.541 px，深度误差均小于 2 mm。 | 不混用世界、reset、修订或物理时相；背景深度 +∞、ID 0。输出为主机拥有的不可变字节，未宣称 GPU 零拷贝。 |
 | 自研实时渲染 | 完整 Panda 网格常驻、直接 PBR、面积灯、方向 HDR 环境。相同 300 帧 720p、2×2 灯面样本，[软件阴影 p95 41.62 ms](r2/daylight-software-camera.json)，[硬件阴影 10.65 ms](r2/daylight-hardware-camera.json)。 | 硬件模式显式请求 `ray_query`，主可见性仍是光栅；不支持设备拒绝，不回退。未实现自研路径追踪。 |

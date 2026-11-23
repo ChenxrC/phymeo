@@ -1,0 +1,158 @@
+{
+  "schema": "phymeo-native-msaa-author-validation-v1",
+  "source_commit": "40e4ca2b14bbe1ec423bcc39617626ec47f55368",
+  "source_root": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo",
+  "created_utc": "2026-11-23T02:31:37.2662078Z",
+  "artifacts": [
+    {
+      "name": "phymeo_native.dll",
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-msaa\\build-msaa\\phymeo_native.dll",
+      "sha256": "61ec93d959b4cb739bf0669750a12dae7fedf8922b589de8da9d99996768d972",
+      "bytes": 151040
+    },
+    {
+      "name": "native.frag.spv",
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-msaa\\build-msaa\\native.frag.spv",
+      "sha256": "cd6f295432a75c7383357cb9d4805f72f8ea5a47f7c117adb2975ae919c90066",
+      "bytes": 10652
+    },
+    {
+      "name": "native.vert.spv",
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-msaa\\build-msaa\\native.vert.spv",
+      "sha256": "9595a6722905db50583a3d3518c4853463568124bade005db7ffa04f2d1f41b4",
+      "bytes": 4048
+    },
+    {
+      "name": "resident_area4.frag.spv",
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-msaa\\build-msaa\\resident_area4.frag.spv",
+      "sha256": "7149d83e0d609b81bc77d279e799353858a927b6af50a548e518a31bced6caf9",
+      "bytes": 48016
+    },
+    {
+      "name": "resident_area8.frag.spv",
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-msaa\\build-msaa\\resident_area8.frag.spv",
+      "sha256": "3fdf542a0383634250fda280eb52bb2f67641856b8b2c53d50086e649b8e08f4",
+      "bytes": 48016
+    },
+    {
+      "name": "resident_msaa_resolve.frag.spv",
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-msaa\\build-msaa\\resident_msaa_resolve.frag.spv",
+      "sha256": "bc140bc9ce2668db043516fc6d35e11a26689b2b45d2f1d38d39972e1902c707",
+      "bytes": 1572
+    },
+    {
+      "name": "resident_msaa_resolve.vert.spv",
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-msaa\\build-msaa\\resident_msaa_resolve.vert.spv",
+      "sha256": "d9bbb44453660efa44c1f5f6c2861102b62f6b23b400400fac7d7f3faa02b798",
+      "bytes": 1144
+    },
+    {
+      "name": "resident_rayquery_area4.frag.spv",
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-msaa\\build-msaa\\resident_rayquery_area4.frag.spv",
+      "sha256": "e4aa6287ba091c1fe04eda6f06dc7cd115cf45398c6f393cd167f16b51922c42",
+      "bytes": 37580
+    },
+    {
+      "name": "resident_rayquery_area8.frag.spv",
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-msaa\\build-msaa\\resident_rayquery_area8.frag.spv",
+      "sha256": "55d19a786b1045bb00420baa5fb9e60a90c4576ace8b0acce77c90cfb8d35638",
+      "bytes": 37580
+    },
+    {
+      "name": "resident_rayquery.frag.spv",
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-msaa\\build-msaa\\resident_rayquery.frag.spv",
+      "sha256": "c3a5e2f2a913b16ffc1ba62817a130a0a29465d266ac6c9c10e4110475dda470",
+      "bytes": 37468
+    },
+    {
+      "name": "resident_rayquery.vert.spv",
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-msaa\\build-msaa\\resident_rayquery.vert.spv",
+      "sha256": "b1069d14f062dcf3b441d1c44286068b92754557dbe8ce8327e9407cd7c0ec82",
+      "bytes": 6596
+    },
+    {
+      "name": "resident_sky.frag.spv",
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-msaa\\build-msaa\\resident_sky.frag.spv",
+      "sha256": "d1f64fe50290ec0e905830c3d556d8d24ceced8c9a1665155fe5406ee59232b7",
+      "bytes": 6484
+    },
+    {
+      "name": "resident_sky.vert.spv",
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-msaa\\build-msaa\\resident_sky.vert.spv",
+      "sha256": "d9bbb44453660efa44c1f5f6c2861102b62f6b23b400400fac7d7f3faa02b798",
+      "bytes": 1144
+    },
+    {
+      "name": "resident.frag.spv",
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-msaa\\build-msaa\\resident.frag.spv",
+      "sha256": "f04c767484fd28be1ce3cafa40e381bc6a9b3c88cb2dafbbdee236520bec3041",
+      "bytes": 47904
+    },
+    {
+      "name": "resident.vert.spv",
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-msaa\\build-msaa\\resident.vert.spv",
+      "sha256": "b1cb30601e2f8ff78e7a14818d3253ec95806b4ba22039b106927ffa4ca86810",
+      "bytes": 6724
+    }
+  ],
+  "python": "C:/Users/38347/AppData/Local/Temp/phymeo-g5-5fdf4ec3-20261123-02/runtime/env/Scripts/python.exe",
+  "device_index": 1,
+  "validation_layer_path": "C:/Users/38347/AppData/Local/Temp/phymeo-g5-5fdf4ec3-20261123-02/sdk/validation",
+  "checks": {
+    "host_methods": 9,
+    "gpu_methods": 4,
+    "half_coverage_rgb": [
+      188,
+      188,
+      188
+    ],
+    "shade_modes": [
+      "software",
+      "ray_query"
+    ],
+    "area_grids": [
+      2,
+      4,
+      8
+    ],
+    "old_new_1x_real_geometry_byte_equal": true,
+    "rgb_only_mixed_byte_equal": true,
+    "center_sensors_byte_equal": true,
+    "resize_return_equal": true,
+    "sky_uniform_neutral_tested": true,
+    "old_dll_old_shader_explicit_4x_rejection": true,
+    "validation_errors": 0,
+    "validation_warnings": 0,
+    "closed_live_resources": 0,
+    "closed_device_bytes": 0,
+    "quality_gate": "pending independent B",
+    "performance_gate": "pending independent C"
+  },
+  "logs": [
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-msaa\\host-red-01.log",
+      "sha256": "ca9f4fddf9d0e95cfa9adfb22cd28e81829c32cc9fbe2df6c547cb967b5b386b"
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-msaa\\host-green-01.log",
+      "sha256": "00dc393574be942688960ebea79cfbc686a78a6a5bf24e9e52072b22b94cce77"
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-msaa\\configure-01.log",
+      "sha256": "fee8409304c35b46c9e77d61b060d62ad53f81505c2c7417a2ce61a8b25f8ee0"
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-msaa\\build-01.log",
+      "sha256": "60d572a93d929dd2d31cb0ca1ce084a59b1f2582e020354b8a0adedbdd9150a5"
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-msaa\\device-01.log",
+      "sha256": "adad145df018929fd3ad2e5130c502a6e391921d71d3e494702f254febbd5b78"
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-msaa\\device-compat-01.log",
+      "sha256": "6800867a36b9c3d8b4a6db7b053e06ed37239ce4b2fe9369c0876a8e6d1b66be"
+    }
+  ],
+  "active_entrypoints": []
+}

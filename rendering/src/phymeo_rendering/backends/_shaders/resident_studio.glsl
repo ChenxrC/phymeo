@@ -44,7 +44,11 @@ vec3 studioVisibleNormal(vec3 eye, float alpha, int i) {
 }
 
 vec3 residentStudioRadiance(vec3 P, vec3 N, vec3 Ng, vec3 V, vec3 albedo,
-                            float metal, float roughness) {
+                            float metal, float roughness
+#ifdef PR_RESIDENT_REFLECTION
+                            ,bool overrideSpecular,vec3 reflectedRadiance
+#endif
+                            ) {
     vec3 f0 = mix(vec3(0.04), albedo, metal);
     float nv = max(dot(N,V),1e-5);
     float alpha = max(roughness*roughness, 0.045*0.045);
@@ -58,6 +62,9 @@ vec3 residentStudioRadiance(vec3 P, vec3 N, vec3 Ng, vec3 V, vec3 albedo,
         diffuseEnvironment = residentEnvironmentDiffuse(N);
         specularEnvironment = residentEnvironmentSpecular(reflect(-V,N),roughness);
     }
+#endif
+#ifdef PR_RESIDENT_REFLECTION
+    if(overrideSpecular) specularEnvironment=reflectedRadiance;
 #endif
     vec3 result = diffuseEnvironment*diffuse*(1.0-f0);
     vec3 biasP = P + Ng*u.options.y;
@@ -126,3 +133,10 @@ vec3 residentStudioRadiance(vec3 P, vec3 N, vec3 Ng, vec3 V, vec3 albedo,
     }
     return result;
 }
+
+#ifdef PR_RESIDENT_REFLECTION
+// Terminal-hit overload: intentionally cannot call the near-reflection query.
+vec3 residentStudioRadiance(vec3 P,vec3 N,vec3 Ng,vec3 V,vec3 albedo,float metal,float roughness) {
+    return residentStudioRadiance(P,N,Ng,V,albedo,metal,roughness,false,vec3(0.0));
+}
+#endif

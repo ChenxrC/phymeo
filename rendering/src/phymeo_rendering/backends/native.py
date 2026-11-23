@@ -28,6 +28,7 @@ from ._native_environment import pack_environment
 from ._native_display import configure_display
 from ._native_msaa import configure_msaa
 from ._native_normal import pack_normal_maps, configure_normal_maps
+from ._native_reflection import reflection_declaration, configure_reflection
 from ._native_device import (
     NativeDevice,
     Parameters,
@@ -149,7 +150,7 @@ def _image_planes(raw, pixels, channels, attachment_mask):
 
 
 class _NativeDelegate:
-    def __init__(self, scene, meshes, device, exposure, *, resident=False, studio=None, textures=None, environment=None, shadow_mode='software', area_light_grid=2, display_info=None, msaa_info=None, normal_info=None):
+    def __init__(self, scene, meshes, device, exposure, *, resident=False, studio=None, textures=None, environment=None, shadow_mode='software', area_light_grid=2, display_info=None, msaa_info=None, normal_info=None, reflection_info=None):
         self.scene, self.meshes, self.device, self.exposure = scene, meshes, device, exposure
         self.display_info = display_info or {'display_transform':'clip', 'display_transform_abi':None}
         self.resident = resident
@@ -157,6 +158,7 @@ class _NativeDelegate:
         self.studio = deepcopy(studio)
         self.textures = deepcopy(textures)
         self.normal_info = deepcopy(normal_info)
+        self.reflection_info = deepcopy(reflection_info)
         self.environment = deepcopy(environment)
         self.shadow_mode = shadow_mode
         self.area_light_grid = area_light_grid
@@ -266,6 +268,7 @@ class _NativeDelegate:
             textures=self.textures is not None,
             texture_assets=deepcopy(self.textures),
             normal_maps=deepcopy(self.normal_info),
+            reflection=deepcopy(self.reflection_info),
             physics_steps=0,
         )
 
@@ -298,6 +301,10 @@ class NativeBackend:
     area_light_grid=4 or 8 selects a separate resident fragment shader with
     midpoint panel integration; default 2 retains the original shader artifact.
     BRDF samples remain eight. Missing dense artifacts never fall back.
+    reflection_mode='single_bounce' requires resident hardware ray query and a
+    separate shader ABI. Only uploaded metallic>=.99 / roughness factor<=.10
+    surfaces emit ideal mirror rays; zero receivers is legal. Hits use terminal
+    lighting, misses keep the environment. No rough reflection or recursion.
     display_transform='pbr-neutral' requires a declared resident display ABI;
     default 'clip' preserves the previous output and never probes that extension.
     """
@@ -316,6 +323,7 @@ class NativeBackend:
         area_light_grid=2,
         display_transform='clip',
         msaa_samples=1,
+        reflection_mode='environment',
     ):
         if isinstance(device_index, bool) or not isinstance(device_index, int):
             raise TypeError("device_index must be an integer, not bool")
@@ -350,6 +358,13 @@ class NativeBackend:
             raise ValueError('shadow_mode must be software or ray_query')
         if shadow_mode=='ray_query' and not resident:
             raise UnsupportedRequestError('hardware ray query shadows require resident=True')
+        if not isinstance(reflection_mode,str):
+            raise TypeError('reflection_mode must be environment or single_bounce')
+        if reflection_mode not in ('environment','single_bounce'):
+            raise ValueError('reflection_mode must be environment or single_bounce')
+        if reflection_mode=='single_bounce' and (not resident or shadow_mode!='ray_query'):
+            raise UnsupportedRequestError('single_bounce reflection requires resident=True and shadow_mode=ray_query')
+        self.reflection_mode=reflection_mode
         self.shadow_mode = shadow_mode
         self.area_light_grid = area_light_grid
         if studio is not None:
@@ -379,6 +394,7 @@ class NativeBackend:
             raise TypeError("scene must be VisualScene")
         if not self.resident and any(isinstance(m,TexturedMaterial) for m in scene.materials):
             raise UnsupportedRequestError('native base-color textures require resident=True; no legacy approximation')
+        reflection = reflection_declaration(scene,self.reflection_mode)
         require_library(self.library_path)
         if len(scene.lights) > 4:
             raise UnsupportedRequestError(
@@ -399,7 +415,8 @@ class NativeBackend:
         device = device_type(
             self.library_path, self.shader_directory, self.device_index, self.validation,
             **({'area_light_grid': self.area_light_grid} if self.area_light_grid != 2 else {}),
-            **({'normal_maps': True} if has_normal_maps else {})
+            **({'normal_maps': True} if has_normal_maps else {}),
+            **({'reflection': True} if self.reflection_mode=='single_bounce' else {})
         )
         try:
             display_info = configure_display(device, self.display_transform)
@@ -429,9 +446,10 @@ class NativeBackend:
                     studio_info['environment']['active_lighting'] = False
                     studio_info['environment']['replaced_by'] = 'directional environment map'
             normal_info = configure_normal_maps(device, pack_normal_maps(scene, meshes, device.info())) if self.resident else None
+            reflection_info=configure_reflection(device,reflection)
             msaa_info = configure_msaa(device, self.msaa_samples)
             return NativeRenderSession(scene, _NativeDelegate(
-                scene, meshes, device, self.exposure, resident=self.resident, studio=studio_info, textures=texture_info, environment=environment_info, shadow_mode=self.shadow_mode, area_light_grid=self.area_light_grid, display_info=display_info, msaa_info=msaa_info, normal_info=normal_info))
+                scene, meshes, device, self.exposure, resident=self.resident, studio=studio_info, textures=texture_info, environment=environment_info, shadow_mode=self.shadow_mode, area_light_grid=self.area_light_grid, display_info=display_info, msaa_info=msaa_info, normal_info=normal_info, reflection_info=reflection_info))
         except BaseException as primary:
             try:
                 device.close()

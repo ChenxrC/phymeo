@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from math import isfinite
 from numbers import Real
 
+from ..assets import TexturedMaterial
 from ..pipeline import RenderPath
 from ..scene import VisualScene
 from . import BackendUnavailableError, UnsupportedRequestError, ValidatedRenderSession
@@ -113,6 +114,13 @@ class SapienBackend:
         if not isinstance(scene, VisualScene):
             raise TypeError("scene must be VisualScene")
         self._last_open_diagnostics = None
+        bound = {instance.material_id for instance in scene.instances}
+        for material in scene.materials:
+            if material.id in bound and isinstance(material, TexturedMaterial) and material.normal_map is not None:
+                raise UnsupportedRequestError(
+                    f"material {material.id!r} uses a tangent-space normal map; "
+                    "the SAPIEN reference adapter does not support this material input"
+                )
         try:
             import sapien
         except (ImportError, OSError) as exc:

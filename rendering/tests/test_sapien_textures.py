@@ -26,6 +26,30 @@ def fixture(texture, factors=((1., 1., 1.),), *, uv=UV):
 
 
 class SapienTextureHostTests(unittest.TestCase):
+    def test_reference_rejects_bound_normal_before_loading_optional_device(self):
+        from phymeo_rendering.backends import BackendUnavailableError, UnsupportedRequestError
+        from phymeo_rendering.backends.sapien import SapienBackend, SapienConfig
+        from phymeo_rendering.pipeline import RenderPath
+
+        mesh = assets.Mesh("panel", "unused.gltf")
+        plain = assets.Material("plain", (1., 1., 1.), 0., .5)
+        normal = assets.TexturedMaterial(
+            "engraved", (1., 1., 1.), 0., .5,
+            normal_map=assets.TextureMap("never-opened.png", "a" * 64),
+        )
+        for path in (RenderPath.RASTER, RenderPath.PATH_TRACE):
+            backend = SapienBackend(SapienConfig(path=path))
+            for material_id in (normal.id, plain.id):
+                scene = VisualScene("vis", (mesh,), (plain, normal),
+                                    (Instance(1, mesh.id, material_id, "body"),))
+                with self.subTest(path=path, material=material_id), patch.dict("sys.modules", {"sapien": None}):
+                    if material_id == normal.id:
+                        with self.assertRaisesRegex(UnsupportedRequestError, "engraved.*normal map"):
+                            backend.open_scene(scene)
+                    else:
+                        with self.assertRaises(BackendUnavailableError):
+                            backend.open_scene(scene)
+
     def test_missing_uv_is_rejected_before_image_loading_or_device_creation(self):
         source, decoded = fixture(assets.TextureMap("not-opened.png", "a"*64), uv=None)
         with patch.object(texture_data, "load_texture", side_effect=AssertionError("image opened before missing-UV rejection")):

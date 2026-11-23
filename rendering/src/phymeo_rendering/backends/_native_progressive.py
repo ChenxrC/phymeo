@@ -86,7 +86,8 @@ def configure_progressive(device, enabled, bounces):
         raise BackendUnavailableError('progressive info ABI layout mismatch')
     try:
         version = device._lib.pr_resident_progressive_abi_version
-        setter = device._lib.pr_resident_set_progressive
+        setter = (device._lib.pr_resident_set_spatial if getattr(device, '_spatial_requested', False)
+                  else device._lib.pr_resident_set_progressive)
         query = device._lib.pr_resident_progressive_info
         begin = device._lib.pr_resident_begin_progressive
         reset = device._lib.pr_resident_reset_progressive
@@ -97,7 +98,8 @@ def configure_progressive(device, enabled, bounces):
     version.restype = ct.c_uint32
     if version() != 1:
         raise BackendUnavailableError('unsupported progressive ABI')
-    path = device.shader_directory / 'resident_progressive.comp.spv'
+    filename = 'resident_spatial.comp.spv' if getattr(device, '_spatial_requested', False) else 'resident_progressive.comp.spv'
+    path = device.shader_directory / filename
     try:
         raw = path.read_bytes()
     except OSError as error:
@@ -115,7 +117,20 @@ def configure_progressive(device, enabled, bounces):
     reset.restype = ct.c_int
     read.argtypes = [ct.c_void_p, ct.c_void_p, ct.c_size_t]
     read.restype = ct.c_int
-    if setter(device._handle, bounces, words, len(raw)):
+    arguments = [device._handle, bounces, words, len(raw)]
+    if getattr(device, '_spatial_requested', False):
+        guide_path = device.shader_directory / device._spatial_guide_filename()
+        try:
+            guide_raw = guide_path.read_bytes()
+        except OSError as error:
+            raise BackendUnavailableError(f'spatial guide shader unavailable: {guide_path}') from error
+        if len(guide_raw) < 20 or len(guide_raw) % 4 or guide_raw[:4] != b'\x03\x02\x23\x07':
+            raise BackendUnavailableError('invalid spatial guide SPIR-V')
+        guide_words = (ct.c_uint32 * (len(guide_raw) // 4)).from_buffer_copy(guide_raw)
+        setter.argtypes += [ct.POINTER(ct.c_uint32), ct.c_size_t]
+        arguments += [guide_words, len(guide_raw)]
+        device.shader_sha256['spatial_guide_fragment'] = hashlib.sha256(guide_raw).hexdigest()
+    if setter(*arguments):
         raise BackendUnavailableError(device._error())
     device._progressive_query = query
     device._progressive_begin = begin

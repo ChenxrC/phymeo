@@ -233,5 +233,13 @@ add_custom_command(OUTPUT "${output}"
   DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident_progressive.comp"
     "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident_display.glsl" VERBATIM)
 list(APPEND shader_outputs "${output}")
+set(output "${CMAKE_BINARY_DIR}/resident_spatial.comp.spv")
+add_custom_command(OUTPUT "${output}"
+  COMMAND "${GLSLANG_VALIDATOR}" -V --target-env vulkan1.2
+    "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident_spatial.comp" -o "${output}"
+  DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident_spatial.comp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident_display.glsl" VERBATIM)
+list(APPEND shader_outputs "${output}")
+
 add_custom_target(native_shaders ALL DEPENDS ${shader_outputs})
 add_dependencies(phymeo_native native_shaders)

@@ -126,7 +126,7 @@ class ResidentReadbackInfo(ct.Structure):
 class ResidentDevice(NativeDevice):
     _shader_prefix = 'resident'
 
-    def __init__(self, *args, area_light_grid=2, normal_maps=False, reflection=False, indirect=False, progressive=False):
+    def __init__(self, *args, area_light_grid=2, normal_maps=False, reflection=False, indirect=False, progressive=False, spatial=False):
         if type(area_light_grid) is not int or area_light_grid not in (2, 4, 8):
             raise ValueError('area_light_grid must be 2, 4 or 8')
         if type(normal_maps) is not bool:
@@ -136,6 +136,9 @@ class ResidentDevice(NativeDevice):
         self._indirect_requested=indirect
         if type(progressive) is not bool: raise TypeError("progressive must be bool")
         self._progressive_requested=progressive
+        if type(spatial) is not bool:
+            raise TypeError('spatial must be bool')
+        self._spatial_requested = spatial
         self._reflection_requested=reflection
         self._normal_maps_requested = normal_maps
         self._area_light_grid = area_light_grid
@@ -175,11 +178,24 @@ class ResidentDevice(NativeDevice):
         grid=f'_area{self._area_light_grid}' if stage=='frag' and self._area_light_grid!=2 else ''
         return f'{prefix}{grid}.{stage}.spv'
 
+    def _spatial_guide_filename(self):
+        prefix = 'resident_rayquery' + ('_normal' if self._normal_maps_requested else '')
+        grid = f'_area{self._area_light_grid}' if self._area_light_grid != 2 else ''
+        return f'{prefix}{grid}.frag.spv'
+
     def _bind(self):
         super()._bind()
         if tuple(map(ct.sizeof, (ResidentVertex, ResidentMesh, ResidentInstance, ResidentInfo))) != (32,16,48,128):
             raise BackendUnavailableError('resident C ABI structure layout mismatch')
         lib = self._lib
+        if self._spatial_requested:
+            version = getattr(lib, 'pr_resident_spatial_abi_version', None)
+            if version is None:
+                raise BackendUnavailableError('native spatial ABI unavailable; no fallback')
+            version.argtypes = []
+            version.restype = ct.c_uint32
+            if version() != 1:
+                raise BackendUnavailableError('unsupported native spatial ABI')
         if self._progressive_requested:
             version = getattr(lib, 'pr_resident_progressive_abi_version', None)
             if version is None:
@@ -403,6 +419,8 @@ class ResidentDevice(NativeDevice):
             self._indirect_info=indirect_info(value)
         from ._native_progressive import query_progressive
         result['resident_progressive_info'] = query_progressive(self)
+        from ._native_spatial import query_spatial
+        result['resident_spatial_info'] = query_spatial(self)
         result['resident_indirect_info']=dict(self._indirect_info) if getattr(self,'_indirect_info',None) is not None else None
         result['resident_readback'] = dict(self._readback) if self._readback is not None else None
         result['resident_profile'] = dict(self._profile) if self._profile is not None else None

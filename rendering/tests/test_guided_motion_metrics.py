@@ -68,22 +68,41 @@ class GuidedMotionMetricsTests(unittest.TestCase):
         score = metrics.score_pose(**data)
         self.assertEqual(score['subsets']['reveal']['count'], 25)
 
-    def test_exact_zero_error_mask_passes_without_zero_division(self):
+    def test_exact_zero_error_is_preservation_not_noise_reduction(self):
         data = inputs()
         data['raw_rgb8'] = data['reference_rgb8'].copy()
         data['filtered_rgb8'] = data['reference_rgb8'].copy()
         score = metrics.score_pose(**data)
         report = metrics.summarize_scores([score], registered_pose_ids=['p0'],
                                           required_reveal_pose_ids=['p0'])
-        self.assertEqual(report['status'], 'passed')
+        self.assertEqual(report['status'], 'insufficient_evidence')
         self.assertEqual(report['pooled']['fingers']['raw']['rmse'], 0.)
-        self.assertTrue(report['gates']['fingers']['passed'])
+        self.assertFalse(report['quality_claim_supported'])
+        self.assertFalse(report['gates']['fingers']['passed'])
+        self.assertIsNone(report['gates']['fingers']['rmse_ratio'])
+        self.assertEqual(report['gates']['fingers']['interpretation'], 'exact_preservation_only')
+        self.assertTrue(report['gates']['edge']['passed'])
+        self.assertTrue(report['gates']['reveal']['passed'])
         data['filtered_rgb8'] += 1
         score = metrics.score_pose(**data)
         report = metrics.summarize_scores([score], registered_pose_ids=['p0'],
                                           required_reveal_pose_ids=['p0'])
         self.assertEqual(report['status'], 'failed')
         self.assertIsNone(report['gates']['fingers']['rmse_ratio'])
+
+    def test_only_registered_reveal_poses_feed_reveal_acceptance(self):
+        first = metrics.score_pose(**inputs(15))
+        data = inputs(24)
+        data['filtered_rgb8'][4:12, 4:8] = 255
+        extra = metrics.score_pose(**data)
+        report = metrics.summarize_scores([first, extra], registered_pose_ids=[15, 24],
+                                          required_reveal_pose_ids=[15])
+        self.assertEqual(report['pooled']['reveal']['count'], 32)
+        self.assertEqual(report['extra_reveal']['pooled']['count'], 32)
+        self.assertEqual(report['extra_reveal']['pose_ids'], [24])
+        self.assertTrue(report['gates']['reveal']['passed'])
+        self.assertGreater(report['extra_reveal']['pooled']['filtered']['rmse'],
+                           report['extra_reveal']['pooled']['raw']['rmse'])
 
     def test_all_empty_registered_targets_are_insufficient_not_perfect(self):
         data = inputs()
@@ -172,4 +191,6 @@ class GuidedMotionMetricsTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
 

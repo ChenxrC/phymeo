@@ -28,7 +28,7 @@
       <source src="r2/panda-daylight-reference-1080.mp4" type="video/mp4">
     </video>
     <h2 id="title">Panda 抓放 · 全景与夹爪近景</h2>
-    <p id="caption"></p><div id="shots" class="shots" aria-label="跳转到动作"></div>
+    <p id="caption"></p><div id="shots" class="shots" aria-label="跳转到片中时刻"></div>
     <div class="meta"><span id="detail"></span><a id="original" href="r2/panda-daylight-reference-1080.mp4">打开 MP4</a></div>
     <p id="error" hidden>当前播放器未能解码，可用上方链接在本机播放器中打开。</p>
   </section>
@@ -41,6 +41,8 @@
      caption:"在 1.2 秒看红色方块贴近指尖时，背光面受到的反射光。再切到自研版，运动时刻会保留。夹爪和方块的位置均来自本次十秒物理记录。", detail:"10 秒 · 300 帧 · 每像素 512 样本 · 每帧四块曝光"},
     {id:"hero-native", title:"Panda 抓放 · 全景与夹爪近景", description:"自研 Vulkan · 1080p · 双面积灯与车间日光", file:"r2/panda-daylight-native-1080.mp4", poster:"r2/native-gripper-1080.png", group:"panda", shots:panda,
      caption:"先看机械臂全景，约 0.5 秒切到夹爪，2.3 秒后回到全景。停在搬运位置，看指尖贴住方块、台面上的阴影，以及白色外壳保留的高光层次。", detail:"10 秒 · 300 帧 · 扫描木纹与粗糙度 · 每盏灯 64 个阴影样本"},
+    {id:"material-orbit", title:"同一束光下的四种材质", description:"自研 Vulkan · 8 秒相机绕拍", file:"r2/material-orbit/material-orbit.mp4", poster:"r2/material-orbit/poster.png", group:"materials", shots:[[0,"左侧机位"],[4,"正面看高光"],[7.5,"右侧看反射"]],
+     caption:"从左到右看抛光钢、粗糙钢、黑橡胶和木板。两颗钢球形状相同。相机移动时，第一颗映出灯的边缘，第二颗把亮光摊得更宽。再看木纹，它一直留在板上同一个位置。", detail:"8 秒 · 192 帧 · 720p · 两盏面积灯与车间环境光"},
     {id:"daylight-reference", title:"车间日光下的抓放 · 光追", description:"SAPIEN 路径追踪 · 每像素 1024 样本", file:"r2/workshop-daylight-reference.mp4", poster:"r2/daylight-reference-1024.png", group:"panda", shots:panda,
      caption:"先看红方块离开台面时下方的阴影，再看白色外壳、钢柱和木桌如何反射窗光。切到下一个自研版本，可以停在同一姿态比较。", detail:"10 秒 · 960 × 540 · 同一段物理抓放"},
     {id:"daylight", title:"车间日光下的抓放", description:"自研 Vulkan · 720p", file:"r2/workshop-daylight-native.mp4", poster:"r2/daylight-native.png", group:"panda", shots:panda,

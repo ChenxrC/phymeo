@@ -1,0 +1,5622 @@
+{
+  "schema": "phymeo-panda-msaa-codec-v1",
+  "movies": {
+    "1": {
+      "contiguous_timestamps": true,
+      "frames": 300,
+      "duration_s": 10.0,
+      "stream": {
+        "codec_name": "h264",
+        "codec_type": "video",
+        "codec_tag_string": "avc1",
+        "width": 1280,
+        "height": 768,
+        "sample_aspect_ratio": "1:1",
+        "pix_fmt": "yuv420p",
+        "color_range": "tv",
+        "color_space": "bt709",
+        "color_transfer": "iec61966-2-1",
+        "color_primaries": "bt709",
+        "r_frame_rate": "30/1",
+        "avg_frame_rate": "30/1",
+        "time_base": "1/15360",
+        "duration_ts": 153600,
+        "nb_frames": "300",
+        "nb_read_frames": "300",
+        "disposition": {
+          "default": 1,
+          "dub": 0,
+          "original": 0,
+          "comment": 0,
+          "lyrics": 0,
+          "karaoke": 0,
+          "forced": 0,
+          "hearing_impaired": 0,
+          "visual_impaired": 0,
+          "clean_effects": 0,
+          "attached_pic": 0,
+          "timed_thumbnails": 0,
+          "non_diegetic": 0,
+          "captions": 0,
+          "descriptions": 0,
+          "metadata": 0,
+          "dependent": 0,
+          "still_image": 0,
+          "multilayer": 0
+        },
+        "tags": {
+          "language": "und",
+          "handler_name": "VideoHandler",
+          "encoder": "Lavc62.28.102 libx264"
+        }
+      },
+      "file": "panda-msaa-1x.mp4",
+      "sha256": "c7c917a3d623a5b17bbd9c55a61d55c0d4b7a67aa0c92354909bedbf598615bc",
+      "faststart": {
+        "moov_offset": 32,
+        "mdat_offset": 4469
+      },
+      "encode_input_sha256": [
+        "6acb794b1c95497563e709de76c5fa93c48e8031d5743eff3a374567d906abbe",
+        "2eed506cf54df02e14b8fa85056159b9e2af9deb4b89604ef0ad2bb23a044920",
+        "05bba360d855eb156f0a266c3f178991cdf9ea68ea1832439b0c27b63fa21671",
+        "3790eec5ffcc3dc112c0b9bcf8cffd60165c93a7aa19a228823abac3c09acf52",
+        "535bed9ac003aed0de384261b537ec755c619645d9cc3602b8e6d9d42801cc23",
+        "a680cdda2687e54ec225a7e9544ddbe839560b6a636e11cdf66fb462532256e9",
+        "2643cf3a7bc59a9fe918bfdb861fe19f453add293c0a667823bbdfa635fd6aaf",
+        "c2c5c0ee1d46e48fc8d6e576b565989584c254e476bea3929c03d9842a9a99f1",
+        "6acd36830509068bed3af8a2fcafefd86ec76a16e4b1cbb6d6d9491f36700c8b",
+        "598a7c8462a35773536abe5ff891342576272e43f4a333cc3706755256bfe078",
+        "a3d5c6679684608b96d589fb8214a7a368c6484f51ae92321c1866a16006d1c5",
+        "886049ab4b323bcc7f5331496dd6d51a28888ca030b3bc8e1046aab31a7b6ac0",
+        "e03c6d994bb1d597f01ed7257ca7d20906556eeedd6a949dc657f63f59723d47",
+        "2c3d3d084ba2efc4bbb7f192b1d8e3168707d88a4d3657ddb4bbe3979c0c026a",
+        "619258a74cf86a52a658bdc3061e51a4fc65c40956860930c6dc466374b11f0f",
+        "a03876eb32b935e3ddee372a4ed5defd81fe9d9e4e16ced15893eb4833ca67d4",
+        "28349000a786be89e6ea2285d4a91fab4cf441020b38a4799a823d3afab355f4",
+        "70efdd1d9671aa8689f98f538fad66b4cf5d9eff3f9602becb4cce865d2b908e",
+        "e649652044d7ed0c00b8ba85369c0cd50f0ebf54926d0fe739e30d94c865278e",
+        "69046e262e66afa9839bcc5dbbba6636f533793115158b4cbd5d1cda814bcceb",
+        "10601d1b62e7673e158395ce9f57fa0889c6474f76644a3f0e1f0b6bcd8fbf34",
+        "93acd9477bbf92b8b38c0e7a85d4d138ae68c55e3408ce7d603dd7f76b434e98",
+        "a68c10930ffbf9b3858957ef9d6a343a65d3e5194c4591d7c9bf0787810af706",
+        "3bef3818b6fc3b12596c0bff31e5e9c8da3d339a5482e88042a717b04d8e683e",
+        "b9eac369c126236d82bcc21cc9d2c871939e3f42a8616f7ae5890fbcf5d827f3",
+        "8fb3c6c600a46844d486a2919d9f5dbf0fe8e9ce33e2bb292d0224fdd2b84a86",
+        "0ce7089527dfa512601f5d4b37234a28f19f9ec9e7a9187629ae69b61abbdfdf",
+        "3aabd78c015744813a093bce122f07edcdbf21fb5b6ad3b5717bd179270e6a75",
+        "4bb2ca8a6148af656c82850465af610d80a4b88551c12ed3fe034d89f66c23a2",
+        "6bf66124f78c1302fb50715bde1d6ce5b991ad0f46e3e936c5220afc97ba6747",
+        "fdcde6f81ed2524941087f43bf683fd811e93962187bef51a1f68a87008dce20",
+        "095b8daed16a4952243414d676a67b0e069914b31d14492fda49b35095019dd0",
+        "591a84bbc5176134a3c084ac7ce755c9f3d9862ec8a7026960c8ec69e1426c0c",
+        "93b8cbfd55fdc95054fd16544150475b82abccd93336944328b26b1921b85e0a",
+        "a8ad52d20d2c1a344ea5d8df4e5c4bb809e6d79c65197888e088efb5d1c7366d",
+        "590b3da12e74cffea9601d1a278af6bd74d1aed45fe6437e3618ea576c69d2a0",
+        "cc97c464b1dde5371a50d327369d822be88cf830af6c0f0534b36e3277b1bab8",
+        "63c9904b69c7c5cacfdef877d69460d1caf2fc09841ad1cd4042c5e0acc29ba6",
+        "f5410a60c2ca533f94b1210a96caffae68fd78e95730d7a805ec4116904a18dc",
+        "8f51b59c68acfcb847657a4f53b358b49b8724a7dd76e4da3c268030bf4fe19f",
+        "6a91fa41e67151bc079aca3c665779b191a13e965dc315772a08dd82604d8821",
+        "58c2b31b176b06a04326a4f0b712ba86f18f83227678ee2c4ef1cff2b1e6276c",
+        "89f763c7898972b909a55d06e6d59de8360664b55abf835cff9e2278fcf3b9c7",
+        "ba1f4e1e9883bf3f701dda6130682b66104c8b228611a1cddc4ad46ea9daf9e5",
+        "4f93d66f11e1df56bbc6a9f63303e48e9cc5f82397d27ad5b27e75a7a4ac2546",
+        "057ce8ea9531c8c731d682a01ca478a577efa32367adf4e8323ce8cb003dc2da",
+        "f64d8e3d9ac2fb9b6d396406159c79a9f729de2e56401234e95c6037371b513c",
+        "acf50230b64238b5d514a604b93c6c38afd72e66c0b346aca906c8ed2934ece9",
+        "8223d775f3f2e1cac0eb88c5c5a07e5ea20596934be3c1815e85d3c677a982b4",
+        "a7a24241a42de77620b9e741ff2d0294531b709abffd661de1070c4321de6fa3",
+        "7bfe10b7f0f3d54f7a8dd8cf5262279eb77e3f71241c8b514c7ce46be169fd46",
+        "64d31e0d7e5c8c3daacb3d04d734fa6d4205fe42ba44909a286901d2d7038739",
+        "e84a14103945f8e3caf4fe61d864a2647f59c3d29d0155c2aeb623270eb1ac2b",
+        "59af2e798fa1060cd2e1fa1e13914504de3f4cccf811157e24294d649de21e8d",
+        "f788e7360bec2e58d2d588caf7b7c72787b03b95b4c87a78306b2494e3f8e039",
+        "e0037b845b86b5182bd1b5ae13533085e376bd7653497e40854681b8f82bc5ff",
+        "985c6b97dc3fba4313f8f6075a80a5e8169978e55979d658ddae15a16edd2fd1",
+        "fa0240856f2c9e57f2693f0c6fe073ea42fd2d4729a02fd3eb89508c898b0227",
+        "d125f34d74876d93386cf46b861b2fa621b33ddd99b94632cdca973f90963c1d",
+        "5c2589c864e0d4ec4b2e2713a5be42e46ae818c9c87348ec9e862476033d5ab0",
+        "ffecdd65c681c0060a5acfd54d1b6ea74159eff5683ef04643dd018cd40365c3",
+        "c634901fff60ae3e978df2a330268b899d305c775f44a5d4faf0e6e1c5a033dd",
+        "eb094fceae573e0687cd2c83d399b0d8cb9ec157c8ceabe673d0e5b68725590e",
+        "df7584c716cb09f6afd2392184887246d5ac17cfada3b38d2cefda55dbdb6858",
+        "3ff960a9f130d481eccbcf6c9fdf914d90166cfd910cd94e855c07042a8e879c",
+        "e25a0986382c666fc68409d8538a054128044754242cdb4b43ed41ce307f8de7",
+        "d4f94c9f54045f79d047ad31201be782e453a37f5027d497f23a593f7fb3d6bc",
+        "0418c2dec174eb94600609fe4ae26e32499d908d4ab8ce95d7f3b1e5140fde98",
+        "9c96475ac60c81c68eb8109bedef84c80e8174bf3c7c104242eb05fdd1551467",
+        "80504f456e3d9e4a066ce2fd29e64860a1c005f0f78d1c1a01395e8390728614",
+        "108fdc1ee377202ea728f94bf658d1504990e7df21e1af1e3d8c0091eb1a6f06",
+        "98a12dd87c55714b99531520b999944f81a673906e797a2f22f6162987b9ec09",
+        "cd4cf573da5a6120cec597ea2c5358be63f99d085e790345a0b0374e0b96bf50",
+        "781634504b503735b2dcbbf602e6a2216cafef581e109741decf08b435156639",
+        "37df9e397777042ae8a8da69ac56217ab6d22e46f598af8a7a5fed0084843a1c",
+        "33733be76d16919cd1a149a9ca5ea203837de1da33abf906d3bb2852b88f7ba1",
+        "26be554c2e7f2b62d5ea1c62e15a9d41c54b243ffd2dfab4c44986b7d715524e",
+        "9ecb3ee54454f29e8bbf268c1c460f0bd4516f28204c753793c7b229575e4719",
+        "0b74619de14638b5173708722b5f6afc524554a28b17f72fba18b18b9213d5d1",
+        "b99669258ac9f93e443c83a04904abb03513eee7b31eb24137442a9e59c610fa",
+        "42ed4e7471939509e11c0eed76537b2946bd1337fc04ad1c457e90ad76931f2a",
+        "c77bd13563f8a11d8c2b9385d8f7b88d13ef279f3fc5419e546334aab82be7d1",
+        "af7be4ffbf68f41c83ff1522d83c236854b0237e56c6d373f24e2e34b5b4fa4d",
+        "2bb46cf741cc3d2be756e5fd285d92ac8f2b629f6aed54d0458bba228155e0e1",
+        "a566c0a591b496b8eb171a9733576b8a03cb132fb3756117b956b4af1a127a43",
+        "daa632dbf9f537783451c96ca9e76fb68710e4ea864b49b37fd9874589b3b418",
+        "107240d4fecc71fef57991641146384aa460c807ea351a3e78dcfc96b78c6990",
+        "d89a3a51c28fd74a5936508c71fecc7ff0da6b50358c86372182335bc971a7e1",
+        "745d359cb10f6678c7cc5047342bc7adbb891f0be815fba3e811ed009da71ea2",
+        "619ea478fdc0addd096a6c50d7471ea66c74ff6ec7251d20d958ca1b0ce5f254",
+        "e02fc3d3c0612a9a6d2aa63eb29164ff2f9e2ac6ce3f27a90e4682fa9bb00073",
+        "f861383e094a9e564cbe24e9201e555ed55a9ba889e2df442fcf8c03cb8ada08",
+        "55a9a66ff709a088f1da067c74d99b16320e2dbeada3fe5b13fcaa669b89dac3",
+        "75d852b01b7476e9c439534909e07185f57d418e95f5afee3d0bd23e7aa7ea00",
+        "05ceaf888cce49f1aa9a266b329883c7f682610e38f375e596f796809576156a",
+        "f432ac4ace34790bf912594758a90cbfec92cecb09132d5dc5db8d2f32988e06",
+        "678d9fd837b4e41d8f0069d22ae1687e8a05a48a7d633a9c667352278dcda8f2",
+        "5e18813e4bad12194ca0802e97e45795bba7546a2d1ee66a703e399035ae1e4b",
+        "1f680537ca1b583e42b234756a6d0a9033e19062df22a0d6d9ffd7d13f4803b9",
+        "c44ef002e48bf58974616749dfb63be45cc195a9bb4b9559a943b286b360cd2d",
+        "e61e9695a9ddd1b4f8f85ea15b7a6e8afcd7c751d902682188856f350ef6361a",
+        "e25952c1b59733f1f143b340b3cf17f628f88bbe0ff588c5108ce46bc865a87d",
+        "ac5d6db0aeb01fb116e60961be9bf85c49ced685a3cc62d740a0367f6393c27c",
+        "ba0f5860f8f73fc26bd37cdc8e471ff466f0b81b733d5f2611412ffa65eb7e1b",
+        "3a185c83c58ad69704670150bbb62e58dc7f60fb7c8f88292d010b8f0929eb9d",
+        "21e7c350c2bbfeaeef2b4c6b122fa301a7587ec55b8b6202e91c0a4a84f27575",
+        "db05801f69d72fa29d54e5526e3665825c2cd5265853d0dc27b49baddaa273f5",
+        "431dc7d62b759930e0dad46b2492fadfd0db8d5fef9ecf5458d756f3f6d55448",
+        "4e5e869264f102e6f46b144d8f0836526d75f9ea81d5bc005c8076a99f476a67",
+        "d70d20ec677c359564cdfbb864c1df7346c8a94fd93690c5353e2615524de1b1",
+        "7a3fc09030245fec9d4819ddf8aec1f8d266feb6b5c3cb5953c3daecefc90cb3",
+        "45c4859a4277a600a32c328a1fb7d5bf0c2e8627245cb3e8dbbbe1c1311e9ee5",
+        "dabfcdafdb0221225fab3e4ef6ea373e59d137b6ff60e2fa1fb4a840cb0d0990",
+        "ddec795fee323a4774f566af41f1e4d5d288135babf529babf315a6b403aa4d2",
+        "5dab78bab5b082feb74021b367010dd072be1f702002779bfda6b17d280563e9",
+        "e596bfdc4158224b449c5592ae39428b632ecb77d2c035bb6ec4a6c65a5e067f",
+        "d8e630e16f6f6f958ef84e07c31f6f1218127aaf47ef3006fa284e6e69299a09",
+        "f56b1d4cefd95f9926f8edcdb1747d3b065a29aad1687b1af5d031baead2eac6",
+        "952676ff3f9f889a214a47fb68a58744faf752625560730da1b287a2d53fcf44",
+        "ac8d437aac668ef34daa79ceb92a7e4d892feab2646d7c2cb3e524e2570daffd",
+        "1d3d6989fae30c4c0ba06ad0fbd9663df05e2ac2cc82d7e9def2d5f10d61a33c",
+        "1b7909d568517b2b2891f45b2ea70d8e460276f792441dce4ec8f9d477076dbd",
+        "02f5749e0577a2df035a8787a51516b29628e29748d1de4a66578258dc1d0ec2",
+        "bcb61aa69bacead8762b82f8ffbdbbd484547ad98b354f73663b65fa7fdce6f7",
+        "51c89162726ded5b0d31ab1f1bc40b264f03ab1e5b5f902024bd4f70712c1eda",
+        "79facd8df410ef8235e18456c09aacfa0bcd8ce2d1258b225b964f7512715116",
+        "508cfa4fc8c1daecd7fd388b1e9b42ad62fb8567fc22bf33d5524af1fb68ca11",
+        "dc12d4f715c874364cfdf2b5a860b2a02320afdda1065ea9f4c940f00b0d5f00",
+        "b9ea6ce21aa1d986bf5de3eaf3640180fad562457d48e57aeb7996fdafa6158f",
+        "686316373df44b0b5208e602d9e48b8d54e508efbdcc7fae5b302647e99b4499",
+        "f402d3232cc03dda2f8e240bdfe070979e8ea9853774609e3bf5f6a34c5e7978",
+        "1427bce40787d534fe889ca4724ef448fe3902c8fae95dc9fc9a9b629b001a2c",
+        "0903ff28abbafa5b7f530f9d2a3f0084e056c90d1eddb6fc8df989457ec43eb0",
+        "e11821df3b8d25bf4475c547a11a4f556e92dd1c5298eee8cc8f5d0dbd9c1a34",
+        "4fa2cf2518cb42a4ae80ac6418a2c2b8ab2e274356156149c24b21ae11164a2d",
+        "08139ac60614b9cad46830f8bd8f6a3d808b2ee37265047294e7953e93b78bbc",
+        "f642ac3fe88a9601b6f42965a324351148341b8d2605ff7d6ef1992b1754b147",
+        "ce26e9ab9c6d870dae9d6f3bdffea10788df98fc5560129d40f21eaa89beb902",
+        "dfb56e2996c447ce6c452a631a75b44a608f5ec0620db4fca8b469196a88c3de",
+        "769f421d29a4b5ef4ebd1a985abb3ebe3f70b820ecbd6cf08b135560a5e49a17",
+        "7456266b8afb3b28a9233f86295dea99e3f69463aeb77c8f1109824652f20393",
+        "a8b9555a0a488f95c2c86127981594d3ff0db5dcc9221f49fa174d67b3081c9d",
+        "2ca4094fd97ef6d9fa3b90f3ddb408ed7d67d85ef2a4053214c78579f9ae2c4c",
+        "2a3c4ac7ff31fb1da928218b6fbeb5d0996189854b9d3329f0dff38d58bfc02c",
+        "f56c5d573baa84ce7014dcd0d65910e2a70a53fd708bcf36500bd23896d5b523",
+        "33ddd72e50419e9f34cb479582c8c9e991c860499c8f984ecde0fc9e4fff836b",
+        "273e0a2df3e313a6df0cf1cc90b12ef5418c96cf03cb31f2b15988edca92349f",
+        "a6ff95b6a4a2f70c30400957a98547a77d54931fb5a2d2c2eb376a01c40ea0f1",
+        "add9c76e3f7705b9a2ac856f4b4375fb75d9c303d20ccbf80d1c13cf8474b7ba",
+        "7db96b246bb053379a80dc8d69d92b1f719c378e8f25d5966affd195a2d4a1cf",
+        "d4cdfd354f33731f3ad2881d58289db9a26f6e7ba05d6b0c91b0eeaf2cb3956c",
+        "a7a5ac1a965a2f0789bacc9752a5183c0ce5148ad9d2e6bd8b45ac37747248ce",
+        "37eff00cdc5cf33a903a64b317af1da8db1d028908beb22fb8c6a3170fa23b7d",
+        "bac839422c384c7e8f9d3c0a1bc21618e82aa37ebb4d0b8a50168f00c753ff32",
+        "0bb41417e60b6d2ca67140235e86cc36c3e12f0aa01a97469570a5edef6239d7",
+        "9a0577e23a6c3f88772d3f3957989769e47de3e1a374a849fe747d553916b67a",
+        "ddfffbd29f6f08f50eaf6c0bf64a6ab75acbd5e983db3e8a64a0f7a9d58ffbc2",
+        "7287299fc3cfb8bde2e95bd74a2a6d483f583f41c95f3e31d148458e168d5fa1",
+        "e24e8451bb4358f210ec797afe2a29110dd4bcabe5a697865ec454910f87ec10",
+        "93ea41281296ca95e0c39bceeba201e67339230f07dbb2240d00c55a82b1fd2d",
+        "2281ddbeb084171a522fc42c305d9c0cd2a595be226555576da245c6cf90adb2",
+        "282d8ffce88a2a80f0a279fee9899f239ca04eba7f63c7c0448345034d568f26",
+        "e287325c541aaafe0bfb224a97b22eef7442a7bf380bcfe2101c63ae629ee4d2",
+        "6ff5c55221a73599e0de26b1bf0d017e3ff0de0266b47a4acbb5c305a99af21d",
+        "9efdf1049a074b7bbd6f099479ba0404d99eec7f0a4f691f2a2f909350357b74",
+        "b470996f37bd2e7b6d03481981d081bce77d757ed2eb15773abd702417c7806c",
+        "c455fe334162bc4325d612777f0b56f13e6ce602aad9e7c2f1c26e4b81d571d5",
+        "67d0942816ed7436b5a593fb60c6d6f0f1b66729a0b6ac86cc646c41e7392fcc",
+        "7f3bc704288089dc95d60187bc02a57c71eccaaf5ea26a4f775b8ebfc7b5bf73",
+        "85e1318dfa8c81a1eeb0bb17cdde336e9858aff2773e4d30380f7ce4966f36a4",
+        "45c9aba62ed77547b0996574411cd1a311109bac3176255cb719d6801217270e",
+        "f3a7907903a458268a0e61ddcd4f514b62740ae56ddfc5c0abe87461d08cbed6",
+        "56913531e11292ac6466ca9fe86858466f7d82cfab32ab7cf23e217af4615c71",
+        "feea108cb1fec4a54056e78bbbf9f737f072fda09e5d5c67781a4163ed1a6b12",
+        "a4bc3317a194d6033f0b5a1d03ef4ff3dee5a81cb6fccb21db4143e99f1e706d",
+        "3cf0bca9d5d5adca9310b4429c1d108a9e6f793382ec92055439135826dff396",
+        "ab68bc0bd479c598412c7cf533d09b2c68f93e90f8ff1c98a276bdecbd7af135",
+        "546043ba6e11a208956dfdc83d1983a288fba40571a27ef0fd16a91736707753",
+        "5e0d715910fb892532965e69758c91ea1d4ef08284d6050531d523c0e02946b6",
+        "89e55f441d36726ca04acef2ee131e0abc4a33f5f1a274c0a8fc1ef19da30012",
+        "49b0d9cb8f9b3b041eb6eae6f16ef80e82fe3c2fa6d433f97c977dbd32f711ae",
+        "78bcfc1d78d7a15e51849cf2696a60b819029b2c63c4cfcec7d1e050c894b5f8",
+        "9f712488816870363e5afd8dcfdb9c04d38cfe2e641b3bf57b335ce04cd1a206",
+        "571cdad258195dc05ee40c452b5a011c6de0727955d56ba368500576c48e3a4e",
+        "030c69618e3314c8968b18bdd07adef9c6c43b8fde21e7a0fd854ce19047b4f8",
+        "2b51b20d31607271b351cb0858daf6761fe3f70ba2bc72ed6acc63232e1a53c7",
+        "05eb5a01e67f644fcb3c63bf31e8fe433e4209451fbdd25ff2496e25c7ab1af2",
+        "02df7c9968b818be2e361eac89753d0c64d2cb097c847ddc30b73b9788cd0068",
+        "95c62175efcb0ea0f5dd3ad2caf36191518f022f7490d3bc3960ee684696148c",
+        "83d5ab83b393ece56611953a92882e03e94ea2be3180449ec6ebf78bddea13ea",
+        "f92086b6846023ca07a132ff63cfee0d94e9cdcdb35c1c5654d24594ef34e0fc",
+        "aeafe22844cf03aa19eae641762c1bfd0da75ecb4c8728e56766c1192fd92ba4",
+        "e48bf8308305e6d92b227ad913e2f70d104247230d24c6efc72f97a8826267b6",
+        "02a866ec40de4dd68187e295615d5609c1a087890c66ad1b10cbc0158ad6fd96",
+        "ed841e1bbd3fb1842e91d7b06259c721d0ef949ac181d1b8bb03eff69d1b942a",
+        "6ff6c057a6aa0d54809b6d086588559666903e72c884c1979b0b58b630b2a6ca",
+        "88f1ccc662b8e18043338d3ef01c0fbad536efbcb8248aa586c618214b589369",
+        "ea82146cedd29015a8be3739eb666809fe2377abfdc0ddc984612b7191836ab0",
+        "e555a2aa4c7cc5a0b7b76d6e78d04e4222b22d62a19230c0032d2032ed144136",
+        "b8bbddd60fbd4b62e62c9e21af4cdf3773233e06788d48125e6a75107072a966",
+        "121885dad303367e8d828c89a92b060b8f94449d91ab643bba418e2a095ee864",
+        "f1cc3d6b264b476f8780904fc81ca70590eb65362328412034d1c0edbb557da5",
+        "86ed360d3debb172a126bc85078af476515ffba3cb943db86d0d8f44a5cac706",
+        "ddc22a2a7a61284dbbd5dcb2cbc560c870f4a422ddb5ab3393a01d41f2a6571c",
+        "e647889911b5729fbe70dc1431bddf94f5dc450b5eaec4061be8409af28e71d6",
+        "d837c18cf04f1ef0fcb9b3bdb9758520c80ccbc00dfb2b1fd805d5a82a909a31",
+        "acd0591240640917b356b484d01db933b3c252760ad5f6fc49c2d743751c979f",
+        "39b6b6015127a93886f99816e2ed9c6464fb5e45c883dbb3af0cc2c50a57eca4",
+        "9d4fc3408a90f0c0f0aad338bd187ba8a7084b1a5408ae03096799ae113c4455",
+        "27636db535cec43fa00385ca5b676375de7b2be9bf52381cfe1517d1a3715214",
+        "6f25b6216d70f2c289789933951d1c4614539cbb124981ab6f4d36e045f0bc85",
+        "b369964d5c3205c05f1089dc77a4f860b905e39c816cf46a0b81a92f659393b8",
+        "84f65183af6d247ae1b44b4e610dc9145fcf2ddeff42f400559cbd3c101a05c6",
+        "b776e87fdbef6a62019b09ae043577afc8ab2baaf3f885dbbde71d6f88d768a3",
+        "1a6c2583ce0faa90fc246271816fb2630d214c89dd8bfe80ce6a4340dec1eed8",
+        "f84597c369342edee015b3ddab49673cad43cc1ff8542dc40328e10b82f0c317",
+        "aa2c7998b9aafef14de86c38c1baa38ac97bc3130a0e8758bc9dbf020e3707e2",
+        "d8c08b62054892f630c285a46fc76a205ec0b1e574bc2dc6815f4cf763a0fc14",
+        "d75bb37d4fbb3d43596b75b8ef57ccaab426815d335d31b87f786f972bf37e1d",
+        "237ac5fad3d6ffd4676ed8d00154f8d4aaff9a208033b62f7903e94f4275d3bb",
+        "d12b64ecc67e5dea80834e9d29225244e724953a51dcaf2e425b9033302b976c",
+        "a8d32027481567f098f3f8a3a37b732247514a6bc07de008613e43ce9fbea2a0",
+        "bcf0e3873a890e6e489ecb7b1481c89ad38ddc28c3418509e6acb5f759111db5",
+        "5cf2938e2ea05e8b257c809f743bbe6d923784183c4d830aac8e4607ff020aa4",
+        "d6216805fd96c4b119a696e6307cdd2db21bbdeb70ad705b8752e36e06c87e6f",
+        "fd7cd7cc7189125e94e0c224332842ccd29cc84c6312e5c2b0667410f7897e2c",
+        "83b9bbec738659e3ae6ffb2a90d8aa50f84a3272eebd9c60acd9751d9ca1f050",
+        "4d6ee035888b42962feeb267af97d99afaab85bc7d5f2d9b529296fa2e3d73cc",
+        "02ba1fd39e65a74c83384ec0d997882078e71da828594a052ce169048f435794",
+        "5df9729cc7a7320b0a97ccf7485ef242269654f9af0bfe71b4dd5317e787597a",
+        "b956a0ec20e8fe670ba090638f00f5aeaf7a95646b96b7ede4d12e815b43dd67",
+        "6737e28d7349a3a73582921de0178950828c4b5939c0e2e8a6e75f3d00bfcc63",
+        "b241d8568d8fcb3d796f1c982eb5efd52ce7d43d6b412639d522d73a019d2e41",
+        "a52d3ca6004043c5de4f0babd337240d5ac093bce84d7120acf217f14179ce91",
+        "010ec82decc2818cb16862e044aacfb3e414754a771068ebcb3acb0f9eb72606",
+        "bbbd3f9029f60ffc1194bc06c296bb55306f085c4a4b65f54ac091fe0e9af418",
+        "150991fb47c63d6faf3d0fff1cab565caaad69b46547a368005bbe2805db3916",
+        "2f6ddf5ec8d833bed90901b3aecb3d7a9d10824d5ff2ff108bc0327b032cd8e5",
+        "07c93afddd7feea782cb3eeffe98f6629d598732e928a9c28ea36711b65247e7",
+        "e4542e6d90907c7a258da8829d16d60c6d132d63974839f2d7db93bc4958d4e8",
+        "d11e6ae8795560f704c04a0758511cf102ce88f50a9deb7f111b421b4caceadc",
+        "af91c0e411208e9a94d75f6ec46b770766b171b28b783d32344498354703b6a1",
+        "325569e88748a67430a2041d04f4f4e8d4868a41b8f8304dc18e287976c1b5be",
+        "d49106da225dd3619a58eca5036918125c566617b9fa448826ba547063ea448c",
+        "8f1eb95c2900e9fb27a14707b59d62f35bd602d8b2a01ef0515df9f1d397fbf8",
+        "fcbac401efad4e76f19a04ab6bc3ed1e5a6772ee4bbbfc848dba42560c5efdcd",
+        "efc5557b1f7928b19896f13b14d2a22a677f5c411c87eec11a5d16f40a295ca2",
+        "6abbb552d633f3d7f80709693b3875e1a727554bcdd564f3777b67d80bb35aa9",
+        "caf56c876f277f1dd3143cf5262709eadc2ed258f185bdef3fc55bbfc0fdbb8a",
+        "fa78bbe16f29d68711e1fbd648057cee49cbd0f3551a05951edd38b6e25be559",
+        "df74c4f22974417961e29c5bb50a6b74940e8999d583a09dbbf77f33bdd01762",
+        "258e55c38d5f53fa082d6cad79dfc91642dc9d41dc99670a8036c3560427c37d",
+        "6ab7040a6cc95d4527a89ecd1212b87fa15d6af0915cd08e547ee15b39184046",
+        "f9f20ba4a4ca9b4f63b8e6e77385e9f34f63c8ba0df86c76f4e10a161d2219a1",
+        "7a9c567596075a3e56e017c91e70d17028962eebd767b3734cbe077c0e1f815b",
+        "2f238d047e1b3961ac6526b9ba347151e15351eb0f50482ed35e6b9e9a085e0b",
+        "f8f422ebed4fd55d8b2d40a2b44e10d82a1d5522371e2a335f01cbeb4c5957c4",
+        "db6659e618edc38a2c77c6b9f8a95c88775ffc6d387bfbf425cf2b3fe28cbb1c",
+        "e94ddb222e456fa0e579b92d72dfb0267b9bdfe897b09389c9fed59891938204",
+        "45d9387f70ebdbd451a1235439fff56dbf19426704138fdfa9e0b729116af9d9",
+        "9cc01ac5fbff60e908497060ad0fb635019748fd84b762af845f22ce6cf8f4fe",
+        "19bf08b15ef4af7511e6c133699b8aab947e27cfed8a970917a5f6ecdad4a8bb",
+        "38d998c764fcb6b9f75be5db4c4fd5e5b07966b89cbd83fcd0ed1e23c497635f",
+        "3774af2b28191d9fb95218802b12b40da0a91b881343d3f8bc557df3561ce478",
+        "5abe8237e8b6fed41b00a3e5fc890225ec9a46a3bea418f3a3bf5cce85114cc1",
+        "3d10e86573933c73f168c58168a913048a32d3648b27f915e5ca596ff9d33647",
+        "73b2c3a9e641d2b546df1b9be68673e37779e016207c9a6476778b16554681da",
+        "423f139df572613abea15ad89350dd2e9d486facbba3e477d4ab087aac165c5f",
+        "f6ff42324b2961aa371fc23338ffddc790a3d2901fb908acc4f8aadf7efed5f3",
+        "65178eaa69969dd572876339907317a29a9ce96b7122068dc367a867314ef5e3",
+        "dae69f4ae1a6564c31145007737100938793309c708c5cb44f7a4225034dac34",
+        "9aecccc5b43588970ece483276bf7021fa2132eada8a037090d3d4c601cccb93",
+        "010887453e20803be673e7bb2fc0e5490cf5fa32decb0dd0dc7a32bb70d534b0",
+        "7d3caaecffa275fc2ef43ea834ea1f9c2ab8fee5983c7ec1cb840c5943acc3d6",
+        "52565c0f53033f00910bd35aa763457adfced61e135fcfbc1e1b20c2e4774eb2",
+        "5fefedf3c2950c3e9baeddccd4cb1179b7c5086831893426a192dbc47ca96028",
+        "d153d49be1e2b699366b2204e3bbca8e6630fef0aaababd5b9cd5de10c5c7e6b",
+        "1faaa6ab88f51ab10bba4e3a56f0ceb2c6a347064fd5c19290b7247204384867",
+        "e8f34d6c6deb1d22bfd56fae3029988b49ed08e759c0ad54d8a2400ed47fe759",
+        "d9add984046d075244c141832885534958432acc22a87a308b58bf344f2369b5",
+        "cba9fb6f2a54bf63e7c2993e18e9bbffd3da894163dd9eda416b46e956e06f2f",
+        "709d0b71e7210f5dd749083892948f4133ff262d92ddb4adbda026ee8d692de5",
+        "fc152ac630b36a8a27bfbaae73b981b815878428e04eb3a82264ab920450a5d3",
+        "e3648061a0d96e213eb04dc7d4053be57426e40a0238b1d354b11ab044ae7e46",
+        "f10b4873ce230e935f9872eb908896a5808a640eca4e2b6fdd29c63f16f3b349",
+        "f1e311170d57b56f871a5ffc4d5ecb04c614fd585d7138f7cd1a074bab389622",
+        "2baca5b05c05f7e75fb3fb6b9016ba3e90791a808896e0851525072db1c86c14",
+        "0b7077defc59ab8139d35dd816c4cb7b431b367675dad710fbf0f708e795a0fc",
+        "bf89074c271bf779a09ba8845bec565c129f6d2166094bb4e39d04e4c253250e",
+        "cd51fb5265839e3cf623f56bb448fa6cb0d867fc808f113706c868c8a6aac239",
+        "3a8895d5d4a06df9f7b58afde23f40297eae55c0f15d22178f5c81437694eb0c",
+        "e8efd2db7cfe90ab172b36d6eebb67d54d7665102f89ee34dbea9b0eba371d2a",
+        "c7abaa89327bd63a41e69c323147631f477b562139643fd3d40e16d73861c88d",
+        "7288ecda9b26a33eaf745e7c86639aa085b531c275fef959f6c02a7f5f8080ca",
+        "98e74af1fad2bef8a132fb83975d0b9c4ece433588d78cca55055b2fe18a4f67",
+        "a217b738a7351b74cc944cc888e55a7660ed5762b2c1ef314e672dc6ce5a78fd",
+        "894f81122d6e4b743305724878126b243d673c9819a7b98012db68f414441bd7",
+        "f31847595aaf78ceae3a349018caa3f1109e8ab1e380ce70ac1c6cfea6242fc2",
+        "30d5667c53bf92df7a60fe659245bc3c0abb42e7a0ce4c40e8d7e3015dc861a4",
+        "6a20856c2055ce1914043cc739c51b56a29d3868c9a66bbd5fb2a5a3977c32ca"
+      ],
+      "codec_error": {
+        "frames": 300,
+        "mean_mae_rgb8": 1.8070591419361255,
+        "worst_mae_rgb8": 1.9527177598741319,
+        "worst_mae_frame": 162,
+        "max_rgb8": 149,
+        "worst_max_frame": 127,
+        "per_frame": [
+          {
+            "index": 0,
+            "mae_rgb8": 1.8009752061631945,
+            "max_rgb8": 148
+          },
+          {
+            "index": 1,
+            "mae_rgb8": 1.8116014268663194,
+            "max_rgb8": 110
+          },
+          {
+            "index": 2,
+            "mae_rgb8": 1.8145226372612848,
+            "max_rgb8": 100
+          },
+          {
+            "index": 3,
+            "mae_rgb8": 1.8218512641059028,
+            "max_rgb8": 103
+          },
+          {
+            "index": 4,
+            "mae_rgb8": 1.8254753960503471,
+            "max_rgb8": 138
+          },
+          {
+            "index": 5,
+            "mae_rgb8": 1.8052663167317708,
+            "max_rgb8": 108
+          },
+          {
+            "index": 6,
+            "mae_rgb8": 1.8070688883463542,
+            "max_rgb8": 126
+          },
+          {
+            "index": 7,
+            "mae_rgb8": 1.8022352430555555,
+            "max_rgb8": 96
+          },
+          {
+            "index": 8,
+            "mae_rgb8": 1.831644015842014,
+            "max_rgb8": 117
+          },
+          {
+            "index": 9,
+            "mae_rgb8": 1.824826388888889,
+            "max_rgb8": 124
+          },
+          {
+            "index": 10,
+            "mae_rgb8": 1.8405785454644097,
+            "max_rgb8": 117
+          },
+          {
+            "index": 11,
+            "mae_rgb8": 1.8413241916232639,
+            "max_rgb8": 138
+          },
+          {
+            "index": 12,
+            "mae_rgb8": 1.8873250325520834,
+            "max_rgb8": 124
+          },
+          {
+            "index": 13,
+            "mae_rgb8": 1.928947957356771,
+            "max_rgb8": 124
+          },
+          {
+            "index": 14,
+            "mae_rgb8": 1.4757897271050346,
+            "max_rgb8": 120
+          },
+          {
+            "index": 15,
+            "mae_rgb8": 1.441435072157118,
+            "max_rgb8": 109
+          },
+          {
+            "index": 16,
+            "mae_rgb8": 1.4562269422743055,
+            "max_rgb8": 106
+          },
+          {
+            "index": 17,
+            "mae_rgb8": 1.4872351752387152,
+            "max_rgb8": 100
+          },
+          {
+            "index": 18,
+            "mae_rgb8": 1.4710957845052084,
+            "max_rgb8": 102
+          },
+          {
+            "index": 19,
+            "mae_rgb8": 1.4437235514322917,
+            "max_rgb8": 109
+          },
+          {
+            "index": 20,
+            "mae_rgb8": 1.4425540500217013,
+            "max_rgb8": 99
+          },
+          {
+            "index": 21,
+            "mae_rgb8": 1.4361012776692708,
+            "max_rgb8": 94
+          },
+          {
+            "index": 22,
+            "mae_rgb8": 1.399463907877604,
+            "max_rgb8": 97
+          },
+          {
+            "index": 23,
+            "mae_rgb8": 1.3770155164930555,
+            "max_rgb8": 92
+          },
+          {
+            "index": 24,
+            "mae_rgb8": 1.3567013210720487,
+            "max_rgb8": 86
+          },
+          {
+            "index": 25,
+            "mae_rgb8": 1.3637003580729166,
+            "max_rgb8": 99
+          },
+          {
+            "index": 26,
+            "mae_rgb8": 1.344287109375,
+            "max_rgb8": 88
+          },
+          {
+            "index": 27,
+            "mae_rgb8": 1.3581146240234374,
+            "max_rgb8": 91
+          },
+          {
+            "index": 28,
+            "mae_rgb8": 1.353365749782986,
+            "max_rgb8": 110
+          },
+          {
+            "index": 29,
+            "mae_rgb8": 1.3487894694010416,
+            "max_rgb8": 90
+          },
+          {
+            "index": 30,
+            "mae_rgb8": 1.3380181206597221,
+            "max_rgb8": 90
+          },
+          {
+            "index": 31,
+            "mae_rgb8": 1.3544735378689237,
+            "max_rgb8": 95
+          },
+          {
+            "index": 32,
+            "mae_rgb8": 1.3464375813802083,
+            "max_rgb8": 107
+          },
+          {
+            "index": 33,
+            "mae_rgb8": 1.335737779405382,
+            "max_rgb8": 93
+          },
+          {
+            "index": 34,
+            "mae_rgb8": 1.3390658908420139,
+            "max_rgb8": 91
+          },
+          {
+            "index": 35,
+            "mae_rgb8": 1.342034912109375,
+            "max_rgb8": 81
+          },
+          {
+            "index": 36,
+            "mae_rgb8": 1.335038587782118,
+            "max_rgb8": 108
+          },
+          {
+            "index": 37,
+            "mae_rgb8": 1.3401401095920138,
+            "max_rgb8": 109
+          },
+          {
+            "index": 38,
+            "mae_rgb8": 1.3389173719618055,
+            "max_rgb8": 100
+          },
+          {
+            "index": 39,
+            "mae_rgb8": 1.343325466579861,
+            "max_rgb8": 85
+          },
+          {
+            "index": 40,
+            "mae_rgb8": 1.3393690321180556,
+            "max_rgb8": 123
+          },
+          {
+            "index": 41,
+            "mae_rgb8": 1.3265231662326389,
+            "max_rgb8": 93
+          },
+          {
+            "index": 42,
+            "mae_rgb8": 1.336662122938368,
+            "max_rgb8": 108
+          },
+          {
+            "index": 43,
+            "mae_rgb8": 1.3673075358072917,
+            "max_rgb8": 98
+          },
+          {
+            "index": 44,
+            "mae_rgb8": 1.38507080078125,
+            "max_rgb8": 89
+          },
+          {
+            "index": 45,
+            "mae_rgb8": 1.4158548990885416,
+            "max_rgb8": 102
+          },
+          {
+            "index": 46,
+            "mae_rgb8": 1.4094763861762152,
+            "max_rgb8": 95
+          },
+          {
+            "index": 47,
+            "mae_rgb8": 1.429704115125868,
+            "max_rgb8": 124
+          },
+          {
+            "index": 48,
+            "mae_rgb8": 1.4462385389539931,
+            "max_rgb8": 110
+          },
+          {
+            "index": 49,
+            "mae_rgb8": 1.444009738498264,
+            "max_rgb8": 96
+          },
+          {
+            "index": 50,
+            "mae_rgb8": 1.4331607394748265,
+            "max_rgb8": 94
+          },
+          {
+            "index": 51,
+            "mae_rgb8": 1.4189554850260417,
+            "max_rgb8": 104
+          },
+          {
+            "index": 52,
+            "mae_rgb8": 1.4236199273003471,
+            "max_rgb8": 104
+          },
+          {
+            "index": 53,
+            "mae_rgb8": 1.4221900092230904,
+            "max_rgb8": 97
+          },
+          {
+            "index": 54,
+            "mae_rgb8": 1.4341166178385416,
+            "max_rgb8": 113
+          },
+          {
+            "index": 55,
+            "mae_rgb8": 1.4059210883246527,
+            "max_rgb8": 95
+          },
+          {
+            "index": 56,
+            "mae_rgb8": 1.4145290798611112,
+            "max_rgb8": 93
+          },
+          {
+            "index": 57,
+            "mae_rgb8": 1.4083197699652779,
+            "max_rgb8": 115
+          },
+          {
+            "index": 58,
+            "mae_rgb8": 1.4365058051215278,
+            "max_rgb8": 115
+          },
+          {
+            "index": 59,
+            "mae_rgb8": 1.4220323350694444,
+            "max_rgb8": 93
+          },
+          {
+            "index": 60,
+            "mae_rgb8": 1.433018324110243,
+            "max_rgb8": 93
+          },
+          {
+            "index": 61,
+            "mae_rgb8": 1.4360009087456598,
+            "max_rgb8": 101
+          },
+          {
+            "index": 62,
+            "mae_rgb8": 1.4531867133246528,
+            "max_rgb8": 101
+          },
+          {
+            "index": 63,
+            "mae_rgb8": 1.427543470594618,
+            "max_rgb8": 113
+          },
+          {
+            "index": 64,
+            "mae_rgb8": 1.4227840847439237,
+            "max_rgb8": 98
+          },
+          {
+            "index": 65,
+            "mae_rgb8": 1.4173268636067708,
+            "max_rgb8": 98
+          },
+          {
+            "index": 66,
+            "mae_rgb8": 1.445553927951389,
+            "max_rgb8": 98
+          },
+          {
+            "index": 67,
+            "mae_rgb8": 1.4578582763671875,
+            "max_rgb8": 118
+          },
+          {
+            "index": 68,
+            "mae_rgb8": 1.7313652886284723,
+            "max_rgb8": 121
+          },
+          {
+            "index": 69,
+            "mae_rgb8": 1.794410875108507,
+            "max_rgb8": 114
+          },
+          {
+            "index": 70,
+            "mae_rgb8": 1.803163316514757,
+            "max_rgb8": 141
+          },
+          {
+            "index": 71,
+            "mae_rgb8": 1.8290320502387152,
+            "max_rgb8": 123
+          },
+          {
+            "index": 72,
+            "mae_rgb8": 1.8272386338975695,
+            "max_rgb8": 123
+          },
+          {
+            "index": 73,
+            "mae_rgb8": 1.815283203125,
+            "max_rgb8": 129
+          },
+          {
+            "index": 74,
+            "mae_rgb8": 1.8381659613715278,
+            "max_rgb8": 129
+          },
+          {
+            "index": 75,
+            "mae_rgb8": 1.8401824951171875,
+            "max_rgb8": 129
+          },
+          {
+            "index": 76,
+            "mae_rgb8": 1.840645005967882,
+            "max_rgb8": 122
+          },
+          {
+            "index": 77,
+            "mae_rgb8": 1.8438242594401042,
+            "max_rgb8": 142
+          },
+          {
+            "index": 78,
+            "mae_rgb8": 1.8461466471354167,
+            "max_rgb8": 136
+          },
+          {
+            "index": 79,
+            "mae_rgb8": 1.8484351264105903,
+            "max_rgb8": 136
+          },
+          {
+            "index": 80,
+            "mae_rgb8": 1.8520968967013889,
+            "max_rgb8": 118
+          },
+          {
+            "index": 81,
+            "mae_rgb8": 1.850559828016493,
+            "max_rgb8": 141
+          },
+          {
+            "index": 82,
+            "mae_rgb8": 1.854085964626736,
+            "max_rgb8": 126
+          },
+          {
+            "index": 83,
+            "mae_rgb8": 1.8668199327256945,
+            "max_rgb8": 126
+          },
+          {
+            "index": 84,
+            "mae_rgb8": 1.8624030219184027,
+            "max_rgb8": 127
+          },
+          {
+            "index": 85,
+            "mae_rgb8": 1.8530917697482638,
+            "max_rgb8": 133
+          },
+          {
+            "index": 86,
+            "mae_rgb8": 1.863257853190104,
+            "max_rgb8": 133
+          },
+          {
+            "index": 87,
+            "mae_rgb8": 1.8662339952256946,
+            "max_rgb8": 129
+          },
+          {
+            "index": 88,
+            "mae_rgb8": 1.8735555013020833,
+            "max_rgb8": 117
+          },
+          {
+            "index": 89,
+            "mae_rgb8": 1.8688897026909723,
+            "max_rgb8": 129
+          },
+          {
+            "index": 90,
+            "mae_rgb8": 1.881930202907986,
+            "max_rgb8": 127
+          },
+          {
+            "index": 91,
+            "mae_rgb8": 1.889934285481771,
+            "max_rgb8": 129
+          },
+          {
+            "index": 92,
+            "mae_rgb8": 1.87508544921875,
+            "max_rgb8": 122
+          },
+          {
+            "index": 93,
+            "mae_rgb8": 1.8773617214626737,
+            "max_rgb8": 129
+          },
+          {
+            "index": 94,
+            "mae_rgb8": 1.885374281141493,
+            "max_rgb8": 117
+          },
+          {
+            "index": 95,
+            "mae_rgb8": 1.8849422878689237,
+            "max_rgb8": 133
+          },
+          {
+            "index": 96,
+            "mae_rgb8": 1.8839114718967014,
+            "max_rgb8": 118
+          },
+          {
+            "index": 97,
+            "mae_rgb8": 1.8858269585503473,
+            "max_rgb8": 131
+          },
+          {
+            "index": 98,
+            "mae_rgb8": 1.8955393473307292,
+            "max_rgb8": 144
+          },
+          {
+            "index": 99,
+            "mae_rgb8": 1.9017432318793404,
+            "max_rgb8": 143
+          },
+          {
+            "index": 100,
+            "mae_rgb8": 1.8906734890407986,
+            "max_rgb8": 119
+          },
+          {
+            "index": 101,
+            "mae_rgb8": 1.893348185221354,
+            "max_rgb8": 113
+          },
+          {
+            "index": 102,
+            "mae_rgb8": 1.8905585394965279,
+            "max_rgb8": 116
+          },
+          {
+            "index": 103,
+            "mae_rgb8": 1.910454305013021,
+            "max_rgb8": 120
+          },
+          {
+            "index": 104,
+            "mae_rgb8": 1.896437242296007,
+            "max_rgb8": 118
+          },
+          {
+            "index": 105,
+            "mae_rgb8": 1.8936923556857639,
+            "max_rgb8": 118
+          },
+          {
+            "index": 106,
+            "mae_rgb8": 1.9061659071180554,
+            "max_rgb8": 113
+          },
+          {
+            "index": 107,
+            "mae_rgb8": 1.9203932020399306,
+            "max_rgb8": 117
+          },
+          {
+            "index": 108,
+            "mae_rgb8": 1.9018358018663195,
+            "max_rgb8": 122
+          },
+          {
+            "index": 109,
+            "mae_rgb8": 1.9049536810980903,
+            "max_rgb8": 129
+          },
+          {
+            "index": 110,
+            "mae_rgb8": 1.9143683539496528,
+            "max_rgb8": 129
+          },
+          {
+            "index": 111,
+            "mae_rgb8": 1.921445041232639,
+            "max_rgb8": 118
+          },
+          {
+            "index": 112,
+            "mae_rgb8": 1.9124416775173612,
+            "max_rgb8": 119
+          },
+          {
+            "index": 113,
+            "mae_rgb8": 1.9128858778211806,
+            "max_rgb8": 118
+          },
+          {
+            "index": 114,
+            "mae_rgb8": 1.916708034939236,
+            "max_rgb8": 135
+          },
+          {
+            "index": 115,
+            "mae_rgb8": 1.9207139756944445,
+            "max_rgb8": 131
+          },
+          {
+            "index": 116,
+            "mae_rgb8": 1.9139923095703124,
+            "max_rgb8": 118
+          },
+          {
+            "index": 117,
+            "mae_rgb8": 1.9070793999565971,
+            "max_rgb8": 126
+          },
+          {
+            "index": 118,
+            "mae_rgb8": 1.915668741861979,
+            "max_rgb8": 131
+          },
+          {
+            "index": 119,
+            "mae_rgb8": 1.930575222439236,
+            "max_rgb8": 128
+          },
+          {
+            "index": 120,
+            "mae_rgb8": 1.9145423041449652,
+            "max_rgb8": 126
+          },
+          {
+            "index": 121,
+            "mae_rgb8": 1.9154446072048612,
+            "max_rgb8": 86
+          },
+          {
+            "index": 122,
+            "mae_rgb8": 1.9290249294704862,
+            "max_rgb8": 126
+          },
+          {
+            "index": 123,
+            "mae_rgb8": 1.929372829861111,
+            "max_rgb8": 137
+          },
+          {
+            "index": 124,
+            "mae_rgb8": 1.9260396321614583,
+            "max_rgb8": 126
+          },
+          {
+            "index": 125,
+            "mae_rgb8": 1.9216016981336805,
+            "max_rgb8": 115
+          },
+          {
+            "index": 126,
+            "mae_rgb8": 1.9332763671875,
+            "max_rgb8": 123
+          },
+          {
+            "index": 127,
+            "mae_rgb8": 1.9348602294921875,
+            "max_rgb8": 149
+          },
+          {
+            "index": 128,
+            "mae_rgb8": 1.9231692843967014,
+            "max_rgb8": 98
+          },
+          {
+            "index": 129,
+            "mae_rgb8": 1.9256432427300347,
+            "max_rgb8": 98
+          },
+          {
+            "index": 130,
+            "mae_rgb8": 1.9298936631944446,
+            "max_rgb8": 116
+          },
+          {
+            "index": 131,
+            "mae_rgb8": 1.9497934977213542,
+            "max_rgb8": 110
+          },
+          {
+            "index": 132,
+            "mae_rgb8": 1.930000474717882,
+            "max_rgb8": 105
+          },
+          {
+            "index": 133,
+            "mae_rgb8": 1.9318773057725696,
+            "max_rgb8": 123
+          },
+          {
+            "index": 134,
+            "mae_rgb8": 1.9430199517144098,
+            "max_rgb8": 111
+          },
+          {
+            "index": 135,
+            "mae_rgb8": 1.941229248046875,
+            "max_rgb8": 98
+          },
+          {
+            "index": 136,
+            "mae_rgb8": 1.929690212673611,
+            "max_rgb8": 104
+          },
+          {
+            "index": 137,
+            "mae_rgb8": 1.9333763970269098,
+            "max_rgb8": 115
+          },
+          {
+            "index": 138,
+            "mae_rgb8": 1.9360104031032985,
+            "max_rgb8": 117
+          },
+          {
+            "index": 139,
+            "mae_rgb8": 1.9412529839409722,
+            "max_rgb8": 134
+          },
+          {
+            "index": 140,
+            "mae_rgb8": 1.9327589246961805,
+            "max_rgb8": 125
+          },
+          {
+            "index": 141,
+            "mae_rgb8": 1.9291141086154513,
+            "max_rgb8": 141
+          },
+          {
+            "index": 142,
+            "mae_rgb8": 1.9262580023871527,
+            "max_rgb8": 118
+          },
+          {
+            "index": 143,
+            "mae_rgb8": 1.938662380642361,
+            "max_rgb8": 112
+          },
+          {
+            "index": 144,
+            "mae_rgb8": 1.9348765055338542,
+            "max_rgb8": 119
+          },
+          {
+            "index": 145,
+            "mae_rgb8": 1.9328514946831596,
+            "max_rgb8": 121
+          },
+          {
+            "index": 146,
+            "mae_rgb8": 1.9438591851128473,
+            "max_rgb8": 129
+          },
+          {
+            "index": 147,
+            "mae_rgb8": 1.940869140625,
+            "max_rgb8": 137
+          },
+          {
+            "index": 148,
+            "mae_rgb8": 1.933260769314236,
+            "max_rgb8": 137
+          },
+          {
+            "index": 149,
+            "mae_rgb8": 1.9317732069227431,
+            "max_rgb8": 142
+          },
+          {
+            "index": 150,
+            "mae_rgb8": 1.9439843071831597,
+            "max_rgb8": 137
+          },
+          {
+            "index": 151,
+            "mae_rgb8": 1.945253160264757,
+            "max_rgb8": 142
+          },
+          {
+            "index": 152,
+            "mae_rgb8": 1.9356987847222222,
+            "max_rgb8": 135
+          },
+          {
+            "index": 153,
+            "mae_rgb8": 1.9318284776475694,
+            "max_rgb8": 133
+          },
+          {
+            "index": 154,
+            "mae_rgb8": 1.9436818440755208,
+            "max_rgb8": 122
+          },
+          {
+            "index": 155,
+            "mae_rgb8": 1.946104261610243,
+            "max_rgb8": 141
+          },
+          {
+            "index": 156,
+            "mae_rgb8": 1.9372731526692708,
+            "max_rgb8": 111
+          },
+          {
+            "index": 157,
+            "mae_rgb8": 1.9445407443576388,
+            "max_rgb8": 120
+          },
+          {
+            "index": 158,
+            "mae_rgb8": 1.9402635362413194,
+            "max_rgb8": 126
+          },
+          {
+            "index": 159,
+            "mae_rgb8": 1.9506734212239583,
+            "max_rgb8": 110
+          },
+          {
+            "index": 160,
+            "mae_rgb8": 1.9404208713107638,
+            "max_rgb8": 137
+          },
+          {
+            "index": 161,
+            "mae_rgb8": 1.9353217230902777,
+            "max_rgb8": 113
+          },
+          {
+            "index": 162,
+            "mae_rgb8": 1.9527177598741319,
+            "max_rgb8": 138
+          },
+          {
+            "index": 163,
+            "mae_rgb8": 1.9477105034722222,
+            "max_rgb8": 124
+          },
+          {
+            "index": 164,
+            "mae_rgb8": 1.9379618326822916,
+            "max_rgb8": 135
+          },
+          {
+            "index": 165,
+            "mae_rgb8": 1.9275227864583333,
+            "max_rgb8": 133
+          },
+          {
+            "index": 166,
+            "mae_rgb8": 1.9315456814236112,
+            "max_rgb8": 140
+          },
+          {
+            "index": 167,
+            "mae_rgb8": 1.9354688856336806,
+            "max_rgb8": 128
+          },
+          {
+            "index": 168,
+            "mae_rgb8": 1.9332800971137152,
+            "max_rgb8": 134
+          },
+          {
+            "index": 169,
+            "mae_rgb8": 1.924893527560764,
+            "max_rgb8": 132
+          },
+          {
+            "index": 170,
+            "mae_rgb8": 1.947196790907118,
+            "max_rgb8": 142
+          },
+          {
+            "index": 171,
+            "mae_rgb8": 1.9363521999782987,
+            "max_rgb8": 135
+          },
+          {
+            "index": 172,
+            "mae_rgb8": 1.929559326171875,
+            "max_rgb8": 120
+          },
+          {
+            "index": 173,
+            "mae_rgb8": 1.9207261827256945,
+            "max_rgb8": 130
+          },
+          {
+            "index": 174,
+            "mae_rgb8": 1.9291656494140625,
+            "max_rgb8": 115
+          },
+          {
+            "index": 175,
+            "mae_rgb8": 1.9320777045355904,
+            "max_rgb8": 117
+          },
+          {
+            "index": 176,
+            "mae_rgb8": 1.9331298828125,
+            "max_rgb8": 125
+          },
+          {
+            "index": 177,
+            "mae_rgb8": 1.9288255479600696,
+            "max_rgb8": 101
+          },
+          {
+            "index": 178,
+            "mae_rgb8": 1.9261881510416667,
+            "max_rgb8": 140
+          },
+          {
+            "index": 179,
+            "mae_rgb8": 1.9311621771918404,
+            "max_rgb8": 125
+          },
+          {
+            "index": 180,
+            "mae_rgb8": 1.9315450032552084,
+            "max_rgb8": 140
+          },
+          {
+            "index": 181,
+            "mae_rgb8": 1.9136827256944444,
+            "max_rgb8": 116
+          },
+          {
+            "index": 182,
+            "mae_rgb8": 1.924074978298611,
+            "max_rgb8": 143
+          },
+          {
+            "index": 183,
+            "mae_rgb8": 1.9240088568793403,
+            "max_rgb8": 142
+          },
+          {
+            "index": 184,
+            "mae_rgb8": 1.927168443467882,
+            "max_rgb8": 141
+          },
+          {
+            "index": 185,
+            "mae_rgb8": 1.9112423366970486,
+            "max_rgb8": 134
+          },
+          {
+            "index": 186,
+            "mae_rgb8": 1.9305877685546875,
+            "max_rgb8": 132
+          },
+          {
+            "index": 187,
+            "mae_rgb8": 1.9182393391927084,
+            "max_rgb8": 132
+          },
+          {
+            "index": 188,
+            "mae_rgb8": 1.9234978569878471,
+            "max_rgb8": 119
+          },
+          {
+            "index": 189,
+            "mae_rgb8": 1.9036451551649305,
+            "max_rgb8": 120
+          },
+          {
+            "index": 190,
+            "mae_rgb8": 1.9226365831163195,
+            "max_rgb8": 119
+          },
+          {
+            "index": 191,
+            "mae_rgb8": 1.9253370496961806,
+            "max_rgb8": 117
+          },
+          {
+            "index": 192,
+            "mae_rgb8": 1.9269185384114584,
+            "max_rgb8": 119
+          },
+          {
+            "index": 193,
+            "mae_rgb8": 1.9094000922309027,
+            "max_rgb8": 114
+          },
+          {
+            "index": 194,
+            "mae_rgb8": 1.920682101779514,
+            "max_rgb8": 134
+          },
+          {
+            "index": 195,
+            "mae_rgb8": 1.9217617458767362,
+            "max_rgb8": 121
+          },
+          {
+            "index": 196,
+            "mae_rgb8": 1.9265903049045139,
+            "max_rgb8": 138
+          },
+          {
+            "index": 197,
+            "mae_rgb8": 1.9057908799913195,
+            "max_rgb8": 140
+          },
+          {
+            "index": 198,
+            "mae_rgb8": 1.9107445610894098,
+            "max_rgb8": 110
+          },
+          {
+            "index": 199,
+            "mae_rgb8": 1.9089999728732638,
+            "max_rgb8": 136
+          },
+          {
+            "index": 200,
+            "mae_rgb8": 1.9269887288411458,
+            "max_rgb8": 132
+          },
+          {
+            "index": 201,
+            "mae_rgb8": 1.9060068766276042,
+            "max_rgb8": 134
+          },
+          {
+            "index": 202,
+            "mae_rgb8": 1.9192830403645833,
+            "max_rgb8": 125
+          },
+          {
+            "index": 203,
+            "mae_rgb8": 1.919578382703993,
+            "max_rgb8": 113
+          },
+          {
+            "index": 204,
+            "mae_rgb8": 1.9233574761284722,
+            "max_rgb8": 93
+          },
+          {
+            "index": 205,
+            "mae_rgb8": 1.906691148546007,
+            "max_rgb8": 123
+          },
+          {
+            "index": 206,
+            "mae_rgb8": 1.9112711588541667,
+            "max_rgb8": 114
+          },
+          {
+            "index": 207,
+            "mae_rgb8": 1.9148868136935764,
+            "max_rgb8": 132
+          },
+          {
+            "index": 208,
+            "mae_rgb8": 1.9237501356336806,
+            "max_rgb8": 113
+          },
+          {
+            "index": 209,
+            "mae_rgb8": 1.8963487413194444,
+            "max_rgb8": 122
+          },
+          {
+            "index": 210,
+            "mae_rgb8": 1.9199649386935764,
+            "max_rgb8": 138
+          },
+          {
+            "index": 211,
+            "mae_rgb8": 1.9118472629123264,
+            "max_rgb8": 105
+          },
+          {
+            "index": 212,
+            "mae_rgb8": 1.9250637478298611,
+            "max_rgb8": 142
+          },
+          {
+            "index": 213,
+            "mae_rgb8": 1.899167209201389,
+            "max_rgb8": 102
+          },
+          {
+            "index": 214,
+            "mae_rgb8": 1.9170074462890625,
+            "max_rgb8": 143
+          },
+          {
+            "index": 215,
+            "mae_rgb8": 1.914590793185764,
+            "max_rgb8": 133
+          },
+          {
+            "index": 216,
+            "mae_rgb8": 1.9209754096137153,
+            "max_rgb8": 106
+          },
+          {
+            "index": 217,
+            "mae_rgb8": 1.8995707194010416,
+            "max_rgb8": 127
+          },
+          {
+            "index": 218,
+            "mae_rgb8": 1.913134765625,
+            "max_rgb8": 130
+          },
+          {
+            "index": 219,
+            "mae_rgb8": 1.9044759114583334,
+            "max_rgb8": 127
+          },
+          {
+            "index": 220,
+            "mae_rgb8": 1.9219614664713542,
+            "max_rgb8": 142
+          },
+          {
+            "index": 221,
+            "mae_rgb8": 1.8985019259982638,
+            "max_rgb8": 130
+          },
+          {
+            "index": 222,
+            "mae_rgb8": 1.910731675889757,
+            "max_rgb8": 121
+          },
+          {
+            "index": 223,
+            "mae_rgb8": 1.9057071261935763,
+            "max_rgb8": 126
+          },
+          {
+            "index": 224,
+            "mae_rgb8": 1.9197679307725695,
+            "max_rgb8": 132
+          },
+          {
+            "index": 225,
+            "mae_rgb8": 1.8938195122612846,
+            "max_rgb8": 119
+          },
+          {
+            "index": 226,
+            "mae_rgb8": 1.9039635552300347,
+            "max_rgb8": 145
+          },
+          {
+            "index": 227,
+            "mae_rgb8": 1.8944349500868056,
+            "max_rgb8": 133
+          },
+          {
+            "index": 228,
+            "mae_rgb8": 1.9167605929904514,
+            "max_rgb8": 135
+          },
+          {
+            "index": 229,
+            "mae_rgb8": 1.8895263671875,
+            "max_rgb8": 122
+          },
+          {
+            "index": 230,
+            "mae_rgb8": 1.9057274712456598,
+            "max_rgb8": 126
+          },
+          {
+            "index": 231,
+            "mae_rgb8": 1.901763916015625,
+            "max_rgb8": 119
+          },
+          {
+            "index": 232,
+            "mae_rgb8": 1.9148949517144098,
+            "max_rgb8": 123
+          },
+          {
+            "index": 233,
+            "mae_rgb8": 1.882470703125,
+            "max_rgb8": 121
+          },
+          {
+            "index": 234,
+            "mae_rgb8": 1.8949079725477431,
+            "max_rgb8": 106
+          },
+          {
+            "index": 235,
+            "mae_rgb8": 1.8949032253689235,
+            "max_rgb8": 132
+          },
+          {
+            "index": 236,
+            "mae_rgb8": 1.9100443522135417,
+            "max_rgb8": 132
+          },
+          {
+            "index": 237,
+            "mae_rgb8": 1.8800438774956598,
+            "max_rgb8": 131
+          },
+          {
+            "index": 238,
+            "mae_rgb8": 1.9035003662109375,
+            "max_rgb8": 112
+          },
+          {
+            "index": 239,
+            "mae_rgb8": 1.8934787326388889,
+            "max_rgb8": 138
+          },
+          {
+            "index": 240,
+            "mae_rgb8": 1.9121893988715277,
+            "max_rgb8": 144
+          },
+          {
+            "index": 241,
+            "mae_rgb8": 1.8761128743489583,
+            "max_rgb8": 142
+          },
+          {
+            "index": 242,
+            "mae_rgb8": 1.9038350423177084,
+            "max_rgb8": 144
+          },
+          {
+            "index": 243,
+            "mae_rgb8": 1.887968275282118,
+            "max_rgb8": 108
+          },
+          {
+            "index": 244,
+            "mae_rgb8": 1.9177944607204862,
+            "max_rgb8": 125
+          },
+          {
+            "index": 245,
+            "mae_rgb8": 1.8803660074869792,
+            "max_rgb8": 114
+          },
+          {
+            "index": 246,
+            "mae_rgb8": 1.915092298719618,
+            "max_rgb8": 103
+          },
+          {
+            "index": 247,
+            "mae_rgb8": 1.8939612494574654,
+            "max_rgb8": 132
+          },
+          {
+            "index": 248,
+            "mae_rgb8": 1.9171312120225694,
+            "max_rgb8": 133
+          },
+          {
+            "index": 249,
+            "mae_rgb8": 1.8747775607638888,
+            "max_rgb8": 133
+          },
+          {
+            "index": 250,
+            "mae_rgb8": 1.909207492404514,
+            "max_rgb8": 123
+          },
+          {
+            "index": 251,
+            "mae_rgb8": 1.881999715169271,
+            "max_rgb8": 123
+          },
+          {
+            "index": 252,
+            "mae_rgb8": 1.9085442437065971,
+            "max_rgb8": 129
+          },
+          {
+            "index": 253,
+            "mae_rgb8": 1.8654642740885417,
+            "max_rgb8": 129
+          },
+          {
+            "index": 254,
+            "mae_rgb8": 1.8969757080078125,
+            "max_rgb8": 91
+          },
+          {
+            "index": 255,
+            "mae_rgb8": 1.8698879665798611,
+            "max_rgb8": 120
+          },
+          {
+            "index": 256,
+            "mae_rgb8": 1.9121073404947917,
+            "max_rgb8": 120
+          },
+          {
+            "index": 257,
+            "mae_rgb8": 1.8537027994791666,
+            "max_rgb8": 115
+          },
+          {
+            "index": 258,
+            "mae_rgb8": 1.8841105143229167,
+            "max_rgb8": 115
+          },
+          {
+            "index": 259,
+            "mae_rgb8": 1.8656487358940972,
+            "max_rgb8": 130
+          },
+          {
+            "index": 260,
+            "mae_rgb8": 1.9060004340277779,
+            "max_rgb8": 118
+          },
+          {
+            "index": 261,
+            "mae_rgb8": 1.8455142550998265,
+            "max_rgb8": 96
+          },
+          {
+            "index": 262,
+            "mae_rgb8": 1.8727701822916667,
+            "max_rgb8": 123
+          },
+          {
+            "index": 263,
+            "mae_rgb8": 1.8545328776041667,
+            "max_rgb8": 125
+          },
+          {
+            "index": 264,
+            "mae_rgb8": 1.8938218858506946,
+            "max_rgb8": 117
+          },
+          {
+            "index": 265,
+            "mae_rgb8": 1.8391571044921875,
+            "max_rgb8": 121
+          },
+          {
+            "index": 266,
+            "mae_rgb8": 1.862741427951389,
+            "max_rgb8": 121
+          },
+          {
+            "index": 267,
+            "mae_rgb8": 1.8477410210503473,
+            "max_rgb8": 117
+          },
+          {
+            "index": 268,
+            "mae_rgb8": 1.8859727647569444,
+            "max_rgb8": 122
+          },
+          {
+            "index": 269,
+            "mae_rgb8": 1.8313815646701388,
+            "max_rgb8": 122
+          },
+          {
+            "index": 270,
+            "mae_rgb8": 1.8510379367404515,
+            "max_rgb8": 110
+          },
+          {
+            "index": 271,
+            "mae_rgb8": 1.8369215223524304,
+            "max_rgb8": 117
+          },
+          {
+            "index": 272,
+            "mae_rgb8": 1.8827796088324653,
+            "max_rgb8": 126
+          },
+          {
+            "index": 273,
+            "mae_rgb8": 1.821312459309896,
+            "max_rgb8": 126
+          },
+          {
+            "index": 274,
+            "mae_rgb8": 1.8508575439453125,
+            "max_rgb8": 127
+          },
+          {
+            "index": 275,
+            "mae_rgb8": 1.838935343424479,
+            "max_rgb8": 130
+          },
+          {
+            "index": 276,
+            "mae_rgb8": 1.8843353271484375,
+            "max_rgb8": 130
+          },
+          {
+            "index": 277,
+            "mae_rgb8": 1.8183505588107638,
+            "max_rgb8": 128
+          },
+          {
+            "index": 278,
+            "mae_rgb8": 1.844949679904514,
+            "max_rgb8": 128
+          },
+          {
+            "index": 279,
+            "mae_rgb8": 1.8322899712456597,
+            "max_rgb8": 129
+          },
+          {
+            "index": 280,
+            "mae_rgb8": 1.8776862250434028,
+            "max_rgb8": 129
+          },
+          {
+            "index": 281,
+            "mae_rgb8": 1.8189785427517362,
+            "max_rgb8": 119
+          },
+          {
+            "index": 282,
+            "mae_rgb8": 1.8343505859375,
+            "max_rgb8": 108
+          },
+          {
+            "index": 283,
+            "mae_rgb8": 1.8376366509331596,
+            "max_rgb8": 107
+          },
+          {
+            "index": 284,
+            "mae_rgb8": 1.8824378119574652,
+            "max_rgb8": 107
+          },
+          {
+            "index": 285,
+            "mae_rgb8": 1.8819288465711805,
+            "max_rgb8": 133
+          },
+          {
+            "index": 286,
+            "mae_rgb8": 1.8467841254340278,
+            "max_rgb8": 133
+          },
+          {
+            "index": 287,
+            "mae_rgb8": 1.881155056423611,
+            "max_rgb8": 133
+          },
+          {
+            "index": 288,
+            "mae_rgb8": 1.8353261311848958,
+            "max_rgb8": 133
+          },
+          {
+            "index": 289,
+            "mae_rgb8": 1.8435784233940973,
+            "max_rgb8": 133
+          },
+          {
+            "index": 290,
+            "mae_rgb8": 1.8588935004340277,
+            "max_rgb8": 133
+          },
+          {
+            "index": 291,
+            "mae_rgb8": 1.8982550726996528,
+            "max_rgb8": 133
+          },
+          {
+            "index": 292,
+            "mae_rgb8": 1.9037089029947916,
+            "max_rgb8": 133
+          },
+          {
+            "index": 293,
+            "mae_rgb8": 1.908057657877604,
+            "max_rgb8": 133
+          },
+          {
+            "index": 294,
+            "mae_rgb8": 1.9147047254774305,
+            "max_rgb8": 133
+          },
+          {
+            "index": 295,
+            "mae_rgb8": 1.9218814425998263,
+            "max_rgb8": 133
+          },
+          {
+            "index": 296,
+            "mae_rgb8": 1.9292344835069444,
+            "max_rgb8": 133
+          },
+          {
+            "index": 297,
+            "mae_rgb8": 1.936419677734375,
+            "max_rgb8": 133
+          },
+          {
+            "index": 298,
+            "mae_rgb8": 1.9385837131076389,
+            "max_rgb8": 133
+          },
+          {
+            "index": 299,
+            "mae_rgb8": 1.9483035617404514,
+            "max_rgb8": 133
+          }
+        ]
+      },
+      "complete_decode": true
+    },
+    "4": {
+      "contiguous_timestamps": true,
+      "frames": 300,
+      "duration_s": 10.0,
+      "stream": {
+        "codec_name": "h264",
+        "codec_type": "video",
+        "codec_tag_string": "avc1",
+        "width": 1280,
+        "height": 768,
+        "sample_aspect_ratio": "1:1",
+        "pix_fmt": "yuv420p",
+        "color_range": "tv",
+        "color_space": "bt709",
+        "color_transfer": "iec61966-2-1",
+        "color_primaries": "bt709",
+        "r_frame_rate": "30/1",
+        "avg_frame_rate": "30/1",
+        "time_base": "1/15360",
+        "duration_ts": 153600,
+        "nb_frames": "300",
+        "nb_read_frames": "300",
+        "disposition": {
+          "default": 1,
+          "dub": 0,
+          "original": 0,
+          "comment": 0,
+          "lyrics": 0,
+          "karaoke": 0,
+          "forced": 0,
+          "hearing_impaired": 0,
+          "visual_impaired": 0,
+          "clean_effects": 0,
+          "attached_pic": 0,
+          "timed_thumbnails": 0,
+          "non_diegetic": 0,
+          "captions": 0,
+          "descriptions": 0,
+          "metadata": 0,
+          "dependent": 0,
+          "still_image": 0,
+          "multilayer": 0
+        },
+        "tags": {
+          "language": "und",
+          "handler_name": "VideoHandler",
+          "encoder": "Lavc62.28.102 libx264"
+        }
+      },
+      "file": "panda-msaa-4x.mp4",
+      "sha256": "8347e7b29b10c84012d52e9d2ab55b013a2f31c65886caf6381f2f2865d308b0",
+      "faststart": {
+        "moov_offset": 32,
+        "mdat_offset": 4469
+      },
+      "encode_input_sha256": [
+        "b8860189e2c2badd2e129a2ca6ff2eca7889ce15baf1a1e475b85879717c71fa",
+        "5ce77f30b3165e35d798af4020452d531f8767f2a206227d3879e270ceab2720",
+        "9ba725c6e1e7f9e91f15f8366d8ca981c2756015a731233480750e9f89ee2082",
+        "da4debe1afbd3f91f7bbf69a2af7d2395a7d1f541da83b9da391a666f2d0d0d7",
+        "85c656687b91cfef75c1ca63e5aa79d245413cf7748b2b4f9f1de374b78d6958",
+        "11ce6b22b32b6989304a043322616e7933f5ee7c8cd53869b92eab529261ff13",
+        "344f12cbd0baa3d737b2d870db6affc7bdf798380755b2f8bcf6d535f5ff9629",
+        "a16ee6a388c982b63a33f830d43facdc6bd13bbef3dda0fedacd22f7222d5f8b",
+        "4de05e82a628c6627283cb9b1a54b4f170461f230b1fe0fe38871a66bc7b69a9",
+        "1bef72a53ffa9f8e0b0c73ff7ae113ed06dffd6c8ad060422304d80800bb4751",
+        "17413d48032eb1143b142ad0bec4a0dddd83c3ac1f9c35fd3b48e4a41d77233e",
+        "c3e40138a7ad8cf2bb37b96a0fd8a6a454f1dea0474100d2ded3cd07cd43c32d",
+        "fa18b36197146f6b902271f7dafbbf6295a4ebd96eb85c3e5bb541508fb697b2",
+        "fdd474a2e21df477a9acc4fbf92d46846a1b32b2167a227a595af64162c6d878",
+        "dd7a11b8e680550ce21b72eef7b18c5e4e92c95a9df85593cc34d87aa0bd27c8",
+        "ba6f4a47845fcc35f5bc25ebef9c990aedae4ed6d3d70577e08c845fa63541d6",
+        "8911d4de5101cc54f43b42c78fa863fbcd0494516b939f1126ecea55b49c15a2",
+        "a94eb279ae7d917b826b59cfa87ceb38ecdcd16a115ded455134fb539a2e0111",
+        "1e9ae74448485f7ca9df3996ee0a5a5900d15f0eb5b80083e91e466542ecc70b",
+        "0a4543291a415e0e85bd596ae3074fe7ded5a8e2613272fbc39f7aa7f558c28a",
+        "e4b35eb9af288a5e1c4520529b795d8c40325f11ce9bdb1aae19270b501d0d38",
+        "0298388f866365d51627dde36afcb5fa3870e4aafbeb3ac23f113d109b727d63",
+        "fc0199621be63a74f9d6fe97592b54c162387d4cec6fec5a95e35b51e3a277cc",
+        "0daac8733d86ecd30fa60f667692056769ae1bc181f3444452e9a7e392463ea1",
+        "d59c646f02baf51e14d4aa087bb64f1ac9fdc25ea27b0f38f06f26016b5143f5",
+        "3cc8542482d873e1bf4a7ecf36afdb9458a3d364a5850d475d0131e566b45003",
+        "7e5ec7b00ac09f7bae3de2a2245076fbd9cee89d5727960badcf6ac077ff5770",
+        "cd21baa67402130e78a0086095dff8b4ac1317587841afac180caeb1bd3ae82d",
+        "346ee9f188c787306b5af981cd5009290da275dce1409a7a2cdb14e40d29ca18",
+        "1bd8b62faae8b78d98f04b58c58b75c01bbd4246fafe4ee2fa81f248ab236df6",
+        "99e08824d69c221f678aba2b70744abb90759e5f536d75e6cc4fc9312b8cd38c",
+        "0c2c3d1b886309a9f74c1531f93628561c84b8ddc73773ad5f5e1ab8beb2e875",
+        "e5e154573a83f4fb2a32461fd2f3cfd521ed55e3a00a5ac69016f6f5009a4af1",
+        "bb8e3102286cec7b5cb39786ad40cf9852c3377cad2ae18af3341bdbc41a562a",
+        "4780880e8e2adabcc17cd50782085e4711e28d39ada6d2c31e4ef52ba3ba429f",
+        "aca49e7cd938ad8ee7001921b8b2dc1992b02893863e6f46337215820acec741",
+        "ba257ce30df2d96b5300cd23df0dc18f0a11bee51e70d9dc7b128fdbcdec43a8",
+        "872894a76be9a0e97f734937d2812040ccc7582a6be3bf26302f15ae669219c1",
+        "e65e1900066a14eebf6d9d81c15300e567874fd870f0d3a4e91454847cb20b7e",
+        "a65fc974d3c84390c778f966f7758ccaf04aae097da310893c9ca7550cc39a02",
+        "25ea1371ddc49f3de058944bde4361e94f08505d375bb80fec4d468ce2c582c7",
+        "b94dbe6ea850e9242b9f6dc092da51a90e2e3063a344204feede3f6c3c1bb1f3",
+        "7eb66a72117565089bcc105a05948a29cc5e164583f0d2d361762842a109dcec",
+        "b711b07a8f9320c5637936701ae9b42e608320e69674deb4b65fd3fefa852c76",
+        "204776a97bb497f6bf47eea26189b60c05ab562994192b8326d2086fa03dd648",
+        "7efdb704b241f54a8e171ea01f9d1449045a603404e70e27d81d553f3f5573cd",
+        "877ea2f263ee8130d845af3f019a0ab259253a3a104348fab3b5fa27ff5a918f",
+        "1269a7df86c73b087f4e845b24eb0360b98635d1952d63197a5b1dce81faabd7",
+        "d743d289de1278e8ce2a65b6888ffaf7ea2f1a1aa8ab4d0935409fafdc7407d1",
+        "6cd5a07d610cd49a90ba76afd9f13d3b8c223066e751d3b438cf47efa5334ed2",
+        "0845b511d7c9e3085bf708cd3e1b981b730f3c4cd33328b655523c6c382d54f6",
+        "9f9835f42122822c0f63c9941fa7cdf08a575e297c3ee385386db053925ce19f",
+        "1305765a3fdd7561ab577ccaecfc39961b87820320f5980b6581088ebfc40abd",
+        "534635d0da4b27912c9a2c5b82b7668a9434b0dd617d793f586e98aa16edee58",
+        "b8fd5a0a1405fd8144eea49f8cbb8551f927aa4386c2ee744866dea3f23d916b",
+        "117960bd320dc533ad4f7a599cac104c60a1d42bb81c0c318030b3ddab15f38a",
+        "19d7c369aa48ebeb1c87238d4277cccd005b83d8f1e4152c5be4c496125c15c1",
+        "8750d2eb209c4402f7de1b23862900e5b1f540c7786a4a4ec5cc03600b542d10",
+        "04d1ff290a096b14b38d42d476474a53f4202cdc827fac9d8e3d4f29ecb11c4c",
+        "c4a74f6327ca4ef656da853b7d03a83db4ca6b92437d1a5e6fb185147a1455f5",
+        "84dcc26d0a53808493f93096787959cd45a86f86276b776f1d8fd4930bddad5d",
+        "396b8953a672c2c7b23414949492cd0195865ca168a5ac5a578b6d57007408be",
+        "f0f6ba41254b0c008d1c2fb6a388c42de413e2b40a4d7f80ea6e997fca6936b7",
+        "343a9801d948fd78d172641dde7e482c9089e8a54e426ef6ae6dbb8ca226ff16",
+        "e815fafd5abff0671c7c3f5f0ca95b68c173438454c126c59670372e13d2b611",
+        "5de45d9b57404a7f61d6adc469b9d9252c2d73d3f78735be9fba6193f4f0c01b",
+        "d0677614bbea1d5489e2516f1c0aaadaff9ce7078da28faa71b7b924ce194a97",
+        "3512cc4ba37efc934e4c4685ce5a575a1e7360d85209aa56c063ef3d6d12612f",
+        "942c0eea7e405e04050a3c1c112d3076d0a6caaddcaab07da3ab5139ca5ea5e9",
+        "31489df95f8744d17aaa91988843361d1385145b43c2bb8c2aa35ea3fc879ff2",
+        "608b6e148bc7d2daee923a4c59f1d72f02cb0e4008b81711ca67c2e1012edb1c",
+        "8ccb6b7eb6cd98b4b2273694ed7216445c5d05271fd8b29ba19702a084a76a29",
+        "a09ec535303ba395e854995fd743ef0c0c487b5a344f5c444960c232da4bac9d",
+        "44af17126a96727659b01b42d801effd8680b2554ce6e1d958bfe439c311afeb",
+        "f5b09398dc8a702a64595a91af222a0b8f6428b62c371f9a7893cac28795a8bc",
+        "0868ed686b7aa2a54cbaf6cf2954c2b984833d4da9b9e0180bb53aef3da4c5c7",
+        "e0edc931684d689dc40a37a7fff189b11cf2180481c1eaa4210b698eb6a2f04f",
+        "02f6a8adcb9e90c65e9c0f8f7bb5ee0ee4d744300e0e93d92a5a9ea8671e3ca0",
+        "702fe7560af411b3dcdcaac80819a6f1774532607e125f3b4806e8ad22530f94",
+        "be8cbb991782ff42ce90d63835396c79ecec240ea69cf9ce9f9eb1ab3604daf4",
+        "d1091527bea11b04b9d2da73e63eec6d15fed94ab92ef04689fae96c0bfc05ce",
+        "81d9d149b99991bd3e48a6fad96879e259c4ce33fc8be1330aede3bb51d67ade",
+        "50f34460e0348a82df7662de50bb03563e7f06f3b7b514086217bd074c959c0e",
+        "592d109f18bddf80f9ef11c23cbbae62b476593dd9546221353fe5216dc269be",
+        "c55e0d5a6f77fe635aec054cfd6b00e68cc2652bfbdf3359e26f114ef34a39f0",
+        "36e8f336e8e593053bbfbfe06a6153642f5f5b825fc341932318769ce997abf2",
+        "53ce55de257562cad5135fd2d9c5c19446f8f4464d87e084d390ab8d140c659f",
+        "54e9c3472c253b4f5e10d475892b6389202903d5c87129694fa612419bc66c36",
+        "f75605a1b9d2e701305f372b55a8c5b5804e8b1c9f6030558a60eb51a9339009",
+        "c06589a2f03420e98e19bba90f5b9592d6dc68d8aeb30595d1cfe1438451ee71",
+        "688a825540a32079603a94b82faf6c35a779f17d4d8b177329a64c32328b0a11",
+        "84af0c12713930bce68d67fbd496de4d2a042f634c55df22684acf25e9dc35f7",
+        "7f0d2d292602084af88c00a4d8fc24bbfbde345bf88abb56ab5471e6c8fda6d2",
+        "3dd994b3089e4f1c7a7469f167ee87bfe87089b7c5f2012a68a986d29b955e70",
+        "3cfec0daf5a403e96b4a12613726616ec51b1782a24884b5c27ad437a7724e8d",
+        "cd4d469712ad30689a5b3e8753787b76575793665aebadc7cc6c1ff797246b8e",
+        "1f9b4c476ba007f8fa6bfa3cb2e024498f3d7bbee795e1cc98ecdaddaf6e4ffd",
+        "c9333a8bfd320e44c4db9a5eb4af3705e641a9901b2233ecb4be1c4a05570426",
+        "41a8ee3623dce2598c08a074f8512ae06786166503c06bc4200e929ccf930df7",
+        "7285c4dea4197fcdb7911650c2a7d6bdb01e7aa2baa93aefbe4f2274572d80a0",
+        "8bbc892faee31fb124d74bf4f16e2ff54f91f683fb5c0a60d38873919d696608",
+        "3f94fbbea22994d17fb6f88f96876d7ac070ab9e3e19b49368d2c4333baec07a",
+        "d754a99ebcdd04a2c97806e51fc048bde69487d360e7979b7ee2332b068adf72",
+        "4054647583899a02835b091a4408b3930936f57d6323885fe8169e6904ab6c1a",
+        "bce48dabe03c84c46d55da447d6668a214d8f1af1656f18c91c0026368ebc4fe",
+        "be4fa27f7fa7bb0e7a4e04c3ff8e76deb3a9edd7c79ccfc3e9a7d944e5cb6515",
+        "f22a820e5c2028629fa3e782f9c262a691a5ca02a721fe0fed73f7b706f19618",
+        "dd20691d4b0ea2baab521dc8b45008fb91c78ad407b7d5e3f2a2cfa94878eef6",
+        "b350407976416fab1ae2408700b2070456d2967304653c724ede80874d20fc07",
+        "10e8b4c987184d988c2202ab584fe9a1f61e0d31f337e75fb6b79a317200cf64",
+        "3b85fc6ae7a3b1e272c0190b97c2d4cccce926b57b0f8e1ed2dd89c7599eb1d9",
+        "efb02ece7b159ccaa8d3b9a78040f201b3f78ca4cf0427a2746ee2dfce656b9e",
+        "fb26ce195320a66adbecb18223b82ce812b2b043051478df45b9b05e8e560570",
+        "21977f50e6ffa9ceaeec7466064e4e572cb14b300ad61f1af401573513afe843",
+        "dcbea4ff5ba7d85d2bfd62fc8bf6beb90563a211b2f23e50f969b638ddce682f",
+        "76a74914485fd050bb837e0f48e44430bd13f40542aa9d34c26ae9f92f26e4f8",
+        "e939062b269be3b9281501af82f20c83d48577ff134a081e457dda5cdbd432a0",
+        "e558fd2127d68e0ecb760145313a00b835fe243c20a685d976ccf9274aa5b546",
+        "4ad8cdaf104e7d8bdf9e22faea4301aadc2166b5cadd9db65234299900fe2b71",
+        "b33db45d6b654d20bc17245f6af8fb1c818c6b66c3773a1c803cda9736dcfdfb",
+        "63c4d8127b5d0f60090fe3ec89a42473d4c6ed88e3d309705e453556a7068475",
+        "decdd3ad8c4d88eab04dae21970200be4540bd0e904b90c5d859a9e911e06fbd",
+        "f8dae6bff7ca3a3d0f49285aa04b8b9a1905316f057fcf8b17b65ca1f477b1bf",
+        "49450abfee653aff5e91be34fd5d5c7d533b0f8ab7279202447f9beed0d398c9",
+        "a939b9c83eddc30bdb215214208d22838a51a72da2ccdc1a769371dede096afe",
+        "528055ed6102e0ab9de86031959d329dd64d81d3995641f8ef49f865625b8e04",
+        "349c783eab1e09a8461c971a1dc14ee1e27cf1d3326f808746665f48cf57fa9b",
+        "07ab67452ef3b0f60be617a4a63a9332d0c2c9b82949d1685af1c74d1634cd68",
+        "3a9621454dfdd3e08ffb427ee220a7a954ffe53c44c5c4f4aacce9b0d48aaf9f",
+        "01f4785e0a87587803627f6dcd7eaf34ea6902dfa1df94fc011c0bd72ee6c051",
+        "402eb68fadd9c16cab5272220a517e291da0b15161cb5cd76a2880fa9959433b",
+        "a801d308083e0c835d64ff0ac7d2d471c27a5b2a843465c56910969488add0f0",
+        "09d6b87acc28748b2a5624637ebdae03c7e9fc3be70e89f052c89f604f6d1881",
+        "a84d9a72d455f03f53d4e29851c84aa71645efb7bb72a508fe73dae4e5a8b700",
+        "79ffcf0c21a4af6697cb912faf56b6c1b8e9a95006815035b71a7e227a1d05d8",
+        "3faa2d60a66f39faa17b51cb3e2bafc95979dcb9859246e41d807996aeb2b785",
+        "16ebec76aefc77f220eb00c1b85beb8660a04a10d019e845e2c52c2d3c7820a3",
+        "4fb3a796874388c4adfaa1df9eb87c25f39e722930a865197c3ccbb6b1d040a0",
+        "3611ceefceda8bf0ad8149f04d2cd2694cf90dc07f34dc2c876de893f89aadf4",
+        "08f6c76c994454d2686e971f9562f2eb35e0ca8264adfc267b22cf31d300809d",
+        "8f2ea3249ce83180a3850b1a12471476706432b73767ca319d62640efd0eb938",
+        "59cbc85b4f55ef55a270815bf994c77ea3f703e355e71b5f6b17e2a5ac919a9d",
+        "0ef15df2314a779ca83ff84847068db6c9a6bd266fe478688f07f8b747753ced",
+        "b5db50d64059532c0ff3f31fac5ff76ced27e934067ece738aa6da55217051cd",
+        "4a8b96a97c44a663d789907d83a98a464365368989638473669dcac04a644b92",
+        "2245efa78a9b2c94e91ed3cc82327a8bd59eff54b5ad43b4829ed5c25e16db66",
+        "3128a1ecc46a6eeeb543149f2060e8abef4f7dcdae2e03ff823a5f72b4536e49",
+        "212968030643b68894cebfd8f1e09e415a3a35ed8cfba01586299bfd682e3645",
+        "0e200a2974d88fbd7d366a428d91c03407ba3efaec47c5f8508e26963222543f",
+        "bcbde975abe7aa0a2638ecb11699272b604d6c8f0d8acce8607ba41a30a16303",
+        "b3c9094912056e2600675508fa50072c0c8e1af8be20dba23a8474ab6bc4697d",
+        "2e7d10d7e5f9073664d8578c26763653a50ea49bfd66093b3acb7b7ffe93d253",
+        "45b29646d779e75ead441c369a91a2f08ad8ab9b80f1c7bdff2b6c225937e61a",
+        "f76d063650458a539f89ff04256bf9f8c04661ba5097ab5b5330072c783dd0d3",
+        "38b81aeaf725646742aa5b0fb0babb6acfe95cdf6c71a39cf1d62d48fcf37e23",
+        "da7ed08013753178c0214f7c676dee839e53d63a31f0170f8fbe92d483a668c0",
+        "0ee0aa850b2faed462cefe204d22f08336a237d310ca3f9396753ab3aa616a8d",
+        "6d847f696b18c1cce0da107e98535ad9c9c55fee6f95412b71377f82837a8803",
+        "875c5e8c2a351353696232062cf77469a80cbfb6dfd860badc69605e39b241c4",
+        "d322f1b9fe168b983331738f7b810bb0ea536b600429456326c1e0eb9da80bbe",
+        "660ca736908f4487ed224860040d3277c19865f7c92c8b9715184488114c2e11",
+        "f49d0cba3f0596c4b119bf3deb14354062fcfb5a83e19a52b35a8fd1635582b4",
+        "8c647a29ea5b7671d639f88800e2f3a591a8ba5369cc9ef3ebb4b17ac2a5746b",
+        "c9e74437c74460806c2a1d0b348c489913387f9ada2a826bfd197a8ee2c6524d",
+        "6bb88c03bd53af24b5a0a58708b41b939219f7ee716d6ec1bc85c7742e5b5ebe",
+        "fd1b3fb9bcdd81d08a46bbf5b6ba102203c88bb7c4677de21985af9a516f9f59",
+        "6f85de9331bd63889414242731be9a032e102eba9aaa48ea1295e53b4ada8a39",
+        "bd95e59641159dd33e94af7cbdf5d0e65cbffbff748dc5335e022838e431bb9f",
+        "f886618569b1c36d36c893691ff0db347c86640291df2e8e56c41aed6fff0f44",
+        "fa39883b63bee98236000d5431433f15a2f8bf5ced3bf23683f57d6baa665fb8",
+        "d208f12a3523d473caa89cb10468175fe5e2ab68fa8695949e1ee0508b7849a6",
+        "af168d1b9d3ef02dfdf4b5adfd63c1310bf4a2b9e9c89be1cff8eaa9b9f69538",
+        "2f58a40de31912d3d2f17d8e652581b7c4bbde597e79d5482e8213d604589d48",
+        "3d84ac74808b8d1acb8cb104a10c66a6ec60e302255583c744933ede0708288b",
+        "60125d8641b5d1d08d951ef151ab62a2c70036ab5a3c5d6b8be379705a088c89",
+        "eba211e0f295f4fab29a5bb01bbb3e0c6d627691c8bbd77a2f602f38dda222d8",
+        "c95b4d3db038d015394bbc1576f8c9432fcec02a6684c0c72ff883e3835ee6ec",
+        "828598c39ae9025d4b7b8adc5a054debab2d556e3b793c9df305f9a70db17af3",
+        "1fe827ab5290951358774461b2dbfe94e9cf1e9134ec95fee2943127a76bd0f5",
+        "4359d161a8e5e60a204655a6d8f50147ec84b027bd69b021bdc326d8d56b1b13",
+        "13d7e5d6a9ac7628a60bad6671b35fbe5374e654032223fb1859822933a4c381",
+        "c3c1d68bae2971d1e74cb3ddc061bf4196d580ebcd3ced140b331fc33c269de5",
+        "762a4cdd1b21358f936ba65f0f61419f486debd45b2f4d977072194db5505af7",
+        "75b3bd8c3fa8f54ca2085e4fdc80c808e90c1fa5e0f7dcb0bd8031f47a25a89e",
+        "01cdda393ccdb1228ca75a50ad02a14e3d787d8674a336413e0ab51e50838b32",
+        "de2caaa7a671eeee2ba98860d03c82002d54fd3b820737c9c157147f5d454c45",
+        "3031fa7a5f72a74165c4fe1914f5dfbc86c37d122509262e682449cd9227605c",
+        "b228fdf970f50f7f0964d534643e6c4da5b2e0c930e36fe638916a2c07e034b6",
+        "5f63bc028aeabace558ac1d136d8b8967042188a8c246375f93b9e8ce84d2521",
+        "86087c00350dd30d2ed831936474f8fb5ce1b1c10d70057805fefbe6111dad52",
+        "63f694d5b66ba8035ab1da813de50d571651af476d42ff2a50be985448dbedfd",
+        "544b9d1c0b8a3dba78026225357e06abc1730886e748c98dd4c106afb991f809",
+        "2a2a845c34b7ba1c3d7352d37e8702cd48ed4f1b51bb7f50fe20e3a4effd7c41",
+        "80e26411b0a4c2aa377ac60b5676d063c91838640156cea42c1d5ac7a1c3faa2",
+        "d0124cda4b4ac554848a9031cd57b060ade0f2ee83daf5303060c3e5f77f9dd7",
+        "e80c8e6e8195f7f6363be45ecf020dcce331ab7fb799a7883132c71a11fb125d",
+        "2583f0d3c8ba1159da219aa128717baec8922980762c67eef6691af6f8ecb4bc",
+        "03c113124bb429e1f28893e4b938d0a1a75183c4086e3400c674f5c0553e2126",
+        "8515d5557150b55bfcdc5d2feb0ba378cd300b9f5b2bb023a27debbfad8f6ee2",
+        "724d083731875d689059de362b7678987451d8c2ca633eca0c68f415c47d9e88",
+        "6f14fb8a3f67d057fd6f36b3922e7b3366184676c529cad6b79e0599fec05830",
+        "d3b946284b29bec7df96373cffde1a8d3eb55795f8e742569f33ba7b5c35b37d",
+        "296f8a421b7d5e723cfc4b9df35995993462f6131cd7c1185854a2861f55ad0b",
+        "cb1f0625e803886a036b462b6fd9ef70b9c52f0f1f55426948d92fd550af8043",
+        "fd93a5079943eed64f075513eea7200a222ba6bb6a90bab8e00bc02264b7cee7",
+        "a5058025da07423751913559c13bead4ac2b2a0ea04dcc16ab54337e9363e6c1",
+        "e2a61198f97105b2753efe75fb0579e1d040ab3537ec93cb884514a4830b9ea4",
+        "d41b5d9efffd0ed76ef513ba32967871ffd6a363f38c97f4e2b3e7e1f3da3500",
+        "ac144d09d3ff7ee6884c2af4783846d4b3e8771787096c8ad9b31e350a5909f2",
+        "d64286dbffa237ee9cc1d5c623137adfe63e09544afc35e4c00233b24e93b3fc",
+        "ffee0a8a88615c7b420a15e99878d383b942c907fb5179d4b99e92a3ad1185e7",
+        "f6f3d4255e86bb723ce57a7f6f01be67f2fe7d23d038066fcabdc6b45a1b1121",
+        "b43edee621fd06d0b5bfb06defcd3ddd2cfd40f66581c11a5f21139f82da48a3",
+        "c2ea05ac3e8ac18224702b57c0ecd2d6f84fabd112041df0bce75955165a10fb",
+        "60ac4256a97b800c7039039cd6b22a399eee523e4dd698a509ada4216a1103e1",
+        "35da0a126ab3349742ac9fef5ff92643a64293044040a362b67d1d14a1c64121",
+        "72c7bb6e41b6188e2049cc7b1e63c88e62de2194acea354570f0091526c06c5e",
+        "295f63446c6b96ce5825dd6baf8f5dba0af8c39bff7200ff80ba40b06892e079",
+        "1a4c09429a02d4a50c778ca4fb90240e99b5e50b0a77640427a2d0623139da0d",
+        "50ead9a9bb4d229ce0cad97cff1ff08496801fb1aaf4be2c0ed0ac26074b1d7c",
+        "47bded965389fb2739bb0980d1f3d526f9569781dc8ea1ee66d6505577bcf7a3",
+        "52f56ad3c4d6a18c409f5596426ee4a0d1294f4f06311448cb5d6fb1e298eda7",
+        "689815639f692016a53b38a8b2ed50add9fd9826d4c6eaf47e4ec921e2a8dbe2",
+        "e7014a478da1235e731a3e6b23522b6725a64f0aca3bc6b5c65dd5b4d3d76888",
+        "ebe744c76b9befd856e774c96f2f67829803ad529d7e499a1a8c9afbff11a02e",
+        "08d7f2e957e5fb40529f573709908a53a64525b27ec483433e8c78edfeecc065",
+        "a42f8e8ea1ed06783005dd5d9b0ede339b91c9b8e44423b33be8f50718858f4f",
+        "f472f5a716a7c0bcd982f33bafe64ec57ffd9c218f9811a9d8b21f508186cfa2",
+        "666e1222810a6690516b517b67fe94e7dfa0a23313dc5cd22b9593446e3bdccb",
+        "c8e3db8d428c174bb52f70895c647f57fe99e27d66bf0913f9271ddb45fab482",
+        "dccbcf44ea1775b62e5a97aa25d61a2dff3b6075ed21d9497df03ea83c0c3a10",
+        "1b75c52c0b557dfe439aa36ea4ab26e44fc1aba70abfe17feaea1e390f486502",
+        "3ece85f2b64d2b2d01c81de706d38bb344ba2625e4d5ab849e7cd06912e57d4a",
+        "c83ef987ade316867b106fb7a6acc4b6f19ccc245b8eaf187b49685cb08f10f6",
+        "429f3471e91f1c64011075686068364a78848c29ea19a284778a1ff13de33f5c",
+        "d04e2d44febd6a30add5fc1bfc52cb452878e51046d4863e8521dbf333db4142",
+        "0d0a311a270f67157630a8f36eb772304106b7ed56a42185d52ea9a416f7c9ec",
+        "60813794df912538e567e1c92f5682160fbb93bb1fcaa6f62ce1a52d36902e6d",
+        "d9b326b6ef772cd106d7e057cdb6e5688cf8e5274a90cdfa5a5c037e4bb2acdb",
+        "45106939feedc464989a0519bf17e066833ad9c289feb6739ebd64a771237b27",
+        "ce5e62684c604b0e1634225a6c5d87ce7a656d00fbb998fe0aa52c7a513f5f15",
+        "777fffec8065f93730d8ba01206907bf46c8839b43d47c96d7ef61c2b042fa84",
+        "016be78683a6e09602e1b38bc684aab75a081dbd0c7e2ad5031bfc874db3f9f2",
+        "a418f24edec2278733d55587e358337261ee098275d1626bd06ab2a7d09e607f",
+        "53288051ebfcd3bc7e9f96a246459304ef4e229f6e46aad83c86d4d65ee1091f",
+        "c7df9151bf9793e920acf0ddf39310f6e0cdf6244f0537660df3dfd11504d172",
+        "d547e17df308ecc281407610d0dd6e087ee7598459a90dad2636c952de3765bc",
+        "cb5f12025b2115d21bb848c9e2b3ade93a137585ec54b48f3139dffe1ea9de99",
+        "531f6e5f4506b63b392ada49ce0b4d8be7c5b8aec00c9110fdd1643653772798",
+        "cdc768f78d144dc251275ebfa976e11a8bfb0a342eb390a38c17034dc1863d3b",
+        "8b0147e8c40684761beec73c680e197ef6339d0784459254a5826cab660d9c4b",
+        "7ac4a1e06453021aa618c1beead2487c9e03afa00ec8860901f56aebcb9b0f62",
+        "9229c7968cc0c37d19646d0d99027950bf9ecdf83afcb319c9141f3c2fb0e4fb",
+        "cbc4435faa9532beb27fde279dee551ff789a96f99c1297df6c2b4070fa5f7ce",
+        "f3b77155c50d01fbc05ad7a72a72cf4514323e631d4ccf612e90ba053aa767fb",
+        "edf5ab9a8bcd2171fcbb03143ec937b216b05437af8cce0e965c6c3beaf81ab2",
+        "054a829f33b67db818d5ad0e26f64b22e90abee4fd4acd2d75ea02896ba74b5e",
+        "93983d7af053dd97dea4cbed9f33401d80c227e37c7077143dc61839fed364c7",
+        "f7063b7a45c0053678f75f6b4acf340a66eddf3724ded23bc6854933db30c510",
+        "f79da629847c69e4cefa2242badd4ad3152fe585792e0af3a21e2f664afaf72e",
+        "c748be1d5d67c4a62eaa4c037bf8cdbc813bce5e52e25129c1106c1fad55359f",
+        "9c037bf8687ad808a093b24b698b8fa18f2734004e54c75183e875ff5daff98b",
+        "8989498af0b4a119f6038a733d59be33a5df1326a94f991d5184fa03d6e0cbb9",
+        "959b1973bfe15067aaa318943494c0fd433a3f0e30520cd4ac7aa93010c51c60",
+        "3454108f72d628bfc5fdc677672e6ddfe628767f6ca621a9f784f1e5cd356f8f",
+        "3f35b6f6ebb80b114c6b0d8e11a2480b7e4b938b139149c0834842c9f6b58a45",
+        "a266ffba2c9125e95993a7902c32930382730250a8df67ef847ecd0b1144a662",
+        "55498c3a2ff39158144de2144c93de682e220d1e7ef0a6454a2852846ea19c4f",
+        "86bfb3576f11aecedd8fddb92c3808ae4a644b639e317b05d3c8053a5830fe8d",
+        "a1b7e5f6fa16155db629ddf2163c6a04d4732e4edb61370cdb3005061ef930df",
+        "60d7f7962a0e108d4f5ac92dc4d1c649f662a1d145edb38d5fc17a0801ee6f84",
+        "81e71fbe5e4ae3796a99bfd88bc546251ec2d743630dbf047248d641f937d1a2",
+        "c0f1eb40e95cea6380349b023cfe0cfe8fadd12e74583060dcbe9174fe83ff44",
+        "aa2f51a736607827a8d5dbbb3afa122054b8a4efa93faff2d6ee45510c3cfdc3",
+        "37401bbdcb5f0baad0edfd293ab02058b7be661267c7786224d41ebd880ac7e9",
+        "4725a2beec8851f49cf7944da99bf42197e7451d016e954b86dfac2a99f8b724",
+        "36a9754082c2a76c8ebff4aada527387f1434ad7719abe9fc72b846038e6facf",
+        "568fd9057db68795a6790bfdaed893839c0d80ecf736186b95d9cd798a247b71",
+        "bb2e555009baf5b79fcd98d68bea0189e6fa1e35c69527b9292344c28d3d2bcb",
+        "d7872f611977289c732f28ce242142f1b3c1c35c121b3feccd71059828b4f4c5",
+        "35b888fa649553b31a3285b9123d0aabf2444d78891b8dbf1b25276f6afb9238",
+        "ae28ce1ed1a0afaf2c92578871194396949266bd89311a34c2d1b2aa7a71c232",
+        "797f8c1344449263d7271c6dd7d1f953657859ee6e484bca536bd9f91ecc41a9",
+        "b7549e3699672c33f2a1f6dfef89a008304ac180076fbe57361c23c1c31852aa",
+        "5da86f7662fe6dca491aef0cdef31f37097279e7f6dabb8b7a6d15743d7b6352",
+        "ee5a8cb339adec4d0843ec2c912750325e998ec8dad031657f6ecb72579a7436",
+        "3ddc228510864a5b23643d8c28bc6d8101426d8129e1ca6b8b64d2692b4fe959",
+        "17bb30599e6a42a2739484f51509ae76aed981ae9fa27c3ca28cfd31ef84d151",
+        "be3282c97c0f4059651cc945e47c7be4155d1d682356e2b32715af18040327d8",
+        "9260d7d330c844d84039672895c630fbeb9ab89a535a153082d3cae7427fa663",
+        "b67f801ef373795e6ce36d6622e4065fb9a3c2fcdfc2244180374dcd628d635c",
+        "24ea695cf7082b8d7a1b779fb5a8a2a53ed214d7131eef2699a89c6847dbdfe3",
+        "4508448ecc5262997540dc1f077e0280e3aea12f82613f0e7eacb52c86d61f26",
+        "5b208613e78237fdc2b1ad3d4ceaea52609357b6fd235f23647be958199b2bb0",
+        "6a6772cad92b79a6e6f6dbabaf9fbab726daeab2bc373cbf642873fde931a5e0",
+        "4ac81985e8ffbff82b0dd7452df799ac85fc7a04e749cbc5c12a266dbe08f5d7",
+        "072040f985ba8f33883ab7c82a008508b1df6bc4b1d5195f796bc666665fad17",
+        "f13a7f4554b97e5a0c3d5f349fcb635f873e224e6cf034427932fe65b7dac183",
+        "922f7c4b64cfe213d36b35f9dc859238efd14b33567b3ca292de32b0b03955ab",
+        "f60aecf8ad1ff032cbebb8149831f2aa6bc4acf2ab0984f0fde8c161cd67e36a"
+      ],
+      "codec_error": {
+        "frames": 300,
+        "mean_mae_rgb8": 1.8094907723885993,
+        "worst_mae_rgb8": 1.9591505262586806,
+        "worst_mae_frame": 299,
+        "max_rgb8": 129,
+        "worst_max_frame": 69,
+        "per_frame": [
+          {
+            "index": 0,
+            "mae_rgb8": 1.797474161783854,
+            "max_rgb8": 72
+          },
+          {
+            "index": 1,
+            "mae_rgb8": 1.8250664605034723,
+            "max_rgb8": 72
+          },
+          {
+            "index": 2,
+            "mae_rgb8": 1.8314992268880208,
+            "max_rgb8": 72
+          },
+          {
+            "index": 3,
+            "mae_rgb8": 1.8185295952690972,
+            "max_rgb8": 75
+          },
+          {
+            "index": 4,
+            "mae_rgb8": 1.8253821478949652,
+            "max_rgb8": 85
+          },
+          {
+            "index": 5,
+            "mae_rgb8": 1.8266079372829862,
+            "max_rgb8": 123
+          },
+          {
+            "index": 6,
+            "mae_rgb8": 1.8221754286024305,
+            "max_rgb8": 73
+          },
+          {
+            "index": 7,
+            "mae_rgb8": 1.8378451877170139,
+            "max_rgb8": 116
+          },
+          {
+            "index": 8,
+            "mae_rgb8": 1.8257086859809029,
+            "max_rgb8": 78
+          },
+          {
+            "index": 9,
+            "mae_rgb8": 1.8429779052734374,
+            "max_rgb8": 74
+          },
+          {
+            "index": 10,
+            "mae_rgb8": 1.8395365397135417,
+            "max_rgb8": 72
+          },
+          {
+            "index": 11,
+            "mae_rgb8": 1.8776065402560764,
+            "max_rgb8": 81
+          },
+          {
+            "index": 12,
+            "mae_rgb8": 1.882209947374132,
+            "max_rgb8": 79
+          },
+          {
+            "index": 13,
+            "mae_rgb8": 1.930621337890625,
+            "max_rgb8": 95
+          },
+          {
+            "index": 14,
+            "mae_rgb8": 1.455141872829861,
+            "max_rgb8": 92
+          },
+          {
+            "index": 15,
+            "mae_rgb8": 1.431028578016493,
+            "max_rgb8": 86
+          },
+          {
+            "index": 16,
+            "mae_rgb8": 1.4455780029296874,
+            "max_rgb8": 84
+          },
+          {
+            "index": 17,
+            "mae_rgb8": 1.4754157172309028,
+            "max_rgb8": 83
+          },
+          {
+            "index": 18,
+            "mae_rgb8": 1.451381089952257,
+            "max_rgb8": 91
+          },
+          {
+            "index": 19,
+            "mae_rgb8": 1.4438988579644096,
+            "max_rgb8": 101
+          },
+          {
+            "index": 20,
+            "mae_rgb8": 1.446867201063368,
+            "max_rgb8": 78
+          },
+          {
+            "index": 21,
+            "mae_rgb8": 1.4090020073784721,
+            "max_rgb8": 75
+          },
+          {
+            "index": 22,
+            "mae_rgb8": 1.391151597764757,
+            "max_rgb8": 69
+          },
+          {
+            "index": 23,
+            "mae_rgb8": 1.3956427680121528,
+            "max_rgb8": 75
+          },
+          {
+            "index": 24,
+            "mae_rgb8": 1.3768636067708333,
+            "max_rgb8": 79
+          },
+          {
+            "index": 25,
+            "mae_rgb8": 1.344776407877604,
+            "max_rgb8": 75
+          },
+          {
+            "index": 26,
+            "mae_rgb8": 1.3414042154947916,
+            "max_rgb8": 78
+          },
+          {
+            "index": 27,
+            "mae_rgb8": 1.339275105794271,
+            "max_rgb8": 84
+          },
+          {
+            "index": 28,
+            "mae_rgb8": 1.3347110324435765,
+            "max_rgb8": 72
+          },
+          {
+            "index": 29,
+            "mae_rgb8": 1.3279832628038195,
+            "max_rgb8": 84
+          },
+          {
+            "index": 30,
+            "mae_rgb8": 1.3404754638671874,
+            "max_rgb8": 75
+          },
+          {
+            "index": 31,
+            "mae_rgb8": 1.3243306477864583,
+            "max_rgb8": 97
+          },
+          {
+            "index": 32,
+            "mae_rgb8": 1.330338880750868,
+            "max_rgb8": 72
+          },
+          {
+            "index": 33,
+            "mae_rgb8": 1.3266899956597222,
+            "max_rgb8": 83
+          },
+          {
+            "index": 34,
+            "mae_rgb8": 1.332057359483507,
+            "max_rgb8": 73
+          },
+          {
+            "index": 35,
+            "mae_rgb8": 1.3232381184895834,
+            "max_rgb8": 94
+          },
+          {
+            "index": 36,
+            "mae_rgb8": 1.335080295138889,
+            "max_rgb8": 85
+          },
+          {
+            "index": 37,
+            "mae_rgb8": 1.3243886311848958,
+            "max_rgb8": 89
+          },
+          {
+            "index": 38,
+            "mae_rgb8": 1.3266821967230902,
+            "max_rgb8": 75
+          },
+          {
+            "index": 39,
+            "mae_rgb8": 1.31864013671875,
+            "max_rgb8": 83
+          },
+          {
+            "index": 40,
+            "mae_rgb8": 1.3315989176432292,
+            "max_rgb8": 82
+          },
+          {
+            "index": 41,
+            "mae_rgb8": 1.3241858588324653,
+            "max_rgb8": 75
+          },
+          {
+            "index": 42,
+            "mae_rgb8": 1.3435106065538194,
+            "max_rgb8": 87
+          },
+          {
+            "index": 43,
+            "mae_rgb8": 1.3348663330078125,
+            "max_rgb8": 76
+          },
+          {
+            "index": 44,
+            "mae_rgb8": 1.4004913330078126,
+            "max_rgb8": 74
+          },
+          {
+            "index": 45,
+            "mae_rgb8": 1.412168714735243,
+            "max_rgb8": 88
+          },
+          {
+            "index": 46,
+            "mae_rgb8": 1.396388414171007,
+            "max_rgb8": 88
+          },
+          {
+            "index": 47,
+            "mae_rgb8": 1.4310045030381944,
+            "max_rgb8": 97
+          },
+          {
+            "index": 48,
+            "mae_rgb8": 1.4482666015625,
+            "max_rgb8": 76
+          },
+          {
+            "index": 49,
+            "mae_rgb8": 1.437580362955729,
+            "max_rgb8": 82
+          },
+          {
+            "index": 50,
+            "mae_rgb8": 1.4129180908203125,
+            "max_rgb8": 74
+          },
+          {
+            "index": 51,
+            "mae_rgb8": 1.4122684054904513,
+            "max_rgb8": 80
+          },
+          {
+            "index": 52,
+            "mae_rgb8": 1.413196818033854,
+            "max_rgb8": 80
+          },
+          {
+            "index": 53,
+            "mae_rgb8": 1.4159715440538194,
+            "max_rgb8": 80
+          },
+          {
+            "index": 54,
+            "mae_rgb8": 1.4184160020616319,
+            "max_rgb8": 70
+          },
+          {
+            "index": 55,
+            "mae_rgb8": 1.3997856987847221,
+            "max_rgb8": 70
+          },
+          {
+            "index": 56,
+            "mae_rgb8": 1.4133168538411458,
+            "max_rgb8": 70
+          },
+          {
+            "index": 57,
+            "mae_rgb8": 1.403813001844618,
+            "max_rgb8": 68
+          },
+          {
+            "index": 58,
+            "mae_rgb8": 1.4259792751736111,
+            "max_rgb8": 82
+          },
+          {
+            "index": 59,
+            "mae_rgb8": 1.4192664252387153,
+            "max_rgb8": 70
+          },
+          {
+            "index": 60,
+            "mae_rgb8": 1.4268897162543404,
+            "max_rgb8": 79
+          },
+          {
+            "index": 61,
+            "mae_rgb8": 1.4321506076388888,
+            "max_rgb8": 78
+          },
+          {
+            "index": 62,
+            "mae_rgb8": 1.4451436360677083,
+            "max_rgb8": 73
+          },
+          {
+            "index": 63,
+            "mae_rgb8": 1.416961669921875,
+            "max_rgb8": 73
+          },
+          {
+            "index": 64,
+            "mae_rgb8": 1.4194681803385416,
+            "max_rgb8": 74
+          },
+          {
+            "index": 65,
+            "mae_rgb8": 1.4122616238064236,
+            "max_rgb8": 76
+          },
+          {
+            "index": 66,
+            "mae_rgb8": 1.4376485188802084,
+            "max_rgb8": 77
+          },
+          {
+            "index": 67,
+            "mae_rgb8": 1.4554419623480903,
+            "max_rgb8": 78
+          },
+          {
+            "index": 68,
+            "mae_rgb8": 1.7251468234592013,
+            "max_rgb8": 82
+          },
+          {
+            "index": 69,
+            "mae_rgb8": 1.7998494466145833,
+            "max_rgb8": 129
+          },
+          {
+            "index": 70,
+            "mae_rgb8": 1.8178059895833334,
+            "max_rgb8": 80
+          },
+          {
+            "index": 71,
+            "mae_rgb8": 1.8419670952690972,
+            "max_rgb8": 79
+          },
+          {
+            "index": 72,
+            "mae_rgb8": 1.8183607313368055,
+            "max_rgb8": 71
+          },
+          {
+            "index": 73,
+            "mae_rgb8": 1.8275549994574654,
+            "max_rgb8": 73
+          },
+          {
+            "index": 74,
+            "mae_rgb8": 1.843014865451389,
+            "max_rgb8": 74
+          },
+          {
+            "index": 75,
+            "mae_rgb8": 1.8457933213975695,
+            "max_rgb8": 80
+          },
+          {
+            "index": 76,
+            "mae_rgb8": 1.8315056694878473,
+            "max_rgb8": 75
+          },
+          {
+            "index": 77,
+            "mae_rgb8": 1.8466081407335069,
+            "max_rgb8": 91
+          },
+          {
+            "index": 78,
+            "mae_rgb8": 1.8542595757378473,
+            "max_rgb8": 78
+          },
+          {
+            "index": 79,
+            "mae_rgb8": 1.8536407470703125,
+            "max_rgb8": 75
+          },
+          {
+            "index": 80,
+            "mae_rgb8": 1.839848158094618,
+            "max_rgb8": 72
+          },
+          {
+            "index": 81,
+            "mae_rgb8": 1.8601453993055554,
+            "max_rgb8": 75
+          },
+          {
+            "index": 82,
+            "mae_rgb8": 1.8582892523871528,
+            "max_rgb8": 86
+          },
+          {
+            "index": 83,
+            "mae_rgb8": 1.8675882975260416,
+            "max_rgb8": 77
+          },
+          {
+            "index": 84,
+            "mae_rgb8": 1.858323499891493,
+            "max_rgb8": 73
+          },
+          {
+            "index": 85,
+            "mae_rgb8": 1.8560217963324652,
+            "max_rgb8": 88
+          },
+          {
+            "index": 86,
+            "mae_rgb8": 1.8613277859157986,
+            "max_rgb8": 78
+          },
+          {
+            "index": 87,
+            "mae_rgb8": 1.8797576904296875,
+            "max_rgb8": 76
+          },
+          {
+            "index": 88,
+            "mae_rgb8": 1.8627966986762152,
+            "max_rgb8": 67
+          },
+          {
+            "index": 89,
+            "mae_rgb8": 1.8735443115234376,
+            "max_rgb8": 82
+          },
+          {
+            "index": 90,
+            "mae_rgb8": 1.8901787651909723,
+            "max_rgb8": 81
+          },
+          {
+            "index": 91,
+            "mae_rgb8": 1.896425035264757,
+            "max_rgb8": 78
+          },
+          {
+            "index": 92,
+            "mae_rgb8": 1.877037556966146,
+            "max_rgb8": 68
+          },
+          {
+            "index": 93,
+            "mae_rgb8": 1.8853702121310765,
+            "max_rgb8": 84
+          },
+          {
+            "index": 94,
+            "mae_rgb8": 1.9024542914496527,
+            "max_rgb8": 73
+          },
+          {
+            "index": 95,
+            "mae_rgb8": 1.9004157172309029,
+            "max_rgb8": 80
+          },
+          {
+            "index": 96,
+            "mae_rgb8": 1.8809973822699653,
+            "max_rgb8": 76
+          },
+          {
+            "index": 97,
+            "mae_rgb8": 1.8878482394748264,
+            "max_rgb8": 79
+          },
+          {
+            "index": 98,
+            "mae_rgb8": 1.895347425672743,
+            "max_rgb8": 79
+          },
+          {
+            "index": 99,
+            "mae_rgb8": 1.912626478407118,
+            "max_rgb8": 72
+          },
+          {
+            "index": 100,
+            "mae_rgb8": 1.8868442111545138,
+            "max_rgb8": 81
+          },
+          {
+            "index": 101,
+            "mae_rgb8": 1.9042704264322916,
+            "max_rgb8": 77
+          },
+          {
+            "index": 102,
+            "mae_rgb8": 1.9004302978515626,
+            "max_rgb8": 105
+          },
+          {
+            "index": 103,
+            "mae_rgb8": 1.9138712565104166,
+            "max_rgb8": 78
+          },
+          {
+            "index": 104,
+            "mae_rgb8": 1.8924119737413194,
+            "max_rgb8": 86
+          },
+          {
+            "index": 105,
+            "mae_rgb8": 1.908906724717882,
+            "max_rgb8": 103
+          },
+          {
+            "index": 106,
+            "mae_rgb8": 1.9076002332899304,
+            "max_rgb8": 99
+          },
+          {
+            "index": 107,
+            "mae_rgb8": 1.9191389295789931,
+            "max_rgb8": 96
+          },
+          {
+            "index": 108,
+            "mae_rgb8": 1.8973476833767362,
+            "max_rgb8": 74
+          },
+          {
+            "index": 109,
+            "mae_rgb8": 1.9099256727430556,
+            "max_rgb8": 99
+          },
+          {
+            "index": 110,
+            "mae_rgb8": 1.9122260199652779,
+            "max_rgb8": 78
+          },
+          {
+            "index": 111,
+            "mae_rgb8": 1.928172810872396,
+            "max_rgb8": 98
+          },
+          {
+            "index": 112,
+            "mae_rgb8": 1.9050140380859375,
+            "max_rgb8": 78
+          },
+          {
+            "index": 113,
+            "mae_rgb8": 1.9247595893012153,
+            "max_rgb8": 104
+          },
+          {
+            "index": 114,
+            "mae_rgb8": 1.935548570421007,
+            "max_rgb8": 89
+          },
+          {
+            "index": 115,
+            "mae_rgb8": 1.935585191514757,
+            "max_rgb8": 70
+          },
+          {
+            "index": 116,
+            "mae_rgb8": 1.9104895697699653,
+            "max_rgb8": 68
+          },
+          {
+            "index": 117,
+            "mae_rgb8": 1.920759752061632,
+            "max_rgb8": 76
+          },
+          {
+            "index": 118,
+            "mae_rgb8": 1.933967759874132,
+            "max_rgb8": 72
+          },
+          {
+            "index": 119,
+            "mae_rgb8": 1.9387464735243056,
+            "max_rgb8": 76
+          },
+          {
+            "index": 120,
+            "mae_rgb8": 1.915284898546007,
+            "max_rgb8": 71
+          },
+          {
+            "index": 121,
+            "mae_rgb8": 1.917426554361979,
+            "max_rgb8": 75
+          },
+          {
+            "index": 122,
+            "mae_rgb8": 1.9281751844618056,
+            "max_rgb8": 82
+          },
+          {
+            "index": 123,
+            "mae_rgb8": 1.9302927652994792,
+            "max_rgb8": 83
+          },
+          {
+            "index": 124,
+            "mae_rgb8": 1.9192613389756945,
+            "max_rgb8": 72
+          },
+          {
+            "index": 125,
+            "mae_rgb8": 1.9295186360677083,
+            "max_rgb8": 75
+          },
+          {
+            "index": 126,
+            "mae_rgb8": 1.935813734266493,
+            "max_rgb8": 75
+          },
+          {
+            "index": 127,
+            "mae_rgb8": 1.944739786783854,
+            "max_rgb8": 81
+          },
+          {
+            "index": 128,
+            "mae_rgb8": 1.921160888671875,
+            "max_rgb8": 73
+          },
+          {
+            "index": 129,
+            "mae_rgb8": 1.9324208577473958,
+            "max_rgb8": 88
+          },
+          {
+            "index": 130,
+            "mae_rgb8": 1.9368696424696181,
+            "max_rgb8": 82
+          },
+          {
+            "index": 131,
+            "mae_rgb8": 1.9486117892795138,
+            "max_rgb8": 86
+          },
+          {
+            "index": 132,
+            "mae_rgb8": 1.923520236545139,
+            "max_rgb8": 112
+          },
+          {
+            "index": 133,
+            "mae_rgb8": 1.9429707845052084,
+            "max_rgb8": 91
+          },
+          {
+            "index": 134,
+            "mae_rgb8": 1.9428765190972221,
+            "max_rgb8": 85
+          },
+          {
+            "index": 135,
+            "mae_rgb8": 1.9469601101345486,
+            "max_rgb8": 68
+          },
+          {
+            "index": 136,
+            "mae_rgb8": 1.9265309651692708,
+            "max_rgb8": 69
+          },
+          {
+            "index": 137,
+            "mae_rgb8": 1.9375695122612848,
+            "max_rgb8": 75
+          },
+          {
+            "index": 138,
+            "mae_rgb8": 1.9441392686631944,
+            "max_rgb8": 81
+          },
+          {
+            "index": 139,
+            "mae_rgb8": 1.953700425889757,
+            "max_rgb8": 79
+          },
+          {
+            "index": 140,
+            "mae_rgb8": 1.9284142388237848,
+            "max_rgb8": 71
+          },
+          {
+            "index": 141,
+            "mae_rgb8": 1.9328162299262153,
+            "max_rgb8": 81
+          },
+          {
+            "index": 142,
+            "mae_rgb8": 1.938194105360243,
+            "max_rgb8": 74
+          },
+          {
+            "index": 143,
+            "mae_rgb8": 1.9534752739800347,
+            "max_rgb8": 100
+          },
+          {
+            "index": 144,
+            "mae_rgb8": 1.9225023057725694,
+            "max_rgb8": 90
+          },
+          {
+            "index": 145,
+            "mae_rgb8": 1.9434807671440972,
+            "max_rgb8": 109
+          },
+          {
+            "index": 146,
+            "mae_rgb8": 1.9374281141493055,
+            "max_rgb8": 122
+          },
+          {
+            "index": 147,
+            "mae_rgb8": 1.9461595323350696,
+            "max_rgb8": 103
+          },
+          {
+            "index": 148,
+            "mae_rgb8": 1.9248009575737848,
+            "max_rgb8": 79
+          },
+          {
+            "index": 149,
+            "mae_rgb8": 1.9371693929036458,
+            "max_rgb8": 73
+          },
+          {
+            "index": 150,
+            "mae_rgb8": 1.9568918863932292,
+            "max_rgb8": 81
+          },
+          {
+            "index": 151,
+            "mae_rgb8": 1.9590335422092013,
+            "max_rgb8": 86
+          },
+          {
+            "index": 152,
+            "mae_rgb8": 1.9238155788845486,
+            "max_rgb8": 79
+          },
+          {
+            "index": 153,
+            "mae_rgb8": 1.9407280815972223,
+            "max_rgb8": 80
+          },
+          {
+            "index": 154,
+            "mae_rgb8": 1.9552205403645833,
+            "max_rgb8": 88
+          },
+          {
+            "index": 155,
+            "mae_rgb8": 1.9531602647569444,
+            "max_rgb8": 94
+          },
+          {
+            "index": 156,
+            "mae_rgb8": 1.928155517578125,
+            "max_rgb8": 113
+          },
+          {
+            "index": 157,
+            "mae_rgb8": 1.9439870198567708,
+            "max_rgb8": 86
+          },
+          {
+            "index": 158,
+            "mae_rgb8": 1.9564571804470485,
+            "max_rgb8": 84
+          },
+          {
+            "index": 159,
+            "mae_rgb8": 1.955534193250868,
+            "max_rgb8": 86
+          },
+          {
+            "index": 160,
+            "mae_rgb8": 1.928959486219618,
+            "max_rgb8": 77
+          },
+          {
+            "index": 161,
+            "mae_rgb8": 1.9472188313802083,
+            "max_rgb8": 76
+          },
+          {
+            "index": 162,
+            "mae_rgb8": 1.9446445041232638,
+            "max_rgb8": 80
+          },
+          {
+            "index": 163,
+            "mae_rgb8": 1.9585964626736112,
+            "max_rgb8": 86
+          },
+          {
+            "index": 164,
+            "mae_rgb8": 1.9312364366319446,
+            "max_rgb8": 93
+          },
+          {
+            "index": 165,
+            "mae_rgb8": 1.9399498833550348,
+            "max_rgb8": 93
+          },
+          {
+            "index": 166,
+            "mae_rgb8": 1.942216322157118,
+            "max_rgb8": 88
+          },
+          {
+            "index": 167,
+            "mae_rgb8": 1.9488047281901042,
+            "max_rgb8": 106
+          },
+          {
+            "index": 168,
+            "mae_rgb8": 1.9268113878038196,
+            "max_rgb8": 68
+          },
+          {
+            "index": 169,
+            "mae_rgb8": 1.930050998263889,
+            "max_rgb8": 87
+          },
+          {
+            "index": 170,
+            "mae_rgb8": 1.9507849799262154,
+            "max_rgb8": 72
+          },
+          {
+            "index": 171,
+            "mae_rgb8": 1.9442301432291667,
+            "max_rgb8": 82
+          },
+          {
+            "index": 172,
+            "mae_rgb8": 1.923944091796875,
+            "max_rgb8": 81
+          },
+          {
+            "index": 173,
+            "mae_rgb8": 1.9298892550998263,
+            "max_rgb8": 79
+          },
+          {
+            "index": 174,
+            "mae_rgb8": 1.9380059136284722,
+            "max_rgb8": 96
+          },
+          {
+            "index": 175,
+            "mae_rgb8": 1.9483466254340278,
+            "max_rgb8": 80
+          },
+          {
+            "index": 176,
+            "mae_rgb8": 1.926481458875868,
+            "max_rgb8": 75
+          },
+          {
+            "index": 177,
+            "mae_rgb8": 1.9375315348307292,
+            "max_rgb8": 85
+          },
+          {
+            "index": 178,
+            "mae_rgb8": 1.9447129991319445,
+            "max_rgb8": 84
+          },
+          {
+            "index": 179,
+            "mae_rgb8": 1.9505462646484375,
+            "max_rgb8": 80
+          },
+          {
+            "index": 180,
+            "mae_rgb8": 1.926626247829861,
+            "max_rgb8": 82
+          },
+          {
+            "index": 181,
+            "mae_rgb8": 1.9284111870659721,
+            "max_rgb8": 95
+          },
+          {
+            "index": 182,
+            "mae_rgb8": 1.9342644585503472,
+            "max_rgb8": 69
+          },
+          {
+            "index": 183,
+            "mae_rgb8": 1.9308624267578125,
+            "max_rgb8": 73
+          },
+          {
+            "index": 184,
+            "mae_rgb8": 1.9272301567925347,
+            "max_rgb8": 79
+          },
+          {
+            "index": 185,
+            "mae_rgb8": 1.931894259982639,
+            "max_rgb8": 79
+          },
+          {
+            "index": 186,
+            "mae_rgb8": 1.9412384033203125,
+            "max_rgb8": 75
+          },
+          {
+            "index": 187,
+            "mae_rgb8": 1.9393086751302084,
+            "max_rgb8": 95
+          },
+          {
+            "index": 188,
+            "mae_rgb8": 1.9182074652777779,
+            "max_rgb8": 100
+          },
+          {
+            "index": 189,
+            "mae_rgb8": 1.9225487603081597,
+            "max_rgb8": 99
+          },
+          {
+            "index": 190,
+            "mae_rgb8": 1.935467529296875,
+            "max_rgb8": 74
+          },
+          {
+            "index": 191,
+            "mae_rgb8": 1.9326955159505208,
+            "max_rgb8": 75
+          },
+          {
+            "index": 192,
+            "mae_rgb8": 1.915443589952257,
+            "max_rgb8": 79
+          },
+          {
+            "index": 193,
+            "mae_rgb8": 1.9224114312065972,
+            "max_rgb8": 84
+          },
+          {
+            "index": 194,
+            "mae_rgb8": 1.9216373019748263,
+            "max_rgb8": 93
+          },
+          {
+            "index": 195,
+            "mae_rgb8": 1.9283118353949653,
+            "max_rgb8": 91
+          },
+          {
+            "index": 196,
+            "mae_rgb8": 1.9149149576822917,
+            "max_rgb8": 107
+          },
+          {
+            "index": 197,
+            "mae_rgb8": 1.919881863064236,
+            "max_rgb8": 70
+          },
+          {
+            "index": 198,
+            "mae_rgb8": 1.9161176893446181,
+            "max_rgb8": 73
+          },
+          {
+            "index": 199,
+            "mae_rgb8": 1.9299465603298611,
+            "max_rgb8": 70
+          },
+          {
+            "index": 200,
+            "mae_rgb8": 1.9190850151909722,
+            "max_rgb8": 71
+          },
+          {
+            "index": 201,
+            "mae_rgb8": 1.9118771023220487,
+            "max_rgb8": 86
+          },
+          {
+            "index": 202,
+            "mae_rgb8": 1.9241939968532986,
+            "max_rgb8": 88
+          },
+          {
+            "index": 203,
+            "mae_rgb8": 1.9306325276692708,
+            "max_rgb8": 94
+          },
+          {
+            "index": 204,
+            "mae_rgb8": 1.9158460828993056,
+            "max_rgb8": 73
+          },
+          {
+            "index": 205,
+            "mae_rgb8": 1.9133643256293402,
+            "max_rgb8": 74
+          },
+          {
+            "index": 206,
+            "mae_rgb8": 1.9157067192925348,
+            "max_rgb8": 77
+          },
+          {
+            "index": 207,
+            "mae_rgb8": 1.9267452663845486,
+            "max_rgb8": 81
+          },
+          {
+            "index": 208,
+            "mae_rgb8": 1.9162061903211804,
+            "max_rgb8": 86
+          },
+          {
+            "index": 209,
+            "mae_rgb8": 1.904636976453993,
+            "max_rgb8": 79
+          },
+          {
+            "index": 210,
+            "mae_rgb8": 1.9191179063585069,
+            "max_rgb8": 83
+          },
+          {
+            "index": 211,
+            "mae_rgb8": 1.9169667561848958,
+            "max_rgb8": 73
+          },
+          {
+            "index": 212,
+            "mae_rgb8": 1.9168694390190972,
+            "max_rgb8": 68
+          },
+          {
+            "index": 213,
+            "mae_rgb8": 1.907900661892361,
+            "max_rgb8": 71
+          },
+          {
+            "index": 214,
+            "mae_rgb8": 1.920941162109375,
+            "max_rgb8": 70
+          },
+          {
+            "index": 215,
+            "mae_rgb8": 1.9288282606336806,
+            "max_rgb8": 80
+          },
+          {
+            "index": 216,
+            "mae_rgb8": 1.9181094699435763,
+            "max_rgb8": 81
+          },
+          {
+            "index": 217,
+            "mae_rgb8": 1.9093105740017362,
+            "max_rgb8": 85
+          },
+          {
+            "index": 218,
+            "mae_rgb8": 1.9176415337456598,
+            "max_rgb8": 75
+          },
+          {
+            "index": 219,
+            "mae_rgb8": 1.9155897352430555,
+            "max_rgb8": 74
+          },
+          {
+            "index": 220,
+            "mae_rgb8": 1.9161017523871529,
+            "max_rgb8": 68
+          },
+          {
+            "index": 221,
+            "mae_rgb8": 1.9056525336371528,
+            "max_rgb8": 84
+          },
+          {
+            "index": 222,
+            "mae_rgb8": 1.9194786919487847,
+            "max_rgb8": 89
+          },
+          {
+            "index": 223,
+            "mae_rgb8": 1.9185160319010417,
+            "max_rgb8": 107
+          },
+          {
+            "index": 224,
+            "mae_rgb8": 1.9139014350043402,
+            "max_rgb8": 84
+          },
+          {
+            "index": 225,
+            "mae_rgb8": 1.9067959255642362,
+            "max_rgb8": 77
+          },
+          {
+            "index": 226,
+            "mae_rgb8": 1.9125566270616319,
+            "max_rgb8": 74
+          },
+          {
+            "index": 227,
+            "mae_rgb8": 1.9192009819878473,
+            "max_rgb8": 72
+          },
+          {
+            "index": 228,
+            "mae_rgb8": 1.910186767578125,
+            "max_rgb8": 81
+          },
+          {
+            "index": 229,
+            "mae_rgb8": 1.897073703342014,
+            "max_rgb8": 71
+          },
+          {
+            "index": 230,
+            "mae_rgb8": 1.9182481553819444,
+            "max_rgb8": 85
+          },
+          {
+            "index": 231,
+            "mae_rgb8": 1.9071607801649306,
+            "max_rgb8": 82
+          },
+          {
+            "index": 232,
+            "mae_rgb8": 1.9116668701171875,
+            "max_rgb8": 91
+          },
+          {
+            "index": 233,
+            "mae_rgb8": 1.8945953369140625,
+            "max_rgb8": 79
+          },
+          {
+            "index": 234,
+            "mae_rgb8": 1.9230088975694444,
+            "max_rgb8": 75
+          },
+          {
+            "index": 235,
+            "mae_rgb8": 1.9108944363064235,
+            "max_rgb8": 70
+          },
+          {
+            "index": 236,
+            "mae_rgb8": 1.906775919596354,
+            "max_rgb8": 73
+          },
+          {
+            "index": 237,
+            "mae_rgb8": 1.888957722981771,
+            "max_rgb8": 80
+          },
+          {
+            "index": 238,
+            "mae_rgb8": 1.9161244710286458,
+            "max_rgb8": 88
+          },
+          {
+            "index": 239,
+            "mae_rgb8": 1.9076612684461804,
+            "max_rgb8": 87
+          },
+          {
+            "index": 240,
+            "mae_rgb8": 1.9048333062065972,
+            "max_rgb8": 77
+          },
+          {
+            "index": 241,
+            "mae_rgb8": 1.895158216688368,
+            "max_rgb8": 98
+          },
+          {
+            "index": 242,
+            "mae_rgb8": 1.9198350694444444,
+            "max_rgb8": 70
+          },
+          {
+            "index": 243,
+            "mae_rgb8": 1.9055884467230904,
+            "max_rgb8": 70
+          },
+          {
+            "index": 244,
+            "mae_rgb8": 1.9140743679470487,
+            "max_rgb8": 71
+          },
+          {
+            "index": 245,
+            "mae_rgb8": 1.8874003092447917,
+            "max_rgb8": 80
+          },
+          {
+            "index": 246,
+            "mae_rgb8": 1.9156833224826388,
+            "max_rgb8": 80
+          },
+          {
+            "index": 247,
+            "mae_rgb8": 1.895209757486979,
+            "max_rgb8": 73
+          },
+          {
+            "index": 248,
+            "mae_rgb8": 1.9070217556423612,
+            "max_rgb8": 70
+          },
+          {
+            "index": 249,
+            "mae_rgb8": 1.8739559597439237,
+            "max_rgb8": 75
+          },
+          {
+            "index": 250,
+            "mae_rgb8": 1.9089385986328125,
+            "max_rgb8": 79
+          },
+          {
+            "index": 251,
+            "mae_rgb8": 1.8882076687282987,
+            "max_rgb8": 78
+          },
+          {
+            "index": 252,
+            "mae_rgb8": 1.9055274115668404,
+            "max_rgb8": 75
+          },
+          {
+            "index": 253,
+            "mae_rgb8": 1.8676845974392362,
+            "max_rgb8": 75
+          },
+          {
+            "index": 254,
+            "mae_rgb8": 1.904904513888889,
+            "max_rgb8": 75
+          },
+          {
+            "index": 255,
+            "mae_rgb8": 1.8730509440104166,
+            "max_rgb8": 79
+          },
+          {
+            "index": 256,
+            "mae_rgb8": 1.905964152018229,
+            "max_rgb8": 78
+          },
+          {
+            "index": 257,
+            "mae_rgb8": 1.863702392578125,
+            "max_rgb8": 85
+          },
+          {
+            "index": 258,
+            "mae_rgb8": 1.892887708875868,
+            "max_rgb8": 85
+          },
+          {
+            "index": 259,
+            "mae_rgb8": 1.8692989773220485,
+            "max_rgb8": 85
+          },
+          {
+            "index": 260,
+            "mae_rgb8": 1.8988966200086805,
+            "max_rgb8": 88
+          },
+          {
+            "index": 261,
+            "mae_rgb8": 1.847850545247396,
+            "max_rgb8": 87
+          },
+          {
+            "index": 262,
+            "mae_rgb8": 1.8733252631293402,
+            "max_rgb8": 90
+          },
+          {
+            "index": 263,
+            "mae_rgb8": 1.8531185574001736,
+            "max_rgb8": 76
+          },
+          {
+            "index": 264,
+            "mae_rgb8": 1.8849660237630208,
+            "max_rgb8": 73
+          },
+          {
+            "index": 265,
+            "mae_rgb8": 1.840362548828125,
+            "max_rgb8": 103
+          },
+          {
+            "index": 266,
+            "mae_rgb8": 1.8599568684895833,
+            "max_rgb8": 70
+          },
+          {
+            "index": 267,
+            "mae_rgb8": 1.8548590766059028,
+            "max_rgb8": 75
+          },
+          {
+            "index": 268,
+            "mae_rgb8": 1.8824903700086806,
+            "max_rgb8": 79
+          },
+          {
+            "index": 269,
+            "mae_rgb8": 1.8328867594401042,
+            "max_rgb8": 72
+          },
+          {
+            "index": 270,
+            "mae_rgb8": 1.8545501708984375,
+            "max_rgb8": 70
+          },
+          {
+            "index": 271,
+            "mae_rgb8": 1.8453755696614584,
+            "max_rgb8": 87
+          },
+          {
+            "index": 272,
+            "mae_rgb8": 1.8780921088324654,
+            "max_rgb8": 68
+          },
+          {
+            "index": 273,
+            "mae_rgb8": 1.826396687825521,
+            "max_rgb8": 85
+          },
+          {
+            "index": 274,
+            "mae_rgb8": 1.8537882486979167,
+            "max_rgb8": 77
+          },
+          {
+            "index": 275,
+            "mae_rgb8": 1.843987019856771,
+            "max_rgb8": 72
+          },
+          {
+            "index": 276,
+            "mae_rgb8": 1.8792500813802084,
+            "max_rgb8": 66
+          },
+          {
+            "index": 277,
+            "mae_rgb8": 1.8268683539496529,
+            "max_rgb8": 69
+          },
+          {
+            "index": 278,
+            "mae_rgb8": 1.8484032524956597,
+            "max_rgb8": 67
+          },
+          {
+            "index": 279,
+            "mae_rgb8": 1.8403116861979167,
+            "max_rgb8": 80
+          },
+          {
+            "index": 280,
+            "mae_rgb8": 1.8766075981987846,
+            "max_rgb8": 75
+          },
+          {
+            "index": 281,
+            "mae_rgb8": 1.8237460666232639,
+            "max_rgb8": 91
+          },
+          {
+            "index": 282,
+            "mae_rgb8": 1.8359093560112847,
+            "max_rgb8": 74
+          },
+          {
+            "index": 283,
+            "mae_rgb8": 1.8419674343532986,
+            "max_rgb8": 72
+          },
+          {
+            "index": 284,
+            "mae_rgb8": 1.87822265625,
+            "max_rgb8": 72
+          },
+          {
+            "index": 285,
+            "mae_rgb8": 1.8829759385850695,
+            "max_rgb8": 74
+          },
+          {
+            "index": 286,
+            "mae_rgb8": 1.85294189453125,
+            "max_rgb8": 74
+          },
+          {
+            "index": 287,
+            "mae_rgb8": 1.8766198052300347,
+            "max_rgb8": 74
+          },
+          {
+            "index": 288,
+            "mae_rgb8": 1.8403845893012152,
+            "max_rgb8": 69
+          },
+          {
+            "index": 289,
+            "mae_rgb8": 1.849617173936632,
+            "max_rgb8": 67
+          },
+          {
+            "index": 290,
+            "mae_rgb8": 1.8641181098090278,
+            "max_rgb8": 63
+          },
+          {
+            "index": 291,
+            "mae_rgb8": 1.8977691650390625,
+            "max_rgb8": 63
+          },
+          {
+            "index": 292,
+            "mae_rgb8": 1.9069400363498263,
+            "max_rgb8": 63
+          },
+          {
+            "index": 293,
+            "mae_rgb8": 1.9128200954861112,
+            "max_rgb8": 63
+          },
+          {
+            "index": 294,
+            "mae_rgb8": 1.9208743625217013,
+            "max_rgb8": 63
+          },
+          {
+            "index": 295,
+            "mae_rgb8": 1.9246541341145833,
+            "max_rgb8": 71
+          },
+          {
+            "index": 296,
+            "mae_rgb8": 1.932779269748264,
+            "max_rgb8": 71
+          },
+          {
+            "index": 297,
+            "mae_rgb8": 1.943357679578993,
+            "max_rgb8": 71
+          },
+          {
+            "index": 298,
+            "mae_rgb8": 1.9472208658854167,
+            "max_rgb8": 71
+          },
+          {
+            "index": 299,
+            "mae_rgb8": 1.9591505262586806,
+            "max_rgb8": 71
+          }
+        ]
+      },
+      "complete_decode": true
+    },
+    "split": {
+      "contiguous_timestamps": true,
+      "frames": 300,
+      "duration_s": 10.0,
+      "stream": {
+        "codec_name": "h264",
+        "codec_type": "video",
+        "codec_tag_string": "avc1",
+        "width": 2562,
+        "height": 768,
+        "sample_aspect_ratio": "1:1",
+        "pix_fmt": "yuv420p",
+        "color_range": "tv",
+        "color_space": "bt709",
+        "color_transfer": "iec61966-2-1",
+        "color_primaries": "bt709",
+        "r_frame_rate": "30/1",
+        "avg_frame_rate": "30/1",
+        "time_base": "1/15360",
+        "duration_ts": 153600,
+        "nb_frames": "300",
+        "nb_read_frames": "300",
+        "disposition": {
+          "default": 1,
+          "dub": 0,
+          "original": 0,
+          "comment": 0,
+          "lyrics": 0,
+          "karaoke": 0,
+          "forced": 0,
+          "hearing_impaired": 0,
+          "visual_impaired": 0,
+          "clean_effects": 0,
+          "attached_pic": 0,
+          "timed_thumbnails": 0,
+          "non_diegetic": 0,
+          "captions": 0,
+          "descriptions": 0,
+          "metadata": 0,
+          "dependent": 0,
+          "still_image": 0,
+          "multilayer": 0
+        },
+        "tags": {
+          "language": "und",
+          "handler_name": "VideoHandler",
+          "encoder": "Lavc62.28.102 libx264"
+        }
+      },
+      "file": "panda-msaa-split.mp4",
+      "sha256": "104feaf8d4c395038f3c88c79c816f3af1b7f620fde430ddbf5f22cf67f5d670",
+      "faststart": {
+        "moov_offset": 32,
+        "mdat_offset": 4552
+      },
+      "encode_input_sha256": [
+        "a270949f27efa8966b6bf8b6cfd0af69b8f635c0c9d91f396e54556bf46fdacb",
+        "7fdc8c01f9f67805b21c50392629b12e5de90878e1915a8849485488e8cf6ea6",
+        "9c160f0b2111bad64c4114968e85ae7755d53b9095ce7aeaf281fcf3db9a5ea0",
+        "b77cdae2946d0b6f4b2f154e566f6c31b44ac8e5d13e54fbc3ba39a9b47695fc",
+        "8175b122bc52f1b99a8264d216ffe12b991c624e1596bed1aea9117c11e00689",
+        "b8fe6961660bfd107b8122af52aafb45a5c57fcdfed3c59e2172c179a935a6ba",
+        "3c10c69527a9ef8d27fab2c4695fe3d7d2c028b3ebc82fb71c9758ce9ff721e4",
+        "bfb1e33d121fa177846f4f4c2d4f042909c369a9d5f074313cd6c9dd7564cb64",
+        "6629a1d43e6c91090e7a2c1a826fb2dee6a9878b79c4e2e78738c314e2d2bf91",
+        "c383bb832bca5de29e3b8371de88a739348d8d539dc65856d08b4cf45f04892c",
+        "132d4223d05fd5358a59e41974f1c050864f0dfc3df03e770da75780994d6345",
+        "3a589d4501a7db2b720f46ed8ce46586b8cc6a4b16854503baea3d80ba166b13",
+        "75c810aeef28002554ade36f910701fd35d77cc8bfae8fab20f85e3823f0661e",
+        "22cbc42485e21d7a046367cfaa9d2a67098c20b83c6452185283c2b43347c12c",
+        "339298eb56b85c05445d976beaf6a1b50a1dd28fbbd38e456c6f567f43a77277",
+        "e4cb5950f9d6daa77bc031b0a32db246c01941f8854c778ba76518d6d06154d1",
+        "21813013dbc05cd2557e6706c8000358c5d52b880e8534e75f31207ad9728746",
+        "ee1e9f9892bdfcfa9b4b9ea2fb09bc8515942363442b1d15725bd771f4cb0817",
+        "881382a4e22c2ee6782db9771aca7b445a474c4efa0aff5242053c80263ac259",
+        "6ba097c5efec6219ba03fe779488015003446e58be7650ff979a651ce4aa6b7e",
+        "25f792be20034d6fbc4c1e06c660f99dcb5f69f1108ada695b59b7af67d2cdd3",
+        "5a589b5723f161f672c2cbeeb4cbdde15c62f21a4892231b0b0f3c00e1f32413",
+        "dd763911be57cba809f2d841b39ad32eb5e8cfffd22fd6bc100655b352388994",
+        "a73c597b8feccff850f61b6860323543629f9914d3954ec6eb861c351a43a459",
+        "dc1d28b92d0bea633d10916fb44fee94c912deeb9eacaf91e4db6c7ed0ce6dae",
+        "4a39b3097759447a03aee9782cf9988c1d488469fec5c0ba38f6dbe36b44d92c",
+        "43ca353165f035930db0659f915aeb190258c4eca5d346af7c596d7ff298607a",
+        "878ca2b20d9162f7094e601c72766f5df17dbcd8ae977c602ebbc5bcabcc8b9e",
+        "87280a5ed0eee9d5fab302a911f9df6d34c48b23c81959cf29069e216901987e",
+        "7f25894b5e316c02eabd972b34797035089351d48d5ba8c4c573aa0d5036dac9",
+        "a2801d240f9c0facaad79904677185709953af58f3fb90d26635912d6eae131b",
+        "36701096a1fa9e7ccf7ec614a636eded55490b976c89d2548685f0899aefd370",
+        "043e8829ab96b91e6328ede4d6b0b8bb943be45add2643acaa9bc1c62ae052f5",
+        "4bba41bfa1757fe749f97327f63ec292307855cba9f8e0cd032305bc19f53e72",
+        "a26c0d270155c414a5d8818bc84a900011158c31e0db872fdb27ac53ff46f705",
+        "28c43ab4dfe6a8bdcf38c540f5ff2319415d2eb46d0a7a145ee93598bc686de0",
+        "4e0b09dbfc0b4e751df4427e269344261924ea6a726c5dc9200edc2abb55c6bd",
+        "46fb09421672def86c133df9fedc73e6709eed45adf9277fb0a612bf055a9ea9",
+        "a89d1c98d555d8800e8ff8a1e36e58ffffe264748c02d88545f22dc5fab72741",
+        "1faa9e62b1e12f158d2931c934b2966e287c7ecfc787fbb8405c1039e127a72d",
+        "148e716f584d1b01df97f72d54a4acd38e3c69739fe1763cf95e49b922ec2f4b",
+        "fe81be8a93aac7b72baf70f7026259adac280fae4e6cbac16f6b39b6505c8334",
+        "88c9369b9c0f904e4e3b3d72d2b9b170152ead0c575aa5714253d9e8fc930368",
+        "e0dd99c8ea25503e491ce72986b56406819d4b814a66bea49b69d6ee3164e4f7",
+        "d216811425bf3414179ccaec2fa51b2ed4d72705287be7e87f22a6e4d6a71f4b",
+        "bf65186921687d1b4157b169df2b27c77e2991c27c6f7c42e9798f2d11016e02",
+        "37d05f9ff2659a41fbbf3a65cae3285e70039d9b9e29e8692a93279794953807",
+        "02b8fd8b5488e99116074f072033182a5435914077e148de952cdc020aed2040",
+        "ca36cafa45f4a33fe5ac7a546e33550ee501f7d994cdbfca819511d0194c090c",
+        "43d5307558980a76b602bc15de996ae8eceedcfb4c5abe200423601cd39195fb",
+        "42e9ae5af1c8605955159e8f49eb5ce0c156a7eeceae466de4724021500faeeb",
+        "4b450f2c293d74a359c5d714ac96442fac1122833a0aab4371e6bff79f93cd48",
+        "12e9cce489a6b51e84c267b3decd3673977d4dd057eb1fff051d5a79341a7863",
+        "f50b95f6380c7769d8982495954c3743019eee3e531dd70b7c4f059324ca55bb",
+        "c9984a1e5200844947996ab02ebb0f61e8b91ee3edebf028bcf52c7cdf9c7411",
+        "0620766db87344d8e716ec04f686c75770c24466e77e0e0457c077f55ef37dad",
+        "10caa552a5995443751881adfb7f2b28894e4daefa19adec83633edab3a19c62",
+        "2b133475aa672c18b792c97dc7818ac19aba90d04e82713d1c9b67af6eef4c7b",
+        "b7efb255bef9088d75cf2c5a90497179fc96a53fe6a1c459b719af6fb3e45ebc",
+        "b034a71243c38b2c745c62fbaaa200f12f4b838dbbe80683f6b436f6b5881d3b",
+        "fb45be4fa06650b279815be446d8204a43440d4cea5219270e894bbfcba3e4bf",
+        "01aa32b5f2e04a08ff51dd594278246e51d18d2dc618c1d162dbe2771559d139",
+        "2ff38988fdc5eb4651295924e5f53dc61051f0a399f64c974bd1450d531ecd36",
+        "36d87c2a3691422f08be4f1a0ed8c2cefb001bfdf98523be948902318939bf41",
+        "8a7c2f4e9db82d9a3871b871af1170b9be77325d7f426c8f79451efebe74b1f6",
+        "ce2dc7768fc0e67492b540a43c171944af173452fb0168375cab6cf9512e3827",
+        "7e548e13bc77d2ab384c1cb07a62a20a55f33f3a2994f0b9eb776abdb076e17e",
+        "5f2d6f668348334afbd1e5fcc116036e00d3de71997395636fd7f84390ca13a0",
+        "363dfbd6e3dd1428b20fa23148e952d7a593176a2d691c072f91c40458f08f09",
+        "c4ee0c7d24efb6d16ecac969e1062bde96458bfbb4da07d3b7066582de11500e",
+        "3e5dfc1470bda4be2125c587b8c8e3b64d7449506446dc1d856c0028f95693b5",
+        "3f5eebe9b9839aa29398c9810d30b67556ca21ed5c00251304f48511535043c5",
+        "3b2fb6ba8cb5330e8393e0f24e09f5c47c9e1113631b28e3321d83deadc3080c",
+        "ef27b82a06a7e07664391d92ddfb5c712fc0dce440b003f68c539149b53cf3ad",
+        "9b0bec25f8b4f4a43f78077fc4ae807ba7aafbc1b99371fb7f569e641883eb4d",
+        "bdd7c2b0fdf5f5e9469f92666e1156f61b416d4699418ad2ca9b0ad38470c7dd",
+        "797d103dae087e91cd8d361b3ee59f6342442e8bf681169014cdd7be04892279",
+        "424a931d41833073bad4937488e5402e26b6368fe9043f3c4519de54596c2f8b",
+        "f070c3af04b566ebcc014f4c65299d4e0614e4cbcc796064c60a49eb8aef40aa",
+        "690fe642511d262982e71cdb093930f99ba6c55fd8fde4d9faee21ea18a66dae",
+        "f758b660d68ab8bf7342b7aa1f2ac708a2987d584da2910e61322d3ed7c4404d",
+        "886ff4d5680871517de4df1b074665356ceb3a432ee648d466d6c6d4d17321bc",
+        "b1e20935d981d743066aa48d20b59ec0403f820547dfdcf110eadc2531a7ce6f",
+        "ff43d0e97194dccf026bff9d8e91177d41134bbd470bd41e5b68e2b9ffb9b2f9",
+        "63aef6643f7b21f96de6826f31345bba6704135d7d5e29d0e0807f3e39ffc2fe",
+        "0763807318446916de11a8243b389a9e270d6fe1405ed0f3f5070953e0de4514",
+        "be6dcae6c5ac28d6c874846eb7c3d3a4249c840b00b5caf5a14b8fec0773f130",
+        "931cd9874e573c3e1d428e134cfcc20fdbdc69fc4bdfcba4bdfb4f7363f755e5",
+        "dd649de3e35964c70cf5e5dc8e7fbe70929accd8e5304d8ebcab034565df76b3",
+        "c0b481f14b0cab1c34152ea619b3fcdb8aacebf367794faf8c012a6d6eecb5d6",
+        "4a24f922ff5c35a2a684a97bac2ffed3bb164c26379e7fe9385a7c51317bc47e",
+        "408e18a0d7396c9cd7b16c30a7b4aeb7f59feaf216bfe8a84285d892c76853d1",
+        "c94499dbd7f87fce5d8dc3b16b4b97f9111b99f71f4d2e9e0f2d6bb202e998af",
+        "5f0056ec855185f86b23e5863bf2b5a38c4b605efe40653f12bc7d8f601fb617",
+        "9c63e8eff3a14221644a2835966997c8faabe53c52bf0665e8d97518d4b6a88e",
+        "e7fc29823a30984da603ee555df89933cc3fe5dfb7d32d073f2cd4679e8ec9ec",
+        "d0f924ed00750e477b5316a301de05f76a563148517d097041c4bd9e644cb4ff",
+        "b5bb7916cb77dfd6eb30f1ef99419b80e97fd9974da199abe3512c1ecfb179b3",
+        "c0b5e3c2e23788b32c692dfe720c9d397ba2cd1311f4752d684d821352d65d87",
+        "f61466497a2ad07f454a858e4dc9d5b3bb9732ebec61cc0a230f9535708dcc02",
+        "c9078d0304f200dbd9bb0252ee81ae1bed3bf5e16206128e24d7840ae701a580",
+        "25ff09cd8921d2c8018e1d972cd3643aaf8c2901a741b25dfb89c55d26acaa95",
+        "4d470794ea2286c20186dfad36f1f5c13dbbb86ed2cac7b9bcbfdfa93600d5dc",
+        "0d863885603cab1a3b80776d0136601b2d02f80d337743c8588936cfc3ac53ae",
+        "d98e69c0a9d7d12b131ec85be1cf447182c1fb760b29ab3409b263e84b97c87e",
+        "343dbdb3cb699f18a8717accf84638fcef1f1406671c2f1d9ac5f3b8bfecc4fd",
+        "239e18a5747b4e83899a0472a73b8cd798f9e22f8b1c07d1054dfde41f295ed8",
+        "75425181154bd380a1dbcf7c066934396f5332b30cb0f382b8679c60eec89876",
+        "f8b0a4c020f7aeaead9816c81ddb5e29124587beb103fb8eda39b8a2f51af682",
+        "61e3c2c1bd56f57c7dc2c7bd0c34d6ac84c5b67b9ee92c1535d14f6cf142c218",
+        "55b4d349f05d01c36bdd9d148eb41282a548d7fdfbebe0eacc526628f849fee2",
+        "395b721a6a10ad06f5f4eb33af71d9e0f543971a84fc6c8748518acb1c287eaf",
+        "a92ce3cacb7bc687e1dab7dfa8c930326a3475bb0e222540ee6ac936f4543def",
+        "8baaa34e0d79b7752e9a545940092eab00e9a580c80c20e4a6e2bc10fe0a8398",
+        "737530838979c8bc24dc87a56af0f66379c8b4497030f3d9334810cce8c378de",
+        "79576fba38aa35bc7f93cfe6245d09020b5b202ba84d5d07aca35ba6cfbdcfe9",
+        "af4852abc63013e60f8f54aaf9763cbabfc87c636bd672899259a040c5c2a72e",
+        "703f83bdae43eca0342d6eb2d5216c7e06c9560b5a77be3dc74bbb361c744b19",
+        "19ed69c4d5659dd2f8f10abcccecd6ca0cf9c46d716040a0b79262213d68f040",
+        "d560e91e793c8abf82ea0ac49e673e531e45861fcaf40679672f4f30008977af",
+        "0d5aef666cf58e1dfd4401891e23432686ddf45d78242f35384b01672e0dce5f",
+        "bc772805d0a36e5de309eb63708b3e102dbdc6f3d7c894fa5cac51ee12901287",
+        "616e27ab0eb2976ee9c2fc3406fffccd529491d4d3766d2fea80c19cee864554",
+        "55a98be03635af0ad5c8278ac4bba0c0dd3614dc49d3dddad6b02bab160fcab5",
+        "d70d42530abf42c4ac6a10b22e8814b591447349c05416ebdfca5d135e46c909",
+        "25167dfa2fbe37fb350c89b28d7ef47d0d98dde4726d8bba0b66e2ec01b9ea4b",
+        "2563271423ae3501ab6764a2075cc1f3e4c949199a6ee6445bc49864ad6f4db8",
+        "8b2183a4ea29736bb7b3a4dcedbf9d339bd25b196bab121052baab87836acc8e",
+        "1ce844036424d6c30a110999bae221b84c83b11c3a7bb0f5ba98c2843cfd8667",
+        "2ab0273fb9108c65240e0837a8d25dc6cd07613859abf9c52b684c2e5871526b",
+        "23548f0760a153bdfd91b5d4c829d61a9b48fa32c590af5f15d2190647447d02",
+        "a91c1f28eb558a3e8a1d2bcefa935cdbf0c3c6a7a714cae1f6bf374dbdc6e5a9",
+        "2dc6d5b9e49a2bde74111cb824aa07e1b5221edea0ab8245facb8ee6e7536393",
+        "e8499f5b70785d06bed9c596d05a584ae46e2dfafd0d45a8a2bdd1e34d7c1a38",
+        "2340b09eb192dc355d8021a28f4dbed4580428ddef28d73d42f28afbfd9ba7a6",
+        "c88439ebb5dec7ab408be52db8764601761134b55a7c0440fcf4432d5faab09b",
+        "a6e24964cb0d1efbef79bfca0727d9c9ea56fc9addd432278e718c9459bf28ea",
+        "82d62fa02699bc83bf161c633219fb93123840f799af424a8ec4d16cc9f276b1",
+        "62722072d77965b17da24becbae08488582186f7c82d313c74280be9b91f006a",
+        "79690d7ecd33ff6e7ba5ab4b2774ac9e83d8325cd80743b833132d46fde4043f",
+        "b2edc8d8919ea750c84a1028203b57d7529f877775931fe99b3ecf2c74faf1d6",
+        "54742c772877445135df0cd1f8890b40546cb5dec98670bd35346326054da6d8",
+        "dea3ee5e69d37a16bf1d8b67e7965f8a7cf8e2bc55e0fbcd1e98dfc30f76b899",
+        "64efd082433704664b49ac096f598d86df937f2f354be39eda7ddff50a68b5a7",
+        "d002ed35b1e344484a29d18b4eebee140db7a3d5fda518e0a0424c6aef7e6401",
+        "3994c7d768ace67d0469ce8b99de87c2ef9cb11774a87703dc8e3f38b8635eb0",
+        "c40c85e9b71fefcf992251412c28eb367bc002d350748f4b1aab75d64ddb7a22",
+        "cd03ce4d3eb0066149d7a1a60c4de9b33739e9284371a92f00666723d646584f",
+        "ee582045869b77fb4f11ecd06e1b288518de3b660448badbbb56854cba2dad54",
+        "e08bcb1ea8e307805fb98977d8a9160d56873a1f95063c9e1f26a175aaccb61d",
+        "2ac4a10f57769e30faea1f2c7cf1eef71112181bff0cafdd69efe7ef9e995977",
+        "b3f3601b9df0d1f76cc9a5198ba98f76591176d4e1b5e3734fc40182f0311df9",
+        "4e97d983f2d83dd3157a442cb165f737ce04e29a30ae3362eda36e4f111aad84",
+        "86b425277e248f2771e52e62772461896a535dc82a35948e60686f39a5407a2c",
+        "cb73b3e84f7ee40e648611f4a683c2450caa5ce2968dc2f92eb96f537ef1de9e",
+        "a520d8c3380c479ba0740d0339bc53e299a34cff0c00d5ff52d8a46cdb01bea1",
+        "31107847c415e603c39bfa24dc8d9f3d49d833c6bb18f23eebd0c8593d286e08",
+        "38583fa12dbfc194318d5169adaa16f21b604e41026769c39ee2f40fe2327d58",
+        "13e428ba458bb0e9f6c04694c564c2ff254e3e2626618591021b5836e1ef6235",
+        "9ec68aa030c444307b5ae0b9b6666c6191ae70be06476428c2481ea5df47806f",
+        "17f358237f5384d60ddc3fc3d5da284bd36088f8bb44e8fac715fe002d9f82d2",
+        "0c0ce6c0bb61b183b8482f3629d807fcc7cdafe57073bcf4a9102062f5500409",
+        "5610807d32f5a4574f46764312d4ca1e3917ef1c0a5df5a4c1af93c5f34cfebd",
+        "833b2ddb8d260fa94df8df1a819b19798b30d86ed165f26684446f30b31659d6",
+        "616509f2cc23356f21f9338518c2bb411d5d1c0d352dc3af51a5aec3b9e0eb52",
+        "4aa511e1ee28c12fbdffa86dad37046e85c87625030f90e80ac61f1cabdbd387",
+        "66b49158444754c363ecbfc018875db6d67c3171d2d3407bb4dfe1e821991622",
+        "c38fe7e2c5deadc2d0749b44b9d6fb84d23d69e2f8f8742f4d2f825c25ac9a3e",
+        "308ca7bcd70ed77f18ac06316e32d389639ed72200d118f8a51ae2ee894bdb17",
+        "9328c5c6a6b0faa8959567323cc2bc4ab6fc4b855083615c1d4524b1a5392ce6",
+        "fb57b67424dbc12d1cb053ff213433e56642af0e38749f4fb4811688d8b579bb",
+        "413062f3c5d6d4a6abd8e505da3ca5c2f3e6c45da138b2303d6e181202f8b449",
+        "eacf1b943273458daf27e4962c55fcac34bf77a4950a788bb081468c48c27cf2",
+        "38596e3648fa261128b12719f06f0e104d0b4babfba2045f2bf04333aed8cfd2",
+        "46ce73a522adca3aae15efb13364b128cb9eed9426dd2779953450e852902b55",
+        "61b78b15735807c494249a348461741d748d2bfb348de734eff98a882ab7a6f4",
+        "c3a225cfae0ad0a92089b264bca968820cd1f4b3a7ea3d0e58613d4e71ccc4ff",
+        "af2035eb67c4994e91ee0cc197d4f35305fd83973ff77806535734daa3e88eab",
+        "9cd84741592711f2b4d19ff71e93dae8d33496cabb1942d1b02254cdb55ef6f2",
+        "ad0b32a3f4f811b85648f0918702e23db3d2874692a7fff7d3613c4e73e136bc",
+        "645f946f9754a18e987317817855f7f2ddb049fdcee0351db68af72d127ec8d6",
+        "7f354d379e210f04a4fbff69d2d0dcaa60eead285040703ddc9788b2890d1fc6",
+        "b00591e8d7d3433e9c732d43c39a8817d5cb54ae9a4c807424ff16665002cf0e",
+        "10d0eef3d50bb845fd82ad98469c39596d0424b67fc6caaa7ed7fe13057af1cb",
+        "8960625f8cf6ffc5d9b79e5fb61852f6832bcf2f7f835c32eb032a565604f324",
+        "fd0b29613945aa27808fd12eb11cf65a2653726b3980185c7e1e48f36b2df8ba",
+        "b7ee2f413d3329f39c558fac4b2aaf91cb981b0afc1decb1537da99e4a38dd5a",
+        "62c10efde15a2d8419783222d3c8b56f8e5f1ae538245cc0997fd20cc34a2788",
+        "c0f10ffd22a270cefde01c5e3ddd874db5c10a0a03593677091224ef0edc173b",
+        "3c64cc9477935f99cc98797fcd23ee3b1011e09c4328d03444e1b82ad269a4d8",
+        "4df58988de71ec724243c092c7615cc7e6c52e2f29ffb2ad24b08a50adce30fc",
+        "0b019a2c794f1dbcc9304baa2a3e19b81ccddd46d19cf1a5bdbd7a058268629c",
+        "ae2b56f5f6612578fb8cdfc991b76b59d55f5d909fdf6c0332c55cfc4a45b516",
+        "b9c050fc0d3f79581a0882c0a6a7a3848d4830b343a522c045bbbab3aac22e16",
+        "4d9d62e23c5302284fe90a22ea856951000fb624a13d01d485de8fb737c726da",
+        "f85ccdb68bbba529d7f24bf6481b2d97ad77dd548ad4fa6c98b7302d73bde3e5",
+        "82bcf8530ab93396bb8ffdaeca9dae2dbb75256dbcfb3c51698aadcec4f1ca45",
+        "2f10a4083be92b8cf6abf5e0ff7e868eda408a561f46534a4ec0057617248edf",
+        "56c802ba44ff96b2473c79b56e78bdb17a10175490826206689357dc14dd8129",
+        "ba224436ae4c637614835dee3bdae3a46ee66a2f69ad5c1fca2d16445a1f3d50",
+        "4f73adafc934c3aaef08f3b491f2cfe07413bf0f2ab0f42516e7be0305da41e6",
+        "907e90cce4637beb931b14730cf08ba6776f79c7c4316219eedf5ab928194979",
+        "025a3659f76e19b7579d294ad35214898c8a792f6326d0075a73dbb8bd06e6a6",
+        "963ee2309d4f5aba44c710b50e80b5a047a13094c6a8b59c0c5868c44fc30023",
+        "ae4b1aefe24b291ccdee5142b9e3112ec02a8f6cb721b31b9153fa07cd956445",
+        "32df6f8a4f7e4ff8c270301ff67994edc6efdddb4bf879b78a6ccf783bcc442c",
+        "afec053144eda7def542157370826d1e45fd2788948edaf789ba035a4ed93c3a",
+        "94719897cd20daa26c41bfa021b383568ad0b01485a77525849120b11bee0612",
+        "b8546fcd240154c52b679ea3683cfb3589cb0705cae14a27b84e8da362b91c8b",
+        "5c25ff9924fbd2fcd640b9b9b4a30ef30d1247aa41c3695d9defeea807573291",
+        "3c2b41c2c8639997671790ee61413bcc45bb7f692d331585a7940f1feb8ba5b2",
+        "48775e7971d0fe16ddd01ff842608aa8ea1ae6c168782f83cd06f4e073f0a094",
+        "f1920b71986f57c245cc2534fec0af3d355df4018674277e50152c2af61ac05e",
+        "154bc47e8ff0118968eeaa85152e4eb17157efe3a24f213694ff90c636bc9330",
+        "fa84af5d0db77533c8495286a5500d49cd61ca9957f0ffd597eefcb9670d7276",
+        "5a9f18cac64a65be952b41f61fcd442c4efdeb415d88582548609c3007ec34f2",
+        "bed17d17cea17c85641ae2a5d457acbae57f475719888b6712eeb9f473822274",
+        "713d49be0b6d3adb639e1fc0eea6ce26e76c73438f9c432071c5728b54c1717f",
+        "b13620ab62f765742d2a708484942f91d6b1428c52b1d0dd368633979b3c3755",
+        "59b512c8e84e10a564fd14c42852f1a588b5a5cf783e1fc8fae5f971fc2e9332",
+        "87dd2921879f017a9102f8fd2168417b759657acab8fbfdcd079d5424654f8b7",
+        "8012bd321d612d1353c613f9b7bef646b09ecef5219d5222cd7541fa1c13bef6",
+        "d23028917cee4cee0657ef788eae1079caea8676354e9fa844457acf4983a706",
+        "243a978bfc7f11a07ba8325f4fd8d4160d31e3169504696fb198949fae910434",
+        "6935811bdca9d0227b3d4b0ee6e00f9df0e602bc6bf78f8736d0e40ad5ad48e6",
+        "1fce9f6e5d8df7478581cbb8768155a85f9a902fe8701e85f662ab2c9a77f6b3",
+        "21908fea6a58292763c94d6dc1bdaa3afca138dcf51aa07e83924e75725cb31f",
+        "0d6a4f8dd45aa5bd5a1fd5deac27e4645c8985206a72e3505e8b654cda130e02",
+        "5ee22297b5c2f53a1e1d8a36e04cff44e9007fd52a700455eef89b08e1001842",
+        "fcd7fac54724dce173dd6944dab57288063fbe699e2f2d6245648223b70acedc",
+        "d73fd3a77845409fae89ddb6f16e86b5cbf1cf2e344b712d2eaadec1cbc2104e",
+        "6b4e57ec5c14436913449739cf70844201a7ea6bb9609046ea50e3c60a2b1ca9",
+        "e664bacd3a4c8ec05cc8f5f4e4db645bed685ffa1f039dce8876490a88d40c85",
+        "852e0c1c38b6188c66ab8ea8866887ed85da53fa0efc651d0e03e3e0c485d1d8",
+        "2eb680bb5ad3e9ea51249e1bac619b7b8be388efbe742750d74ffa6988e918e0",
+        "1a34e1d8c01e6a98600c6dc85c3caa9352de1d5459140eec680eb063039592e4",
+        "65df592bd33eaf971c9a5e0b309af505d416d285bd31c8ff64c9641911e47472",
+        "8d0bb3af0de8a02b26b74d06f8810f259d3352998f8c716e51a254063af9d312",
+        "95da10d5f28ff978fb17707f4ba38a08c66c68089ade07d0c12f63b3c3e59250",
+        "3eeafb2a83f1515b849da693312e51656cfed2d398c4378eb16612c86746e7ae",
+        "b65680690f5b9983a51acfbc4f9a31efd19fcd71df31dba3b8141fcdafe19fb6",
+        "bf782cfbc8e730419580a0670545b6cac6f8671c46c48d18a2117a22188f7531",
+        "3a6b0f22511aa2b2e156caa01b402a5d7cebbfba23f2d9781b2876d26c093995",
+        "b1bda9db7c1e21a979ff284650344de3c2c00bda6281a0418d646504670146b9",
+        "64aa263f718f145811f5a8242153271a2c6bae88f218604ecbbe3d2d88eb1963",
+        "f7c4ff90b688116d6789e10b037eeb14e4e579a4d021f62f562c538693bae833",
+        "eae2ed50bd84e894b7b95a980693de11f4239b18cafa4894a0098fdf2c01310f",
+        "4e33cdfdb0f30cff8a0fce732a97c6df2a72d787af51d7c383903d25a1380299",
+        "7bec8112c5718fff009e19ccb855e919194d837805a7c0f49ac60e4220c8d6e9",
+        "bab92f29d0281a68028d27bc0ce36e3dea507904ec4ecc31d4ca70a0483b4e9b",
+        "0a54a025d1b2d87e389dc9e6120541ceef5506b6cf96b99c01cbfebb6af4bc53",
+        "7f644c7104113b421c6c10bfaffdbb7bb9fc21c5e70b7d61b594f58441c1650e",
+        "f6d880a2cd0f7b8e49bfbe4431f89832d567d361a0e26c866d81dc0ef39ba0e3",
+        "87ca740947d4084dcbc2396633c30564db5f78d8d0e37b59000720e96a6f0fa3",
+        "699a95d0b97710c051991ef03f235d8bf504e4fe6e55b336f5dd26ccba39fb74",
+        "8da0ebf5a61fac5dc6fd90bcf239566a31eab894fb6744475f0878b0b0e8694c",
+        "829a4d279bc62942e677eea1e8fe30756bf7cf5fcf2c3728aa5a4625a193ef27",
+        "d55c4f6cbb625311b1e3e86457ce96e0a80e36ca6bad9eb1ba92956f525d4b12",
+        "0277b5cdf8c19e7108a127224f0f95ef2fdc607da01870a9a364c320cfda1221",
+        "a7d79c757839f7a85d2dd2692267f03f16ac29161487601761eac4623048fd0e",
+        "d1648afe0300c83509126d6205b906708da9968f6acfd8cb4f5d512a2a5cc435",
+        "87d59f4bffd7307a153123be5ca3729a5019cc4e5f86d71efd338842d0963a4a",
+        "b7ff2564dbfddb8a5522e1b49adc77d7da1b1a2838fa512466d2394192ea2170",
+        "e0dc39627a77be70586f7bb65b3a4f868d43d4d1950d77c128f959677fab0490",
+        "3ed05add8212894a638fca0d183750331706ff070669abb89ad6a6efcbe14417",
+        "45a3f5cf7fcb36ebb42018d61aa30ebc8badb2aa6ef66e30102f79429f1e8222",
+        "9e198e974f2f2d1bbe6c560078a07d07339e060a58670a31479270f91ffe51a0",
+        "debb6b6e5e155e5d8120f8dd40909df0ad232a95c746a1493eb42f1647808a15",
+        "4b933cb3ff4c387293b89c5fc238330accc6b6dc0b4af0456a4e10fb33515755",
+        "92e48d9162609fcaa6f1ddaba4ce2e31ecd32fc5cc466be232a49794a4272bf9",
+        "0edc83bffdf15959c10222ba84bd86bbc0a97dcb01ab9aa4cd201be7c34522e9",
+        "4a4f5159e858f311696ff1969e653950404234c1986b9c175d479f0e2142cca4",
+        "c27ccfa0f5f40fce751e3d762d4c6e0d2a3dbc847a86fc6bbcd183d3a5631944",
+        "abd28b49dfc74c4be778c78d0cfe3f69e18d640c515e3a1fa0d1ce2526fdd76f",
+        "0342e78683039d037d910d21d1d21beeea68e14dafdaa945a7b011945a034113",
+        "f7642ffef7285738f38ca9e84c98fc92ddabf40dfbd0d6401a449acc8addf533",
+        "0b79a63fc91515c8c0658a664e60455dacd1a05e26e28225e1ba5f5f43359580",
+        "5a9e99717f1e3fe73142750300686f4deee2cb4dbdf96c739035353dcc07fc96",
+        "79654a8992401bf6d9626b1a37e550099f29120d5acd55f15f67bc650c0f60fb",
+        "0227d8b404d39fb209d6dd685db0fd4b706bb67b821ee7c83ef8374f8711df00",
+        "12100dfc4e82ff593e6b182b9b83a47c621cc79988e4165f995e8a22a9a07696",
+        "18cef2b3b8c80d257d82a08828e328a3ccefb7bb519b5d1e108eca465ad80d01",
+        "e4f5b54a8ff3a583934b2a609ff2db9133cc383881e06469d1a6229b06221a7c",
+        "57f440a7ce7f40e0da9c5c08edd854d358e31452980e9227d6ac1b32a8f19c96",
+        "2e331d444075f3632e4293e73ebd52dd56ab77af1cf80cb09f9302e28e32cff8",
+        "1254d3fc6caccbc8df03a33a06465f47156a36e3b70b9e20ff2db694708d4ff2",
+        "de7a3e3ec05552e1a8324745776416c0ce3910305e8fc53172ac8856f1a9c52a",
+        "1a8160144ddab4872cd678b1d637381a522c24fd710a96558c656379132284ae",
+        "bc45d714fefeadb245d3d35bf512a23acc86440bbd35d79beea7b0a73045f39b",
+        "bb82492c1699667f8c28ede8c37cd0b850ce56ebbd38a6ba92d5bb57e23cb35f",
+        "37704d9c6b38e1ae7f85bbe4f5138b21ec66b40e6e30479aadf149e5f239c6c0",
+        "e7b18cb70aca979d88fe21efa06acd5ab86d984ada1f12df99834b6759a578ad",
+        "b451dfa6888ccf17807aceb47e920c4aeac1c8152066abe4405375c7a6669202",
+        "c77d5cfa824dc1a9f5613681dec169c5d395647303449933a9d393ed98200497",
+        "49353e0c95c31b9085ef8328f409d55b2698389229f179ed3e098c5da698bb1e",
+        "49dc01989e08c7c2f5b51491f0ed6839ac3f008076c251b1490c0c0f1f749a36",
+        "02adacbb04b541b17b7b1c047c4a7fb98c83e499442e9c5c62c72b885fe41482",
+        "5ae3519dec12c98ddf56caac8e39f638e1426c30eb576a7b6972398512c25ec5",
+        "b96820241e4c16756fa40db5742585d53b262922fd391e783eb357325a00bd4c",
+        "374b10290eb8e9cd19210699e49190e3f35837a175fb2f64e45d395f2fd12ce9"
+      ],
+      "codec_error": {
+        "frames": 300,
+        "mean_mae_rgb8": 1.8097809565823142,
+        "worst_mae_rgb8": 1.9559234796491456,
+        "worst_mae_frame": 299,
+        "max_rgb8": 149,
+        "worst_max_frame": 170,
+        "per_frame": [
+          {
+            "index": 0,
+            "mae_rgb8": 1.8012793146630237,
+            "max_rgb8": 148
+          },
+          {
+            "index": 1,
+            "mae_rgb8": 1.8157585965283198,
+            "max_rgb8": 103
+          },
+          {
+            "index": 2,
+            "mae_rgb8": 1.820381280358227,
+            "max_rgb8": 92
+          },
+          {
+            "index": 3,
+            "mae_rgb8": 1.8305346842744383,
+            "max_rgb8": 90
+          },
+          {
+            "index": 4,
+            "mae_rgb8": 1.8285654653482522,
+            "max_rgb8": 147
+          },
+          {
+            "index": 5,
+            "mae_rgb8": 1.8183532762490242,
+            "max_rgb8": 122
+          },
+          {
+            "index": 6,
+            "mae_rgb8": 1.817598047586521,
+            "max_rgb8": 128
+          },
+          {
+            "index": 7,
+            "mae_rgb8": 1.8173718855711685,
+            "max_rgb8": 104
+          },
+          {
+            "index": 8,
+            "mae_rgb8": 1.8326204571081621,
+            "max_rgb8": 120
+          },
+          {
+            "index": 9,
+            "mae_rgb8": 1.8333529848642554,
+            "max_rgb8": 126
+          },
+          {
+            "index": 10,
+            "mae_rgb8": 1.844991434643074,
+            "max_rgb8": 131
+          },
+          {
+            "index": 11,
+            "mae_rgb8": 1.8485324372235232,
+            "max_rgb8": 147
+          },
+          {
+            "index": 12,
+            "mae_rgb8": 1.8953206994318674,
+            "max_rgb8": 142
+          },
+          {
+            "index": 13,
+            "mae_rgb8": 1.9277601252818979,
+            "max_rgb8": 133
+          },
+          {
+            "index": 14,
+            "mae_rgb8": 1.4773849843329865,
+            "max_rgb8": 103
+          },
+          {
+            "index": 15,
+            "mae_rgb8": 1.4416917054276173,
+            "max_rgb8": 111
+          },
+          {
+            "index": 16,
+            "mae_rgb8": 1.4532374880735537,
+            "max_rgb8": 96
+          },
+          {
+            "index": 17,
+            "mae_rgb8": 1.4885811052563103,
+            "max_rgb8": 104
+          },
+          {
+            "index": 18,
+            "mae_rgb8": 1.473541077120739,
+            "max_rgb8": 96
+          },
+          {
+            "index": 19,
+            "mae_rgb8": 1.4473582921328823,
+            "max_rgb8": 104
+          },
+          {
+            "index": 20,
+            "mae_rgb8": 1.439888846875271,
+            "max_rgb8": 96
+          },
+          {
+            "index": 21,
+            "mae_rgb8": 1.4434945639799637,
+            "max_rgb8": 113
+          },
+          {
+            "index": 22,
+            "mae_rgb8": 1.4180385468167231,
+            "max_rgb8": 95
+          },
+          {
+            "index": 23,
+            "mae_rgb8": 1.3814140225192992,
+            "max_rgb8": 114
+          },
+          {
+            "index": 24,
+            "mae_rgb8": 1.3580122679764073,
+            "max_rgb8": 90
+          },
+          {
+            "index": 25,
+            "mae_rgb8": 1.3399387888693728,
+            "max_rgb8": 89
+          },
+          {
+            "index": 26,
+            "mae_rgb8": 1.3461840792783415,
+            "max_rgb8": 97
+          },
+          {
+            "index": 27,
+            "mae_rgb8": 1.3394371666016134,
+            "max_rgb8": 103
+          },
+          {
+            "index": 28,
+            "mae_rgb8": 1.3557025354540724,
+            "max_rgb8": 110
+          },
+          {
+            "index": 29,
+            "mae_rgb8": 1.3417035302281204,
+            "max_rgb8": 86
+          },
+          {
+            "index": 30,
+            "mae_rgb8": 1.3348917336173995,
+            "max_rgb8": 107
+          },
+          {
+            "index": 31,
+            "mae_rgb8": 1.3357155732283805,
+            "max_rgb8": 96
+          },
+          {
+            "index": 32,
+            "mae_rgb8": 1.344441530596756,
+            "max_rgb8": 95
+          },
+          {
+            "index": 33,
+            "mae_rgb8": 1.3375580736620696,
+            "max_rgb8": 91
+          },
+          {
+            "index": 34,
+            "mae_rgb8": 1.3443710561410356,
+            "max_rgb8": 104
+          },
+          {
+            "index": 35,
+            "mae_rgb8": 1.33661039552433,
+            "max_rgb8": 92
+          },
+          {
+            "index": 36,
+            "mae_rgb8": 1.335887862943447,
+            "max_rgb8": 86
+          },
+          {
+            "index": 37,
+            "mae_rgb8": 1.3395728638108249,
+            "max_rgb8": 105
+          },
+          {
+            "index": 38,
+            "mae_rgb8": 1.3320056691278515,
+            "max_rgb8": 89
+          },
+          {
+            "index": 39,
+            "mae_rgb8": 1.3278876569411917,
+            "max_rgb8": 90
+          },
+          {
+            "index": 40,
+            "mae_rgb8": 1.3378323480462313,
+            "max_rgb8": 92
+          },
+          {
+            "index": 41,
+            "mae_rgb8": 1.3228885446482783,
+            "max_rgb8": 110
+          },
+          {
+            "index": 42,
+            "mae_rgb8": 1.3323558390797121,
+            "max_rgb8": 87
+          },
+          {
+            "index": 43,
+            "mae_rgb8": 1.3425724328324227,
+            "max_rgb8": 94
+          },
+          {
+            "index": 44,
+            "mae_rgb8": 1.3842878895068957,
+            "max_rgb8": 99
+          },
+          {
+            "index": 45,
+            "mae_rgb8": 1.4014907719121346,
+            "max_rgb8": 93
+          },
+          {
+            "index": 46,
+            "mae_rgb8": 1.4255208672152833,
+            "max_rgb8": 115
+          },
+          {
+            "index": 47,
+            "mae_rgb8": 1.4452853944401076,
+            "max_rgb8": 124
+          },
+          {
+            "index": 48,
+            "mae_rgb8": 1.4195871213353284,
+            "max_rgb8": 96
+          },
+          {
+            "index": 49,
+            "mae_rgb8": 1.4314613894852113,
+            "max_rgb8": 93
+          },
+          {
+            "index": 50,
+            "mae_rgb8": 1.4179550278103044,
+            "max_rgb8": 108
+          },
+          {
+            "index": 51,
+            "mae_rgb8": 1.4167373105321364,
+            "max_rgb8": 108
+          },
+          {
+            "index": 52,
+            "mae_rgb8": 1.425383306498829,
+            "max_rgb8": 98
+          },
+          {
+            "index": 53,
+            "mae_rgb8": 1.4143598141100702,
+            "max_rgb8": 102
+          },
+          {
+            "index": 54,
+            "mae_rgb8": 1.4166449822187528,
+            "max_rgb8": 111
+          },
+          {
+            "index": 55,
+            "mae_rgb8": 1.4091389444552866,
+            "max_rgb8": 111
+          },
+          {
+            "index": 56,
+            "mae_rgb8": 1.4229492272204876,
+            "max_rgb8": 109
+          },
+          {
+            "index": 57,
+            "mae_rgb8": 1.4033358134920635,
+            "max_rgb8": 109
+          },
+          {
+            "index": 58,
+            "mae_rgb8": 1.41556448683754,
+            "max_rgb8": 93
+          },
+          {
+            "index": 59,
+            "mae_rgb8": 1.42159022221138,
+            "max_rgb8": 93
+          },
+          {
+            "index": 60,
+            "mae_rgb8": 1.4391256559545493,
+            "max_rgb8": 102
+          },
+          {
+            "index": 61,
+            "mae_rgb8": 1.4356968026281551,
+            "max_rgb8": 105
+          },
+          {
+            "index": 62,
+            "mae_rgb8": 1.4356542807810737,
+            "max_rgb8": 109
+          },
+          {
+            "index": 63,
+            "mae_rgb8": 1.4251163167338885,
+            "max_rgb8": 104
+          },
+          {
+            "index": 64,
+            "mae_rgb8": 1.4306639777951253,
+            "max_rgb8": 101
+          },
+          {
+            "index": 65,
+            "mae_rgb8": 1.445782781464134,
+            "max_rgb8": 109
+          },
+          {
+            "index": 66,
+            "mae_rgb8": 1.428356108780033,
+            "max_rgb8": 110
+          },
+          {
+            "index": 67,
+            "mae_rgb8": 1.471881030987076,
+            "max_rgb8": 113
+          },
+          {
+            "index": 68,
+            "mae_rgb8": 1.7318286020578542,
+            "max_rgb8": 121
+          },
+          {
+            "index": 69,
+            "mae_rgb8": 1.7955192137761298,
+            "max_rgb8": 137
+          },
+          {
+            "index": 70,
+            "mae_rgb8": 1.8112092671198716,
+            "max_rgb8": 135
+          },
+          {
+            "index": 71,
+            "mae_rgb8": 1.8219140997701448,
+            "max_rgb8": 120
+          },
+          {
+            "index": 72,
+            "mae_rgb8": 1.824863184686443,
+            "max_rgb8": 124
+          },
+          {
+            "index": 73,
+            "mae_rgb8": 1.8202211881451122,
+            "max_rgb8": 138
+          },
+          {
+            "index": 74,
+            "mae_rgb8": 1.8380452961011362,
+            "max_rgb8": 138
+          },
+          {
+            "index": 75,
+            "mae_rgb8": 1.8434355755052476,
+            "max_rgb8": 138
+          },
+          {
+            "index": 76,
+            "mae_rgb8": 1.8371494573466909,
+            "max_rgb8": 126
+          },
+          {
+            "index": 77,
+            "mae_rgb8": 1.8418043290289705,
+            "max_rgb8": 147
+          },
+          {
+            "index": 78,
+            "mae_rgb8": 1.8534751360699107,
+            "max_rgb8": 147
+          },
+          {
+            "index": 79,
+            "mae_rgb8": 1.8569028035280597,
+            "max_rgb8": 141
+          },
+          {
+            "index": 80,
+            "mae_rgb8": 1.850693258576199,
+            "max_rgb8": 126
+          },
+          {
+            "index": 81,
+            "mae_rgb8": 1.8611068758673779,
+            "max_rgb8": 125
+          },
+          {
+            "index": 82,
+            "mae_rgb8": 1.870147935369503,
+            "max_rgb8": 145
+          },
+          {
+            "index": 83,
+            "mae_rgb8": 1.8697647305165235,
+            "max_rgb8": 145
+          },
+          {
+            "index": 84,
+            "mae_rgb8": 1.8602439026043023,
+            "max_rgb8": 126
+          },
+          {
+            "index": 85,
+            "mae_rgb8": 1.856727803257004,
+            "max_rgb8": 144
+          },
+          {
+            "index": 86,
+            "mae_rgb8": 1.8695284039162112,
+            "max_rgb8": 147
+          },
+          {
+            "index": 87,
+            "mae_rgb8": 1.8732857427465521,
+            "max_rgb8": 138
+          },
+          {
+            "index": 88,
+            "mae_rgb8": 1.8726856934144331,
+            "max_rgb8": 127
+          },
+          {
+            "index": 89,
+            "mae_rgb8": 1.8689312345498308,
+            "max_rgb8": 145
+          },
+          {
+            "index": 90,
+            "mae_rgb8": 1.8813686207064793,
+            "max_rgb8": 126
+          },
+          {
+            "index": 91,
+            "mae_rgb8": 1.893891897606037,
+            "max_rgb8": 136
+          },
+          {
+            "index": 92,
+            "mae_rgb8": 1.8759139655976234,
+            "max_rgb8": 118
+          },
+          {
+            "index": 93,
+            "mae_rgb8": 1.8815146519103998,
+            "max_rgb8": 135
+          },
+          {
+            "index": 94,
+            "mae_rgb8": 1.9011480559892444,
+            "max_rgb8": 127
+          },
+          {
+            "index": 95,
+            "mae_rgb8": 1.9019976458821233,
+            "max_rgb8": 130
+          },
+          {
+            "index": 96,
+            "mae_rgb8": 1.8858678048291266,
+            "max_rgb8": 125
+          },
+          {
+            "index": 97,
+            "mae_rgb8": 1.8926004870869113,
+            "max_rgb8": 123
+          },
+          {
+            "index": 98,
+            "mae_rgb8": 1.9042125089448347,
+            "max_rgb8": 140
+          },
+          {
+            "index": 99,
+            "mae_rgb8": 1.9072452822773007,
+            "max_rgb8": 142
+          },
+          {
+            "index": 100,
+            "mae_rgb8": 1.891611134150837,
+            "max_rgb8": 124
+          },
+          {
+            "index": 101,
+            "mae_rgb8": 1.9021052210729466,
+            "max_rgb8": 110
+          },
+          {
+            "index": 102,
+            "mae_rgb8": 1.9026718966844478,
+            "max_rgb8": 124
+          },
+          {
+            "index": 103,
+            "mae_rgb8": 1.9078382163999479,
+            "max_rgb8": 115
+          },
+          {
+            "index": 104,
+            "mae_rgb8": 1.9008685299028536,
+            "max_rgb8": 115
+          },
+          {
+            "index": 105,
+            "mae_rgb8": 1.906769410291439,
+            "max_rgb8": 113
+          },
+          {
+            "index": 106,
+            "mae_rgb8": 1.906921879065834,
+            "max_rgb8": 117
+          },
+          {
+            "index": 107,
+            "mae_rgb8": 1.9155848160074596,
+            "max_rgb8": 121
+          },
+          {
+            "index": 108,
+            "mae_rgb8": 1.9031309971051262,
+            "max_rgb8": 126
+          },
+          {
+            "index": 109,
+            "mae_rgb8": 1.9192953977469858,
+            "max_rgb8": 123
+          },
+          {
+            "index": 110,
+            "mae_rgb8": 1.9170485162416515,
+            "max_rgb8": 135
+          },
+          {
+            "index": 111,
+            "mae_rgb8": 1.9269852450884726,
+            "max_rgb8": 135
+          },
+          {
+            "index": 112,
+            "mae_rgb8": 1.912458697903114,
+            "max_rgb8": 119
+          },
+          {
+            "index": 113,
+            "mae_rgb8": 1.9136039078085696,
+            "max_rgb8": 121
+          },
+          {
+            "index": 114,
+            "mae_rgb8": 1.9176936285670916,
+            "max_rgb8": 138
+          },
+          {
+            "index": 115,
+            "mae_rgb8": 1.9293837483194554,
+            "max_rgb8": 131
+          },
+          {
+            "index": 116,
+            "mae_rgb8": 1.9183958319780554,
+            "max_rgb8": 121
+          },
+          {
+            "index": 117,
+            "mae_rgb8": 1.9171911592505855,
+            "max_rgb8": 121
+          },
+          {
+            "index": 118,
+            "mae_rgb8": 1.924993155846127,
+            "max_rgb8": 134
+          },
+          {
+            "index": 119,
+            "mae_rgb8": 1.9372253867963396,
+            "max_rgb8": 142
+          },
+          {
+            "index": 120,
+            "mae_rgb8": 1.919140896055599,
+            "max_rgb8": 121
+          },
+          {
+            "index": 121,
+            "mae_rgb8": 1.9230178381689653,
+            "max_rgb8": 85
+          },
+          {
+            "index": 122,
+            "mae_rgb8": 1.9257744736100268,
+            "max_rgb8": 121
+          },
+          {
+            "index": 123,
+            "mae_rgb8": 1.936773909814381,
+            "max_rgb8": 134
+          },
+          {
+            "index": 124,
+            "mae_rgb8": 1.925521883673779,
+            "max_rgb8": 121
+          },
+          {
+            "index": 125,
+            "mae_rgb8": 1.9388198713570128,
+            "max_rgb8": 122
+          },
+          {
+            "index": 126,
+            "mae_rgb8": 1.933556988084396,
+            "max_rgb8": 119
+          },
+          {
+            "index": 127,
+            "mae_rgb8": 1.9417547258543673,
+            "max_rgb8": 132
+          },
+          {
+            "index": 128,
+            "mae_rgb8": 1.927970023961315,
+            "max_rgb8": 97
+          },
+          {
+            "index": 129,
+            "mae_rgb8": 1.930988397465088,
+            "max_rgb8": 100
+          },
+          {
+            "index": 130,
+            "mae_rgb8": 1.9376145209905455,
+            "max_rgb8": 113
+          },
+          {
+            "index": 131,
+            "mae_rgb8": 1.944366685369503,
+            "max_rgb8": 113
+          },
+          {
+            "index": 132,
+            "mae_rgb8": 1.9307427533285628,
+            "max_rgb8": 121
+          },
+          {
+            "index": 133,
+            "mae_rgb8": 1.933237650706913,
+            "max_rgb8": 127
+          },
+          {
+            "index": 134,
+            "mae_rgb8": 1.9401651541764247,
+            "max_rgb8": 112
+          },
+          {
+            "index": 135,
+            "mae_rgb8": 1.9471548310239397,
+            "max_rgb8": 109
+          },
+          {
+            "index": 136,
+            "mae_rgb8": 1.9301064503100875,
+            "max_rgb8": 107
+          },
+          {
+            "index": 137,
+            "mae_rgb8": 1.9363095576914737,
+            "max_rgb8": 123
+          },
+          {
+            "index": 138,
+            "mae_rgb8": 1.940457385994015,
+            "max_rgb8": 130
+          },
+          {
+            "index": 139,
+            "mae_rgb8": 1.9475475228228813,
+            "max_rgb8": 137
+          },
+          {
+            "index": 140,
+            "mae_rgb8": 1.9329506705915518,
+            "max_rgb8": 128
+          },
+          {
+            "index": 141,
+            "mae_rgb8": 1.9314446179200278,
+            "max_rgb8": 142
+          },
+          {
+            "index": 142,
+            "mae_rgb8": 1.9335105698130801,
+            "max_rgb8": 124
+          },
+          {
+            "index": 143,
+            "mae_rgb8": 1.9513063863409663,
+            "max_rgb8": 122
+          },
+          {
+            "index": 144,
+            "mae_rgb8": 1.9311102030748548,
+            "max_rgb8": 119
+          },
+          {
+            "index": 145,
+            "mae_rgb8": 1.9404236734538989,
+            "max_rgb8": 133
+          },
+          {
+            "index": 146,
+            "mae_rgb8": 1.93664566663414,
+            "max_rgb8": 139
+          },
+          {
+            "index": 147,
+            "mae_rgb8": 1.9424394800611502,
+            "max_rgb8": 140
+          },
+          {
+            "index": 148,
+            "mae_rgb8": 1.9307544426012664,
+            "max_rgb8": 137
+          },
+          {
+            "index": 149,
+            "mae_rgb8": 1.9380226290766762,
+            "max_rgb8": 138
+          },
+          {
+            "index": 150,
+            "mae_rgb8": 1.9528729182930002,
+            "max_rgb8": 138
+          },
+          {
+            "index": 151,
+            "mae_rgb8": 1.9510622668921849,
+            "max_rgb8": 142
+          },
+          {
+            "index": 152,
+            "mae_rgb8": 1.932873758565357,
+            "max_rgb8": 133
+          },
+          {
+            "index": 153,
+            "mae_rgb8": 1.93678932610157,
+            "max_rgb8": 130
+          },
+          {
+            "index": 154,
+            "mae_rgb8": 1.9519885994015092,
+            "max_rgb8": 121
+          },
+          {
+            "index": 155,
+            "mae_rgb8": 1.9519716584265765,
+            "max_rgb8": 125
+          },
+          {
+            "index": 156,
+            "mae_rgb8": 1.9330338507784717,
+            "max_rgb8": 110
+          },
+          {
+            "index": 157,
+            "mae_rgb8": 1.9385173055447134,
+            "max_rgb8": 118
+          },
+          {
+            "index": 158,
+            "mae_rgb8": 1.9396830140298378,
+            "max_rgb8": 123
+          },
+          {
+            "index": 159,
+            "mae_rgb8": 1.9460624769602741,
+            "max_rgb8": 117
+          },
+          {
+            "index": 160,
+            "mae_rgb8": 1.9325959265764594,
+            "max_rgb8": 139
+          },
+          {
+            "index": 161,
+            "mae_rgb8": 1.935109628436985,
+            "max_rgb8": 120
+          },
+          {
+            "index": 162,
+            "mae_rgb8": 1.942733067156735,
+            "max_rgb8": 144
+          },
+          {
+            "index": 163,
+            "mae_rgb8": 1.9425109709753665,
+            "max_rgb8": 144
+          },
+          {
+            "index": 164,
+            "mae_rgb8": 1.9325757668162893,
+            "max_rgb8": 126
+          },
+          {
+            "index": 165,
+            "mae_rgb8": 1.9318095265200799,
+            "max_rgb8": 135
+          },
+          {
+            "index": 166,
+            "mae_rgb8": 1.939829892282505,
+            "max_rgb8": 136
+          },
+          {
+            "index": 167,
+            "mae_rgb8": 1.9454497218969555,
+            "max_rgb8": 133
+          },
+          {
+            "index": 168,
+            "mae_rgb8": 1.9303902116402116,
+            "max_rgb8": 133
+          },
+          {
+            "index": 169,
+            "mae_rgb8": 1.9323064053148582,
+            "max_rgb8": 147
+          },
+          {
+            "index": 170,
+            "mae_rgb8": 1.9413989653807788,
+            "max_rgb8": 149
+          },
+          {
+            "index": 171,
+            "mae_rgb8": 1.942019174473068,
+            "max_rgb8": 111
+          },
+          {
+            "index": 172,
+            "mae_rgb8": 1.9328773161700927,
+            "max_rgb8": 119
+          },
+          {
+            "index": 173,
+            "mae_rgb8": 1.9247065145502646,
+            "max_rgb8": 110
+          },
+          {
+            "index": 174,
+            "mae_rgb8": 1.9398564896131494,
+            "max_rgb8": 112
+          },
+          {
+            "index": 175,
+            "mae_rgb8": 1.939346227448174,
+            "max_rgb8": 121
+          },
+          {
+            "index": 176,
+            "mae_rgb8": 1.9306051926121086,
+            "max_rgb8": 130
+          },
+          {
+            "index": 177,
+            "mae_rgb8": 1.9370144716584266,
+            "max_rgb8": 99
+          },
+          {
+            "index": 178,
+            "mae_rgb8": 1.9375264279208952,
+            "max_rgb8": 146
+          },
+          {
+            "index": 179,
+            "mae_rgb8": 1.9481197889561106,
+            "max_rgb8": 129
+          },
+          {
+            "index": 180,
+            "mae_rgb8": 1.930275182420418,
+            "max_rgb8": 133
+          },
+          {
+            "index": 181,
+            "mae_rgb8": 1.9194051752645502,
+            "max_rgb8": 118
+          },
+          {
+            "index": 182,
+            "mae_rgb8": 1.9298953657624252,
+            "max_rgb8": 145
+          },
+          {
+            "index": 183,
+            "mae_rgb8": 1.9317900443989071,
+            "max_rgb8": 137
+          },
+          {
+            "index": 184,
+            "mae_rgb8": 1.927491441419464,
+            "max_rgb8": 133
+          },
+          {
+            "index": 185,
+            "mae_rgb8": 1.9227777845541678,
+            "max_rgb8": 117
+          },
+          {
+            "index": 186,
+            "mae_rgb8": 1.933468217375748,
+            "max_rgb8": 129
+          },
+          {
+            "index": 187,
+            "mae_rgb8": 1.9317024595585046,
+            "max_rgb8": 140
+          },
+          {
+            "index": 188,
+            "mae_rgb8": 1.9206977716519213,
+            "max_rgb8": 117
+          },
+          {
+            "index": 189,
+            "mae_rgb8": 1.9257793864927575,
+            "max_rgb8": 116
+          },
+          {
+            "index": 190,
+            "mae_rgb8": 1.925045842278168,
+            "max_rgb8": 117
+          },
+          {
+            "index": 191,
+            "mae_rgb8": 1.9269727087670223,
+            "max_rgb8": 119
+          },
+          {
+            "index": 192,
+            "mae_rgb8": 1.9244856042371412,
+            "max_rgb8": 117
+          },
+          {
+            "index": 193,
+            "mae_rgb8": 1.912625735915951,
+            "max_rgb8": 135
+          },
+          {
+            "index": 194,
+            "mae_rgb8": 1.926720796469772,
+            "max_rgb8": 128
+          },
+          {
+            "index": 195,
+            "mae_rgb8": 1.92704386086174,
+            "max_rgb8": 109
+          },
+          {
+            "index": 196,
+            "mae_rgb8": 1.9228428378979097,
+            "max_rgb8": 139
+          },
+          {
+            "index": 197,
+            "mae_rgb8": 1.9082454774373319,
+            "max_rgb8": 140
+          },
+          {
+            "index": 198,
+            "mae_rgb8": 1.921143149882904,
+            "max_rgb8": 123
+          },
+          {
+            "index": 199,
+            "mae_rgb8": 1.920280515439327,
+            "max_rgb8": 134
+          },
+          {
+            "index": 200,
+            "mae_rgb8": 1.9191913801608986,
+            "max_rgb8": 136
+          },
+          {
+            "index": 201,
+            "mae_rgb8": 1.9096979966280683,
+            "max_rgb8": 119
+          },
+          {
+            "index": 202,
+            "mae_rgb8": 1.920440777062191,
+            "max_rgb8": 122
+          },
+          {
+            "index": 203,
+            "mae_rgb8": 1.9213838811366988,
+            "max_rgb8": 104
+          },
+          {
+            "index": 204,
+            "mae_rgb8": 1.9209613732218753,
+            "max_rgb8": 88
+          },
+          {
+            "index": 205,
+            "mae_rgb8": 1.9046077418900165,
+            "max_rgb8": 131
+          },
+          {
+            "index": 206,
+            "mae_rgb8": 1.9176439915105385,
+            "max_rgb8": 119
+          },
+          {
+            "index": 207,
+            "mae_rgb8": 1.9189862249544627,
+            "max_rgb8": 123
+          },
+          {
+            "index": 208,
+            "mae_rgb8": 1.921150942731373,
+            "max_rgb8": 117
+          },
+          {
+            "index": 209,
+            "mae_rgb8": 1.907831440009975,
+            "max_rgb8": 127
+          },
+          {
+            "index": 210,
+            "mae_rgb8": 1.9289885153742736,
+            "max_rgb8": 129
+          },
+          {
+            "index": 211,
+            "mae_rgb8": 1.9226610612368809,
+            "max_rgb8": 138
+          },
+          {
+            "index": 212,
+            "mae_rgb8": 1.9216913598317287,
+            "max_rgb8": 133
+          },
+          {
+            "index": 213,
+            "mae_rgb8": 1.9078815852957758,
+            "max_rgb8": 95
+          },
+          {
+            "index": 214,
+            "mae_rgb8": 1.9305989244513835,
+            "max_rgb8": 128
+          },
+          {
+            "index": 215,
+            "mae_rgb8": 1.9199664297640733,
+            "max_rgb8": 117
+          },
+          {
+            "index": 216,
+            "mae_rgb8": 1.920389615317894,
+            "max_rgb8": 96
+          },
+          {
+            "index": 217,
+            "mae_rgb8": 1.9073037286408188,
+            "max_rgb8": 121
+          },
+          {
+            "index": 218,
+            "mae_rgb8": 1.9234654187266893,
+            "max_rgb8": 135
+          },
+          {
+            "index": 219,
+            "mae_rgb8": 1.9189542065118397,
+            "max_rgb8": 138
+          },
+          {
+            "index": 220,
+            "mae_rgb8": 1.9206881152962096,
+            "max_rgb8": 135
+          },
+          {
+            "index": 221,
+            "mae_rgb8": 1.9045376062537949,
+            "max_rgb8": 132
+          },
+          {
+            "index": 222,
+            "mae_rgb8": 1.9156136156648451,
+            "max_rgb8": 117
+          },
+          {
+            "index": 223,
+            "mae_rgb8": 1.9097982871996704,
+            "max_rgb8": 126
+          },
+          {
+            "index": 224,
+            "mae_rgb8": 1.918413281182236,
+            "max_rgb8": 126
+          },
+          {
+            "index": 225,
+            "mae_rgb8": 1.9007380843958712,
+            "max_rgb8": 136
+          },
+          {
+            "index": 226,
+            "mae_rgb8": 1.9134241640645329,
+            "max_rgb8": 137
+          },
+          {
+            "index": 227,
+            "mae_rgb8": 1.906603049917599,
+            "max_rgb8": 128
+          },
+          {
+            "index": 228,
+            "mae_rgb8": 1.9184425890688699,
+            "max_rgb8": 137
+          },
+          {
+            "index": 229,
+            "mae_rgb8": 1.897949599921936,
+            "max_rgb8": 127
+          },
+          {
+            "index": 230,
+            "mae_rgb8": 1.9167301953226645,
+            "max_rgb8": 130
+          },
+          {
+            "index": 231,
+            "mae_rgb8": 1.9054703763335936,
+            "max_rgb8": 103
+          },
+          {
+            "index": 232,
+            "mae_rgb8": 1.9151900912915256,
+            "max_rgb8": 137
+          },
+          {
+            "index": 233,
+            "mae_rgb8": 1.8912491055165235,
+            "max_rgb8": 133
+          },
+          {
+            "index": 234,
+            "mae_rgb8": 1.9123397722590858,
+            "max_rgb8": 104
+          },
+          {
+            "index": 235,
+            "mae_rgb8": 1.9013838743603089,
+            "max_rgb8": 133
+          },
+          {
+            "index": 236,
+            "mae_rgb8": 1.913584933916645,
+            "max_rgb8": 133
+          },
+          {
+            "index": 237,
+            "mae_rgb8": 1.8981457764116576,
+            "max_rgb8": 124
+          },
+          {
+            "index": 238,
+            "mae_rgb8": 1.9034511815313557,
+            "max_rgb8": 105
+          },
+          {
+            "index": 239,
+            "mae_rgb8": 1.8985096685532137,
+            "max_rgb8": 131
+          },
+          {
+            "index": 240,
+            "mae_rgb8": 1.914838227242172,
+            "max_rgb8": 135
+          },
+          {
+            "index": 241,
+            "mae_rgb8": 1.8903442880453638,
+            "max_rgb8": 133
+          },
+          {
+            "index": 242,
+            "mae_rgb8": 1.9151296120110157,
+            "max_rgb8": 136
+          },
+          {
+            "index": 243,
+            "mae_rgb8": 1.9000973767239135,
+            "max_rgb8": 117
+          },
+          {
+            "index": 244,
+            "mae_rgb8": 1.9155873571536994,
+            "max_rgb8": 129
+          },
+          {
+            "index": 245,
+            "mae_rgb8": 1.8797077275240697,
+            "max_rgb8": 138
+          },
+          {
+            "index": 246,
+            "mae_rgb8": 1.910394609517304,
+            "max_rgb8": 128
+          },
+          {
+            "index": 247,
+            "mae_rgb8": 1.8983079015417643,
+            "max_rgb8": 126
+          },
+          {
+            "index": 248,
+            "mae_rgb8": 1.9142940831273312,
+            "max_rgb8": 128
+          },
+          {
+            "index": 249,
+            "mae_rgb8": 1.87801413826004,
+            "max_rgb8": 116
+          },
+          {
+            "index": 250,
+            "mae_rgb8": 1.9113302595628416,
+            "max_rgb8": 125
+          },
+          {
+            "index": 251,
+            "mae_rgb8": 1.8871099171111978,
+            "max_rgb8": 114
+          },
+          {
+            "index": 252,
+            "mae_rgb8": 1.9076308588667708,
+            "max_rgb8": 124
+          },
+          {
+            "index": 253,
+            "mae_rgb8": 1.8673667355147887,
+            "max_rgb8": 124
+          },
+          {
+            "index": 254,
+            "mae_rgb8": 1.9002532336932951,
+            "max_rgb8": 87
+          },
+          {
+            "index": 255,
+            "mae_rgb8": 1.8800412953204961,
+            "max_rgb8": 129
+          },
+          {
+            "index": 256,
+            "mae_rgb8": 1.9074931287405672,
+            "max_rgb8": 129
+          },
+          {
+            "index": 257,
+            "mae_rgb8": 1.859531534608379,
+            "max_rgb8": 109
+          },
+          {
+            "index": 258,
+            "mae_rgb8": 1.888178723219707,
+            "max_rgb8": 109
+          },
+          {
+            "index": 259,
+            "mae_rgb8": 1.866982344793564,
+            "max_rgb8": 130
+          },
+          {
+            "index": 260,
+            "mae_rgb8": 1.901984601331425,
+            "max_rgb8": 113
+          },
+          {
+            "index": 261,
+            "mae_rgb8": 1.8488668520686964,
+            "max_rgb8": 97
+          },
+          {
+            "index": 262,
+            "mae_rgb8": 1.8744114705308352,
+            "max_rgb8": 122
+          },
+          {
+            "index": 263,
+            "mae_rgb8": 1.8541487092332378,
+            "max_rgb8": 120
+          },
+          {
+            "index": 264,
+            "mae_rgb8": 1.8909580595671784,
+            "max_rgb8": 120
+          },
+          {
+            "index": 265,
+            "mae_rgb8": 1.8390802202597798,
+            "max_rgb8": 126
+          },
+          {
+            "index": 266,
+            "mae_rgb8": 1.8652547041699192,
+            "max_rgb8": 98
+          },
+          {
+            "index": 267,
+            "mae_rgb8": 1.8462445585588516,
+            "max_rgb8": 106
+          },
+          {
+            "index": 268,
+            "mae_rgb8": 1.8845049033957846,
+            "max_rgb8": 114
+          },
+          {
+            "index": 269,
+            "mae_rgb8": 1.8380451266913869,
+            "max_rgb8": 114
+          },
+          {
+            "index": 270,
+            "mae_rgb8": 1.8563713651444185,
+            "max_rgb8": 110
+          },
+          {
+            "index": 271,
+            "mae_rgb8": 1.8449070685879088,
+            "max_rgb8": 133
+          },
+          {
+            "index": 272,
+            "mae_rgb8": 1.8838130339795298,
+            "max_rgb8": 129
+          },
+          {
+            "index": 273,
+            "mae_rgb8": 1.8249409437613844,
+            "max_rgb8": 126
+          },
+          {
+            "index": 274,
+            "mae_rgb8": 1.8552469926381299,
+            "max_rgb8": 126
+          },
+          {
+            "index": 275,
+            "mae_rgb8": 1.8468363068132536,
+            "max_rgb8": 138
+          },
+          {
+            "index": 276,
+            "mae_rgb8": 1.878936743754879,
+            "max_rgb8": 138
+          },
+          {
+            "index": 277,
+            "mae_rgb8": 1.8267107674126117,
+            "max_rgb8": 132
+          },
+          {
+            "index": 278,
+            "mae_rgb8": 1.8490941999522943,
+            "max_rgb8": 132
+          },
+          {
+            "index": 279,
+            "mae_rgb8": 1.8385503065638824,
+            "max_rgb8": 127
+          },
+          {
+            "index": 280,
+            "mae_rgb8": 1.880472781952034,
+            "max_rgb8": 127
+          },
+          {
+            "index": 281,
+            "mae_rgb8": 1.82183718774395,
+            "max_rgb8": 119
+          },
+          {
+            "index": 282,
+            "mae_rgb8": 1.8291985495814902,
+            "max_rgb8": 111
+          },
+          {
+            "index": 283,
+            "mae_rgb8": 1.8397831013097408,
+            "max_rgb8": 109
+          },
+          {
+            "index": 284,
+            "mae_rgb8": 1.8800987252255184,
+            "max_rgb8": 109
+          },
+          {
+            "index": 285,
+            "mae_rgb8": 1.8870257204657819,
+            "max_rgb8": 131
+          },
+          {
+            "index": 286,
+            "mae_rgb8": 1.8482354619329517,
+            "max_rgb8": 131
+          },
+          {
+            "index": 287,
+            "mae_rgb8": 1.8791413907320669,
+            "max_rgb8": 131
+          },
+          {
+            "index": 288,
+            "mae_rgb8": 1.8432012818219272,
+            "max_rgb8": 131
+          },
+          {
+            "index": 289,
+            "mae_rgb8": 1.8471610653027148,
+            "max_rgb8": 133
+          },
+          {
+            "index": 290,
+            "mae_rgb8": 1.861969510310955,
+            "max_rgb8": 133
+          },
+          {
+            "index": 291,
+            "mae_rgb8": 1.9003154070712984,
+            "max_rgb8": 133
+          },
+          {
+            "index": 292,
+            "mae_rgb8": 1.904690752667187,
+            "max_rgb8": 133
+          },
+          {
+            "index": 293,
+            "mae_rgb8": 1.9102375666796774,
+            "max_rgb8": 133
+          },
+          {
+            "index": 294,
+            "mae_rgb8": 1.916482348859398,
+            "max_rgb8": 133
+          },
+          {
+            "index": 295,
+            "mae_rgb8": 1.9235306414801805,
+            "max_rgb8": 133
+          },
+          {
+            "index": 296,
+            "mae_rgb8": 1.9334982029013792,
+            "max_rgb8": 133
+          },
+          {
+            "index": 297,
+            "mae_rgb8": 1.9423327519190736,
+            "max_rgb8": 133
+          },
+          {
+            "index": 298,
+            "mae_rgb8": 1.9463824919767543,
+            "max_rgb8": 133
+          },
+          {
+            "index": 299,
+            "mae_rgb8": 1.9559234796491456,
+            "max_rgb8": 133
+          }
+        ]
+      },
+      "complete_decode": true
+    }
+  },
+  "source_directory": "C:\\Users\\38347\\.codex\\worktrees\\render-g5-package\\phymeo\\artifacts\\rendering\\msaa-panda\\capture-01",
+  "media_directory": "C:\\Users\\38347\\.codex\\worktrees\\render-g5-package\\phymeo\\artifacts\\rendering\\msaa-panda\\capture-01",
+  "input_protocol_sha256": "f7872f362463bf78dac7f11674a58c8b205b74d9b310e684c7642d82e98a1662",
+  "source_color": "sRGB RGB8 unchanged",
+  "conversion": "BT.709 matrix, full RGB to limited YUV420, sRGB transfer retained; no display transform",
+  "labels": "Pillow embedded default font, external 48px band; no source-image labels",
+  "tools": {
+    "ffmpeg": "ffmpeg version 8.1.2-essentials_build-www.gyan.dev Copyright (c) 2000-2026 the FFmpeg developers",
+    "ffprobe": "ffprobe version 8.1.2-essentials_build-www.gyan.dev Copyright (c) 2007-2026 the FFmpeg developers"
+  }
+}

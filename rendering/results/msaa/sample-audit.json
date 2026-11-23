@@ -1,0 +1,1821 @@
+{
+  "schema": "phymeo-msaa-offline-sample-audit-v1",
+  "physics_steps": 0,
+  "gpu_calls": 0,
+  "run": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01",
+  "self_tests": {
+    "shared_diagonal_exactly_once": true,
+    "reversed_winding": true,
+    "outside_negative": true,
+    "fractional_controls_rgb8": [
+      137,
+      188,
+      225
+    ],
+    "outer_equality_separate": true
+  },
+  "sources": [
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\summary.json",
+      "sha256": "d57d6d936b2575698eaf4e67b95b0901aff71a92598fc328ed40f76febbc3cf0",
+      "bytes": 461803
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\ideal-coverage.json",
+      "sha256": "3e1098fffae2cdbf3a89fdf4ec76ee45e83ca6bbb07e9bedae70e54422792a25",
+      "bytes": 3462143
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\geometry\\back.gltf",
+      "sha256": "65880eb2914f930b267a244884c550156aa6930dc35a439d95c076ecb03e72f2",
+      "bytes": 822
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\geometry\\edge.gltf",
+      "sha256": "329b70796539873d4ae50527b6181d270cbb014bd6c32ebdab4a0816a8a58013",
+      "bytes": 806
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\geometry\\front.gltf",
+      "sha256": "6611c2e93f68e91b0320ef6d8472d6d7d684f24ecb4e013292347adf34752cfe",
+      "bytes": 832
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\geometry\\half.gltf",
+      "sha256": "df22e08b2e33694d96982c92be69a8a41fccc9c19af8b4c4357ff75f4613f7c5",
+      "bytes": 801
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\geometry\\quarter.gltf",
+      "sha256": "91ce38affe2c5963cfd52432dae59fe059a19b3c32880c56d18360238df40f89",
+      "bytes": 802
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\geometry\\rod.gltf",
+      "sha256": "779722c76abee47ebf1bc10afa7747acb25c21aa1ad0c9408a15234e2c490032",
+      "bytes": 824
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\geometry\\solid.gltf",
+      "sha256": "0a05ce220866d57a4e4fb8e7970593a33a799c61fcb7ea45d15fb8bca1305fe1",
+      "bytes": 800
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\geometry\\three-quarter.gltf",
+      "sha256": "b28fbc3beb82423e80d14976dd8fecf58848ee6d08ca41cddf36e4f679d6c861",
+      "bytes": 802
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-1\\clear.png",
+      "sha256": "671f32fef5314fcb88911ea01eb5aef779e856e1cd6607fe57d603a14dda018b",
+      "bytes": 116
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-1\\solid.png",
+      "sha256": "aaa58cb816f43b52de637832227adbad9305a4a45894f0354674951ebb72120a",
+      "bytes": 291
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-1\\rod-00.png",
+      "sha256": "4d8a55c712950d912500b9d70b4a550c8c8634842140b46aac4fee98e2a39c6f",
+      "bytes": 227
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-1\\rod-00.FORWARD_DEPTH.raw",
+      "sha256": "00bd33222ada8b09dde7474821eedb97eb22c5d8ab7a374ba1d9aa7993651092",
+      "bytes": 49152
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-1\\rod-00.INSTANCE_ID.raw",
+      "sha256": "f1f5d30064fe772a5b641196e4d7e903bcbfdfc14ca20f55dada90969f6578bf",
+      "bytes": 49152
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-1\\rod-00.VALID.raw",
+      "sha256": "9e7d0fe6569415064d38fea212de55562e70887c53d204d4e170efaefd11bef9",
+      "bytes": 12288
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-1\\rod-01.png",
+      "sha256": "30c7bfb2c37a8c361be403e96546fff7b4389b9065408dcf6737df06fbe50318",
+      "bytes": 226
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-1\\rod-01.FORWARD_DEPTH.raw",
+      "sha256": "96775bc4d52ed73aa282ff82d4f30898c0fdbb5909b019237a5fa038933a3337",
+      "bytes": 49152
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-1\\rod-01.INSTANCE_ID.raw",
+      "sha256": "a35dd5911bbf022ddd3403ba666ddbdaf1f3cf3e2e61a7e36289e0b2304a9fa6",
+      "bytes": 49152
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-1\\rod-01.VALID.raw",
+      "sha256": "ef1345a91d35b43ba90c96fb801ae760f702e1e6bdeb5a928650c8bd25e6d268",
+      "bytes": 12288
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-1\\rod-02.png",
+      "sha256": "57a25c4062d2732aa8c482b01f8e9a7363daf956b4678d86d3f995928beadd30",
+      "bytes": 229
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-1\\rod-02.FORWARD_DEPTH.raw",
+      "sha256": "c7406a65ab30e4a56343a7bcca9e5fd254df67ccf19006d2dedf71fc8c2eaa95",
+      "bytes": 49152
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-1\\rod-02.INSTANCE_ID.raw",
+      "sha256": "3227a3bffabd8271e8ef24e447ae791460b9a09ec1d489ea99404cb974b17607",
+      "bytes": 49152
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-1\\rod-02.VALID.raw",
+      "sha256": "c22fa57cfde597b179bb249954e84fe6e49f2a5f6473ddc699a853a2c294620f",
+      "bytes": 12288
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-1\\rod-03.png",
+      "sha256": "a9c7be4a9846cacb1d3ca70845f6f16d9fa33537bce0280707fbc6dab9f38ec7",
+      "bytes": 229
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-1\\rod-03.FORWARD_DEPTH.raw",
+      "sha256": "f1989d2fc5e3cc934d25674f613602d8fa0841189a5c9b7e39f07b11fb1ed16c",
+      "bytes": 49152
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-1\\rod-03.INSTANCE_ID.raw",
+      "sha256": "42270f4d20c249d1a580a8443336da248122e15951401d34138f4ccf9d87e80a",
+      "bytes": 49152
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-1\\rod-03.VALID.raw",
+      "sha256": "5ad32ce391e39510ebcaaac3c52e19f861aad8302d380998adee2e1f48bb2e0e",
+      "bytes": 12288
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-1\\rod-04.png",
+      "sha256": "84654087556df93133c3db2fb97f031555fba3fbd32999cb4ade581f06dd4f7e",
+      "bytes": 228
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-1\\rod-04.FORWARD_DEPTH.raw",
+      "sha256": "fde80d79f8a7ee7b46c5c23a947dda2310ad0b9661a469dbfafa529b90124463",
+      "bytes": 49152
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-1\\rod-04.INSTANCE_ID.raw",
+      "sha256": "ffda2eba3170482199847f9e9d12e5db2f02c917ed0d8e0102a86bc54493456f",
+      "bytes": 49152
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-1\\rod-04.VALID.raw",
+      "sha256": "8bc55e92fdfbad89c9a3f6d4a2396667fd3d603630728d9a2fab38c4926e2a7a",
+      "bytes": 12288
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-1\\rod-05.png",
+      "sha256": "64874e556bd9341bf34cd391e77d0f79c9d43fe11693b2fb66ab2974e220f10a",
+      "bytes": 227
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-1\\rod-05.FORWARD_DEPTH.raw",
+      "sha256": "a60a785d0bb3ecfdeb767f8adbe3470186f5dafec1b97a3dd30da787787f1823",
+      "bytes": 49152
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-1\\rod-05.INSTANCE_ID.raw",
+      "sha256": "b2289fb190230e058422a93e488336fe212d1d8739c6bfcc94a1f790df6dbba0",
+      "bytes": 49152
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-1\\rod-05.VALID.raw",
+      "sha256": "cb566c7e4a5622614b23135f431cf563e5870fae830f112f27c764354b8b811b",
+      "bytes": 12288
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-1\\rod-06.png",
+      "sha256": "aff2864494d7afb596021f8c3abe456a531627d4fce8d85b0655851117338981",
+      "bytes": 227
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-1\\rod-06.FORWARD_DEPTH.raw",
+      "sha256": "0671b3489508539fb7476433c8211953dcd59dfd4288df4bdcc3eb8bf71d57d3",
+      "bytes": 49152
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-1\\rod-06.INSTANCE_ID.raw",
+      "sha256": "02067321e842e995aaffcea194feab22c72ccdf467fce25d6dcba887f32932fd",
+      "bytes": 49152
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-1\\rod-06.VALID.raw",
+      "sha256": "298506f96e2ef4b3de1fa50970eca9cfa8885717b194e354f0ca79cd726e8870",
+      "bytes": 12288
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-1\\rod-07.png",
+      "sha256": "a04778e6f1eb52d0c3079ea37c6803f63c67c47534b0c3335fdbe414ce143492",
+      "bytes": 226
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-1\\rod-07.FORWARD_DEPTH.raw",
+      "sha256": "aa425e410c0e3c1efc1d1052dd79e8a8e2cc4f7ae48aabc560d0bfcf5ef4e1b9",
+      "bytes": 49152
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-1\\rod-07.INSTANCE_ID.raw",
+      "sha256": "711315ecf2f07a0b2d07fa9590892d606f9ef35f89ac3a869a2f8e3854c88588",
+      "bytes": 49152
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-1\\rod-07.VALID.raw",
+      "sha256": "bdcf590fe913427b2e401116bd9bfdbe50e4ea3766244f81fd83f8ac842e3bae",
+      "bytes": 12288
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-1\\rod-08.png",
+      "sha256": "b4ee05bcca7a9309056c2863821fcc9c59585c5f3c06651c324788d5bdc70d89",
+      "bytes": 227
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-1\\rod-08.FORWARD_DEPTH.raw",
+      "sha256": "20e53f7c616bc9a3bb7bd6f421026e24428503d340880057244ceca1e0ec9d81",
+      "bytes": 49152
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-1\\rod-08.INSTANCE_ID.raw",
+      "sha256": "989d5860a26ed1da9902a2fb7785fbc3bd7c45cb9364914012aa202383a94059",
+      "bytes": 49152
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-1\\rod-08.VALID.raw",
+      "sha256": "aadf07bb837120fdb06348bfee75d2c152241a23e4c239141a9ec87a75ecf826",
+      "bytes": 12288
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-1\\rod-09.png",
+      "sha256": "7e880873223730e5f1abc4bee10d8e779cf5bd1710ec079037d6b26fcb940f25",
+      "bytes": 229
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-1\\rod-09.FORWARD_DEPTH.raw",
+      "sha256": "f848b00df5c8c06141e9cd4f650ed50822bf17654e318356a5092b7acd6ff61a",
+      "bytes": 49152
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-1\\rod-09.INSTANCE_ID.raw",
+      "sha256": "8ebbf75d064fd87b90b6b9cb0211471195d4a18cb35dbfe1b061191292074135",
+      "bytes": 49152
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-1\\rod-09.VALID.raw",
+      "sha256": "52e15dd023b6155cdb56995ca9f19dad002b5425465afe6fd0e781c6c81592fc",
+      "bytes": 12288
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-1\\rod-10.png",
+      "sha256": "4e5a44a2b05b59b0ee77b986c1ade454c4994282a471a5d82f72d9383d7cd58b",
+      "bytes": 228
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-1\\rod-10.FORWARD_DEPTH.raw",
+      "sha256": "e3484e0a42e7eacea596bdc45985d91906d571ab14a4105f1534d12ead4f11a1",
+      "bytes": 49152
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-1\\rod-10.INSTANCE_ID.raw",
+      "sha256": "7d4c1e854d244d88e32a57b3249d5ef32f359c3de007a4507d739ebfb78b9a6c",
+      "bytes": 49152
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-1\\rod-10.VALID.raw",
+      "sha256": "09eb5dc9ceb86195c401b61859d5d951906594a920dc7a093ae547bcfc934296",
+      "bytes": 12288
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-1\\rod-11.png",
+      "sha256": "d0af0a688859b78113dd1cb6aa876ee22532c4bde7931285df273a2d41f72cad",
+      "bytes": 226
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-1\\rod-11.FORWARD_DEPTH.raw",
+      "sha256": "4a8be6470cb786ee9897fd8d739c4ab8086dccb25005a5fd4c310c5c20ec0b07",
+      "bytes": 49152
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-1\\rod-11.INSTANCE_ID.raw",
+      "sha256": "cdbb3d4cf1c57712828ac863cd63b7bdf11a140403db4eb4872b45fc03865ba4",
+      "bytes": 49152
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-1\\rod-11.VALID.raw",
+      "sha256": "25eed5cf3f30a7e7def9d4e060bb8e1bf2bc47d3e8241b155bed5f0366712408",
+      "bytes": 12288
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-1\\rod-12.png",
+      "sha256": "fb491609e9d12f10ad32cfda7917e0337ef086bddca775ba515738778e135d19",
+      "bytes": 229
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-1\\rod-12.FORWARD_DEPTH.raw",
+      "sha256": "dc59940960f3e77cd51587117acc4f19dd936a65a3656f0e9f004de3ab5346b7",
+      "bytes": 49152
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-1\\rod-12.INSTANCE_ID.raw",
+      "sha256": "54493eda3cab1de28d6a45a93e7b1ad3d6c03c266d46c2be0a76d7d8090893a9",
+      "bytes": 49152
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-1\\rod-12.VALID.raw",
+      "sha256": "9e030f1dfd3092280ad736ecad1532bae2eaaa8a2d060b91943c4fc26311869c",
+      "bytes": 12288
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-1\\rod-13.png",
+      "sha256": "22ce53cc316bbda68be855ed280dc331caa4436299e68b131663a086810396ba",
+      "bytes": 229
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-1\\rod-13.FORWARD_DEPTH.raw",
+      "sha256": "b6d75d95434e5b9b356872f3d1c32d7d4c22ecc5476d5590a8fab9f1e4ddc6b4",
+      "bytes": 49152
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-1\\rod-13.INSTANCE_ID.raw",
+      "sha256": "f7545ec3cdb491bc430263ac7a5b4d360191d8d31f46bf3f58b41ca65b99bf0a",
+      "bytes": 49152
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-1\\rod-13.VALID.raw",
+      "sha256": "d76aa8e1a13aae3bae4b4c6810263b7f0c9f2de11479d464e0f67fb5f455054e",
+      "bytes": 12288
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-1\\rod-14.png",
+      "sha256": "59ad18db4d86c4e3192204ea33f45cf8362386ef4d454e38c710f22858948679",
+      "bytes": 227
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-1\\rod-14.FORWARD_DEPTH.raw",
+      "sha256": "f75b72c1c1f6316ba91a8367dcfdf0cec59991768305b4ba6768b261750c0c56",
+      "bytes": 49152
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-1\\rod-14.INSTANCE_ID.raw",
+      "sha256": "f594d6a1e01ffeb21b4ef1a8303f9c3afe7b0e54763f38bdd00d5a1823679298",
+      "bytes": 49152
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-1\\rod-14.VALID.raw",
+      "sha256": "83f75a719738b56b8207e57ae53dc7d8098c4c82e4a0f6bdf196bf12136a922b",
+      "bytes": 12288
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-1\\rod-15.png",
+      "sha256": "aaa4442063a01e6d6215c45282a4a0635022261051bc1886b979bc9aba993688",
+      "bytes": 226
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-1\\rod-15.FORWARD_DEPTH.raw",
+      "sha256": "9397821246ec7d187b122bc682c99b4bac38646a492112493cfa5721debffddb",
+      "bytes": 49152
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-1\\rod-15.INSTANCE_ID.raw",
+      "sha256": "50ae9e22e8e18286d483bbde595adcf06e060571b6677b27ae22fe3b013442c5",
+      "bytes": 49152
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-1\\rod-15.VALID.raw",
+      "sha256": "452c941770aac2c3722c0d839728826d8c05716c7d8245d5e40a974533b8d15e",
+      "bytes": 12288
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-4\\clear.png",
+      "sha256": "671f32fef5314fcb88911ea01eb5aef779e856e1cd6607fe57d603a14dda018b",
+      "bytes": 116
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-4\\solid.png",
+      "sha256": "aaa58cb816f43b52de637832227adbad9305a4a45894f0354674951ebb72120a",
+      "bytes": 291
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-4\\rod-00.png",
+      "sha256": "93a4e4a2025204909f23beaec5e707f00f9ba9c66ecb179cbb9150016ce81970",
+      "bytes": 480
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-4\\rod-00.FORWARD_DEPTH.raw",
+      "sha256": "00bd33222ada8b09dde7474821eedb97eb22c5d8ab7a374ba1d9aa7993651092",
+      "bytes": 49152
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-4\\rod-00.INSTANCE_ID.raw",
+      "sha256": "f1f5d30064fe772a5b641196e4d7e903bcbfdfc14ca20f55dada90969f6578bf",
+      "bytes": 49152
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-4\\rod-00.VALID.raw",
+      "sha256": "9e7d0fe6569415064d38fea212de55562e70887c53d204d4e170efaefd11bef9",
+      "bytes": 12288
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-4\\rod-01.png",
+      "sha256": "c17be71bf0675c6a5e9f933fc59395574b06268509dc8795df60940cd54eaaff",
+      "bytes": 475
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-4\\rod-01.FORWARD_DEPTH.raw",
+      "sha256": "96775bc4d52ed73aa282ff82d4f30898c0fdbb5909b019237a5fa038933a3337",
+      "bytes": 49152
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-4\\rod-01.INSTANCE_ID.raw",
+      "sha256": "a35dd5911bbf022ddd3403ba666ddbdaf1f3cf3e2e61a7e36289e0b2304a9fa6",
+      "bytes": 49152
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-4\\rod-01.VALID.raw",
+      "sha256": "ef1345a91d35b43ba90c96fb801ae760f702e1e6bdeb5a928650c8bd25e6d268",
+      "bytes": 12288
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-4\\rod-02.png",
+      "sha256": "48669bb6f57cf6d07ce9eb295f41226ecd388a67e0dde0ccf24aa7ec4bfe0b87",
+      "bytes": 477
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-4\\rod-02.FORWARD_DEPTH.raw",
+      "sha256": "c7406a65ab30e4a56343a7bcca9e5fd254df67ccf19006d2dedf71fc8c2eaa95",
+      "bytes": 49152
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-4\\rod-02.INSTANCE_ID.raw",
+      "sha256": "3227a3bffabd8271e8ef24e447ae791460b9a09ec1d489ea99404cb974b17607",
+      "bytes": 49152
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-4\\rod-02.VALID.raw",
+      "sha256": "c22fa57cfde597b179bb249954e84fe6e49f2a5f6473ddc699a853a2c294620f",
+      "bytes": 12288
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-4\\rod-03.png",
+      "sha256": "0808ad97b64d98d8d7157d172597d50b2945ef0b0cc717af2c969a936aa414eb",
+      "bytes": 481
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-4\\rod-03.FORWARD_DEPTH.raw",
+      "sha256": "f1989d2fc5e3cc934d25674f613602d8fa0841189a5c9b7e39f07b11fb1ed16c",
+      "bytes": 49152
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-4\\rod-03.INSTANCE_ID.raw",
+      "sha256": "42270f4d20c249d1a580a8443336da248122e15951401d34138f4ccf9d87e80a",
+      "bytes": 49152
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-4\\rod-03.VALID.raw",
+      "sha256": "5ad32ce391e39510ebcaaac3c52e19f861aad8302d380998adee2e1f48bb2e0e",
+      "bytes": 12288
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-4\\rod-04.png",
+      "sha256": "0c579f6cad9b37cfe7f71d3cebaff4a563fd75c2673e4d964c7b9cea55e8c067",
+      "bytes": 481
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-4\\rod-04.FORWARD_DEPTH.raw",
+      "sha256": "fde80d79f8a7ee7b46c5c23a947dda2310ad0b9661a469dbfafa529b90124463",
+      "bytes": 49152
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-4\\rod-04.INSTANCE_ID.raw",
+      "sha256": "ffda2eba3170482199847f9e9d12e5db2f02c917ed0d8e0102a86bc54493456f",
+      "bytes": 49152
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-4\\rod-04.VALID.raw",
+      "sha256": "8bc55e92fdfbad89c9a3f6d4a2396667fd3d603630728d9a2fab38c4926e2a7a",
+      "bytes": 12288
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-4\\rod-05.png",
+      "sha256": "5cb37207b36a8d5dcbbb9c79b7ea3535ff1cf7dd5b27b6a363efb9093d761b71",
+      "bytes": 478
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-4\\rod-05.FORWARD_DEPTH.raw",
+      "sha256": "a60a785d0bb3ecfdeb767f8adbe3470186f5dafec1b97a3dd30da787787f1823",
+      "bytes": 49152
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-4\\rod-05.INSTANCE_ID.raw",
+      "sha256": "b2289fb190230e058422a93e488336fe212d1d8739c6bfcc94a1f790df6dbba0",
+      "bytes": 49152
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-4\\rod-05.VALID.raw",
+      "sha256": "cb566c7e4a5622614b23135f431cf563e5870fae830f112f27c764354b8b811b",
+      "bytes": 12288
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-4\\rod-06.png",
+      "sha256": "b70b71804d9b3806a411abee8cd4b267233320a4a858d2ae13c3bf178cf7c233",
+      "bytes": 477
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-4\\rod-06.FORWARD_DEPTH.raw",
+      "sha256": "0671b3489508539fb7476433c8211953dcd59dfd4288df4bdcc3eb8bf71d57d3",
+      "bytes": 49152
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-4\\rod-06.INSTANCE_ID.raw",
+      "sha256": "02067321e842e995aaffcea194feab22c72ccdf467fce25d6dcba887f32932fd",
+      "bytes": 49152
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-4\\rod-06.VALID.raw",
+      "sha256": "298506f96e2ef4b3de1fa50970eca9cfa8885717b194e354f0ca79cd726e8870",
+      "bytes": 12288
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-4\\rod-07.png",
+      "sha256": "4118eb02916537bab5c9e00181af11ca0bea81019d8f5cdc0c33186ea7b00a22",
+      "bytes": 478
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-4\\rod-07.FORWARD_DEPTH.raw",
+      "sha256": "aa425e410c0e3c1efc1d1052dd79e8a8e2cc4f7ae48aabc560d0bfcf5ef4e1b9",
+      "bytes": 49152
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-4\\rod-07.INSTANCE_ID.raw",
+      "sha256": "711315ecf2f07a0b2d07fa9590892d606f9ef35f89ac3a869a2f8e3854c88588",
+      "bytes": 49152
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-4\\rod-07.VALID.raw",
+      "sha256": "bdcf590fe913427b2e401116bd9bfdbe50e4ea3766244f81fd83f8ac842e3bae",
+      "bytes": 12288
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-4\\rod-08.png",
+      "sha256": "2d7bc7d4ba457a4002f5c565b345dc0daad8b1f855bf857d16be803a9e17df28",
+      "bytes": 475
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-4\\rod-08.FORWARD_DEPTH.raw",
+      "sha256": "20e53f7c616bc9a3bb7bd6f421026e24428503d340880057244ceca1e0ec9d81",
+      "bytes": 49152
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-4\\rod-08.INSTANCE_ID.raw",
+      "sha256": "989d5860a26ed1da9902a2fb7785fbc3bd7c45cb9364914012aa202383a94059",
+      "bytes": 49152
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-4\\rod-08.VALID.raw",
+      "sha256": "aadf07bb837120fdb06348bfee75d2c152241a23e4c239141a9ec87a75ecf826",
+      "bytes": 12288
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-4\\rod-09.png",
+      "sha256": "ba81f7bbd679bf61fbc7f190557fd2b4f2f022131e558d9b25bb21f420b3a4fc",
+      "bytes": 477
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-4\\rod-09.FORWARD_DEPTH.raw",
+      "sha256": "f848b00df5c8c06141e9cd4f650ed50822bf17654e318356a5092b7acd6ff61a",
+      "bytes": 49152
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-4\\rod-09.INSTANCE_ID.raw",
+      "sha256": "8ebbf75d064fd87b90b6b9cb0211471195d4a18cb35dbfe1b061191292074135",
+      "bytes": 49152
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-4\\rod-09.VALID.raw",
+      "sha256": "52e15dd023b6155cdb56995ca9f19dad002b5425465afe6fd0e781c6c81592fc",
+      "bytes": 12288
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-4\\rod-10.png",
+      "sha256": "7fb22502aedf913f7b69de79aee55a18941d656cad530c206b167a575daeac27",
+      "bytes": 475
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-4\\rod-10.FORWARD_DEPTH.raw",
+      "sha256": "e3484e0a42e7eacea596bdc45985d91906d571ab14a4105f1534d12ead4f11a1",
+      "bytes": 49152
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-4\\rod-10.INSTANCE_ID.raw",
+      "sha256": "7d4c1e854d244d88e32a57b3249d5ef32f359c3de007a4507d739ebfb78b9a6c",
+      "bytes": 49152
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-4\\rod-10.VALID.raw",
+      "sha256": "09eb5dc9ceb86195c401b61859d5d951906594a920dc7a093ae547bcfc934296",
+      "bytes": 12288
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-4\\rod-11.png",
+      "sha256": "bb9237ada61578696698d78e7504ff7f458b400c79e0fa2f4352d0d66daa72d7",
+      "bytes": 485
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-4\\rod-11.FORWARD_DEPTH.raw",
+      "sha256": "4a8be6470cb786ee9897fd8d739c4ab8086dccb25005a5fd4c310c5c20ec0b07",
+      "bytes": 49152
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-4\\rod-11.INSTANCE_ID.raw",
+      "sha256": "cdbb3d4cf1c57712828ac863cd63b7bdf11a140403db4eb4872b45fc03865ba4",
+      "bytes": 49152
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-4\\rod-11.VALID.raw",
+      "sha256": "25eed5cf3f30a7e7def9d4e060bb8e1bf2bc47d3e8241b155bed5f0366712408",
+      "bytes": 12288
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-4\\rod-12.png",
+      "sha256": "8b4d2bf484a9589e41c466635c130d2464f930d073d467ffec7510abccc9ccfd",
+      "bytes": 480
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-4\\rod-12.FORWARD_DEPTH.raw",
+      "sha256": "dc59940960f3e77cd51587117acc4f19dd936a65a3656f0e9f004de3ab5346b7",
+      "bytes": 49152
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-4\\rod-12.INSTANCE_ID.raw",
+      "sha256": "54493eda3cab1de28d6a45a93e7b1ad3d6c03c266d46c2be0a76d7d8090893a9",
+      "bytes": 49152
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-4\\rod-12.VALID.raw",
+      "sha256": "9e030f1dfd3092280ad736ecad1532bae2eaaa8a2d060b91943c4fc26311869c",
+      "bytes": 12288
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-4\\rod-13.png",
+      "sha256": "db910520d8fec45a76c8098b24dc429864d7dc7f93d303459229f592508e8364",
+      "bytes": 480
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-4\\rod-13.FORWARD_DEPTH.raw",
+      "sha256": "b6d75d95434e5b9b356872f3d1c32d7d4c22ecc5476d5590a8fab9f1e4ddc6b4",
+      "bytes": 49152
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-4\\rod-13.INSTANCE_ID.raw",
+      "sha256": "f7545ec3cdb491bc430263ac7a5b4d360191d8d31f46bf3f58b41ca65b99bf0a",
+      "bytes": 49152
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-4\\rod-13.VALID.raw",
+      "sha256": "d76aa8e1a13aae3bae4b4c6810263b7f0c9f2de11479d464e0f67fb5f455054e",
+      "bytes": 12288
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-4\\rod-14.png",
+      "sha256": "6ddbea6dda8f6e156ded159345d46d7f88c5713140603a5c8d09873f6978bdd8",
+      "bytes": 481
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-4\\rod-14.FORWARD_DEPTH.raw",
+      "sha256": "f75b72c1c1f6316ba91a8367dcfdf0cec59991768305b4ba6768b261750c0c56",
+      "bytes": 49152
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-4\\rod-14.INSTANCE_ID.raw",
+      "sha256": "f594d6a1e01ffeb21b4ef1a8303f9c3afe7b0e54763f38bdd00d5a1823679298",
+      "bytes": 49152
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-4\\rod-14.VALID.raw",
+      "sha256": "83f75a719738b56b8207e57ae53dc7d8098c4c82e4a0f6bdf196bf12136a922b",
+      "bytes": 12288
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-4\\rod-15.png",
+      "sha256": "ba996bc030491a54d41b8b58bcdc37fb0965c08061753b60f183191130ccb052",
+      "bytes": 482
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-4\\rod-15.FORWARD_DEPTH.raw",
+      "sha256": "9397821246ec7d187b122bc682c99b4bac38646a492112493cfa5721debffddb",
+      "bytes": 49152
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-4\\rod-15.INSTANCE_ID.raw",
+      "sha256": "50ae9e22e8e18286d483bbde595adcf06e060571b6677b27ae22fe3b013442c5",
+      "bytes": 49152
+    },
+    {
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-g1-scene\\phymeo\\artifacts\\rendering\\msaa-calibration\\run-01\\samples-4\\rod-15.VALID.raw",
+      "sha256": "452c941770aac2c3722c0d839728826d8c05716c7d8245d5e40a974533b8d15e",
+      "bytes": 12288
+    }
+  ],
+  "script_sha256": "73e822c664db88491f76755598af8ee9dacaa6c0ca7fc046c053f59795360368",
+  "original_registered_acceptance": {
+    "edge_mae_25_percent": true,
+    "motion_error_20_percent": false,
+    "linear_resolve": true,
+    "centre_sensors": true,
+    "request_combinations": true,
+    "resize_and_reset": true,
+    "cleanup": true
+  },
+  "original_motion_improvement": {
+    "baseline": 0.06706486891631643,
+    "actual": 0.05704160569437257,
+    "required_reduction": 0.2,
+    "reduction": 0.149456241157362,
+    "passed": false
+  },
+  "roi_pixels": 224,
+  "transitions": 15,
+  "modes": {
+    "1": {
+      "frames": [
+        {
+          "name": "rod-00",
+          "frame_key": {
+            "scene_key": "authored-msaa-calibration-v1",
+            "world_id": "authored-calibration",
+            "epoch": 0,
+            "revision": 3,
+            "tick": 3,
+            "phase": "authored"
+          },
+          "time_s": 0.05,
+          "all_vertices_on_1_16_grid": true,
+          "actual_rgb_sha256": "b565cce372902fb5de2fbfe9d67480a17bdffb55b386c8c705e344d6ed9357d5",
+          "nominal_rgb_sha256": "b565cce372902fb5de2fbfe9d67480a17bdffb55b386c8c705e344d6ed9357d5",
+          "mismatch_pixels": 0,
+          "mismatch_bytes": 0,
+          "max_abs_byte_difference": 0,
+          "signed_byte_difference_histogram": {
+            "0": 36864
+          },
+          "mismatch_pixels_outside_uncertain": 0,
+          "outer_equal_pixels": 0,
+          "uncertain_pixels": 50,
+          "roi_uncertain_pixels": 50,
+          "outside_sensitivity_rgb_interval_plus_one_lsb": 0,
+          "first_mismatches": []
+        },
+        {
+          "name": "rod-01",
+          "frame_key": {
+            "scene_key": "authored-msaa-calibration-v1",
+            "world_id": "authored-calibration",
+            "epoch": 0,
+            "revision": 4,
+            "tick": 4,
+            "phase": "authored"
+          },
+          "time_s": 0.06666666666666667,
+          "all_vertices_on_1_16_grid": true,
+          "actual_rgb_sha256": "c7ac57cf23f437254c1a53b5374e40902329c9ff82a5e7b850209a6c936f696f",
+          "nominal_rgb_sha256": "c7ac57cf23f437254c1a53b5374e40902329c9ff82a5e7b850209a6c936f696f",
+          "mismatch_pixels": 0,
+          "mismatch_bytes": 0,
+          "max_abs_byte_difference": 0,
+          "signed_byte_difference_histogram": {
+            "0": 36864
+          },
+          "mismatch_pixels_outside_uncertain": 0,
+          "outer_equal_pixels": 0,
+          "uncertain_pixels": 45,
+          "roi_uncertain_pixels": 45,
+          "outside_sensitivity_rgb_interval_plus_one_lsb": 0,
+          "first_mismatches": []
+        },
+        {
+          "name": "rod-02",
+          "frame_key": {
+            "scene_key": "authored-msaa-calibration-v1",
+            "world_id": "authored-calibration",
+            "epoch": 0,
+            "revision": 5,
+            "tick": 5,
+            "phase": "authored"
+          },
+          "time_s": 0.08333333333333333,
+          "all_vertices_on_1_16_grid": true,
+          "actual_rgb_sha256": "9485265a040d4352c0c18c8b23b7319ec7abd8ce60ebab27eb6f3c1a4cf3d866",
+          "nominal_rgb_sha256": "9485265a040d4352c0c18c8b23b7319ec7abd8ce60ebab27eb6f3c1a4cf3d866",
+          "mismatch_pixels": 0,
+          "mismatch_bytes": 0,
+          "max_abs_byte_difference": 0,
+          "signed_byte_difference_histogram": {
+            "0": 36864
+          },
+          "mismatch_pixels_outside_uncertain": 0,
+          "outer_equal_pixels": 0,
+          "uncertain_pixels": 49,
+          "roi_uncertain_pixels": 49,
+          "outside_sensitivity_rgb_interval_plus_one_lsb": 0,
+          "first_mismatches": []
+        },
+        {
+          "name": "rod-03",
+          "frame_key": {
+            "scene_key": "authored-msaa-calibration-v1",
+            "world_id": "authored-calibration",
+            "epoch": 0,
+            "revision": 6,
+            "tick": 6,
+            "phase": "authored"
+          },
+          "time_s": 0.1,
+          "all_vertices_on_1_16_grid": true,
+          "actual_rgb_sha256": "2dc9cf7443bd7c484b0e2c129767a812642692b5d89cb18aa3b9f3f8c44d0fe7",
+          "nominal_rgb_sha256": "2dc9cf7443bd7c484b0e2c129767a812642692b5d89cb18aa3b9f3f8c44d0fe7",
+          "mismatch_pixels": 0,
+          "mismatch_bytes": 0,
+          "max_abs_byte_difference": 0,
+          "signed_byte_difference_histogram": {
+            "0": 36864
+          },
+          "mismatch_pixels_outside_uncertain": 0,
+          "outer_equal_pixels": 0,
+          "uncertain_pixels": 50,
+          "roi_uncertain_pixels": 50,
+          "outside_sensitivity_rgb_interval_plus_one_lsb": 0,
+          "first_mismatches": []
+        },
+        {
+          "name": "rod-04",
+          "frame_key": {
+            "scene_key": "authored-msaa-calibration-v1",
+            "world_id": "authored-calibration",
+            "epoch": 0,
+            "revision": 7,
+            "tick": 7,
+            "phase": "authored"
+          },
+          "time_s": 0.11666666666666667,
+          "all_vertices_on_1_16_grid": true,
+          "actual_rgb_sha256": "cef55a59a71c8bcf58d137932be07e7478ba52528c8a4fbbc2b3302e7fb2867a",
+          "nominal_rgb_sha256": "cef55a59a71c8bcf58d137932be07e7478ba52528c8a4fbbc2b3302e7fb2867a",
+          "mismatch_pixels": 0,
+          "mismatch_bytes": 0,
+          "max_abs_byte_difference": 0,
+          "signed_byte_difference_histogram": {
+            "0": 36864
+          },
+          "mismatch_pixels_outside_uncertain": 0,
+          "outer_equal_pixels": 0,
+          "uncertain_pixels": 49,
+          "roi_uncertain_pixels": 49,
+          "outside_sensitivity_rgb_interval_plus_one_lsb": 0,
+          "first_mismatches": []
+        },
+        {
+          "name": "rod-05",
+          "frame_key": {
+            "scene_key": "authored-msaa-calibration-v1",
+            "world_id": "authored-calibration",
+            "epoch": 0,
+            "revision": 8,
+            "tick": 8,
+            "phase": "authored"
+          },
+          "time_s": 0.13333333333333333,
+          "all_vertices_on_1_16_grid": true,
+          "actual_rgb_sha256": "4a0823fe3eb1291d06506304f669099adc1a20b13f93b5bcbd1f99165ae89420",
+          "nominal_rgb_sha256": "4a0823fe3eb1291d06506304f669099adc1a20b13f93b5bcbd1f99165ae89420",
+          "mismatch_pixels": 0,
+          "mismatch_bytes": 0,
+          "max_abs_byte_difference": 0,
+          "signed_byte_difference_histogram": {
+            "0": 36864
+          },
+          "mismatch_pixels_outside_uncertain": 0,
+          "outer_equal_pixels": 0,
+          "uncertain_pixels": 49,
+          "roi_uncertain_pixels": 49,
+          "outside_sensitivity_rgb_interval_plus_one_lsb": 0,
+          "first_mismatches": []
+        },
+        {
+          "name": "rod-06",
+          "frame_key": {
+            "scene_key": "authored-msaa-calibration-v1",
+            "world_id": "authored-calibration",
+            "epoch": 0,
+            "revision": 9,
+            "tick": 9,
+            "phase": "authored"
+          },
+          "time_s": 0.15,
+          "all_vertices_on_1_16_grid": true,
+          "actual_rgb_sha256": "dc3eb7f43546fdd21caf24b0a775a64ee03ef08aec12be3e40a492a68db42734",
+          "nominal_rgb_sha256": "dc3eb7f43546fdd21caf24b0a775a64ee03ef08aec12be3e40a492a68db42734",
+          "mismatch_pixels": 0,
+          "mismatch_bytes": 0,
+          "max_abs_byte_difference": 0,
+          "signed_byte_difference_histogram": {
+            "0": 36864
+          },
+          "mismatch_pixels_outside_uncertain": 0,
+          "outer_equal_pixels": 0,
+          "uncertain_pixels": 47,
+          "roi_uncertain_pixels": 47,
+          "outside_sensitivity_rgb_interval_plus_one_lsb": 0,
+          "first_mismatches": []
+        },
+        {
+          "name": "rod-07",
+          "frame_key": {
+            "scene_key": "authored-msaa-calibration-v1",
+            "world_id": "authored-calibration",
+            "epoch": 0,
+            "revision": 10,
+            "tick": 10,
+            "phase": "authored"
+          },
+          "time_s": 0.16666666666666666,
+          "all_vertices_on_1_16_grid": true,
+          "actual_rgb_sha256": "e14a70caf4fa2f3aec191b5ae182a3ec66c15fe81713a604b3b725568f19bfb9",
+          "nominal_rgb_sha256": "e14a70caf4fa2f3aec191b5ae182a3ec66c15fe81713a604b3b725568f19bfb9",
+          "mismatch_pixels": 0,
+          "mismatch_bytes": 0,
+          "max_abs_byte_difference": 0,
+          "signed_byte_difference_histogram": {
+            "0": 36864
+          },
+          "mismatch_pixels_outside_uncertain": 0,
+          "outer_equal_pixels": 0,
+          "uncertain_pixels": 50,
+          "roi_uncertain_pixels": 50,
+          "outside_sensitivity_rgb_interval_plus_one_lsb": 0,
+          "first_mismatches": []
+        },
+        {
+          "name": "rod-08",
+          "frame_key": {
+            "scene_key": "authored-msaa-calibration-v1",
+            "world_id": "authored-calibration",
+            "epoch": 0,
+            "revision": 11,
+            "tick": 11,
+            "phase": "authored"
+          },
+          "time_s": 0.18333333333333332,
+          "all_vertices_on_1_16_grid": true,
+          "actual_rgb_sha256": "d7378d0cac2ff67bf0fb61f25d8828b86048ddd437d9013f76d15536ffe963c7",
+          "nominal_rgb_sha256": "d7378d0cac2ff67bf0fb61f25d8828b86048ddd437d9013f76d15536ffe963c7",
+          "mismatch_pixels": 0,
+          "mismatch_bytes": 0,
+          "max_abs_byte_difference": 0,
+          "signed_byte_difference_histogram": {
+            "0": 36864
+          },
+          "mismatch_pixels_outside_uncertain": 0,
+          "outer_equal_pixels": 0,
+          "uncertain_pixels": 49,
+          "roi_uncertain_pixels": 49,
+          "outside_sensitivity_rgb_interval_plus_one_lsb": 0,
+          "first_mismatches": []
+        },
+        {
+          "name": "rod-09",
+          "frame_key": {
+            "scene_key": "authored-msaa-calibration-v1",
+            "world_id": "authored-calibration",
+            "epoch": 0,
+            "revision": 12,
+            "tick": 12,
+            "phase": "authored"
+          },
+          "time_s": 0.2,
+          "all_vertices_on_1_16_grid": true,
+          "actual_rgb_sha256": "5b99d28c240d659cd64108fc639834eefd9563b14fee3c31c1e2f045945c5d04",
+          "nominal_rgb_sha256": "5b99d28c240d659cd64108fc639834eefd9563b14fee3c31c1e2f045945c5d04",
+          "mismatch_pixels": 0,
+          "mismatch_bytes": 0,
+          "max_abs_byte_difference": 0,
+          "signed_byte_difference_histogram": {
+            "0": 36864
+          },
+          "mismatch_pixels_outside_uncertain": 0,
+          "outer_equal_pixels": 0,
+          "uncertain_pixels": 48,
+          "roi_uncertain_pixels": 48,
+          "outside_sensitivity_rgb_interval_plus_one_lsb": 0,
+          "first_mismatches": []
+        },
+        {
+          "name": "rod-10",
+          "frame_key": {
+            "scene_key": "authored-msaa-calibration-v1",
+            "world_id": "authored-calibration",
+            "epoch": 0,
+            "revision": 13,
+            "tick": 13,
+            "phase": "authored"
+          },
+          "time_s": 0.21666666666666667,
+          "all_vertices_on_1_16_grid": true,
+          "actual_rgb_sha256": "92b405fe90e5d7c6f064d99ae7995697ade03153dce1dcb9dfc910f3c47e4dca",
+          "nominal_rgb_sha256": "92b405fe90e5d7c6f064d99ae7995697ade03153dce1dcb9dfc910f3c47e4dca",
+          "mismatch_pixels": 0,
+          "mismatch_bytes": 0,
+          "max_abs_byte_difference": 0,
+          "signed_byte_difference_histogram": {
+            "0": 36864
+          },
+          "mismatch_pixels_outside_uncertain": 0,
+          "outer_equal_pixels": 0,
+          "uncertain_pixels": 48,
+          "roi_uncertain_pixels": 48,
+          "outside_sensitivity_rgb_interval_plus_one_lsb": 0,
+          "first_mismatches": []
+        },
+        {
+          "name": "rod-11",
+          "frame_key": {
+            "scene_key": "authored-msaa-calibration-v1",
+            "world_id": "authored-calibration",
+            "epoch": 0,
+            "revision": 14,
+            "tick": 14,
+            "phase": "authored"
+          },
+          "time_s": 0.23333333333333334,
+          "all_vertices_on_1_16_grid": true,
+          "actual_rgb_sha256": "70669fc309f4f2176993d3dcd77b72e1fc46fd54c74fb3a6c73e395b84f767f2",
+          "nominal_rgb_sha256": "70669fc309f4f2176993d3dcd77b72e1fc46fd54c74fb3a6c73e395b84f767f2",
+          "mismatch_pixels": 0,
+          "mismatch_bytes": 0,
+          "max_abs_byte_difference": 0,
+          "signed_byte_difference_histogram": {
+            "0": 36864
+          },
+          "mismatch_pixels_outside_uncertain": 0,
+          "outer_equal_pixels": 0,
+          "uncertain_pixels": 49,
+          "roi_uncertain_pixels": 49,
+          "outside_sensitivity_rgb_interval_plus_one_lsb": 0,
+          "first_mismatches": []
+        },
+        {
+          "name": "rod-12",
+          "frame_key": {
+            "scene_key": "authored-msaa-calibration-v1",
+            "world_id": "authored-calibration",
+            "epoch": 0,
+            "revision": 15,
+            "tick": 15,
+            "phase": "authored"
+          },
+          "time_s": 0.25,
+          "all_vertices_on_1_16_grid": true,
+          "actual_rgb_sha256": "1c5a844d4b5e8060264d97900d2099d169a5ec4045b341d8bc44fbc2497ea5a6",
+          "nominal_rgb_sha256": "1c5a844d4b5e8060264d97900d2099d169a5ec4045b341d8bc44fbc2497ea5a6",
+          "mismatch_pixels": 0,
+          "mismatch_bytes": 0,
+          "max_abs_byte_difference": 0,
+          "signed_byte_difference_histogram": {
+            "0": 36864
+          },
+          "mismatch_pixels_outside_uncertain": 0,
+          "outer_equal_pixels": 0,
+          "uncertain_pixels": 47,
+          "roi_uncertain_pixels": 47,
+          "outside_sensitivity_rgb_interval_plus_one_lsb": 0,
+          "first_mismatches": []
+        },
+        {
+          "name": "rod-13",
+          "frame_key": {
+            "scene_key": "authored-msaa-calibration-v1",
+            "world_id": "authored-calibration",
+            "epoch": 0,
+            "revision": 16,
+            "tick": 16,
+            "phase": "authored"
+          },
+          "time_s": 0.26666666666666666,
+          "all_vertices_on_1_16_grid": true,
+          "actual_rgb_sha256": "4bdb405c90b5595b233e97182c2edbc93d28e2b161dd9c157dc7910e8eb103f8",
+          "nominal_rgb_sha256": "4bdb405c90b5595b233e97182c2edbc93d28e2b161dd9c157dc7910e8eb103f8",
+          "mismatch_pixels": 0,
+          "mismatch_bytes": 0,
+          "max_abs_byte_difference": 0,
+          "signed_byte_difference_histogram": {
+            "0": 36864
+          },
+          "mismatch_pixels_outside_uncertain": 0,
+          "outer_equal_pixels": 0,
+          "uncertain_pixels": 48,
+          "roi_uncertain_pixels": 48,
+          "outside_sensitivity_rgb_interval_plus_one_lsb": 0,
+          "first_mismatches": []
+        },
+        {
+          "name": "rod-14",
+          "frame_key": {
+            "scene_key": "authored-msaa-calibration-v1",
+            "world_id": "authored-calibration",
+            "epoch": 0,
+            "revision": 17,
+            "tick": 17,
+            "phase": "authored"
+          },
+          "time_s": 0.2833333333333333,
+          "all_vertices_on_1_16_grid": true,
+          "actual_rgb_sha256": "883f35e33ece085565fb792638f3d21300d1f8d5533244eef8f427c646267e0c",
+          "nominal_rgb_sha256": "883f35e33ece085565fb792638f3d21300d1f8d5533244eef8f427c646267e0c",
+          "mismatch_pixels": 0,
+          "mismatch_bytes": 0,
+          "max_abs_byte_difference": 0,
+          "signed_byte_difference_histogram": {
+            "0": 36864
+          },
+          "mismatch_pixels_outside_uncertain": 0,
+          "outer_equal_pixels": 0,
+          "uncertain_pixels": 49,
+          "roi_uncertain_pixels": 49,
+          "outside_sensitivity_rgb_interval_plus_one_lsb": 0,
+          "first_mismatches": []
+        },
+        {
+          "name": "rod-15",
+          "frame_key": {
+            "scene_key": "authored-msaa-calibration-v1",
+            "world_id": "authored-calibration",
+            "epoch": 0,
+            "revision": 18,
+            "tick": 18,
+            "phase": "authored"
+          },
+          "time_s": 0.3,
+          "all_vertices_on_1_16_grid": true,
+          "actual_rgb_sha256": "e1632e2bf542c2c2e3461e5edbc7fb9bf975fc56f588911b50fe1b063405e91c",
+          "nominal_rgb_sha256": "e1632e2bf542c2c2e3461e5edbc7fb9bf975fc56f588911b50fe1b063405e91c",
+          "mismatch_pixels": 0,
+          "mismatch_bytes": 0,
+          "max_abs_byte_difference": 0,
+          "signed_byte_difference_histogram": {
+            "0": 36864
+          },
+          "mismatch_pixels_outside_uncertain": 0,
+          "outer_equal_pixels": 0,
+          "uncertain_pixels": 49,
+          "roi_uncertain_pixels": 49,
+          "outside_sensitivity_rgb_interval_plus_one_lsb": 0,
+          "first_mismatches": []
+        }
+      ],
+      "actual_motion": {
+        "mae": 0.06706486891631643,
+        "per_transition_mae": [
+          0.06705655650931609,
+          0.06705655650933233,
+          0.06705655650931863,
+          0.06705655650932295,
+          0.06711148814994582,
+          0.06705655650932739,
+          0.06705655650931965,
+          0.06705655650931572,
+          0.06705655650932359,
+          0.06705655650932853,
+          0.06712631097361513,
+          0.0670565565093062,
+          0.0670565565093199,
+          0.0670565565093284,
+          0.06705655650932599
+        ],
+        "transitions": 15
+      },
+      "nominal_motion": {
+        "mae": 0.06706486891631643,
+        "per_transition_mae": [
+          0.06705655650931609,
+          0.06705655650933233,
+          0.06705655650931863,
+          0.06705655650932295,
+          0.06711148814994582,
+          0.06705655650932739,
+          0.06705655650931965,
+          0.06705655650931572,
+          0.06705655650932359,
+          0.06705655650932853,
+          0.06712631097361513,
+          0.0670565565093062,
+          0.0670565565093199,
+          0.0670565565093284,
+          0.06705655650932599
+        ],
+        "transitions": 15
+      },
+      "nominal_actual_motion_mae_difference": 0.0,
+      "all_nominal_rgb_bytes_equal": true,
+      "total_mismatch_pixels_outside_uncertain": 0
+    },
+    "4": {
+      "frames": [
+        {
+          "name": "rod-00",
+          "frame_key": {
+            "scene_key": "authored-msaa-calibration-v1",
+            "world_id": "authored-calibration",
+            "epoch": 0,
+            "revision": 3,
+            "tick": 3,
+            "phase": "authored"
+          },
+          "time_s": 0.05,
+          "all_vertices_on_1_16_grid": true,
+          "actual_rgb_sha256": "0d3f209185d51762a3283664c8caf63493d07c5853a20889ed03f46dff82497a",
+          "nominal_rgb_sha256": "0d3f209185d51762a3283664c8caf63493d07c5853a20889ed03f46dff82497a",
+          "mismatch_pixels": 0,
+          "mismatch_bytes": 0,
+          "max_abs_byte_difference": 0,
+          "signed_byte_difference_histogram": {
+            "0": 36864
+          },
+          "mismatch_pixels_outside_uncertain": 0,
+          "outer_equal_pixels": 4,
+          "uncertain_pixels": 127,
+          "roi_uncertain_pixels": 127,
+          "outside_sensitivity_rgb_interval_plus_one_lsb": 0,
+          "first_mismatches": []
+        },
+        {
+          "name": "rod-01",
+          "frame_key": {
+            "scene_key": "authored-msaa-calibration-v1",
+            "world_id": "authored-calibration",
+            "epoch": 0,
+            "revision": 4,
+            "tick": 4,
+            "phase": "authored"
+          },
+          "time_s": 0.06666666666666667,
+          "all_vertices_on_1_16_grid": true,
+          "actual_rgb_sha256": "e34abced9e94a7da30bb01a389746b962ce890520c577d0ebbe28e72625c20c7",
+          "nominal_rgb_sha256": "e34abced9e94a7da30bb01a389746b962ce890520c577d0ebbe28e72625c20c7",
+          "mismatch_pixels": 0,
+          "mismatch_bytes": 0,
+          "max_abs_byte_difference": 0,
+          "signed_byte_difference_histogram": {
+            "0": 36864
+          },
+          "mismatch_pixels_outside_uncertain": 0,
+          "outer_equal_pixels": 4,
+          "uncertain_pixels": 130,
+          "roi_uncertain_pixels": 130,
+          "outside_sensitivity_rgb_interval_plus_one_lsb": 0,
+          "first_mismatches": []
+        },
+        {
+          "name": "rod-02",
+          "frame_key": {
+            "scene_key": "authored-msaa-calibration-v1",
+            "world_id": "authored-calibration",
+            "epoch": 0,
+            "revision": 5,
+            "tick": 5,
+            "phase": "authored"
+          },
+          "time_s": 0.08333333333333333,
+          "all_vertices_on_1_16_grid": true,
+          "actual_rgb_sha256": "0b7c1731f966ffb4dab25ebee8f2b6ccd1754da59f8d64af6cda3923dac6f414",
+          "nominal_rgb_sha256": "0b7c1731f966ffb4dab25ebee8f2b6ccd1754da59f8d64af6cda3923dac6f414",
+          "mismatch_pixels": 0,
+          "mismatch_bytes": 0,
+          "max_abs_byte_difference": 0,
+          "signed_byte_difference_histogram": {
+            "0": 36864
+          },
+          "mismatch_pixels_outside_uncertain": 0,
+          "outer_equal_pixels": 4,
+          "uncertain_pixels": 136,
+          "roi_uncertain_pixels": 136,
+          "outside_sensitivity_rgb_interval_plus_one_lsb": 0,
+          "first_mismatches": []
+        },
+        {
+          "name": "rod-03",
+          "frame_key": {
+            "scene_key": "authored-msaa-calibration-v1",
+            "world_id": "authored-calibration",
+            "epoch": 0,
+            "revision": 6,
+            "tick": 6,
+            "phase": "authored"
+          },
+          "time_s": 0.1,
+          "all_vertices_on_1_16_grid": true,
+          "actual_rgb_sha256": "48898c4423f2f814ee6ddbf310193535d0ec1e8a0dd8c75c44bc2ffd6371b7c0",
+          "nominal_rgb_sha256": "48898c4423f2f814ee6ddbf310193535d0ec1e8a0dd8c75c44bc2ffd6371b7c0",
+          "mismatch_pixels": 0,
+          "mismatch_bytes": 0,
+          "max_abs_byte_difference": 0,
+          "signed_byte_difference_histogram": {
+            "0": 36864
+          },
+          "mismatch_pixels_outside_uncertain": 0,
+          "outer_equal_pixels": 4,
+          "uncertain_pixels": 129,
+          "roi_uncertain_pixels": 129,
+          "outside_sensitivity_rgb_interval_plus_one_lsb": 0,
+          "first_mismatches": []
+        },
+        {
+          "name": "rod-04",
+          "frame_key": {
+            "scene_key": "authored-msaa-calibration-v1",
+            "world_id": "authored-calibration",
+            "epoch": 0,
+            "revision": 7,
+            "tick": 7,
+            "phase": "authored"
+          },
+          "time_s": 0.11666666666666667,
+          "all_vertices_on_1_16_grid": true,
+          "actual_rgb_sha256": "161165b904d545e94d3e44d285d4c0d928703a7980361e0c29fab57c57c16272",
+          "nominal_rgb_sha256": "161165b904d545e94d3e44d285d4c0d928703a7980361e0c29fab57c57c16272",
+          "mismatch_pixels": 0,
+          "mismatch_bytes": 0,
+          "max_abs_byte_difference": 0,
+          "signed_byte_difference_histogram": {
+            "0": 36864
+          },
+          "mismatch_pixels_outside_uncertain": 0,
+          "outer_equal_pixels": 3,
+          "uncertain_pixels": 124,
+          "roi_uncertain_pixels": 124,
+          "outside_sensitivity_rgb_interval_plus_one_lsb": 0,
+          "first_mismatches": []
+        },
+        {
+          "name": "rod-05",
+          "frame_key": {
+            "scene_key": "authored-msaa-calibration-v1",
+            "world_id": "authored-calibration",
+            "epoch": 0,
+            "revision": 8,
+            "tick": 8,
+            "phase": "authored"
+          },
+          "time_s": 0.13333333333333333,
+          "all_vertices_on_1_16_grid": true,
+          "actual_rgb_sha256": "82177d89c255b09355c56ca7233f0d456475f962bbfd68453d9580a7b892aeae",
+          "nominal_rgb_sha256": "82177d89c255b09355c56ca7233f0d456475f962bbfd68453d9580a7b892aeae",
+          "mismatch_pixels": 0,
+          "mismatch_bytes": 0,
+          "max_abs_byte_difference": 0,
+          "signed_byte_difference_histogram": {
+            "0": 36864
+          },
+          "mismatch_pixels_outside_uncertain": 0,
+          "outer_equal_pixels": 2,
+          "uncertain_pixels": 127,
+          "roi_uncertain_pixels": 127,
+          "outside_sensitivity_rgb_interval_plus_one_lsb": 0,
+          "first_mismatches": []
+        },
+        {
+          "name": "rod-06",
+          "frame_key": {
+            "scene_key": "authored-msaa-calibration-v1",
+            "world_id": "authored-calibration",
+            "epoch": 0,
+            "revision": 9,
+            "tick": 9,
+            "phase": "authored"
+          },
+          "time_s": 0.15,
+          "all_vertices_on_1_16_grid": true,
+          "actual_rgb_sha256": "336de25b1802f60c95bda0ea705316e99d018c00d0e42904f0fa4979b22ba4dc",
+          "nominal_rgb_sha256": "336de25b1802f60c95bda0ea705316e99d018c00d0e42904f0fa4979b22ba4dc",
+          "mismatch_pixels": 0,
+          "mismatch_bytes": 0,
+          "max_abs_byte_difference": 0,
+          "signed_byte_difference_histogram": {
+            "0": 36864
+          },
+          "mismatch_pixels_outside_uncertain": 0,
+          "outer_equal_pixels": 2,
+          "uncertain_pixels": 127,
+          "roi_uncertain_pixels": 127,
+          "outside_sensitivity_rgb_interval_plus_one_lsb": 0,
+          "first_mismatches": []
+        },
+        {
+          "name": "rod-07",
+          "frame_key": {
+            "scene_key": "authored-msaa-calibration-v1",
+            "world_id": "authored-calibration",
+            "epoch": 0,
+            "revision": 10,
+            "tick": 10,
+            "phase": "authored"
+          },
+          "time_s": 0.16666666666666666,
+          "all_vertices_on_1_16_grid": true,
+          "actual_rgb_sha256": "37447d73e66443c5bfd45c9a71db959f9b16d6e8072baedc4a760670dde1ca2c",
+          "nominal_rgb_sha256": "37447d73e66443c5bfd45c9a71db959f9b16d6e8072baedc4a760670dde1ca2c",
+          "mismatch_pixels": 0,
+          "mismatch_bytes": 0,
+          "max_abs_byte_difference": 0,
+          "signed_byte_difference_histogram": {
+            "0": 36864
+          },
+          "mismatch_pixels_outside_uncertain": 0,
+          "outer_equal_pixels": 2,
+          "uncertain_pixels": 127,
+          "roi_uncertain_pixels": 127,
+          "outside_sensitivity_rgb_interval_plus_one_lsb": 0,
+          "first_mismatches": []
+        },
+        {
+          "name": "rod-08",
+          "frame_key": {
+            "scene_key": "authored-msaa-calibration-v1",
+            "world_id": "authored-calibration",
+            "epoch": 0,
+            "revision": 11,
+            "tick": 11,
+            "phase": "authored"
+          },
+          "time_s": 0.18333333333333332,
+          "all_vertices_on_1_16_grid": true,
+          "actual_rgb_sha256": "fd817ffb05256e126937761b66bc7aa9a2c46cbf2fea3293d04cf293e6b47e91",
+          "nominal_rgb_sha256": "fd817ffb05256e126937761b66bc7aa9a2c46cbf2fea3293d04cf293e6b47e91",
+          "mismatch_pixels": 0,
+          "mismatch_bytes": 0,
+          "max_abs_byte_difference": 0,
+          "signed_byte_difference_histogram": {
+            "0": 36864
+          },
+          "mismatch_pixels_outside_uncertain": 0,
+          "outer_equal_pixels": 2,
+          "uncertain_pixels": 127,
+          "roi_uncertain_pixels": 127,
+          "outside_sensitivity_rgb_interval_plus_one_lsb": 0,
+          "first_mismatches": []
+        },
+        {
+          "name": "rod-09",
+          "frame_key": {
+            "scene_key": "authored-msaa-calibration-v1",
+            "world_id": "authored-calibration",
+            "epoch": 0,
+            "revision": 12,
+            "tick": 12,
+            "phase": "authored"
+          },
+          "time_s": 0.2,
+          "all_vertices_on_1_16_grid": true,
+          "actual_rgb_sha256": "2680e5da54bf953f9ddaf741e453c8bbf500217936215022c1077f089393d1ad",
+          "nominal_rgb_sha256": "2680e5da54bf953f9ddaf741e453c8bbf500217936215022c1077f089393d1ad",
+          "mismatch_pixels": 0,
+          "mismatch_bytes": 0,
+          "max_abs_byte_difference": 0,
+          "signed_byte_difference_histogram": {
+            "0": 36864
+          },
+          "mismatch_pixels_outside_uncertain": 0,
+          "outer_equal_pixels": 2,
+          "uncertain_pixels": 130,
+          "roi_uncertain_pixels": 130,
+          "outside_sensitivity_rgb_interval_plus_one_lsb": 0,
+          "first_mismatches": []
+        },
+        {
+          "name": "rod-10",
+          "frame_key": {
+            "scene_key": "authored-msaa-calibration-v1",
+            "world_id": "authored-calibration",
+            "epoch": 0,
+            "revision": 13,
+            "tick": 13,
+            "phase": "authored"
+          },
+          "time_s": 0.21666666666666667,
+          "all_vertices_on_1_16_grid": true,
+          "actual_rgb_sha256": "bc1c46c541187ad7ae8ce68a6f8ae7ccc5c04219a43d13a2ee111a1264884430",
+          "nominal_rgb_sha256": "bc1c46c541187ad7ae8ce68a6f8ae7ccc5c04219a43d13a2ee111a1264884430",
+          "mismatch_pixels": 0,
+          "mismatch_bytes": 0,
+          "max_abs_byte_difference": 0,
+          "signed_byte_difference_histogram": {
+            "0": 36864
+          },
+          "mismatch_pixels_outside_uncertain": 0,
+          "outer_equal_pixels": 3,
+          "uncertain_pixels": 137,
+          "roi_uncertain_pixels": 137,
+          "outside_sensitivity_rgb_interval_plus_one_lsb": 0,
+          "first_mismatches": []
+        },
+        {
+          "name": "rod-11",
+          "frame_key": {
+            "scene_key": "authored-msaa-calibration-v1",
+            "world_id": "authored-calibration",
+            "epoch": 0,
+            "revision": 14,
+            "tick": 14,
+            "phase": "authored"
+          },
+          "time_s": 0.23333333333333334,
+          "all_vertices_on_1_16_grid": true,
+          "actual_rgb_sha256": "d7c8212379b15d96503aa6f2b5df7049c33b6156bbffc929bd1feaaf24c80a92",
+          "nominal_rgb_sha256": "d7c8212379b15d96503aa6f2b5df7049c33b6156bbffc929bd1feaaf24c80a92",
+          "mismatch_pixels": 0,
+          "mismatch_bytes": 0,
+          "max_abs_byte_difference": 0,
+          "signed_byte_difference_histogram": {
+            "0": 36864
+          },
+          "mismatch_pixels_outside_uncertain": 0,
+          "outer_equal_pixels": 4,
+          "uncertain_pixels": 132,
+          "roi_uncertain_pixels": 132,
+          "outside_sensitivity_rgb_interval_plus_one_lsb": 0,
+          "first_mismatches": []
+        },
+        {
+          "name": "rod-12",
+          "frame_key": {
+            "scene_key": "authored-msaa-calibration-v1",
+            "world_id": "authored-calibration",
+            "epoch": 0,
+            "revision": 15,
+            "tick": 15,
+            "phase": "authored"
+          },
+          "time_s": 0.25,
+          "all_vertices_on_1_16_grid": true,
+          "actual_rgb_sha256": "b59f051b266fbf36d0a1ddf7ded5b56b4fe6590f63d68f29b2470b8384f72ca1",
+          "nominal_rgb_sha256": "b59f051b266fbf36d0a1ddf7ded5b56b4fe6590f63d68f29b2470b8384f72ca1",
+          "mismatch_pixels": 0,
+          "mismatch_bytes": 0,
+          "max_abs_byte_difference": 0,
+          "signed_byte_difference_histogram": {
+            "0": 36864
+          },
+          "mismatch_pixels_outside_uncertain": 0,
+          "outer_equal_pixels": 4,
+          "uncertain_pixels": 128,
+          "roi_uncertain_pixels": 128,
+          "outside_sensitivity_rgb_interval_plus_one_lsb": 0,
+          "first_mismatches": []
+        },
+        {
+          "name": "rod-13",
+          "frame_key": {
+            "scene_key": "authored-msaa-calibration-v1",
+            "world_id": "authored-calibration",
+            "epoch": 0,
+            "revision": 16,
+            "tick": 16,
+            "phase": "authored"
+          },
+          "time_s": 0.26666666666666666,
+          "all_vertices_on_1_16_grid": true,
+          "actual_rgb_sha256": "703ec611cc428d555add47c4ccf17c3b153b385d856983b3652c4d3092ac5e78",
+          "nominal_rgb_sha256": "703ec611cc428d555add47c4ccf17c3b153b385d856983b3652c4d3092ac5e78",
+          "mismatch_pixels": 0,
+          "mismatch_bytes": 0,
+          "max_abs_byte_difference": 0,
+          "signed_byte_difference_histogram": {
+            "0": 36864
+          },
+          "mismatch_pixels_outside_uncertain": 0,
+          "outer_equal_pixels": 4,
+          "uncertain_pixels": 128,
+          "roi_uncertain_pixels": 128,
+          "outside_sensitivity_rgb_interval_plus_one_lsb": 0,
+          "first_mismatches": []
+        },
+        {
+          "name": "rod-14",
+          "frame_key": {
+            "scene_key": "authored-msaa-calibration-v1",
+            "world_id": "authored-calibration",
+            "epoch": 0,
+            "revision": 17,
+            "tick": 17,
+            "phase": "authored"
+          },
+          "time_s": 0.2833333333333333,
+          "all_vertices_on_1_16_grid": true,
+          "actual_rgb_sha256": "2675525ec5ab06790fd15b8ba0c123731b732d8fca5e7c3c5ebb66eab23dc9b3",
+          "nominal_rgb_sha256": "2675525ec5ab06790fd15b8ba0c123731b732d8fca5e7c3c5ebb66eab23dc9b3",
+          "mismatch_pixels": 0,
+          "mismatch_bytes": 0,
+          "max_abs_byte_difference": 0,
+          "signed_byte_difference_histogram": {
+            "0": 36864
+          },
+          "mismatch_pixels_outside_uncertain": 0,
+          "outer_equal_pixels": 4,
+          "uncertain_pixels": 125,
+          "roi_uncertain_pixels": 124,
+          "outside_sensitivity_rgb_interval_plus_one_lsb": 0,
+          "first_mismatches": []
+        },
+        {
+          "name": "rod-15",
+          "frame_key": {
+            "scene_key": "authored-msaa-calibration-v1",
+            "world_id": "authored-calibration",
+            "epoch": 0,
+            "revision": 18,
+            "tick": 18,
+            "phase": "authored"
+          },
+          "time_s": 0.3,
+          "all_vertices_on_1_16_grid": true,
+          "actual_rgb_sha256": "f9731ad073646b715506330e4a58330ffe387fbfed3fbeed62dcf1fc1067492c",
+          "nominal_rgb_sha256": "f9731ad073646b715506330e4a58330ffe387fbfed3fbeed62dcf1fc1067492c",
+          "mismatch_pixels": 0,
+          "mismatch_bytes": 0,
+          "max_abs_byte_difference": 0,
+          "signed_byte_difference_histogram": {
+            "0": 36864
+          },
+          "mismatch_pixels_outside_uncertain": 0,
+          "outer_equal_pixels": 4,
+          "uncertain_pixels": 125,
+          "roi_uncertain_pixels": 124,
+          "outside_sensitivity_rgb_interval_plus_one_lsb": 0,
+          "first_mismatches": []
+        }
+      ],
+      "actual_motion": {
+        "mae": 0.05704160569437257,
+        "per_transition_mae": [
+          0.057015680285129974,
+          0.05701568028515079,
+          0.057015680285149514,
+          0.057015680285149764,
+          0.05712554356639703,
+          0.057085434749434845,
+          0.0570156802851419,
+          0.05701568028513365,
+          0.05701568028514152,
+          0.05701568028514901,
+          0.05708543474943586,
+          0.05715518921371485,
+          0.057015680285162455,
+          0.057015680285147606,
+          0.057015680285149764
+        ],
+        "transitions": 15
+      },
+      "nominal_motion": {
+        "mae": 0.05704160569437257,
+        "per_transition_mae": [
+          0.057015680285129974,
+          0.05701568028515079,
+          0.057015680285149514,
+          0.057015680285149764,
+          0.05712554356639703,
+          0.057085434749434845,
+          0.0570156802851419,
+          0.05701568028513365,
+          0.05701568028514152,
+          0.05701568028514901,
+          0.05708543474943586,
+          0.05715518921371485,
+          0.057015680285162455,
+          0.057015680285147606,
+          0.057015680285149764
+        ],
+        "transitions": 15
+      },
+      "nominal_actual_motion_mae_difference": 0.0,
+      "all_nominal_rgb_bytes_equal": true,
+      "total_mismatch_pixels_outside_uncertain": 0
+    }
+  },
+  "nominal_predicted_reduction": 0.149456241157362,
+  "stable_roi_all_frames_pixels": 11,
+  "stable_roi_metrics": {
+    "1": {
+      "actual": {
+        "mae": 0.0005702359068655397,
+        "per_transition_mae": [
+          0.005157503342285385,
+          0.000720149565495376,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.00011750083555997745,
+          0.0025583848596423568
+        ],
+        "transitions": 15
+      },
+      "nominal": {
+        "mae": 0.0005702359068655397,
+        "per_transition_mae": [
+          0.005157503342285385,
+          0.000720149565495376,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.00011750083555997745,
+          0.0025583848596423568
+        ],
+        "transitions": 15
+      }
+    },
+    "4": {
+      "actual": {
+        "mae": 0.0005702359068655397,
+        "per_transition_mae": [
+          0.005157503342285385,
+          0.000720149565495376,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.00011750083555997745,
+          0.0025583848596423568
+        ],
+        "transitions": 15
+      },
+      "nominal": {
+        "mae": 0.0005702359068655397,
+        "per_transition_mae": [
+          0.005157503342285385,
+          0.000720149565495376,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.00011750083555997745,
+          0.0025583848596423568
+        ],
+        "transitions": 15
+      }
+    }
+  },
+  "assumptions": {
+    "standard_locations_source": "recorded standard_sample_locations=1; Vulkan standard table",
+    "device_subPixelPrecisionBits": null,
+    "device_subpixel_precision_recorded": false,
+    "sensitivity_vertex_epsilon_px": 0.0625,
+    "sensitivity_scope": "conservative per-coordinate envelope based on core minimum; not measured device rounding or transform-error bound",
+    "equal_outer_boundary": "nominal top/left is a convention, not a Vulkan-required outer-edge choice; ties separately reported",
+    "shared_diagonal": "exact rational edge tests; complementary ownership exactly once; identical white/depth on both triangles",
+    "color_model": "constant display-linear white1/black0 verified by saved controls; no independent BRDF or shadow re-execution",
+    "coordinate_model": "exact real projection from recorded FP32 vertices and saved identity rotations/translations; not a replay of GPU floating-point evaluation",
+    "quantization": "IEC sRGB with nearest RGB8; interval comparison separately allows one code for arithmetic rounding, never changes original acceptance"
+  },
+  "specification_links": [
+    "https://docs.vulkan.org/spec/latest/chapters/primsrast.html",
+    "https://docs.vulkan.org/spec/latest/chapters/limits.html"
+  ],
+  "conclusion": "nominal point-sample model reproduces every saved rod RGB byte"
+}

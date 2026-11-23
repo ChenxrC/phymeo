@@ -1,0 +1,31 @@
+{
+  "schema": "phymeo-panda-msaa-viewer-check-v1",
+  "browser": "Edg/154.0.4258.37",
+  "input_capture_commit": "44bbed839c61754d05d4871944103cd2aa48ec17",
+  "first_check": "Cold switch at 0 seconds stalled waiting for a redundant seek",
+  "verified": {
+    "cold_switch_at_zero": true,
+    "paused_times_seconds": [
+      2,
+      2
+    ],
+    "switch_during_playback_advances": true,
+    "decoded_sizes": [
+      [
+        1280,
+        768
+      ],
+      [
+        1280,
+        768
+      ]
+    ],
+    "durations_seconds": [
+      10,
+      10
+    ]
+  },
+  "template_scope": "AST outside the changed HTML constant is identical to the captured driver",
+  "source_sha256": "950594ffaacda777ea599b89710eb41e717e7e29451ab170a60c35fc44364a2c",
+  "deployed_page_sha256": "3ede5d326812a24aff51fc3b7c03f0ee17d122dec0dbfaf8900b34837c78b8d8"
+}

@@ -412,13 +412,53 @@ def encode_pair(root, *, videos="both", media_output=None):
 <button id="swap">切换到 4×</button><span id="label"> 当前 1×</span>
 <video id="a" controls preload="auto" src="panda-msaa-1x.mp4"></video>
 <video id="b" controls preload="auto" src="panda-msaa-4x.mp4" hidden></video>
-<script>let current=document.getElementById('a'),other=document.getElementById('b');
-const button=document.getElementById('swap');button.onclick=async()=>{button.disabled=true;
-const playing=!current.paused,t=current.currentTime;current.pause();other.pause();
-if(Math.abs(other.currentTime-t)>1e-6||other.readyState<2){const ready=new Promise(resolve=>other.addEventListener('seeked',resolve,{once:true}));other.currentTime=t;await ready;}
-current.hidden=true;other.hidden=false;[current,other]=[other,current];
-document.getElementById('label').textContent=current.id==='a'?' 当前 1×':' 当前 4×';
-button.textContent=current.id==='a'?'切换到 4×':'切换到 1×';button.disabled=false;if(playing)current.play();};</script>'''
+<script>
+let current = document.getElementById('a'), other = document.getElementById('b');
+const button = document.getElementById('swap'), label = document.getElementById('label');
+
+function waitForMedia(video, event, ready) {
+  if (ready()) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    function finish(error) {
+      clearTimeout(timer);
+      video.removeEventListener(event, loaded);
+      video.removeEventListener('error', failed);
+      if (error) reject(error); else resolve();
+    }
+    const loaded = () => { if (ready()) finish(); };
+    const failed = () => finish(new Error('视频加载失败'));
+    const timer = setTimeout(() => finish(new Error('视频加载超时')), 10000);
+    video.addEventListener(event, loaded);
+    video.addEventListener('error', failed);
+    if (video.error) failed(); else loaded();
+  });
+}
+
+button.onclick = async () => {
+  button.disabled = true;
+  const playing = !current.paused && !current.ended;
+  current.pause();
+  const time = current.currentTime;
+  try {
+    other.pause();
+    if (Math.abs(other.currentTime - time) > 0.000001) {
+      await waitForMedia(other, 'loadedmetadata', () => other.readyState >= 1);
+      other.currentTime = time;
+    }
+    if (other.seeking) await waitForMedia(other, 'seeked', () => !other.seeking);
+    current.hidden = true;
+    other.hidden = false;
+    [current, other] = [other, current];
+    label.textContent = current.id === 'a' ? ' 当前 1×' : ' 当前 4×';
+    button.textContent = current.id === 'a' ? '切换到 4×' : '切换到 1×';
+    if (playing) await current.play();
+  } catch (error) {
+    label.textContent = ' ' + error.message + '，可用播放器控件继续。';
+  } finally {
+    button.disabled = false;
+  }
+};
+</script>'''
         (media/"compare.html").write_text(page.replace("@CROP1@",links[0]).replace("@CROP4@",links[1]), encoding="utf-8")
     return report
 

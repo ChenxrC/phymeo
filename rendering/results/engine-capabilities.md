@@ -1,6 +1,6 @@
 # 渲染引擎 · 能力与实测导航
 
-当前证据来自 Windows／RTX 4060 Laptop：日光成片与软硬阴影对照基线 `9417f4f6`，另含随后接受的粗糙度贴图、面积灯格点记录。先看[同步影片入口](index.html)，实现全图见[架构图](../architecture.html)；本页不替代[模块计划](../plans/README.md)与[验收规程](../plans/09-acceptance.md)。
+当前证据来自 Windows／RTX 4060 Laptop：日光成片与软硬阴影对照基线 `9417f4f6`，另含随后接受的粗糙度贴图、面积灯格点记录。先看[同步影片入口](index.html)，实现全图见[架构图](../architecture.html)。已验功能列于下表，开发中的抗锯齿、材质与光追功能列于[自研 Vulkan 画质路线](../plans/2026-11-23-native-vulkan-quality.md)。[模块计划](../plans/README.md) · [首版验收](../plans/09-acceptance.md)
 
 ```mermaid
 flowchart LR

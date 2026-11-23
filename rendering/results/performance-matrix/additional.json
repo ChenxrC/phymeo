@@ -1,0 +1,610 @@
+{
+  "base_sha256": "09429c3be766b82f2d1516bd57ac6f564392910b83a0660d23d1fd8292c99733",
+  "source_sha256": "9ca0e2ea5152b9cf92302bfeb6ac434255bb4dead32f8fcf5a69cc939e701667",
+  "cases": [
+    {
+      "id": "balanced",
+      "label": "均衡 · 4× MSAA＋4×4 面光",
+      "overrides": {
+        "msaa_samples": 4,
+        "area_light_grid": 4
+      },
+      "rounds": [
+        {
+          "open_ms": 8399.11120000761,
+          "capture_ms": [
+            40.417399955913424,
+            35.22799996426329,
+            34.14359997259453,
+            29.91639997344464,
+            29.369199997745454,
+            29.050800018012524,
+            29.882000002544373,
+            28.969499981030822,
+            29.640600027050823,
+            29.62760004447773,
+            28.792699973564595,
+            29.277099994942546,
+            30.969000014010817,
+            29.723300016485155,
+            32.91959996568039,
+            31.82909998577088,
+            32.76079997885972,
+            33.37419999297708,
+            36.82410001056269,
+            32.74780005449429,
+            31.117399979848415,
+            30.7283999864012,
+            31.24730003764853,
+            30.74459999334067,
+            30.954700021538883,
+            33.4963999921456,
+            32.572299998719245,
+            30.763700022362173,
+            29.307099990546703,
+            29.793300025630742,
+            29.336599982343614,
+            27.27040002355352
+          ],
+          "hero_sensor_sha256": {
+            "forward_depth_m_f32": "f2bbf77c25fdaa7abea0ab3c44e831a8050a21e15968f174d92383ea9793a81e",
+            "instance_id_u32": "bc69b5e50916d2714d788c7471fc19228f0252714dcc02460b2256dbf4b1cfc3",
+            "valid_u8": "61a2ef4589e9c6a3b5163bdebdf5830681c6941d5fd51a1b5c6e00dd2bc5cc07"
+          },
+          "hero_pixels": {
+            "1": 15062,
+            "2": 30781
+          },
+          "device": "NVIDIA GeForce RTX 4060 Laptop GPU",
+          "uuid": "3b78d98198a3be57a8cb4d72fdfbfa96",
+          "triangles": 134960,
+          "geometries": "8882b67fbdaf1f3cd5732ee366f4e4da7ac895f55c7ae4ca5917329d6519d1fe",
+          "rgb_sha256": "70ff86eed2fdbbb7fb7f66c7200336f6aae6d7c765d96d1645bc59fdc452c228",
+          "sensors_sha256": "20bfd2cfe5751a25305580a5d73de8e1ef232eaa1f7d6283e706958b3f36257b",
+          "gpu_mean_ms": {
+            "gpu_render_ns": 12.350101,
+            "gpu_copy_ns": 1.054346,
+            "gpu_total_ns": 13.404447
+          },
+          "vulkan_timestamps": 32,
+          "backend_passes": [
+            "visibility",
+            "shadows",
+            "lighting",
+            "display_transform",
+            "sensor_export"
+          ],
+          "shaders": {
+            "vert": "b1069d14f062dcf3b441d1c44286068b92754557dbe8ce8327e9407cd7c0ec82",
+            "frag": "043d0e991b770144bb92d15b3f95374680a9714162df793945cb63209d02aeaa",
+            "environment_sky_vert": "d9bbb44453660efa44c1f5f6c2861102b62f6b23b400400fac7d7f3faa02b798",
+            "environment_sky_frag": "d1f64fe50290ec0e905830c3d556d8d24ceced8c9a1665155fe5406ee59232b7",
+            "msaa_resolve_vert": "d9bbb44453660efa44c1f5f6c2861102b62f6b23b400400fac7d7f3faa02b798",
+            "msaa_resolve_frag": "bc140bc9ce2668db043516fc6d35e11a26689b2b45d2f1d38d39972e1902c707"
+          }
+        },
+        {
+          "open_ms": 8316.604999999981,
+          "capture_ms": [
+            42.721300036646426,
+            38.17329998128116,
+            29.77109997300431,
+            28.641599987167865,
+            28.164900024421513,
+            31.052299949806184,
+            32.55220002029091,
+            34.85760005423799,
+            31.047400028910488,
+            31.35220002150163,
+            32.73450001142919,
+            30.39520001038909,
+            30.182800022885203,
+            34.07569997943938,
+            37.13090001838282,
+            31.99950000271201,
+            37.22050000214949,
+            34.23580003436655,
+            30.903799983207136,
+            30.34330002265051,
+            30.52110003773123,
+            34.29300000425428,
+            32.36020001349971,
+            40.99850001512095,
+            33.603399991989136,
+            30.55939998012036,
+            31.3004000345245,
+            31.81309998035431,
+            33.4026999771595,
+            31.02310001850128,
+            33.08899997500703,
+            30.728000041563064
+          ],
+          "hero_sensor_sha256": {
+            "forward_depth_m_f32": "f2bbf77c25fdaa7abea0ab3c44e831a8050a21e15968f174d92383ea9793a81e",
+            "instance_id_u32": "bc69b5e50916d2714d788c7471fc19228f0252714dcc02460b2256dbf4b1cfc3",
+            "valid_u8": "61a2ef4589e9c6a3b5163bdebdf5830681c6941d5fd51a1b5c6e00dd2bc5cc07"
+          },
+          "hero_pixels": {
+            "1": 15062,
+            "2": 30781
+          },
+          "device": "NVIDIA GeForce RTX 4060 Laptop GPU",
+          "uuid": "3b78d98198a3be57a8cb4d72fdfbfa96",
+          "triangles": 134960,
+          "geometries": "8882b67fbdaf1f3cd5732ee366f4e4da7ac895f55c7ae4ca5917329d6519d1fe",
+          "rgb_sha256": "70ff86eed2fdbbb7fb7f66c7200336f6aae6d7c765d96d1645bc59fdc452c228",
+          "sensors_sha256": "20bfd2cfe5751a25305580a5d73de8e1ef232eaa1f7d6283e706958b3f36257b",
+          "gpu_mean_ms": {
+            "gpu_render_ns": 12.378558,
+            "gpu_copy_ns": 1.190367,
+            "gpu_total_ns": 13.568925
+          },
+          "vulkan_timestamps": 32,
+          "backend_passes": [
+            "visibility",
+            "shadows",
+            "lighting",
+            "display_transform",
+            "sensor_export"
+          ],
+          "shaders": {
+            "vert": "b1069d14f062dcf3b441d1c44286068b92754557dbe8ce8327e9407cd7c0ec82",
+            "frag": "043d0e991b770144bb92d15b3f95374680a9714162df793945cb63209d02aeaa",
+            "environment_sky_vert": "d9bbb44453660efa44c1f5f6c2861102b62f6b23b400400fac7d7f3faa02b798",
+            "environment_sky_frag": "d1f64fe50290ec0e905830c3d556d8d24ceced8c9a1665155fe5406ee59232b7",
+            "msaa_resolve_vert": "d9bbb44453660efa44c1f5f6c2861102b62f6b23b400400fac7d7f3faa02b798",
+            "msaa_resolve_frag": "bc140bc9ce2668db043516fc6d35e11a26689b2b45d2f1d38d39972e1902c707"
+          }
+        }
+      ],
+      "image": "images/balanced.png"
+    },
+    {
+      "id": "high_grid2",
+      "label": "综合光照 · 2×2 面光",
+      "overrides": {
+        "progressive": true,
+        "indirect_mode": "diffuse_bounce",
+        "indirect_bounces": 2,
+        "spatial_filter": "guided_settling",
+        "reflection_mode": "single_bounce",
+        "area_light_grid": 2,
+        "normal": true
+      },
+      "rounds": [
+        {
+          "open_ms": 8211.301499977708,
+          "capture_ms": [
+            114.00309996679425,
+            104.2126000393182,
+            113.0737999919802,
+            104.20800000429153,
+            96.3507000124082,
+            99.99130002688617,
+            100.0668000197038,
+            102.26329998113215,
+            98.61739998450503,
+            110.49650004133582,
+            103.8898000260815,
+            105.12730001937598,
+            110.26960000162944,
+            110.49589997855946,
+            105.97400000551715,
+            106.31180001655594,
+            107.26040002191439,
+            111.92749999463558,
+            108.26940002152696,
+            108.87820000061765,
+            109.40780001692474,
+            114.67350000748411,
+            102.89819998433813,
+            116.7707999702543,
+            109.56809995695949,
+            115.15440000221133,
+            111.61180003546178,
+            108.97989996010438,
+            102.35220001777634,
+            99.77009997237474,
+            106.63819999899715,
+            108.79289999138564
+          ],
+          "hero_sensor_sha256": {
+            "forward_depth_m_f32": "f2bbf77c25fdaa7abea0ab3c44e831a8050a21e15968f174d92383ea9793a81e",
+            "instance_id_u32": "bc69b5e50916d2714d788c7471fc19228f0252714dcc02460b2256dbf4b1cfc3",
+            "valid_u8": "61a2ef4589e9c6a3b5163bdebdf5830681c6941d5fd51a1b5c6e00dd2bc5cc07"
+          },
+          "hero_pixels": {
+            "1": 15062,
+            "2": 30781
+          },
+          "device": "NVIDIA GeForce RTX 4060 Laptop GPU",
+          "uuid": "3b78d98198a3be57a8cb4d72fdfbfa96",
+          "triangles": 134960,
+          "geometries": "8882b67fbdaf1f3cd5732ee366f4e4da7ac895f55c7ae4ca5917329d6519d1fe",
+          "rgb_sha256": "63b5ff1fb13f75b80850799f384f4165e76d38c47192cd4cbd08c0e40b788d23",
+          "sensors_sha256": "20bfd2cfe5751a25305580a5d73de8e1ef232eaa1f7d6283e706958b3f36257b",
+          "gpu_mean_ms": {
+            "gpu_render_ns": 82.320635,
+            "gpu_copy_ns": 1.21533,
+            "gpu_total_ns": 83.535965
+          },
+          "vulkan_timestamps": 32,
+          "backend_passes": [
+            "visibility",
+            "shadows",
+            "lighting",
+            "display_transform",
+            "sensor_export",
+            "spatial-direct-guide",
+            "settling-display-after-mean-barrier"
+          ],
+          "shaders": {
+            "vert": "f4babe286e92561226bbb0382b03e582f2eb87ee5603fc34f6bcd8f22c793109",
+            "frag": "1aeb1bfa703b74c853768a658c22ad7bbf4a0aed2b8e4ffee1f70671ce697016",
+            "environment_sky_vert": "d9bbb44453660efa44c1f5f6c2861102b62f6b23b400400fac7d7f3faa02b798",
+            "environment_sky_frag": "bae01a76dc87f9f714ae437a2d4a8c4fd5e47c4b15ba2e6fa00a438eaf501367",
+            "spatial_guide_fragment": "c6e66b1a95b58a4ff707a1d783918f65cc2f690c4734b07498ac64a4770c38dd",
+            "settling_display_compute": "b5b5465e58001f95cf7970bae39b7d6a9b021c58f0b629fd54229a02fba9456e",
+            "progressive_compute": "7ff0535b5c6312aed2f0525302c3ef30d37f9df717ea5d4597c1127bab644d8c"
+          }
+        },
+        {
+          "open_ms": 8232.452200027183,
+          "capture_ms": [
+            116.39179999474436,
+            108.75470004975796,
+            111.88820004463196,
+            111.13099998328835,
+            105.33779999241233,
+            102.23279998172075,
+            103.98060001898557,
+            99.09530001459643,
+            100.2590999705717,
+            108.36760001257062,
+            98.02789997775108,
+            103.02079998655245,
+            109.80919998837635,
+            109.34099997393787,
+            106.40350001631305,
+            105.59389996342361,
+            115.34259998006746,
+            117.00170004041865,
+            115.34089996712282,
+            105.6828000000678,
+            112.8002000041306,
+            113.35010000038892,
+            125.38270000368357,
+            111.4166000043042,
+            117.85640002926812,
+            115.83530000643805,
+            108.37460000766441,
+            113.84069995256141,
+            105.33609997946769,
+            100.88789998553693,
+            112.55499999970198,
+            98.26430003158748
+          ],
+          "hero_sensor_sha256": {
+            "forward_depth_m_f32": "f2bbf77c25fdaa7abea0ab3c44e831a8050a21e15968f174d92383ea9793a81e",
+            "instance_id_u32": "bc69b5e50916d2714d788c7471fc19228f0252714dcc02460b2256dbf4b1cfc3",
+            "valid_u8": "61a2ef4589e9c6a3b5163bdebdf5830681c6941d5fd51a1b5c6e00dd2bc5cc07"
+          },
+          "hero_pixels": {
+            "1": 15062,
+            "2": 30781
+          },
+          "device": "NVIDIA GeForce RTX 4060 Laptop GPU",
+          "uuid": "3b78d98198a3be57a8cb4d72fdfbfa96",
+          "triangles": 134960,
+          "geometries": "8882b67fbdaf1f3cd5732ee366f4e4da7ac895f55c7ae4ca5917329d6519d1fe",
+          "rgb_sha256": "63b5ff1fb13f75b80850799f384f4165e76d38c47192cd4cbd08c0e40b788d23",
+          "sensors_sha256": "20bfd2cfe5751a25305580a5d73de8e1ef232eaa1f7d6283e706958b3f36257b",
+          "gpu_mean_ms": {
+            "gpu_render_ns": 82.883848,
+            "gpu_copy_ns": 1.142811,
+            "gpu_total_ns": 84.026659
+          },
+          "vulkan_timestamps": 32,
+          "backend_passes": [
+            "visibility",
+            "shadows",
+            "lighting",
+            "display_transform",
+            "sensor_export",
+            "spatial-direct-guide",
+            "settling-display-after-mean-barrier"
+          ],
+          "shaders": {
+            "vert": "f4babe286e92561226bbb0382b03e582f2eb87ee5603fc34f6bcd8f22c793109",
+            "frag": "1aeb1bfa703b74c853768a658c22ad7bbf4a0aed2b8e4ffee1f70671ce697016",
+            "environment_sky_vert": "d9bbb44453660efa44c1f5f6c2861102b62f6b23b400400fac7d7f3faa02b798",
+            "environment_sky_frag": "bae01a76dc87f9f714ae437a2d4a8c4fd5e47c4b15ba2e6fa00a438eaf501367",
+            "spatial_guide_fragment": "c6e66b1a95b58a4ff707a1d783918f65cc2f690c4734b07498ac64a4770c38dd",
+            "settling_display_compute": "b5b5465e58001f95cf7970bae39b7d6a9b021c58f0b629fd54229a02fba9456e",
+            "progressive_compute": "7ff0535b5c6312aed2f0525302c3ef30d37f9df717ea5d4597c1127bab644d8c"
+          }
+        }
+      ],
+      "image": "images/high_grid2.png"
+    },
+    {
+      "id": "high_grid4",
+      "label": "综合光照 · 4×4 面光",
+      "overrides": {
+        "progressive": true,
+        "indirect_mode": "diffuse_bounce",
+        "indirect_bounces": 2,
+        "spatial_filter": "guided_settling",
+        "reflection_mode": "single_bounce",
+        "area_light_grid": 4,
+        "normal": true
+      },
+      "rounds": [
+        {
+          "open_ms": 8343.65880000405,
+          "capture_ms": [
+            247.68879998009652,
+            228.64419996039942,
+            223.2996000093408,
+            219.68820004258305,
+            225.50409997347742,
+            208.4379000007175,
+            217.39419997902587,
+            217.7013999898918,
+            208.4300999995321,
+            206.67649997631088,
+            205.55730001069605,
+            223.80350000457838,
+            215.89419996598735,
+            220.6990999984555,
+            226.65759996743873,
+            230.35969998454675,
+            228.82950003258884,
+            233.48019999684766,
+            235.16290000407025,
+            229.13719998905435,
+            226.06359998462722,
+            230.70989997358993,
+            231.08189995400608,
+            228.66760002216324,
+            238.00230002962053,
+            238.19990002084523,
+            234.1528999968432,
+            231.87940003117546,
+            217.39519998664036,
+            202.39740004763007,
+            199.3452999740839,
+            195.44629997108132
+          ],
+          "hero_sensor_sha256": {
+            "forward_depth_m_f32": "f2bbf77c25fdaa7abea0ab3c44e831a8050a21e15968f174d92383ea9793a81e",
+            "instance_id_u32": "bc69b5e50916d2714d788c7471fc19228f0252714dcc02460b2256dbf4b1cfc3",
+            "valid_u8": "61a2ef4589e9c6a3b5163bdebdf5830681c6941d5fd51a1b5c6e00dd2bc5cc07"
+          },
+          "hero_pixels": {
+            "1": 15062,
+            "2": 30781
+          },
+          "device": "NVIDIA GeForce RTX 4060 Laptop GPU",
+          "uuid": "3b78d98198a3be57a8cb4d72fdfbfa96",
+          "triangles": 134960,
+          "geometries": "8882b67fbdaf1f3cd5732ee366f4e4da7ac895f55c7ae4ca5917329d6519d1fe",
+          "rgb_sha256": "d5d8ef75270f41b2b1e967780227fb41f87e0f01a54e1ed4364655799be04566",
+          "sensors_sha256": "20bfd2cfe5751a25305580a5d73de8e1ef232eaa1f7d6283e706958b3f36257b",
+          "gpu_mean_ms": {
+            "gpu_render_ns": 194.928343,
+            "gpu_copy_ns": 1.175527,
+            "gpu_total_ns": 196.10387
+          },
+          "vulkan_timestamps": 32,
+          "backend_passes": [
+            "visibility",
+            "shadows",
+            "lighting",
+            "display_transform",
+            "sensor_export",
+            "spatial-direct-guide",
+            "settling-display-after-mean-barrier"
+          ],
+          "shaders": {
+            "vert": "f4babe286e92561226bbb0382b03e582f2eb87ee5603fc34f6bcd8f22c793109",
+            "frag": "9d2e5c47a68c48e15e23aecc9e848f5e5713d51039e821bca9f97246a7eae9b5",
+            "environment_sky_vert": "d9bbb44453660efa44c1f5f6c2861102b62f6b23b400400fac7d7f3faa02b798",
+            "environment_sky_frag": "bae01a76dc87f9f714ae437a2d4a8c4fd5e47c4b15ba2e6fa00a438eaf501367",
+            "spatial_guide_fragment": "d3365b07cac963057c7f807a69932361191f8ddcaaf0c1afdccb8a6cb34527cc",
+            "settling_display_compute": "b5b5465e58001f95cf7970bae39b7d6a9b021c58f0b629fd54229a02fba9456e",
+            "progressive_compute": "7ff0535b5c6312aed2f0525302c3ef30d37f9df717ea5d4597c1127bab644d8c"
+          }
+        },
+        {
+          "open_ms": 8281.447200046387,
+          "capture_ms": [
+            239.50730002252385,
+            240.28830003226176,
+            225.9625000297092,
+            216.1985000129789,
+            209.6350000356324,
+            211.17809996940196,
+            212.79670001240447,
+            218.52309996029362,
+            209.43829999305308,
+            211.74810000229627,
+            207.81190000707284,
+            221.62560001015663,
+            212.25500002037734,
+            212.3657999909483,
+            220.55700002238154,
+            215.442200016696,
+            249.6388999861665,
+            233.88620000332594,
+            227.56899998057634,
+            231.0877000563778,
+            235.63110001850873,
+            228.4246999770403,
+            231.57309996895492,
+            235.3550000116229,
+            234.73589995410293,
+            227.44979994604364,
+            230.76639999635518,
+            230.7683000108227,
+            208.95780000137165,
+            202.46150001185015,
+            199.0150999627076,
+            192.25530000403523
+          ],
+          "hero_sensor_sha256": {
+            "forward_depth_m_f32": "f2bbf77c25fdaa7abea0ab3c44e831a8050a21e15968f174d92383ea9793a81e",
+            "instance_id_u32": "bc69b5e50916d2714d788c7471fc19228f0252714dcc02460b2256dbf4b1cfc3",
+            "valid_u8": "61a2ef4589e9c6a3b5163bdebdf5830681c6941d5fd51a1b5c6e00dd2bc5cc07"
+          },
+          "hero_pixels": {
+            "1": 15062,
+            "2": 30781
+          },
+          "device": "NVIDIA GeForce RTX 4060 Laptop GPU",
+          "uuid": "3b78d98198a3be57a8cb4d72fdfbfa96",
+          "triangles": 134960,
+          "geometries": "8882b67fbdaf1f3cd5732ee366f4e4da7ac895f55c7ae4ca5917329d6519d1fe",
+          "rgb_sha256": "d5d8ef75270f41b2b1e967780227fb41f87e0f01a54e1ed4364655799be04566",
+          "sensors_sha256": "20bfd2cfe5751a25305580a5d73de8e1ef232eaa1f7d6283e706958b3f36257b",
+          "gpu_mean_ms": {
+            "gpu_render_ns": 195.070495,
+            "gpu_copy_ns": 1.078732,
+            "gpu_total_ns": 196.149227
+          },
+          "vulkan_timestamps": 32,
+          "backend_passes": [
+            "visibility",
+            "shadows",
+            "lighting",
+            "display_transform",
+            "sensor_export",
+            "spatial-direct-guide",
+            "settling-display-after-mean-barrier"
+          ],
+          "shaders": {
+            "vert": "f4babe286e92561226bbb0382b03e582f2eb87ee5603fc34f6bcd8f22c793109",
+            "frag": "9d2e5c47a68c48e15e23aecc9e848f5e5713d51039e821bca9f97246a7eae9b5",
+            "environment_sky_vert": "d9bbb44453660efa44c1f5f6c2861102b62f6b23b400400fac7d7f3faa02b798",
+            "environment_sky_frag": "bae01a76dc87f9f714ae437a2d4a8c4fd5e47c4b15ba2e6fa00a438eaf501367",
+            "spatial_guide_fragment": "d3365b07cac963057c7f807a69932361191f8ddcaaf0c1afdccb8a6cb34527cc",
+            "settling_display_compute": "b5b5465e58001f95cf7970bae39b7d6a9b021c58f0b629fd54229a02fba9456e",
+            "progressive_compute": "7ff0535b5c6312aed2f0525302c3ef30d37f9df717ea5d4597c1127bab644d8c"
+          }
+        }
+      ],
+      "image": "images/high_grid4.png"
+    }
+  ],
+  "reference": {
+    "open_ms": 8415.722899953835,
+    "capture_ms": [
+      692.8244999726303,
+      688.3991000358947,
+      670.0451000360772,
+      685.6605000211857,
+      679.7909999731928,
+      686.5178000298329,
+      677.5854000006802,
+      702.0696999970824,
+      687.1033000061288,
+      687.0527999708429,
+      683.9380000019446,
+      686.3086000084877,
+      681.0037000104785,
+      703.2341999583878,
+      677.2072999738157,
+      698.104900016915,
+      699.1815999499522,
+      675.6972000002861,
+      683.5919999866746,
+      678.7028000107966,
+      692.8942000376992,
+      722.976400051266,
+      679.0163000114262,
+      691.2022000178695,
+      688.6726000229828,
+      685.2592999930494,
+      681.5114000346512,
+      673.0192999821156,
+      684.0411000302993,
+      689.5761999767274,
+      681.6843999549747,
+      673.9728000247851,
+      704.7639999655075,
+      694.261499971617,
+      680.7815000065602,
+      676.4023999567144,
+      686.6313999635167,
+      724.9345000018366,
+      672.2250999882817,
+      676.1154999840073,
+      675.3743999870494,
+      728.74839999713,
+      671.605899988208,
+      730.7222000090405,
+      657.3444999521598,
+      664.692800026387,
+      683.2263999967836,
+      690.8369000302628,
+      692.3273000284098,
+      682.8162000165321,
+      711.793199996464,
+      685.3560999734327,
+      665.0717000011355,
+      672.2757000243291,
+      695.804400020279,
+      676.0551000479609,
+      667.6069999812171,
+      691.6676000109874,
+      682.0601999643259,
+      700.9278000332415,
+      682.8347999835387,
+      693.9618000178598,
+      697.0380000420846,
+      681.6504999878816
+    ],
+    "hero_sensor_sha256": {
+      "forward_depth_m_f32": "f2bbf77c25fdaa7abea0ab3c44e831a8050a21e15968f174d92383ea9793a81e",
+      "instance_id_u32": "bc69b5e50916d2714d788c7471fc19228f0252714dcc02460b2256dbf4b1cfc3",
+      "valid_u8": "61a2ef4589e9c6a3b5163bdebdf5830681c6941d5fd51a1b5c6e00dd2bc5cc07"
+    },
+    "hero_pixels": {
+      "1": 15062,
+      "2": 30781
+    },
+    "device": "NVIDIA GeForce RTX 4060 Laptop GPU",
+    "uuid": "3b78d98198a3be57a8cb4d72fdfbfa96",
+    "triangles": 134960,
+    "geometries": "8882b67fbdaf1f3cd5732ee366f4e4da7ac895f55c7ae4ca5917329d6519d1fe",
+    "rgb_sha256": "6727d250246ae64431115e75c1d40ee9f5a65d7443927d35ce92068e10e57437",
+    "sensors_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "gpu_mean_ms": {
+      "gpu_render_ns": 658.846207,
+      "gpu_copy_ns": 1.660938,
+      "gpu_total_ns": 660.507145
+    },
+    "vulkan_timestamps": 64,
+    "backend_passes": [
+      "visibility",
+      "shadows",
+      "lighting",
+      "display_transform",
+      "sensor_export"
+    ],
+    "shaders": {
+      "vert": "f4babe286e92561226bbb0382b03e582f2eb87ee5603fc34f6bcd8f22c793109",
+      "frag": "e0655e99eed4874823470f7399bf9195f3d810b804fb3b2db47e5a40b8ddfdad",
+      "environment_sky_vert": "d9bbb44453660efa44c1f5f6c2861102b62f6b23b400400fac7d7f3faa02b798",
+      "environment_sky_frag": "bae01a76dc87f9f714ae437a2d4a8c4fd5e47c4b15ba2e6fa00a438eaf501367",
+      "spatial_guide_fragment": "2ab92a834bcbbb555d36c82d0f6861f29423b7e60cf63c0d8a82726185ce9e0f",
+      "settling_display_compute": "b5b5465e58001f95cf7970bae39b7d6a9b021c58f0b629fd54229a02fba9456e",
+      "progressive_compute": "7ff0535b5c6312aed2f0525302c3ef30d37f9df717ea5d4597c1127bab644d8c"
+    },
+    "image": "images/reference-seed1.png",
+    "seed": 1,
+    "batches": 64,
+    "spp": 1024
+  },
+  "total_timed_captures": 256
+}

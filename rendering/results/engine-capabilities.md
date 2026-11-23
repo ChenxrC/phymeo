@@ -1,5 +1,7 @@
 # 渲染引擎 · 能力与实测导航
 
+同一段 720p Panda 抓放近景实测了 14 个运动档位和两组静态累积，提供阴影、抗锯齿、面积灯、反弹、反射和降噪的整帧时间与同帧原图。[画质开关与性能表](performance-matrix/README.md)
+
 这里收录 Windows／RTX 4060 Laptop 上的实测结果。自研 Vulkan 已支持直接 PBR、面积灯、法线与粗糙度贴图、4× MSAA、光滑金属的一次镜面反射，以及粗糙表面的一至两次漫反射和静止视图的 GPU 线性累积。[原图降噪与多次反弹](progressive-room/index.html)。可以在同一帧查看附近色板如何照亮白色夹爪的暗面，以及画外物体在钢球中留下的倒影。[红板与夹爪](diffuse-bounce/index.html) · [近场反射开关](near-reflections/index.html) · [材质开关](normal-maps/index.html) · [全部影片](index.html) · [架构图](../architecture.html) · [自研 Vulkan 画质路线](../plans/2026-11-23-native-vulkan-quality.md) · [首版验收](../plans/09-acceptance.md)
 
 ```mermaid

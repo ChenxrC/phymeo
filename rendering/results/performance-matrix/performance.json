@@ -1,0 +1,845 @@
+{
+  "schema": "phymeo-render-performance-summary-v1",
+  "source": {
+    "file": "benchmark.json",
+    "sha256": "09429c3be766b82f2d1516bd57ac6f564392910b83a0660d23d1fd8292c99733",
+    "additional_json_sha256": "b793335aeca6667e56065cd232c0c6288e52481a45683d2f8d07345b99d66432"
+  },
+  "device": "NVIDIA GeForce RTX 4060 Laptop GPU",
+  "width": 1280,
+  "height": 720,
+  "statistics": {
+    "pooling": "all captures across all rounds, weighted by sample count",
+    "quantiles": "nearest rank: sorted[ceil(p*N)-1]",
+    "fps": "1000 / pooled mean capture_ms; not mean instantaneous FPS",
+    "budget_ms": 33.333333333333336,
+    "budget_operator": "<=",
+    "timing_scope": "synchronous capture to owned four-channel CPU planes; no open/upload, warmup, hashes, PNG or physics; GPU times are inclusive timestamps over measured captures",
+    "reported_rgb_hash_scope": "decoded PNG RGB pixels matched the measured hero capture in every round"
+  },
+  "cases": [
+    {
+      "id": "software",
+      "label": "软件 BVH 阴影",
+      "round_count": 2,
+      "rounds": [
+        {
+          "count": 32,
+          "mean_ms": 44.68605937836401,
+          "p50_ms": 43.84800000116229,
+          "p95_ms": 52.90769995190203,
+          "fps_from_mean": 22.37834380366459,
+          "recorded_capture_total_ms": 1429.9539001076482,
+          "budget_ms": 33.333333333333336,
+          "within_budget_count": 0,
+          "within_budget_ratio": 0.0,
+          "within_budget_percent": 0.0,
+          "round": 1,
+          "reported_rgb_sha256": "e885999ea43062a2917003f8fa33ea174bbe482fede39594432e1f38380f2a39"
+        },
+        {
+          "count": 32,
+          "mean_ms": 42.74271874601254,
+          "p50_ms": 42.438399977982044,
+          "p95_ms": 48.35559998173267,
+          "fps_from_mean": 23.395797678248762,
+          "recorded_capture_total_ms": 1367.7669998724014,
+          "budget_ms": 33.333333333333336,
+          "within_budget_count": 0,
+          "within_budget_ratio": 0.0,
+          "within_budget_percent": 0.0,
+          "round": 2,
+          "reported_rgb_sha256": "e885999ea43062a2917003f8fa33ea174bbe482fede39594432e1f38380f2a39"
+        }
+      ],
+      "pooled": {
+        "count": 64,
+        "mean_ms": 43.714389062188275,
+        "p50_ms": 43.374900007620454,
+        "p95_ms": 50.11260003084317,
+        "fps_from_mean": 22.875762911324134,
+        "recorded_capture_total_ms": 2797.7208999800496,
+        "budget_ms": 33.333333333333336,
+        "within_budget_count": 0,
+        "within_budget_ratio": 0.0,
+        "within_budget_percent": 0.0
+      },
+      "image": {
+        "path": "images/software.png",
+        "png_sha256": "755faf246b271444c4f532beb46fcb3d3a7e5e7e18d8a2ccfbbc0e71d69bdb93",
+        "decoded_rgb_sha256": "e885999ea43062a2917003f8fa33ea174bbe482fede39594432e1f38380f2a39",
+        "width": 1280,
+        "height": 720
+      }
+    },
+    {
+      "id": "common",
+      "label": "常用 · 硬件阴影",
+      "round_count": 2,
+      "rounds": [
+        {
+          "count": 32,
+          "mean_ms": 22.156353123136796,
+          "p50_ms": 22.294399968814105,
+          "p95_ms": 23.72789999935776,
+          "fps_from_mean": 45.13378146856438,
+          "recorded_capture_total_ms": 709.0032999403775,
+          "budget_ms": 33.333333333333336,
+          "within_budget_count": 32,
+          "within_budget_ratio": 1.0,
+          "within_budget_percent": 100.0,
+          "round": 1,
+          "reported_rgb_sha256": "e885999ea43062a2917003f8fa33ea174bbe482fede39594432e1f38380f2a39"
+        },
+        {
+          "count": 32,
+          "mean_ms": 20.383225000841776,
+          "p50_ms": 20.352200022898614,
+          "p95_ms": 21.762099990155548,
+          "fps_from_mean": 49.05995003041484,
+          "recorded_capture_total_ms": 652.2632000269368,
+          "budget_ms": 33.333333333333336,
+          "within_budget_count": 32,
+          "within_budget_ratio": 1.0,
+          "within_budget_percent": 100.0,
+          "round": 2,
+          "reported_rgb_sha256": "e885999ea43062a2917003f8fa33ea174bbe482fede39594432e1f38380f2a39"
+        }
+      ],
+      "pooled": {
+        "count": 64,
+        "mean_ms": 21.269789061989286,
+        "p50_ms": 21.196399990003556,
+        "p95_ms": 23.58000003732741,
+        "fps_from_mean": 47.015040773821084,
+        "recorded_capture_total_ms": 1361.2664999673143,
+        "budget_ms": 33.333333333333336,
+        "within_budget_count": 64,
+        "within_budget_ratio": 1.0,
+        "within_budget_percent": 100.0
+      },
+      "image": {
+        "path": "images/common.png",
+        "png_sha256": "755faf246b271444c4f532beb46fcb3d3a7e5e7e18d8a2ccfbbc0e71d69bdb93",
+        "decoded_rgb_sha256": "e885999ea43062a2917003f8fa33ea174bbe482fede39594432e1f38380f2a39",
+        "width": 1280,
+        "height": 720
+      }
+    },
+    {
+      "id": "aa4",
+      "label": "4× MSAA",
+      "round_count": 2,
+      "rounds": [
+        {
+          "count": 32,
+          "mean_ms": 24.528556248696987,
+          "p50_ms": 23.469399951864034,
+          "p95_ms": 30.470300000160933,
+          "fps_from_mean": 40.7688079910175,
+          "recorded_capture_total_ms": 784.9137999583036,
+          "budget_ms": 33.333333333333336,
+          "within_budget_count": 32,
+          "within_budget_ratio": 1.0,
+          "within_budget_percent": 100.0,
+          "round": 1,
+          "reported_rgb_sha256": "5a920e6fd6020509bc5d9aea9a1d437ee28a6b99c1bf9103282fdea7a69e5ba5"
+        },
+        {
+          "count": 32,
+          "mean_ms": 23.789387496435666,
+          "p50_ms": 23.68949999799952,
+          "p95_ms": 25.481600023340434,
+          "fps_from_mean": 42.03555052225825,
+          "recorded_capture_total_ms": 761.2603998859413,
+          "budget_ms": 33.333333333333336,
+          "within_budget_count": 32,
+          "within_budget_ratio": 1.0,
+          "within_budget_percent": 100.0,
+          "round": 2,
+          "reported_rgb_sha256": "5a920e6fd6020509bc5d9aea9a1d437ee28a6b99c1bf9103282fdea7a69e5ba5"
+        }
+      ],
+      "pooled": {
+        "count": 64,
+        "mean_ms": 24.158971872566326,
+        "p50_ms": 23.6865000333637,
+        "p95_ms": 28.695299988612533,
+        "fps_from_mean": 41.392489931889365,
+        "recorded_capture_total_ms": 1546.1741998442449,
+        "budget_ms": 33.333333333333336,
+        "within_budget_count": 64,
+        "within_budget_ratio": 1.0,
+        "within_budget_percent": 100.0
+      },
+      "image": {
+        "path": "images/aa4.png",
+        "png_sha256": "fb6afaa4e67ddb20bb386a831042eb7c4c47d9a77161cfb98251086a274103b3",
+        "decoded_rgb_sha256": "5a920e6fd6020509bc5d9aea9a1d437ee28a6b99c1bf9103282fdea7a69e5ba5",
+        "width": 1280,
+        "height": 720
+      }
+    },
+    {
+      "id": "dense4",
+      "label": "面光源 4×4",
+      "round_count": 2,
+      "rounds": [
+        {
+          "count": 32,
+          "mean_ms": 24.787271873719874,
+          "p50_ms": 24.832400027662516,
+          "p95_ms": 26.625500002410263,
+          "fps_from_mean": 40.343286066113095,
+          "recorded_capture_total_ms": 793.192699959036,
+          "budget_ms": 33.333333333333336,
+          "within_budget_count": 32,
+          "within_budget_ratio": 1.0,
+          "within_budget_percent": 100.0,
+          "round": 1,
+          "reported_rgb_sha256": "0a208e3aafabd3ec8469077283f8bdec87c3e9b7db5e1080ea182396f0bff883"
+        },
+        {
+          "count": 32,
+          "mean_ms": 25.67950312368339,
+          "p50_ms": 25.380200007930398,
+          "p95_ms": 31.27979999408126,
+          "fps_from_mean": 38.941563440054715,
+          "recorded_capture_total_ms": 821.7440999578685,
+          "budget_ms": 33.333333333333336,
+          "within_budget_count": 32,
+          "within_budget_ratio": 1.0,
+          "within_budget_percent": 100.0,
+          "round": 2,
+          "reported_rgb_sha256": "0a208e3aafabd3ec8469077283f8bdec87c3e9b7db5e1080ea182396f0bff883"
+        }
+      ],
+      "pooled": {
+        "count": 64,
+        "mean_ms": 25.23338749870163,
+        "p50_ms": 25.065399997401983,
+        "p95_ms": 28.595999989192933,
+        "fps_from_mean": 39.63003382131925,
+        "recorded_capture_total_ms": 1614.9367999169044,
+        "budget_ms": 33.333333333333336,
+        "within_budget_count": 64,
+        "within_budget_ratio": 1.0,
+        "within_budget_percent": 100.0
+      },
+      "image": {
+        "path": "images/dense4.png",
+        "png_sha256": "c4bfd2c4ca6ac6140f431fe3589215d798fc9484020e334bbf0a5068bf38675d",
+        "decoded_rgb_sha256": "0a208e3aafabd3ec8469077283f8bdec87c3e9b7db5e1080ea182396f0bff883",
+        "width": 1280,
+        "height": 720
+      }
+    },
+    {
+      "id": "dense8",
+      "label": "面光源 8×8",
+      "round_count": 2,
+      "rounds": [
+        {
+          "count": 32,
+          "mean_ms": 40.76708125103323,
+          "p50_ms": 40.70989997126162,
+          "p95_ms": 46.74859996885061,
+          "fps_from_mean": 24.52959518593584,
+          "recorded_capture_total_ms": 1304.5466000330634,
+          "budget_ms": 33.333333333333336,
+          "within_budget_count": 0,
+          "within_budget_ratio": 0.0,
+          "within_budget_percent": 0.0,
+          "round": 1,
+          "reported_rgb_sha256": "a6c55948320dccf8ee8cad4474b2c7838b5090ea3f9d6e95fd59cbc96bbcd640"
+        },
+        {
+          "count": 32,
+          "mean_ms": 42.00294687325368,
+          "p50_ms": 40.97639996325597,
+          "p95_ms": 48.1712999753654,
+          "fps_from_mean": 23.807853363659408,
+          "recorded_capture_total_ms": 1344.0942999441177,
+          "budget_ms": 33.333333333333336,
+          "within_budget_count": 0,
+          "within_budget_ratio": 0.0,
+          "within_budget_percent": 0.0,
+          "round": 2,
+          "reported_rgb_sha256": "a6c55948320dccf8ee8cad4474b2c7838b5090ea3f9d6e95fd59cbc96bbcd640"
+        }
+      ],
+      "pooled": {
+        "count": 64,
+        "mean_ms": 41.385014062143455,
+        "p50_ms": 40.87839997373521,
+        "p95_ms": 46.74859996885061,
+        "fps_from_mean": 24.163335996416645,
+        "recorded_capture_total_ms": 2648.640899977181,
+        "budget_ms": 33.333333333333336,
+        "within_budget_count": 0,
+        "within_budget_ratio": 0.0,
+        "within_budget_percent": 0.0
+      },
+      "image": {
+        "path": "images/dense8.png",
+        "png_sha256": "8dd2a77a92a69631ca0e23c9a6f47431ed51a835a13dc24b067ecf60c8fb06da",
+        "decoded_rgb_sha256": "a6c55948320dccf8ee8cad4474b2c7838b5090ea3f9d6e95fd59cbc96bbcd640",
+        "width": 1280,
+        "height": 720
+      }
+    },
+    {
+      "id": "normal",
+      "label": "橡胶台面法线贴图",
+      "round_count": 2,
+      "rounds": [
+        {
+          "count": 32,
+          "mean_ms": 21.255175002806936,
+          "p50_ms": 20.62979998299852,
+          "p95_ms": 24.52350000385195,
+          "fps_from_mean": 47.0473661058044,
+          "recorded_capture_total_ms": 680.165600089822,
+          "budget_ms": 33.333333333333336,
+          "within_budget_count": 32,
+          "within_budget_ratio": 1.0,
+          "within_budget_percent": 100.0,
+          "round": 1,
+          "reported_rgb_sha256": "066a1de256a829c3ab8c37ce75fe037d249d2a1bee79487030097eef541119e1"
+        },
+        {
+          "count": 32,
+          "mean_ms": 25.744834372744663,
+          "p50_ms": 25.268200028222054,
+          "p95_ms": 29.27029994316399,
+          "fps_from_mean": 38.842743578054325,
+          "recorded_capture_total_ms": 823.8346999278292,
+          "budget_ms": 33.333333333333336,
+          "within_budget_count": 32,
+          "within_budget_ratio": 1.0,
+          "within_budget_percent": 100.0,
+          "round": 2,
+          "reported_rgb_sha256": "066a1de256a829c3ab8c37ce75fe037d249d2a1bee79487030097eef541119e1"
+        }
+      ],
+      "pooled": {
+        "count": 64,
+        "mean_ms": 23.5000046877758,
+        "p50_ms": 23.87589996214956,
+        "p95_ms": 27.884099981747568,
+        "fps_from_mean": 42.553183000860365,
+        "recorded_capture_total_ms": 1504.0003000176512,
+        "budget_ms": 33.333333333333336,
+        "within_budget_count": 64,
+        "within_budget_ratio": 1.0,
+        "within_budget_percent": 100.0
+      },
+      "image": {
+        "path": "images/normal.png",
+        "png_sha256": "92c9c77b6fc3b9786928e57969acc543d0acc274caf88d478fe4cb06cd07c8eb",
+        "decoded_rgb_sha256": "066a1de256a829c3ab8c37ce75fe037d249d2a1bee79487030097eef541119e1",
+        "width": 1280,
+        "height": 720
+      }
+    },
+    {
+      "id": "mirror",
+      "label": "近场镜面反射",
+      "round_count": 2,
+      "rounds": [
+        {
+          "count": 32,
+          "mean_ms": 21.573034373432165,
+          "p50_ms": 21.165799989830703,
+          "p95_ms": 23.5990000073798,
+          "fps_from_mean": 46.35416523655707,
+          "recorded_capture_total_ms": 690.3370999498293,
+          "budget_ms": 33.333333333333336,
+          "within_budget_count": 32,
+          "within_budget_ratio": 1.0,
+          "within_budget_percent": 100.0,
+          "round": 1,
+          "reported_rgb_sha256": "431c2571668387f8f4e9af92fb42b306740a26715d4d100759fb102a3b7beb4f"
+        },
+        {
+          "count": 32,
+          "mean_ms": 22.300068752883817,
+          "p50_ms": 22.290099994279444,
+          "p95_ms": 25.17259999876842,
+          "fps_from_mean": 44.84291107267018,
+          "recorded_capture_total_ms": 713.6022000922821,
+          "budget_ms": 33.333333333333336,
+          "within_budget_count": 32,
+          "within_budget_ratio": 1.0,
+          "within_budget_percent": 100.0,
+          "round": 2,
+          "reported_rgb_sha256": "431c2571668387f8f4e9af92fb42b306740a26715d4d100759fb102a3b7beb4f"
+        }
+      ],
+      "pooled": {
+        "count": 64,
+        "mean_ms": 21.93655156315799,
+        "p50_ms": 21.6058999649249,
+        "p95_ms": 24.291199981234968,
+        "fps_from_mean": 45.58601643110946,
+        "recorded_capture_total_ms": 1403.9393000421114,
+        "budget_ms": 33.333333333333336,
+        "within_budget_count": 64,
+        "within_budget_ratio": 1.0,
+        "within_budget_percent": 100.0
+      },
+      "image": {
+        "path": "images/mirror.png",
+        "png_sha256": "cd9307362a1b16f7f34fe25b1948eca1b638fc19b05531e01628a9e91f6057f7",
+        "decoded_rgb_sha256": "431c2571668387f8f4e9af92fb42b306740a26715d4d100759fb102a3b7beb4f",
+        "width": 1280,
+        "height": 720
+      }
+    },
+    {
+      "id": "gi1",
+      "label": "一次漫反射",
+      "round_count": 2,
+      "rounds": [
+        {
+          "count": 32,
+          "mean_ms": 60.134493753139395,
+          "p50_ms": 59.98310004360974,
+          "p95_ms": 65.59860002016649,
+          "fps_from_mean": 16.629390846876362,
+          "recorded_capture_total_ms": 1924.3038001004606,
+          "budget_ms": 33.333333333333336,
+          "within_budget_count": 0,
+          "within_budget_ratio": 0.0,
+          "within_budget_percent": 0.0,
+          "round": 1,
+          "reported_rgb_sha256": "ddc45385a15cc41cf26ca169ef249b87b7960c953a1485eb4261d63fdc277a68"
+        },
+        {
+          "count": 32,
+          "mean_ms": 59.0935843756597,
+          "p50_ms": 57.549300021491945,
+          "p95_ms": 67.61139997979626,
+          "fps_from_mean": 16.92231078153882,
+          "recorded_capture_total_ms": 1890.9947000211105,
+          "budget_ms": 33.333333333333336,
+          "within_budget_count": 0,
+          "within_budget_ratio": 0.0,
+          "within_budget_percent": 0.0,
+          "round": 2,
+          "reported_rgb_sha256": "ddc45385a15cc41cf26ca169ef249b87b7960c953a1485eb4261d63fdc277a68"
+        }
+      ],
+      "pooled": {
+        "count": 64,
+        "mean_ms": 59.61403906439955,
+        "p50_ms": 58.966999989934266,
+        "p95_ms": 66.65210000937805,
+        "fps_from_mean": 16.774572159415758,
+        "recorded_capture_total_ms": 3815.298500121571,
+        "budget_ms": 33.333333333333336,
+        "within_budget_count": 0,
+        "within_budget_ratio": 0.0,
+        "within_budget_percent": 0.0
+      },
+      "image": {
+        "path": "images/gi1.png",
+        "png_sha256": "631ac14ff1a6e26a162463a137c0fbead58545972e2bacb00c2da29e0a41d0e2",
+        "decoded_rgb_sha256": "ddc45385a15cc41cf26ca169ef249b87b7960c953a1485eb4261d63fdc277a68",
+        "width": 1280,
+        "height": 720
+      }
+    },
+    {
+      "id": "gi2",
+      "label": "二次漫反射",
+      "round_count": 2,
+      "rounds": [
+        {
+          "count": 32,
+          "mean_ms": 104.96180000154709,
+          "p50_ms": 103.93400001339614,
+          "p95_ms": 117.4167999997735,
+          "fps_from_mean": 9.52727563728195,
+          "recorded_capture_total_ms": 3358.777600049507,
+          "budget_ms": 33.333333333333336,
+          "within_budget_count": 0,
+          "within_budget_ratio": 0.0,
+          "within_budget_percent": 0.0,
+          "round": 1,
+          "reported_rgb_sha256": "ab309d08b13641068c43b4e543df13eca0ed71f9c518668f49b82b54d3c1c4e0"
+        },
+        {
+          "count": 32,
+          "mean_ms": 104.66005312628113,
+          "p50_ms": 105.04439997021109,
+          "p95_ms": 112.14079998899251,
+          "fps_from_mean": 9.554743860041961,
+          "recorded_capture_total_ms": 3349.121700040996,
+          "budget_ms": 33.333333333333336,
+          "within_budget_count": 0,
+          "within_budget_ratio": 0.0,
+          "within_budget_percent": 0.0,
+          "round": 2,
+          "reported_rgb_sha256": "ab309d08b13641068c43b4e543df13eca0ed71f9c518668f49b82b54d3c1c4e0"
+        }
+      ],
+      "pooled": {
+        "count": 64,
+        "mean_ms": 104.81092656391411,
+        "p50_ms": 104.87840004498139,
+        "p95_ms": 113.06349997175857,
+        "fps_from_mean": 9.540989978656434,
+        "recorded_capture_total_ms": 6707.899300090503,
+        "budget_ms": 33.333333333333336,
+        "within_budget_count": 0,
+        "within_budget_ratio": 0.0,
+        "within_budget_percent": 0.0
+      },
+      "image": {
+        "path": "images/gi2.png",
+        "png_sha256": "e0b5b2c8ec95916ecde921078cf6aeb3a4a1a29352fc307f97801586087bc4f5",
+        "decoded_rgb_sha256": "ab309d08b13641068c43b4e543df13eca0ed71f9c518668f49b82b54d3c1c4e0",
+        "width": 1280,
+        "height": 720
+      }
+    },
+    {
+      "id": "denoise",
+      "label": "二次漫反射＋引导降噪",
+      "round_count": 2,
+      "rounds": [
+        {
+          "count": 32,
+          "mean_ms": 105.82584687654162,
+          "p50_ms": 104.30040000937879,
+          "p95_ms": 117.37110000103712,
+          "fps_from_mean": 9.449487337121132,
+          "recorded_capture_total_ms": 3386.427100049332,
+          "budget_ms": 33.333333333333336,
+          "within_budget_count": 0,
+          "within_budget_ratio": 0.0,
+          "within_budget_percent": 0.0,
+          "round": 1,
+          "reported_rgb_sha256": "3fc543b43ae2abfbf6699b18384e8cb21f6408b3e8085b3784561f662fdf3276"
+        },
+        {
+          "count": 32,
+          "mean_ms": 106.56436562931049,
+          "p50_ms": 105.67159997299314,
+          "p95_ms": 117.39119997946545,
+          "fps_from_mean": 9.38399993369782,
+          "recorded_capture_total_ms": 3410.0597001379356,
+          "budget_ms": 33.333333333333336,
+          "within_budget_count": 0,
+          "within_budget_ratio": 0.0,
+          "within_budget_percent": 0.0,
+          "round": 2,
+          "reported_rgb_sha256": "3fc543b43ae2abfbf6699b18384e8cb21f6408b3e8085b3784561f662fdf3276"
+        }
+      ],
+      "pooled": {
+        "count": 64,
+        "mean_ms": 106.19510625292605,
+        "p50_ms": 104.94920000201091,
+        "p95_ms": 117.37110000103712,
+        "fps_from_mean": 9.416629779702738,
+        "recorded_capture_total_ms": 6796.486800187267,
+        "budget_ms": 33.333333333333336,
+        "within_budget_count": 0,
+        "within_budget_ratio": 0.0,
+        "within_budget_percent": 0.0
+      },
+      "image": {
+        "path": "images/denoise.png",
+        "png_sha256": "4e129d908eccd3e1d2dcac71517e5a1e59bdb80eb5961ddfdb460d861166f6ba",
+        "decoded_rgb_sha256": "3fc543b43ae2abfbf6699b18384e8cb21f6408b3e8085b3784561f662fdf3276",
+        "width": 1280,
+        "height": 720
+      }
+    },
+    {
+      "id": "high",
+      "label": "高画质 · 综合光照",
+      "round_count": 2,
+      "rounds": [
+        {
+          "count": 32,
+          "mean_ms": 704.6295500003907,
+          "p50_ms": 709.1209999634884,
+          "p95_ms": 758.3260000101291,
+          "fps_from_mean": 1.4191854429032185,
+          "recorded_capture_total_ms": 22548.145600012504,
+          "budget_ms": 33.333333333333336,
+          "within_budget_count": 0,
+          "within_budget_ratio": 0.0,
+          "within_budget_percent": 0.0,
+          "round": 1,
+          "reported_rgb_sha256": "b40410cd19046ea98dc4cf8176d7823f550f94f304582d948fd96f6da416b6af"
+        },
+        {
+          "count": 32,
+          "mean_ms": 698.7850625027932,
+          "p50_ms": 705.415099975653,
+          "p95_ms": 758.146799984388,
+          "fps_from_mean": 1.4310552037537334,
+          "recorded_capture_total_ms": 22361.12200008938,
+          "budget_ms": 33.333333333333336,
+          "within_budget_count": 0,
+          "within_budget_ratio": 0.0,
+          "within_budget_percent": 0.0,
+          "round": 2,
+          "reported_rgb_sha256": "b40410cd19046ea98dc4cf8176d7823f550f94f304582d948fd96f6da416b6af"
+        }
+      ],
+      "pooled": {
+        "count": 64,
+        "mean_ms": 701.707306251592,
+        "p50_ms": 707.0667999796569,
+        "p95_ms": 758.146799984388,
+        "fps_from_mean": 1.4250956076570442,
+        "recorded_capture_total_ms": 44909.267600101884,
+        "budget_ms": 33.333333333333336,
+        "within_budget_count": 0,
+        "within_budget_ratio": 0.0,
+        "within_budget_percent": 0.0
+      },
+      "image": {
+        "path": "images/high.png",
+        "png_sha256": "9f8bc4589709af47b6f31f5db82a6c73c38715e7f73d3147b94c17e1394d090d",
+        "decoded_rgb_sha256": "b40410cd19046ea98dc4cf8176d7823f550f94f304582d948fd96f6da416b6af",
+        "width": 1280,
+        "height": 720
+      }
+    },
+    {
+      "id": "balanced",
+      "label": "均衡 · 4× MSAA＋4×4 面光",
+      "round_count": 2,
+      "rounds": [
+        {
+          "count": 32,
+          "mean_ms": 31.337343749328284,
+          "p50_ms": 30.74459999334067,
+          "p95_ms": 36.82410001056269,
+          "fps_from_mean": 31.910809288723936,
+          "recorded_capture_total_ms": 1002.7949999785051,
+          "budget_ms": 33.333333333333336,
+          "within_budget_count": 26,
+          "within_budget_ratio": 0.8125,
+          "within_budget_percent": 81.25,
+          "round": 1,
+          "reported_rgb_sha256": "70ff86eed2fdbbb7fb7f66c7200336f6aae6d7c765d96d1645bc59fdc452c228"
+        },
+        {
+          "count": 32,
+          "mean_ms": 32.85149375733454,
+          "p50_ms": 31.81309998035431,
+          "p95_ms": 40.99850001512095,
+          "fps_from_mean": 30.440016134022414,
+          "recorded_capture_total_ms": 1051.2478002347052,
+          "budget_ms": 33.333333333333336,
+          "within_budget_count": 21,
+          "within_budget_ratio": 0.65625,
+          "within_budget_percent": 65.625,
+          "round": 2,
+          "reported_rgb_sha256": "70ff86eed2fdbbb7fb7f66c7200336f6aae6d7c765d96d1645bc59fdc452c228"
+        }
+      ],
+      "pooled": {
+        "count": 64,
+        "mean_ms": 32.09441875333141,
+        "p50_ms": 31.052299949806184,
+        "p95_ms": 38.17329998128116,
+        "fps_from_mean": 31.158065447008592,
+        "recorded_capture_total_ms": 2054.0428002132103,
+        "budget_ms": 33.333333333333336,
+        "within_budget_count": 47,
+        "within_budget_ratio": 0.734375,
+        "within_budget_percent": 73.4375
+      },
+      "image": {
+        "path": "images/balanced.png",
+        "png_sha256": "ce09c92c4757092c85863111e260ee888996d596897c739dd8c8c7f75f888278",
+        "decoded_rgb_sha256": "70ff86eed2fdbbb7fb7f66c7200336f6aae6d7c765d96d1645bc59fdc452c228",
+        "width": 1280,
+        "height": 720
+      }
+    },
+    {
+      "id": "high_grid2",
+      "label": "综合光照 · 2×2 面光",
+      "round_count": 2,
+      "rounds": [
+        {
+          "count": 32,
+          "mean_ms": 107.13454062715755,
+          "p50_ms": 107.26040002191439,
+          "p95_ms": 115.15440000221133,
+          "fps_from_mean": 9.334057850494109,
+          "recorded_capture_total_ms": 3428.3053000690416,
+          "budget_ms": 33.333333333333336,
+          "within_budget_count": 0,
+          "within_budget_ratio": 0.0,
+          "within_budget_percent": 0.0,
+          "round": 1,
+          "reported_rgb_sha256": "63b5ff1fb13f75b80850799f384f4165e76d38c47192cd4cbd08c0e40b788d23"
+        },
+        {
+          "count": 32,
+          "mean_ms": 109.02822187381389,
+          "p50_ms": 108.75470004975796,
+          "p95_ms": 117.85640002926812,
+          "fps_from_mean": 9.17193716281433,
+          "recorded_capture_total_ms": 3488.9030999620445,
+          "budget_ms": 33.333333333333336,
+          "within_budget_count": 0,
+          "within_budget_ratio": 0.0,
+          "within_budget_percent": 0.0,
+          "round": 2,
+          "reported_rgb_sha256": "63b5ff1fb13f75b80850799f384f4165e76d38c47192cd4cbd08c0e40b788d23"
+        }
+      ],
+      "pooled": {
+        "count": 64,
+        "mean_ms": 108.08138125048572,
+        "p50_ms": 108.37460000766441,
+        "p95_ms": 116.7707999702543,
+        "fps_from_mean": 9.252287382249808,
+        "recorded_capture_total_ms": 6917.208400031086,
+        "budget_ms": 33.333333333333336,
+        "within_budget_count": 0,
+        "within_budget_ratio": 0.0,
+        "within_budget_percent": 0.0
+      },
+      "image": {
+        "path": "images/high_grid2.png",
+        "png_sha256": "e6e69e55db8e435ec629d43e165530d28f40b5e7d12fda8e4704292465c4460b",
+        "decoded_rgb_sha256": "63b5ff1fb13f75b80850799f384f4165e76d38c47192cd4cbd08c0e40b788d23",
+        "width": 1280,
+        "height": 720
+      }
+    },
+    {
+      "id": "high_grid4",
+      "label": "综合光照 · 4×4 面光",
+      "round_count": 2,
+      "rounds": [
+        {
+          "count": 32,
+          "mean_ms": 222.6996218705608,
+          "p50_ms": 225.50409997347742,
+          "p95_ms": 238.19990002084523,
+          "fps_from_mean": 4.49035338093761,
+          "recorded_capture_total_ms": 7126.387899857946,
+          "budget_ms": 33.333333333333336,
+          "within_budget_count": 0,
+          "within_budget_ratio": 0.0,
+          "within_budget_percent": 0.0,
+          "round": 1,
+          "reported_rgb_sha256": "d5d8ef75270f41b2b1e967780227fb41f87e0f01a54e1ed4364655799be04566"
+        },
+        {
+          "count": 32,
+          "mean_ms": 221.40341250087658,
+          "p50_ms": 220.55700002238154,
+          "p95_ms": 240.28830003226176,
+          "fps_from_mean": 4.51664221749988,
+          "recorded_capture_total_ms": 7084.909200028051,
+          "budget_ms": 33.333333333333336,
+          "within_budget_count": 0,
+          "within_budget_ratio": 0.0,
+          "within_budget_percent": 0.0,
+          "round": 2,
+          "reported_rgb_sha256": "d5d8ef75270f41b2b1e967780227fb41f87e0f01a54e1ed4364655799be04566"
+        }
+      ],
+      "pooled": {
+        "count": 64,
+        "mean_ms": 222.0515171857187,
+        "p50_ms": 223.80350000457838,
+        "p95_ms": 239.50730002252385,
+        "fps_from_mean": 4.503459434432161,
+        "recorded_capture_total_ms": 14211.297099885996,
+        "budget_ms": 33.333333333333336,
+        "within_budget_count": 0,
+        "within_budget_ratio": 0.0,
+        "within_budget_percent": 0.0
+      },
+      "image": {
+        "path": "images/high_grid4.png",
+        "png_sha256": "fc6533c636b16ad5ef70b89640e47e48daffd17eb7d5933d1c95d3086ff4a4fb",
+        "decoded_rgb_sha256": "d5d8ef75270f41b2b1e967780227fb41f87e0f01a54e1ed4364655799be04566",
+        "width": 1280,
+        "height": 720
+      }
+    }
+  ],
+  "still": {
+    "id": "still",
+    "label": "静态多批",
+    "image": {
+      "path": "images/still.png",
+      "png_sha256": "159842859d1305dd1270f293e1646d26ea92b396d2774976ab26034381389d6c",
+      "decoded_rgb_sha256": "4abd16e2cfe89e40a7b048464b5d8c8d5a4b201671dc707b822a2026e7f3c124",
+      "width": 1280,
+      "height": 720
+    },
+    "pooled": {
+      "count": 64,
+      "mean_ms": 690.5728281271877,
+      "p50_ms": 685.2313000126742,
+      "p95_ms": 729.5235999627039,
+      "fps_from_mean": 1.4480731926739274,
+      "recorded_capture_total_ms": 44196.66100014001,
+      "budget_ms": 33.333333333333336,
+      "within_budget_count": 0,
+      "within_budget_ratio": 0.0,
+      "within_budget_percent": 0.0
+    },
+    "interpretation": "per-capture statistics and sum of recorded capture calls; not complete static-image FPS or unmeasured pipeline duration"
+  },
+  "visual_comparison": {
+    "reference": {
+      "path": "images/reference-seed1.png",
+      "png_sha256": "1f6283b7a7bedb0d2909a81705cd201f7cd30d21f797e1656233bec23881dfd2",
+      "decoded_rgb_sha256": "6727d250246ae64431115e75c1d40ee9f5a65d7443927d35ce92068e10e57437",
+      "width": 1280,
+      "height": 720
+    },
+    "seed": 1,
+    "samples_per_pixel": 1024,
+    "scope": "Full-frame inverse sRGB RGB RMS for one registered pose. Independent finite sample of the same high preset at 1x, not ground truth or an AA/temporal quality ranking.",
+    "display_linear_rmse": {
+      "software": 0.05398301784946304,
+      "common": 0.05398301784946304,
+      "aa4": 0.055096996161530805,
+      "dense4": 0.052669718541898336,
+      "dense8": 0.05256888396026629,
+      "normal": 0.05397917608019714,
+      "mirror": 0.05283557398386941,
+      "gi1": 0.07388849188323404,
+      "gi2": 0.07631186303008602,
+      "denoise": 0.0612701233613136,
+      "high": 0.0595985296989333,
+      "balanced": 0.05384641467715585,
+      "high_grid2": 0.060331376156763504,
+      "high_grid4": 0.05955405066112258,
+      "still": 0.055096278843428804
+    }
+  },
+  "comparison": {
+    "file": "comparison.png",
+    "sha256": "ab9887a2c4a40ccb648685c3b0b02c6c6c7177aa0de553bad71bba675e36b892",
+    "width": 2560,
+    "height": 1872,
+    "panel_order": [
+      "common",
+      "dense4",
+      "high",
+      "still"
+    ],
+    "source_pixels": "unscaled RGB copy; text outside image; no color transform",
+    "font": "msyh.ttc"
+  }
+}

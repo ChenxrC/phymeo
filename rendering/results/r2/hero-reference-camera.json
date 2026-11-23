@@ -1,0 +1,9047 @@
+{
+  "mode": "studio",
+  "backend": {
+    "geometry": {
+      "mesh_slots": 61,
+      "instances": 63,
+      "uploaded_vertices": 403311,
+      "uploaded_triangles": 134960,
+      "limits": {
+        "mesh_slots": 256,
+        "instances": 256,
+        "uploaded_vertices": 600000,
+        "uploaded_triangles": 200000
+      },
+      "scope": "per-instance uploaded geometry; shared per-mesh decoding guards unchanged"
+    },
+    "textures": {
+      "uploads": [
+        {
+          "role": "color",
+          "channel": null,
+          "source_sha256": "460dd08d240f4a1f02982415048c3c5c200f385db212da18dc7e2df68bf4d0be",
+          "decoded_rgb8_sha256": "bce2d660b1735b3b00d2872d1b9ba297e16148b570259931ab640d47ec624084",
+          "width": 1024,
+          "height": 1024,
+          "factor": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "format": "R8G8B8A8Unorm",
+          "srgb": true,
+          "upload_bytes": 4194304,
+          "materials": [
+            "photographic-wood"
+          ],
+          "uris": [
+            "file:///C:/Users/38347/.codex/worktrees/phymeo-rendering/phymeo/rendering/examples/materials/wood_table_001_diff_1k.jpg"
+          ]
+        },
+        {
+          "role": "roughness",
+          "channel": "r",
+          "source_sha256": "a2ca9ae89dfe7b8e2e5e92f0aa43467845417de8a50205b5852ef0d57c7624f9",
+          "decoded_rgb8_sha256": "8a34fb07de049a9beab78167faac1efc8a2ca8343844f1712f28643655d78588",
+          "width": 1024,
+          "height": 1024,
+          "factor": 1.0,
+          "format": "R32Sfloat",
+          "srgb": false,
+          "upload_bytes": 4194304,
+          "materials": [
+            "photographic-wood"
+          ],
+          "uris": [
+            "file:///C:/Users/38347/.codex/worktrees/phymeo-rendering/phymeo/rendering/examples/materials/wood_table_001_rough_1k.jpg"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "instance_id": 3,
+          "material_id": "photographic-wood",
+          "mesh_id": "floor",
+          "mesh_source_sha256": "99502a36c2c2dc7640a2602f80d3cedb0b4569ed2dfbde7446d6d86c75dbbfb0"
+        }
+      ],
+      "decoded_rgb8_bytes": 6291456,
+      "upload_bytes": 8388608,
+      "sampling": {
+        "filter": "linear",
+        "address": "repeat",
+        "mipmap_levels": 1,
+        "uv_origin": "upper-left; unmodified glTF TEXCOORD_0"
+      },
+      "factor_policy": "white: sRGB8 hardware decode; nonwhite: standard EOTF times linear factor, FP32 texture; material uniform white",
+      "shader_semantics": "SAPIEN 3.0.3 takes sampled color and roughness in place of the corresponding uniform",
+      "limits": {
+        "decoded_rgb8_bytes": 67108864,
+        "upload_bytes": 134217728
+      },
+      "actual_uploads": [
+        {
+          "role": "color",
+          "channel": null,
+          "source_sha256": "460dd08d240f4a1f02982415048c3c5c200f385db212da18dc7e2df68bf4d0be",
+          "factor": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "width": 1024,
+          "height": 1024,
+          "format": "R8G8B8A8Unorm",
+          "srgb": true,
+          "filter": "linear",
+          "address": "repeat",
+          "mipmap_levels": 1,
+          "cpu_upload_sha256": "2243ad28f23a90512387bf13e605cfc782c437c87d0de26d93a8bfcd11fc3fb3",
+          "cpu_upload_bytes": 4194304
+        },
+        {
+          "role": "roughness",
+          "channel": "r",
+          "source_sha256": "a2ca9ae89dfe7b8e2e5e92f0aa43467845417de8a50205b5852ef0d57c7624f9",
+          "factor": 1.0,
+          "width": 1024,
+          "height": 1024,
+          "format": "R32Sfloat",
+          "srgb": false,
+          "filter": "linear",
+          "address": "repeat",
+          "mipmap_levels": 1,
+          "cpu_upload_sha256": "15604d37fad666ee2a5c8e148edb9aa21437d12b9f29fcfd048856f2871096a6",
+          "cpu_upload_bytes": 4194304
+        }
+      ]
+    },
+    "studio": {
+      "preset": "neutral-area-studio-v1",
+      "center_m": [
+        0.18,
+        0,
+        0.42
+      ],
+      "scale_m": 0.85,
+      "panel_size_scale": 1.0,
+      "panel_strength": 0.125,
+      "environment_radiance": null,
+      "panels": [
+        {
+          "name": "key",
+          "position_m": [
+            -0.8400000000000001,
+            -1.19,
+            1.95
+          ],
+          "emission_direction_world": [
+            0.4656903154237997,
+            0.543305367994433,
+            -0.6985354731356995
+          ],
+          "half_size_m": [
+            0.68,
+            0.4675
+          ],
+          "radiance_linear_rgb": [
+            0.75,
+            0.75,
+            0.75
+          ],
+          "public_component": "RenderParallelogramLightComponent",
+          "visible_geometry": false
+        },
+        {
+          "name": "fill",
+          "position_m": [
+            1.3699999999999999,
+            0.595,
+            1.44
+          ],
+          "emission_direction_world": [
+            -0.7098281771887514,
+            -0.3549140885943757,
+            -0.6084241518760726
+          ],
+          "half_size_m": [
+            0.5525,
+            0.68
+          ],
+          "radiance_linear_rgb": [
+            0.3125,
+            0.3125,
+            0.3125
+          ],
+          "public_component": "RenderParallelogramLightComponent",
+          "visible_geometry": false
+        }
+      ],
+      "units": "positions and emitter half sizes in metres; colors linear relative radiance",
+      "declared_scene_lights": "retained unchanged",
+      "soft_shadow_method": "official RT samples emitter surface and traces finite shadow rays",
+      "reflection_method": "official diffuse/GGX direct area-light estimator plus traced HDR environment",
+      "support": "path_trace RGB only; no raster studio approximation",
+      "environment_source": "directional-radiance-map",
+      "uniform_environment_radiance_ignored": 0.125,
+      "environment_map": {
+        "uri": "file:///C:/Users/38347/.codex/worktrees/phymeo-rendering/phymeo/rendering/examples/materials/university_workshop_1k.hdr",
+        "sha256": "a125ada38fc602025326f29b68df09531bb16f899f1973b03d9ac5ac98142548",
+        "strength": 0.0625,
+        "yaw_degrees": 25.0,
+        "face_size": 256
+      },
+      "environment": {
+        "source_kind": "local equirectangular Radiance RGBE",
+        "source_sha256": "a125ada38fc602025326f29b68df09531bb16f899f1973b03d9ac5ac98142548",
+        "source_size": [
+          1024,
+          512
+        ],
+        "face_resolution": [
+          256,
+          256
+        ],
+        "face_count": 6,
+        "face_sha256": [
+          "d0fc20856bc30e4f9aeba61593deaab7fcdd8c83e6e2105a12012c6248e17aad",
+          "2349aa755010f6cd98b887e257a667c9f56a84214025adad7a88fd86276556fa",
+          "f1d34740bc90ac27e1703f80b13c5e85129009cb59ce20112f7d75d8e6d4fe59",
+          "4df8c4fc90af452040229de7d3269952eadb0dd3900feefcdfc0b9463cbbc290",
+          "e4a375ee78173253a47d288582f97da4b460a251d2347b69502c1acfa36c616a",
+          "e07870bbebaef2a800f7ea170e8184672b0e05a60c7f0627ef28528c28bb9478"
+        ],
+        "peak_linear_radiance": 67.0,
+        "strength": 0.0625,
+        "yaw_degrees": 25.0,
+        "orientation": "world +Z up, panorama centre +X, increasing longitude toward +Y; sampler receives ray.xzy",
+        "encoding": "linear-radiance-rgbe",
+        "loader": "public RenderCubemap(px,nx,py,ny,pz,nz)",
+        "source_lifetime": "owned temporary file until scene close"
+      },
+      "attached_area_lights": 2
+    },
+    "backend": "sapien-reference",
+    "library_version": "3.0.3",
+    "sapien_scene_id": 1,
+    "numpy_version": "1.26.4",
+    "requested_path": "path_trace",
+    "effective_path": "path_trace",
+    "requested_device": "cuda:0",
+    "device_name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+    "device_pci": "0000:01:00.0",
+    "device_description": "cuda:0",
+    "driver_version": null,
+    "vulkan_api_version": null,
+    "physics_systems": [],
+    "physics_steps": 0,
+    "shader_pack": "rt",
+    "shader_directory": "C:\\Users\\38347\\.codex\\worktrees\\phymeo-rendering\\phymeo\\artifacts\\rendering\\g3-table\\ref-env\\Lib\\site-packages\\sapien\\vulkan_shader\\rt",
+    "shader_sha256": "4358e2244c99e37d9c8dcd3ee91a9e9d30b1af52b804aa9d7f9cc4b4f50f3d6b",
+    "official_shader_sha256": "4358e2244c99e37d9c8dcd3ee91a9e9d30b1af52b804aa9d7f9cc4b4f50f3d6b",
+    "linear_rgb_target": "HdrColor",
+    "display": "exposure=8; nonnegative linear Rec.709; Khronos PBR Neutral; standard sRGB OETF; half-up UNORM8",
+    "display_transform": "pbr-neutral",
+    "display_transform_source": "https://github.com/KhronosGroup/ToneMapping/blob/b5a2eed5ddf6c2227090449399de9c7affb9e4c9/PBR_Neutral/pbrNeutral.glsl",
+    "exposure": 8.0,
+    "ambient_linear_rgb": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "shadow_map_size": 2048,
+    "readback": "blocking SAPIEN get_picture CPU download, then owned bytes",
+    "samples_per_pixel": 512,
+    "max_bounces": 4,
+    "denoiser": "none",
+    "seed": null,
+    "seed_support": "not-user-configurable",
+    "seed_note": "sampling_pattern specifies the actual shader and device scope",
+    "sampling_pattern": {
+      "mode": "official-fixed-sequence-fresh-camera",
+      "magic_hex": "0x9e3779b9",
+      "primary_pixel_sequence": "Halton bases 2 and 3; frameCount*spp+i",
+      "path_rng": "TEA(pixel index + width*height*spp*frameCount, magic)",
+      "frame_count_policy": "first render of a newly constructed camera each exposure",
+      "arbitrary_seed_supported": false,
+      "scope": "same installed shader/device/config; repeated public bytes audited in device test",
+      "cross_device_bitwise_guarantee": false
+    },
+    "accumulation": "fresh camera per exposure; no temporal history",
+    "supported_channels": [
+      "srgb8_rgb"
+    ],
+    "pt_clip_limit": "all vertices inside near+0.002/far and range<9999m, with FP32 clearance",
+    "pt_precision_policy": "8*FP32-epsilon*transform-scale clearance; reject >=1% scene span; pragmatic admission, not a global error proof",
+    "resolution_limit": 4096,
+    "shader_probe": "selected shader executed and CPU target read back",
+    "global_config_note": "camera default mutations serialized/restored inside this adapter only",
+    "lifecycle": {
+      "studio_temporary_files_exist": false,
+      "closed": true,
+      "completed_captures": 1200,
+      "close_error": null,
+      "attached_entities": 0,
+      "attached_cameras": 0,
+      "attached_render_bodies": 0,
+      "attached_lights": 0,
+      "attached_entities_before_clear": 66,
+      "attached_entities_after_clear": 0,
+      "attached_cameras_after_clear": 0,
+      "attached_render_bodies_after_clear": 0,
+      "attached_lights_after_clear": 0,
+      "scope": "this scene attachments only; no driver/cache/process-memory release claim"
+    }
+  },
+  "camera_setup": "sequence",
+  "workshop": false,
+  "camera_cuts_s": [
+    0.5,
+    2.3
+  ],
+  "shadow_traversal": null,
+  "area_light_grid": null,
+  "scene_radiance_unit_scale": 0.125,
+  "display_exposure": 8.0,
+  "panorama_relative_strength": 0.5,
+  "photographic_worktop": true,
+  "scanned_linear_roughness": true,
+  "display_transform": "pbr-neutral",
+  "tiles_per_axis": 2,
+  "backend_exposures_per_image": 4,
+  "lighting": "workshop daylight + area lights",
+  "source_archive": "archive:c58e3447cd6d95c52715c07f038318203eaa3892f486317226c8b93350cad0f9",
+  "source_excerpt_sha256": "58073ab38acab8f5057061fa487117aa0284f81b097a4f5bb0473f890515f118",
+  "frames": 300,
+  "size": [
+    1920,
+    1080
+  ],
+  "fps": 30,
+  "recorded_window_s": [
+    0.0,
+    10.0
+  ],
+  "simulated_range_s": [
+    0.033125,
+    10.0
+  ],
+  "source_indices": [
+    52,
+    106,
+    159,
+    212,
+    266,
+    319,
+    372,
+    426,
+    479,
+    532,
+    586,
+    639,
+    692,
+    746,
+    799,
+    852,
+    906,
+    959,
+    1012,
+    1066,
+    1119,
+    1172,
+    1226,
+    1279,
+    1332,
+    1386,
+    1439,
+    1492,
+    1546,
+    1599,
+    1652,
+    1706,
+    1759,
+    1812,
+    1866,
+    1919,
+    1972,
+    2026,
+    2079,
+    2132,
+    2186,
+    2239,
+    2292,
+    2346,
+    2399,
+    2452,
+    2506,
+    2559,
+    2612,
+    2666,
+    2719,
+    2772,
+    2826,
+    2879,
+    2932,
+    2986,
+    3039,
+    3092,
+    3146,
+    3199,
+    3252,
+    3306,
+    3359,
+    3412,
+    3466,
+    3519,
+    3572,
+    3626,
+    3679,
+    3732,
+    3786,
+    3839,
+    3892,
+    3946,
+    3999,
+    4052,
+    4106,
+    4159,
+    4212,
+    4266,
+    4319,
+    4372,
+    4426,
+    4479,
+    4532,
+    4586,
+    4639,
+    4692,
+    4746,
+    4799,
+    4852,
+    4906,
+    4959,
+    5012,
+    5066,
+    5119,
+    5172,
+    5226,
+    5279,
+    5332,
+    5386,
+    5439,
+    5492,
+    5546,
+    5599,
+    5652,
+    5706,
+    5759,
+    5812,
+    5866,
+    5919,
+    5972,
+    6026,
+    6079,
+    6132,
+    6186,
+    6239,
+    6292,
+    6346,
+    6399,
+    6452,
+    6506,
+    6559,
+    6612,
+    6666,
+    6719,
+    6772,
+    6826,
+    6879,
+    6932,
+    6986,
+    7039,
+    7092,
+    7146,
+    7199,
+    7252,
+    7306,
+    7359,
+    7412,
+    7466,
+    7519,
+    7572,
+    7626,
+    7679,
+    7732,
+    7786,
+    7839,
+    7892,
+    7946,
+    7999,
+    8052,
+    8106,
+    8159,
+    8212,
+    8266,
+    8319,
+    8372,
+    8426,
+    8479,
+    8532,
+    8586,
+    8639,
+    8692,
+    8746,
+    8799,
+    8852,
+    8906,
+    8959,
+    9012,
+    9066,
+    9119,
+    9172,
+    9226,
+    9279,
+    9332,
+    9386,
+    9439,
+    9492,
+    9546,
+    9599,
+    9652,
+    9706,
+    9759,
+    9812,
+    9866,
+    9919,
+    9972,
+    10026,
+    10079,
+    10132,
+    10186,
+    10239,
+    10292,
+    10346,
+    10399,
+    10452,
+    10506,
+    10559,
+    10612,
+    10666,
+    10719,
+    10772,
+    10826,
+    10879,
+    10932,
+    10986,
+    11039,
+    11092,
+    11146,
+    11199,
+    11252,
+    11306,
+    11359,
+    11412,
+    11466,
+    11519,
+    11572,
+    11626,
+    11679,
+    11732,
+    11786,
+    11839,
+    11892,
+    11946,
+    11999,
+    12052,
+    12106,
+    12159,
+    12212,
+    12266,
+    12319,
+    12372,
+    12426,
+    12479,
+    12532,
+    12586,
+    12639,
+    12692,
+    12746,
+    12799,
+    12852,
+    12906,
+    12959,
+    13012,
+    13066,
+    13119,
+    13172,
+    13226,
+    13279,
+    13332,
+    13386,
+    13439,
+    13492,
+    13546,
+    13599,
+    13652,
+    13706,
+    13759,
+    13812,
+    13866,
+    13919,
+    13972,
+    14026,
+    14079,
+    14132,
+    14186,
+    14239,
+    14292,
+    14346,
+    14399,
+    14452,
+    14506,
+    14559,
+    14612,
+    14666,
+    14719,
+    14772,
+    14826,
+    14879,
+    14932,
+    14986,
+    15039,
+    15092,
+    15146,
+    15199,
+    15252,
+    15306,
+    15359,
+    15412,
+    15466,
+    15519,
+    15572,
+    15626,
+    15679,
+    15732,
+    15786,
+    15839,
+    15892,
+    15946,
+    15999
+  ],
+  "source_times_s": [
+    0.033125,
+    0.066875,
+    0.1,
+    0.133125,
+    0.166875,
+    0.2,
+    0.233125,
+    0.26687500000000003,
+    0.3,
+    0.333125,
+    0.366875,
+    0.4,
+    0.433125,
+    0.466875,
+    0.5,
+    0.533125,
+    0.566875,
+    0.6,
+    0.633125,
+    0.666875,
+    0.7000000000000001,
+    0.733125,
+    0.766875,
+    0.8,
+    0.833125,
+    0.8668750000000001,
+    0.9,
+    0.933125,
+    0.966875,
+    1.0,
+    1.033125,
+    1.066875,
+    1.1,
+    1.133125,
+    1.166875,
+    1.2,
+    1.233125,
+    1.266875,
+    1.3,
+    1.3331250000000001,
+    1.366875,
+    1.4000000000000001,
+    1.433125,
+    1.466875,
+    1.5,
+    1.533125,
+    1.566875,
+    1.6,
+    1.633125,
+    1.666875,
+    1.7,
+    1.733125,
+    1.766875,
+    1.8,
+    1.8331250000000001,
+    1.866875,
+    1.9000000000000001,
+    1.933125,
+    1.9668750000000002,
+    2.0,
+    2.033125,
+    2.066875,
+    2.1,
+    2.133125,
+    2.166875,
+    2.2,
+    2.2331250000000002,
+    2.266875,
+    2.3000000000000003,
+    2.333125,
+    2.366875,
+    2.4,
+    2.433125,
+    2.466875,
+    2.5,
+    2.533125,
+    2.566875,
+    2.6,
+    2.633125,
+    2.666875,
+    2.7,
+    2.7331250000000002,
+    2.766875,
+    2.8000000000000003,
+    2.833125,
+    2.866875,
+    2.9,
+    2.933125,
+    2.966875,
+    3.0,
+    3.033125,
+    3.066875,
+    3.1,
+    3.133125,
+    3.166875,
+    3.2,
+    3.2331250000000002,
+    3.266875,
+    3.3000000000000003,
+    3.333125,
+    3.3668750000000003,
+    3.4,
+    3.433125,
+    3.466875,
+    3.5,
+    3.533125,
+    3.566875,
+    3.6,
+    3.633125,
+    3.666875,
+    3.7,
+    3.7331250000000002,
+    3.766875,
+    3.8000000000000003,
+    3.833125,
+    3.8668750000000003,
+    3.9,
+    3.933125,
+    3.966875,
+    4.0,
+    4.033125,
+    4.0668750000000005,
+    4.1,
+    4.133125,
+    4.166875,
+    4.2,
+    4.233125,
+    4.266875,
+    4.3,
+    4.333125,
+    4.366875,
+    4.4,
+    4.433125,
+    4.466875,
+    4.5,
+    4.533125,
+    4.5668750000000005,
+    4.6000000000000005,
+    4.633125,
+    4.666875,
+    4.7,
+    4.733125,
+    4.766875,
+    4.8,
+    4.833125,
+    4.866875,
+    4.9,
+    4.933125,
+    4.966875,
+    5.0,
+    5.033125,
+    5.0668750000000005,
+    5.1000000000000005,
+    5.133125,
+    5.166875,
+    5.2,
+    5.233125,
+    5.266875,
+    5.3,
+    5.333125,
+    5.366875,
+    5.4,
+    5.433125,
+    5.466875,
+    5.5,
+    5.533125,
+    5.5668750000000005,
+    5.6000000000000005,
+    5.633125,
+    5.666875,
+    5.7,
+    5.733125,
+    5.766875,
+    5.8,
+    5.833125,
+    5.866875,
+    5.9,
+    5.933125,
+    5.966875,
+    6.0,
+    6.033125,
+    6.0668750000000005,
+    6.1000000000000005,
+    6.133125,
+    6.166875,
+    6.2,
+    6.233125,
+    6.266875,
+    6.3,
+    6.333125,
+    6.366875,
+    6.4,
+    6.433125,
+    6.466875,
+    6.5,
+    6.533125,
+    6.5668750000000005,
+    6.6000000000000005,
+    6.633125,
+    6.666875,
+    6.7,
+    6.733125,
+    6.766875,
+    6.8,
+    6.833125,
+    6.866875,
+    6.9,
+    6.933125,
+    6.966875,
+    7.0,
+    7.033125,
+    7.0668750000000005,
+    7.1000000000000005,
+    7.133125,
+    7.166875,
+    7.2,
+    7.233125,
+    7.266875,
+    7.3,
+    7.333125,
+    7.366875,
+    7.4,
+    7.433125,
+    7.466875,
+    7.5,
+    7.533125,
+    7.5668750000000005,
+    7.6000000000000005,
+    7.633125,
+    7.666875,
+    7.7,
+    7.733125,
+    7.766875,
+    7.8,
+    7.833125,
+    7.866875,
+    7.9,
+    7.933125,
+    7.966875,
+    8.0,
+    8.033125,
+    8.066875,
+    8.1,
+    8.133125,
+    8.166875000000001,
+    8.2,
+    8.233125,
+    8.266875,
+    8.3,
+    8.333125,
+    8.366875,
+    8.4,
+    8.433125,
+    8.466875,
+    8.5,
+    8.533125,
+    8.566875,
+    8.6,
+    8.633125,
+    8.666875000000001,
+    8.700000000000001,
+    8.733125,
+    8.766875,
+    8.8,
+    8.833125,
+    8.866875,
+    8.9,
+    8.933125,
+    8.966875,
+    9.0,
+    9.033125,
+    9.066875,
+    9.1,
+    9.133125,
+    9.166875000000001,
+    9.200000000000001,
+    9.233125,
+    9.266875,
+    9.3,
+    9.333125,
+    9.366875,
+    9.4,
+    9.433125,
+    9.466875,
+    9.5,
+    9.533125,
+    9.566875,
+    9.6,
+    9.633125,
+    9.666875000000001,
+    9.700000000000001,
+    9.733125,
+    9.766875,
+    9.8,
+    9.833125,
+    9.866875,
+    9.9,
+    9.933125,
+    9.966875,
+    10.0
+  ],
+  "cameras": [
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.1566204390590933,
+        -0.9937394353274565,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5622496442152143,
+        -0.23987721912986615,
+        -0.3105635243256441,
+        -0.7279316964391795
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.1566303110792546,
+        -0.9937291372158351,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5622484527062961,
+        -0.23988001189550756,
+        -0.3105671400551546,
+        -0.7279301538199593
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.1566598382875806,
+        -0.9936983343457744,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5622448887471023,
+        -0.23988836519383572,
+        -0.31057795487858,
+        -0.7279255396438745
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.1567088865055444,
+        -0.9936471630515706,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5622389680669089,
+        -0.23990224147487715,
+        -0.31059592018083076,
+        -0.7279178742752576
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.1567773203758234,
+        -0.9935757585379824,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5622307062351911,
+        -0.23992160312045974,
+        -0.31062098725852405,
+        -0.7279071778715517
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.1568650033890644,
+        -0.9934842549064353,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5622201186652996,
+        -0.23994641244575743,
+        -0.3106531073219825,
+        -0.7278934703880668
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.156971797910353,
+        -0.9933727851811569,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5622072206181111,
+        -0.23997663170082084,
+        -0.3106922314972124,
+        -0.7278767715827107
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.1570975652054094,
+        -0.9932414813352348,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.562192027205661,
+        0.2400122230720807,
+        0.3107383108278557,
+        0.7278571010206866
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.1572421654665022,
+        -0.9930904743165956,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5621745533947483,
+        -0.24005314868384497,
+        -0.3107912962771234,
+        -0.7278344780791663
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.1574054578381017,
+        -0.9929198940738967,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5621548140105239,
+        -0.24009937059977104,
+        -0.31085113872970466,
+        -0.7278089219519317
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.1575873004422588,
+        -0.9927298695823279,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.562132823740053,
+        -0.24015085082432586,
+        -0.31091778899365563,
+        -0.7277804516539884
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.1577875504037287,
+        -0.9925205288693164,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.562108597135855,
+        -0.24020755130422933,
+        -0.3109911978022688,
+        -0.7277490860261504
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.15800606387484,
+        -0.9922919990401322,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5620821486194238,
+        -0.24026943392987965,
+        -0.3110713158159184,
+        -0.7277148437395928
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.1582426960601073,
+        -0.9920444063033869,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5620534924847206,
+        0.24033646053676694,
+        0.31115809362389035,
+        0.7276777433003797
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-detail",
+      "position_m": [
+        1.158497301240606,
+        -0.9917778759964235,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5767436137344277,
+        0.2130131119998031,
+        0.27324262100351937,
+        0.7398180101888835
+      ],
+      "intrinsics": [
+        4218.75,
+        4218.75,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-detail",
+      "position_m": [
+        1.158769732798099,
+        -0.9914925326105921,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5767059280203325,
+        0.21309822009210644,
+        0.2733559806655632,
+        0.7397810007117996
+      ],
+      "intrinsics": [
+        4218.75,
+        4218.75,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-detail",
+      "position_m": [
+        1.1590598432389279,
+        -0.9911884998164042,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5766681509482946,
+        0.21319037058717472,
+        0.27347668257354035,
+        0.7397392876273027
+      ],
+      "intrinsics": [
+        4218.75,
+        4218.75,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-detail",
+      "position_m": [
+        1.1593674842176753,
+        -0.9908659004885676,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5767429840347396,
+        -0.21334218635650337,
+        -0.27358352947988424,
+        -0.7395976570302668
+      ],
+      "intrinsics": [
+        4218.75,
+        4218.75,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-detail",
+      "position_m": [
+        1.1596925065605928,
+        -0.9905248567308909,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5773708091872762,
+        -0.213716102903743,
+        -0.2735484541710097,
+        -0.7390125975101621
+      ],
+      "intrinsics": [
+        4218.75,
+        4218.75,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-detail",
+      "position_m": [
+        1.160034760288808,
+        -0.9901654899010577,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5788950956825443,
+        -0.21439968781301022,
+        -0.2732291977765502,
+        -0.7377391460013254
+      ],
+      "intrinsics": [
+        4218.75,
+        4218.75,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-detail",
+      "position_m": [
+        1.1603940946413132,
+        -0.9897879206352653,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5812120130203805,
+        -0.21536800072801565,
+        -0.2726658831665193,
+        -0.735841379877645
+      ],
+      "intrinsics": [
+        4218.75,
+        4218.75,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-detail",
+      "position_m": [
+        1.1607703580977329,
+        -0.9893922688727239,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5840620981711591,
+        -0.21655624991637545,
+        -0.2719615935913406,
+        -0.7334928409421034
+      ],
+      "intrinsics": [
+        4218.75,
+        4218.75,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-detail",
+      "position_m": [
+        1.161163398400885,
+        -0.9889786538800116,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.587049971575234,
+        -0.21785885441871433,
+        -0.2712700454085522,
+        -0.7309736061506766
+      ],
+      "intrinsics": [
+        4218.75,
+        4218.75,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-detail",
+      "position_m": [
+        1.161573062579128,
+        -0.9885471942752834,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5896567599626917,
+        0.21903619849990374,
+        0.27069774458169227,
+        0.7287323104236535
+      ],
+      "intrinsics": [
+        4218.75,
+        4218.75,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-detail",
+      "position_m": [
+        1.1619991969685095,
+        -0.9880980080523294,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5916832986833866,
+        -0.22001965179517546,
+        -0.2703131312790615,
+        -0.7269339983390409
+      ],
+      "intrinsics": [
+        4218.75,
+        4218.75,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-detail",
+      "position_m": [
+        1.162441647234707,
+        -0.9876312126044771,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.592891118817969,
+        0.2207214960194518,
+        0.2701936095117894,
+        0.7257806526773104
+      ],
+      "intrinsics": [
+        4218.75,
+        4218.75,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-detail",
+      "position_m": [
+        1.1629002583947794,
+        -0.9871469247483384,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5932284776687314,
+        -0.22107646451488772,
+        -0.2703144308506707,
+        -0.7253518309029868
+      ],
+      "intrinsics": [
+        4218.75,
+        4218.75,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-detail",
+      "position_m": [
+        1.1633748748387172,
+        -0.9866452607473931,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5929992851965392,
+        -0.22120064771035697,
+        -0.2705884757188834,
+        -0.7253991990738914
+      ],
+      "intrinsics": [
+        4218.75,
+        4218.75,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-detail",
+      "position_m": [
+        1.1638653403508066,
+        -0.9861263363354081,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5926106664338782,
+        0.22125985858898467,
+        0.2709059778457602,
+        0.7255801983057487
+      ],
+      "intrinsics": [
+        4218.75,
+        4218.75,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-detail",
+      "position_m": [
+        1.1643714981308069,
+        -0.9855902667396903,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5924181390017184,
+        -0.22108221914690984,
+        -0.2708615109568013,
+        -0.7258081308727647
+      ],
+      "intrinsics": [
+        4218.75,
+        4218.75,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-detail",
+      "position_m": [
+        1.1648931908149411,
+        -0.9850371667041663,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5924190078680844,
+        -0.22050947113658503,
+        -0.27030164610206664,
+        -0.7261902728418852
+      ],
+      "intrinsics": [
+        4218.75,
+        4218.75,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-detail",
+      "position_m": [
+        1.1654302604967073,
+        -0.9844671505122893,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5925621443909714,
+        -0.21942350810510636,
+        -0.26914327079012845,
+        -0.7268323939630191
+      ],
+      "intrinsics": [
+        4218.75,
+        4218.75,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-detail",
+      "position_m": [
+        1.1659825487475153,
+        -0.9838803320097684,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5927650728255155,
+        -0.2178319420312026,
+        -0.2674448788180152,
+        -0.7277719768327806
+      ],
+      "intrinsics": [
+        4218.75,
+        4218.75,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-detail",
+      "position_m": [
+        1.1665498966371421,
+        -0.9832768246271175,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5930107394355937,
+        -0.2159037466073036,
+        -0.26537904563105214,
+        -0.7289017747645642
+      ],
+      "intrinsics": [
+        4218.75,
+        4218.75,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-detail",
+      "position_m": [
+        1.1671321447540226,
+        -0.982656741402022,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5931752020184319,
+        -0.21381598674128455,
+        -0.26319822266890025,
+        -0.7301729925902324
+      ],
+      "intrinsics": [
+        4218.75,
+        4218.75,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-detail",
+      "position_m": [
+        1.1677291332253679,
+        -0.9820201950015177,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.593227621652221,
+        -0.2118322771103729,
+        -0.2611826329594565,
+        -0.7314312732741537
+      ],
+      "intrinsics": [
+        4218.75,
+        4218.75,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-detail",
+      "position_m": [
+        1.1683407017371161,
+        -0.9813672977439846,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5931816508972569,
+        0.21013860632038217,
+        0.2595112031668729,
+        0.7325511795113117
+      ],
+      "intrinsics": [
+        4218.75,
+        4218.75,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-detail",
+      "position_m": [
+        1.1689666895537236,
+        -0.9806981616209451,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.593073877659331,
+        0.2089033183393758,
+        0.25833411928928673,
+        0.7334072961431126
+      ],
+      "intrinsics": [
+        4218.75,
+        4218.75,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-detail",
+      "position_m": [
+        1.169606935537792,
+        -0.9800128983186728,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5929428680674865,
+        -0.20828646259943595,
+        -0.2577937867984369,
+        -0.7338786467760451
+      ],
+      "intrinsics": [
+        4218.75,
+        4218.75,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-detail",
+      "position_m": [
+        1.1702612781695372,
+        -0.9793116192396013,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5928061821860575,
+        -0.20822823217745778,
+        -0.25782221953299617,
+        -0.7339955972628999
+      ],
+      "intrinsics": [
+        4218.75,
+        4218.75,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-detail",
+      "position_m": [
+        1.1709295555661048,
+        -0.9785944355235368,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5926538075137024,
+        -0.20853842128497557,
+        -0.2582340395936855,
+        -0.7338858031619149
+      ],
+      "intrinsics": [
+        4218.75,
+        4218.75,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-detail",
+      "position_m": [
+        1.1716116055007277,
+        -0.977861458068668,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5923163186459393,
+        0.20886339089268657,
+        0.258779548512818,
+        0.7338737002250683
+      ],
+      "intrinsics": [
+        4218.75,
+        4218.75,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-detail",
+      "position_m": [
+        1.1723072654217364,
+        -0.977112797552374,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5913690807506202,
+        -0.20890240992536968,
+        -0.25942752472675834,
+        -0.7343975441637086
+      ],
+      "intrinsics": [
+        4218.75,
+        4218.75,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-detail",
+      "position_m": [
+        1.1730163724714158,
+        -0.9763485644518253,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.589512047840119,
+        0.20853245318333302,
+        0.26024631162856254,
+        0.7357048448286985
+      ],
+      "intrinsics": [
+        4218.75,
+        4218.75,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-detail",
+      "position_m": [
+        1.1737387635047176,
+        -0.9755688690643771,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5868459397273768,
+        -0.20783258649326786,
+        -0.26124941177937083,
+        -0.7376762188534635
+      ],
+      "intrinsics": [
+        4218.75,
+        4218.75,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-detail",
+      "position_m": [
+        1.1744742751078276,
+        -0.9747738215277539,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5836113979356411,
+        -0.20694614527920252,
+        -0.2624257437532815,
+        -0.7400701035504831
+      ],
+      "intrinsics": [
+        4218.75,
+        4218.75,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-detail",
+      "position_m": [
+        1.1752227436165856,
+        -0.9739635318400199,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5801450156556761,
+        -0.20603286361192108,
+        -0.2637219569250333,
+        -0.7425853145311845
+      ],
+      "intrinsics": [
+        4218.75,
+        4218.75,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-detail",
+      "position_m": [
+        1.1759840051347696,
+        -0.9731381098793385,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5770142371013166,
+        0.2052974283644573,
+        0.26498556769599313,
+        0.7447752580491369
+      ],
+      "intrinsics": [
+        4218.75,
+        4218.75,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-detail",
+      "position_m": [
+        1.1767578955522346,
+        -0.9722976654235126,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5752951336109516,
+        0.20470626432794836,
+        0.2654801127844863,
+        0.7460905871972853
+      ],
+      "intrinsics": [
+        4218.75,
+        4218.75,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-detail",
+      "position_m": [
+        1.1775442505629177,
+        -0.9714423081693101,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5751481991073295,
+        -0.2048980339444576,
+        -0.2657802387397291,
+        -0.7460443749836494
+      ],
+      "intrinsics": [
+        4218.75,
+        4218.75,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-detail",
+      "position_m": [
+        1.178342905682704,
+        -0.9705721477515676,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5751355394509772,
+        -0.20521376298163063,
+        -0.26612437646904247,
+        -0.7458446480282043
+      ],
+      "intrinsics": [
+        4218.75,
+        4218.75,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-detail",
+      "position_m": [
+        1.1791536962671576,
+        -0.9696872937620752,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5751368190914292,
+        0.20555477263992317,
+        0.2664859438182844,
+        0.7456206250618477
+      ],
+      "intrinsics": [
+        4218.75,
+        4218.75,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-detail",
+      "position_m": [
+        1.179976457529121,
+        -0.9687878557682356,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.575063207566805,
+        -0.2058669283019473,
+        -0.2668656633529926,
+        -0.7454554533019837
+      ],
+      "intrinsics": [
+        4218.75,
+        4218.75,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-detail",
+      "position_m": [
+        1.1808110245561783,
+        -0.9678739433315018,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5750331459813961,
+        0.20614245128079978,
+        0.2671777326727666,
+        0.7452907016503835
+      ],
+      "intrinsics": [
+        4218.75,
+        4218.75,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-detail",
+      "position_m": [
+        1.1816572323279937,
+        -0.9669456660255863,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5749313121984959,
+        -0.20641943355963777,
+        -0.26753834478149746,
+        -0.7451632289466585
+      ],
+      "intrinsics": [
+        4218.75,
+        4218.75,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-detail",
+      "position_m": [
+        1.1825149157335135,
+        -0.9660031334544442,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5748122154056665,
+        -0.2067042929510664,
+        -0.26791857190166307,
+        -0.7450395231973959
+      ],
+      "intrinsics": [
+        4218.75,
+        4218.75,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-detail",
+      "position_m": [
+        1.183383909588045,
+        -0.9650464552700273,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5746935349850133,
+        0.20699321227708778,
+        0.26830274476181337,
+        0.7449126043173915
+      ],
+      "intrinsics": [
+        4218.75,
+        4218.75,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-detail",
+      "position_m": [
+        1.1842640486502043,
+        -0.9640757411898067,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5745725953853684,
+        -0.20728593757542302,
+        -0.2686923514687208,
+        -0.7447840579508999
+      ],
+      "intrinsics": [
+        4218.75,
+        4218.75,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-detail",
+      "position_m": [
+        1.1851551676387406,
+        -0.9630911010140659,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5744499469675116,
+        -0.2075826286661372,
+        -0.26908719515817103,
+        -0.7446534711575499
+      ],
+      "intrinsics": [
+        4218.75,
+        4218.75,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-detail",
+      "position_m": [
+        1.186057101249232,
+        -0.9620926446429596,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5743255019649992,
+        0.2078832064753886,
+        0.2694872464397986,
+        0.7445209293662993
+      ],
+      "intrinsics": [
+        4218.75,
+        4218.75,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-detail",
+      "position_m": [
+        1.1869696841706596,
+        -0.961080482093338,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5741992865608299,
+        -0.2081876328605703,
+        -0.2698924440767884,
+        -0.744386430200876
+      ],
+      "intrinsics": [
+        4218.75,
+        4218.75,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-detail",
+      "position_m": [
+        1.1878927511018549,
+        -0.9600547235153377,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5740713101226343,
+        -0.208495863594243,
+        -0.2703027315010358,
+        -0.7442499842803169
+      ],
+      "intrinsics": [
+        4218.75,
+        4218.75,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-detail",
+      "position_m": [
+        1.188826136767828,
+        -0.9590154792087355,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5739415839343979,
+        0.20880785512858935,
+        0.27071805159820184,
+        0.7441116007739335
+      ],
+      "intrinsics": [
+        4218.75,
+        4218.75,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-detail",
+      "position_m": [
+        1.189769675935968,
+        -0.9579628596390644,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5738101192347408,
+        -0.20912356388548492,
+        -0.27113834725535935,
+        -0.7439712889213388
+      ],
+      "intrinsics": [
+        4218.75,
+        4218.75,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-detail",
+      "position_m": [
+        1.1907232034321282,
+        -0.9568969754534917,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5736769272476424,
+        -0.20944294626664095,
+        -0.2715635613531186,
+        -0.7438290580153903
+      ],
+      "intrinsics": [
+        4218.75,
+        4218.75,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-detail",
+      "position_m": [
+        1.1916865541565842,
+        -0.9558179374964596,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5735420192346072,
+        0.20976595867170533,
+        0.2719936367516384,
+        0.7436849173685373
+      ],
+      "intrinsics": [
+        4218.75,
+        4218.75,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-detail",
+      "position_m": [
+        1.1926595630998738,
+        -0.9547258568250826,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5734054064808796,
+        -0.2100925574924083,
+        -0.27242851629513404,
+        -0.7435388763299656
+      ],
+      "intrinsics": [
+        4218.75,
+        4218.75,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-detail",
+      "position_m": [
+        1.1936420653585156,
+        -0.9536208447243067,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5732671003025147,
+        -0.21042269911431977,
+        -0.2728681428105367,
+        -0.7433909442865979
+      ],
+      "intrinsics": [
+        4218.75,
+        4218.75,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.1946338961506116,
+        -0.9525030127218269,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5574581085654262,
+        -0.25081108402993413,
+        -0.32471934800153546,
+        -0.7217282053209816
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.1956348908313217,
+        -0.9513724726027606,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5573261633723416,
+        -0.2511041423359618,
+        -0.32509876385720915,
+        -0.7215573789109929
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.1966448849082278,
+        -0.9502293364240805,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5571927163255411,
+        -0.25140011843946664,
+        -0.3254819573182395,
+        -0.721384608085503
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.197663714056573,
+        -0.949073716528802,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5570577794650948,
+        -0.2516989730114737,
+        -0.3258688774663054,
+        -0.7212099084325151
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.1986912141343815,
+        -0.9479057255599281,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5569213648657626,
+        0.2520006667325888,
+        0.32625947339549044,
+        0.7210332955849437
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.199727221197463,
+        -0.9467254764741493,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5567834846389572,
+        0.2523051602938652,
+        0.32665369421340545,
+        0.7208547852231555
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.2007715715142941,
+        -0.9455330825552974,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5566441509346831,
+        -0.25261241439766724,
+        -0.3270514890423032,
+        -0.7206743930774835
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.2018241015807836,
+        -0.944328657427556,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.556503375943446,
+        -0.25292238975851977,
+        -0.3274528070201823,
+        -0.7204921349306945
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.2028846481349145,
+        -0.9431123150684242,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.556361171898137,
+        -0.2532350471039593,
+        -0.32785759730188657,
+        -0.7203080266204319
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.20395304817127,
+        -0.9418841698214341,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5562175510758897,
+        -0.2535503471753746,
+        -0.328265809060194,
+        -0.720122084041618
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.2050291389554393,
+        -0.9406443364086227,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5560725257999083,
+        -0.253868250728844,
+        -0.32867739148690045,
+        -0.7199343231488229
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.2061127580382998,
+        -0.939392929942757,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5559261084412728,
+        -0.2541887185359628,
+        -0.3290922937938924,
+        -0.7197447599585988
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.2072037432701839,
+        -0.938130065939313,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5557783114207125,
+        -0.2545117113846712,
+        -0.32951046521421595,
+        -0.7195534105517797
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.208301932814921,
+        -0.936855860328208,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5556291472103568,
+        -0.2548371900800671,
+        -0.3299318550031327,
+        -0.7193602910757435
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.2094071651637606,
+        -0.9355704294652856,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5554786283354556,
+        0.2551651154452226,
+        0.33035641243917385,
+        0.7191654177466443
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.2105192791491715,
+        -0.9342738901435546,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.555326767376074,
+        -0.255495448321986,
+        -0.33078408682518023,
+        -0.7189688068516036
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.211638113958523,
+        -0.9329663596041813,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5551735769687618,
+        -0.25582814957178435,
+        -0.33121482748934034,
+        -0.718770474750872
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.2127635091476363,
+        -0.9316479555472352,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5550190698081929,
+        -0.2561631800764137,
+        -0.33164858378621487,
+        -0.7185704378799512
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.2138953046542202,
+        -0.9303187961421885,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5548632586487797,
+        -0.2565005007388297,
+        -0.3320853050977582,
+        -0.7183687127516871
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.2150333408111755,
+        -0.9289790000381685,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5547061563062597,
+        0.2568400724839258,
+        0.3325249408343277,
+        0.7181653159583206
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.2161774583597815,
+        -0.9276286863739654,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5545477756592567,
+        -0.25718185625930834,
+        -0.33296744043568743,
+        -0.7179602641735083
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.217327498462751,
+        -0.9262679747877939,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5543881296508116,
+        -0.25752581303606825,
+        -0.33341275337200404,
+        -0.7177535741543096
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.218483302717161,
+        -0.9248969854268084,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.55422723128989,
+        0.25787190380953817,
+        0.33386082914483184,
+        0.7175452627431333
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.2196447131672585,
+        -0.9235158389563756,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5540650936528612,
+        -0.2582200896000524,
+        -0.33431161728809256,
+        -0.7173353468696543
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.220811572317134,
+        -0.9221246565690993,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5539017298849502,
+        0.2585703314536927,
+        0.3347650673690446,
+        0.7171238435526922
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.2219837231432698,
+        -0.9207235599936047,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5537371532016622,
+        0.25892259044303545,
+        0.33522112898924555,
+        0.7169107699020588
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.2231610091069556,
+        -0.9193126715030763,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5535713768901814,
+        -0.25927682766788396,
+        -0.33567975178550513,
+        -0.7166961431203663
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.2243432741665743,
+        -0.9178921139235539,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5534044143107429,
+        0.2596330042560009,
+        0.3361408854308306,
+        0.7164799805048041
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.225530362789755,
+        -0.9164620106419862,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.553236278897976,
+        -0.2599910813638301,
+        -0.3366044796353618,
+        -0.7162622994488785
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.2267221199653957,
+        -0.915022485614042,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5530669841622237,
+        -0.26035102017721257,
+        -0.3370704841473003,
+        -0.7160431174441185
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.2279183912155474,
+        -0.9135736633716811,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5528965436908312,
+        0.26071278191209946,
+        0.33753884875382745,
+        0.7158224520817489
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.229119022607165,
+        -0.9121156690304837,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5527249711494107,
+        0.26107632781525036,
+        0.3380095232820143,
+        0.7156003210543247
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.2303238607637248,
+        -0.9106486282967412,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5525522802830799,
+        -0.2614416191649326,
+        -0.33848245759972245,
+        -0.7153767421573329
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.231532752876699,
+        -0.9091726674743073,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5523784849176706,
+        -0.26180861727160865,
+        -0.33895760161649735,
+        -0.7151517332907606
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.2327455467168942,
+        -0.9076879134712109,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5522035989609129,
+        -0.26217728347861924,
+        -0.33943490528444986,
+        -0.7149253124606262
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.2339620906456497,
+        -0.9061944938060332,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.552027636403592,
+        0.26254757916285687,
+        0.33991431859913074,
+        0.7146974977804774
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.2351822336258953,
+        -0.904692536614047,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5518506113206781,
+        -0.2629194657354357,
+        -0.34039579160039535,
+        -0.7144683074728556
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.2364058252330627,
+        -0.9031821706531211,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5516725378724299,
+        0.26329290464234933,
+        0.3408792743732578,
+        0.7142377598707228
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.2376327156658584,
+        -0.901663525309391,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5514934303054719,
+        -0.2636678573651262,
+        -0.3413647170487375,
+        -0.7140058734188554
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.2388627557568852,
+        -0.9001367306026952,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5513133029538436,
+        -0.26404428542147307,
+        -0.3418520698046942,
+        -0.7137726666752051
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.2400957969831217,
+        -0.8986019171917811,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5511321702400234,
+        0.26442215036591543,
+        0.34234128286665494,
+        0.7135381583122238
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.2413316914762536,
+        -0.8970592163792779,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5509500466759252,
+        0.26480141379042677,
+        0.3428323065086297,
+        0.7133023671181529
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.2425702920328487,
+        -0.8955087601164402,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5507669468638695,
+        -0.2651820373250504,
+        -0.34332509105391873,
+        -0.7130653119982807
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.2438114521243917,
+        -0.8939506810076636,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5505828854975263,
+        0.2655639826385172,
+        0.3438195868759073,
+        0.7128270119761646
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.2450550259071562,
+        -0.8923851123147717,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5503978773628329,
+        0.2659472114388509,
+        0.34431574439885343,
+        0.7125874861948182
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.2463008682319296,
+        -0.8908121879610772,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5502119373388848,
+        -0.2663316854739669,
+        -0.3448135140986627,
+        -0.7123467539178643
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.2475488346535788,
+        -0.8892320425352184,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5500250803987999,
+        0.2667173665322651,
+        0.3453128465036536,
+        0.7121048345306551
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.2487987814404613,
+        -0.8876448112947711,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5498373216105574,
+        0.2671042164432106,
+        0.34581369219531227,
+        0.7118617475413559
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.250050565583675,
+        -0.8860506301696397,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5496486761378083,
+        -0.2674921970779104,
+        -0.34631600180903704,
+        -0.711617512581998
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.2513040448061525,
+        -0.8844496357652248,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5494591592406619,
+        0.2678812703496788,
+        0.34681972603487116,
+        0.7113721494094942
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.2525590775715867,
+        -0.8828419653653745,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5492687862764445,
+        -0.26827139821459633,
+        -0.34732481561822476,
+        -0.7111256779066225
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.2538155230931995,
+        -0.8812277569351152,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5490775727004327,
+        0.2686625426720558,
+        0.3478312213605863,
+        0.7108781180829735
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.2550732413423438,
+        -0.879607149123167,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5488855340665594,
+        -0.26905466576530657,
+        -0.3483388941202222,
+        -0.7106294900758677
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.2563320930569375,
+        -0.8779802812642432,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.548692686028096,
+        0.26944772958198426,
+        0.3488477848128654,
+        0.7103798141512353
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.2575919397497306,
+        -0.8763472933811377,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5484990443383057,
+        -0.2698416962546343,
+        -0.34935784441239276,
+        -0.7101291107044644
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.2588526437164018,
+        -0.8747083261865991,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5483046248510721,
+        -0.2702365279612252,
+        -0.34986902395148833,
+        -0.7098774002612138
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.2601140680434872,
+        -0.8730635210849954,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5481094435215023,
+        -0.27063218692565394,
+        -0.35038127452229995,
+        -0.7096247034781945
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.26137607661613,
+        -0.8714130201737691,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5479135164065031,
+        0.2710286354182403,
+        0.35089454727707775,
+        0.7093710411439148
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.2626385341256603,
+        -0.869756966244687,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5477168596653327,
+        0.2714258357562138,
+        0.35140879342880454,
+        0.7091164341793936
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.2639013060769977,
+        -0.8680955027848827,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5475194895601228,
+        0.2718237503041916,
+        0.35192396425181394,
+        0.7088609036388416
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.2651642587958745,
+        -0.8664287739776971,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.547321422456381,
+        0.27222234147464197,
+        0.3524400110823933,
+        0.7086044707103039
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.2664272594358799,
+        -0.8647569247033164,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5471226748234619,
+        -0.272621571728345,
+        -0.35295688531937663,
+        -0.7083471567162754
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.2676901759853252,
+        -0.8630801005392101,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5469232632350155,
+        -0.27302140357483873,
+        -0.35347453842472426,
+        -0.7080889831142801
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.2689528772739216,
+        -0.8613984477603709,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5467232043694079,
+        -0.2734217995728567,
+        -0.35399292192408877,
+        -0.7078299714974163
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.2702152329792773,
+        -0.8597121133393585,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5465225150101197,
+        -0.2738227223307561,
+        -0.35451198740736906,
+        -0.7075701435948697
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.271477113633207,
+        -0.8580212449461485,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.546321212046115,
+        -0.27422413450693395,
+        -0.35503168652925,
+        -0.7073095212723941
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.2727383906278513,
+        -0.8563259909477882,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5461193124721864,
+        -0.2746259988102353,
+        -0.35555197100972985,
+        -0.7070481265327584
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.2739989362216104,
+        -0.854626500407863,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.545916833389277,
+        0.2750282780003491,
+        0.35607279263463343,
+        0.7067859815161588
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.2752586235448842,
+        -0.8529229230857732,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5457137920047722,
+        -0.2754309348881947,
+        -0.35659410325611285,
+        -0.7065231085006035
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.2765173266056176,
+        -0.8512154094358225,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5455102056327706,
+        0.27583393233629705,
+        0.35711585479313207,
+        0.7062595299022572
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.2777749202946556,
+        -0.8495041106061252,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5453060916943274,
+        0.2762372332591513,
+        0.35763799923194034,
+        0.7059952682757595
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.2790312803908976,
+        -0.8477891784373262,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5451014677176712,
+        0.27664080062357677,
+        0.35816048862652894,
+        0.7057303463145064
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.2802862835662558,
+        -0.8460707654611437,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5448963513384008,
+        0.27704459744905874,
+        0.35868327509907544,
+        0.7054647868509019
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.2815398073904152,
+        -0.8443490248987303,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5446907602996509,
+        -0.27744858680808104,
+        -0.359206310840373,
+        -0.7051986128565743
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.282791730335388,
+        -0.8426241106588596,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5444847124522362,
+        -0.27785273182644554,
+        -0.35972954811024477,
+        -0.7049318474425639
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.2840419317798697,
+        -0.8408961773359352,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5442782257547699,
+        0.2782569956835812,
+        0.3602529392379433,
+        0.7046645138594747
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.2852902920133877,
+        -0.8391653802078307,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5440713182737573,
+        0.27866134161284173,
+        0.3607764366225361,
+        0.7043966354975952
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.2865366922402444,
+        -0.8374318752335553,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5438640081836632,
+        -0.2790657329017904,
+        -0.36129999273327473,
+        -0.7041282358869891
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.2877810145832527,
+        -0.8356958190507532,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5436563137669576,
+        0.2794701328924729,
+        0.36182356010994865,
+        0.7038593386975479
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.2890231420872604,
+        -0.8339573689730362,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5434482534141324,
+        0.27987450498168254,
+        0.36234709136322657,
+        0.703589967739021
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.2902629587224668,
+        -0.8322166829871517,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5432398456236982,
+        -0.2802788126212067,
+        -0.36287053917497747,
+        -0.7033201469610039
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.291500349387523,
+        -0.830473919749989,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5430311090021522,
+        0.28068301931806616,
+        0.36339385629857945,
+        0.7030499004529014
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.2927351999124188,
+        -0.8287292385854251,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5428220622639236,
+        0.28108708863473986,
+        0.36391699555921125,
+        0.7027792524438556
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.293967397061156,
+        -0.8269827994810135,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.542612724231296,
+        -0.28149098418937757,
+        -0.3644399098541275,
+        -0.7025082273026436
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.2951968285342,
+        -0.8252347630845164,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5424031138343021,
+        0.2818946696560014,
+        0.364962552152919,
+        0.702236849537544
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.296423382970717,
+        -0.8234852907002853,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5421932501105955,
+        0.2822981087646925,
+        0.365484875497755,
+        0.7019651437961698
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.2976469499505874,
+        -0.821734544285488,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5419831522052996,
+        0.28270126530176654,
+        0.3660068330036106,
+        0.7016931348652731
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.2988674199961976,
+        -0.8199826864461887,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5417728393708309,
+        0.2831041031099347,
+        0.3665283778584752,
+        0.701420847670514
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3000846845740097,
+        -0.8182298804332802,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5415623309666977,
+        0.2835065860884538,
+        0.36704946332354516,
+        0.7011483072762027
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3012986360959045,
+        -0.8164762901382723,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5413516464592749,
+        0.28390867819326204,
+        0.3675700427334018,
+        0.7008755388850093
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.302509167920298,
+        -0.814722080088937,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5411408054215571,
+        0.2843103434370994,
+        0.36809006949616746,
+        0.700602567837639
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3037161743530319,
+        -0.8129674154448148,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.540929827532884,
+        0.2847115458896201,
+        0.3686094970936479,
+        0.7003294196124814
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.304919550648032,
+        -0.8112124619925818,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5407187325786452,
+        -0.28511224967748483,
+        -0.36912827908145524,
+        -0.7000561198252253
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3061191930077358,
+        -0.8094573861412823,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5405075404499589,
+        0.2855124189844449,
+        0.36964636908911497,
+        0.6997826942284449
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3073149985832915,
+        -0.8077023549174283,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5402962711433278,
+        0.28591201805140765,
+        0.37016372082015236,
+        0.6995091687111523
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3085068654745162,
+        -0.8059475359599657,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5400849447602722,
+        -0.2863110111764944,
+        -0.37068028805216413,
+        -0.6992355692983241
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3096946927296282,
+        -0.8041930975151155,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5398735815069375,
+        -0.2867093627150762,
+        -0.3711960246368693,
+        -0.6989619221503927
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3108783803447335,
+        -0.8024392084310835,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.539662201693679,
+        -0.287107037079804,
+        -0.37171088450014333,
+        -0.6986882535627091
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3120578292630825,
+        -0.8006860381526505,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5394508257346251,
+        -0.2875039987406157,
+        -0.3722248216420321,
+        -0.6984145899649752
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3132329413740806,
+        -0.7989337567156366,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5392394741472142,
+        0.28790021222473716,
+        0.37273779013675,
+        0.6981409579206471
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.314403619512064,
+        -0.7971825347412476,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5390281675517089,
+        -0.28829564211666414,
+        -0.3732497441326566,
+        -0.6978673841263061
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3155697674548312,
+        -0.7954325434303031,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5388169266706893,
+        -0.2886902530581279,
+        -0.37376063785221464,
+        -0.6975938954109998
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3167312899219306,
+        -0.7936839545573495,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5386057723285193,
+        -0.2890840097480525,
+        -0.3742704255919312,
+        -0.6973205187355537
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3178880925727061,
+        -0.7919369404646587,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5383947254507937,
+        0.2894768769424897,
+        0.3747790617222774,
+        0.697047281191855
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3190400820040966,
+        -0.790191674056117,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5381838070637589,
+        0.289868819454545,
+        0.3752865006875881,
+        0.696774210002101
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.320187165748189,
+        -0.7884483287910051,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5379730382937128,
+        -0.2902598021542848,
+        -0.37579269700594625,
+        -0.6965013325180249
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3213292522695208,
+        -0.7867070786776699,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5377624403663801,
+        -0.2906497899686298,
+        -0.3762976052690418,
+        -0.696228676220085
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3224662509621388,
+        -0.7849680982670937,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5375520346062668,
+        -0.2910387478812333,
+        -0.376801180142015,
+        -0.6959562687166284
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3235980721464038,
+        -0.7832315626463607,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5373418424359897,
+        -0.29142664093234316,
+        -0.3773033763632783,
+        -0.6956841377430256
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3247246270655446,
+        -0.781497647432022,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5371318853755849,
+        -0.29181343421865014,
+        -0.3778041487443185,
+        -0.6954123111607733
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3258458278819616,
+        -0.7797665287633642,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5369221850417923,
+        -0.2921990928931163,
+        -0.37830345216947686,
+        -0.6951408169565669
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3269615876732772,
+        -0.7780383832955813,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5367127631473186,
+        -0.2925835821647945,
+        -0.37880124159571293,
+        -0.6948696832413495
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3280718204281283,
+        -0.7763133881928537,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5365036415000768,
+        0.29296686729862464,
+        0.379297472052343,
+        0.6945989382493247
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3291764410417075,
+        -0.7745917211213335,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5362948420024034,
+        0.2933489136152202,
+        0.3797920986407614,
+        0.6943286103369455
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.330275365311047,
+        -0.7728735602420431,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5360863866502555,
+        -0.29372968649063347,
+        -0.3802850765341391,
+        -0.6940587279818697
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3313685099300439,
+        -0.7711590842036838,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.53587829753238,
+        -0.2941091513561094,
+        -0.38077636097710293,
+        -0.6937893197818932
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3324557924842289,
+        -0.7694484721353604,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5356705968294677,
+        -0.2944872736978199,
+        -0.3812659072853931,
+        -0.693520414453845
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.333537131445274,
+        -0.7677419036392213,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5354633068132794,
+        0.2948640190565829,
+        0.3817536708454974,
+        0.6932520408324628
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3346124461652444,
+        -0.7660395587830182,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5352564498457519,
+        -0.29523935302756443,
+        -0.382239607114269,
+        -0.6929842278692324
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.335681656870584,
+        -0.764341618092585,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5350500483780838,
+        -0.29561324125996646,
+        -0.38272367161851745,
+        -0.6927170046312046
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3367446846558444,
+        -0.7626482625442411,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5348441249497949,
+        0.29598564945669403,
+        0.3832058199545828,
+        0.6924504002997784
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.337801451477147,
+        -0.7609596735571166,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5346387021877692,
+        0.29635654337400896,
+        0.3836860077878838,
+        0.6921844441694593
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3388518801453873,
+        -0.7592760329854058,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5344338028052696,
+        -0.29672588882116624,
+        -0.38416419085244863,
+        -0.6919191656465884
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.339895894319168,
+        -0.7575975231105477,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5342294496009374,
+        -0.2970936516600319,
+        -0.3846403249504195,
+        -0.6916545942480413
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3409334184974766,
+        -0.7559243266333381,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5340256654577642,
+        -0.2974597978046867,
+        -0.3851143659515396,
+        -0.6913907595999028
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3419643780120887,
+        -0.7542566266659705,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5338224733420461,
+        -0.29782429322100856,
+        -0.3855862697926134,
+        -0.6911276914361083
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3429886990197113,
+        -0.7525946067240141,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5336198963023142,
+        -0.29818710392624326,
+        -0.3860559924769494,
+        -0.6908654195970622
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3440063084938583,
+        -0.7509384507183245,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5334179574682445,
+        -0.2985481959885523,
+        -0.386523490073776,
+        -0.6906039740282234
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3450171342164556,
+        -0.7492883429468937,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5332166800495449,
+        -0.29890753552654725,
+        -0.3869887187176387,
+        -0.6903433847786674
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.346021104769184,
+        -0.7476444680866363,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.533016087334822,
+        -0.2992650887088072,
+        -0.3874516346077733,
+        -0.6900836819996192
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.347018149524548,
+        -0.7460070111851188,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5328162026904261,
+        -0.299620821753375,
+        -0.387912194007456,
+        -0.6898248959429552
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3480081986366796,
+        -0.7443761576522294,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5326170495592749,
+        0.299974700927238,
+        0.38837035324333125,
+        0.6895670569596819
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3489911830318726,
+        -0.7427520932517916,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5324186514596546,
+        -0.3003266925457939,
+        -0.3888260687047174,
+        -0.6893101954983847
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3499670343988432,
+        -0.7411350040931232,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5322210319840017,
+        -0.30067676297229406,
+        -0.3892792968428892,
+        -0.6890543421036491
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3509356851787269,
+        -0.7395250766225429,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5320242147976627,
+        0.3010248786172721,
+        0.38972999417033627,
+        0.688799527414455
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3518970685547969,
+        -0.7379224976148226,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.531828223637631,
+        -0.3013710059379545,
+        -0.39017811726000007,
+        -0.6885457821625433
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.352851118441918,
+        -0.7363274541645931,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5316330823112668,
+        -0.30171511143765206,
+        -0.3906236227444875,
+        -0.6882931371707549
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3537977694757277,
+        -0.7347401336776966,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5314388146949893,
+        -0.3020571616651351,
+        -0.39106646731525957,
+        -0.6880416233513422
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3547369570015397,
+        -0.7331607238624949,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5312454447329561,
+        -0.30239712321398937,
+        -0.3915066077217993,
+        -0.6877912717042546
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3556686170629861,
+        -0.7315894127211294,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5310529964357124,
+        -0.3027349627219559,
+        -0.3919440007707562,
+        -0.6875421133153957
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.356592686390377,
+        -0.7300263885407369,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5308614938788291,
+        -0.30307064687024865,
+        -0.3923786033250635,
+        -0.6872941793548522
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3575091023887926,
+        -0.7284718398846206,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5306709612015107,
+        -0.3034041423828583,
+        -0.39281037230303706,
+        -0.6870475010750977
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3584178031259038,
+        -0.7269259555833802,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5304814226051884,
+        0.3037354160258372,
+        0.3932392646774482,
+        0.68680210980917
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3593187273195142,
+        -0.7253889247259978,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5302929023520904,
+        0.30406443460656374,
+        0.3936652374745719,
+        0.6865580369688173
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3602118143248365,
+        -0.7238609366508854,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5301054247637905,
+        0.30439116497299046,
+        0.3940882477732147,
+        0.686315314042623
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3610970041214885,
+        -0.7223421809368917,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5299190142197368,
+        -0.3047155740128741,
+        -0.39450825270371553,
+        -0.6860739725940989
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.361974237300221,
+        -0.7208328473942718,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5297336951557604,
+        0.3050376286529858,
+        0.3949252094469247,
+        0.6858340442597539
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3628434550493695,
+        -0.7193331260556167,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5295494920625621,
+        -0.3053572958583032,
+        -0.3953390752331585,
+        -0.6855955607471345
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.363704599141032,
+        -0.7178432071667491,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5293664294841782,
+        0.3056745426311872,
+        0.3957498073411308,
+        0.6853585538328424
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3645576119169776,
+        -0.7163632811775806,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5291845320164272,
+        0.30598933601053435,
+        0.396157363096859,
+        0.6851230553605173
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3654024362742754,
+        -0.7148935387329358,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5290038243053341,
+        0.3063016430709179,
+        0.39656169987254913,
+        0.6848890972388021
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3662390156506548,
+        -0.7134341706633391,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5288243310455356,
+        -0.30661143092170395,
+        -0.3969627750854533,
+        -0.6846567114392751
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3670672940095914,
+        -0.7119853679757723,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5286460769786625,
+        0.30691866670615375,
+        0.3973605461967066,
+        0.6844259299943586
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3678872158251165,
+        -0.7105473218443926,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5284690868917055,
+        -0.3072233176005038,
+        -0.3977549707101371,
+        -0.6841967849951981
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3686987260663597,
+        -0.7091202236012242,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5282933856153548,
+        -0.30752535081303256,
+        -0.3981460061710559,
+        -0.6839693085895188
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3695017701818124,
+        -0.7077042647268118,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5281189980223252,
+        0.307824733583103,
+        0.3985336101650188,
+        0.6837435329794528
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.370296294083321,
+        -0.7062996368408476,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5279459490256548,
+        -0.3081214331801889,
+        -0.39891774031656557,
+        -0.6835194904193387
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.37108224412981,
+        -0.7049065316927619,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5277742635769891,
+        0.3084154169028841,
+        0.3992983542879373,
+        0.6832972132134975
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3718595671107272,
+        -0.703525141152285,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5276039666648388,
+        -0.3087066520778923,
+        -0.39967540977776744,
+        -0.6830767337139811
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3726282102292229,
+        -0.7021556571999784,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5274350833128215,
+        -0.3089951060589954,
+        -0.40004886451974814,
+        -0.6828580843182916
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3733881210850534,
+        -0.7007982719177323,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5272676385778816,
+        0.30928074622600976,
+        0.40041867628127625,
+        0.6826412974670792
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3741392476572134,
+        -0.6994531774792352,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5271016575484875,
+        -0.30956353998371633,
+        -0.4007848028620717,
+        -0.682426405641808
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3748815382863004,
+        -0.6981205661404111,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5269371653428121,
+        0.309843454760779,
+        0.40114720209277294,
+        0.6822134413623989
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3756149416566046,
+        -0.6968006302298251,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5267741871068895,
+        -0.31012045800863974,
+        -0.40150583183350974,
+        -0.6820024371848452
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3763394067779307,
+        -0.6954935621390588,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5266127480127547,
+        -0.3103945172003971,
+        -0.40186064997245113,
+        -0.6817934256988006
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3770548829671498,
+        -0.6941995543130551,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5264528732565578,
+        -0.31066559982966835,
+        -0.4022116144243289,
+        -0.6815864395251432
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.377761319829482,
+        -0.69291879924043,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5262945880566621,
+        -0.3109336734094281,
+        -0.40255868312893867,
+        -0.6813815113135092
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3784586672395078,
+        -0.6916514894437523,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.526137917651722,
+        -0.31119870547083306,
+        -0.40290181404961467,
+        -0.681178673739803
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3791468753219172,
+        -0.6903978174697918,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5259828872987357,
+        0.3114606635620276,
+        0.40324096517168495,
+        0.6809779595036798
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3798258944319832,
+        -0.6891579758797348,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5258295222710807,
+        -0.3117195152469282,
+        -0.4035760945008976,
+        -0.6807794013260018
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3804956751357746,
+        -0.6879321572393653,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5256778478565303,
+        -0.3119752281039945,
+        -0.4039071600618288,
+        -0.6805830319462683
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3811561681901001,
+        -0.6867205541092126,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5255278893552463,
+        -0.31222776972497646,
+        -0.40423411989626234,
+        -0.6803888841200162
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.381807324522184,
+        -0.6855233590346634,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5253796720777518,
+        -0.31247710771364834,
+        -0.4045569320615487,
+        -0.6801969906161995
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3824490952090815,
+        -0.6843407645360395,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.525233221342885,
+        -0.31272320968452094,
+        -0.40487555462893954,
+        -0.680007384214536
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3830814314568274,
+        -0.6831729630986371,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5250885624757312,
+        -0.31296604326153854,
+        -0.40518994568189876,
+        -0.6798200977028309
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3837042845793186,
+        -0.6820201471627303,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5249457208055331,
+        -0.31320557607675537,
+        -0.4055000633143908,
+        -0.6796351638742747
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.384317605976938,
+        -0.6808825091135358,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5248047216635837,
+        -0.3134417757689958,
+        -0.40580586562914517,
+        -0.6794526155247089
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3849213471149133,
+        -0.6797602412711362,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5246655903810948,
+        -0.3136746099824943,
+        -0.40610731073589634,
+        -0.679272485449871
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3855154595014154,
+        -0.6786535358803645,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5245283522870466,
+        -0.3139040463655236,
+        -0.4064043567496054,
+        -0.6790948064426102
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3860998946653973,
+        -0.6775625851006455,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5243930327060156,
+        -0.3141300525689965,
+        -0.4066969617886523,
+        -0.6789196112900752
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3866746041341718,
+        -0.6764875809957928,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5242596569559842,
+        -0.31435259624505496,
+        -0.4069850839730091,
+        -0.678746932770874
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3872395394107304,
+        -0.6754287155237622,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5241282503461252,
+        0.3145716450456436,
+        0.40726868142239103,
+        0.678576803652213
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3877946519508086,
+        -0.6743861805263568,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5239988381745693,
+        -0.3147871666210592,
+        -0.40754771225438124,
+        -0.6784092566869994
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.388339893139687,
+        -0.6733601677188862,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5238714457261486,
+        0.31499912861848967,
+        0.40782213458253685,
+        0.6782443246109253
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3888752142687457,
+        -0.6723508686797722,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5237460982701218,
+        -0.31520749868053066,
+        -0.40809190651447,
+        -0.6780820401395189
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3894005665117557,
+        -0.6713584748401062,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5236228210578759,
+        -0.31541224444368776,
+        -0.4083569861499079,
+        -0.6779224359651707
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3899159009009232,
+        -0.67038317747315,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5235016393206073,
+        0.31561333353686005,
+        0.4086173315787302,
+        0.6777655447541318
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3904211683026773,
+        -0.6694251676837822,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.523382578266985,
+        -0.3158107335798078,
+        -0.40887290087898404,
+        -0.6776113991434849
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3909163193932104,
+        -0.6684846363978872,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5232656630807846,
+        -0.31600441218160147,
+        -0.409123652114878,
+        -0.6774600317380881
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3914013046337625,
+        -0.6675617743516823,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5231509189185117,
+        0.31619433693905685,
+        0.4093695433347524,
+        0.6773114751074896
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3918760742456644,
+        -0.6666567720809838,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5230383709069937,
+        0.31638047543514936,
+        0.4096105325690315,
+        0.6771657617828162
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.392340578185127,
+        -0.665769819910408,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5229280441409573,
+        0.31656279523741626,
+        0.4098465778281508,
+        0.6770229242536334
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.392794766117786,
+        -0.6649011079425047,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5228199636805801,
+        -0.31674126389633805,
+        -0.4100776371004633,
+        -0.6768829949647781
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3932385873930047,
+        -0.6640508260468216,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5227141545490243,
+        0.3169158489437093,
+        0.4103036683501286,
+        0.6767460063131625
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3936719910179276,
+        -0.6632191638488951,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5226106417299432,
+        0.3170865178909851,
+        0.4105246295149744,
+        0.6766119906445497
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.394094925631298,
+        -0.6624063107191662,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5225094501649729,
+        0.31725323822761964,
+        0.41074047850434414,
+        0.6764809802503021
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3945073394770295,
+        -0.6616124557618184,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5224106047511952,
+        -0.3174159774193842,
+        -0.41095117319691926,
+        -0.6763530073641003
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3949091803775395,
+        -0.660837787803535,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5223141303385852,
+        -0.3175747029066708,
+        -0.41115667143852286,
+        -0.6762281041586351
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3953003957068488,
+        -0.6600824953821711,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5222200517274301,
+        0.3177293821027779,
+        0.4113569310399025,
+        0.6761063027422684
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3956809323634394,
+        -0.6593467667353393,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5221283936657296,
+        -0.31787998239218795,
+        -0.4115519097744954,
+        -0.6759876351556685
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3960507367428796,
+        -0.658630789788903,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.522039180846576,
+        -0.3180264711288181,
+        -0.4117415653761688,
+        -0.6758721333684126
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.396409754710218,
+        -0.6579347521453788,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.521952437905506,
+        0.3181688156342668,
+        0.41192585553694716,
+        0.6757598292755653
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.396757931572144,
+        -0.6572588410722374,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.521868189417835,
+        0.31830698319603923,
+        0.4121047379047153,
+        0.6756507546942232
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.397095212048918,
+        -0.6566032434901072,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5217864598959678,
+        -0.3184409410657594,
+        -0.41227817008090273,
+        -0.6755449413600321
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3974215402460761,
+        -0.6559681459608706,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5217072737866837,
+        -0.31857065645736915,
+        -0.41244610961815314,
+        -0.6754424209236768
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.397736859625907,
+        -0.6553537346756524,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5216306554684029,
+        0.3186960965453095,
+        0.4126085140179701,
+        0.6753432249473371
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3980411129787034,
+        -0.654760195442696,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5215566292484263,
+        0.31881722846269234,
+        0.4127653407283476,
+        0.6752473849011172
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3983342423937934,
+        -0.6541877136751235,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.521485219360155,
+        0.3189340192994532,
+        0.41291654714138254,
+        0.6751549321594454
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3986161892303517,
+        -0.6536364743785745,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5214164499602847,
+        0.3190464361004942,
+        0.41306209059086607,
+        0.6750658979974402
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.398886894087988,
+        -0.6531066621387194,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5213503451259783,
+        0.31915444586381114,
+        0.413201928349862,
+        0.6749803135872501
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3991462967771227,
+        -0.6525984611086458,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5212869288520117,
+        0.3192580155386091,
+        0.4133360176282654,
+        0.6748982099943616
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3993943362891488,
+        -0.652112054996109,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5212262250479007,
+        -0.31935711202340233,
+        -0.41346431557034297,
+        -0.6748196181738754
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.399630950766377,
+        -0.6516476270506459,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5211682575350017,
+        -0.31945170216410346,
+        -0.41358677925225995,
+        -0.6747445689667529
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.3998560774717754,
+        -0.6512053600505452,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5211130500435858,
+        0.31954175275209973,
+        0.4137033656795878,
+        0.674673093096033
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.4000696527584982,
+        -0.6507854362896708,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.521060626209895,
+        0.3196272305223148,
+        0.41381403178479687,
+        0.6746052211630131
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.4002716120392098,
+        -0.6503880375641321,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5210110095731677,
+        0.31970810215126133,
+        0.4139187344247337,
+        0.674540983643406
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.4004618897552048,
+        -0.6500133451587973,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5209642235726449,
+        -0.31978433425507913,
+        -0.41401743037808136,
+        -0.6744804108834574
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.4006404193453283,
+        -0.649661539833644,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5209202915445478,
+        0.31985589338756293,
+        0.4141100763428066,
+        0.6744235330960374
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.4008071332146965,
+        -0.6493328018099429,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5208792367190344,
+        -0.31992274603817883,
+        -0.4141966289335906,
+        -0.6743703803566974
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.4009619627032213,
+        -0.6490273107562662,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5208410822171274,
+        0.3199848586300674,
+        0.4142770446792456,
+        0.6743209825996942
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.4011048380539421,
+        -0.6487452457743197,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5208058510476204,
+        -0.32004219751804097,
+        -0.4143512800201189,
+        -0.674275369613985
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.4012356883811656,
+        -0.6484867853845915,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5207735661039574,
+        -0.3200947289865611,
+        -0.4144192913054791,
+        -0.6742335710391847
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.4013544416384172,
+        -0.648252107511807,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5207442501610859,
+        -0.32014241924771747,
+        -0.4144810347908943,
+        -0.6741956163614953
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.4014610245862107,
+        -0.6480413894701933,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5207179258722856,
+        0.3201852344391878,
+        0.4145364666355934,
+        0.674161534909598
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.4015553627596278,
+        -0.6478548079485391,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5206946157659732,
+        -0.3202231406221895,
+        -0.41458554289981503,
+        -0.6741313558505142
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.4016373804357254,
+        -0.6476925389950479,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5206743422424751,
+        -0.3202561037794266,
+        -0.4146282195421471,
+        -0.6741051081854343
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.401707000600761,
+        -0.6475547580019779,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5206571275707824,
+        -0.3202840898130206,
+        -0.41466445241685024,
+        -0.6740828207455078
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.4017641449172478,
+        -0.6474416396900624,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5206429938852715,
+        -0.32030706454243885,
+        -0.41469419727117385,
+        -0.6740645221876046
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.4018087336908338,
+        -0.6473533580927036,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5206319631824045,
+        -0.3203249937024091,
+        -0.41471740974265714,
+        -0.6740502409900376
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.401840685837021,
+        -0.6472900865399338,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5206240573173978,
+        -0.3203378429408298,
+        -0.4147340453564239,
+        -0.6740400054482543
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.4018599188477117,
+        -0.6472519976421377,
+        0.79
+      ],
+      "orientation_xyzw": [
+        -0.5206192980008676,
+        -0.3203455778166707,
+        -0.41474405952246296,
+        -0.6740338436704902
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    },
+    {
+      "id": "materials-wide",
+      "position_m": [
+        1.4018663487575993,
+        -0.647239263273529,
+        0.79
+      ],
+      "orientation_xyzw": [
+        0.5206177067954467,
+        0.32034816379786424,
+        0.41474740753290024,
+        0.6740317835733902
+      ],
+      "intrinsics": [
+        1678.125,
+        1678.125,
+        960.0,
+        540.0
+      ],
+      "clip_m": [
+        0.005,
+        5.0
+      ]
+    }
+  ],
+  "open_ms": 5234.447300026659,
+  "warmup": 0,
+  "capture_ms": [
+    2997.4672999815084,
+    2963.0595999769866,
+    2926.251999975648,
+    2958.532699965872,
+    2973.964300006628,
+    2956.737900036387,
+    3026.234499993734,
+    3009.625899954699,
+    3009.8677999922074,
+    2979.2830999940634,
+    2967.950899968855,
+    2969.5763000054285,
+    2980.056300002616,
+    3013.7813999899663,
+    3888.5287000448443,
+    3895.862900011707,
+    3888.4664000361226,
+    3898.3456999994814,
+    3918.6140000238083,
+    3804.163700027857,
+    3804.6145999687724,
+    3781.9025000208057,
+    3703.6459999508224,
+    3678.454899985809,
+    3573.4889000304975,
+    3626.373099978082,
+    3653.22819998255,
+    3627.7401000261307,
+    3634.757699968759,
+    3622.51820001984,
+    3627.42099998286,
+    3573.863999976311,
+    3483.714100031648,
+    3409.1664999723434,
+    3368.937899998855,
+    3253.3053000224754,
+    3164.863799989689,
+    3131.0920999967493,
+    3121.4114000322297,
+    3115.1146999909543,
+    3079.3924999888986,
+    3132.615199952852,
+    3171.0411999956705,
+    3226.314999978058,
+    3259.2202999512665,
+    3357.9348999774083,
+    3430.446300015319,
+    3461.857499962207,
+    3510.890699981246,
+    3563.3440999663435,
+    3557.9243000247516,
+    3583.1655000220053,
+    3559.7931000520475,
+    3573.7671000533737,
+    3607.920099981129,
+    3570.5086000380106,
+    3575.849000015296,
+    3591.7922999942675,
+    3572.889600007329,
+    3574.7869000188075,
+    3588.1429000291973,
+    3472.295599989593,
+    3461.4397999830544,
+    3401.0732999886386,
+    3302.662599948235,
+    3250.7047999533825,
+    3290.200999996159,
+    3260.410499991849,
+    3020.8738000364974,
+    3036.2844999763183,
+    3061.695799988229,
+    3079.949300037697,
+    3006.88280002214,
+    3072.896199999377,
+    3028.2800999702886,
+    3017.3509000451304,
+    3006.0497000231408,
+    3031.514399976004,
+    3034.2156999977306,
+    3039.7026000428014,
+    3099.488800042309,
+    3030.8995999512263,
+    3034.1913000447676,
+    3071.8516999622807,
+    3016.6541000362486,
+    3049.9357999651693,
+    3025.6291999830864,
+    3061.0316999955103,
+    3039.121999987401,
+    3067.7668999996968,
+    3047.7573000243865,
+    2981.5431000315584,
+    3009.4631999963894,
+    3026.7535999882966,
+    3022.5396000314504,
+    3008.797200047411,
+    3045.5137999961153,
+    2990.932499989867,
+    3055.16859999625,
+    3063.7907999916933,
+    3026.9777000066824,
+    3032.4686999665573,
+    2989.8895000224,
+    3020.518200006336,
+    2973.7717999960296,
+    3019.256299943663,
+    2993.954799952917,
+    3004.197300004307,
+    3038.935600023251,
+    3015.332099981606,
+    3040.250100020785,
+    3049.0639000199735,
+    3031.2610999681056,
+    3021.5825000195764,
+    3011.6275000036694,
+    3046.4507000287995,
+    3036.4056000253186,
+    3055.5335000390187,
+    3010.5641999980435,
+    3023.6307999584824,
+    3039.296999981161,
+    3009.324299986474,
+    2976.4341000118293,
+    2984.5977999502793,
+    3001.599899958819,
+    3054.352100007236,
+    3054.654300038237,
+    3011.1952999723144,
+    3038.730700034648,
+    3039.619199989829,
+    2998.516399995424,
+    3030.953799956478,
+    3041.681399976369,
+    3035.8558000298217,
+    3035.3086999966763,
+    3087.5317999743856,
+    3047.171199985314,
+    3037.76779997861,
+    3054.63290004991,
+    3083.001699997112,
+    3053.7998999934644,
+    3061.4846000098623,
+    3046.181900019292,
+    3064.8756000446156,
+    3080.743500031531,
+    3027.9300999827683,
+    3093.6872999882326,
+    3056.853099958971,
+    3012.6740999985486,
+    3038.9305999851786,
+    3043.386699981056,
+    3042.5164999905974,
+    3028.103399963584,
+    3033.9694000431336,
+    3042.871700017713,
+    3037.687600008212,
+    2974.048500007484,
+    2993.0807999917306,
+    3005.765599955339,
+    3006.9904000265524,
+    3013.366999977734,
+    3012.54099997459,
+    3008.7211999925785,
+    3019.211800012272,
+    3034.5612000091933,
+    3046.0003999760374,
+    3009.5794000080787,
+    3064.364399993792,
+    3033.1990999984555,
+    3060.6704999809153,
+    3000.2906000008807,
+    3012.5354999909177,
+    3019.31359997252,
+    3028.2161999493837,
+    3010.532900050748,
+    3018.0585000198334,
+    3019.0442000166513,
+    2975.1479999977164,
+    2951.4109999872744,
+    2943.836300051771,
+    2947.226900025271,
+    2940.042700036429,
+    2967.997399973683,
+    2944.1771999699995,
+    2950.9843999985605,
+    2982.309599989094,
+    2972.407600027509,
+    2951.068199996371,
+    2988.668999983929,
+    2995.2846000087447,
+    3010.944699984975,
+    2994.4558999850415,
+    3002.3813000298105,
+    3001.6294000088237,
+    2980.500600009691,
+    3022.637699963525,
+    2987.7152999979444,
+    2994.971300009638,
+    3025.4671999718994,
+    2984.4058000016958,
+    2994.3500000517815,
+    2978.9073999854736,
+    3017.7520999568515,
+    3000.7094999891706,
+    3009.8245999542996,
+    2992.8238000138663,
+    2972.2200999967754,
+    2998.1469999765977,
+    2963.973200006876,
+    2989.3588999984786,
+    2938.7063999893144,
+    2924.667799961753,
+    2955.8332999586128,
+    2919.6213000104763,
+    2915.8572999876924,
+    2987.665700027719,
+    3008.743799990043,
+    3000.838899984956,
+    2947.3130000405945,
+    2959.6641999669373,
+    2980.6022999691777,
+    2955.569799989462,
+    2974.0393999964,
+    2921.152099967003,
+    2939.8448999854736,
+    2919.1478999564424,
+    2888.1045000161976,
+    2922.183600021526,
+    2933.0131000024267,
+    2895.6075999885798,
+    2923.123200016562,
+    2968.0950000183657,
+    2981.252899975516,
+    2972.8419999592006,
+    2986.79669998819,
+    2992.644799989648,
+    2973.4304000157863,
+    2988.8106000144035,
+    2975.5778999533504,
+    2965.6066999887116,
+    2923.9595000399277,
+    2874.210799986031,
+    2900.8093999582343,
+    2965.6227999948896,
+    2910.724100016523,
+    2940.246300015133,
+    2939.133500040043,
+    2928.817599953618,
+    2929.946399992332,
+    2953.555799962487,
+    2934.9765999941155,
+    2925.977499980945,
+    2939.702400006354,
+    2938.2704000454396,
+    2978.003899974283,
+    2947.740299976431,
+    2938.002199982293,
+    2958.3694000029936,
+    2941.306799999438,
+    2927.671100012958,
+    2984.6367999562062,
+    2971.4824999682605,
+    2924.263900029473,
+    2914.2269999720156,
+    2966.560299973935,
+    2998.1650999980047,
+    2970.913199998904,
+    2957.2607000009157,
+    2917.673400021158,
+    2934.0039000380784,
+    2886.3990999525413,
+    2920.1005999930203,
+    2933.6806000210345,
+    2926.8770999624394,
+    2963.4441999951378,
+    2950.7681999821216,
+    2967.043399985414,
+    2952.2678999928758,
+    2947.0010999939404,
+    2992.8354999865405,
+    2918.8775999937207,
+    2918.2136000017636,
+    2907.041800033767,
+    2897.74479996413,
+    2908.8453000294976,
+    2895.109799981583,
+    2921.653099998366,
+    2890.828700037673,
+    2926.5379999997094,
+    2914.9809000082314,
+    2912.5205000163987,
+    2934.3035999918357,
+    2938.3997000404634,
+    2934.09039999824,
+    2914.4442999968305,
+    2962.0510999811813,
+    2947.914300020784,
+    2981.9421999854967,
+    2929.3595000053756,
+    2893.641300033778
+  ],
+  "consumer_work_ms": [
+    69.8481000144966,
+    69.98159998329356,
+    71.3104999740608,
+    70.39639999857172,
+    70.70320000639185,
+    97.92939998442307,
+    72.64349999604747,
+    83.14390003215522,
+    70.29179995879531,
+    116.12790002254769,
+    89.5252000191249,
+    70.98159997258335,
+    70.41410001693293,
+    72.92280002729967,
+    66.81380001828074,
+    72.00949999969453,
+    75.26610000059009,
+    67.73359997896478,
+    67.44870002148673,
+    73.35009996313602,
+    67.90670001646504,
+    68.2286000228487,
+    69.11039998522028,
+    64.41340001765639,
+    66.86570000601932,
+    65.62299997312948,
+    64.36999997822568,
+    66.39880000147969,
+    69.85610001720488,
+    64.2919999663718,
+    88.39300001272932,
+    67.80760001856834,
+    74.48660000227392,
+    78.90010002302006,
+    112.97249997733161,
+    63.35390004096553,
+    63.26800002716482,
+    62.06720002228394,
+    65.8137999707833,
+    69.13629994960502,
+    67.10009998641908,
+    65.76540000969544,
+    63.016199972480536,
+    62.56679998477921,
+    69.0652999910526,
+    65.9682999830693,
+    68.70900001376867,
+    65.69859996670857,
+    65.50209998385981,
+    65.34049997571856,
+    68.17750004120171,
+    70.22520003374666,
+    68.74760001664981,
+    71.02299999678507,
+    68.4577000210993,
+    67.17460002982989,
+    76.0459000011906,
+    65.12720003956929,
+    67.37669999711215,
+    66.9921999797225,
+    65.37319999188185,
+    70.81159995868802,
+    65.08029997348785,
+    73.47439997829497,
+    72.25319999270141,
+    67.09780002711341,
+    62.90269998135045,
+    174.75539998849854,
+    78.93650000914931,
+    75.7972999708727,
+    71.19699998293072,
+    72.48309999704361,
+    74.56969999475405,
+    74.09199996618554,
+    79.21860000351444,
+    75.96950000151992,
+    91.82460000738502,
+    75.26180002605543,
+    70.34470001235604,
+    74.57360002445057,
+    78.13480001641437,
+    75.21430001361296,
+    77.98930001445115,
+    75.69450000301003,
+    79.74939997075126,
+    76.35609997669235,
+    74.46540001546964,
+    73.34180001635104,
+    74.86360002076253,
+    73.82479996886104,
+    77.29580003069714,
+    75.22540003992617,
+    71.47500000428408,
+    71.87089999206364,
+    73.01710004685447,
+    79.19660001061857,
+    75.06000000284985,
+    72.29370001005009,
+    75.81750000827014,
+    73.6081000068225,
+    72.22619996173307,
+    73.13680002698675,
+    87.36540004611015,
+    73.30469996668398,
+    79.53679998172447,
+    74.31140000699088,
+    72.62659998377785,
+    80.74550004675984,
+    74.72620002226904,
+    74.85109998378903,
+    77.13510002940893,
+    78.71319999685511,
+    72.70359998801723,
+    70.89840003754944,
+    73.76090000616387,
+    71.68910000473261,
+    71.40840002102777,
+    77.02620001509786,
+    81.16910001263022,
+    74.59089998155832,
+    79.51109996065497,
+    73.92400002572685,
+    77.70000002346933,
+    76.16140000754967,
+    73.43370001763105,
+    72.99509999575093,
+    71.83810003334656,
+    71.92389998817816,
+    73.26809997903183,
+    85.07189998636022,
+    73.3100000070408,
+    72.36890000058338,
+    75.23649994982406,
+    71.55980000970885,
+    75.84619999397546,
+    108.7843999848701,
+    71.46289997035637,
+    84.52209999086335,
+    82.38890004577115,
+    71.60149997798726,
+    72.47460004873574,
+    78.18899996345863,
+    73.45040002837777,
+    78.93260003766045,
+    76.7098999931477,
+    71.4346999884583,
+    71.43219996942207,
+    71.57660002121702,
+    72.92940001934767,
+    69.88679995993152,
+    76.87930000247434,
+    71.83239998994395,
+    74.99400002416223,
+    76.50770002510399,
+    78.22109997505322,
+    72.59450003039092,
+    71.29920000443235,
+    73.71949998196214,
+    70.91880001826212,
+    73.45489994622767,
+    75.51359996432438,
+    72.38710002275184,
+    72.61809997726232,
+    72.9875999968499,
+    76.00930001353845,
+    75.649100006558,
+    71.42739999108016,
+    76.6235000337474,
+    75.32830000855029,
+    73.36929999291897,
+    73.17350001540035,
+    73.28050001524389,
+    74.63459996506572,
+    70.53480000467971,
+    74.94170003337786,
+    90.1575000025332,
+    76.90059999004006,
+    69.9727000319399,
+    70.65660000080243,
+    74.00259998394176,
+    74.91890003439039,
+    70.16890001250431,
+    72.6509999949485,
+    69.23650001408532,
+    70.78299997374415,
+    71.67399994796142,
+    71.65619998704642,
+    71.92349998513237,
+    73.38870002422482,
+    70.44049998512492,
+    71.60729996394366,
+    75.18479996360838,
+    76.0461000027135,
+    71.76030002301559,
+    70.57839998742566,
+    69.8899999842979,
+    71.08429999789223,
+    70.14029996935278,
+    73.0790999950841,
+    70.77120000030845,
+    73.1853999895975,
+    73.83949996437877,
+    113.12469997210428,
+    71.1058999877423,
+    82.96660002088174,
+    73.7548999604769,
+    73.28479998977855,
+    69.9896999867633,
+    70.42310002725571,
+    71.77270000101998,
+    75.73899999260902,
+    89.19119997881353,
+    68.74150002840906,
+    74.55079996725544,
+    71.45210000453517,
+    70.79430000158027,
+    75.30009996844456,
+    71.70299999415874,
+    68.08860000455752,
+    71.71759998891503,
+    75.97399997757748,
+    72.38879997748882,
+    76.23299997067079,
+    71.44029997289181,
+    71.88609999138862,
+    74.31259995792061,
+    71.77799998316914,
+    77.44919997639954,
+    73.4216999844648,
+    74.26160003524274,
+    71.17819995619357,
+    69.98239998938516,
+    70.53879997693002,
+    74.60170000558719,
+    70.10410004295409,
+    73.26279999688268,
+    75.46119997277856,
+    70.9958000225015,
+    75.51140000578016,
+    72.62410002294928,
+    70.92620001640171,
+    75.704799965024,
+    72.68650003243238,
+    74.41299996571615,
+    70.19710005261004,
+    73.00979999126866,
+    70.94870001310483,
+    70.09130000369623,
+    72.78540002880618,
+    70.89929998619482,
+    71.65449997410178,
+    74.44319996284321,
+    69.95790003566071,
+    68.89560003764927,
+    71.58579997485504,
+    72.75390002178028,
+    70.47750003403053,
+    69.82410000637174,
+    71.1308000027202,
+    75.36700001219288,
+    79.40089999465272,
+    74.37089999439195,
+    75.56720002321526,
+    75.6732999579981,
+    70.87870000395924,
+    88.05040002334863,
+    71.55029999557883,
+    71.98980002431199,
+    72.94600002933294,
+    70.46030001947656,
+    77.86740001756698,
+    75.88050002232194,
+    69.44039999507368,
+    68.83160001598299,
+    69.92150004953146,
+    74.29389999015257,
+    69.92559996433556,
+    74.35979996807873,
+    70.42900001397356,
+    71.63500000024214,
+    69.3944999948144,
+    72.274100035429,
+    70.01720002153888,
+    71.5914000174962,
+    70.38190000457689,
+    75.00589999835938,
+    81.1962999869138,
+    69.43939998745918,
+    73.28220002818853,
+    80.37189999595284,
+    72.07329996163025,
+    74.14219999918714,
+    73.08130001183599,
+    79.01069999206811,
+    70.35279995761812,
+    73.61979997949675,
+    75.72490000165999,
+    72.18719995580614,
+    70.30479999957606,
+    72.14300002669916
+  ],
+  "p50_ms": 3009.5794000080787,
+  "p95_ms": 3622.51820001984,
+  "max_ms": 3918.6140000238083,
+  "over_33_3": 300,
+  "frame_sha256": [
+    "0feca4f19ce2e93025fbebde6814ddd1498037b7dd99af82f340774a09058f8e",
+    "17f7e249831fc1f34943e107e8616ead6e808862e7325f51463085f7198a156a",
+    "8cc865c153e697860c1413a0d8ad1a732acb81e0d39135a5f76207fd90db6ace",
+    "abc109410f497570e8b823b0e6056e5c4286469653eddf7ddc94aa960cd03a39",
+    "57ba69cb02acbc9e392ccee167a70f8fa00cd0f1c6161976fec43a7b7088fc0c",
+    "eb8a37c7e5562068f0fe95ef72fccb6b817b145898172f9c2aba436d8485cb20",
+    "f9c3c6679eb8f993e55f6f423458687c2f8e85625edaaccf6cb644b81ea2edb9",
+    "c6e8b9b1a9c084ba25669e18992b8faf2b042c062bb55116a30eb87b37281116",
+    "e949ecff5828545db18eb7931a0229a1235fb5a617f39ed687cd1e15ae7998d9",
+    "56d9e7a1c9cef048b32e4d586e34756c819d775c0a02d3216be7f2bd4d952026",
+    "bd92c0f5c4fdeddbdb2c9b3d153f25efec367f0295c38b337972a9d33bef1e3f",
+    "3bc3320fc12d2d545e8466fa72763cae1a6bf5e09309e590305aab85746d2d57",
+    "b9064286632fc60b7114db506318da2af88e88096b92a8938dcdf76fc7e01277",
+    "9487dc917a8477e8bbcab972973b11916459cb1d28ad498237f07519c9277214",
+    "5c1176bdb0f861e38bc59356588ad5131fbab5cc63c17dc4ea4fe71327a3df4f",
+    "a3a4a7ccda387d36b73acffaa0118b392d37e7d071637e45c4488696bf708083",
+    "676056f1dd98bb5eb193f09efd30fef2e04ae15b212854aa285c8ab6d0ff322b",
+    "c64fe0102044364a6c73d46c5cd88e5ee249f117f9fd691338019ad224a981e7",
+    "ebc4ba8b3f46db5285a2d2351f42342788f0eccd931c33c7228b5bec62cca444",
+    "cd4f37a4b31c2ef548b9651b53afb5d1e68342e2f1a5c73ad92e61a6bafc7802",
+    "dd73e85ba230ce25602c7ac0f3a5060390d1c86752009ec01cf25c2ea24d3f4c",
+    "6f56fb714efd02aebd4faf8a8bd54ff38be25cbb746e5532f302dfb37f4c8ac9",
+    "12fb4bff8a9da99e17e18c205653a0b44f35b8e3cb307647a06ee561a1858fd8",
+    "b2a29b005e15e18c8a86dde882d69155c3e40bdf84058a5f8c285f5cc090dcea",
+    "1b35d47b3955eb2fa3b2a01addf043f49148bdb421249fb7a33876ee69b55989",
+    "663d76e82df9900d9c6d4077dcd50d811d6028c3d785ae79635789040cd5c649",
+    "7d20bb5e08932e353e3bd88f8915c3b58ab6b18238311789cd857c728c60c391",
+    "d757369872628f036aafea8bee889e03588be339eb480c8d67e94c22ca055437",
+    "cc0f6b33c979ed53aa2c9da3bb22a98b7077f70b479ae564d379adf06a41704b",
+    "448e7b2a4f4ca342e59b310f01df2bdf29591b500ebf64dfc0628a05bb8b616d",
+    "7df153fd506709ad2e2c573815b182436f2a97f898f7d2fa48efe1f45a47e4c4",
+    "672e8f794af917b023a94475c4f0859ba94ab1b8c1d7ab48925b9076726d2666",
+    "a12c4aa1d17567bef00f423d33cdbe846183dcc586389261d133b7d980f3e0b0",
+    "90446d351102ef48d6b7ef285b85ca75b54cc1fdc5f3a9a8f584b909fbfe729b",
+    "eb6da09b4735a986191c2e5d4d9020a436df60f4ec47691a982d14a86cf38723",
+    "5da4314dd5e5755d3c56c075707030e8a24691d235a77298dd8c1bc9dd560a07",
+    "b019287dc21297a529aa645260b01f47300440344a554df9d4a28eb96bf7e7bd",
+    "2c219126c8b033ef10b587fbe178806b3374e6b47f5b3338126dd23842b792c2",
+    "260857edfd5ffb7c6e0fbb4deeb51d650907d5823b0c5251bdd6586b92b9a5f6",
+    "7118918da9ffe343328ab52fd1d7a78b839335003aaf2be848ba4feafef51de1",
+    "5a039cd2a2dcf92bd7908d2985a03593724c21b21d451d3277f507b6a3220a4a",
+    "d82f9812f25b33d0adc52b20f74ced63fc33690f8baa5cabbeefd78de46831b8",
+    "b378ecac3dd1450a15482cd929d29da2187b74dc966c67ca61a0db63b869c837",
+    "4ee681a8e7a0c058db51cd1175528ede42ae8185aa0bf8dd76f4cd5b0f568ace",
+    "125c51b9f27ed2b4ada8d74cffabacc2c3b4841cf42a05c3fa5bf7b3c82244cb",
+    "b286b9eef046ff870655ed7549eaea89c69fde7262e403b9a1ef8fe944c4909d",
+    "1749aacd3a5e0d6da0923f0831569817090f8b7f0bae10e89ef1d70548ac7433",
+    "a1c4ce4e135eab884ea07ffed4d81cd698cea3d1b1ba039ea031fda669c40b0e",
+    "5c60bdfdd4c4226b402779a125b0b80bda835dc53f752c2562dfb08ac0688b34",
+    "aa1fbfc04890e01e678a18ab5fd697cb71ba13ba4a8bbd4f36b47bd15aa051db",
+    "bd2dd96e9c787d8f43d253d06fedd6373efde9ea125412c710dacab562efa013",
+    "a2ae063e69545123d76babcf0df2575fabe9cb4952881a3a7284043d1195db48",
+    "0704c8468914e6980e5842060a4905c12c1d3ddc2f82356493ad0e9cf934e3a1",
+    "cfd4409ca91132a260fcd1493293baf8d89bece243030153a43a87a6d0db0240",
+    "93502a0533fcbfab3f5d04dc7f111943fd0a964f2fc1e6a01034ee0686847a9a",
+    "f00bbb73f2b3e5269d78df4a1fd9e84a5970b2f145f3f605818346f262b1b29b",
+    "a746ac4081fa4c30764c3ddf73cd873cfbb7fe05fa6d3b4277109bfe60af1e6f",
+    "097cdf521d243c30e8ff420ee466e67aa2c0150c2668e786fef080bf6d4da9f0",
+    "31cf39fb27f4be25cec50c8ea3658b19c9be920667245454b2e71aa383901cbe",
+    "a5cf1564f24552c060796a8ebda8ea3dfee3e0e5666ce17c02390e00ec1a6cbf",
+    "3d4b83f59790686cf39f3a7471d7be30b733d978993e4134a0a8f46d09135b73",
+    "9160a5a33db11a3e1314c5d149e067de5fdb70bc83606df385aee8f87d265a2c",
+    "2a51a10c4176b819eb208171c254f0824570258d0101ab2ed123323c4f18cb58",
+    "9aeef3c3d1a8942b1ccf59033c71bfb02ad97561bbc220d4d99b23de74b35638",
+    "64a63eaccbeee25d901fd5204768a2a7c7fed44648af8484917a752ed6d16cf5",
+    "03a6aba4567f8770639c24da645e5480402cfc794deb451a53a3cfd35fe040d3",
+    "a093b4721dad9bc89656e270e70417337a462c892b7205ae095b471a43f334e7",
+    "2744e3dd8e71d7134ff0b0ec14276e44d2450c3bc7578a9226c553bf352e616c",
+    "decd8286eee794d97c5d58086142b0d6b2edebc5be77f1b70d68540e40b1923a",
+    "7509707c534e756cf1009300f5613cc8c9ab1d4d7f69c00393acc6b0bcc1eb5f",
+    "58ac5db22eab6ffb63748e0bea64f55547140c93380944415eac2b4b530e4ab9",
+    "d4086eda84fa876f66598703cf178ff457439ceb24753f593f4e645b8bfcb66e",
+    "3b4dda2f84deded5c369b45da504466f0f5bf3b1126880ad0431609683adab6a",
+    "d2e9c5c8334e96a9d4efad3b602b6cc87ff32498a39cb1b5f5751e6b527ca568",
+    "e8bdbb50bc94123b20e0cf6d2f1deb2ddada4f95d7b77f7131d40ca7170ba755",
+    "165998fe37140aac33e1d4c7933550af2c62529b0968af5ad4df7340a5edc056",
+    "ff0a39322bb777c2547d654d9446784a623201b7bb5f1d73b323b48d02aafda7",
+    "35dbfbe39166729847973cc56f48fd74de2a4c707bee5faf8835472856f8685a",
+    "798db0c57daa7f4aaf2849ded3818b303602f717db363ed2d76847d7da72a8ee",
+    "23e01bf3c76225353c0d1345bae232ce4b06baf520b3780e609e59bf8eddf253",
+    "5feb5299ad75703c2124c8918a8e499c4d951f5387b343f1b5936f78342e7e51",
+    "4963052a06e06ebce6120a58cfdf3ee4d046e8f5b6e84624bdd701e6e066c282",
+    "d2ac984fb4bdcbdaeb30df0b7b5c1838a8892876716be02334dcb96d91a09ac3",
+    "29bb16c4d802cb2ecb40a6c5a79b21d1b7b5cdddffe911ab6c603139671e1d01",
+    "e524acca10b2a97e7a6fa0ea16fa1eaab46b2f5ff6543081de96d519b83eaee1",
+    "74bd106f490d0f898f55866a9dca147f29849b6494ba83a74ffc6bdbd0478b22",
+    "1c5d0ad0b5102a2739c735c8c055e24f58a91c14f72405123cef3337a940a689",
+    "1e1cb95ecfc702af49d20b2b17640fba1083e0c997deb24a30a2f59c7e70fd20",
+    "a043619681662e56983916a880413213e87b0af3a8bbeedc8edae64f013f4ab3",
+    "a0f6d9b80e0fe386bbdd8a6bfc4fcfc890616d606cca9175e845f840778476ef",
+    "8f9db49e94552f914f66ae7502acce822ae6971657685d0f457bc8a3354e4426",
+    "37a3a6074052e73823edf0858a9940aca36f37f9b7f74cc91d7b0793836ad355",
+    "f79e04526989d410e6ed29dbdc82cfabcb51894ffa3f60f581555fba0e9c8296",
+    "79af7b26835405c8064b7e4eadcd9a44c636da499e7d9706e9823cb86ef0b18e",
+    "99a476cf41b80ef2d99dc860f61b42abc5e7d0b03ba851886678ba227cc03bfd",
+    "4a7f6c0b3f1c8921b0bd90e41a6f12c6d9fff8a8fe9a85e916afd09ab48a791f",
+    "c377ff71ce54b4e65078509d8f96eec3d87bcf08765053a011d833e6b1ebfa50",
+    "fd797a17658f4a9bcb65f177258009ad66d24ed75f2e5c3096f29334d00260b3",
+    "bd06351184af088ea7bd6363d0d03459867c0435b7d5053050e2bcef19da9c5b",
+    "896a4a1dd93125e832c7580067714303a5ac53f09b8567129612a0a6394652cb",
+    "1a61846dff6b51cbe1be5b9b95c887346fa1a0c2a37d63636b09639548baddf4",
+    "6c462e3b16b5fa6d251191fa8fed254338851b4aba03ba2678d833927a2fa2e7",
+    "9336e6ae76d29201ebafd27b4d136fa8fa70859e0faf53e7f5a30b9f479f0448",
+    "a5debf68ca25477da9871766316b90a981cc224e8a456f4d5cb9691b16d72095",
+    "c860b225fc05460dc2fa6afdf791cb9323602646b31695cac685894749d39095",
+    "180bf315a7cf5bffebae587d2d72be1d3435b850ec71f37c6b4a1d22e5676461",
+    "03647d8c302ef56a09e9481401f928e6fa237cedf8efd1b67c3f82d1cbd132d1",
+    "f223ed68ee1029638add235c54fce7abed63ee6d2bf4c621b2b5acec37a1f8f2",
+    "15e865ab45016a7a2d3a9092df5c9eab8dffc29a6a27924c30a6709438385a15",
+    "fe7b66ab28fa5b7f09335026f4f425b94b25462d32b27f8db4637e2eb58aed91",
+    "8bd2297c45a114f4010d78cd581a13cfa5a5dad443ee8216510258ad7aff06d8",
+    "c7b03cab2f9678369cd00969ed3b74f2e517b1662fad575228ac48c0433cba37",
+    "c82946b1fe478a96d796d9e155de70087c241bb03baabbf75f5c9a5613d8e6fe",
+    "46b722b115f62c6e4c200d5d91dbbf22fc35b2ea8e84ee81d36d745832552792",
+    "8358af62dda00085fdee76c6ec9eb418354a6141d267d37941637a9c5b0c9584",
+    "45e4012670b8bd663b0db5f7fbdf46b818477b2bfbd7f75bf83da8c5de011a94",
+    "90d0783ab15d439a941d963a88ea39facab766d4e05579e58bf56761d15dbcc3",
+    "ee96ba6211a2ecbef596f37039bddc037fa873c7b4ee50110f1453b83f88fcad",
+    "045c7596ede2be1e49d843b7b8d04bd9f67775ccb3b447aa3956c2318d628e88",
+    "b7a323015391d31d2b2acb3e11e3891d5c7d6d2afb55aea71eb7ef638a351fa8",
+    "8dbfe52fe1a5d1fdf010226755f63f1514ca1162d158b49e57d6c99828b1ca6e",
+    "92ca04bbad6f38aacb66bf05e7379ee287360e35112b54c6922e106a295199e8",
+    "9e63b716aa199b6598f2ff035880fd72aa8b8f4e552c718db2ecaf81d410fb24",
+    "0a12861293c03094da03277edba6e3f5aac730977cd969536bacd477ca8a61f5",
+    "fce767a65b995a032e8ef4cf78ecc801a7f434dbab2ba7d7f5f305297e3181d6",
+    "14c0e1b203a7056477f1f1741f8e21737989735e9591ac099d697d6ec5b014fa",
+    "88849a431bdc5e9e2f01150ded874951da25af7c5586aa4388ce60d2dac8c7cb",
+    "c0fb7931985bdc98523a27b95e54e8b1f4c425d23a2ac7bd809b6db49b865c38",
+    "937589d18f6948913939f721ce1414be556b014184c265b5d295f39f32563b71",
+    "48da9a8b377f72290298412ee4d3434bf2bdced5bc6267a19489ca29f69bfcc8",
+    "b40e52695aedffe03cfe109e916b0c3a4a7f9866df64a59a5bcb8de22c1db193",
+    "92b7c6c71655adcd5026a4db43ec67f466de0e6d3fae1460a537fda7a8e330ac",
+    "0678a1de916be6f745e59c8dc407f2d0de9dc939cc7f149b5714fae37ecf5149",
+    "3a9db255d31a3b2f2799b0f8f7ceb93fcbbf19d1175d35586a6bcddfc6da9317",
+    "5195b6a532621520b3bef3551389633542967fc58f940968dc886b4fb1848cb9",
+    "638535b395d74027afdaa4bfe5bbbeae628dc5d93bab192daf9e61888fa36b35",
+    "91ee498a732a1ca763d8709415e4d0f039dd6b3cc3691e3c4e853b47fe82e41e",
+    "d57057d90607f537bd528fd5e25893f071b207bc5d00f95523404c8056a6bc0d",
+    "51f61d809a0633c7352b1c1ea255cdc2b1617b6c925929b9988e5e54880fac31",
+    "bc94d07fbd1fa92829f8409fbc05409881c12c3e862849006cb896eb8de20ebf",
+    "6e98dff971d7beb6dce8f7ad8da0f282c15a82ea0ae264b87ef875b53cb7d0bc",
+    "228309b382c6923f2b0f4bbbbe45be4911ab7107cb50d67b6dd8092b51f5acc6",
+    "fccc540a51728977e149837326aeb21202f8b4851319051ef45a280486948042",
+    "587960a0c6c4c4a3855968db09ad3051fe19133683a766faa74d79d736b6e6ae",
+    "6f3a2349e49762ac48ee2849beee6e5ac34108c0ce5913d8f9d5c485435eb96e",
+    "da99446d56e3d45e62c0c8f653485e9ba49915585c3277beed446d1bea9676a7",
+    "ca9880cf794fa639abc4cc1fc25ea5d0cf9822b282e6e280c161f8d53273574f",
+    "230920a3f99ae3177a574982abb5e0c5e68055fc7e4f716656228fc697f95d98",
+    "04157d7dd322137fbbeb95a449d0a7a00377fae05ca000607e87a2864f199052",
+    "daa72ee505c36ce71218a98b6f4d45fad279e89ed4523b523d94a19d2f6241b6",
+    "d140c65c0249111f57436797cf011581da78d78740c29955ba601dc5f6f68d87",
+    "45aeb9497397d4d3ab5ef8fb245c10832b663644ecd45e0a90ef5206d2d4be75",
+    "36a0b34a586c16d34e145f827417283a99d817bef563f05e1272926a4c32545c",
+    "564f26531e2429fa94d09e77b06b00404fbaf18fd6ad311f096ddc7c8f7bf011",
+    "27df31f39cfccb981b71689d82ca6ded9f35fa6c3d5568ec4ffa0c3281ecc467",
+    "356069d8af86ec5ebb9c39e1fcd0d68ebad4a2d8a948964ded27bf25094e8630",
+    "170e99c594eca946a0327a2b39114ea151ea5698ded2a6b67af267eb9d8bfc04",
+    "b99f25cb232a5b32c838ad920d150c3a14e78f076c3b7390413a6667581f8772",
+    "1b4b3d1553bc50aa35ba40643d1b92d22c00a83526044e9ec9065520d05d7743",
+    "d2cd2a1488055f1597c8d7d7deea43329302b6833e6c08f5cac4a3ecf651535f",
+    "b3b015e4c7e30af35012c48c25cc58b13d06038824bc6abb72588f0a2639e455",
+    "a5337e825f991e06247cd8e67b96c6695fc9d37894200104208fa6972f3a9e27",
+    "325523d48a9e548f6859cba2c3955141a6c50e640da5da492e196d2f510ad744",
+    "7c2aa61b38a28a5eced8866b0608b6f061007483e132295b7c55dd8b04590b99",
+    "7a5d806adde0bc518a782729b95b78e9c6978d8bb75f4a330117fc877911dfc9",
+    "43c92023f04057c6499b06e1c86b281dfb5710b9ab93a9e106dd4fc4c51c1b2e",
+    "f7f98654088962eb2ab8bb7917a794bf51c4260eb0060256f66e83121ffaf803",
+    "1c085e416c8565e595816727d385cdb5a85b70a19963f9b05b0267a6590a0c87",
+    "5a557ba0b609508a7c60f75658329ea2cd9cef8626b6ff0493a8b81fbbef69cc",
+    "937928a62515e16854f118633b41167ddb4e01d3b5f1a0daf8a57849dacfd564",
+    "74efb44e936d36e24d9962f32d18df5ed87176a25a67e38c6bf871f4971d920d",
+    "eac06b4e83138974fe9d42485c6943e020359b4976f3b15dd21f90d10c9d455b",
+    "6709b1305f3924bbdb89cbc7b974f182e8e071814c74ab3929e359bbbbe330e8",
+    "2829988b5cc46aac5612ceeb0dd4506b147d7088cf65e69e81d9951f0322303a",
+    "f2d4b66d9143180187932672c78012acff82439d96d87713d6bb615b40aa22ea",
+    "a9d23258c35d8705ce2dc7434e9bc140c0d9c046ace23fe9309cf9d63687d4e1",
+    "91a1a210c64e6fee65f569e0a8b5a94155d3eb0b1010db0c484cedbfb47157bb",
+    "66ec2a5113a411153f4e79fa929ea8945349685a063c19f5ad96a1341d007087",
+    "63ec2ab36f6a330e23f71f221bd8def94126368eca2e83486dd6ec5e14ed322b",
+    "339f7faf84135cd096818267282fd83a19e6bc6f60f08aa77b3761fce56b39f5",
+    "0a68bc24839e93615877ae60729782638d3ce84f18ae5dc735b59dbd8d56f607",
+    "6bacb819150e6bbe326dc6189496bc46ea462ca588cdc33c89fc6592a84fa93a",
+    "1904eb22c0603adb41c21f957276ec1bfba0869b3ff235e468730d0af80e60c4",
+    "068569afe118904561c189a8c55f05c5925c0ecc947092ee0184611b3fe44040",
+    "4530e34e21ab49a4edd065ca3d3301ad9946d4ff5ed868f19ba077fce950bd5f",
+    "a84a619d7586c00e6636bee9e15b12f01afde252846913f3486853b8b0d0498a",
+    "cd5b11cfea2fd946b85bc75a83228980844460e91b8e0ed6199b505e012c0fcb",
+    "07bff5b01b1b4d8d4706ed16a1babc91dea74d43587daf48ef4fea965e575626",
+    "76cc293c8c9009dc8188b3a996c0c821963ef44f2f7728063b8b2ca59f62a999",
+    "da2ed5bf63285d4f672a45e2732dc2162fb71af01819aca8736137f48b2d1214",
+    "9ce2933a3f3e4abf8053f0cdd9c026931ed9c7002a0cefaea67e4ee7d4fa9ff6",
+    "114311c0eb816c0ad3eff5e741115936a22f74ccff222b06101a664be04c3e18",
+    "e7f1ae23e2cbbabe2c69a9a4e4cf6ff8ed89632ac9368f1d1fad6908a2eb91e1",
+    "8583b6c2fedaffa501a79bf778769eba701b4c8297b4668e76442a57693524ab",
+    "a457223746009c8ab027992008bdf9a5fe03baaa830bcfb53b6d611dfb6f3b5d",
+    "69870b2bf9379e291708db797b46332b52592c0758b6ce02de058947d21eb95d",
+    "e3e979b651d7a746b02bd411985d1fb08d8d3a73413a57b674d66ce19c554795",
+    "ebc0bd69696385b5de2d493197137c90e2ed23cdbec93944efaf77c787cd4069",
+    "cd8efeef0b2cdfd8d6dce7b14d7c0deba856a31d9078261bb992c49f8d0a06aa",
+    "a4924a347bc5a2b7962c31f10c528086857221a59d1dd84c80cb91f7c8fe937a",
+    "cbd11cc1390c485f2837b2773de3cea5da1b3fd888554195b73f3317ffdebe9b",
+    "be22a25575d6007717ce5292ac8a3aad861897ec5989da04cdc7022025f08158",
+    "b17ec1c9bd3f479ab7935ac300960d1501c8727556a63f6251f53e123bc21841",
+    "1a991f6109142dbf7fce436d96ca64d95359c477a432a24921b77036cbc04a57",
+    "a98af902ddb0eae72d2b9db0914b40066f7a25a692e97bff12519fa4477fc2c0",
+    "3486a0b3e43a0a2b3b5d90283652bbcda21c18fd0c0a4842db8d8dcee7f654f1",
+    "10ea29a9b025c6d68ba66c1fc92c96bd87da1a7fd593ad786ee2c0510d056591",
+    "8c0444e4fefab01e396e03e7eb51fc66a2d775970dc3f2e0293a576ee23e2be3",
+    "3a3fc9b8ee0e6f4a4ffd6056334051120842f17013d4c6e9fb6fdee6939ed046",
+    "6a5380153695e2b5f1e05c4259081f99c4a974f9d2307343ae9e99544f958019",
+    "e62d7d7c7c3729bbd20cf32220742c460ba700b43735726279666bffd77bb049",
+    "71cde58c880c1c4412bb17706e2b4abe4383079759567c12d97816b88eea892e",
+    "a4c452b1cf660690f0032277f50a08f593fd1824cc251ac44b49b2485beafe2b",
+    "93011aaabef8bfd03d9147193c311b1ab3e273ef53e4c9f58ec4573679c60a2e",
+    "c47340fbda8392869ec556068f295955e86ef513472d51634f9944c66a44503e",
+    "0e1e77ea25489735a4beb916b36f915fdb6881fe59fe7ee2d78ea8dacae87f21",
+    "6f58a981b788bdcc61bdbb8848e78e8c1e35d7a36f3c7e9bdbc9bcf79a384a72",
+    "a2205c763d318fafd72c169ce064c9e0283c798e95de3d50031a94ced4cd9af6",
+    "bab34dd38b04b534e12a6445c0295dd6203fa31c2200ab1dd7a727519d189f74",
+    "1c1631c2daddde75f21461201aab06bb536af67150ffe638c26f02cde85f44de",
+    "8e776654d880066afa4d89387aa7a8a52d58fa723302600e5c848b5c25f49457",
+    "c531bdf24d92a66b9b1a5f3c9a3a6834e99eeae1e81e0777a0dc8148ff227a99",
+    "884f2308216a19a1fda9c572679f5d860ee8105f4ad824a141c5bd65985045e1",
+    "2b409bbadf6d37fd57dc14f881fd2282ed986e76871e21a95c8baf0ab2ccbdae",
+    "9b29d3bc4ae697352c152649b2642bf70950d30774de57696c8a12fd81f61164",
+    "6fe92188f99c57cd55d5425ed575ef509b96096f64027873c9ea7334eb43fc42",
+    "685240b7cd51585aba961b2b1e3fda32f930fbba703bd7b043082a93e59e98fe",
+    "28b3649050c1cf1d9828b47e95a96e456bb25434a80cf14996008993704902d5",
+    "0b1594d685b69d167d97bfa5d8797172acf67c0f914fc406d96a2c753bde2302",
+    "2e3a33e85b44ca628dd7ebf8ad19dec8b12165f680f0f346e47ae5d5526bb8a0",
+    "0538cdc589eb1113629ebb5c3fb3b311d129eca60da8ca3db5665dde1d7d9aa0",
+    "23b7f56dcbe06f46960c146c20eaf8c6f043277c0db2a7cca666a3b648178fb0",
+    "14a7666166e134fa3eb0f795ace9b3f784727437013604ec8daafbf54c6c6f6c",
+    "bfddb11c0f84def167f10d618981c37fe287ec4da5ae8fa5e9249385918b2b1f",
+    "6d557957f021c7ec590ca4f417592135e37cf55c2e459cbc4164540aa1b96c14",
+    "5a0655c0f0805fe53e2221dc1ac3a12ad7d195dccc7cc6296c1b0b1df94806f6",
+    "22116b5b22d3f7c2e902c0d7e7cdba429f544d5a024e717153f4791d719558ad",
+    "d275f68a7d294da0c52504f7ca710e3ac9fed206e33ced9ec62455364e6f50d1",
+    "035ef9605e7c7b967185d3c25688c4bc69bbf2a340677198ca84cb859e0848da",
+    "12a9440d22ad49b8d47fc585d976195e57720f6ebdef5b23e0c687317c90a579",
+    "827e024004d036bc9aa53670a395ba1c3ec20c6abd5c5bea49af1237038a2232",
+    "a44a67c30f2c4d0dd1a20fe957bb08bc4210ca281567f68cc6645f3f3bb27df1",
+    "a702c95afe227d8af71abd2d47b84229ae67c9ef0a10fc368b37a52a71cf0564",
+    "ce084f35494649ecec5a03f99817fc30142ac4b3fb112cd4900bbee0cb9600c4",
+    "51afee0bf8d08037ebd11b279b4e11da2d2bfed12ed088ce02d0847a902a034c",
+    "27b17d51bdfb36050db5d4ddeccbe69ee8c715d4897a029f9c06fc7cd931c905",
+    "ef76e99fc1c457264ed528899d611b94fa9b01f43e1624a08932d909e5080fb6",
+    "cb2a7029de9054a593aeb9433343b5c6cbe092534246c613bff7df8374ea9ff0",
+    "749fe3ee59e1989b1fcff8b05a9673d7b1e966d6c08946b1bf9e53d5bb0e5f75",
+    "ab29f58174c4aa59cc7059dfb9d131a8e2db969c4a93828b334bcdbc828a259c",
+    "441786efd8779f5fdb4f4e2fec7da5a3128b8a850f9be3af236a80e24dd3fa35",
+    "c56f6d0a70990930b7c22b7b7ec6e5ad3d1cdd2b1366fd2f886da9cb5ee5b64d",
+    "9c50027eb16db4111ac3ec6cb89617c8a866fe854044488ef462292d3a9ad9e3",
+    "da631c119c61ac43361a20b86236007469dd145e6a830ce431bf58a4127113e1",
+    "4b18d24d8b770c303d87d9fe1b9dc6a77df0f22cc981be61660001f390a8754a",
+    "43451010038190147ec4312ddfe9da80226428fcb5b8833ccc4232349cc09622",
+    "caff27f4d43918d771eeb3185f18c9c64b95025fb39a9e861dcf0f11ae039f0f",
+    "aa865a4efbaad41c70bfbbc9467957aa95dea3e568ecae08796008ca683c2f10",
+    "30f0770038cdfe1346d018fcd3b90aa98dda1dad758be41093052540112aaeb0",
+    "fee2b356fc35e023a99b47410c1e066a6030b4ccea9615572ad1bca780718184",
+    "91480341257b1b8dcfef0c8b73f898a62f40ed04d1d7d9cc6e4e047c025a823a",
+    "7cee91205c647d77ed45562646d3b2e2e45c385709d5c3cf47d1a0e8737a2148",
+    "85b80d5ddfa6d629e591b36feb265993d86e55d669beb0c82866275eb9ec15fd",
+    "aa85d7a56445c54ad654616ee59f4c5e0af526a0ac478d75a9a840c4cf8c7792",
+    "d683dfed45ec0b7f6c35b8514776569c89f9d7a5726c47c8098ee89bb016751e",
+    "47f265b2f1a533124517e2c5e3784bb574bb2660ff066a50fda2b41720a913ab",
+    "82b396d2f0c11abfaaac2e8dc86069556f80f14f38e87197c55c3b728cff1cf1",
+    "59ee2f9ab768296969504d62786058f5a9b3a517dacd20b376fd2545eb3f780c",
+    "dccc008b574983bdc85fcf04c7cf5eaf0cc5bff160291f6867b148bcdfb46392",
+    "2db56901e60a6649b43f0c2e4697b8e9fccf0ac4e317d46cfe2b9251852a7ce3",
+    "f23e7bbac8a753a142222ff2df94a003e9260c931f355d3285983684e51599f1",
+    "1c6be84058d6fa2dc1b222f4cdbd84ae91d6a04c71a55bd0e5cf689c4dcae245",
+    "346bff63389bcf7d4a9deca508da213b70ea920358fcde94c053c190f767e350",
+    "566c55720d6ecd28e72aed77ba601a0d060758412150bab333604683dff30f6b",
+    "66167589059dcaf4f08f45a4b368d62fea69e3092b6fc8bbd94ab606ad3139d3",
+    "7f987161c3b9f6477ea97f86cf2ea972fa1cb2ab962584cfa1f077af1864d790",
+    "1df29d09298edbca12c64273ce9e6056e46d5275864758bfee7cbf34581252b3",
+    "068926bb13edb6d7eab4c57593b5beeb6ad4047811908871fd87fe9db3efc2f8",
+    "143364899172516ca3daa5857bbe0e0e1c2c7227a1ed8eccfdb7dd25631c4c86",
+    "2d066ced06c96b97c438d165a58ecd9e89ed35e891671bd1b4678c040d7d97b4",
+    "de6a500b79ae4ad650f3a8a06bc9aa2f3614f38cb3e6b9318705437d89deaf48",
+    "930bc7a68895c719e226eeb23c3674b6c89839c591458c337232c76b70ccce69",
+    "e932b0c0d7e102a338172d9c79aaa6b5adbc9d8943e104015dfc4c4ad7f629d9",
+    "6a74d8c6a311737b10168c89508ab5017ab6ef464786b95fecf40ba49458b53b",
+    "99e2d91827f564ae56621f727bb957fedf859467e713a340a953a9c894a7e357",
+    "18560a2c040e8ce6f0f26a9b2298d9887b3b052dac6b4bcfdc8cdb3a532b9862",
+    "d3bf548c5f81fac9b8dea040bb1a858723f642d09b3de6111f740295f8894854",
+    "1a1e280e78e2c64e68f70a244d47387f2147c47ceddb98c48d98a9d2b4034ed2",
+    "0f0fcbd6c9aa25f82b33c9fd0b7c5b31b3214868c481a73481a62235ea4d67ef",
+    "acf389d6be6a5ca3dec51b2e3ca43523da573cf7888b2f894f55aeaf1a136b95",
+    "cc1ec7d5ce3f0133da11a5a738d8f981f69278bf72612e1712bdf6ae43f07126",
+    "6c56c2d66c87f1849049af465398465f9e8208a66180fc184d89ed40b5298e84",
+    "ed12837f35a2ad0b41a808e443db16eb5dd62d9808f0106d5984cf2574e9510d",
+    "e4f6bee0eb419c63ebd2b576ee5f41e028abd17caf4f38ec16239e892bb80d7c",
+    "e541551171b7b90446b13d43b2e2e33ee935d53e1bf93fb1144d7b9167b46277",
+    "23b713e261751b4f77e10778124eb2368fec775214d32fd09e1bc38a48c84545",
+    "b5bf2fb881dee3a11fcf407ae0d8acb1d46200ee8863856d003bee7265c73edf",
+    "7f4aae62c0923ae410342fdc3d8fe46d53feb05807cf795103d282403da30c46",
+    "b8c41f0b5b3204e3e051e4564e46f7eb63df7878e725d1e5537dc7f771734c60",
+    "b79b904b07faec47cf50808d77770678947af177025082d9c72f9d63d10c17bb"
+  ]
+}

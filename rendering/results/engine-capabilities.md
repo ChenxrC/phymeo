@@ -19,8 +19,9 @@ flowchart LR
 | 自研实时渲染 | 完整 Panda 网格常驻、直接 PBR、面积灯、方向 HDR 环境。相同 300 帧 720p、2×2 灯面样本，[软件阴影 p95 41.62 ms](r2/daylight-software-camera.json)，[硬件阴影 10.65 ms](r2/daylight-hardware-camera.json)。 | 硬件模式显式请求 `ray_query`，主可见性仍是光栅；不支持设备拒绝，不回退。未实现自研路径追踪。 |
 | 面积灯积分 | 软件／硬件两种求交分别实测 **2×2、4×4、8×8**；8×8 通过独立有限面积灯半影门，4×4 仅部分通过。[完整格点证据](r2/area-light-grid-results.json) | 此处是灯面采样密度，不是世界数量；高档画质与采集成本分别记录。 |
 | 材质与环境 | 不透明 base-color 贴图、UV 重复／双线性与线性粗糙度通道。16 块粗糙度标定对常量材质的最大 RGB8 差：[自研 1](r2/roughness-chart-native.json)／[参考光栅 0](r2/roughness-chart-sapien-raster.json)／[参考光追 0](r2/roughness-chart-sapien-pt.json)。[HDR 方向与反射](r2/native-ibl-calibration.json)有独立采样核对。 | 颜色图按 sRGB 解码，粗糙度按线性数据读取；暂无 normal map、透明／折射或真实材质参数拟合保证。环境全景无近场几何深度。 |
-| SAPIEN 参考 | 光栅四通道；路径追踪 RGB、面积光、环境反射与独立采样对照。[Neutral 四曝光](r2/reference-neutral-calibration.json)恢复固定 ROI 的 1600 个剪裁像素，原 HDR 与光栅传感保持相同。 | PT 不发布深度／ID／有效掩码；Neutral 此处仅记 SAPIEN 已验能力。跨设备随机序列一致性未保证。 |
+| 显示与参考成像 | 自研在两种阴影求交、三档灯面密度下验证 Neutral 高光显示。SAPIEN 在同一原始 HDR 上保留 1600 个原先剪裁的像素。两种光栅均保留几何附件。[自研标定](r2/native-neutral-verification.json) · [参考标定](r2/reference-neutral-calibration.json) | SAPIEN 路径追踪发布 RGB。512 样本下夹爪近景仍有可见颗粒；本机 OIDN 及 OptiX 在实际采集阶段退出，高清片采用直接采样。[兼容性记录](r2/denoiser-probe.json) |
+| 分块与相机回放 | 647×419 离轴相机分九块，两个光栅后端分别与整图对照；全部 ID、有效掩码、RGB 一致，内部深度差 0。[标定读数](r3/README.md) · [同相机 1080p 动态片](r2/README.md) | 光追分块改变像素的随机序列。独立记录单图采集、传感差异和最终有损编码误差。 |
 | 单／多世界回放 | [R4](r4/README.md)：**1、2、8 世界 × 两相机**，每档 300 批，6,600 次曝光对照独跑，深度差 0、ID／掩码逐字相同，单世界 reset 不影响其他世界。 | 此全套是原软件阴影路径，未声称硬件阴影也完成 R4。逐世界、逐相机提交；渲染不推进物理，回放成功不等于控制任务成功。 |
-| 独立交付 | [G5 包与外部安装规程](g5/README.md)：基础包不强依赖 NumPy／Pillow／SAPIEN，源码与授权 Panda 资产可重定位；最新 HOST 23 通过、1 个真实 wheel 节点跳过。 | **最终 wheel 构建、源码外离线安装与设备复核待执行。** 包含 native 构建源码及 shaders，不夹带本机 DLL；需要外部 Vulkan／C++ 工具链。 |
+| 独立交付 | 候选 `82ca3a0b` 的 wheel 已构建（8,134,733 字节）。使用该 wheel 验收时 28 项 HOST 中 27 项通过，1 项因资源清单要求的 `_panda_assets/.gitattributes` 缺失而出错。[本轮结果](../plans/2026-11-23-rendering-to-0700.md) · [G5 规程](g5/README.md) | 源码外安装、原生编译、三个后端 F0 与十二项能力检查尚未执行，G5 待通过。 |
 
 直接观看：[同轨迹日光自研版](r2/workshop-daylight-native.mp4) · [同轨迹日光光追版](r2/workshop-daylight-reference.mp4) · [八世界及单世界 reset](r4/eight-worlds.mp4) · [单世界推 T 光追近景](r4/pusht-reference.mp4)。原图、采样、编码损失与硬件范围以各具名收据为准。

@@ -24,12 +24,12 @@
 <header><h1>Phymeo 渲染回放</h1><div><a href="compare.html">同帧擦拭比较</a> · <a href="engine-capabilities.md">引擎能力</a> · <a href="../architecture.html">架构图</a></div></header>
 <main>
   <section aria-label="当前影片">
-    <video id="film" controls playsinline preload="metadata" poster="r2/native-gripper-1080.png">
-      <source src="r2/panda-daylight-native-1080.mp4" type="video/mp4">
+    <video id="film" controls playsinline preload="metadata" poster="r2/reference-gripper-512.png">
+      <source src="r2/panda-daylight-reference-1080.mp4" type="video/mp4">
     </video>
     <h2 id="title">Panda 抓放 · 全景与夹爪近景</h2>
     <p id="caption"></p><div id="shots" class="shots" aria-label="跳转到动作"></div>
-    <div class="meta"><span id="detail"></span><a id="original" href="r2/panda-daylight-native-1080.mp4">打开 MP4</a></div>
+    <div class="meta"><span id="detail"></span><a id="original" href="r2/panda-daylight-reference-1080.mp4">打开 MP4</a></div>
     <p id="error" hidden>当前播放器未能解码，可用上方链接在本机播放器中打开。</p>
   </section>
   <nav id="choices" aria-label="选择回放"></nav>
@@ -37,6 +37,8 @@
 <script>
   const panda = [[0,"从头播放"],[1.2,"搬运方块"],[1.9,"放回台面"],[2.25,"开爪回程"]];
   const movies = [
+    {id:"hero-reference", title:"Panda 抓放 · 日光下的夹爪", description:"SAPIEN 光追 · 1080p · 全景与夹爪近景", file:"r2/panda-daylight-reference-1080.mp4", poster:"r2/reference-gripper-512.png", group:"panda", shots:panda,
+     caption:"在 1.2 秒看红色方块贴近指尖时，背光面受到的反射光。再切到自研版，运动时刻会保留。夹爪和方块的位置均来自本次十秒物理记录。", detail:"10 秒 · 300 帧 · 每像素 512 样本 · 每帧四块曝光"},
     {id:"hero-native", title:"Panda 抓放 · 全景与夹爪近景", description:"自研 Vulkan · 1080p · 双面积灯与车间日光", file:"r2/panda-daylight-native-1080.mp4", poster:"r2/native-gripper-1080.png", group:"panda", shots:panda,
      caption:"先看机械臂全景，约 0.5 秒切到夹爪，2.3 秒后回到全景。停在搬运位置，看指尖贴住方块、台面上的阴影，以及白色外壳保留的高光层次。", detail:"10 秒 · 300 帧 · 扫描木纹与粗糙度 · 每盏灯 64 个阴影样本"},
     {id:"daylight-reference", title:"车间日光下的抓放 · 光追", description:"SAPIEN 路径追踪 · 每像素 1024 样本", file:"r2/workshop-daylight-reference.mp4", poster:"r2/daylight-reference-1024.png", group:"panda", shots:panda,

@@ -44,6 +44,12 @@ python -B -m preview_compact_rigid_history.run_smoke --prepared "$out/rigid" --c
 guide、compute 和 DLL 必须一致。源生成器检查实际循环、分层、/8、宏、
 计数器以及 unchanged `.5` 混合 PDF；这仍不能替代编译和真设备证据。
 
+首个构建 `queue21-eight-build.log` 保留了 `resident.frag:226` 的 P4 未声明
+错误：最初只改了声明与部分消费者，漏掉片元的 guide/primary 两个 guard。
+修正版同时修两处，并独立扫描整个生成 `source/`，拒绝任何孤立旧 profile，
+正向核 C++ 三处绑定、三份 GLSL 的声明/使用；13 个 HOST 含该回归。
+旧失败目录仍可复现，请始终在新输出目录重建。
+
 真实 smoke 应检查：提案计数为实际锚点×8，RGB/四平面请求与当前/历史相配，
 current incoming、三传感及 reset 图像逐字相同，显露 age1、移动实例确有接受，
 关闭资源归零。正常低锚点缺支持仍使用已声明 SH fallback，不改成虚构采样。

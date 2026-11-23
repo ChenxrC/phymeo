@@ -1,6 +1,8 @@
 """Eight actual proposals must keep stratification and balance normalization."""
 import importlib
 import math
+from pathlib import Path
+import tempfile
 import unittest
 
 
@@ -76,6 +78,58 @@ class EightProposalContracts(unittest.TestCase):
                          "runtime/phymeo_rendering/native.py")
         for value in ("../private", "source/../../private", "C:/private", "/source/a", "build/a.dll"):
             with self.subTest(path=value),self.assertRaises(ValueError):self.m.safe_relative(value)
+
+    def test_both_fragment_guards_are_renamed_not_only_the_declaration(self):
+        old=self.m.OLD_PROFILE
+        fragment=("#ifdef PR_PREVIEW_SPARSE_GUIDE\n"
+            f"if(PR_PREVIEW_SPARSE_GUIDE_ABI!=1u||{old}!=1u)incoming=vec3(importanceInvalid());\n#endif\n"
+            "#ifdef PR_PREVIEW_SPARSE_MAIN\n"
+            f"if(PR_PREVIEW_SPARSE_PRIMARY_ABI!=1u||{old}!=1u)color=vec3(importanceInvalid());\n#endif\n")
+        actual=self.m.patch_text("source/_shaders/resident.frag",fragment)
+        self.assertNotIn(old,actual)
+        self.assertEqual(actual.count(self.m.PROFILE),2)
+        self.assertEqual(actual,fragment.replace(old,self.m.PROFILE))
+
+    def test_profile_scan_rejects_orphan_outside_the_edit_manifest(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory)
+            self._profile_fixture(root)
+            self.m.verify_profile_bindings(root)
+            extra=root/"source/_shaders/not_in_source_edits.glsl"
+            extra.write_text(f"if({self.m.OLD_PROFILE}!=1u)return;",encoding="utf-8")
+            with self.assertRaisesRegex(ValueError,"profile"):
+                self.m.verify_profile_bindings(root)
+
+    def test_profile_scan_requires_every_forward_binding(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory)
+            files=self._profile_fixture(root)
+            for name,value in files.items():
+                path=root/name
+                with self.subTest(file=name):
+                    path.write_text(value.replace(self.m.PROFILE,"UNBOUND",1),encoding="utf-8")
+                    with self.assertRaisesRegex(ValueError,"profile"):
+                        self.m.verify_profile_bindings(root)
+                    path.write_text(value,encoding="utf-8")
+
+    def _profile_fixture(self,root):
+        profile=self.m.PROFILE
+        declaration=f"layout(constant_id=83) const uint {profile}=1u;\n"
+        files={
+            "source/_native/renderer.cpp":
+                f'named_shader_marker(frag,frag_bytes,83,"{profile}");\n'
+                f'named_shader_marker(code,bytes,83,"{profile}",5);\n'
+                f'named_shader_marker(guide,guide_bytes,83,"{profile}");\n',
+            "source/_shaders/preview_sparse_common.glsl":declaration,
+            "source/_shaders/resident.frag":
+                f"if(PR_PREVIEW_SPARSE_GUIDE_ABI!=1u||{profile}!=1u)incoming=vec3(importanceInvalid());\n"
+                f"if(PR_PREVIEW_SPARSE_PRIMARY_ABI!=1u||{profile}!=1u)color=vec3(importanceInvalid());\n",
+            "source/_shaders/resident_spatial.comp":declaration+f"if({profile}!=1u)return;\n",
+        }
+        for name,value in files.items():
+            path=root/name;path.parent.mkdir(parents=True,exist_ok=True)
+            path.write_text(value,encoding="utf-8")
+        return files
 
 
 if __name__=="__main__":unittest.main()

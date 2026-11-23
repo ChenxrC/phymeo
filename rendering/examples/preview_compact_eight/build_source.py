@@ -11,6 +11,7 @@ from hashlib import sha256
 import json
 import math
 from pathlib import Path, PurePosixPath
+import re
 
 
 HERE = Path(__file__).resolve().parent
@@ -83,6 +84,7 @@ def source_edits():
             ("-DPR_PREVIEW_PATHS=4 ", "-DPR_PREVIEW_PATHS=8 ", 1),
         ],
         "source/_shaders/preview_sparse_common.glsl": [(OLD_PROFILE, PROFILE, 1)],
+        "source/_shaders/resident.frag": [(OLD_PROFILE, PROFILE, 2)],
         "source/_shaders/resident_spatial.comp": [(OLD_PROFILE, PROFILE, 2)],
         "source/_shaders/preview_sparse_ratio.glsl": [
             ("layout(constant_id=84) const uint PR_PREVIEW_SKY_VISIBILITY_RATIO_ABI=1u;",
@@ -132,9 +134,58 @@ def write(path, value):
     Path(path).write_text(value, encoding="utf-8", newline="\n")
 
 
+def verify_profile_bindings(root):
+    """Check consumers independently of the list of files being patched.
+
+    The first build found an old symbol in resident.frag after its declaration
+    had changed. Scanning source_edits alone could not detect that omission.
+    Every source file is now scanned, and each expected live binding is required.
+    """
+    root = Path(root)
+    for path in sorted((root / "source").rglob("*")):
+        if not path.is_file() or path.suffix not in (".cpp", ".h", ".inc", ".glsl", ".frag", ".vert", ".comp", ".txt"):
+            continue
+        text = path.read_text(encoding="utf-8")
+        names = re.findall(r"\bPR_PREVIEW_SPARSE_PROFILE_[A-Za-z0-9_]+\b", text)
+        if any(name != PROFILE for name in names):
+            raise ValueError("orphan/incompatible profile symbol: " + str(path.relative_to(root)))
+    expected = {
+        "source/_native/renderer.cpp": 3,
+        "source/_shaders/preview_sparse_common.glsl": 1,
+        "source/_shaders/resident.frag": 2,
+        "source/_shaders/resident_spatial.comp": 2,
+    }
+    texts = {}
+    for name, count in expected.items():
+        path = root / name
+        if not path.is_file():
+            raise ValueError("profile consumer missing: " + name)
+        texts[name] = path.read_text(encoding="utf-8")
+        if texts[name].count(PROFILE) != count:
+            raise ValueError("profile forward binding count differs: " + name)
+    native = texts["source/_native/renderer.cpp"]
+    for value in (f'named_shader_marker(frag,frag_bytes,83,"{PROFILE}")',
+                  f'named_shader_marker(code,bytes,83,"{PROFILE}",5)',
+                  f'named_shader_marker(guide,guide_bytes,83,"{PROFILE}")'):
+        if value not in native:
+            raise ValueError("native profile stage binding differs: " + value)
+    declaration = f"layout(constant_id=83) const uint {PROFILE}=1u;"
+    for name in ("source/_shaders/preview_sparse_common.glsl", "source/_shaders/resident_spatial.comp"):
+        if declaration not in texts[name]:
+            raise ValueError("profile declaration differs: " + name)
+    fragment = texts["source/_shaders/resident.frag"]
+    for abi in ("PR_PREVIEW_SPARSE_GUIDE_ABI", "PR_PREVIEW_SPARSE_PRIMARY_ABI"):
+        if not any(abi + "!=1u" in line and PROFILE + "!=1u" in line for line in fragment.splitlines()):
+            raise ValueError("fragment profile guard missing: " + abi)
+    if PROFILE + "!=1u" not in texts["source/_shaders/resident_spatial.comp"]:
+        raise ValueError("compute profile guard missing")
+    return expected
+
+
 def verify_sources(root):
     """Read actual output; fail before compilation if a budget seam was missed."""
     root = Path(root)
+    profile_bindings = verify_profile_bindings(root)
     texts = {key: (root / key).read_text(encoding="utf-8") for key in source_edits()}
     for relative, text in texts.items():
         if OLD_PROFILE in text:
@@ -163,6 +214,7 @@ def verify_sources(root):
         raise ValueError("actual proposal counter differs")
     return dict(profile=PROFILE, samples=8, cosine_grid=[4, 2], mis_cosine_grid=[2, 2],
                 mis_counts=[4, 4], hit_normalization=.125, proposal_counter="valid traced anchors * 8",
+                profile_bindings=profile_bindings,
                 ray_count_claim=False, source_contract_checked=True, device_execution=False)
 
 

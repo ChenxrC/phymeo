@@ -1,0 +1,623 @@
+{
+  "schema": "phymeo-diffuse-bounce-study-v1",
+  "status": "complete",
+  "physics_steps": 0,
+  "appearance": {
+    "passed": true,
+    "receivers": {
+      "156": {
+        "unblocked_linear_red_excess": 0.037268679289480675,
+        "blocked_linear_red_excess": 0.005122104077818591,
+        "color_transfer_passed": true,
+        "occlusion_passed": true,
+        "states": {
+          "unblocked": {
+            "linear_red_excess": 0.037268679289480675,
+            "rgb8_red_excess": 49.43245869776482,
+            "all_pixels": 2058,
+            "min_linear": 0.0,
+            "max_linear": 0.13013647669036432,
+            "zero_off_pixels": 2058,
+            "fraction_positive": 0.8790087463556852
+          },
+          "blocked": {
+            "linear_red_excess": 0.005122104077818591,
+            "rgb8_red_excess": 9.275024295432459,
+            "all_pixels": 2058,
+            "min_linear": 0.0,
+            "max_linear": 0.042311410620809675,
+            "zero_off_pixels": 2058,
+            "fraction_positive": 0.2240038872691934
+          }
+        }
+      },
+      "158": {
+        "unblocked_linear_red_excess": 0.037665649898946565,
+        "blocked_linear_red_excess": 0.005473274664818552,
+        "color_transfer_passed": true,
+        "occlusion_passed": true,
+        "states": {
+          "unblocked": {
+            "linear_red_excess": 0.037665649898946565,
+            "rgb8_red_excess": 50.240543161978664,
+            "all_pixels": 2062,
+            "min_linear": 0.0,
+            "max_linear": 0.10702310297826761,
+            "zero_off_pixels": 2062,
+            "fraction_positive": 0.9005819592628516
+          },
+          "blocked": {
+            "linear_red_excess": 0.005473274664818552,
+            "rgb8_red_excess": 9.85984481086324,
+            "all_pixels": 2062,
+            "min_linear": 0.0,
+            "max_linear": 0.06480326669290576,
+            "zero_off_pixels": 2062,
+            "fraction_positive": 0.23714839961202716
+          }
+        }
+      }
+    },
+    "expression": "T=((on-off)_red-(on-off)_grey) dot (1,-0.5,-0.5)",
+    "scope": "inverse IEC sRGB of published RGB8: quantized display-linear, not raw HDR or radiance"
+  },
+  "geometry": {
+    "red": {
+      "sensors": {
+        "identical": true,
+        "sha256": {
+          "forward_depth_m_f32": "5c7eec2aee8eacd9e4eba882b9bbe2b7ea66891c6edad56b679c1471d8d61c81",
+          "instance_id_u32": "ee20d29a78562d1996a97f06a91e1bb36cdf34f4c925df5a4dc8edd7100e6641",
+          "valid_u8": "f6b1266da5f008506ef9117269e5d3c8a24a998e19002f1ba4d645199ce85fc1"
+        }
+      },
+      "roi": {
+        "pixels": 4120,
+        "max_depth_error_m": 8.105829910065587e-07
+      },
+      "background_identical": true
+    },
+    "grey": {
+      "sensors": {
+        "identical": true,
+        "sha256": {
+          "forward_depth_m_f32": "5c7eec2aee8eacd9e4eba882b9bbe2b7ea66891c6edad56b679c1471d8d61c81",
+          "instance_id_u32": "ee20d29a78562d1996a97f06a91e1bb36cdf34f4c925df5a4dc8edd7100e6641",
+          "valid_u8": "f6b1266da5f008506ef9117269e5d3c8a24a998e19002f1ba4d645199ce85fc1"
+        }
+      },
+      "roi": {
+        "pixels": 4120,
+        "max_depth_error_m": 8.105829910065587e-07
+      },
+      "background_identical": true
+    },
+    "red-blocked": {
+      "sensors": {
+        "identical": true,
+        "sha256": {
+          "forward_depth_m_f32": "364d504a5d5696d7ac3f9f65c24401198b8c7cb1acf0aac924e513d491b4b9b9",
+          "instance_id_u32": "46a21f810889aa8c26369f9cae6c1df29b360c38e93e4d2a20590077e840b400",
+          "valid_u8": "f6b1266da5f008506ef9117269e5d3c8a24a998e19002f1ba4d645199ce85fc1"
+        }
+      },
+      "roi": {
+        "pixels": 4120,
+        "max_depth_error_m": 8.105829910065587e-07
+      },
+      "background_identical": true
+    },
+    "grey-blocked": {
+      "sensors": {
+        "identical": true,
+        "sha256": {
+          "forward_depth_m_f32": "364d504a5d5696d7ac3f9f65c24401198b8c7cb1acf0aac924e513d491b4b9b9",
+          "instance_id_u32": "46a21f810889aa8c26369f9cae6c1df29b360c38e93e4d2a20590077e840b400",
+          "valid_u8": "f6b1266da5f008506ef9117269e5d3c8a24a998e19002f1ba4d645199ce85fc1"
+        }
+      },
+      "roi": {
+        "pixels": 4120,
+        "max_depth_error_m": 8.105829910065587e-07
+      },
+      "background_identical": true
+    }
+  },
+  "protocol_sha256": "cb0a74fbb449dd06473ba960f78573e03470bb55ccb03904410d0c97ee924e81",
+  "physical_device": {
+    "abi_version": 2,
+    "device_index": 1,
+    "api_version": 4206881,
+    "driver_version": 2374090752,
+    "vendor_id": 4318,
+    "device_id": 10464,
+    "device_type": 2,
+    "max_width": 32768,
+    "max_height": 32768,
+    "max_vertices": 1048576,
+    "validation_errors": 0,
+    "validation_warnings": 0,
+    "captures": 12,
+    "device_name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+    "device_uuid": "3b78d98198a3be57a8cb4d72fdfbfa96",
+    "closed": true,
+    "validation_enabled": false,
+    "live_contexts": 0,
+    "live_frames": 0,
+    "live_resources": 0,
+    "resident_abi_version": 1,
+    "resident_max_vertices": 1048576,
+    "resident_max_indices": 1572864,
+    "resident_max_meshes": 1024,
+    "resident_max_instances": 1024,
+    "resident_max_bvh_nodes": 262144,
+    "resident_max_instanced_triangles": 1048576,
+    "resident_vertex_count": 23058,
+    "resident_index_count": 23178,
+    "resident_mesh_count": 9,
+    "resident_instance_count": 11,
+    "resident_bvh_nodes": 2651,
+    "resident_instanced_triangles": 8350,
+    "resident_loaded": 1,
+    "resident_poisoned": 0,
+    "resident_reserved": 0,
+    "resident_upload_calls": 1,
+    "resident_geometry_upload_bytes": 958632,
+    "resident_transform_upload_bytes": 16896,
+    "resident_parameter_upload_bytes": 3408,
+    "resident_captures": 12,
+    "resident_shadow_node_budget": 0,
+    "resident_target_rebuilds": 1,
+    "resident_host_transform_input_bytes": 8448,
+    "resident_render_planes_available": true,
+    "resident_environment_available": true,
+    "resident_environment_abi_version": 1,
+    "resident_environment_info": {
+      "environment_abi_version": 1,
+      "supported": 1,
+      "shader_compatible": 1,
+      "max_side": 1024,
+      "max_mip_levels": 11,
+      "side": 0,
+      "mip_levels": 0,
+      "loaded": 0,
+      "format": 43,
+      "cube_layers": 6,
+      "sh_coefficients": 9,
+      "axis_transform": 1,
+      "diffuse_basis": 1,
+      "max_rgba_bytes": 134217728,
+      "source_rgba_bytes": 0,
+      "image_upload_bytes": 24,
+      "parameter_upload_bytes": 160,
+      "upload_calls": 0,
+      "rgb_captures_with_environment": 0,
+      "sky_draws": 0,
+      "capture_scope": "successful RGB captures with an uploaded directional environment; sky draw count is not foreground pixel count",
+      "snapshot": "last live query; final GPU allocations are reported by teardown telemetry"
+    },
+    "resident_texture_available": true,
+    "resident_linear_roughness_available": true,
+    "resident_texture_abi_version": 1,
+    "resident_texture_info": {
+      "texture_abi_version": 1,
+      "max_textures": 64,
+      "max_width": 2048,
+      "max_height": 2048,
+      "max_layers": 64,
+      "texture_count": 0,
+      "array_width": 1,
+      "array_height": 1,
+      "array_layers": 1,
+      "uv_count": 0,
+      "bound_instances": 0,
+      "loaded": 0,
+      "sampler_filter": 1,
+      "mip_levels": 1,
+      "format": 43,
+      "max_array_bytes": 134217728,
+      "source_rgba_bytes": 0,
+      "padded_rgba_bytes": 4,
+      "metadata_upload_bytes": 60,
+      "upload_calls": 0,
+      "image_upload_bytes": 4,
+      "rgb_captures_with_textures": 0,
+      "capture_scope": "successful RGB captures with bound texture instances, not visible textured pixel count",
+      "upload_scope": "cumulative actual texture image and metadata GPU writes, including default white sentinel; excluded from geometry_upload_bytes",
+      "snapshot": "last live query, not final allocation state; teardown verified by allocation telemetry"
+    },
+    "resident_normal_info": null,
+    "resident_reflection_info": null,
+    "resident_indirect_info": null,
+    "resident_readback": {
+      "readback_abi_version": 1,
+      "memory_type_index": 3,
+      "memory_property_flags": 14,
+      "persistent_mapped": 1,
+      "last_channel_mask": 15,
+      "capacity_bytes": 15974400,
+      "copied_bytes": 191692800,
+      "map_calls": 1,
+      "unmap_calls": 0,
+      "host_visible": true,
+      "host_coherent": true,
+      "host_cached": true,
+      "device_local": false,
+      "snapshot": "last live query, not final mapping state; teardown verified by allocation telemetry",
+      "capacity_scope": "logical Vulkan readback buffer capacity, not total VkDeviceMemory allocation size"
+    },
+    "resident_profile": {
+      "profile_abi_version": 1,
+      "timestamp_supported": 1,
+      "timestamp_valid_bits": 64,
+      "tlas_node_count": 0,
+      "timestamp_period_ns": 1.0,
+      "captures": 12,
+      "host_prepare_ns": 42000,
+      "host_upload_ns": 2830300,
+      "host_record_ns": 1711700,
+      "host_submit_ns": 687600,
+      "host_wait_ns": 27554700,
+      "host_readback_ns": 14678700,
+      "gpu_render_ns": 7592128,
+      "gpu_copy_ns": 17888320,
+      "gpu_total_ns": 25480448,
+      "tlas_upload_bytes": 0,
+      "timestamp_samples": 12,
+      "scope": "cumulative successful captures including warmup; excludes initial static geometry upload",
+      "gpu_scope": "Vulkan timestamps: TLAS build/update plus raster and fragment shadows, then attachment copies; not fragment-only time",
+      "snapshot": "last live query, retained after close; final ownership is checked by telemetry"
+    },
+    "resident_telemetry": {
+      "telemetry_abi_version": 1,
+      "device_luid_valid": 1,
+      "device_node_mask": 1,
+      "device_local_bytes_current": 0,
+      "device_local_bytes_peak": 23879616,
+      "device_local_bytes_allocated": 23879616,
+      "host_visible_bytes_current": 0,
+      "host_visible_bytes_peak": 15978096,
+      "host_visible_bytes_allocated": 16936976,
+      "readback_bytes": 191692800,
+      "fence_wait_wall_ns": 32571200,
+      "fence_wait_calls": 16,
+      "submissions": 16,
+      "allocation_count": 34,
+      "free_count": 34,
+      "device_luid_hex": "ef22010000000000",
+      "final_after_destroy": true,
+      "allocation_scope": "this context explicit VkDeviceMemory allocations; not driver total VRAM",
+      "wait_scope": "host wall time blocked in fence waits, including upload; not GPU kernel time"
+    },
+    "resident_studio_available": true,
+    "resident_msaa": null,
+    "resident_ray_query_abi_version": 1,
+    "resident_ray_query_info": {
+      "ray_query_abi_version": 1,
+      "enabled": 1,
+      "blas_count": 9,
+      "tlas_instance_count": 11,
+      "primitive_count": 7726,
+      "loaded": 1,
+      "poisoned": 0,
+      "max_meshes": 1024,
+      "max_instances": 1024,
+      "max_triangles": 524288,
+      "build_flags": 4,
+      "update_flags": 5,
+      "trace_flags": 6,
+      "max_acceleration_bytes": 536870912,
+      "acceleration_buffer_bytes": 557056,
+      "scratch_buffer_bytes": 76927,
+      "blas_builds": 9,
+      "tlas_builds": 1,
+      "tlas_updates": 11,
+      "instance_upload_bytes": 8448,
+      "shadow_captures": 12,
+      "capture_scope": "successful RGB-requested captures, not ray count or visible shadow pixel count",
+      "buffer_scope": "logical AS and scratch buffer bytes; actual VkDeviceMemory allocation telemetry is separate",
+      "update_scope": "each capture builds or updates TLAS, including two cameras at the same frame key",
+      "upload_scope": "additional VkAccelerationStructureInstanceKHR records, 64 bytes per instance per capture; not the ordinary forward/inverse matrix buffer",
+      "snapshot": "last live query, retained after close; final allocation teardown is reported by resident telemetry"
+    }
+  },
+  "receipts": {
+    "red": {
+      "none": {
+        "file": "red/none-receipt.json",
+        "sha256": "a862069bf16c67462e10864bf4ea31f0e57a2eed10fe26179bcb48a3999edde2",
+        "timing": {
+          "p50_ms": 26.474199956282973,
+          "p95_ms": 27.164300030563027,
+          "mean_ms": 26.314511119077604,
+          "max_ms": 27.164300030563027,
+          "worst_frame": 4,
+          "over_33_3": 0
+        },
+        "close": {
+          "closed": true,
+          "telemetry": {
+            "telemetry_abi_version": 1,
+            "device_luid_valid": 1,
+            "device_node_mask": 1,
+            "device_local_bytes_current": 0,
+            "device_local_bytes_peak": 23879616,
+            "device_local_bytes_allocated": 23879616,
+            "host_visible_bytes_current": 0,
+            "host_visible_bytes_peak": 15978096,
+            "host_visible_bytes_allocated": 16936976,
+            "readback_bytes": 191692800,
+            "fence_wait_wall_ns": 32571200,
+            "fence_wait_calls": 16,
+            "submissions": 16,
+            "allocation_count": 34,
+            "free_count": 34,
+            "device_luid_hex": "ef22010000000000",
+            "final_after_destroy": true,
+            "allocation_scope": "this context explicit VkDeviceMemory allocations; not driver total VRAM",
+            "wait_scope": "host wall time blocked in fence waits, including upload; not GPU kernel time"
+          }
+        }
+      },
+      "diffuse_bounce": {
+        "file": "red/diffuse-bounce-receipt.json",
+        "sha256": "eb6fb3bea64e71e08e191082c3b1e0a7e2481bad3715e54dbd3af7ddecefe9d7",
+        "timing": {
+          "p50_ms": 47.47669998323545,
+          "p95_ms": 49.64540002401918,
+          "mean_ms": 46.691066663091384,
+          "max_ms": 49.64540002401918,
+          "worst_frame": 2,
+          "over_33_3": 9
+        },
+        "close": {
+          "closed": true,
+          "telemetry": {
+            "telemetry_abi_version": 1,
+            "device_luid_valid": 1,
+            "device_node_mask": 1,
+            "device_local_bytes_current": 0,
+            "device_local_bytes_peak": 23879616,
+            "device_local_bytes_allocated": 23879616,
+            "host_visible_bytes_current": 0,
+            "host_visible_bytes_peak": 15978096,
+            "host_visible_bytes_allocated": 16936976,
+            "readback_bytes": 191692800,
+            "fence_wait_wall_ns": 292841500,
+            "fence_wait_calls": 16,
+            "submissions": 16,
+            "allocation_count": 34,
+            "free_count": 34,
+            "device_luid_hex": "ef22010000000000",
+            "final_after_destroy": true,
+            "allocation_scope": "this context explicit VkDeviceMemory allocations; not driver total VRAM",
+            "wait_scope": "host wall time blocked in fence waits, including upload; not GPU kernel time"
+          }
+        }
+      }
+    },
+    "grey": {
+      "none": {
+        "file": "grey/none-receipt.json",
+        "sha256": "b6869e47979c68d5493e45c9c7a1384551629832306749456c4b1d5df4a34071",
+        "timing": {
+          "p50_ms": 28.64520001458004,
+          "p95_ms": 31.22950001852587,
+          "mean_ms": 28.949277785917122,
+          "max_ms": 31.22950001852587,
+          "worst_frame": 2,
+          "over_33_3": 0
+        },
+        "close": {
+          "closed": true,
+          "telemetry": {
+            "telemetry_abi_version": 1,
+            "device_luid_valid": 1,
+            "device_node_mask": 1,
+            "device_local_bytes_current": 0,
+            "device_local_bytes_peak": 23879616,
+            "device_local_bytes_allocated": 23879616,
+            "host_visible_bytes_current": 0,
+            "host_visible_bytes_peak": 15978096,
+            "host_visible_bytes_allocated": 16936976,
+            "readback_bytes": 191692800,
+            "fence_wait_wall_ns": 74973200,
+            "fence_wait_calls": 16,
+            "submissions": 16,
+            "allocation_count": 34,
+            "free_count": 34,
+            "device_luid_hex": "ef22010000000000",
+            "final_after_destroy": true,
+            "allocation_scope": "this context explicit VkDeviceMemory allocations; not driver total VRAM",
+            "wait_scope": "host wall time blocked in fence waits, including upload; not GPU kernel time"
+          }
+        }
+      },
+      "diffuse_bounce": {
+        "file": "grey/diffuse-bounce-receipt.json",
+        "sha256": "2cd6906e8d86d624658590b87af6aa3828595861860260ad972dd385d9c03d0f",
+        "timing": {
+          "p50_ms": 51.437399990390986,
+          "p95_ms": 69.44449996808544,
+          "mean_ms": 53.96421110102286,
+          "max_ms": 69.44449996808544,
+          "worst_frame": 2,
+          "over_33_3": 9
+        },
+        "close": {
+          "closed": true,
+          "telemetry": {
+            "telemetry_abi_version": 1,
+            "device_luid_valid": 1,
+            "device_node_mask": 1,
+            "device_local_bytes_current": 0,
+            "device_local_bytes_peak": 23879616,
+            "device_local_bytes_allocated": 23879616,
+            "host_visible_bytes_current": 0,
+            "host_visible_bytes_peak": 15978096,
+            "host_visible_bytes_allocated": 16936976,
+            "readback_bytes": 191692800,
+            "fence_wait_wall_ns": 376282000,
+            "fence_wait_calls": 16,
+            "submissions": 16,
+            "allocation_count": 34,
+            "free_count": 34,
+            "device_luid_hex": "ef22010000000000",
+            "final_after_destroy": true,
+            "allocation_scope": "this context explicit VkDeviceMemory allocations; not driver total VRAM",
+            "wait_scope": "host wall time blocked in fence waits, including upload; not GPU kernel time"
+          }
+        }
+      }
+    },
+    "red-blocked": {
+      "none": {
+        "file": "red-blocked/none-receipt.json",
+        "sha256": "7860dfbe1b7e720485030364c69b447cbfe0651b193ddd4fc175feddcce69dd5",
+        "timing": {
+          "p50_ms": 26.09699999447912,
+          "p95_ms": 26.908300002105534,
+          "mean_ms": 26.028344452950275,
+          "max_ms": 26.908300002105534,
+          "worst_frame": 8,
+          "over_33_3": 0
+        },
+        "close": {
+          "closed": true,
+          "telemetry": {
+            "telemetry_abi_version": 1,
+            "device_luid_valid": 1,
+            "device_node_mask": 1,
+            "device_local_bytes_current": 0,
+            "device_local_bytes_peak": 23879616,
+            "device_local_bytes_allocated": 23879616,
+            "host_visible_bytes_current": 0,
+            "host_visible_bytes_peak": 15978096,
+            "host_visible_bytes_allocated": 16936976,
+            "readback_bytes": 191692800,
+            "fence_wait_wall_ns": 82886800,
+            "fence_wait_calls": 16,
+            "submissions": 16,
+            "allocation_count": 34,
+            "free_count": 34,
+            "device_luid_hex": "ef22010000000000",
+            "final_after_destroy": true,
+            "allocation_scope": "this context explicit VkDeviceMemory allocations; not driver total VRAM",
+            "wait_scope": "host wall time blocked in fence waits, including upload; not GPU kernel time"
+          }
+        }
+      },
+      "diffuse_bounce": {
+        "file": "red-blocked/diffuse-bounce-receipt.json",
+        "sha256": "7e1c3444194e1203d56a6b0bd4922c8631290a433584097d85a19329fe15f51a",
+        "timing": {
+          "p50_ms": 52.388800017070025,
+          "p95_ms": 61.06549996184185,
+          "mean_ms": 54.37003332836967,
+          "max_ms": 61.06549996184185,
+          "worst_frame": 6,
+          "over_33_3": 9
+        },
+        "close": {
+          "closed": true,
+          "telemetry": {
+            "telemetry_abi_version": 1,
+            "device_luid_valid": 1,
+            "device_node_mask": 1,
+            "device_local_bytes_current": 0,
+            "device_local_bytes_peak": 23879616,
+            "device_local_bytes_allocated": 23879616,
+            "host_visible_bytes_current": 0,
+            "host_visible_bytes_peak": 15978096,
+            "host_visible_bytes_allocated": 16936976,
+            "readback_bytes": 191692800,
+            "fence_wait_wall_ns": 377118200,
+            "fence_wait_calls": 16,
+            "submissions": 16,
+            "allocation_count": 34,
+            "free_count": 34,
+            "device_luid_hex": "ef22010000000000",
+            "final_after_destroy": true,
+            "allocation_scope": "this context explicit VkDeviceMemory allocations; not driver total VRAM",
+            "wait_scope": "host wall time blocked in fence waits, including upload; not GPU kernel time"
+          }
+        }
+      }
+    },
+    "grey-blocked": {
+      "none": {
+        "file": "grey-blocked/none-receipt.json",
+        "sha256": "91b6c0b6de152de8ed6c6374f8fa7bb961ec4d4bc07485ffacd44fae49640c98",
+        "timing": {
+          "p50_ms": 27.43459999328479,
+          "p95_ms": 28.023399994708598,
+          "mean_ms": 27.117199995296282,
+          "max_ms": 28.023399994708598,
+          "worst_frame": 1,
+          "over_33_3": 0
+        },
+        "close": {
+          "closed": true,
+          "telemetry": {
+            "telemetry_abi_version": 1,
+            "device_luid_valid": 1,
+            "device_node_mask": 1,
+            "device_local_bytes_current": 0,
+            "device_local_bytes_peak": 23879616,
+            "device_local_bytes_allocated": 23879616,
+            "host_visible_bytes_current": 0,
+            "host_visible_bytes_peak": 15978096,
+            "host_visible_bytes_allocated": 16936976,
+            "readback_bytes": 191692800,
+            "fence_wait_wall_ns": 83140500,
+            "fence_wait_calls": 16,
+            "submissions": 16,
+            "allocation_count": 34,
+            "free_count": 34,
+            "device_luid_hex": "ef22010000000000",
+            "final_after_destroy": true,
+            "allocation_scope": "this context explicit VkDeviceMemory allocations; not driver total VRAM",
+            "wait_scope": "host wall time blocked in fence waits, including upload; not GPU kernel time"
+          }
+        }
+      },
+      "diffuse_bounce": {
+        "file": "grey-blocked/diffuse-bounce-receipt.json",
+        "sha256": "a12e1b33dcb33b459d6ada5a27f3df00eccd3d69f76d22bce734f61634673f83",
+        "timing": {
+          "p50_ms": 51.737000001594424,
+          "p95_ms": 58.81990003399551,
+          "mean_ms": 51.855422233024406,
+          "max_ms": 58.81990003399551,
+          "worst_frame": 0,
+          "over_33_3": 9
+        },
+        "close": {
+          "closed": true,
+          "telemetry": {
+            "telemetry_abi_version": 1,
+            "device_luid_valid": 1,
+            "device_node_mask": 1,
+            "device_local_bytes_current": 0,
+            "device_local_bytes_peak": 23879616,
+            "device_local_bytes_allocated": 23879616,
+            "host_visible_bytes_current": 0,
+            "host_visible_bytes_peak": 15978096,
+            "host_visible_bytes_allocated": 16936976,
+            "readback_bytes": 191692800,
+            "fence_wait_wall_ns": 377911100,
+            "fence_wait_calls": 16,
+            "submissions": 16,
+            "allocation_count": 34,
+            "free_count": 34,
+            "device_luid_hex": "ef22010000000000",
+            "final_after_destroy": true,
+            "allocation_scope": "this context explicit VkDeviceMemory allocations; not driver total VRAM",
+            "wait_scope": "host wall time blocked in fence waits, including upload; not GPU kernel time"
+          }
+        }
+      }
+    }
+  },
+  "interpretation": "static colour transfer study; quantized display-linear comparison only; fixed optical gates never alter saved images"
+}

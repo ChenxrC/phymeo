@@ -1,0 +1,6 @@
+*.png binary
+*.zip binary
+*.json binary
+*.npz binary
+*.gltf binary
+SHA256SUMS -text whitespace=cr-at-eol

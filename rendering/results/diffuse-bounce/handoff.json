@@ -1,0 +1,1078 @@
+{
+  "schema": "phymeo-diffuse-bounce-study-handoff-v1",
+  "status": "complete",
+  "producer_commit": "4f51487ddba7a25851f400000b9a3aae40af3c67",
+  "producer_commits": [
+    "da262d0a3f437b2ece5a9a864104f901e14b92b0",
+    "706905b95617994c4edd0f76f1d5f4fd2a02d2d7",
+    "4f51487ddba7a25851f400000b9a3aae40af3c67"
+  ],
+  "backend_commit": "d9f907236a57d11e24f35dfe0a23ee03d03d3f6c",
+  "library": {
+    "file": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-indirect\\build-indirect\\phymeo_native.dll",
+    "sha256": "6c800b007598f98ea9c2fa733227219d1861d2058fb1b1fb5d1271c183a7c1f9"
+  },
+  "backend_proof_sha256": "710dd3c7f4ac50b0839a021ad582c57811890d05558cc0912a66b49a22686751",
+  "shader_count": 40,
+  "physical_device_index": 1,
+  "physical_device": "NVIDIA GeForce RTX 4060 Laptop GPU",
+  "host_tests": 15,
+  "actual_public_captures": 96,
+  "actual_static_states": 4,
+  "physical_motion": false,
+  "profile": {
+    "states": [
+      "red",
+      "grey",
+      "red-blocked",
+      "grey-blocked"
+    ],
+    "modes": [
+      "none",
+      "diffuse_bounce"
+    ],
+    "size": [
+      1280,
+      960
+    ],
+    "seed": 0,
+    "cosine_samples": 16,
+    "bounces": 1,
+    "warmup": 3,
+    "repeats": 9,
+    "msaa_samples": 1,
+    "channels": [
+      "srgb8_rgb",
+      "forward_depth_m_f32",
+      "instance_id_u32",
+      "valid_u8"
+    ],
+    "crop_xyxy": [
+      384,
+      288,
+      896,
+      672
+    ],
+    "receiver_ids": [
+      156,
+      158
+    ],
+    "camera_eye_m": [
+      0.42,
+      0.0,
+      0.24
+    ],
+    "camera_target_m": [
+      0.0,
+      0.0,
+      0.09
+    ],
+    "focal_px": 1550.0,
+    "hand_origin_m": [
+      0.0,
+      0.0,
+      0.18
+    ],
+    "hand_quaternion_xyzw": [
+      1.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "finger_displacement_m": 0.035,
+    "urdf_finger_origin_z_m": 0.0584,
+    "board_size_m": [
+      0.22,
+      0.26,
+      0.006
+    ],
+    "board_centre_m": [
+      0.0,
+      0.0,
+      0.037
+    ],
+    "blocker_size_m": [
+      0.11,
+      0.2,
+      0.002
+    ],
+    "blocker_z_m": 0.055,
+    "parked_blocker_z_m": -0.2,
+    "white_reflectance": [
+      0.7,
+      0.7,
+      0.7
+    ],
+    "red_reflectance": [
+      0.8,
+      0.01,
+      0.01
+    ],
+    "grey_reflectance": 0.177954,
+    "luminance_coefficients": [
+      0.2126,
+      0.7152,
+      0.0722
+    ],
+    "environment": null,
+    "directional_travel": [
+      0.7071067811865475,
+      0.0,
+      -0.7071067811865475
+    ],
+    "illuminance": [
+      3.0,
+      3.0,
+      3.0
+    ],
+    "display_transform": "pbr-neutral",
+    "exposure": 1.0,
+    "shadow_mode": "ray_query",
+    "validation": false,
+    "roi_rule": "same pre-GPU nearest original finger_01 triangles; local z [0.012,0.032]m, world normal.x>=0.5, barycentric min>=0.02",
+    "minimum_roi_pixels_per_finger": 128,
+    "depth_error_max_m": 0.0001,
+    "linear_scope": "inverse IEC sRGB of published RGB8: quantized display-linear, not raw HDR or radiance",
+    "transfer_expression": "T=((on-off)_red-(on-off)_grey) dot (1,-0.5,-0.5)",
+    "transfer_linear_min": 0.005,
+    "transfer_rgb8_min": 3.0,
+    "blocked_max_fraction": 0.5,
+    "blocked_linear_allowance": 0.002,
+    "pixel_policy": "all registered pixels retained, including zero energy and 16-sample noise; no post-image pruning",
+    "occlusion_scope": "physical black screen can both intercept transfer paths and shade the board; not an isolated secondary-visibility-only test",
+    "timing": "public synchronous RGB+forward-depth+ID+VALID owned bytes; three warmups excluded; nine static repeats",
+    "limitation": "one diffuse bounce, 16 stable cosine samples, no denoising or temporal accumulation; no physical motion"
+  },
+  "roi": {
+    "156": 2058,
+    "158": 2062
+  },
+  "optical": {
+    "passed": true,
+    "receivers": {
+      "156": {
+        "unblocked_linear_red_excess": 0.037268679289480675,
+        "blocked_linear_red_excess": 0.005122104077818591,
+        "color_transfer_passed": true,
+        "occlusion_passed": true,
+        "states": {
+          "unblocked": {
+            "linear_red_excess": 0.037268679289480675,
+            "rgb8_red_excess": 49.43245869776482,
+            "all_pixels": 2058,
+            "min_linear": 0.0,
+            "max_linear": 0.13013647669036432,
+            "zero_off_pixels": 2058,
+            "fraction_positive": 0.8790087463556852
+          },
+          "blocked": {
+            "linear_red_excess": 0.005122104077818591,
+            "rgb8_red_excess": 9.275024295432459,
+            "all_pixels": 2058,
+            "min_linear": 0.0,
+            "max_linear": 0.042311410620809675,
+            "zero_off_pixels": 2058,
+            "fraction_positive": 0.2240038872691934
+          }
+        }
+      },
+      "158": {
+        "unblocked_linear_red_excess": 0.037665649898946565,
+        "blocked_linear_red_excess": 0.005473274664818552,
+        "color_transfer_passed": true,
+        "occlusion_passed": true,
+        "states": {
+          "unblocked": {
+            "linear_red_excess": 0.037665649898946565,
+            "rgb8_red_excess": 50.240543161978664,
+            "all_pixels": 2062,
+            "min_linear": 0.0,
+            "max_linear": 0.10702310297826761,
+            "zero_off_pixels": 2062,
+            "fraction_positive": 0.9005819592628516
+          },
+          "blocked": {
+            "linear_red_excess": 0.005473274664818552,
+            "rgb8_red_excess": 9.85984481086324,
+            "all_pixels": 2062,
+            "min_linear": 0.0,
+            "max_linear": 0.06480326669290576,
+            "zero_off_pixels": 2062,
+            "fraction_positive": 0.23714839961202716
+          }
+        }
+      }
+    },
+    "expression": "T=((on-off)_red-(on-off)_grey) dot (1,-0.5,-0.5)",
+    "scope": "inverse IEC sRGB of published RGB8: quantized display-linear, not raw HDR or radiance"
+  },
+  "suppression": [
+    {
+      "instance_id": 156,
+      "registered_pixels": 2058,
+      "unblocked_display_linear_red_excess": 0.037268679289480675,
+      "blocked_display_linear_red_excess": 0.005122104077818591,
+      "suppression_percent": 86.25627691812429,
+      "all_pixels_retained": true
+    },
+    {
+      "instance_id": 158,
+      "registered_pixels": 2062,
+      "unblocked_display_linear_red_excess": 0.037665649898946565,
+      "blocked_display_linear_red_excess": 0.005473274664818552,
+      "suppression_percent": 85.46879005273283,
+      "all_pixels_retained": true
+    }
+  ],
+  "geometry": {
+    "red": {
+      "sensors": {
+        "identical": true,
+        "sha256": {
+          "forward_depth_m_f32": "5c7eec2aee8eacd9e4eba882b9bbe2b7ea66891c6edad56b679c1471d8d61c81",
+          "instance_id_u32": "ee20d29a78562d1996a97f06a91e1bb36cdf34f4c925df5a4dc8edd7100e6641",
+          "valid_u8": "f6b1266da5f008506ef9117269e5d3c8a24a998e19002f1ba4d645199ce85fc1"
+        }
+      },
+      "roi": {
+        "pixels": 4120,
+        "max_depth_error_m": 8.105829910065587E-07
+      },
+      "background_identical": true
+    },
+    "grey": {
+      "sensors": {
+        "identical": true,
+        "sha256": {
+          "forward_depth_m_f32": "5c7eec2aee8eacd9e4eba882b9bbe2b7ea66891c6edad56b679c1471d8d61c81",
+          "instance_id_u32": "ee20d29a78562d1996a97f06a91e1bb36cdf34f4c925df5a4dc8edd7100e6641",
+          "valid_u8": "f6b1266da5f008506ef9117269e5d3c8a24a998e19002f1ba4d645199ce85fc1"
+        }
+      },
+      "roi": {
+        "pixels": 4120,
+        "max_depth_error_m": 8.105829910065587E-07
+      },
+      "background_identical": true
+    },
+    "red-blocked": {
+      "sensors": {
+        "identical": true,
+        "sha256": {
+          "forward_depth_m_f32": "364d504a5d5696d7ac3f9f65c24401198b8c7cb1acf0aac924e513d491b4b9b9",
+          "instance_id_u32": "46a21f810889aa8c26369f9cae6c1df29b360c38e93e4d2a20590077e840b400",
+          "valid_u8": "f6b1266da5f008506ef9117269e5d3c8a24a998e19002f1ba4d645199ce85fc1"
+        }
+      },
+      "roi": {
+        "pixels": 4120,
+        "max_depth_error_m": 8.105829910065587E-07
+      },
+      "background_identical": true
+    },
+    "grey-blocked": {
+      "sensors": {
+        "identical": true,
+        "sha256": {
+          "forward_depth_m_f32": "364d504a5d5696d7ac3f9f65c24401198b8c7cb1acf0aac924e513d491b4b9b9",
+          "instance_id_u32": "46a21f810889aa8c26369f9cae6c1df29b360c38e93e4d2a20590077e840b400",
+          "valid_u8": "f6b1266da5f008506ef9117269e5d3c8a24a998e19002f1ba4d645199ce85fc1"
+        }
+      },
+      "roi": {
+        "pixels": 4120,
+        "max_depth_error_m": 8.105829910065587E-07
+      },
+      "background_identical": true
+    }
+  },
+  "timings": [
+    {
+      "state": "red",
+      "mode": "none",
+      "measured_static_repeats": 9,
+      "excluded_warmups": 3,
+      "timing": {
+        "p50_ms": 26.474199956282973,
+        "p95_ms": 27.164300030563027,
+        "mean_ms": 26.314511119077604,
+        "max_ms": 27.164300030563027,
+        "worst_frame": 4,
+        "over_33_3": 0
+      },
+      "capture_ms": [
+        25.796799978706986,
+        25.694600015413016,
+        25.882499990984797,
+        26.580800011288375,
+        27.164300030563027,
+        26.474199956282973,
+        25.765800033695996,
+        26.48060000501573,
+        26.991000049747527
+      ]
+    },
+    {
+      "state": "red",
+      "mode": "diffuse-bounce",
+      "measured_static_repeats": 9,
+      "excluded_warmups": 3,
+      "timing": {
+        "p50_ms": 47.47669998323545,
+        "p95_ms": 49.64540002401918,
+        "mean_ms": 46.691066663091384,
+        "max_ms": 49.64540002401918,
+        "worst_frame": 2,
+        "over_33_3": 9
+      },
+      "capture_ms": [
+        44.536300003528595,
+        45.000699989032,
+        49.64540002401918,
+        45.15930003253743,
+        48.10019995784387,
+        48.124499968253076,
+        48.164799984078854,
+        47.47669998323545,
+        44.011700025293976
+      ]
+    },
+    {
+      "state": "grey",
+      "mode": "none",
+      "measured_static_repeats": 9,
+      "excluded_warmups": 3,
+      "timing": {
+        "p50_ms": 28.64520001458004,
+        "p95_ms": 31.22950001852587,
+        "mean_ms": 28.949277785917122,
+        "max_ms": 31.22950001852587,
+        "worst_frame": 2,
+        "over_33_3": 0
+      },
+      "capture_ms": [
+        27.92249998310581,
+        31.009600032120943,
+        31.22950001852587,
+        30.587000015657395,
+        30.380600015632808,
+        28.64520001458004,
+        27.652299962937832,
+        26.520100014749914,
+        26.596700015943497
+      ]
+    },
+    {
+      "state": "grey",
+      "mode": "diffuse-bounce",
+      "measured_static_repeats": 9,
+      "excluded_warmups": 3,
+      "timing": {
+        "p50_ms": 51.437399990390986,
+        "p95_ms": 69.44449996808544,
+        "mean_ms": 53.96421110102286,
+        "max_ms": 69.44449996808544,
+        "worst_frame": 2,
+        "over_33_3": 9
+      },
+      "capture_ms": [
+        64.52939996961504,
+        55.80580001696944,
+        69.44449996808544,
+        52.5344000197947,
+        48.295099986717105,
+        47.102199983783066,
+        47.6067999843508,
+        51.437399990390986,
+        48.92229998949915
+      ]
+    },
+    {
+      "state": "red-blocked",
+      "mode": "none",
+      "measured_static_repeats": 9,
+      "excluded_warmups": 3,
+      "timing": {
+        "p50_ms": 26.09699999447912,
+        "p95_ms": 26.908300002105534,
+        "mean_ms": 26.028344452950275,
+        "max_ms": 26.908300002105534,
+        "worst_frame": 8,
+        "over_33_3": 0
+      },
+      "capture_ms": [
+        26.146200019866228,
+        26.168900018092245,
+        25.787700025830418,
+        26.149300043471158,
+        26.09699999447912,
+        25.227999954950064,
+        25.817700021434575,
+        25.95199999632314,
+        26.908300002105534
+      ]
+    },
+    {
+      "state": "red-blocked",
+      "mode": "diffuse-bounce",
+      "measured_static_repeats": 9,
+      "excluded_warmups": 3,
+      "timing": {
+        "p50_ms": 52.388800017070025,
+        "p95_ms": 61.06549996184185,
+        "mean_ms": 54.37003332836967,
+        "max_ms": 61.06549996184185,
+        "worst_frame": 6,
+        "over_33_3": 9
+      },
+      "capture_ms": [
+        60.60240004444495,
+        58.13969997689128,
+        52.229399967473,
+        52.97880002763122,
+        52.27869999362156,
+        49.212199985049665,
+        61.06549996184185,
+        50.43479998130351,
+        52.388800017070025
+      ]
+    },
+    {
+      "state": "grey-blocked",
+      "mode": "none",
+      "measured_static_repeats": 9,
+      "excluded_warmups": 3,
+      "timing": {
+        "p50_ms": 27.43459999328479,
+        "p95_ms": 28.023399994708598,
+        "mean_ms": 27.117199995296282,
+        "max_ms": 28.023399994708598,
+        "worst_frame": 1,
+        "over_33_3": 0
+      },
+      "capture_ms": [
+        27.43459999328479,
+        28.023399994708598,
+        27.79049996752292,
+        27.448799984995276,
+        27.62010000878945,
+        26.120199996512383,
+        26.450200006365776,
+        26.59210003912449,
+        26.574899966362864
+      ]
+    },
+    {
+      "state": "grey-blocked",
+      "mode": "diffuse-bounce",
+      "measured_static_repeats": 9,
+      "excluded_warmups": 3,
+      "timing": {
+        "p50_ms": 51.737000001594424,
+        "p95_ms": 58.81990003399551,
+        "mean_ms": 51.855422233024406,
+        "max_ms": 58.81990003399551,
+        "worst_frame": 0,
+        "over_33_3": 9
+      },
+      "capture_ms": [
+        58.81990003399551,
+        55.44750002445653,
+        51.737000001594424,
+        48.775299976114184,
+        49.23280002549291,
+        49.64099999051541,
+        49.000300001353025,
+        52.09900002228096,
+        51.946000021416694
+      ]
+    }
+  ],
+  "receipts": [
+    {
+      "file": "red/none-receipt.json",
+      "sha256": "a862069bf16c67462e10864bf4ea31f0e57a2eed10fe26179bcb48a3999edde2",
+      "png": "red/none.png",
+      "png_sha256": "167da458213af5c8bc4cb5163156fd94f7bcc852a26de309aaad2441dcfc955e",
+      "data": "red/none.npz",
+      "data_sha256": "6480a27eb2a8bbdd6906833ccf007faa6373cbc43a25a0ff58d72ebf5fc8c59d",
+      "public_planes": {
+        "srgb8_rgb": "b6941458d0b653555511ca1f3f85e056dcb11045abc3b2d97b93a15a54358e42",
+        "forward_depth_m_f32": "5c7eec2aee8eacd9e4eba882b9bbe2b7ea66891c6edad56b679c1471d8d61c81",
+        "instance_id_u32": "ee20d29a78562d1996a97f06a91e1bb36cdf34f4c925df5a4dc8edd7100e6641",
+        "valid_u8": "f6b1266da5f008506ef9117269e5d3c8a24a998e19002f1ba4d645199ce85fc1"
+      },
+      "indirect": {
+        "mode": "none",
+        "seed": 0,
+        "samples_per_pixel": 0,
+        "bounces": 0
+      },
+      "device_indirect": null,
+      "device_uuid": "3b78d98198a3be57a8cb4d72fdfbfa96",
+      "close": {
+        "closed": true,
+        "telemetry": {
+          "telemetry_abi_version": 1,
+          "device_luid_valid": 1,
+          "device_node_mask": 1,
+          "device_local_bytes_current": 0,
+          "device_local_bytes_peak": 23879616,
+          "device_local_bytes_allocated": 23879616,
+          "host_visible_bytes_current": 0,
+          "host_visible_bytes_peak": 15978096,
+          "host_visible_bytes_allocated": 16936976,
+          "readback_bytes": 191692800,
+          "fence_wait_wall_ns": 32571200,
+          "fence_wait_calls": 16,
+          "submissions": 16,
+          "allocation_count": 34,
+          "free_count": 34,
+          "device_luid_hex": "ef22010000000000",
+          "final_after_destroy": true,
+          "allocation_scope": "this context explicit VkDeviceMemory allocations; not driver total VRAM",
+          "wait_scope": "host wall time blocked in fence waits, including upload; not GPU kernel time"
+        }
+      }
+    },
+    {
+      "file": "red/diffuse-bounce-receipt.json",
+      "sha256": "eb6fb3bea64e71e08e191082c3b1e0a7e2481bad3715e54dbd3af7ddecefe9d7",
+      "png": "red/diffuse-bounce.png",
+      "png_sha256": "db801163bd9c7d1632a3f4001a0dfe1f36fc48b6165e97961732479903887289",
+      "data": "red/diffuse-bounce.npz",
+      "data_sha256": "c8f90d85582f2d7d4c8057fe80633652026f72cb63e268f903d230ae2aa8ba5b",
+      "public_planes": {
+        "srgb8_rgb": "533d53f43cdcc20938981af2f092d8312509afa753a558c241199de0fbbd649d",
+        "forward_depth_m_f32": "5c7eec2aee8eacd9e4eba882b9bbe2b7ea66891c6edad56b679c1471d8d61c81",
+        "instance_id_u32": "ee20d29a78562d1996a97f06a91e1bb36cdf34f4c925df5a4dc8edd7100e6641",
+        "valid_u8": "f6b1266da5f008506ef9117269e5d3c8a24a998e19002f1ba4d645199ce85fc1"
+      },
+      "indirect": {
+        "mode": "diffuse_bounce",
+        "seed": 0,
+        "samples_per_pixel": 16,
+        "bounces": 1,
+        "estimator": "rho_d * sum(Li)/16; 4x4 stratified cosine hemisphere with hashed 23-bit open-interval jitter",
+        "diffuse_coefficient": "rho_d=(1-metallic)*albedo*(1-F0); F0=mix(.04,albedo,metallic)",
+        "environment_policy": "replace the original diffuse IBL/SH term, never add a second copy",
+        "miss_policy": "original HDR level0 radiance along sample direction, or uniform environment; zero if absent",
+        "terminal_lighting": "nearest current real TLAS triangle, original direct + studio + environment; no recursive indirect/reflection",
+        "seed_scope": "uint32 seed + capture-local integer pixel XY + sample index; no frame/time/epoch key, no accumulation",
+        "geometry_policy": "shading-normal cosine distribution clipped by oriented true face; inward/degenerate sample=0, denominator stays16",
+        "combination": "independent primary specular/diffuse lobes may share terminal shading; no additional bounce",
+        "limitations": "16 noisy samples; no denoiser, temporal history, multiple diffuse bounces or raw-HDR output attachment"
+      },
+      "device_indirect": {
+        "indirect_abi_version": 1,
+        "supported": 1,
+        "shader_compatible": 1,
+        "enabled": 1,
+        "samples_per_pixel": 16,
+        "seed": 0,
+        "max_bounces": 1,
+        "set_calls": 1,
+        "receiver_count": 10,
+        "captures": 12,
+        "rgb_captures": 12,
+        "capture_scope": "successful captures/RGB captures; samples_per_pixel is a budget, not an actual ray/hit counter",
+        "receiver_scope": "instances with uploaded metallic<1 and positive base-color factor; image-zero pixels may emit no rays",
+        "snapshot": "last live query retained after close; allocation teardown uses resident telemetry"
+      },
+      "device_uuid": "3b78d98198a3be57a8cb4d72fdfbfa96",
+      "close": {
+        "closed": true,
+        "telemetry": {
+          "telemetry_abi_version": 1,
+          "device_luid_valid": 1,
+          "device_node_mask": 1,
+          "device_local_bytes_current": 0,
+          "device_local_bytes_peak": 23879616,
+          "device_local_bytes_allocated": 23879616,
+          "host_visible_bytes_current": 0,
+          "host_visible_bytes_peak": 15978096,
+          "host_visible_bytes_allocated": 16936976,
+          "readback_bytes": 191692800,
+          "fence_wait_wall_ns": 292841500,
+          "fence_wait_calls": 16,
+          "submissions": 16,
+          "allocation_count": 34,
+          "free_count": 34,
+          "device_luid_hex": "ef22010000000000",
+          "final_after_destroy": true,
+          "allocation_scope": "this context explicit VkDeviceMemory allocations; not driver total VRAM",
+          "wait_scope": "host wall time blocked in fence waits, including upload; not GPU kernel time"
+        }
+      }
+    },
+    {
+      "file": "grey/none-receipt.json",
+      "sha256": "b6869e47979c68d5493e45c9c7a1384551629832306749456c4b1d5df4a34071",
+      "png": "grey/none.png",
+      "png_sha256": "9d29cbcbf8bd4694d049536ab095a046e4978545083c1f1e6bffd060deb161d1",
+      "data": "grey/none.npz",
+      "data_sha256": "a86374525070309ccedd49f756bad1ddf24866cb2b0af2c3a7aeac038b3a857b",
+      "public_planes": {
+        "srgb8_rgb": "3b9d0696ca08a53fde29fd5677901df68b1e5ee561e61e406512b7cdbbfd8b02",
+        "forward_depth_m_f32": "5c7eec2aee8eacd9e4eba882b9bbe2b7ea66891c6edad56b679c1471d8d61c81",
+        "instance_id_u32": "ee20d29a78562d1996a97f06a91e1bb36cdf34f4c925df5a4dc8edd7100e6641",
+        "valid_u8": "f6b1266da5f008506ef9117269e5d3c8a24a998e19002f1ba4d645199ce85fc1"
+      },
+      "indirect": {
+        "mode": "none",
+        "seed": 0,
+        "samples_per_pixel": 0,
+        "bounces": 0
+      },
+      "device_indirect": null,
+      "device_uuid": "3b78d98198a3be57a8cb4d72fdfbfa96",
+      "close": {
+        "closed": true,
+        "telemetry": {
+          "telemetry_abi_version": 1,
+          "device_luid_valid": 1,
+          "device_node_mask": 1,
+          "device_local_bytes_current": 0,
+          "device_local_bytes_peak": 23879616,
+          "device_local_bytes_allocated": 23879616,
+          "host_visible_bytes_current": 0,
+          "host_visible_bytes_peak": 15978096,
+          "host_visible_bytes_allocated": 16936976,
+          "readback_bytes": 191692800,
+          "fence_wait_wall_ns": 74973200,
+          "fence_wait_calls": 16,
+          "submissions": 16,
+          "allocation_count": 34,
+          "free_count": 34,
+          "device_luid_hex": "ef22010000000000",
+          "final_after_destroy": true,
+          "allocation_scope": "this context explicit VkDeviceMemory allocations; not driver total VRAM",
+          "wait_scope": "host wall time blocked in fence waits, including upload; not GPU kernel time"
+        }
+      }
+    },
+    {
+      "file": "grey/diffuse-bounce-receipt.json",
+      "sha256": "2cd6906e8d86d624658590b87af6aa3828595861860260ad972dd385d9c03d0f",
+      "png": "grey/diffuse-bounce.png",
+      "png_sha256": "b9f611c546f494130ae4717177c05e086fe20ca175e3d6b3939cb81fbbe9e3a2",
+      "data": "grey/diffuse-bounce.npz",
+      "data_sha256": "19e69236acebffac00c5e28a4629af4e976e4cb61da01aea7702baf11a4b8e43",
+      "public_planes": {
+        "srgb8_rgb": "32a7ccb7a40cf2f3a4f6c461fc82e6c5343bb342c850492c6336929573efe20b",
+        "forward_depth_m_f32": "5c7eec2aee8eacd9e4eba882b9bbe2b7ea66891c6edad56b679c1471d8d61c81",
+        "instance_id_u32": "ee20d29a78562d1996a97f06a91e1bb36cdf34f4c925df5a4dc8edd7100e6641",
+        "valid_u8": "f6b1266da5f008506ef9117269e5d3c8a24a998e19002f1ba4d645199ce85fc1"
+      },
+      "indirect": {
+        "mode": "diffuse_bounce",
+        "seed": 0,
+        "samples_per_pixel": 16,
+        "bounces": 1,
+        "estimator": "rho_d * sum(Li)/16; 4x4 stratified cosine hemisphere with hashed 23-bit open-interval jitter",
+        "diffuse_coefficient": "rho_d=(1-metallic)*albedo*(1-F0); F0=mix(.04,albedo,metallic)",
+        "environment_policy": "replace the original diffuse IBL/SH term, never add a second copy",
+        "miss_policy": "original HDR level0 radiance along sample direction, or uniform environment; zero if absent",
+        "terminal_lighting": "nearest current real TLAS triangle, original direct + studio + environment; no recursive indirect/reflection",
+        "seed_scope": "uint32 seed + capture-local integer pixel XY + sample index; no frame/time/epoch key, no accumulation",
+        "geometry_policy": "shading-normal cosine distribution clipped by oriented true face; inward/degenerate sample=0, denominator stays16",
+        "combination": "independent primary specular/diffuse lobes may share terminal shading; no additional bounce",
+        "limitations": "16 noisy samples; no denoiser, temporal history, multiple diffuse bounces or raw-HDR output attachment"
+      },
+      "device_indirect": {
+        "indirect_abi_version": 1,
+        "supported": 1,
+        "shader_compatible": 1,
+        "enabled": 1,
+        "samples_per_pixel": 16,
+        "seed": 0,
+        "max_bounces": 1,
+        "set_calls": 1,
+        "receiver_count": 10,
+        "captures": 12,
+        "rgb_captures": 12,
+        "capture_scope": "successful captures/RGB captures; samples_per_pixel is a budget, not an actual ray/hit counter",
+        "receiver_scope": "instances with uploaded metallic<1 and positive base-color factor; image-zero pixels may emit no rays",
+        "snapshot": "last live query retained after close; allocation teardown uses resident telemetry"
+      },
+      "device_uuid": "3b78d98198a3be57a8cb4d72fdfbfa96",
+      "close": {
+        "closed": true,
+        "telemetry": {
+          "telemetry_abi_version": 1,
+          "device_luid_valid": 1,
+          "device_node_mask": 1,
+          "device_local_bytes_current": 0,
+          "device_local_bytes_peak": 23879616,
+          "device_local_bytes_allocated": 23879616,
+          "host_visible_bytes_current": 0,
+          "host_visible_bytes_peak": 15978096,
+          "host_visible_bytes_allocated": 16936976,
+          "readback_bytes": 191692800,
+          "fence_wait_wall_ns": 376282000,
+          "fence_wait_calls": 16,
+          "submissions": 16,
+          "allocation_count": 34,
+          "free_count": 34,
+          "device_luid_hex": "ef22010000000000",
+          "final_after_destroy": true,
+          "allocation_scope": "this context explicit VkDeviceMemory allocations; not driver total VRAM",
+          "wait_scope": "host wall time blocked in fence waits, including upload; not GPU kernel time"
+        }
+      }
+    },
+    {
+      "file": "red-blocked/none-receipt.json",
+      "sha256": "7860dfbe1b7e720485030364c69b447cbfe0651b193ddd4fc175feddcce69dd5",
+      "png": "red-blocked/none.png",
+      "png_sha256": "03105a9cc76b3f70bd47d6780a1699fca457bdd76919f17b6c80070c6a26bf72",
+      "data": "red-blocked/none.npz",
+      "data_sha256": "9aaca221ee1b2d0e3766b105d058d035aeb13524ed88ebf988d140021cd96c1e",
+      "public_planes": {
+        "srgb8_rgb": "b89ffdae919fc1909cfb9f6d2ffd8ecc11835f9a050f3d8be47c46102d43e786",
+        "forward_depth_m_f32": "364d504a5d5696d7ac3f9f65c24401198b8c7cb1acf0aac924e513d491b4b9b9",
+        "instance_id_u32": "46a21f810889aa8c26369f9cae6c1df29b360c38e93e4d2a20590077e840b400",
+        "valid_u8": "f6b1266da5f008506ef9117269e5d3c8a24a998e19002f1ba4d645199ce85fc1"
+      },
+      "indirect": {
+        "mode": "none",
+        "seed": 0,
+        "samples_per_pixel": 0,
+        "bounces": 0
+      },
+      "device_indirect": null,
+      "device_uuid": "3b78d98198a3be57a8cb4d72fdfbfa96",
+      "close": {
+        "closed": true,
+        "telemetry": {
+          "telemetry_abi_version": 1,
+          "device_luid_valid": 1,
+          "device_node_mask": 1,
+          "device_local_bytes_current": 0,
+          "device_local_bytes_peak": 23879616,
+          "device_local_bytes_allocated": 23879616,
+          "host_visible_bytes_current": 0,
+          "host_visible_bytes_peak": 15978096,
+          "host_visible_bytes_allocated": 16936976,
+          "readback_bytes": 191692800,
+          "fence_wait_wall_ns": 82886800,
+          "fence_wait_calls": 16,
+          "submissions": 16,
+          "allocation_count": 34,
+          "free_count": 34,
+          "device_luid_hex": "ef22010000000000",
+          "final_after_destroy": true,
+          "allocation_scope": "this context explicit VkDeviceMemory allocations; not driver total VRAM",
+          "wait_scope": "host wall time blocked in fence waits, including upload; not GPU kernel time"
+        }
+      }
+    },
+    {
+      "file": "red-blocked/diffuse-bounce-receipt.json",
+      "sha256": "7e1c3444194e1203d56a6b0bd4922c8631290a433584097d85a19329fe15f51a",
+      "png": "red-blocked/diffuse-bounce.png",
+      "png_sha256": "57902a5847424f72e15007d0fafaee143d96960192c92837e9e864ea07f4a026",
+      "data": "red-blocked/diffuse-bounce.npz",
+      "data_sha256": "93473416f962a8cefd4566afec3ee910c0439ad505a83abbc38666fd7db326be",
+      "public_planes": {
+        "srgb8_rgb": "051405ad04114cdfbedd8956a803eabe5e99b96eb2d4f059c5a03ca1e2cfa8d3",
+        "forward_depth_m_f32": "364d504a5d5696d7ac3f9f65c24401198b8c7cb1acf0aac924e513d491b4b9b9",
+        "instance_id_u32": "46a21f810889aa8c26369f9cae6c1df29b360c38e93e4d2a20590077e840b400",
+        "valid_u8": "f6b1266da5f008506ef9117269e5d3c8a24a998e19002f1ba4d645199ce85fc1"
+      },
+      "indirect": {
+        "mode": "diffuse_bounce",
+        "seed": 0,
+        "samples_per_pixel": 16,
+        "bounces": 1,
+        "estimator": "rho_d * sum(Li)/16; 4x4 stratified cosine hemisphere with hashed 23-bit open-interval jitter",
+        "diffuse_coefficient": "rho_d=(1-metallic)*albedo*(1-F0); F0=mix(.04,albedo,metallic)",
+        "environment_policy": "replace the original diffuse IBL/SH term, never add a second copy",
+        "miss_policy": "original HDR level0 radiance along sample direction, or uniform environment; zero if absent",
+        "terminal_lighting": "nearest current real TLAS triangle, original direct + studio + environment; no recursive indirect/reflection",
+        "seed_scope": "uint32 seed + capture-local integer pixel XY + sample index; no frame/time/epoch key, no accumulation",
+        "geometry_policy": "shading-normal cosine distribution clipped by oriented true face; inward/degenerate sample=0, denominator stays16",
+        "combination": "independent primary specular/diffuse lobes may share terminal shading; no additional bounce",
+        "limitations": "16 noisy samples; no denoiser, temporal history, multiple diffuse bounces or raw-HDR output attachment"
+      },
+      "device_indirect": {
+        "indirect_abi_version": 1,
+        "supported": 1,
+        "shader_compatible": 1,
+        "enabled": 1,
+        "samples_per_pixel": 16,
+        "seed": 0,
+        "max_bounces": 1,
+        "set_calls": 1,
+        "receiver_count": 10,
+        "captures": 12,
+        "rgb_captures": 12,
+        "capture_scope": "successful captures/RGB captures; samples_per_pixel is a budget, not an actual ray/hit counter",
+        "receiver_scope": "instances with uploaded metallic<1 and positive base-color factor; image-zero pixels may emit no rays",
+        "snapshot": "last live query retained after close; allocation teardown uses resident telemetry"
+      },
+      "device_uuid": "3b78d98198a3be57a8cb4d72fdfbfa96",
+      "close": {
+        "closed": true,
+        "telemetry": {
+          "telemetry_abi_version": 1,
+          "device_luid_valid": 1,
+          "device_node_mask": 1,
+          "device_local_bytes_current": 0,
+          "device_local_bytes_peak": 23879616,
+          "device_local_bytes_allocated": 23879616,
+          "host_visible_bytes_current": 0,
+          "host_visible_bytes_peak": 15978096,
+          "host_visible_bytes_allocated": 16936976,
+          "readback_bytes": 191692800,
+          "fence_wait_wall_ns": 377118200,
+          "fence_wait_calls": 16,
+          "submissions": 16,
+          "allocation_count": 34,
+          "free_count": 34,
+          "device_luid_hex": "ef22010000000000",
+          "final_after_destroy": true,
+          "allocation_scope": "this context explicit VkDeviceMemory allocations; not driver total VRAM",
+          "wait_scope": "host wall time blocked in fence waits, including upload; not GPU kernel time"
+        }
+      }
+    },
+    {
+      "file": "grey-blocked/none-receipt.json",
+      "sha256": "91b6c0b6de152de8ed6c6374f8fa7bb961ec4d4bc07485ffacd44fae49640c98",
+      "png": "grey-blocked/none.png",
+      "png_sha256": "9cf4a789a663f3a5aace1b786303bfe1a13f68d77e788da3272e397ecdcf14cb",
+      "data": "grey-blocked/none.npz",
+      "data_sha256": "22d0959d368887273ca0a8a47ce732dc8d9c6168f45bbf0b22fab9d52a95d755",
+      "public_planes": {
+        "srgb8_rgb": "329cadb47ad3f709820218da959b962dd821553a53f85bc96a60db1246114fe4",
+        "forward_depth_m_f32": "364d504a5d5696d7ac3f9f65c24401198b8c7cb1acf0aac924e513d491b4b9b9",
+        "instance_id_u32": "46a21f810889aa8c26369f9cae6c1df29b360c38e93e4d2a20590077e840b400",
+        "valid_u8": "f6b1266da5f008506ef9117269e5d3c8a24a998e19002f1ba4d645199ce85fc1"
+      },
+      "indirect": {
+        "mode": "none",
+        "seed": 0,
+        "samples_per_pixel": 0,
+        "bounces": 0
+      },
+      "device_indirect": null,
+      "device_uuid": "3b78d98198a3be57a8cb4d72fdfbfa96",
+      "close": {
+        "closed": true,
+        "telemetry": {
+          "telemetry_abi_version": 1,
+          "device_luid_valid": 1,
+          "device_node_mask": 1,
+          "device_local_bytes_current": 0,
+          "device_local_bytes_peak": 23879616,
+          "device_local_bytes_allocated": 23879616,
+          "host_visible_bytes_current": 0,
+          "host_visible_bytes_peak": 15978096,
+          "host_visible_bytes_allocated": 16936976,
+          "readback_bytes": 191692800,
+          "fence_wait_wall_ns": 83140500,
+          "fence_wait_calls": 16,
+          "submissions": 16,
+          "allocation_count": 34,
+          "free_count": 34,
+          "device_luid_hex": "ef22010000000000",
+          "final_after_destroy": true,
+          "allocation_scope": "this context explicit VkDeviceMemory allocations; not driver total VRAM",
+          "wait_scope": "host wall time blocked in fence waits, including upload; not GPU kernel time"
+        }
+      }
+    },
+    {
+      "file": "grey-blocked/diffuse-bounce-receipt.json",
+      "sha256": "a12e1b33dcb33b459d6ada5a27f3df00eccd3d69f76d22bce734f61634673f83",
+      "png": "grey-blocked/diffuse-bounce.png",
+      "png_sha256": "116e8e9fef782b025bac6ab91f3ceaac6d81dfb9e8d03ac0478a0538a2bb6471",
+      "data": "grey-blocked/diffuse-bounce.npz",
+      "data_sha256": "e462f5a02a858c892289931deaf7ffbe0df9f73aaece6bec1badbd2029150eb8",
+      "public_planes": {
+        "srgb8_rgb": "878500d67dd57e8e66f7babbe4c7286bc43e32844a90e9991de67b580143f134",
+        "forward_depth_m_f32": "364d504a5d5696d7ac3f9f65c24401198b8c7cb1acf0aac924e513d491b4b9b9",
+        "instance_id_u32": "46a21f810889aa8c26369f9cae6c1df29b360c38e93e4d2a20590077e840b400",
+        "valid_u8": "f6b1266da5f008506ef9117269e5d3c8a24a998e19002f1ba4d645199ce85fc1"
+      },
+      "indirect": {
+        "mode": "diffuse_bounce",
+        "seed": 0,
+        "samples_per_pixel": 16,
+        "bounces": 1,
+        "estimator": "rho_d * sum(Li)/16; 4x4 stratified cosine hemisphere with hashed 23-bit open-interval jitter",
+        "diffuse_coefficient": "rho_d=(1-metallic)*albedo*(1-F0); F0=mix(.04,albedo,metallic)",
+        "environment_policy": "replace the original diffuse IBL/SH term, never add a second copy",
+        "miss_policy": "original HDR level0 radiance along sample direction, or uniform environment; zero if absent",
+        "terminal_lighting": "nearest current real TLAS triangle, original direct + studio + environment; no recursive indirect/reflection",
+        "seed_scope": "uint32 seed + capture-local integer pixel XY + sample index; no frame/time/epoch key, no accumulation",
+        "geometry_policy": "shading-normal cosine distribution clipped by oriented true face; inward/degenerate sample=0, denominator stays16",
+        "combination": "independent primary specular/diffuse lobes may share terminal shading; no additional bounce",
+        "limitations": "16 noisy samples; no denoiser, temporal history, multiple diffuse bounces or raw-HDR output attachment"
+      },
+      "device_indirect": {
+        "indirect_abi_version": 1,
+        "supported": 1,
+        "shader_compatible": 1,
+        "enabled": 1,
+        "samples_per_pixel": 16,
+        "seed": 0,
+        "max_bounces": 1,
+        "set_calls": 1,
+        "receiver_count": 10,
+        "captures": 12,
+        "rgb_captures": 12,
+        "capture_scope": "successful captures/RGB captures; samples_per_pixel is a budget, not an actual ray/hit counter",
+        "receiver_scope": "instances with uploaded metallic<1 and positive base-color factor; image-zero pixels may emit no rays",
+        "snapshot": "last live query retained after close; allocation teardown uses resident telemetry"
+      },
+      "device_uuid": "3b78d98198a3be57a8cb4d72fdfbfa96",
+      "close": {
+        "closed": true,
+        "telemetry": {
+          "telemetry_abi_version": 1,
+          "device_luid_valid": 1,
+          "device_node_mask": 1,
+          "device_local_bytes_current": 0,
+          "device_local_bytes_peak": 23879616,
+          "device_local_bytes_allocated": 23879616,
+          "host_visible_bytes_current": 0,
+          "host_visible_bytes_peak": 15978096,
+          "host_visible_bytes_allocated": 16936976,
+          "readback_bytes": 191692800,
+          "fence_wait_wall_ns": 377911100,
+          "fence_wait_calls": 16,
+          "submissions": 16,
+          "allocation_count": 34,
+          "free_count": 34,
+          "device_luid_hex": "ef22010000000000",
+          "final_after_destroy": true,
+          "allocation_scope": "this context explicit VkDeviceMemory allocations; not driver total VRAM",
+          "wait_scope": "host wall time blocked in fence waits, including upload; not GPU kernel time"
+        }
+      }
+    }
+  ],
+  "media": {
+    "overview": "overview.png",
+    "overview_size": [
+      2562,
+      4032
+    ],
+    "state_full_pair_pattern": "<state>-pair.png",
+    "state_full_pair_size": [
+      2562,
+      1008
+    ],
+    "state_raw_pattern": "<state>/{none,diffuse-bounce}.png",
+    "state_raw_size": [
+      1280,
+      960
+    ],
+    "state_roi_pair_pattern": "<state>-roi-pair.png",
+    "state_roi_pair_size": [
+      1026,
+      432
+    ],
+    "roi_single_size": [
+      512,
+      384
+    ],
+    "crop_xyxy": [
+      384,
+      288,
+      896,
+      672
+    ],
+    "resized": false,
+    "graded": false,
+    "video": "none; fixed still experiment, no invented motion"
+  },
+  "caption_zh": "同一白色Panda指爪在背光中，开启一次漫反射后被红板染红；等输入线性亮度灰板与黑遮光板提供颜色和遮挡对照。四态共用相机、光、曝光与预注册像素。",
+  "limitations": [
+    "原厂家Panda网格及原米单位；统一白色涂层、静态摆放由实验作者声明，不是物理抓取或原制造商材质",
+    "off被测指面全黑是预先选择背光；所有零能量像素仍保留，未后验选像素",
+    "16固定cosine样本有可见噪声，无降噪或时间累积；9次重复仅验证确定性和计时",
+    "保存linear是发布RGB8逆sRGB的display-linear，不是raw HDR或辐亮度",
+    "灰板仅材料输入线性Rec.709 Y等值，不宣称Neutral/sRGB显示亮度逐像素相等",
+    "黑板可以同时拦截转移光路和给板投影，不是仅隔离二次可见性的证明",
+    "单次顺序四态/两档，每档9计时样本，p95为最近秩最大值；范围为公开四通道同步读回，非GPU核时间或通用速度保证",
+    "显存数字是该context显式VkDeviceMemory，不是驱动或进程总VRAM"
+  ],
+  "first_failure": {
+    "directory": "../capture-01",
+    "actual_gpu_captures": 0,
+    "cause": "C example called open instead of public open_scene; explicit CaptureRequest keywords also corrected",
+    "regression": "two HOST RED then full 15 HOST GREEN",
+    "parameters_changed": false,
+    "originals_preserved": true
+  },
+  "execution_proofs": [
+    {
+      "file": "../01-red/result.json",
+      "sha256": "9e50d4187b96549285fd877c9e5fe01f292e6692c1960ca966d2b36b182f4c91"
+    },
+    {
+      "file": "../01-red/unittest.log",
+      "sha256": "d4f37e069461fc58f11298f82833dfd55a467a4b2fb3dd8a555ee9f7c91804d5"
+    },
+    {
+      "file": "../02-receiver-red/result.json",
+      "sha256": "26340158546c5742eef8b354af9032f2549540d77321383198c68ce942043bbc"
+    },
+    {
+      "file": "../02-receiver-red/unittest.log",
+      "sha256": "17c1e36c08dc7a0015540cbe001b69faf8a823a78a126058e1d9d3cd82b99450"
+    },
+    {
+      "file": "../03-host-green/result.json",
+      "sha256": "d6553b5dcfafd5176b7ec16ac301d95e2260b6771e7a6bc34c18500cf00a90df"
+    },
+    {
+      "file": "../04-capture/result.json",
+      "sha256": "3b6994e5585a98467d6d4328bf5b3509a6d836f22698eedee2fb60b9b903756a"
+    },
+    {
+      "file": "../04-capture/command.log",
+      "sha256": "9d919fe2186f1ad7600dddd21a2391f570f26fd80fb2d0413ccde4aba3e74fd7"
+    },
+    {
+      "file": "../capture-01/summary.json",
+      "sha256": "542c1cbb00ab9fcde508b3814856d736c1e7c49caed0853ad174f151dbb2e999"
+    },
+    {
+      "file": "../05-public-entry-red/result.json",
+      "sha256": "273d73a73710671dd17d2061d490ab67d4237ae332ddff9e5e77591d24cccbdb"
+    },
+    {
+      "file": "../05-public-entry-red/unittest.log",
+      "sha256": "ca7beb1f9824d4c4b1e2aac8fde68ac8a26a5a150e7482f3c309aec0d3130c64"
+    },
+    {
+      "file": "../06-host-green/result.json",
+      "sha256": "58ebecdff2d719927daa0d6ced7f9e473e4f6ccdc06ebde63982b6c8bc693402"
+    },
+    {
+      "file": "../06-host-green/unittest.log",
+      "sha256": "7051309364e484b67b1901eac2a4c336f43b57630b6adb5fdcb77f47a062bb05"
+    },
+    {
+      "file": "../07-capture/result.json",
+      "sha256": "42c9632a0a3b16e7e1edde2304e39aaa41be56046906d71fa7aa8a3a6cd8eff5"
+    },
+    {
+      "file": "../07-capture/before.json",
+      "sha256": "572f1889d7f7696b72633acaa426a2507ad05942bbb276027b0bd16a7ead529d"
+    },
+    {
+      "file": "../07-capture/after.json",
+      "sha256": "8b9ce01d4f1cb4c92f4c68bc3503dfb5b8ca0f27d01aa045222970d6428af8e6"
+    }
+  ],
+  "protocol_sha256": "cb0a74fbb449dd06473ba960f78573e03470bb55ccb03904410d0c97ee924e81",
+  "summary_sha256": "8f8d6a6a842c43ea8cab46af2b99199400cf42dccad851522bce93b7da2917fe",
+  "manifest_sha256": "d05135941243c91866722f4a06537a292e2f91920dfe8615339ff92ff1e3e8bb",
+  "original_files": 46,
+  "original_bytes": 7180807
+}

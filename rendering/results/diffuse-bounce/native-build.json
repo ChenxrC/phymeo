@@ -1,0 +1,458 @@
+{
+  "schema": "phymeo-native-indirect-author-validation-v1",
+  "source_commit": "d9f907236a57d11e24f35dfe0a23ee03d03d3f6c",
+  "source_root": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo",
+  "base_commit": "9214c7b6",
+  "created_utc": "2026-11-23T06:06:06.0803249Z",
+  "artifacts": [
+    {
+      "name": "phymeo_native.dll",
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-indirect\\build-indirect\\phymeo_native.dll",
+      "sha256": "6c800b007598f98ea9c2fa733227219d1861d2058fb1b1fb5d1271c183a7c1f9",
+      "bytes": 162304
+    },
+    {
+      "name": "native.frag.spv",
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-indirect\\build-indirect\\native.frag.spv",
+      "sha256": "cd6f295432a75c7383357cb9d4805f72f8ea5a47f7c117adb2975ae919c90066",
+      "bytes": 10652
+    },
+    {
+      "name": "native.vert.spv",
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-indirect\\build-indirect\\native.vert.spv",
+      "sha256": "9595a6722905db50583a3d3518c4853463568124bade005db7ffa04f2d1f41b4",
+      "bytes": 4048
+    },
+    {
+      "name": "resident_area4.frag.spv",
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-indirect\\build-indirect\\resident_area4.frag.spv",
+      "sha256": "f2c0d36748d223b34ccd7cd4023798d05120acdf0913dc85ef233bfe984090cd",
+      "bytes": 47896
+    },
+    {
+      "name": "resident_area8.frag.spv",
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-indirect\\build-indirect\\resident_area8.frag.spv",
+      "sha256": "417dc986bc40b2baf9a7178b1933f0f6b7122bfa6a41358de0793d3f20b9a185",
+      "bytes": 47896
+    },
+    {
+      "name": "resident_msaa_resolve.frag.spv",
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-indirect\\build-indirect\\resident_msaa_resolve.frag.spv",
+      "sha256": "bc140bc9ce2668db043516fc6d35e11a26689b2b45d2f1d38d39972e1902c707",
+      "bytes": 1572
+    },
+    {
+      "name": "resident_msaa_resolve.vert.spv",
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-indirect\\build-indirect\\resident_msaa_resolve.vert.spv",
+      "sha256": "d9bbb44453660efa44c1f5f6c2861102b62f6b23b400400fac7d7f3faa02b798",
+      "bytes": 1144
+    },
+    {
+      "name": "resident_normal_area4.frag.spv",
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-indirect\\build-indirect\\resident_normal_area4.frag.spv",
+      "sha256": "a28e146a580736f1dfdcade3540f11430fc42dcb0da6cae32a4b9d40802aaafc",
+      "bytes": 55660
+    },
+    {
+      "name": "resident_normal_area8.frag.spv",
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-indirect\\build-indirect\\resident_normal_area8.frag.spv",
+      "sha256": "72cbfadb44532eb9c0d5c77ac6aa497af55aace59b78404617b011a865ec3699",
+      "bytes": 55660
+    },
+    {
+      "name": "resident_normal.frag.spv",
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-indirect\\build-indirect\\resident_normal.frag.spv",
+      "sha256": "7fa538382ace5b300fa213618ef4a0d602cb79a2d1abc844f08bd78245be45ce",
+      "bytes": 55548
+    },
+    {
+      "name": "resident_normal.vert.spv",
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-indirect\\build-indirect\\resident_normal.vert.spv",
+      "sha256": "45c2f2a0fd75c130f949fbebdf43033e4999a4a67c55e2c6b2eb99e4310eaa9c",
+      "bytes": 7604
+    },
+    {
+      "name": "resident_rayquery_area4.frag.spv",
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-indirect\\build-indirect\\resident_rayquery_area4.frag.spv",
+      "sha256": "043d0e991b770144bb92d15b3f95374680a9714162df793945cb63209d02aeaa",
+      "bytes": 37460
+    },
+    {
+      "name": "resident_rayquery_area8.frag.spv",
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-indirect\\build-indirect\\resident_rayquery_area8.frag.spv",
+      "sha256": "ff7f38b122b01303c686c1c0f4db7815e05ee332ee6490ec6ecb8bcf851259d8",
+      "bytes": 37460
+    },
+    {
+      "name": "resident_rayquery_indirect_area4.frag.spv",
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-indirect\\build-indirect\\resident_rayquery_indirect_area4.frag.spv",
+      "sha256": "c3d3fce53e6b03f641e2921de1c159d7d82b148fa2e1d77a0cc063f3d0fd2527",
+      "bytes": 58116
+    },
+    {
+      "name": "resident_rayquery_indirect_area8.frag.spv",
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-indirect\\build-indirect\\resident_rayquery_indirect_area8.frag.spv",
+      "sha256": "163cf92bdf491c2075ff89c266b55d3de4d1ff8143ac57be6d710f563b7fbeee",
+      "bytes": 58116
+    },
+    {
+      "name": "resident_rayquery_indirect.frag.spv",
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-indirect\\build-indirect\\resident_rayquery_indirect.frag.spv",
+      "sha256": "d74aa898647ffd28e82879b9861d7a27988bfd4c0683f8d85e21ff64f6dcc5d5",
+      "bytes": 58004
+    },
+    {
+      "name": "resident_rayquery_normal_area4.frag.spv",
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-indirect\\build-indirect\\resident_rayquery_normal_area4.frag.spv",
+      "sha256": "d3365b07cac963057c7f807a69932361191f8ddcaaf0c1afdccb8a6cb34527cc",
+      "bytes": 45264
+    },
+    {
+      "name": "resident_rayquery_normal_area8.frag.spv",
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-indirect\\build-indirect\\resident_rayquery_normal_area8.frag.spv",
+      "sha256": "2ab92a834bcbbb555d36c82d0f6861f29423b7e60cf63c0d8a82726185ce9e0f",
+      "bytes": 45264
+    },
+    {
+      "name": "resident_rayquery_normal_indirect_area4.frag.spv",
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-indirect\\build-indirect\\resident_rayquery_normal_indirect_area4.frag.spv",
+      "sha256": "42ee37ba7a29a9d76a322fc6931e5c57deed51f8e91485f0f9169e46ef16ccad",
+      "bytes": 73968
+    },
+    {
+      "name": "resident_rayquery_normal_indirect_area8.frag.spv",
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-indirect\\build-indirect\\resident_rayquery_normal_indirect_area8.frag.spv",
+      "sha256": "2e1bf2da65cd0767325ec8484c83fd22942028c21bd09dd6390e991bed7d9a96",
+      "bytes": 73968
+    },
+    {
+      "name": "resident_rayquery_normal_indirect.frag.spv",
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-indirect\\build-indirect\\resident_rayquery_normal_indirect.frag.spv",
+      "sha256": "28ff794c21d4be67dcb6cf8eb19761344275dbd457ed985db74ec83918f93800",
+      "bytes": 73856
+    },
+    {
+      "name": "resident_rayquery_normal_reflection_area4.frag.spv",
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-indirect\\build-indirect\\resident_rayquery_normal_reflection_area4.frag.spv",
+      "sha256": "7a7f7091af8691fea270987fe309f9809ffd5e4b04a5e304f61a6eacc80334c9",
+      "bytes": 69624
+    },
+    {
+      "name": "resident_rayquery_normal_reflection_area8.frag.spv",
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-indirect\\build-indirect\\resident_rayquery_normal_reflection_area8.frag.spv",
+      "sha256": "29fc236291c047b01de56d398eae08ab7d31906beb2fe925e8e5d3c6d5dae898",
+      "bytes": 69624
+    },
+    {
+      "name": "resident_rayquery_normal_reflection_indirect_area4.frag.spv",
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-indirect\\build-indirect\\resident_rayquery_normal_reflection_indirect_area4.frag.spv",
+      "sha256": "c14094b6dac77d4cb332e01acd4571cf7af1ac3a5ba093ffdaa326379751106c",
+      "bytes": 76136
+    },
+    {
+      "name": "resident_rayquery_normal_reflection_indirect_area8.frag.spv",
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-indirect\\build-indirect\\resident_rayquery_normal_reflection_indirect_area8.frag.spv",
+      "sha256": "a9a8af2281c910758beee17360811a61a8fc7396d6f832535c8f01048af3deba",
+      "bytes": 76136
+    },
+    {
+      "name": "resident_rayquery_normal_reflection_indirect.frag.spv",
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-indirect\\build-indirect\\resident_rayquery_normal_reflection_indirect.frag.spv",
+      "sha256": "b8b7d52256c41719e92bf62f39d16d99ec9a11e9854044379cda62cfceec50e2",
+      "bytes": 76024
+    },
+    {
+      "name": "resident_rayquery_normal_reflection.frag.spv",
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-indirect\\build-indirect\\resident_rayquery_normal_reflection.frag.spv",
+      "sha256": "d1a05fbe2f3fdfef7b23d817139826aa18da2951298081eeb9f567b91e5b645f",
+      "bytes": 69512
+    },
+    {
+      "name": "resident_rayquery_normal.frag.spv",
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-indirect\\build-indirect\\resident_rayquery_normal.frag.spv",
+      "sha256": "c6e66b1a95b58a4ff707a1d783918f65cc2f690c4734b07498ac64a4770c38dd",
+      "bytes": 45152
+    },
+    {
+      "name": "resident_rayquery_normal.vert.spv",
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-indirect\\build-indirect\\resident_rayquery_normal.vert.spv",
+      "sha256": "f4babe286e92561226bbb0382b03e582f2eb87ee5603fc34f6bcd8f22c793109",
+      "bytes": 7480
+    },
+    {
+      "name": "resident_rayquery_reflection_area4.frag.spv",
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-indirect\\build-indirect\\resident_rayquery_reflection_area4.frag.spv",
+      "sha256": "3134db8d7985323ba7f03339ba8f1a826cd1e669fd543ad378d02bd451258b22",
+      "bytes": 53772
+    },
+    {
+      "name": "resident_rayquery_reflection_area8.frag.spv",
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-indirect\\build-indirect\\resident_rayquery_reflection_area8.frag.spv",
+      "sha256": "166abd07e053b38fcdd404d80b45e622e95b0a3ec4f102a5e8e2e7fbcb175a66",
+      "bytes": 53772
+    },
+    {
+      "name": "resident_rayquery_reflection_indirect_area4.frag.spv",
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-indirect\\build-indirect\\resident_rayquery_reflection_indirect_area4.frag.spv",
+      "sha256": "ad0d61d163fc19a79acd6d2564e46a9bc741c5acdacdf30ef27c340a3e502968",
+      "bytes": 60284
+    },
+    {
+      "name": "resident_rayquery_reflection_indirect_area8.frag.spv",
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-indirect\\build-indirect\\resident_rayquery_reflection_indirect_area8.frag.spv",
+      "sha256": "3348499939e1ad24459ec19967f98acd0c04c317cc27a3aed26f5db9bccbacd4",
+      "bytes": 60284
+    },
+    {
+      "name": "resident_rayquery_reflection_indirect.frag.spv",
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-indirect\\build-indirect\\resident_rayquery_reflection_indirect.frag.spv",
+      "sha256": "6ef7157a5cd0341ae97fb2df98ba78a24dee7976029316083d685c26d7bcdd84",
+      "bytes": 60172
+    },
+    {
+      "name": "resident_rayquery_reflection.frag.spv",
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-indirect\\build-indirect\\resident_rayquery_reflection.frag.spv",
+      "sha256": "1cf7332f127d0f1106390589ca44a0c12a856b28c8f14818288b440e8898ff1c",
+      "bytes": 53660
+    },
+    {
+      "name": "resident_rayquery.frag.spv",
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-indirect\\build-indirect\\resident_rayquery.frag.spv",
+      "sha256": "7b54bc5140c4e40d24152f54c57e98aaa5a16a4b58d54be10edd3542fe9c9593",
+      "bytes": 37348
+    },
+    {
+      "name": "resident_rayquery.vert.spv",
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-indirect\\build-indirect\\resident_rayquery.vert.spv",
+      "sha256": "b1069d14f062dcf3b441d1c44286068b92754557dbe8ce8327e9407cd7c0ec82",
+      "bytes": 6596
+    },
+    {
+      "name": "resident_sky.frag.spv",
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-indirect\\build-indirect\\resident_sky.frag.spv",
+      "sha256": "d1f64fe50290ec0e905830c3d556d8d24ceced8c9a1665155fe5406ee59232b7",
+      "bytes": 6484
+    },
+    {
+      "name": "resident_sky.vert.spv",
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-indirect\\build-indirect\\resident_sky.vert.spv",
+      "sha256": "d9bbb44453660efa44c1f5f6c2861102b62f6b23b400400fac7d7f3faa02b798",
+      "bytes": 1144
+    },
+    {
+      "name": "resident.frag.spv",
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-indirect\\build-indirect\\resident.frag.spv",
+      "sha256": "72215fcebf7e1af6a1af1be9258f9b5a5411dac1bf108a699ff6ad3d7bb20ab5",
+      "bytes": 47784
+    },
+    {
+      "name": "resident.vert.spv",
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-indirect\\build-indirect\\resident.vert.spv",
+      "sha256": "b1cb30601e2f8ff78e7a14818d3253ec95806b4ba22039b106927ffa4ca86810",
+      "bytes": 6724
+    }
+  ],
+  "source_files": [
+    {
+      "path": "rendering/src/phymeo_rendering/backends/_native/CMakeLists.txt",
+      "sha256": "cf91e8629fbc6ccb023b09578e251510238b58e492d17f29c1450e010ccb17dd"
+    },
+    {
+      "path": "rendering/src/phymeo_rendering/backends/_native/renderer.cpp",
+      "sha256": "45bf7723daa79ded565a556f78bc46c8fa0f70d9d8fe3ad0bf85e5fd14b5179b"
+    },
+    {
+      "path": "rendering/src/phymeo_rendering/backends/_native/renderer.h",
+      "sha256": "fbc5dc22990f3677e3f07a78bed78c25ecf91a6fd96b99e64bb3a58d8eb2501e"
+    },
+    {
+      "path": "rendering/src/phymeo_rendering/backends/_native/resident.inc",
+      "sha256": "76bfa3467bb1a1605fc8e33bec77821c9d5fa6efd7bbb461cadede0f780440d3"
+    },
+    {
+      "path": "rendering/src/phymeo_rendering/backends/_native_indirect.py",
+      "sha256": "25e46a6ac1169852afc3b6beb6889efdf9d96faab8c562ae0693c0488700f392"
+    },
+    {
+      "path": "rendering/src/phymeo_rendering/backends/_native_ray_query.py",
+      "sha256": "c0cbfe8572ea9888cdbb5e4c402fa9d4b297933f3835ef83ae61c3f8933b07ae"
+    },
+    {
+      "path": "rendering/src/phymeo_rendering/backends/_native_resident.py",
+      "sha256": "998d84203154f18e99680d0fe0270aa1621374db240063695cdce120cd0b6b52"
+    },
+    {
+      "path": "rendering/src/phymeo_rendering/backends/_shaders/resident.frag",
+      "sha256": "d5f7246bc3a8f43d33cf9d80f02e15120cd05de7a46279633141eef0cf6f2101"
+    },
+    {
+      "path": "rendering/src/phymeo_rendering/backends/_shaders/resident_indirect.glsl",
+      "sha256": "306e12d2bf57b888a510aa13c0b77bb48d8b958f0f346c29d76b197705b3dc5a"
+    },
+    {
+      "path": "rendering/src/phymeo_rendering/backends/_shaders/resident_reflection.glsl",
+      "sha256": "5db8d0f83ac64f6dd368633ae35da17975527c993a5d3bc4c2c49ef828a83d31"
+    },
+    {
+      "path": "rendering/src/phymeo_rendering/backends/_shaders/resident_studio.glsl",
+      "sha256": "5a572714eee25cde40b516845ff9b8708b534e83b550d1b7716cef95e2c1b7ae"
+    },
+    {
+      "path": "rendering/src/phymeo_rendering/backends/native.py",
+      "sha256": "77ef8b292cc9eaa4456fa08fc6cef1f64838f3e227c64c0d817fb37aef4456a0"
+    },
+    {
+      "path": "rendering/tests/test_native_indirect.py",
+      "sha256": "bbbd9d8f31098db2dc4484f9dbfa50fe0751d9bd988f641215b4ab6e70f51e1f"
+    },
+    {
+      "path": "rendering/tests/test_native_indirect_device.py",
+      "sha256": "71aac4eff60d01032ce23c27164cec7dfc36971da990db759bc7308fd1ae4433"
+    }
+  ],
+  "logs": [
+    {
+      "name": "build-01.log",
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-indirect\\build-01.log",
+      "sha256": "99d169318f3c9c9a892087e39872bf82335567a19312639f8f68082ebeda2604"
+    },
+    {
+      "name": "configure-01.log",
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-indirect\\configure-01.log",
+      "sha256": "a9d0b9c3dfb0eddc3a58c58ad1bbde34c728b596c5cda0627eb96b1fabdf565d"
+    },
+    {
+      "name": "device-compatibility-01.log",
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-indirect\\device-compatibility-01.log",
+      "sha256": "cbb06b59f44ee811e4a8f4717aadbec364096b9d2925fb636d66c8f1ffe2ab9e"
+    },
+    {
+      "name": "device-first-01.log",
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-indirect\\device-first-01.log",
+      "sha256": "f2ec0dda47cb343d9af571539443d95354b78b09cbff88ff0d39f452130fd839"
+    },
+    {
+      "name": "device-old-red-01.log",
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-indirect\\device-old-red-01.log",
+      "sha256": "646f5e4d7cc2b71605bcd1a539d53fd11be99089d388d2dbc4805d7bd99be091"
+    },
+    {
+      "name": "host-green-01.log",
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-indirect\\host-green-01.log",
+      "sha256": "23f197cdd1cc5b82299ba9a0eb4b22d57d86dc5b6a83e68dac587acca3411a02"
+    },
+    {
+      "name": "host-red-01.log",
+      "path": "C:\\Users\\38347\\.codex\\worktrees\\render-resident-native\\phymeo\\artifacts\\rendering\\native-indirect\\host-red-01.log",
+      "sha256": "d0b60e0f210795ba97382f671c96324cf21148268e5831cbf2efa24eb481db08"
+    }
+  ],
+  "device": {
+    "index": 1,
+    "name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+    "validation_enabled": true
+  },
+  "public_contract": {
+    "indirect_mode": "diffuse_bounce",
+    "indirect_seed": "uint32",
+    "samples_per_pixel_budget": 16,
+    "max_bounces": 1,
+    "diffuse": "(1-metallic)*albedo*(1-F0)*mean(Li)",
+    "environment": "replaces diffuse IBL; miss original HDR level0 or uniform; zero if absent",
+    "terminal": "current TLAS nearest triangle with original terminal direct/studio/environment, no recursive lobe",
+    "combination": "single_bounce specular supported as independent primary lobe",
+    "seed_scope": "capture-local integer pixel XY/sample index/seed; independent of time/frame/epoch",
+    "sensor_sampling": "unchanged center sample",
+    "raw_hdr_output": false
+  },
+  "verification": {
+    "host": {
+      "methods": 7,
+      "passed": 7,
+      "log": "host-green-01.log"
+    },
+    "device_first": {
+      "methods": 4,
+      "passed": 4,
+      "elapsed_seconds": 11.688,
+      "log": "device-first-01.log"
+    },
+    "device_compatibility": {
+      "methods": 2,
+      "passed": 2,
+      "elapsed_seconds": 4.221,
+      "log": "device-compatibility-01.log"
+    },
+    "new_shader_variants_exercised": 12,
+    "old_reflection_variants_old_new_byte_equal": 6,
+    "old_reflection_states_per_variant": 2,
+    "zero_light_black_and_metal_no_diffuse": true,
+    "seed_replay_reopen_epoch_and_change": true,
+    "moving_tlas_and_black_occlusion": true,
+    "uniform_environment_once": true,
+    "three_sensor_planes_byte_equal": true,
+    "configuration_reject_atomic": true,
+    "all_sessions_validation_errors_and_warnings": 0,
+    "all_sessions_live_resources_and_allocated_bytes_after_close": 0
+  },
+  "shader_compatibility": {
+    "previous_dll_sha256": "a61302d39c3f165ac7dbd5bada9fbd3fb9021a0054cf38473d971e085815c057",
+    "unchanged_previous_spv": [
+      "native.frag.spv",
+      "native.vert.spv",
+      "resident_area4.frag.spv",
+      "resident_area8.frag.spv",
+      "resident_msaa_resolve.frag.spv",
+      "resident_msaa_resolve.vert.spv",
+      "resident_normal_area4.frag.spv",
+      "resident_normal_area8.frag.spv",
+      "resident_normal.frag.spv",
+      "resident_normal.vert.spv",
+      "resident_rayquery_area4.frag.spv",
+      "resident_rayquery_area8.frag.spv",
+      "resident_rayquery_normal_area4.frag.spv",
+      "resident_rayquery_normal_area8.frag.spv",
+      "resident_rayquery_normal.frag.spv",
+      "resident_rayquery_normal.vert.spv",
+      "resident_rayquery.frag.spv",
+      "resident_rayquery.vert.spv",
+      "resident_sky.frag.spv",
+      "resident_sky.vert.spv",
+      "resident.frag.spv",
+      "resident.vert.spv"
+    ],
+    "recompiled_previous_spv": [
+      "resident_rayquery_normal_reflection_area4.frag.spv",
+      "resident_rayquery_normal_reflection_area8.frag.spv",
+      "resident_rayquery_normal_reflection.frag.spv",
+      "resident_rayquery_reflection_area4.frag.spv",
+      "resident_rayquery_reflection_area8.frag.spv",
+      "resident_rayquery_reflection.frag.spv"
+    ],
+    "new_spv_count": 12,
+    "total_spv_count": 40
+  },
+  "retained_first_failures": [
+    "host-red-01.log: expected missing product contract",
+    "device-old-red-01.log: old DLL directory lacks explicit indirect SPIR-V; exact missing-symbol rejection separately covered by HOST and old DLL with new shaders"
+  ],
+  "limitations": [
+    "16-sample noisy estimator; no variance or 30 FPS claim from A smoke",
+    "No accumulation/denoiser/multiple diffuse hops",
+    "HDR miss uses original raw level0 radiance; focused new environment control measured uniform, independent chart uses no environment",
+    "Profile GPU interval includes TLAS/raster/shadows and optional indirect/terminal work; captures are not ray counts",
+    "RGB8 only; inverse sRGB is display-linear, not raw radiance"
+  ],
+  "release_guard": {
+    "active_entrypoints": [],
+    "idle_reuse_nodes": [
+      {
+        "pid": 44384,
+        "name": "MSBuild.exe",
+        "command": "\"C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\MSBuild\\Current\\Bin\\amd64\\MSBuild.exe\" /nologo /nodemode:1 /nodeReuse:true /low:false"
+      }
+    ],
+    "idle_pid44384_cpu_first": 0.4375,
+    "idle_pid44384_cpu_last": 0.4375
+  }
+}

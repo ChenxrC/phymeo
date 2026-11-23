@@ -1,0 +1,166 @@
+{
+  "browser": "Edg/154.0.4258.37",
+  "title": "红板能照红白色夹爪吗？ · Phymeo",
+  "rows": [
+    {
+      "phase": "red",
+      "zoom": "roi",
+      "expected": "red-roi-pair.png",
+      "size": [
+        1026,
+        432
+      ],
+      "raw": [
+        [
+          1280,
+          960
+        ],
+        [
+          1280,
+          960
+        ]
+      ],
+      "caption": "红板敞开 · 指爪局部。左关右开，点击对照图可查看原尺寸。"
+    },
+    {
+      "phase": "red",
+      "zoom": "full",
+      "expected": "red-pair.png",
+      "size": [
+        2562,
+        1008
+      ],
+      "raw": [
+        [
+          1280,
+          960
+        ],
+        [
+          1280,
+          960
+        ]
+      ],
+      "caption": "红板敞开 · 整个摆台。左关右开，点击对照图可查看原尺寸。"
+    },
+    {
+      "phase": "red-blocked",
+      "zoom": "roi",
+      "expected": "red-blocked-roi-pair.png",
+      "size": [
+        1026,
+        432
+      ],
+      "raw": [
+        [
+          1280,
+          960
+        ],
+        [
+          1280,
+          960
+        ]
+      ],
+      "caption": "红板加黑色遮光板 · 指爪局部。左关右开，点击对照图可查看原尺寸。"
+    },
+    {
+      "phase": "red-blocked",
+      "zoom": "full",
+      "expected": "red-blocked-pair.png",
+      "size": [
+        2562,
+        1008
+      ],
+      "raw": [
+        [
+          1280,
+          960
+        ],
+        [
+          1280,
+          960
+        ]
+      ],
+      "caption": "红板加黑色遮光板 · 整个摆台。左关右开，点击对照图可查看原尺寸。"
+    },
+    {
+      "phase": "grey",
+      "zoom": "roi",
+      "expected": "grey-roi-pair.png",
+      "size": [
+        1026,
+        432
+      ],
+      "raw": [
+        [
+          1280,
+          960
+        ],
+        [
+          1280,
+          960
+        ]
+      ],
+      "caption": "同亮度灰板敞开 · 指爪局部。左关右开，点击对照图可查看原尺寸。"
+    },
+    {
+      "phase": "grey",
+      "zoom": "full",
+      "expected": "grey-pair.png",
+      "size": [
+        2562,
+        1008
+      ],
+      "raw": [
+        [
+          1280,
+          960
+        ],
+        [
+          1280,
+          960
+        ]
+      ],
+      "caption": "同亮度灰板敞开 · 整个摆台。左关右开，点击对照图可查看原尺寸。"
+    },
+    {
+      "phase": "grey-blocked",
+      "zoom": "roi",
+      "expected": "grey-blocked-roi-pair.png",
+      "size": [
+        1026,
+        432
+      ],
+      "raw": [
+        [
+          1280,
+          960
+        ],
+        [
+          1280,
+          960
+        ]
+      ],
+      "caption": "同亮度灰板加黑色遮光板 · 指爪局部。左关右开，点击对照图可查看原尺寸。"
+    },
+    {
+      "phase": "grey-blocked",
+      "zoom": "full",
+      "expected": "grey-blocked-pair.png",
+      "size": [
+        2562,
+        1008
+      ],
+      "raw": [
+        [
+          1280,
+          960
+        ],
+        [
+          1280,
+          960
+        ]
+      ],
+      "caption": "同亮度灰板加黑色遮光板 · 整个摆台。左关右开，点击对照图可查看原尺寸。"
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "native_commit": "d9f907236a57d11e24f35dfe0a23ee03d03d3f6c",
+  "backend_tree_equivalent": true,
+  "dll_sha256": "6c800b007598f98ea9c2fa733227219d1861d2058fb1b1fb5d1271c183a7c1f9",
+  "study_files_compared": 46,
+  "study_file_bytes": 7180807,
+  "same_dll_for_chart_and_camera": true,
+  "calibration_archive_files": 213,
+  "calibration_zip_sha256": "de0c73d620ef5bc5bdf5313f8ed2e53756464d0988155b48c1af3c3f36545b59",
+  "sources": [
+    {
+      "source": "rendering/examples/diffuse_bounce_calibration.py",
+      "tested_commit": "80b1bea5c2666ff54fcf8d20c6ccfd5b19281625",
+      "git_blob": "28874a999e234379e19c094fef90f3ea5acc1ff2",
+      "tested_working_sha256": "1221da8f3324571f9dca525783773366f6f0d7571161539f4947d777a840a8d9",
+      "integrated_working_sha256": "016ac1a811318fb5e0ced3c6eaa012d3ae5c73a75ac24e69ff60f4e6594328ba",
+      "tested_crlf_count": 2,
+      "integrated_crlf_count": 0,
+      "lf_normalized_text_equal": true
+    },
+    {
+      "source": "rendering/examples/diffuse_bounce_study.py",
+      "tested_git_blob": "c3672240df7be658a4ff7bd825f5db43166422c6",
+      "integrated_git_blob": "a6379dd62700b8c8fa49d1aa365ab7579a2903d9",
+      "tested_working_sha256": "d6276193ccaa1e96e4df0bfdffeba7403237050a4d6d4a8fbab0e1f84f5334ae",
+      "integrated_working_sha256": "e81a5574d44939d32b64ee96729fcb0df15045fe73ed794de957a3531fad3d09",
+      "comparison": "identical after LF normalization and removal of surplus blank lines at EOF"
+    },
+    {
+      "source": "rendering/tests/test_diffuse_bounce_study.py",
+      "tested_git_blob": "19ed02498ad8dfc176fefc8d742289097cc97671",
+      "integrated_git_blob": "55c24e87de69e2679c453bb875c0365725e6a724",
+      "tested_working_sha256": "5a468003e17439b7b63e1eb170f662c8aa7ddb30f0de29c7457a9c402621620e",
+      "integrated_working_sha256": "721682cec44a71172a6015888853b73af40d8ebb7c917f732b93c9e2920f44dd",
+      "comparison": "identical after LF normalization and removal of surplus blank lines at EOF"
+    }
+  ]
+}

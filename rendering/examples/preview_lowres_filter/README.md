@@ -22,8 +22,8 @@ full primary/sensor、age4与历史拒绝、路径距离均保持原值。low SS
 所有NEW路径必须不存在。父examples须是本次冻结的原rigid driver，不能混旧runtime。
 
 ```powershell
-$author='C:/Users/38347/.codex/worktrees/render-secondary-budget/phymeo'
 $parent='C:/Users/38347/.codex/worktrees/phymeo-rendering/phymeo'
+$author=$parent # 集成后只有这一个检出；不需要作者树或旧counter实验
 $examples="$author/rendering/examples"
 $original="$parent/artifacts/rendering/nov24/ec8r2/rigid"
 $new="$parent/artifacts/rendering/nov24/lowres8-new"
@@ -53,3 +53,13 @@ guide/ray/history二进制逐字不变。runtime再次检查实际DLL/SPV与seal
 每项至少降低10%，平均偏差增加≤.005。像素级误差、运动/新显露、三传感、真实
 ray/anchor计数相等和300帧速度另验。任何一项不足均保留反例，交付现有8路；
 不另选半径、ROI或样本种子。小HOST测试仅验证固定数学和源码边界，不冒充GPU证据。
+
+## 单检出依赖边界
+
+本包 `_helpers.py` 自带实际使用的 verify/digest/read/save/markers/once，均只用标准库。
+不再导入 `preview_group_counters`。`--examples` 指定的目录优先于继承的 PYTHONPATH；
+运行前核实际 `preview_compact_rigid_history/preview.py` 的绝对路径，若进程已有来自
+其他目录的 driver/runtime 包则明确拒绝。一个集成检出的 rendering/examples 足够；
+原prepared目录、SDK与实际数据依旧按原manifest绑定，不随此修复重写。
+此修复不改变任何被生成的 GPU 源/着色器数学；manifest的作者hash增加helpers。
+父队列负责 root-only HOST/prepare 与旧生成 source/runtime 逐文件hash相等验证。

@@ -6,7 +6,7 @@ from pathlib import Path
 import shutil
 import sys
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
-from preview_group_counters.build_source import verify,digest,read,save,markers,once
+from preview_lowres_filter._helpers import verify,digest,read,save,markers,once
 HERE=Path(__file__).resolve().parent
 
 
@@ -100,7 +100,7 @@ def prepare(parent,output):
     path=output/'source/_native/renderer.cpp';write(path,path.read_text(encoding='utf-8')+EXPORT)
     result=deepcopy(manifest);result['contract']['lowres_filter']=policy();result['lowres_parent']=str(parent)
     result['lowres_parent_sha256']=digest(parent/'source-manifest.json')
-    result['lowres_author_sha256']={p.name:digest(p) for p in (HERE/'build_source.py',HERE/'lowres.glsl',HERE/'lowres_native.inc')}
+    result['lowres_author_sha256']={p.name:digest(p) for p in (HERE/'build_source.py',HERE/'_helpers.py',HERE/'lowres.glsl',HERE/'lowres_native.inc')}
     result['generated_sha256']={p.relative_to(output).as_posix():digest(p) for f in ('source','runtime') for p in sorted((output/f).rglob('*')) if p.is_file()}
     save(output/'source-manifest.json',result);return result
 

@@ -2,6 +2,12 @@
 import importlib.util
 from pathlib import Path
 import unittest
+import shutil
+import subprocess
+import sys
+import tempfile
+from types import SimpleNamespace
+from unittest.mock import patch
 
 
 def module():
@@ -59,5 +65,56 @@ void main() {
         self.assertIn('VK_ACCESS_SHADER_READ_BIT',native)
         self.assertIn('VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT',native)
 
+
+    def test_builder_is_standalone_without_old_experiments(self):
+        with tempfile.TemporaryDirectory() as directory:
+            package=Path(directory)/'preview_lowres_filter';package.mkdir()
+            for name in ('build_source.py','_helpers.py'):
+                shutil.copyfile(Path(__file__).with_name(name),package/name)
+            result=subprocess.run([sys.executable,'-I','-B',str(package/'build_source.py'),'--help'],
+                capture_output=True,text=True,check=False,timeout=15)
+            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+            self.assertIn('prepare',result.stdout)
+
+    def test_self_contained_manifest_verifier_keeps_path_and_duplicate_guards(self):
+        m=module()
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);(root/'source').mkdir();target=root/'source/x';target.write_bytes(b'original')
+            m.save(root/'source-manifest.json',{'generated_sha256':{'source\\x':m.digest(target)}})
+            _,manifest=m.verify(root)
+            self.assertEqual(manifest['generated_sha256'],{'source/x':m.digest(target)})
+            for hashes in ({'source/x':m.digest(target),'source\\x':m.digest(target)},
+                           {'../x':m.digest(target)},{'source/x':'0'*64}):
+                m.save(root/'source-manifest.json',{'generated_sha256':hashes})
+                with self.assertRaises(ValueError):m.verify(root)
+            (root/'source-manifest.json').write_text('{"x":1,"x":2}')
+            with self.assertRaises(ValueError):m.read(root/'source-manifest.json')
+
+    def test_explicit_examples_wins_over_foreign_search_path(self):
+        spec=importlib.util.spec_from_file_location('lowres_run_test',Path(__file__).with_name('run.py'))
+        runner=importlib.util.module_from_spec(spec);spec.loader.exec_module(runner)
+        with tempfile.TemporaryDirectory() as directory,patch.dict(sys.modules),patch.object(sys,'path',list(sys.path)):
+            root=Path(directory);wanted=root/'wanted';foreign=root/'foreign'
+            for parent,value in ((wanted,'wanted'),(foreign,'foreign')):
+                package=parent/'preview_compact_rigid_history';package.mkdir(parents=True)
+                (package/'__init__.py').write_text('')
+                (package/'preview.py').write_text('IDENTITY='+repr(value))
+            for name in tuple(sys.modules):
+                if any(name==p or name.startswith(p+'.') for p in ('preview_compact_rigid_history','preview_compact_history','preview_compact','preview_sparse','panda_render_performance','panda_realtime_film')):
+                    del sys.modules[name]
+            sys.path.insert(0,str(foreign))
+            selected=runner.load_parent_preview(wanted)
+            self.assertEqual(selected.IDENTITY,'wanted')
+            self.assertEqual(Path(selected.__file__).resolve(),(wanted/'preview_compact_rigid_history/preview.py').resolve())
+
+    def test_foreign_preloaded_driver_is_rejected(self):
+        spec=importlib.util.spec_from_file_location('lowres_run_test',Path(__file__).with_name('run.py'))
+        runner=importlib.util.module_from_spec(spec);spec.loader.exec_module(runner)
+        with tempfile.TemporaryDirectory() as directory,patch.dict(sys.modules):
+            root=Path(directory);package=root/'preview_compact_rigid_history';package.mkdir()
+            (package/'preview.py').write_text('')
+            sys.modules['preview_compact_rigid_history.preview']=SimpleNamespace(__file__=str(root.parent/'foreign/preview.py'))
+            with self.assertRaisesRegex(RuntimeError,'foreign'):
+                runner.load_parent_preview(root)
 
 if __name__=='__main__':unittest.main()

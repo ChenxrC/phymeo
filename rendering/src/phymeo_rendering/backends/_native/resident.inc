@@ -95,16 +95,19 @@ struct ResidentState {
     std::vector<PrResidentInstance> instances;
     std::vector<std::array<float, 6>> bounds;
     std::unique_ptr<FrameResources> target;
+    std::vector<std::unique_ptr<FrameResources>> additional_targets;
+    // The primary target is also exposed to the existing optional resident extensions.
+    VkDescriptorSet descriptor_set{};
+    uint32_t width{},height{};
     std::unique_ptr<ResidentTextures> textures;
     std::unique_ptr<ResidentTextures> normal_maps;
     std::vector<uint32_t> normal_validation_indices;
     std::unique_ptr<ResidentEnvironment> environment;
     std::unique_ptr<ResidentAcceleration> acceleration;
-    VkDescriptorSet descriptor_set{};
-    uint32_t width{}, height{};
     explicit ResidentState(Context& context) : c(context) {}
     ~ResidentState() {
         target.reset();
+        additional_targets.clear();
         textures.reset();
         normal_maps.reset();
         environment.reset();
@@ -208,10 +211,11 @@ uint64_t elapsed_ns(HostClock::time_point begin, HostClock::time_point end = Hos
         std::chrono::duration_cast<std::chrono::nanoseconds>(end-begin).count()));
 }
 struct SubmitTiming { uint64_t submit, wait; };
-SubmitTiming submit_and_wait(Context& c, FrameResources& frame) {
+SubmitTiming submit_and_wait(Context& c, FrameResources& frame,
+                             const VkCommandBuffer* commands=nullptr,uint32_t count=1) {
     auto submitted_at = HostClock::now();
     VkSubmitInfo submit{VK_STRUCTURE_TYPE_SUBMIT_INFO};
-    submit.commandBufferCount = 1; submit.pCommandBuffers = &frame.commands;
+    submit.commandBufferCount = count; submit.pCommandBuffers = commands ? commands : &frame.commands;
     VkResult result = vkQueueSubmit(c.queue, 1, &submit, frame.fence);
     frame.submitted = result == VK_SUCCESS || result == VK_ERROR_DEVICE_LOST;
     if (result != VK_SUCCESS) { c.poisoned = true; check(result, "resident vkQueueSubmit"); }
@@ -228,7 +232,7 @@ SubmitTiming submit_and_wait(Context& c, FrameResources& frame) {
     return {submit_ns, static_cast<uint64_t>(std::max<int64_t>(0, elapsed))};
 }
 
-void make_commands(Context& c, FrameResources& frame) {
+void make_commands(Context& c, FrameResources& frame,bool owns_fence=true) {
     VkCommandBufferAllocateInfo allocate{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
     allocate.commandPool = c.command_pool;
     allocate.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
@@ -236,10 +240,12 @@ void make_commands(Context& c, FrameResources& frame) {
     acquire(frame.commands, "resident command allocation", [&](auto* out) {
         return vkAllocateCommandBuffers(c.device, &allocate, out);
     });
-    VkFenceCreateInfo fence{VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};
-    acquire(frame.fence, "resident fence", [&](auto* out) {
-        return vkCreateFence(c.device, &fence, nullptr, out);
-    });
+    if (owns_fence) {
+        VkFenceCreateInfo fence{VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};
+        acquire(frame.fence, "resident fence", [&](auto* out) {
+            return vkCreateFence(c.device, &fence, nullptr, out);
+        });
+    }
 }
 
 uint64_t upload_static(Context& c, const std::vector<StaticUpload>& uploads) {
@@ -602,9 +608,9 @@ std::vector<GpuBvhNode> resident_tlas(const ResidentState& state,
     return output;
 }
 
-void resident_target(Context& c, ResidentState& state, uint32_t width, uint32_t height) {
-    if (state.target && state.width == width && state.height == height) return;
-    if (c.msaa_state) c.msaa_state->target.reset();
+FrameResources& resident_target(Context& c, ResidentState& state, uint32_t width, uint32_t height,
+                                std::unique_ptr<FrameResources>& owner) {
+    if (owner && owner->width == width && owner->height == height) return *owner;
     const auto& info = c.resident_properties;
     uint64_t errors_before = c.errors.load();
     auto frame = std::make_unique<FrameResources>(c);
@@ -695,7 +701,7 @@ void resident_target(Context& c, ResidentState& state, uint32_t width, uint32_t 
         metadata_write.descriptorType=VK_DESCRIPTOR_TYPE_STORAGE_BUFFER; metadata_write.pBufferInfo=&normal_buffer;
     }
     vkUpdateDescriptorSets(c.device,write_count,writes.data(),0,nullptr);
-    make_commands(c, *frame);
+    make_commands(c,*frame,&owner==&state.target);
     if (c.profile.timestamp_supported) {
         VkQueryPoolCreateInfo query{VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO};
         query.queryType=VK_QUERY_TYPE_TIMESTAMP; query.queryCount=3;
@@ -707,21 +713,27 @@ void resident_target(Context& c, ResidentState& state, uint32_t width, uint32_t 
         c.poisoned = true;
         throw std::runtime_error("Vulkan validation failed creating resident targets: "+c.validation_message);
     }
-    state.target = std::move(frame);
-    state.descriptor_set = set; state.width = width; state.height = height;
+    frame->scene_set = set; frame->width = width; frame->height = height;
+    owner=std::move(frame);
+    if (&owner==&state.target) { state.descriptor_set=set; state.width=width; state.height=height; }
     ++c.resident_properties.target_rebuilds;
+    return *owner;
 }
 
+size_t compact_pixel_bytes(uint32_t channel_mask) {
+    require(channel_mask && (channel_mask&~15u)==0,"resident invalid output channel mask");
+    const size_t plane_bytes[]{4,4,4,1};
+    size_t bytes=0;
+    for (uint32_t i=0;i<4;++i) if (channel_mask & (1u<<i)) bytes+=plane_bytes[i];
+    return bytes;
+}
 void validate_resident_params(const Context& c, const PrParams& params,
                               uint32_t width, uint32_t height, uint8_t* output, size_t output_bytes,
                               uint32_t channel_mask, bool compact) {
     require(width && height && width <= c.properties.max_width && height <= c.properties.max_height,
             "resident capture extent exceeds device capability");
     require(static_cast<uint64_t>(width)*height <= 4096ull*4096ull, "resident pixel budget exceeded");
-    require(channel_mask!=0 && (channel_mask & ~15u)==0,"resident invalid output channel mask");
-    const size_t plane_bytes[]{4,4,4,1};
-    size_t bytes_per_pixel=0;
-    for (uint32_t i=0; i<4; ++i) if (channel_mask & (1u<<i)) bytes_per_pixel+=plane_bytes[i];
+    const size_t bytes_per_pixel=compact_pixel_bytes(channel_mask);
     require(output && output_bytes==static_cast<size_t>(width)*height*bytes_per_pixel,
             "resident output byte extent mismatch");
     require(!compact || params.counts[2]==((channel_mask & 1u) ? 1u : 0u),
@@ -749,6 +761,9 @@ void validate_resident_params(const Context& c, const PrParams& params,
             require(params.light_colors[light][k] >= 0, "resident negative light radiance");
     }
 }
+
+#include "resident_camera_record.inc"
+#include "resident_camera_batch.inc"
 
 void resident_render(Context& c, const float* matrices, uint32_t instance_count, const PrParams& params,
                      uint32_t width, uint32_t height, uint8_t* output, size_t output_bytes,
@@ -780,8 +795,7 @@ void resident_render(Context& c, const float* matrices, uint32_t instance_count,
     }
     const auto upload_begin=HostClock::now();
     try {
-    resident_target(c, state, width, height);
-    auto& frame = *state.target;
+    auto& frame = resident_target(c,state,width,height,state.target);
     if (msaa_color) msaa_prepare(c,frame,width,height);
     if(progressive_rgb)progressive_prepare(c,frame,width,height);
     const uint32_t progressive_batch=progressive_rgb ? (c.progressive_state->pending_reset?0:c.progressive_info.batches):0;
@@ -804,136 +818,9 @@ void resident_render(Context& c, const float* matrices, uint32_t instance_count,
     }
     info.transform_upload_bytes += transforms.size()*sizeof(GpuTransform);
     if (!shared) info.host_transform_input_bytes += static_cast<uint64_t>(instance_count)*64;
-    PrParams submitted=params;
-    // Reserved caller words never opt into a display change; only the checked setter does.
-    submitted.options[2]=static_cast<float>(c.display_transform);
-    if (c.shared_blas_compatible) submitted.options[3]=shared ? -1.0f : 0.0f;
-    // Resident shaders do not use the legacy triangle-count word. The caller
-    // still supplies/validates it; only explicit indirect variants read a seed.
-    if(c.indirect_info.enabled) submitted.counts[1]=c.indirect_info.seed;
-    if(progressive_rgb)submitted.options[3]=static_cast<float>(2*progressive_batch+c.progressive_info.bounces-1);
-    c.upload(frame.uniform, &submitted, sizeof(submitted));
-    info.parameter_upload_bytes += sizeof(params);
+    upload_camera_params(c,frame,params,progressive_rgb,progressive_batch);
     const auto record_begin=HostClock::now();
-    check(vkResetFences(c.device, 1, &frame.fence), "resident reset fence");
-    check(vkResetCommandBuffer(frame.commands, 0), "resident reset command");
-    VkCommandBufferBeginInfo begin{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
-    begin.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-    check(vkBeginCommandBuffer(frame.commands, &begin), "resident begin frame");
-    if (frame.timestamps) {
-        vkCmdResetQueryPool(frame.commands,frame.timestamps,0,3);
-        vkCmdWriteTimestamp(frame.commands,VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,frame.timestamps,0);
-    }
-    if (c.ray_query && !shared) record_ray_update(c,state,frame.commands);
-    const VkBuffer input_buffers[]{state.transforms.handle,frame.uniform.handle,state.tlas.handle,state.studio.handle};
-    std::array<VkBufferMemoryBarrier, 4> inputs{};
-    uint32_t input_count=0;
-    for (uint32_t i = 0; i < inputs.size(); ++i) {
-        if (shared && (i==0 || i==2)) continue; // ownership barrier covers transforms; shared fragment bypasses TLAS
-        auto& barrier = inputs[input_count++];
-        barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
-        barrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
-        barrier.dstAccessMask = (i == 1 || i == 3) ? VK_ACCESS_UNIFORM_READ_BIT : VK_ACCESS_SHADER_READ_BIT;
-        barrier.srcQueueFamilyIndex = barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        barrier.buffer = input_buffers[i]; barrier.size = VK_WHOLE_SIZE;
-    }
-    vkCmdPipelineBarrier(frame.commands, VK_PIPELINE_STAGE_HOST_BIT,
-        VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
-        0, nullptr, input_count, inputs.data(), 0, nullptr);
-    if (camera_index!=UINT32_MAX) {
-        const VkDeviceSize base=(VkDeviceSize(info.instance_count)+camera_index)*sizeof(GpuTransform);
-        const VkBufferCopy fields[]={
-            {base+offsetof(GpuTransform,local),offsetof(PrParams,view),16*sizeof(float)},
-            {base+12*sizeof(float),offsetof(PrParams,camera),3*sizeof(float)}
-        };
-        VkBufferMemoryBarrier barrier{VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER};
-        barrier.srcQueueFamilyIndex=barrier.dstQueueFamilyIndex=VK_QUEUE_FAMILY_IGNORED;
-        barrier.buffer=frame.uniform.handle;
-        barrier.size=sizeof(PrParams);
-        barrier.srcAccessMask=VK_ACCESS_HOST_WRITE_BIT;
-        barrier.dstAccessMask=VK_ACCESS_TRANSFER_WRITE_BIT;
-        vkCmdPipelineBarrier(frame.commands,VK_PIPELINE_STAGE_HOST_BIT,VK_PIPELINE_STAGE_TRANSFER_BIT,
-                             0,0,nullptr,1,&barrier,0,nullptr);
-        vkCmdCopyBuffer(frame.commands,state.transforms.handle,frame.uniform.handle,2,fields);
-        barrier.srcAccessMask=VK_ACCESS_TRANSFER_WRITE_BIT;
-        barrier.dstAccessMask=VK_ACCESS_UNIFORM_READ_BIT;
-        vkCmdPipelineBarrier(frame.commands,VK_PIPELINE_STAGE_TRANSFER_BIT,
-            VK_PIPELINE_STAGE_VERTEX_SHADER_BIT|VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,0,0,nullptr,1,&barrier,0,nullptr);
-    }
-    VkDeviceSize offset=0;
-    if (center_pass) {
-    std::array<VkClearValue, 6> clear{};
-    clear[0].color.float32[3] = 1;
-    if (c.studio.environment[3] != 0 && params.counts[2] != 0) {
-        const auto mapped=c.display_transform==1 ? neutral_clear(c.studio.environment,params.options[0]) : std::array<double,3>{};
-        for (uint32_t k=0; k<3; ++k) {
-            double linear=c.display_transform==1 ? std::clamp(mapped[k],0.0,1.0) :
-                std::clamp(static_cast<double>(c.studio.environment[k])*params.options[0],0.0,1.0);
-            clear[0].color.float32[k]=static_cast<float>(linear<=0.0031308 ? 12.92*linear :
-                1.055*std::pow(linear,1.0/2.4)-0.055);
-        }
-    }
-    if(c.progressive_info.shader_compatible) {
-        for(uint32_t k=0;k<3;++k)clear[0].color.float32[k]=c.studio.environment[3]!=0&&params.counts[2]?c.studio.environment[k]:0.f;
-    }
-    clear[1].color.float32[0] = std::numeric_limits<float>::infinity();
-    clear[4].depthStencil.depth = 1;
-    VkRenderPassBeginInfo pass{VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO};
-    pass.renderPass = c.render_pass; pass.framebuffer = frame.framebuffer;
-    pass.renderArea.extent = {width, height}; pass.clearValueCount = 5; pass.pClearValues = clear.data();
-    vkCmdBeginRenderPass(frame.commands, &pass, VK_SUBPASS_CONTENTS_INLINE);
-    vkCmdBindPipeline(frame.commands, VK_PIPELINE_BIND_POINT_GRAPHICS, c.pipeline);
-    VkViewport viewport{0,0,static_cast<float>(width),static_cast<float>(height),0,1};
-    VkRect2D scissor{{0,0},{width,height}};
-    vkCmdSetViewport(frame.commands, 0, 1, &viewport);
-    vkCmdSetScissor(frame.commands, 0, 1, &scissor);
-    offset = 0;
-    vkCmdBindVertexBuffers(frame.commands, 0, 1, &state.vertices.handle, &offset);
-    vkCmdBindIndexBuffer(frame.commands, state.indices.handle, 0, VK_INDEX_TYPE_UINT32);
-    vkCmdBindDescriptorSets(frame.commands, VK_PIPELINE_BIND_POINT_GRAPHICS, c.pipeline_layout,
-                           0, 1, &state.descriptor_set, 0, nullptr);
-    if (c.environment_info.loaded && params.counts[2] && !msaa_color) {
-        vkCmdBindPipeline(frame.commands,VK_PIPELINE_BIND_POINT_GRAPHICS,state.environment->sky_pipeline);
-        vkCmdDraw(frame.commands,3,1,0,0);
-        vkCmdBindPipeline(frame.commands,VK_PIPELINE_BIND_POINT_GRAPHICS,c.pipeline);
-    }
-    for (uint32_t slot = 0; slot < instance_count; ++slot) {
-        const auto& mesh = state.meshes[state.instances[slot].mesh_index];
-        vkCmdDrawIndexed(frame.commands, mesh.index_count, 1, mesh.first_index,
-                         static_cast<int32_t>(mesh.first_vertex), slot);
-    }
-    vkCmdEndRenderPass(frame.commands);
-    }
-    if (msaa_color) msaa_record(c,frame,params);
-    if(progressive_rgb && c.spatial_info.enabled && progressive_batch==0)spatial_record_guide(c,frame,width,height);
-    if(progressive_rgb)progressive_record(c,frame,params,progressive_batch,progressive_status_offset);
-    if (frame.timestamps)
-        vkCmdWriteTimestamp(frame.commands,VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,frame.timestamps,1);
-    const size_t bytes_per_pixel[]{4,4,4,1};
-    const size_t pixels = static_cast<size_t>(width)*height;
-    offset = 0;
-    for (uint32_t i = 0; i < 4; ++i) {
-        if (!(channel_mask & (1u<<i))) continue;
-        // All preceding formats are four bytes; VALID (one byte) is last.
-        // Thus odd width/height and VALID-only still satisfy copy alignment.
-        VkBufferImageCopy copy{};
-        copy.bufferOffset = offset;
-        copy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        copy.imageSubresource.layerCount = 1;
-        copy.imageExtent = {width,height,1};
-        vkCmdCopyImageToBuffer(frame.commands, i==0&&progressive_rgb?c.progressive_state->display.handle:frame.images[i].handle, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                              frame.readback.handle, 1, &copy);
-        offset += pixels*bytes_per_pixel[i];
-    }
-    VkBufferMemoryBarrier host{VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER};
-    host.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT; host.dstAccessMask = VK_ACCESS_HOST_READ_BIT;
-    host.srcQueueFamilyIndex = host.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    host.buffer = frame.readback.handle; host.size = VK_WHOLE_SIZE;
-    vkCmdPipelineBarrier(frame.commands, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_HOST_BIT,
-                         0, 0, nullptr, 1, &host, 0, nullptr);
-    if (frame.timestamps)
-        vkCmdWriteTimestamp(frame.commands,VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,frame.timestamps,2);
-    check(vkEndCommandBuffer(frame.commands), "resident end frame");
+    record_camera(c,frame,params,channel_mask,camera_index,progressive_batch,output_bytes);
     const uint64_t record_ns=elapsed_ns(record_begin);
     const auto timing=submit_and_wait(c, frame);
     const auto readback_begin=HostClock::now();
@@ -941,27 +828,7 @@ void resident_render(Context& c, const float* matrices, uint32_t instance_count,
         c.poisoned = true;
         throw std::runtime_error("Vulkan validation failed during resident capture: "+c.validation_message);
     }
-    uint64_t gpu_render=0,gpu_copy=0,gpu_total=0,timestamp_samples=0;
-    if (frame.timestamps) {
-        uint64_t ticks[3]{};
-        check(vkGetQueryPoolResults(c.device,frame.timestamps,0,3,sizeof(ticks),ticks,sizeof(uint64_t),
-            VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT),"resident timestamp read");
-        uint32_t bits=c.profile.timestamp_valid_bits;
-        uint64_t mask=bits==64 ? UINT64_MAX : ((1ull<<bits)-1);
-        double period=c.profile.timestamp_period_ns;
-        // A possible multiple counter wrap cannot be reconstructed honestly.
-        // Keep the capture, omit that sample instead of reporting a false time.
-        double wrap_ns=std::ldexp(period,static_cast<int>(bits));
-        if (static_cast<double>(timing.submit)+timing.wait < wrap_ns) {
-            double render_ns=static_cast<double>((ticks[1]-ticks[0])&mask)*period;
-            double copy_ns=static_cast<double>((ticks[2]-ticks[1])&mask)*period;
-            double total_ns=static_cast<double>((ticks[2]-ticks[0])&mask)*period;
-            if (std::isfinite(total_ns) && total_ns < static_cast<double>(UINT64_MAX)) {
-                gpu_render=static_cast<uint64_t>(render_ns); gpu_copy=static_cast<uint64_t>(copy_ns);
-                gpu_total=static_cast<uint64_t>(total_ns); timestamp_samples=1;
-            }
-        }
-    }
+    const auto gpu=camera_gpu_timing(c,frame,timing);
     // The HOST_COHERENT mapping lives with the target. Fence completion and the
     // transfer->HOST barrier make writes visible without invalidate operations.
     if(progressive_rgb) {
@@ -978,8 +845,8 @@ void resident_render(Context& c, const float* matrices, uint32_t instance_count,
     profile.host_upload_ns+=elapsed_ns(upload_begin,record_begin);
     profile.host_record_ns+=record_ns; profile.host_submit_ns+=timing.submit;
     profile.host_wait_ns+=timing.wait; profile.host_readback_ns+=elapsed_ns(readback_begin);
-    profile.gpu_render_ns+=gpu_render; profile.gpu_copy_ns+=gpu_copy; profile.gpu_total_ns+=gpu_total;
-    profile.timestamp_samples+=timestamp_samples; profile.tlas_upload_bytes+=tlas.size()*sizeof(GpuBvhNode);
+    profile.gpu_render_ns+=gpu.render; profile.gpu_copy_ns+=gpu.copy; profile.gpu_total_ns+=gpu.total;
+    profile.timestamp_samples+=gpu.samples; profile.tlas_upload_bytes+=tlas.size()*sizeof(GpuBvhNode);
     if(c.spatial_info.enabled) {
         c.spatial_info.last_capture_filtered=progressive_rgb&&(c.settling_info.enabled?progressive_batch<15:progressive_batch==0);
         if(progressive_rgb)++c.spatial_info.rgb_captures;
@@ -1008,23 +875,7 @@ void resident_render(Context& c, const float* matrices, uint32_t instance_count,
     }
     if(c.indirect_info.enabled){++c.indirect_info.captures;if(params.counts[2])++c.indirect_info.rgb_captures;}
     if (c.reflection_info.enabled) { ++c.reflection_info.captures; if(params.counts[2]) ++c.reflection_info.rgb_captures; }
-    if (c.normal_info.loaded && params.counts[2]) ++c.normal_info.rgb_captures_with_normals;
-    if (c.texture_info.loaded && params.counts[2]) ++c.texture_info.rgb_captures_with_textures;
-    if (c.environment_info.loaded && params.counts[2]) {
-        ++c.environment_info.rgb_captures_with_environment;
-        ++c.environment_info.sky_draws;
-    }
-    if (c.ray_query) {
-        if (!shared) {
-            if (state.acceleration->built) ++c.ray_info.tlas_updates;
-            else ++c.ray_info.tlas_builds;
-            state.acceleration->built=true;
-        }
-        if (params.counts[2]) ++c.ray_info.shadow_captures;
-    }
-    if (msaa_color) { ++c.msaa_info.color_passes; ++c.msaa_info.resolve_passes; }
-    if (center_pass) ++c.msaa_info.center_passes;
-    ++c.properties.captures; ++info.captures;
+    count_camera(c,params,msaa_color,center_pass);
     } catch (...) {
         c.poisoned = true; // a failed GPU operation cannot publish or be silently retried
         throw;

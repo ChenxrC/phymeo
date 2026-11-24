@@ -115,37 +115,138 @@ class DeviceVisualBinding:
         import torch
 
         self.frame_key(snapshot)
-        src = snapshot.transforms
-        if (not isinstance(src, torch.Tensor) or src.device != self._device
-                or src.dtype != torch.float32 or tuple(src.shape) != (self._offsets[-1], 3, 4)
-                or not src.is_contiguous()):
-            raise ValueError("expected contiguous accepted FP32 body transforms on the bound CUDA device")
+        src = _body_rows(snapshot, self._offsets[-1], self._device)
         torch.cuda.current_stream(self._device).wait_event(self._init_done)
-        # Accumulate the local rigid transform in double, then invert the actual
-        # rounded FP32 world matrix, matching resident_transforms in resident.inc.
-        parent = src.index_select(0, self._indices).to(torch.float64)
-        world = torch.bmm(parent, self._local).to(torch.float32)
-        rotation = world[:, :, :3].to(torch.float64)
-        a, b, c = rotation.unbind(dim=2)
-        cross_bc = torch.linalg.cross(b, c, dim=1)
-        det = (a * cross_bc).sum(dim=1)
-        cofactor = torch.stack((cross_bc, torch.linalg.cross(c, a, dim=1),
-                                torch.linalg.cross(a, b, dim=1)), dim=1)
-        inverse = (cofactor / det[:, None, None]).to(torch.float32)
-        inverse_p = -torch.bmm(inverse.to(torch.float64), world[:, :, 3:].to(torch.float64))
-        count = self._local.shape[0]
-        packed = torch.zeros((count, 2, 4, 4), dtype=torch.float32, device=self._device)
-        packed[:, 0, :, :3] = world.transpose(1, 2)
-        packed[:, 1, :3, :3] = inverse.transpose(1, 2)
-        packed[:, 1, 3, :3] = inverse_p.squeeze(2)
-        packed[:, :, 3, 3] = 1.
-
-        gram = torch.bmm(rotation.transpose(1, 2), rotation)
-        unit = torch.eye(3, device=self._device, dtype=torch.float64)
-        valid = torch.isfinite(packed).all() & (det > 0).all() & ((gram - unit).abs() <= 1e-4).all()
+        packed, valid = _pack_records(src, self._indices, self._local)
         self.status_readback_bytes += valid.element_size()
         if not valid.item():
             raise ValueError("nonfinite, scaled, sheared or reflected visual transform")
         self.packs += 1
         self.packed_output_bytes += packed.nbytes
         return packed
+
+
+def _body_rows(snapshot, body_count, device):
+    import torch
+
+    src = snapshot.transforms
+    if (not isinstance(src, torch.Tensor) or src.device != device
+            or src.dtype != torch.float32 or tuple(src.shape) != (body_count, 3, 4)
+            or not src.is_contiguous()):
+        raise ValueError("expected contiguous accepted FP32 body transforms on the bound CUDA device")
+    return src
+
+
+def _pack_records(src, indices, local):
+    import torch
+
+    # Accumulate the local rigid transform in double, then invert the actual
+    # rounded FP32 world matrix, matching resident_transforms in resident.inc.
+    parent = src.index_select(0, indices).to(torch.float64)
+    world = torch.bmm(parent, local).to(torch.float32)
+    rotation = world[:, :, :3].to(torch.float64)
+    a, b, c = rotation.unbind(dim=2)
+    cross_bc = torch.linalg.cross(b, c, dim=1)
+    det = (a * cross_bc).sum(dim=1)
+    cofactor = torch.stack((cross_bc, torch.linalg.cross(c, a, dim=1),
+                            torch.linalg.cross(a, b, dim=1)), dim=1)
+    inverse = (cofactor / det[:, None, None]).to(torch.float32)
+    inverse_p = -torch.bmm(inverse.to(torch.float64), world[:, :, 3:].to(torch.float64))
+    count = local.shape[0]
+    packed = torch.zeros((count, 2, 4, 4), dtype=torch.float32, device=parent.device)
+    packed[:, 0, :, :3] = world.transpose(1, 2)
+    packed[:, 1, :3, :3] = inverse.transpose(1, 2)
+    packed[:, 1, 3, :3] = inverse_p.squeeze(2)
+    packed[:, :, 3, 3] = 1.
+
+    gram = torch.bmm(rotation.transpose(1, 2), rotation)
+    unit = torch.eye(3, device=parent.device, dtype=torch.float64)
+    valid = torch.isfinite(packed).all() & (det > 0).all() & ((gram - unit).abs() <= 1e-4).all()
+    return packed, valid
+
+
+@dataclass(frozen=True, slots=True, eq=False)
+class _PackedVisualWorlds:
+    """Owned output of one device pack. Each world occupies a contiguous SSBO slice."""
+
+    layout: object
+    snapshot: object
+    stream: object
+    _records: object
+    _poses: tuple[Pose, ...]
+
+    def _view(self, world_key):
+        try:
+            binding, records, cameras = self.layout._spans[world_key]
+        except KeyError:
+            raise ValueError("world is not in this packed visual batch") from None
+        return binding, self._records[records], dict(enumerate(self._poses[cameras]))
+
+
+class DeviceVisualBatchBinding:
+    """Gather visual and mounted-camera records for several worlds in one CUDA operation sequence.
+
+    Each binding can use a different model, scene and camera layout. Declare
+    mounts whose CPU Camera metadata is required. All their poses and the one
+    rigid-transform validity flag share a single small host readback.
+    """
+
+    def __init__(self, bindings):
+        import torch
+
+        self._bindings = tuple(bindings)
+        if not self._bindings or any(not isinstance(b, DeviceVisualBinding) for b in self._bindings):
+            raise ValueError("a nonempty batch of device visual bindings is required")
+        first = self._bindings[0]
+        self._device, self._source, self._offsets = first._device, first._source, first._offsets
+        self._spans = {}
+        mount_indices = []
+        start = 0
+        init_stream = torch.cuda.current_stream(self._device)
+        for binding in self._bindings:
+            if binding._source is not self._source or binding._offsets != self._offsets:
+                raise ValueError("visual batch spans different physics workspaces or body layouts")
+            if binding.world_key in self._spans:
+                raise ValueError("duplicate world in visual batch")
+            end = start + binding._indices.numel()
+            cameras = slice(len(mount_indices), len(mount_indices) + len(binding.camera_mounts))
+            self._spans[binding.world_key] = binding, slice(start, end), cameras
+            mount_indices.extend(range(start + len(binding.scene.instances), end))
+            start = end
+            init_stream.wait_event(binding._init_done)
+        self._indices = torch.cat([b._indices for b in self._bindings])
+        self._local = torch.cat([b._local for b in self._bindings])
+        self._mount_indices = torch.tensor(mount_indices, dtype=torch.int64, device=self._device)
+        self._init_done = torch.cuda.Event()
+        self._init_done.record(init_stream)
+        self.packs = self.packed_output_bytes = self.readback_calls = 0
+        self.status_readback_bytes = self.camera_metadata_readback_bytes = 0
+
+    def pack(self, snapshot, *, producer_stream):
+        """Produce an immutable publication handle for the supplied accepted snapshot."""
+        import torch
+
+        if snapshot.frame.binding is not self._source or snapshot.body_offsets != self._offsets:
+            raise ValueError("foreign workspace or incompatible body layout")
+        if (not isinstance(producer_stream, torch.cuda.Stream) or producer_stream.device != self._device
+                or producer_stream == torch.cuda.default_stream(self._device)):
+            raise ValueError("visual batch needs a non-default stream on the bound CUDA device")
+        src = _body_rows(snapshot, self._offsets[-1], self._device)
+        with torch.cuda.stream(producer_stream):
+            producer_stream.wait_event(self._init_done)
+            records, valid = _pack_records(src, self._indices, self._local)
+            status = valid.reshape(1).view(torch.uint8)
+            if self._mount_indices.numel():
+                rows = records[:, 0, :, :3].index_select(0, self._mount_indices).transpose(1, 2).contiguous()
+                status = torch.cat((rows.view(torch.uint8).reshape(-1), status))
+            cpu = status.cpu()
+        self.readback_calls += 1
+        self.status_readback_bytes += 1
+        self.camera_metadata_readback_bytes += cpu.nbytes - 1
+        if not cpu[-1].item():
+            raise ValueError("nonfinite, scaled, sheared or reflected visual transform")
+        cameras = cpu[:-1].view(torch.float32).reshape(-1, 3, 4).tolist()
+        poses = tuple(_metadata_pose(camera) for camera in cameras)
+        self.packs += 1
+        self.packed_output_bytes += records.nbytes
+        return _PackedVisualWorlds(self, snapshot, producer_stream, records, poses)

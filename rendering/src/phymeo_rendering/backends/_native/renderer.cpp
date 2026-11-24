@@ -162,10 +162,10 @@ struct Context {
         VkResult waited = VK_SUCCESS;
         if (device) {
             waited = vkDeviceWaitIdle(device);
-            msaa_state.reset(); // framebuffers refer to the resident final color image
             progressive_state.reset();
             destroy_shared(*this);
             resident_state.reset(); // dependent buffers/targets die before VkDevice
+            msaa_state.reset(); // per-camera framebuffers die before their shared render passes
             release(pipeline, [&](auto h) { vkDestroyPipeline(device,h,nullptr); });
             release(pipeline_layout, [&](auto h) { vkDestroyPipelineLayout(device,h,nullptr); });
             release(render_pass, [&](auto h) { vkDestroyRenderPass(device,h,nullptr); });
@@ -736,6 +736,7 @@ struct Context {
     }
 };
 
+struct MsaaTarget;
 struct FrameResources {
     Context& c;
     Buffer vertices{}, uniform{}, readback{};
@@ -745,6 +746,9 @@ struct FrameResources {
     VkFramebuffer framebuffer{},guide_framebuffer{};
     bool guide_initialized=false;
     VkDescriptorPool descriptors{};
+    VkDescriptorSet scene_set{}; // allocated from descriptors
+    uint32_t width{},height{};
+    std::shared_ptr<MsaaTarget> msaa_target;
     VkQueryPool timestamps{};
     VkCommandBuffer commands{};
     VkFence fence{};
@@ -752,6 +756,7 @@ struct FrameResources {
     explicit FrameResources(Context& context):c(context){ ++live_frames; }
     ~FrameResources() {
         if(submitted) vkQueueWaitIdle(c.queue);
+        msaa_target.reset(); // encode framebuffer references images[0]
         release(fence, [&](auto owned) { vkDestroyFence(c.device,owned,nullptr); });
         release(commands, [&](auto h) { vkFreeCommandBuffers(c.device,c.command_pool,1,&h); });
         release(descriptors, [&](auto owned) { vkDestroyDescriptorPool(c.device,owned,nullptr); });
@@ -993,6 +998,14 @@ int pr_resident_shared_end(void* context) {
     return shared_call([&]{require(context,"null shared end context"); end_shared(*static_cast<Context*>(context));});
 }
 uint32_t pr_resident_shared_camera_abi_version() { return 1; }
+uint32_t pr_resident_shared_batch_abi_version() { return 1; }
+int pr_resident_render_shared_batch(void* context,const PrResidentBatchView* views,
+                                    uint32_t count,uint8_t* output,size_t output_bytes) {
+    return shared_call([&]{
+        require(context,"null camera batch context");
+        resident_shared_batch(*static_cast<Context*>(context),views,count,output,output_bytes);
+    });
+}
 int pr_resident_set_shared_camera_capacity(void* context,uint32_t count) {
     return shared_call([&]{
         require(context,"null shared camera context");
@@ -1171,6 +1184,10 @@ int pr_resident_readback_info(void* handle, PrResidentReadbackInfo* output) {
         output->memory_property_flags=frame.readback.allocation.property_flags;
         output->persistent_mapped=frame.readback_mapping ? 1u : 0u;
         output->capacity_bytes=frame.readback_capacity;
+        for (const auto& extra:context.resident_state->additional_targets) if (extra) {
+            output->capacity_bytes+=extra->readback_capacity;
+            if (!extra->readback_mapping) output->persistent_mapped=0;
+        }
     }
     return 0;
 }

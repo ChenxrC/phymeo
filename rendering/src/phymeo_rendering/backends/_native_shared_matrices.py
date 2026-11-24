@@ -266,12 +266,12 @@ class SharedMatrices:
                     self._finish()
 
     @contextmanager
-    def capturing(self, token):
+    def capturing(self, token, *, camera_count=1):
         with self._lock:
             if self._closed or self._active is None or self._active is not token:
                 raise ValueError("shared raster requires this device's active matrix publication")
             yield
-            self._captures += 1
+            self._captures += camera_count
 
     def diagnostics(self):
         with self._lock:

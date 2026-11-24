@@ -188,6 +188,18 @@ PR_API int pr_resident_shared_begin(void* context);
 PR_API uint32_t pr_resident_shared_camera_abi_version();
 PR_API int pr_resident_set_shared_camera_capacity(void* context,uint32_t count);
 PR_API uint64_t pr_resident_shared_camera_d2d_bytes(void* context);
+// A batch uses one acquired shared publication. UINT32_MAX selects a fixed
+// camera; other indices reference declared mounted slots. Each result uses
+// its own compact plane layout, tightly concatenated in request order.
+// Accepts 1..16 cameras and at most 4096*4096 pixels across all views.
+struct PrResidentBatchView {
+    PrParams params;
+    uint32_t width,height,channel_mask,camera_index;
+};
+static_assert(sizeof(PrResidentBatchView)==288,"resident packed batch camera ABI");
+PR_API uint32_t pr_resident_shared_batch_abi_version();
+PR_API int pr_resident_render_shared_batch(void* context,const PrResidentBatchView* views,
+    uint32_t count,uint8_t* output,size_t output_bytes);
 PR_API int pr_resident_render_shared_camera_planes(void* context,uint32_t camera_index,const PrParams* params,
     uint32_t width,uint32_t height,uint32_t mask,uint8_t* output,size_t bytes);
 PR_API int pr_resident_render_shared_planes(void* context,const PrParams* params,
@@ -200,6 +212,7 @@ struct PrResidentReadbackInfo {
 };
 static_assert(sizeof(PrResidentReadbackInfo) == 64, "resident readback info ABI");
 // Actual selected Vulkan memory flags, not a request or a simulated capability.
+// Capacity includes the active primary and all other retained batch readbacks.
 // A close-time cached query is a last-live observation, not final allocator state.
 PR_API int pr_resident_readback_info(void* context, PrResidentReadbackInfo* output);
 

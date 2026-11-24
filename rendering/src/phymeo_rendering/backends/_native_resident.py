@@ -158,6 +158,8 @@ class ResidentDevice(NativeDevice):
         self._shared_camera_abi_version = None
         self._shared_camera_d2d_bytes = 0
         self._shared_exchange = None
+        self._shared_batch_draw = None
+        self._shared_batch_calls = self._shared_batch_views = self._shared_batch_bytes = 0
         self._shared_identity = None
         if shared_cuda_device is not None:
             if type(shared_cuda_device) is not int or shared_cuda_device < 0:
@@ -489,6 +491,10 @@ class ResidentDevice(NativeDevice):
         if result['resident_shared_camera_abi_version'] == 1 and self._handle is not None:
             self._shared_camera_d2d_bytes = int(self._lib.pr_resident_shared_camera_d2d_bytes(self._handle))
         result['resident_shared_camera_d2d_bytes'] = getattr(self, '_shared_camera_d2d_bytes', 0)
+        result['resident_shared_batch'] = dict(
+            abi_version=1 if getattr(self, '_shared_batch_draw', None) is not None else None,
+            calls=getattr(self, '_shared_batch_calls', 0), views=getattr(self, '_shared_batch_views', 0),
+            output_bytes=getattr(self, '_shared_batch_bytes', 0))
         exchange = getattr(self, '_shared_exchange', None)
         result['resident_shared_matrices'] = exchange.diagnostics() if exchange is not None else None
         result['resident_secondary_light_budget'] = dict(self._secondary_budget_marker) if self._secondary_budget_marker is not None else None
@@ -635,6 +641,11 @@ class ResidentDevice(NativeDevice):
             self._shared_exchange = SharedMatrices(self)
         return self._shared_exchange.open()
 
+    def render_shared_image_planes_batch(self, lease, rows):
+        """Return ordered, owned planes from one native batch for the active publication."""
+        from ._native_camera_batch import render_shared_batch
+        return render_shared_batch(self, lease, rows)
+
     def _require_compact_mask(self, parameters, channel_mask):
         if type(channel_mask) is not int:
             raise TypeError('resident channel mask must be int, not bool')
@@ -658,8 +669,7 @@ class ResidentDevice(NativeDevice):
                                           shared=True, shared_camera_index=shared_camera_index)
         return self._read_capture(matrices, parameters, width, height, channel_mask, image_channels, shared=False)
 
-    def _read_capture(self, matrices, parameters, width, height, channel_mask, image_channels, *, shared,
-                      shared_camera_index=None):
+    def _validate_capture_view(self, parameters, width, height):
         if self._handle is None or not self._uploaded:
             raise RuntimeError('resident device is closed or has no uploaded scene')
         limits=self._last_info
@@ -667,19 +677,26 @@ class ResidentDevice(NativeDevice):
             not 0 < width <= min(limits['max_width'],2**32-1) or
             not 0 < height <= min(limits['max_height'],2**32-1) or width*height > 4096*4096):
             raise ValueError('native capture extent or pixel budget exceeded')
-        if not shared and (len(matrices)!=16*self._instance_count or not all(math.isfinite(x) for x in matrices)):
-            raise ValueError('resident instance matrices are incomplete or nonfinite FP32')
         validate_parameters(parameters)
         if parameters.clipping[0]!=width or parameters.clipping[1]!=height:
             raise ValueError('native clipping extent mismatch')
         if parameters.counts[3]!=self._instance_count:
             raise ValueError('resident parameter instance count mismatch')
-        mask=15 if channel_mask is None else channel_mask
-        size=width*height*sum(width for bit,width in enumerate((4,4,4,1)) if mask&(1<<bit))
+
+    def _reserve_output(self, size):
         if self._output_capacity<size:
             self._output_buffer=(ct.c_uint8*size)()
             self._output_capacity=size
-        output=self._output_buffer
+        return self._output_buffer
+
+    def _read_capture(self, matrices, parameters, width, height, channel_mask, image_channels, *, shared,
+                      shared_camera_index=None):
+        self._validate_capture_view(parameters, width, height)
+        if not shared and (len(matrices)!=16*self._instance_count or not all(math.isfinite(x) for x in matrices)):
+            raise ValueError('resident instance matrices are incomplete or nonfinite FP32')
+        mask=15 if channel_mask is None else channel_mask
+        size=width*height*sum(width for bit,width in enumerate((4,4,4,1)) if mask&(1<<bit))
+        output=self._reserve_output(size)
         if shared_camera_index is not None:
             result=self._lib.pr_resident_render_shared_camera_planes(self._handle,shared_camera_index,
                 ct.byref(parameters),width,height,mask,output,size)

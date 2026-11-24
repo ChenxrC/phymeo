@@ -51,10 +51,8 @@ struct MsaaState {
     VkPipelineLayout encode_layout{};
     VkShaderModule resolve_vertex{},resolve_fragment{};
     VkSampler sampler{};
-    std::unique_ptr<MsaaTarget> target;
     explicit MsaaState(Context& context):c(context) {}
     ~MsaaState() {
-        target.reset();
         for(auto* p:{&color_pipeline,&sky_pipeline,&encode_pipeline})
             release(*p,[&](auto h){vkDestroyPipeline(c.device,h,nullptr);});
         release(encode_layout,[&](auto h){vkDestroyPipelineLayout(c.device,h,nullptr);});
@@ -229,8 +227,8 @@ void msaa_prepare(Context& c,FrameResources& frame,uint32_t width,uint32_t heigh
                       state.color_pass,c.pipeline_layout,1);
     }
     require(c.errors.load()==errors,"Vulkan validation failed creating MSAA sky pipeline");
-    if(state.target && state.target->width==width && state.target->height==height) return;
-    auto target=std::make_unique<MsaaTarget>(c); target->width=width; target->height=height;
+    if(frame.msaa_target && frame.msaa_target->width==width && frame.msaa_target->height==height) return;
+    auto target=std::make_shared<MsaaTarget>(c); target->width=width; target->height=height;
     c.make_image(target->color,width,height,MSAA_COLOR,false,VK_SAMPLE_COUNT_4_BIT);
     c.make_image(target->depth,width,height,MSAA_DEPTH,true,VK_SAMPLE_COUNT_4_BIT);
     c.make_image(target->resolved,width,height,MSAA_COLOR,false,VK_SAMPLE_COUNT_1_BIT,VK_IMAGE_USAGE_SAMPLED_BIT);
@@ -254,11 +252,11 @@ void msaa_prepare(Context& c,FrameResources& frame,uint32_t width,uint32_t heigh
     write.descriptorType=VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER; write.pImageInfo=&image;
     vkUpdateDescriptorSets(c.device,1,&write,0,nullptr);
     require(c.errors.load()==errors,"Vulkan validation failed creating MSAA attachments");
-    state.target=std::move(target); ++c.msaa_info.target_rebuilds;
+    frame.msaa_target=std::move(target); ++c.msaa_info.target_rebuilds;
 }
 
 void msaa_record(Context& c,FrameResources& frame,const PrParams& params) {
-    auto& state=*c.msaa_state; auto& target=*state.target; auto& scene=*c.resident_state;
+    auto& state=*c.msaa_state; auto& target=*frame.msaa_target; auto& scene=*c.resident_state;
     std::array<VkClearValue,3> clear{};
     clear[0].color.float32[3]=1; clear[1].depthStencil.depth=1;
     if(c.studio.environment[3]!=0) {
@@ -273,7 +271,7 @@ void msaa_record(Context& c,FrameResources& frame,const PrParams& params) {
     VkViewport viewport{0,0,static_cast<float>(target.width),static_cast<float>(target.height),0,1};
     VkRect2D scissor{{0,0},{target.width,target.height}};
     vkCmdSetViewport(frame.commands,0,1,&viewport); vkCmdSetScissor(frame.commands,0,1,&scissor);
-    vkCmdBindDescriptorSets(frame.commands,VK_PIPELINE_BIND_POINT_GRAPHICS,c.pipeline_layout,0,1,&scene.descriptor_set,0,nullptr);
+    vkCmdBindDescriptorSets(frame.commands,VK_PIPELINE_BIND_POINT_GRAPHICS,c.pipeline_layout,0,1,&frame.scene_set,0,nullptr);
     if(c.environment_info.loaded) {
         vkCmdBindPipeline(frame.commands,VK_PIPELINE_BIND_POINT_GRAPHICS,state.sky_pipeline);
         vkCmdDraw(frame.commands,3,1,0,0);

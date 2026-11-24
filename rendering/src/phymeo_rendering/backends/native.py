@@ -7,10 +7,12 @@ and rectangular studio emitters require their explicit resident extensions.
 """
 
 import ctypes as ct
+from collections.abc import Mapping, Set
 from contextlib import ExitStack, contextmanager
 from copy import deepcopy
 from dataclasses import dataclass
 import hashlib
+from itertools import islice
 import json
 import math
 from numbers import Real
@@ -24,6 +26,7 @@ from ..scene import VisualScene, DirectionalLight, FrameKey, Pose, compose_pose
 from ..cameras import Camera
 from . import BackendUnavailableError, UnsupportedRequestError, ValidatedRenderSession
 from ._native_resident import ResidentDevice, pack_scene
+from ._native_camera_batch import MAX_TOTAL_PIXELS, MAX_VIEWS
 from ._native_pixels import _image_planes
 from ._native_ray_query import RayQueryResidentDevice
 from ._native_studio import pack_studio
@@ -308,6 +311,17 @@ class _NativeDelegate:
         )
         return result
 
+    def capture_shared_batch(self, exposure, requests, *, shared_matrices, shared_camera_indices):
+        rows = []
+        for request, slot in zip(requests, shared_camera_indices, strict=True):
+            params = _parameters(self.scene, request, self.triangles, self.exposure,
+                                 lights=self.effective_lights, device_camera=slot is not None)
+            params.counts[3] = len(self.scene.instances)
+            rows.append((params, request.camera.width, request.camera.height, request.channels, slot))
+        planes = self.device.render_shared_image_planes_batch(shared_matrices, rows)
+        return tuple(Capture(exposure.key, exposure.time_s, request.camera, view)
+                     for request, view in zip(requests, planes, strict=True))
+
     def diagnostics(self):
         device_info = self.device.info()
         sampling = _environment_sampling_diagnostics(
@@ -464,10 +478,24 @@ class NativeRenderSession(ValidatedRenderSession):
         super().__init__(scene, delegate)
         self._shared_cuda_device = shared_cuda_device
         self._active_device_poses = None
+        self._published_device_pose_batches = 0
 
-    @contextmanager
     def publish_device_poses(self, binding, workspace, snapshot, *, producer_stream, time_s=None):
         """Publish one world's accepted pose once and expose it to any number of cameras."""
+        return self._publish_world(binding, workspace, snapshot, producer_stream, time_s)
+
+    def publish_packed_device_poses(self, packed_batch, workspace, world_key):
+        """Lend one world from a multi-world pack, rechecking its source at acquisition."""
+        from ..device_pose_packing import _PackedVisualWorlds
+
+        if not isinstance(packed_batch, _PackedVisualWorlds):
+            raise TypeError("expected a packed DeviceVisualBatchBinding publication")
+        binding, records, camera_poses = packed_batch._view(world_key)
+        return self._publish_world(binding, workspace, packed_batch.snapshot, packed_batch.stream, None,
+                                   (records, camera_poses))
+
+    @contextmanager
+    def _publish_world(self, binding, workspace, snapshot, producer_stream, time_s, prepared=None):
         with ExitStack() as pending:
             with self._lock:
                 self._check_open()
@@ -491,12 +519,17 @@ class NativeRenderSession(ValidatedRenderSession):
                         or producer_stream == torch.cuda.default_stream(ordinal)):
                     raise ValueError("pose producer needs a non-default CUDA stream on the matched device")
                 exchange = self._delegate.device.open_shared_matrices(cuda_device=ordinal)
-                with torch.cuda.stream(producer_stream):
-                    packed = binding.pack(snapshot)
+                if prepared is None:
+                    with torch.cuda.stream(producer_stream):
+                        packed = binding.pack(snapshot)
+                    camera_poses = {}
+                else:
+                    packed, camera_poses = prepared
                 lease = pending.enter_context(exchange.publish(packed, producer_stream=producer_stream))
+                workspace.accepted_frame_time(snapshot.frame, binding.world_key)
                 exposure = DevicePoseExposure(key, source_time)
                 self._active_device_poses = _DevicePosePublication(
-                    exposure, lease, workspace, snapshot.frame, binding, packed, {})
+                    exposure, lease, workspace, snapshot.frame, binding, packed, camera_poses)
             try:
                 yield exposure
             finally:
@@ -526,22 +559,54 @@ class NativeRenderSession(ValidatedRenderSession):
             return Camera(camera_id, exposure.key, active.camera_poses[slot], width, height, fx_px, fy_px, cx_px, cy_px,
                           near_m, far_m)
 
+    def _device_camera_slot(self, active, request):
+        self._check_request(request)
+        if active.exposure.key != request.camera.frame_key:
+            raise ValueError("camera frame key differs from the device pose publication")
+        if not self._supported(request):
+            raise UnsupportedRequestError("unsupported camera request for shared raster")
+        slot = active.binding.camera_slot(request.camera.id)
+        if slot is not None and active.camera_poses.get(slot) != request.camera.world_pose:
+            raise ValueError("mounted camera metadata differs from this publication")
+        return slot
+
     def capture_device_poses(self, exposure, request):
         """Draw a camera from an active publication, preserving normal sensor validation."""
         with self._lock:
             active = self._current_publication(exposure)
-            self._check_request(request)
-            if exposure.key != request.camera.frame_key:
-                raise ValueError("camera frame key differs from the device pose publication")
-            if not self._supported(request):
-                raise UnsupportedRequestError("unsupported camera request for shared raster")
-            slot = active.binding.camera_slot(request.camera.id)
-            if slot is not None and active.camera_poses.get(slot) != request.camera.world_pose:
-                raise ValueError("mounted camera metadata differs from this publication")
+            slot = self._device_camera_slot(active, request)
             camera_kwargs = {} if slot is None else dict(shared_camera_index=slot)
             result = self._delegate.capture(exposure, request, shared_matrices=active.lease, **camera_kwargs)
             active.workspace.accepted_frame_time(active.frame, active.binding.world_key)
             return self._validate_publication(result, exposure.key, exposure.time_s, request)
+
+    def capture_device_poses_batch(self, exposure, requests) -> tuple[Capture, ...]:
+        """Capture 1..16 ordered fixed or mounted views in one native submission.
+
+        Requests share the active world exposure and a combined budget of 4096²
+        pixels. View dimensions and channels may differ. The entire tuple is
+        validated before publication, and each plane owns its immutable bytes.
+        """
+        with self._lock:
+            active = self._current_publication(exposure)
+            if isinstance(requests, (Mapping, Set, str, bytes)):
+                raise TypeError("camera batch requests must be an ordered iterable of CaptureRequest")
+            views = tuple(islice(requests, MAX_VIEWS + 1))
+            if not 1 <= len(views) <= MAX_VIEWS:
+                raise ValueError(f"camera batch requires 1..{MAX_VIEWS} views")
+            slots = tuple(self._device_camera_slot(active, request) for request in views)
+            if sum(r.camera.width * r.camera.height for r in views) > MAX_TOTAL_PIXELS:
+                raise ValueError("camera batch total pixel budget exceeded")
+            self._current_publication(exposure)
+            results = self._delegate.capture_shared_batch(exposure, views, shared_matrices=active.lease,
+                                                          shared_camera_indices=slots)
+            if not isinstance(results, tuple) or len(results) != len(views):
+                raise ValueError("native camera batch returned the wrong number or type of captures")
+            checked = tuple(self._validate_publication(result, exposure.key, exposure.time_s, request)
+                            for result, request in zip(results, views, strict=True))
+            self._current_publication(exposure)
+            self._published_device_pose_batches += 1
+            return checked
 
     def close(self):
         with self._lock:
@@ -561,7 +626,7 @@ class NativeRenderSession(ValidatedRenderSession):
 
     def diagnostics(self):
         with self._lock:
-            return self._delegate.diagnostics()
+            return dict(self._delegate.diagnostics(), published_device_pose_batches=self._published_device_pose_batches)
 
 
     def capture(self, frame, request):

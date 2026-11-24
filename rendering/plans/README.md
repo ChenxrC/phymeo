@@ -8,6 +8,8 @@ G3／R0 已在 RTX 4060 Laptop 上通过。自研 Vulkan 光栅及 SAPIEN 光栅
 
 ## 给模块负责人的七张任务单
 
+物理与渲染互通详见[并行仿真与 Vulkan 渲染的 GPU 缓冲互通计划](2026-11-24-physics-vulkan-device-interop.md)。首个实时用例是两世界滑块，规模对照复用八世界十六相机；计划分别验收共享位姿、设备图像与整批耗时。
+
 综合光照的下一轮工作见[画质与 30 FPS 路线图](2026-11-24-native-lighting-30fps.md)，含画质归因、[主次表面灯光预算](2026-11-24-native-secondary-light-budget.md)、[运动预览与降噪](2026-11-24-native-motion-preview.md)及完整 300 姿态的分档验收。
 
 当前执行批次见[自研 Vulkan 四步画质路线](2026-11-23-native-vulkan-quality.md)和[第一批 4× MSAA 三人分工与验收](2026-11-23-native-msaa.md)。上一批的高清 Panda、便携回放与源码外安装结果见[已完成批次](2026-11-23-rendering-to-0700.md)及[首版签收单](09-acceptance.md)。

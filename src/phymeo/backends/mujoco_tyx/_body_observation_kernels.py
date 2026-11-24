@@ -42,3 +42,22 @@ def pack_bodies(
 
 
 pack_bodies = tx.kernel(pack_bodies)
+
+
+def pack_body_transforms(
+    count: tx.i32,
+    offsets: tx.ndarray(tx.i32, 1),
+    position: tx.ndarray(tx.f32, 3),
+    rotation: tx.ndarray(tx.f32, 4),
+    transforms: tx.ndarray(tx.f32, 3),
+):
+    for world in tx.range(count):
+        start = offsets[world]
+        for body in range(offsets[world + 1] - start):
+            for i in range(3):
+                for j in range(3):
+                    transforms[start + body, i, j] = rotation[world, body, i, j]
+                transforms[start + body, i, 3] = position[world, body, i]
+
+
+pack_body_transforms = tx.kernel(pack_body_transforms)

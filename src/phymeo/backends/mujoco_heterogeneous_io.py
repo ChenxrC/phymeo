@@ -5,7 +5,9 @@ banks are distinct from entry-phase geometry/contact scratch. Physics and
 control audits remain those of the resident runtimes.
 """
 
+from contextlib import ExitStack
 from dataclasses import dataclass
+from itertools import accumulate
 from threading import RLock
 from types import MappingProxyType, SimpleNamespace
 from uuid import uuid4
@@ -25,6 +27,24 @@ class MuJoCoTyxHeterogeneousFrame:
     ticks: tuple
     world_boundaries: tuple = ()
     area_catalogs: object = None
+
+
+@dataclass(frozen=True, eq=False)
+class MuJoCoTyxBodyPoseSnapshot:
+    """Owned contiguous FP32 [body, 3, 4] rows of body-to-world [R | p in metres].
+
+    For world row w and native body id b, use transforms[body_offsets[w] + b].
+    Each interval contains exactly that world's bodies including its world body.
+    The frame carries the source revision, observation epoch, ticks and boundaries.
+    """
+
+    frame: MuJoCoTyxHeterogeneousFrame
+    body_offsets: tuple[int, ...]
+    transforms: object
+
+    @property
+    def world_keys(self):
+        return self.frame.binding["world_keys"]
 
 
 @dataclass(frozen=True)
@@ -120,6 +140,8 @@ class MuJoCoTyxHeterogeneousWorkspace:
             status_downloaded_bytes=0,
             explicit_readback_bytes=0,
             output_d2d_bytes=0,
+            body_pose_snapshots=0,
+            body_pose_layout_upload_bytes=0,
             allocated_payload_bytes=0,
         )
         with batch._transaction():
@@ -279,6 +301,13 @@ class MuJoCoTyxHeterogeneousWorkspace:
                     from .mujoco_tyx._body_observation import BodyObserver
 
                     self._body_observer = BodyObserver(self)
+                    counts = (batch.layout[k].nbody for k in batch.world_keys)
+                    self._pose_offsets = tuple(accumulate(counts, initial=0))
+                    _require(self._pose_offsets[-1] <= np.iinfo(np.int32).max, "body index overflow")
+                    offsets = np.asarray(self._pose_offsets, dtype=np.int32)
+                    self._pose_rows = self._buffer(offsets)
+                    if self._mode == "cuda":
+                        self._counts["body_pose_layout_upload_bytes"] = offsets.nbytes
                 if include_contacts:
                     from .mujoco_tyx._entry_observation import EntryObserver
 
@@ -444,6 +473,50 @@ class MuJoCoTyxHeterogeneousWorkspace:
                     consumer.synchronize()
             self._counts["output_d2d_bytes"] += sum(v.nbytes for v in values.values())
             return MappingProxyType(result)
+
+    def body_pose_snapshot(self, frame):
+        """Pack only valid body transforms from a published include_bodies frame.
+
+        CUDA writes directly into independent Torch CUDA storage on the caller's
+        current stream and waits before releasing the source bank. Interpret mode
+        returns an independent NumPy array. Both survive refresh, reset and close.
+        """
+        from .mujoco_tyx._body_observation_kernels import pack_body_transforms
+
+        with self._batch._lock, self._lock:
+            values = self._values(frame)
+            _require(self._body_observer is not None, "body poses require include_bodies=True")
+            args = (
+                len(self._batch.world_keys),
+                self._pose_rows,
+                values["body_position"],
+                values["body_rotation"],
+            )
+            shape = (self._pose_offsets[-1], 3, 4)
+            with self._tx.use_runtime(self._runtime):
+                if self._mode == "interpret":
+                    transforms = np.empty(shape, np.float32)
+                    pack_body_transforms(*args, transforms, mode="interpret")
+                else:
+                    import torch
+                    from tyx.torch import from_torch, stream_from_torch
+
+                    if not torch.cuda.is_available():
+                        raise RuntimeError("CUDA Torch is required for a CUDA body pose snapshot")
+                    with torch.cuda.device(self._ordinal), ExitStack() as resources:
+                        transforms = torch.empty(shape, dtype=torch.float32, device=f"cuda:{self._ordinal}")
+                        view = from_torch(transforms, backend="cuda")
+                        resources.callback(view.free)
+                        stream = stream_from_torch(transforms, backend="cuda")
+                        resources.callback(stream.close)
+                        try:
+                            pack_body_transforms(*args, view, mode="cuda", stream=stream)
+                        finally:
+                            stream.synchronize()
+                    self._counts["output_d2d_bytes"] += transforms.numel() * transforms.element_size()
+            self._counts["kernels"] += 1
+            self._counts["body_pose_snapshots"] += 1
+            return MuJoCoTyxBodyPoseSnapshot(frame, self._pose_offsets, transforms)
 
     def close(self):
         with self._batch._lock, self._lock:

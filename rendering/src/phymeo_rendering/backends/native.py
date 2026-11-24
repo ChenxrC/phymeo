@@ -20,7 +20,8 @@ from ..assets import TexturedMaterial
 from ..outputs import Capture, Channel
 from ..studio import StudioLighting
 from ..pipeline import DefaultPassPlanner, RenderPath
-from ..scene import VisualScene, DirectionalLight, FrameKey, compose_pose
+from ..scene import VisualScene, DirectionalLight, FrameKey, Pose, compose_pose
+from ..cameras import Camera
 from . import BackendUnavailableError, UnsupportedRequestError, ValidatedRenderSession
 from ._native_resident import ResidentDevice, pack_scene
 from ._native_pixels import _image_planes
@@ -116,10 +117,11 @@ def _instance_matrices(scene, frame):
     return result
 
 
-def _parameters(scene, request, triangle_count, exposure, *, lights=None):
+def _parameters(scene, request, triangle_count, exposure, *, lights=None, device_camera=False):
     camera = request.camera
-    rotation = _rotation(camera.world_pose)
-    position = camera.world_pose.position_m
+    pose = Pose() if device_camera else camera.world_pose
+    rotation = _rotation(pose)
+    position = pose.position_m
     result = Parameters()
     # R^T is world-to-camera. Flatten by columns for GLSL's default matrix layout.
     result.view[:] = (
@@ -246,14 +248,15 @@ class _NativeDelegate:
             return False
         return True
 
-    def capture(self, frame, request, *, shared_matrices=None):
+    def capture(self, frame, request, *, shared_matrices=None, shared_camera_index=None):
         camera = request.camera
         plan = DefaultPassPlanner().plan(request)
         vertices = shared_matrices
         if vertices is None:
             vertices = (_instance_matrices(self.scene, frame) if self.resident
                         else _vertices(self.scene, self.meshes, frame))
-        parameters = _parameters(self.scene, request, self.triangles, self.exposure, lights=self.effective_lights)
+        parameters = _parameters(self.scene, request, self.triangles, self.exposure, lights=self.effective_lights,
+                                 device_camera=shared_camera_index is not None)
         if self.resident:
             parameters.counts[3] = len(self.scene.instances)
         progressive_key = None
@@ -271,7 +274,9 @@ class _NativeDelegate:
         if self.resident and self.limits.get('resident_render_planes_available',False):
             attachment_mask=sum(1<<index for index,channel in enumerate(Channel) if channel in request.channels)
             if hasattr(self.device, 'render_image_planes'):
-                planes=self.device.render_image_planes(vertices,parameters,camera.width,camera.height,request.channels)
+                camera_kwargs = {} if shared_camera_index is None else dict(shared_camera_index=shared_camera_index)
+                planes=self.device.render_image_planes(vertices,parameters,camera.width,camera.height,request.channels,
+                                                       **camera_kwargs)
                 native_bytes=sum(len(plane.data) for plane in planes)
                 if Channel.RGB in request.channels:
                     native_bytes+=camera.width*camera.height  # The native color attachment is RGBA8.
@@ -386,8 +391,10 @@ class _NativeDelegate:
                 fragment_sha256=self.device.shader_sha256.get('frag'),
                 scope='per-panel proposal budgets, not measured ray counts or a universal quality guarantee'),
             area_light_brdf_samples_per_panel=8,
-            geometry_residency=('static indexed meshes; per-frame instance matrices' if self.resident
-                                else 'expanded world triangles per capture'),
+            geometry_residency=('static indexed meshes; shared CUDA instance matrices per world publication'
+                                if getattr(self.device, '_shared_cuda_device', None) is not None else
+                                ('static indexed meshes; per-frame instance matrices' if self.resident
+                                 else 'expanded world triangles per capture')),
             msaa=dict(self.msaa_info),
             primary_visibility=("4-sample Vulkan color raster; independent pixel-center sensors" if self.msaa_info["actual_color_samples"]==4 else
                                 "single-sample Vulkan raster, two-sided opaque triangles"),
@@ -439,6 +446,17 @@ class DevicePoseExposure:
     time_s: float
 
 
+@dataclass(slots=True)
+class _DevicePosePublication:
+    exposure: DevicePoseExposure
+    lease: object
+    workspace: object
+    frame: object
+    binding: object
+    packed: object
+    camera_poses: dict[int, Pose]
+
+
 class NativeRenderSession(ValidatedRenderSession):
     """Checked session with native-specific device/provenance diagnostics."""
 
@@ -459,6 +477,8 @@ class NativeRenderSession(ValidatedRenderSession):
                     raise RuntimeError("a device pose publication is already active")
                 if binding.scene is not self._scene:
                     raise ValueError("device binding belongs to a different visual scene")
+                if len(binding.camera_mounts) != self._delegate.device._shared_camera_capacity:
+                    raise ValueError("camera mount count differs from shared camera capacity")
                 key = binding.frame_key(snapshot)
                 source_time = workspace.accepted_frame_time(snapshot.frame, binding.world_key)
                 if time_s is not None and time_s != source_time:
@@ -475,7 +495,8 @@ class NativeRenderSession(ValidatedRenderSession):
                     packed = binding.pack(snapshot)
                 lease = pending.enter_context(exchange.publish(packed, producer_stream=producer_stream))
                 exposure = DevicePoseExposure(key, source_time)
-                self._active_device_poses = exposure, lease, workspace, snapshot.frame, binding.world_key
+                self._active_device_poses = _DevicePosePublication(
+                    exposure, lease, workspace, snapshot.frame, binding, packed, {})
             try:
                 yield exposure
             finally:
@@ -485,22 +506,41 @@ class NativeRenderSession(ValidatedRenderSession):
                     finally:
                         self._active_device_poses = None
 
+    def _current_publication(self, exposure):
+        self._check_open()
+        active = self._active_device_poses
+        if active is None or exposure is not active.exposure:
+            raise ValueError("foreign or expired device pose exposure")
+        active.workspace.accepted_frame_time(active.frame, active.binding.world_key)
+        return active
+
+    def mounted_camera(self, exposure, camera_id, *, width, height, fx_px, fy_px, cx_px, cy_px, near_m, far_m):
+        """Resolve public metadata once per mount and exposure. Vulkan reads the view on device."""
+        with self._lock:
+            active = self._current_publication(exposure)
+            slot = active.binding.camera_slot(camera_id)
+            if slot is None:
+                raise ValueError("unknown device camera mount")
+            if slot not in active.camera_poses:
+                active.camera_poses[slot] = active.binding.camera_metadata(active.packed, slot)
+            return Camera(camera_id, exposure.key, active.camera_poses[slot], width, height, fx_px, fy_px, cx_px, cy_px,
+                          near_m, far_m)
+
     def capture_device_poses(self, exposure, request):
         """Draw a camera from an active publication, preserving normal sensor validation."""
         with self._lock:
-            self._check_open()
-            active = self._active_device_poses
-            if active is None or exposure is not active[0]:
-                raise ValueError("foreign or expired device pose exposure")
+            active = self._current_publication(exposure)
             self._check_request(request)
             if exposure.key != request.camera.frame_key:
                 raise ValueError("camera frame key differs from the device pose publication")
             if not self._supported(request):
                 raise UnsupportedRequestError("unsupported camera request for shared raster")
-            _, lease, workspace, frame, world = active
-            workspace.accepted_frame_time(frame, world)
-            result = self._delegate.capture(exposure, request, shared_matrices=lease)
-            workspace.accepted_frame_time(frame, world)
+            slot = active.binding.camera_slot(request.camera.id)
+            if slot is not None and active.camera_poses.get(slot) != request.camera.world_pose:
+                raise ValueError("mounted camera metadata differs from this publication")
+            camera_kwargs = {} if slot is None else dict(shared_camera_index=slot)
+            result = self._delegate.capture(exposure, request, shared_matrices=active.lease, **camera_kwargs)
+            active.workspace.accepted_frame_time(active.frame, active.binding.world_key)
             return self._validate_publication(result, exposure.key, exposure.time_s, request)
 
     def close(self):
@@ -648,6 +688,10 @@ class NativeBackend:
     shared_cuda_device selects a same-GPU Win32 matrix buffer. Publish device
     poses once per world endpoint, then use capture_device_poses for each camera.
     Software shadows traverse the current instances and their static mesh BVHs.
+    Hardware shadows build or update the TLAS from device-produced instances once
+    per publication. Both paths support single-sample and four-sample color.
+    shared_camera_capacity appends 0..64 mounted-camera matrix records after the
+    visual instances. Its default of zero uses ordinary host camera uniforms.
     studio=StudioLighting(...) is separately opt-in and requires the resident
     studio export. None retains only the declared scene lights.
     shadow_mode='ray_query' additionally requires resident=True, the hardware
@@ -708,6 +752,7 @@ class NativeBackend:
         exposure=1.0,
         resident=False,
         shared_cuda_device=None,
+        shared_camera_capacity=0,
         studio=None,
         shadow_mode='software',
         area_light_grid=2,
@@ -731,9 +776,12 @@ class NativeBackend:
         if shared_cuda_device is not None:
             if type(shared_cuda_device) is not int or shared_cuda_device < 0:
                 raise ValueError("shared_cuda_device must be a nonnegative CUDA ordinal")
-            if not resident or shadow_mode != 'software' or msaa_samples != 1 or progressive:
-                raise UnsupportedRequestError("shared poses require single-sample resident software shadows")
+            if not resident:
+                raise UnsupportedRequestError("shared poses require a resident renderer")
         self.shared_cuda_device = shared_cuda_device
+        from ._native_shared_matrices import validate_camera_capacity
+        validate_camera_capacity(shared_camera_capacity, shared_cuda_device)
+        self.shared_camera_capacity = shared_camera_capacity
         if not isinstance(display_transform, str):
             raise TypeError('display_transform must be clip or pbr-neutral')
         if display_transform not in ('clip', 'pbr-neutral'):
@@ -790,6 +838,9 @@ class NativeBackend:
             raise ValueError('spatial_filter must be none, guided or guided_settling')
         if spatial_filter != 'none' and not progressive:
             raise UnsupportedRequestError('guided spatial filtering requires progressive=True')
+        if shared_cuda_device is not None and (area_light_grid != 2 or reflection_mode != 'environment'
+                                               or indirect_mode != 'none' or progressive):
+            raise UnsupportedRequestError('shared poses require standard resident direct-light raster shaders')
         self.spatial_filter = spatial_filter
         self.progressive = progressive
         self.indirect_bounces = indirect_bounces
@@ -847,6 +898,7 @@ class NativeBackend:
         device = device_type(
             self.library_path, self.shader_directory, self.device_index, self.validation,
             **({'shared_cuda_device': self.shared_cuda_device} if self.shared_cuda_device is not None else {}),
+            **({'shared_camera_capacity': self.shared_camera_capacity} if self.shared_camera_capacity else {}),
             **({'area_light_grid': self.area_light_grid} if self.area_light_grid != 2 else {}),
             **({'secondary_area_light_grid': self.secondary_area_light_grid} if self.secondary_area_light_grid != self.area_light_grid else {}),
             **({'normal_maps': True} if has_normal_maps else {}),

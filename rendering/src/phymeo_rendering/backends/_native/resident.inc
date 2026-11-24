@@ -68,10 +68,19 @@ struct ResidentAcceleration {
     std::vector<std::unique_ptr<AccelerationObject>> bottom;
     std::unique_ptr<AccelerationObject> top;
     Buffer scratch{},instances{};
+    VkDescriptorSetLayout pack_bindings{};
+    VkPipelineLayout pack_layout{};
+    VkPipeline pack_pipeline{};
+    VkDescriptorPool pack_pool{};
+    VkDescriptorSet pack_set{}; // owned by pack_pool
     VkDeviceAddress scratch_address{},instances_address{};
     bool built=false;
     explicit ResidentAcceleration(Context& context):c(context) {}
     ~ResidentAcceleration() {
+        release(pack_pool,[&](auto h){vkDestroyDescriptorPool(c.device,h,nullptr);});
+        release(pack_pipeline,[&](auto h){vkDestroyPipeline(c.device,h,nullptr);});
+        release(pack_layout,[&](auto h){vkDestroyPipelineLayout(c.device,h,nullptr);});
+        release(pack_bindings,[&](auto h){vkDestroyDescriptorSetLayout(c.device,h,nullptr);});
         top.reset(); bottom.clear();
         for (auto* buffer:{&scratch,&instances}) {
             release(buffer->handle,[&](auto h){vkDestroyBuffer(c.device,h,nullptr);});
@@ -107,6 +116,7 @@ struct ResidentState {
     }
 };
 
+void record_shared_ray_update(Context&,ResidentState&,VkCommandBuffer);
 #include "resident_shared.inc"
 
 struct TriangleBounds {
@@ -282,6 +292,7 @@ uint64_t upload_static(Context& c, const std::vector<StaticUpload>& uploads) {
 #include "resident_normal.inc"
 #include "resident_environment.inc"
 #include "resident_rayquery.inc"
+#include "resident_shared_ray.inc"
 #include "resident_msaa.inc"
 #include "resident_progressive.inc"
 #include "resident_spatial.inc"
@@ -413,12 +424,17 @@ void resident_upload(Context& c, const PrResidentVertex* vertices, uint32_t vert
         black_cube.size(),VK_FORMAT_R8G8B8A8_SRGB,false);
     c.environment_info.image_upload_bytes+=black_cube.size();
     c.environment_info.parameter_upload_bytes+=sizeof(default_environment);
-    if (c.ray_query) state->acceleration=build_ray_geometry(c,*state,index_count/3);
+    if (c.ray_query) {
+        state->acceleration=build_ray_geometry(c,*state,index_count/3);
+        if (c.shared_input) bytes+=static_cast<uint64_t>(instance_count)*
+            (sizeof(VkAccelerationStructureInstanceKHR)-sizeof(VkTransformMatrixKHR));
+    }
     auto transform_bytes=std::max<size_t>(1, instance_count)*sizeof(GpuTransform);
     if (c.shared_input) {
         require(instance_count!=0,"shared resident matrices require at least one instance");
-        create_shared_buffer(c,state->transforms,transform_bytes);
+        create_shared_buffer(c,state->transforms,transform_bytes+c.shared_camera_capacity*sizeof(GpuTransform));
     } else c.make_buffer(state->transforms,transform_bytes,VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    if (c.shared_input && c.ray_query) prepare_shared_ray_pipeline(c,*state);
     if (c.errors.load() != errors_before) {
         c.poisoned = true;
         throw std::runtime_error("Vulkan validation failed during resident upload: "+c.validation_message);
@@ -592,7 +608,8 @@ void resident_target(Context& c, ResidentState& state, uint32_t width, uint32_t 
     const auto& info = c.resident_properties;
     uint64_t errors_before = c.errors.load();
     auto frame = std::make_unique<FrameResources>(c);
-    c.make_buffer(frame->uniform, sizeof(PrParams), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+    c.make_buffer(frame->uniform, sizeof(PrParams), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT |
+                  (c.shared_camera_capacity ? VK_BUFFER_USAGE_TRANSFER_DST_BIT : 0));
     frame->readback_capacity=static_cast<size_t>(width)*height*13+(c.progressive_info.shader_compatible?8:0);
     c.make_buffer(frame->readback,frame->readback_capacity,VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
@@ -735,7 +752,8 @@ void validate_resident_params(const Context& c, const PrParams& params,
 
 void resident_render(Context& c, const float* matrices, uint32_t instance_count, const PrParams& params,
                      uint32_t width, uint32_t height, uint8_t* output, size_t output_bytes,
-                     uint32_t channel_mask=15u, bool compact=false, bool shared=false) {
+                     uint32_t channel_mask=15u, bool compact=false, bool shared=false,
+                     uint32_t camera_index=UINT32_MAX) {
     const auto prepare_begin=HostClock::now();
     require(c.resident && c.resident_state && !c.poisoned,
             "resident scene is not loaded or context failed; open an explicit new session");
@@ -746,9 +764,9 @@ void resident_render(Context& c, const float* matrices, uint32_t instance_count,
     validate_resident_params(c, params, width, height, output, output_bytes, channel_mask, compact);
     auto& state = *c.resident_state;
     require(shared==c.shared_input,"host and shared transform captures require their respective resident contexts");
-    if (shared) require(c.shared_slot.phase==SharedPhase::reading && !c.ray_query &&
-                        c.msaa_info.requested_samples==1 && !c.progressive_info.shader_compatible,
-                        "shared capture requires an acquired publication and single-sample software raster");
+    if (shared) require(c.shared_slot.phase==SharedPhase::reading && !c.progressive_info.shader_compatible &&
+                        (!c.ray_query || state.acceleration->built),
+                        "shared raster capture requires an acquired publication and current acceleration structures");
     require(!c.progressive_info.shader_compatible||c.progressive_info.enabled,"progressive shader requires setup");
     const bool progressive_rgb=c.progressive_info.enabled&&params.counts[2]!=0;
     require(!progressive_rgb||c.progressive_state->armed,"progressive RGB capture requires explicit history begin");
@@ -777,7 +795,7 @@ void resident_render(Context& c, const float* matrices, uint32_t instance_count,
         c.upload(state.transforms, transforms.data(), transforms.size()*sizeof(GpuTransform));
         if (!c.ray_query) c.upload(state.tlas, tlas.data(), tlas.size()*sizeof(GpuBvhNode));
     }
-    if (c.ray_query) upload_ray_instances(c,state,transforms);
+    if (c.ray_query && !shared) upload_ray_instances(c,state,transforms);
     // This static UBO is populated only before the first draw. Its lifetime is
     // the resident scene, independent of reusable target creation/resizing.
     if (!info.captures) {
@@ -806,7 +824,7 @@ void resident_render(Context& c, const float* matrices, uint32_t instance_count,
         vkCmdResetQueryPool(frame.commands,frame.timestamps,0,3);
         vkCmdWriteTimestamp(frame.commands,VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,frame.timestamps,0);
     }
-    if (c.ray_query) record_ray_update(c,state,frame.commands);
+    if (c.ray_query && !shared) record_ray_update(c,state,frame.commands);
     const VkBuffer input_buffers[]{state.transforms.handle,frame.uniform.handle,state.tlas.handle,state.studio.handle};
     std::array<VkBufferMemoryBarrier, 4> inputs{};
     uint32_t input_count=0;
@@ -822,6 +840,26 @@ void resident_render(Context& c, const float* matrices, uint32_t instance_count,
     vkCmdPipelineBarrier(frame.commands, VK_PIPELINE_STAGE_HOST_BIT,
         VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
         0, nullptr, input_count, inputs.data(), 0, nullptr);
+    if (camera_index!=UINT32_MAX) {
+        const VkDeviceSize base=(VkDeviceSize(info.instance_count)+camera_index)*sizeof(GpuTransform);
+        const VkBufferCopy fields[]={
+            {base+offsetof(GpuTransform,local),offsetof(PrParams,view),16*sizeof(float)},
+            {base+12*sizeof(float),offsetof(PrParams,camera),3*sizeof(float)}
+        };
+        VkBufferMemoryBarrier barrier{VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER};
+        barrier.srcQueueFamilyIndex=barrier.dstQueueFamilyIndex=VK_QUEUE_FAMILY_IGNORED;
+        barrier.buffer=frame.uniform.handle;
+        barrier.size=sizeof(PrParams);
+        barrier.srcAccessMask=VK_ACCESS_HOST_WRITE_BIT;
+        barrier.dstAccessMask=VK_ACCESS_TRANSFER_WRITE_BIT;
+        vkCmdPipelineBarrier(frame.commands,VK_PIPELINE_STAGE_HOST_BIT,VK_PIPELINE_STAGE_TRANSFER_BIT,
+                             0,0,nullptr,1,&barrier,0,nullptr);
+        vkCmdCopyBuffer(frame.commands,state.transforms.handle,frame.uniform.handle,2,fields);
+        barrier.srcAccessMask=VK_ACCESS_TRANSFER_WRITE_BIT;
+        barrier.dstAccessMask=VK_ACCESS_UNIFORM_READ_BIT;
+        vkCmdPipelineBarrier(frame.commands,VK_PIPELINE_STAGE_TRANSFER_BIT,
+            VK_PIPELINE_STAGE_VERTEX_SHADER_BIT|VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,0,0,nullptr,1,&barrier,0,nullptr);
+    }
     VkDeviceSize offset=0;
     if (center_pass) {
     std::array<VkClearValue, 6> clear{};
@@ -977,9 +1015,11 @@ void resident_render(Context& c, const float* matrices, uint32_t instance_count,
         ++c.environment_info.sky_draws;
     }
     if (c.ray_query) {
-        if (state.acceleration->built) ++c.ray_info.tlas_updates;
-        else ++c.ray_info.tlas_builds;
-        state.acceleration->built=true;
+        if (!shared) {
+            if (state.acceleration->built) ++c.ray_info.tlas_updates;
+            else ++c.ray_info.tlas_builds;
+            state.acceleration->built=true;
+        }
         if (params.counts[2]) ++c.ray_info.shadow_captures;
     }
     if (msaa_color) { ++c.msaa_info.color_passes; ++c.msaa_info.resolve_passes; }

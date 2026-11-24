@@ -51,6 +51,17 @@ VkAccelerationStructureBuildGeometryInfoKHR ray_build_info(VkAccelerationStructu
     return info;
 }
 
+VkAccelerationStructureInstanceKHR ray_instance_binding(const ResidentState& state,
+                                                        const ResidentAcceleration& acceleration,uint32_t index) {
+    VkAccelerationStructureInstanceKHR instance{};
+    instance.instanceCustomIndex=index;
+    instance.mask=0xff;
+    instance.instanceShaderBindingTableRecordOffset=0;
+    instance.flags=VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
+    instance.accelerationStructureReference=acceleration.bottom[state.instances[index].mesh_index]->address;
+    return instance;
+}
+
 std::unique_ptr<ResidentAcceleration> build_ray_geometry(Context& c,ResidentState& state,uint32_t primitive_count) {
     auto result=std::make_unique<ResidentAcceleration>(c);
     const uint32_t mesh_count=static_cast<uint32_t>(state.meshes.size());
@@ -90,13 +101,29 @@ std::unique_ptr<ResidentAcceleration> build_ray_geometry(Context& c,ResidentStat
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     VkDeviceAddress base=ray_buffer_address(c,result->scratch);
     result->scratch_address=(base+c.ray_scratch_alignment-1)&~static_cast<VkDeviceAddress>(c.ray_scratch_alignment-1);
-    c.make_buffer(result->instances,instance_bytes,VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
-        VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR);
+    VkBufferUsageFlags instance_usage=VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
+        VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
+    if (c.shared_input)
+        c.make_buffer(result->instances,instance_bytes,instance_usage|VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
+                      VK_BUFFER_USAGE_TRANSFER_DST_BIT,VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    else c.make_buffer(result->instances,instance_bytes,instance_usage);
     result->instances_address=ray_buffer_address(c,result->instances);
     if (mesh_count) {
         FrameResources frame(c); make_commands(c,frame);
         VkCommandBufferBeginInfo begin{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO}; begin.flags=VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
         check(vkBeginCommandBuffer(frame.commands,&begin),"ray-query BLAS begin");
+        if (c.shared_input) {
+            // Publish the 16 immutable bytes once. Pose bytes are first written
+            // by the GPU pack pass. This uses the same IDs, flags and BLAS as host input.
+            constexpr size_t prefix=sizeof(VkTransformMatrixKHR);
+            static_assert(prefix==48 && sizeof(VkAccelerationStructureInstanceKHR)==64 &&
+                offsetof(VkAccelerationStructureInstanceKHR,accelerationStructureReference)==56,"Vulkan instance layout");
+            for (uint32_t i=0;i<instance_count;++i) {
+                auto entry=ray_instance_binding(state,*result,i);
+                vkCmdUpdateBuffer(frame.commands,result->instances.handle,sizeof(entry)*i+prefix,sizeof(entry)-prefix,
+                                  reinterpret_cast<const uint8_t*>(&entry)+prefix);
+            }
+        }
         VkMemoryBarrier input{VK_STRUCTURE_TYPE_MEMORY_BARRIER};
         input.srcAccessMask=VK_ACCESS_TRANSFER_WRITE_BIT; input.dstAccessMask=VK_ACCESS_SHADER_READ_BIT;
         vkCmdPipelineBarrier(frame.commands,VK_PIPELINE_STAGE_TRANSFER_BIT,VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
@@ -128,23 +155,23 @@ void upload_ray_instances(Context& c,ResidentState& state,const std::vector<GpuT
     std::vector<VkAccelerationStructureInstanceKHR> instances(state.instances.size());
     for (size_t i=0;i<instances.size();++i) {
         auto& instance=instances[i];
+        instance=ray_instance_binding(state,*state.acceleration,static_cast<uint32_t>(i));
         for (uint32_t row=0;row<3;++row) for (uint32_t column=0;column<4;++column)
             instance.transform.matrix[row][column]=transforms[i].world[4*column+row];
-        instance.instanceCustomIndex=static_cast<uint32_t>(i); instance.mask=0xff;
-        instance.instanceShaderBindingTableRecordOffset=0;
-        instance.flags=VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
-        instance.accelerationStructureReference=state.acceleration->bottom[state.instances[i].mesh_index]->address;
     }
     if (!instances.empty()) c.upload(state.acceleration->instances,instances.data(),instances.size()*sizeof(instances[0]));
     c.ray_info.instance_upload_bytes+=instances.size()*sizeof(VkAccelerationStructureInstanceKHR);
 }
 void record_ray_update(Context& c,ResidentState& state,VkCommandBuffer commands) {
     auto& acceleration=*state.acceleration;
-    // Includes previous frame traversal and scratch use, plus this host write.
+    // Order previous traversal and scratch use. On the shared path the compute
+    // pass wrote the matrices, and a transfer initialized the fixed instance fields.
     VkMemoryBarrier before{VK_STRUCTURE_TYPE_MEMORY_BARRIER};
-    before.srcAccessMask=VK_ACCESS_HOST_WRITE_BIT | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR | VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR;
+    VkPipelineStageFlags input_stage=c.shared_input ? VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT|VK_PIPELINE_STAGE_TRANSFER_BIT : VK_PIPELINE_STAGE_HOST_BIT;
+    VkAccessFlags input_access=c.shared_input ? VK_ACCESS_SHADER_WRITE_BIT|VK_ACCESS_TRANSFER_WRITE_BIT : VK_ACCESS_HOST_WRITE_BIT;
+    before.srcAccessMask=input_access | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR | VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR;
     before.dstAccessMask=VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR | VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR;
-    vkCmdPipelineBarrier(commands,VK_PIPELINE_STAGE_HOST_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
+    vkCmdPipelineBarrier(commands,input_stage | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
         VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
         0,1,&before,0,nullptr,0,nullptr);
     auto geometry=ray_instances_geometry(acceleration.instances_address);

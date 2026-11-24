@@ -128,7 +128,7 @@ class ResidentReadbackInfo(ct.Structure):
 class ResidentDevice(NativeDevice):
     _shader_prefix = 'resident'
 
-    def __init__(self, *args, area_light_grid=2, secondary_area_light_grid=None, normal_maps=False, reflection=False, indirect=False, progressive=False, spatial=False, settling=False, shared_cuda_device=None):
+    def __init__(self, *args, area_light_grid=2, secondary_area_light_grid=None, normal_maps=False, reflection=False, indirect=False, progressive=False, spatial=False, settling=False, shared_cuda_device=None, shared_camera_capacity=0):
         if type(area_light_grid) is not int or area_light_grid not in (2, 4, 8):
             raise ValueError('area_light_grid must be 2, 4 or 8')
         if type(normal_maps) is not bool:
@@ -151,14 +151,20 @@ class ResidentDevice(NativeDevice):
         self._secondary_area_light_grid = secondary_grid(area_light_grid, secondary_area_light_grid, resident=True,
             shadow_mode='ray_query' if self._shader_prefix=='resident_rayquery' else 'software')
         self._shared_cuda_device = shared_cuda_device
+        from ._native_shared_matrices import validate_camera_capacity
+        validate_camera_capacity(shared_camera_capacity, shared_cuda_device)
+        self._shared_camera_capacity = shared_camera_capacity
+        self._shared_modes_abi_version = None
+        self._shared_camera_abi_version = None
+        self._shared_camera_d2d_bytes = 0
         self._shared_exchange = None
         self._shared_identity = None
         if shared_cuda_device is not None:
             if type(shared_cuda_device) is not int or shared_cuda_device < 0:
                 raise ValueError('shared_cuda_device must be a nonnegative CUDA ordinal')
-            if (self._shader_prefix != 'resident' or area_light_grid != 2 or
+            if (self._shader_prefix not in ('resident', 'resident_rayquery') or area_light_grid != 2 or
                     any((normal_maps, reflection, indirect, progressive, spatial, settling))):
-                raise UnsupportedRequestError('shared matrices require the standard resident software raster shaders')
+                raise UnsupportedRequestError('shared matrices require standard resident direct-light raster shaders')
             from ._native_shared_matrices import cuda_identity
             self._shared_identity = cuda_identity(shared_cuda_device)
         self._secondary_budget_marker = None
@@ -189,6 +195,17 @@ class ResidentDevice(NativeDevice):
         self._uploaded = False
         self._instance_count = 0
         super().__init__(*args)
+        if shared_camera_capacity:
+            try:
+                if self._lib.pr_resident_set_shared_camera_capacity(self._handle, shared_camera_capacity):
+                    raise BackendUnavailableError(self._error())
+                self._shared_camera_abi_version = 1
+            except BaseException as error:
+                try:
+                    self.close()
+                except BaseException as cleanup:
+                    raise BaseExceptionGroup('shared camera setup and teardown failed', [error, cleanup])
+                raise
 
     def _shader_filename(self, stage):
         prefix=self._shader_prefix+('_normal' if getattr(self,'_normal_maps_requested',False) else '')
@@ -217,6 +234,9 @@ class ResidentDevice(NativeDevice):
         if self._shared_identity is not None:
             from ._native_shared_matrices import bind
             bind(lib)
+            if self._shared_camera_capacity:
+                from ._native_shared_matrices import bind_camera_capacity
+                bind_camera_capacity(lib)
         if self._settling_requested:
             version = getattr(lib, 'pr_resident_settling_abi_version', None)
             if version is None:
@@ -463,6 +483,12 @@ class ResidentDevice(NativeDevice):
                     raise RuntimeError(self._error())
                 self._remember_environment_info(environment)
         result.update(self._resident_info)
+        result['resident_shared_modes_abi_version'] = getattr(self, '_shared_modes_abi_version', None)
+        result['resident_shared_camera_abi_version'] = getattr(self, '_shared_camera_abi_version', None)
+        result['resident_shared_camera_capacity'] = getattr(self, '_shared_camera_capacity', 0)
+        if result['resident_shared_camera_abi_version'] == 1 and self._handle is not None:
+            self._shared_camera_d2d_bytes = int(self._lib.pr_resident_shared_camera_d2d_bytes(self._handle))
+        result['resident_shared_camera_d2d_bytes'] = getattr(self, '_shared_camera_d2d_bytes', 0)
         exchange = getattr(self, '_shared_exchange', None)
         result['resident_shared_matrices'] = exchange.diagnostics() if exchange is not None else None
         result['resident_secondary_light_budget'] = dict(self._secondary_budget_marker) if self._secondary_budget_marker is not None else None
@@ -588,11 +614,12 @@ class ResidentDevice(NativeDevice):
         self._require_compact_mask(parameters, channel_mask)
         return self._capture_bytes(matrices,parameters,width,height,channel_mask)
 
-    def render_image_planes(self, matrices, parameters, width, height, channels):
+    def render_image_planes(self, matrices, parameters, width, height, channels, *, shared_camera_index=None):
         """Finish the capture and own each requested plane before returning."""
         mask = sum(1 << bit for bit, channel in enumerate(Channel) if channel in channels)
         self._require_compact_mask(parameters, mask)
-        return self._capture_bytes(matrices,parameters,width,height,mask,image_channels=channels)
+        return self._capture_bytes(matrices,parameters,width,height,mask,image_channels=channels,
+                                   shared_camera_index=shared_camera_index)
 
     def open_shared_matrices(self, *, cuda_device):
         """Import the resident slot once after upload, retaining it until device.close()."""
@@ -618,15 +645,21 @@ class ResidentDevice(NativeDevice):
         if parameters.counts[2] != bool(channel_mask&1):
             raise ValueError('resident RGB uniform disagrees with channel mask')
 
-    def _capture_bytes(self, matrices, parameters, width, height, channel_mask, *, image_channels=None):
+    def _capture_bytes(self, matrices, parameters, width, height, channel_mask, *, image_channels=None,
+                       shared_camera_index=None):
+        if shared_camera_index is not None and (type(shared_camera_index) is not int or
+                not 0 <= shared_camera_index < getattr(self, '_shared_camera_capacity', 0)):
+            raise ValueError("invalid shared camera index")
         if getattr(self, '_shared_cuda_device', None) is not None:
             if self._shared_exchange is None:
                 raise RuntimeError('open the CUDA matrix exchange before rendering a shared capture')
             with self._shared_exchange.capturing(matrices):
-                return self._read_capture(matrices, parameters, width, height, channel_mask, image_channels, shared=True)
+                return self._read_capture(matrices, parameters, width, height, channel_mask, image_channels,
+                                          shared=True, shared_camera_index=shared_camera_index)
         return self._read_capture(matrices, parameters, width, height, channel_mask, image_channels, shared=False)
 
-    def _read_capture(self, matrices, parameters, width, height, channel_mask, image_channels, *, shared):
+    def _read_capture(self, matrices, parameters, width, height, channel_mask, image_channels, *, shared,
+                      shared_camera_index=None):
         if self._handle is None or not self._uploaded:
             raise RuntimeError('resident device is closed or has no uploaded scene')
         limits=self._last_info
@@ -647,7 +680,10 @@ class ResidentDevice(NativeDevice):
             self._output_buffer=(ct.c_uint8*size)()
             self._output_capacity=size
         output=self._output_buffer
-        if shared:
+        if shared_camera_index is not None:
+            result=self._lib.pr_resident_render_shared_camera_planes(self._handle,shared_camera_index,
+                ct.byref(parameters),width,height,mask,output,size)
+        elif shared:
             result=self._lib.pr_resident_render_shared_planes(self._handle,ct.byref(parameters),
                 width,height,mask,output,size)
         elif channel_mask is None:

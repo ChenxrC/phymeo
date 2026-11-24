@@ -1,0 +1,16 @@
+#version 450
+layout(local_size_x=64) in;
+layout(constant_id=75) const uint PR_SHARED_INSTANCE_PACK_ABI=1u;
+struct Transform { mat4 world; mat4 local; };
+struct InstanceRecord { vec4 row0; vec4 row1; vec4 row2; uvec4 fixedFields; };
+layout(set=0,binding=0,std430) readonly buffer PoseInput { Transform records[]; } motion;
+layout(set=0,binding=1,std430) writeonly buffer BuildInput { InstanceRecord records[]; } instances;
+void main() {
+    uint i=gl_GlobalInvocationID.x;
+    if (i>=uint(instances.records.length()) || PR_SHARED_INSTANCE_PACK_ABI!=1u) return;
+    mat4 rows=transpose(motion.records[i].world);
+    instances.records[i].row0=rows[0];
+    instances.records[i].row1=rows[1];
+    instances.records[i].row2=rows[2];
+    // Bytes 48..63 carry immutable index/mask, flags/SBT offset and BLAS address.
+}

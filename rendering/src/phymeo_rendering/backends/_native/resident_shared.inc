@@ -24,7 +24,8 @@ void create_shared_buffer(Context& c,Buffer& buffer,VkDeviceSize bytes) {
     VkExternalMemoryBufferCreateInfo ext{VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_BUFFER_CREATE_INFO};
     ext.handleTypes=VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
     VkBufferCreateInfo bi{VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
-    bi.pNext=&ext; bi.size=bytes; bi.usage=VK_BUFFER_USAGE_STORAGE_BUFFER_BIT|VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    bi.pNext=&ext; bi.size=bytes;
+    bi.usage=VK_BUFFER_USAGE_STORAGE_BUFFER_BIT|VK_BUFFER_USAGE_TRANSFER_DST_BIT|VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     bi.sharingMode=VK_SHARING_MODE_EXCLUSIVE;
     acquire(buffer.handle,"create resident shared transform buffer",[&](auto out){return vkCreateBuffer(c.device,&bi,nullptr,out);});
     VkMemoryRequirements req{};
@@ -63,12 +64,17 @@ void enqueue_shared_ownership(Context& c,bool take,bool initial=false) {
     barrier.buffer=c.resident_state->transforms.handle; barrier.size=VK_WHOLE_SIZE;
     barrier.srcQueueFamilyIndex=take ? VK_QUEUE_FAMILY_EXTERNAL : c.queue_family;
     barrier.dstQueueFamilyIndex=take ? c.queue_family : VK_QUEUE_FAMILY_EXTERNAL;
-    barrier.srcAccessMask=take ? 0 : (initial ? VK_ACCESS_TRANSFER_WRITE_BIT : VK_ACCESS_SHADER_READ_BIT);
-    barrier.dstAccessMask=take ? VK_ACCESS_SHADER_READ_BIT : 0;
-    const VkPipelineStageFlags shaders=VK_PIPELINE_STAGE_VERTEX_SHADER_BIT|VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    // The same publication may supply a camera UBO copy, graphics transforms,
+    // and (hardware mode) the compute pass that assembles TLAS instance records.
+    const VkAccessFlags reads=VK_ACCESS_SHADER_READ_BIT|VK_ACCESS_TRANSFER_READ_BIT;
+    barrier.srcAccessMask=take ? 0 : (initial ? VK_ACCESS_TRANSFER_WRITE_BIT : reads);
+    barrier.dstAccessMask=take ? reads : 0;
+    VkPipelineStageFlags consumers=VK_PIPELINE_STAGE_VERTEX_SHADER_BIT|VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT|VK_PIPELINE_STAGE_TRANSFER_BIT;
+    if (c.ray_query) consumers|=VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
     if (initial) vkCmdFillBuffer(s.commands,barrier.buffer,0,VK_WHOLE_SIZE,0);
-    vkCmdPipelineBarrier(s.commands,take ? VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT : (initial ? VK_PIPELINE_STAGE_TRANSFER_BIT : shaders),
-        take ? shaders : VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,0,0,nullptr,1,&barrier,0,nullptr);
+    vkCmdPipelineBarrier(s.commands,take ? VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT : (initial ? VK_PIPELINE_STAGE_TRANSFER_BIT : consumers),
+        take ? consumers : VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,0,0,nullptr,1,&barrier,0,nullptr);
+    if (take && c.ray_query) record_shared_ray_update(c,*c.resident_state,s.commands);
     check_shared(c,vkEndCommandBuffer(s.commands),"end shared ownership command");
     VkPipelineStageFlags wait_stage=VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
     VkSubmitInfo submit{VK_STRUCTURE_TYPE_SUBMIT_INFO};
@@ -90,6 +96,12 @@ void finish_shared_ownership(Context& c) {
         std::chrono::steady_clock::now()-start).count());
     if (rc==VK_TIMEOUT) throw SharedTimeout();
     check_shared(c,rc,"wait for shared ownership fence");
+    if (s.phase==SharedPhase::acquiring && c.ray_query) {
+        auto& acceleration=*c.resident_state->acceleration;
+        if (acceleration.built) ++c.ray_info.tlas_updates;
+        else ++c.ray_info.tlas_builds;
+        acceleration.built=true;
+    }
     s.phase=s.phase==SharedPhase::acquiring ? SharedPhase::reading : SharedPhase::external;
 }
 void export_shared(Context& c,PrResidentSharedExport& output) {
@@ -132,7 +144,7 @@ void export_shared(Context& c,PrResidentSharedExport& output) {
     s.exported=true;
     output={reinterpret_cast<uintptr_t>(s.handles[0]),reinterpret_cast<uintptr_t>(s.handles[1]),
             reinterpret_cast<uintptr_t>(s.handles[2]),buffer.allocation.bytes,
-            static_cast<uint64_t>(c.resident_properties.instance_count)*sizeof(GpuTransform)};
+            (static_cast<uint64_t>(c.resident_properties.instance_count)+c.shared_camera_capacity)*sizeof(GpuTransform)};
 #else
     (void)c; (void)output;
     throw std::runtime_error("resident external handles require Win32");

@@ -1,7 +1,47 @@
 """Pack accepted CUDA body poses into the resident rasterizer's std430 transforms."""
+from dataclasses import dataclass
 from itertools import accumulate
+from math import hypot, sqrt
 
-from .scene import FrameKey, VisualScene
+from .scene import FrameKey, Pose, VisualScene
+
+
+@dataclass(frozen=True, slots=True)
+class DeviceCameraMount:
+    """Camera in the local frame of a physics body, including nonvisual bodies."""
+
+    id: str
+    body_id: int
+    local_pose: Pose = Pose()
+
+    def __post_init__(self):
+        if not isinstance(self.id, str) or not self.id.strip():
+            raise ValueError("camera mount requires a nonblank id")
+        if type(self.body_id) is not int or self.body_id < 0 or not isinstance(self.local_pose, Pose):
+            raise ValueError("invalid camera body or local pose")
+
+
+def _metadata_pose(rows):
+    # Choose the largest quaternion component to avoid division by a small
+    # trace near a half turn. Only the public metadata uses this conversion.
+    r = rows
+    trace = r[0][0] + r[1][1] + r[2][2]
+    squares = [1 + 2*r[i][i] - trace for i in range(3)] + [1 + trace]
+    i = max(range(4), key=squares.__getitem__)
+    q = [0.] * 4
+    q[i] = sqrt(squares[i]) / 2
+    scale = 4*q[i]
+    if i == 3:
+        for j in range(3):
+            a, b = (j+1)%3, (j+2)%3
+            q[j] = (r[b][a]-r[a][b])/scale
+    else:
+        a, b = (i+1)%3, (i+2)%3
+        q[a] = (r[a][i]+r[i][a])/scale
+        q[b] = (r[b][i]+r[i][b])/scale
+        q[3] = (r[b][a]-r[a][b])/scale
+    length = hypot(*q)
+    return Pose(tuple(row[3] for row in rows), tuple(value/length for value in q))
 
 
 class DeviceVisualBinding:
@@ -12,7 +52,7 @@ class DeviceVisualBinding:
     CUDA Torch is loaded only when a device binding is constructed.
     """
 
-    def __init__(self, scene, workspace, world_key, node_bodies):
+    def __init__(self, scene, workspace, world_key, node_bodies, *, camera_mounts=()):
         import torch
         from .backends.native import _rotation
 
@@ -33,10 +73,18 @@ class DeviceVisualBinding:
             raise ValueError("node-to-body mapping must cover the scene's exact visual nodes")
         if any(type(i) is not int or not 0 <= i < counts[self._row] for i in node_bodies.values()):
             raise ValueError("visual node references an invalid native body")
+        self.camera_mounts = tuple(camera_mounts)
+        if (len(self.camera_mounts) > 64 or
+                any(not isinstance(m, DeviceCameraMount) or m.body_id >= counts[self._row] for m in self.camera_mounts)):
+            raise ValueError("invalid camera mount layout or body")
+        self._camera_slots = {mount.id: i for i, mount in enumerate(self.camera_mounts)}
+        if len(self._camera_slots) != len(self.camera_mounts):
+            raise ValueError("duplicate camera mount id")
+        records = [(node_bodies[i.node_id], i.local_pose) for i in scene.instances]
+        records.extend((m.body_id, m.local_pose) for m in self.camera_mounts)
         indices, locals_ = [], []
-        for instance in scene.instances:
-            indices.append(self._offsets[self._row] + node_bodies[instance.node_id])
-            pose = instance.local_pose
+        for body_id, pose in records:
+            indices.append(self._offsets[self._row] + body_id)
             locals_.append([(*axis, p) for axis, p in zip(_rotation(pose), pose.position_m, strict=True)]
                            + [(0., 0., 0., 1.)])
         self._indices = torch.tensor(indices, dtype=torch.int64, device=self._device)
@@ -45,6 +93,15 @@ class DeviceVisualBinding:
         self._init_done.record(torch.cuda.current_stream(self._device))
         self.layout_upload_bytes = self._indices.nbytes + self._local.nbytes
         self.packs = self.status_readback_bytes = self.packed_output_bytes = 0
+        self.camera_metadata_readback_bytes = 0
+
+    def camera_slot(self, camera_id):
+        return self._camera_slots.get(camera_id)
+
+    def camera_metadata(self, packed, slot):
+        rows = packed[len(self.scene.instances)+slot, 0, :, :3].T.contiguous().cpu()
+        self.camera_metadata_readback_bytes += rows.nbytes
+        return _metadata_pose(rows.tolist())
 
     def frame_key(self, snapshot):
         frame = snapshot.frame
@@ -76,7 +133,7 @@ class DeviceVisualBinding:
                                 torch.linalg.cross(a, b, dim=1)), dim=1)
         inverse = (cofactor / det[:, None, None]).to(torch.float32)
         inverse_p = -torch.bmm(inverse.to(torch.float64), world[:, :, 3:].to(torch.float64))
-        count = len(self.scene.instances)
+        count = self._local.shape[0]
         packed = torch.zeros((count, 2, 4, 4), dtype=torch.float32, device=self._device)
         packed[:, 0, :, :3] = world.transpose(1, 2)
         packed[:, 1, :3, :3] = inverse.transpose(1, 2)

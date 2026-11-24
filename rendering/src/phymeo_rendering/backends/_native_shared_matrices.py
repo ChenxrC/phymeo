@@ -35,6 +35,45 @@ def bind(lib):
         f.argtypes, f.restype = arguments, result
 
 
+def _require_version(lib, symbol, feature):
+    version = getattr(lib, symbol, None)
+    if version is None:
+        raise BackendUnavailableError(f"native {feature} ABI is unavailable: missing {symbol}")
+    version.argtypes, version.restype = [], ct.c_uint32
+    actual = version()
+    if actual != 1:
+        raise BackendUnavailableError(f"unsupported native {feature} ABI {actual}, expected 1")
+    return actual
+
+
+def require_shared_modes(device):
+    if getattr(device, "_shared_modes_abi_version", None) is None:
+        device._shared_modes_abi_version = _require_version(
+            device._lib, "pr_resident_shared_modes_abi_version", "shared ray query / MSAA")
+
+
+def bind_camera_capacity(lib):
+    _require_version(lib, "pr_resident_shared_camera_abi_version", "shared mounted camera")
+    ptr, u32 = ct.c_void_p, ct.c_uint32
+    for name,result,arguments in (
+        ("pr_resident_set_shared_camera_capacity", ct.c_int, [ptr, u32]),
+        ("pr_resident_render_shared_camera_planes", ct.c_int,
+         [ptr, u32, ct.POINTER(Parameters), u32, u32, u32, ct.POINTER(ct.c_uint8), ct.c_size_t]),
+        ("pr_resident_shared_camera_d2d_bytes", ct.c_uint64, [ptr]),
+    ):
+        function = getattr(lib, name, None)
+        if function is None:
+            raise BackendUnavailableError(f"native shared mounted camera ABI is missing {name}")
+        function.argtypes, function.restype = arguments, result
+
+
+def validate_camera_capacity(capacity, cuda_device):
+    if type(capacity) is not int or not 0 <= capacity <= 64:
+        raise ValueError("shared_camera_capacity must be an integer from 0 to 64")
+    if capacity and cuda_device is None:
+        raise ValueError("shared_camera_capacity requires a shared CUDA pose session")
+
+
 def _cu(operation, *args):
     status, *values = operation(*args)
     if int(status):
@@ -61,7 +100,8 @@ class SharedMatrices:
     """One imported device-local SSBO, one active publication, multiple raster views.
 
     publish() expects trusted finite world and inverse transforms as contiguous
-    column-major float32 records [N,32] or [N,2,4,4]. The explicit CUDA stream
+    column-major float32 records [N,32] or [N,2,4,4]. N is the uploaded graphics
+    instance count plus the reserved mounted-camera matrix records. The explicit CUDA stream
     must already be ordered after the producer's last write. It must keep the
     source contents unchanged through publication. Loads and draws use the same
     instance order as the resident geometry upload.
@@ -71,7 +111,9 @@ class SharedMatrices:
         self._lock = RLock()
         self._driver, self._device, self._uuid = owner._shared_identity
         self._ordinal = owner._shared_cuda_device
-        self._size = owner._instance_count * 128
+        self._graphics_count = owner._instance_count
+        self._camera_capacity = owner._shared_camera_capacity
+        self._size = (self._graphics_count + self._camera_capacity) * 128
         self._imports = []
         self._context = None
         self._closed = False
@@ -166,7 +208,7 @@ class SharedMatrices:
 
     def _validate_source(self, packed, producer_stream):
         import torch
-        n = self._owner._instance_count
+        n = self._graphics_count + self._camera_capacity
         device = torch.device("cuda", self._ordinal)
         if (not isinstance(packed, torch.Tensor) or packed.device != device or
                 packed.dtype != torch.float32 or not packed.is_contiguous() or
@@ -234,6 +276,7 @@ class SharedMatrices:
     def diagnostics(self):
         with self._lock:
             return dict(cuda_ordinal=self._ordinal, device_uuid=self._uuid.hex(),
+                        graphics_instances=self._graphics_count, camera_capacity=self._camera_capacity,
                         matrix_record_bytes=128, slot_bytes=self._size, publications=self._publications,
                         captures=self._captures, matrix_d2d_copies=self._copies,
                         matrix_d2d_bytes=self._copies*self._size, closed=self._closed,

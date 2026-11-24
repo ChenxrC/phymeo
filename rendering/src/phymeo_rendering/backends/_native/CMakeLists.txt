@@ -226,6 +226,12 @@ add_custom_command(OUTPUT "${output}"
     "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident_display.glsl"
     "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident_msaa.glsl" VERBATIM)
 list(APPEND shader_outputs "${output}")
+set(output "${CMAKE_BINARY_DIR}/resident_shared_instances.comp.spv")
+add_custom_command(OUTPUT "${output}"
+  COMMAND "${GLSLANG_VALIDATOR}" -V --target-env vulkan1.2
+    "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident_shared_instances.comp" -o "${output}"
+  DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/../_shaders/resident_shared_instances.comp" VERBATIM)
+list(APPEND shader_outputs "${output}")
 set(output "${CMAKE_BINARY_DIR}/resident_progressive.comp.spv")
 add_custom_command(OUTPUT "${output}"
   COMMAND "${GLSLANG_VALIDATOR}" -V --target-env vulkan1.2

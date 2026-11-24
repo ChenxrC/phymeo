@@ -133,6 +133,7 @@ class MuJoCoTyxHeterogeneousWorkspace:
         self._storage = []
         self._resources, self._dependencies = DeviceResources(), DeviceResources()
         self._frame, self._active, self._epoch = None, 0, 0
+        self._refresh_failed = False
         self._counts = dict(
             refreshes=0,
             failed_refreshes=0,
@@ -421,7 +422,9 @@ class MuJoCoTyxHeterogeneousWorkspace:
                 )
             except BaseException:
                 self._counts["failed_refreshes"] += 1
+                self._refresh_failed = True
                 raise
+            self._refresh_failed = False
             self._active, self._epoch, self._frame = destination, frame.epoch, frame
             self._counts["refreshes"] += 1
             return frame
@@ -439,6 +442,7 @@ class MuJoCoTyxHeterogeneousWorkspace:
         """Read the already committed host clock, rejecting stale or foreign observations."""
         with self._batch._lock, self._lock:
             self._check_current(frame)
+            _require(not self._refresh_failed, "new exposure requires a successful observation refresh")
             owner = self._batch._buckets[self._batch.layout[world_key].bucket]
             return float(owner._data[world_key].time)
 

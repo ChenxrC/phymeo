@@ -20,6 +20,7 @@
 #include <atomic>
 #include <cmath>
 #include <chrono>
+#include <cstddef>
 #include <cstdio>
 #include <cstring>
 #include <functional>
@@ -93,6 +94,8 @@ void probe_msaa(Context&,const VkPhysicalDeviceLimits&);
 struct Context {
     bool resident = false;
     bool shared_input=false;
+    uint32_t shared_camera_capacity=0;
+    uint64_t shared_camera_d2d_bytes=0;
     bool shared_blas_compatible=false;
     SharedSlot shared_slot{};
     bool surface_maps_compatible = false;
@@ -131,7 +134,7 @@ struct Context {
     VkPipelineLayout pipeline_layout{};
     VkRenderPass render_pass{};
     VkPipeline pipeline{};
-    VkShaderModule vertex_shader{}, fragment_shader{};
+    VkShaderModule vertex_shader{}, fragment_shader{}, shared_instance_shader{};
     VkPhysicalDeviceMemoryProperties memory_properties{};
     PrInfo properties{};
     std::atomic<uint64_t> errors{0}, warnings{0};
@@ -168,6 +171,7 @@ struct Context {
             release(render_pass, [&](auto h) { vkDestroyRenderPass(device,h,nullptr); });
             release(vertex_shader, [&](auto h) { vkDestroyShaderModule(device,h,nullptr); });
             release(fragment_shader, [&](auto h) { vkDestroyShaderModule(device,h,nullptr); });
+            release(shared_instance_shader, [&](auto h) { vkDestroyShaderModule(device,h,nullptr); });
             release(descriptor_layout, [&](auto h) { vkDestroyDescriptorSetLayout(device,h,nullptr); });
             release(command_pool, [&](auto h) { vkDestroyCommandPool(device,h,nullptr); });
             release(device, [&](auto h) { vkDestroyDevice(h,nullptr); });
@@ -301,8 +305,8 @@ struct Context {
         shared_blas_compatible=resident && !ray_query && named_shader_marker(frag,frag_bytes,74,"PR_SHARED_BLAS_ABI");
         if (shared_input) {
 #ifdef _WIN32
-            require(shared_blas_compatible,
-                    "shared matrices require the single-sample software resident shader with PR_SHARED_BLAS_ABI");
+            require(resident && (ray_query || shared_blas_compatible),
+                    "shared software matrices require a resident shader with PR_SHARED_BLAS_ABI");
 #else
             throw std::runtime_error("shared resident matrices require opaque Win32 handles");
 #endif
@@ -550,9 +554,11 @@ struct Context {
         std::vector<VkQueueFamilyProperties> queues(count);
         vkGetPhysicalDeviceQueueFamilyProperties(physical, &count, queues.data());
         queue_family = count;
+        VkQueueFlags needed_queue=VK_QUEUE_GRAPHICS_BIT;
+        if (shared_input && ray_query) needed_queue|=VK_QUEUE_COMPUTE_BIT;
         for (uint32_t i=0; i<count; ++i) if (queues[i].queueCount &&
-            (queues[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)) { queue_family=i; break; }
-        require(queue_family < count, "graphics queue unavailable");
+            (queues[i].queueFlags & needed_queue)==needed_queue) { queue_family=i; break; }
+        require(queue_family < count, "required graphics/compute queue unavailable");
         require(!progressive_info.shader_compatible || (queues[queue_family].queueFlags&VK_QUEUE_COMPUTE_BIT),"progressive needs a graphics+compute queue");
         if (resident) {
             profile.timestamp_valid_bits = queues[queue_family].timestampValidBits;
@@ -569,11 +575,12 @@ struct Context {
         // Optional support is reported false when independentBlend is absent.
         enabled_features.independentBlend=resident ? available_features.independentBlend : VK_FALSE;
         device_info.pEnabledFeatures=&enabled_features;
+        std::vector<const char*> extensions;
 #ifdef _WIN32
         const char* shared_extensions[]={VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME,VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME};
         if (shared_input) {
             VkPhysicalDeviceExternalBufferInfo bi{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_BUFFER_INFO};
-            bi.usage=VK_BUFFER_USAGE_STORAGE_BUFFER_BIT|VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+            bi.usage=VK_BUFFER_USAGE_STORAGE_BUFFER_BIT|VK_BUFFER_USAGE_TRANSFER_DST_BIT|VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
             bi.handleType=VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
             VkExternalBufferProperties bp{VK_STRUCTURE_TYPE_EXTERNAL_BUFFER_PROPERTIES};
             vkGetPhysicalDeviceExternalBufferProperties(physical,&bi,&bp);
@@ -587,14 +594,15 @@ struct Context {
             const auto sf=VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT|VK_EXTERNAL_SEMAPHORE_FEATURE_IMPORTABLE_BIT;
             require((sp.externalSemaphoreFeatures&sf)==sf && (sp.compatibleHandleTypes&si.handleType),
                     "resident Win32 external binary semaphores unavailable");
-            device_info.enabledExtensionCount=2; device_info.ppEnabledExtensionNames=shared_extensions;
+            extensions.assign(shared_extensions,shared_extensions+2);
         }
 #endif
         if (ray_query) {
             device_info.pNext=&address_features;
-            device_info.enabledExtensionCount=static_cast<uint32_t>(ray_extensions.size());
-            device_info.ppEnabledExtensionNames=ray_extensions.data();
+            extensions.insert(extensions.end(),ray_extensions.begin(),ray_extensions.end());
         }
+        device_info.enabledExtensionCount=static_cast<uint32_t>(extensions.size());
+        device_info.ppEnabledExtensionNames=extensions.data();
         acquire(device, "vkCreateDevice", [&](auto* output) { return vkCreateDevice(physical, &device_info, nullptr, output); });
         vkGetDeviceQueue(device, queue_family, 0, &queue);
         if (ray_query) {
@@ -931,6 +939,28 @@ int pr_destroy(void* handle,PrInfo* final_info) {
 
 uint32_t pr_resident_abi_version() { return 1; }
 uint32_t pr_resident_shared_abi_version() { return 1; }
+uint32_t pr_resident_shared_modes_abi_version() { return 1; }
+void* pr_resident_create_shared_ray_query(uint32_t selected,uint32_t validation,const uint32_t* vert,size_t vert_bytes,
+    const uint32_t* frag,size_t frag_bytes,const uint8_t* cuda_uuid16,const uint32_t* comp,size_t comp_bytes) {
+    try {
+        last_error.clear();
+        require(cuda_uuid16 && validation<=1,"invalid shared ray-query device UUID or validation flag");
+        const auto shader=spirv_interface(comp,comp_bytes,5);
+        require(shader.valid && shader.main && shader.bindings==3 &&
+                named_shader_marker(comp,comp_bytes,75,"PR_SHARED_INSTANCE_PACK_ABI",5),
+                "shared ray-query instance compute shader interface is incompatible");
+        auto c=std::make_unique<Context>();
+        c->init(selected,validation!=0,vert,vert_bytes,frag,frag_bytes,true,true,cuda_uuid16);
+        require(!c->reflection_info.shader_compatible && !c->indirect_info.shader_compatible &&
+                !c->progressive_info.shader_compatible,"shared ray-query mode requires direct raster lighting");
+        VkShaderModuleCreateInfo module{VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO};
+        module.pCode=comp; module.codeSize=comp_bytes;
+        acquire(c->shared_instance_shader,"shared TLAS compute module",
+            [&](auto* out){return vkCreateShaderModule(c->device,&module,nullptr,out);});
+        return c.release();
+    } catch (const std::exception& e) { last_error=e.what(); return nullptr; }
+      catch (...) { last_error="unknown shared ray-query creation error"; return nullptr; }
+}
 void* pr_resident_create_shared(uint32_t selected,uint32_t validation,const uint32_t* vert,size_t vert_bytes,
                                 const uint32_t* frag,size_t frag_bytes,const uint8_t* cuda_uuid16) {
     try {
@@ -961,6 +991,29 @@ int pr_resident_shared_begin(void* context) {
 }
 int pr_resident_shared_end(void* context) {
     return shared_call([&]{require(context,"null shared end context"); end_shared(*static_cast<Context*>(context));});
+}
+uint32_t pr_resident_shared_camera_abi_version() { return 1; }
+int pr_resident_set_shared_camera_capacity(void* context,uint32_t count) {
+    return shared_call([&]{
+        require(context,"null shared camera context");
+        auto& c=*static_cast<Context*>(context);
+        require(c.shared_input && !c.resident_state && count<=64,"invalid shared camera capacity or phase");
+        c.shared_camera_capacity=count;
+    });
+}
+uint64_t pr_resident_shared_camera_d2d_bytes(void* context) {
+    return context ? static_cast<Context*>(context)->shared_camera_d2d_bytes : 0;
+}
+int pr_resident_render_shared_camera_planes(void* context,uint32_t camera_index,const PrParams* params,
+                                           uint32_t width,uint32_t height,uint32_t mask,uint8_t* output,size_t bytes) {
+    return shared_call([&]{
+        require(context && params,"null mounted capture argument");
+        auto& c=*static_cast<Context*>(context);
+        require(camera_index<c.shared_camera_capacity,"mounted camera index exceeds the declared capacity");
+        resident_render(c,nullptr,c.resident_properties.instance_count,*params,width,height,output,bytes,
+                        mask,true,true,camera_index);
+        c.shared_camera_d2d_bytes+=19*sizeof(float);
+    });
 }
 int pr_resident_render_shared_planes(void* context,const PrParams* params,uint32_t width,uint32_t height,
                                      uint32_t mask,uint8_t* output,size_t bytes) {
@@ -1030,6 +1083,8 @@ int pr_resident_destroy(void* handle, PrInfo* final_info, PrResidentTelemetry* f
     }
     auto* context = static_cast<Context*>(handle);
     if (!context->resident) { last_error = "context does not use resident rendering"; return -1; }
+    if (context->shared_input && drain_shared(*context)!=0 && context->shared_slot.phase!=SharedPhase::unused)
+        return -2;
     VkResult waited = context->shutdown();
     if (final_info) context->info(final_info);
     if (final_telemetry) *final_telemetry = context->telemetry;

@@ -136,9 +136,13 @@ def test_reject_wrong_source_and_keep_previous_publication(monkeypatch):
             with pytest.raises(RuntimeError, match="observation failure"):
                 ws.refresh(expected_revision=0)
         np.testing.assert_array_equal(ws.body_pose_snapshot(previous).transforms, initial)
+        with pytest.raises(ValueError, match="successful observation refresh"):
+            ws.accepted_frame_time(previous, 41)
+        recovered = ws.refresh(expected_revision=0)
+        assert ws.accepted_frame_time(recovered, 41) == 0.
         assert batch.step(.001) == {41: True, 7: True}
         with pytest.raises(ValueError, match="stale"):
-            ws.body_pose_snapshot(previous)
+            ws.body_pose_snapshot(recovered)
         latest = ws.refresh(expected_revision=batch.checkpoint_revision)
         with pytest.raises(ValueError, match="superseded"):
             ws.body_pose_snapshot(previous)

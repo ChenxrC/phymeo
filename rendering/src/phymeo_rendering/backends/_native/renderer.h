@@ -167,6 +167,13 @@ struct PrResidentSharedExport {
 };
 static_assert(sizeof(PrResidentSharedExport)==40,"resident shared transform ABI");
 PR_API uint32_t pr_resident_shared_abi_version();
+// Shared modes v1 adds software MSAA4 and hardware ray queries with MSAA1/4.
+// A shared hardware begin converts poses and builds/updates the TLAS exactly
+// once. ray_query_info counters refer to publications on these contexts.
+PR_API uint32_t pr_resident_shared_modes_abi_version();
+PR_API void* pr_resident_create_shared_ray_query(uint32_t selected,uint32_t validation,
+    const uint32_t* vert,size_t vert_bytes,const uint32_t* frag,size_t frag_bytes,const uint8_t* cuda_uuid16,
+    const uint32_t* instances_comp,size_t comp_bytes);
 PR_API void* pr_resident_create_shared(uint32_t selected,uint32_t validation,
     const uint32_t* vert,size_t vert_bytes,const uint32_t* frag,size_t frag_bytes,const uint8_t* cuda_uuid16);
 PR_API int pr_resident_shared_export(void* context,PrResidentSharedExport* output);
@@ -178,6 +185,11 @@ PR_API int pr_resident_shared_drop_exports(void* context);
 // or call end after the producer has signalled. CUDA must finish using the
 // imported objects before final teardown. pr_destroy retains the context on -2.
 PR_API int pr_resident_shared_begin(void* context);
+PR_API uint32_t pr_resident_shared_camera_abi_version();
+PR_API int pr_resident_set_shared_camera_capacity(void* context,uint32_t count);
+PR_API uint64_t pr_resident_shared_camera_d2d_bytes(void* context);
+PR_API int pr_resident_render_shared_camera_planes(void* context,uint32_t camera_index,const PrParams* params,
+    uint32_t width,uint32_t height,uint32_t mask,uint8_t* output,size_t bytes);
 PR_API int pr_resident_render_shared_planes(void* context,const PrParams* params,
     uint32_t width,uint32_t height,uint32_t channel_mask,uint8_t* output,size_t output_bytes);
 PR_API int pr_resident_shared_end(void* context);
@@ -263,6 +275,8 @@ static_assert(sizeof(PrResidentRayQueryInfo)==128, "ray-query info ABI");
 // reports every instanced triangle. Buffer byte counts are logical sizes, not
 // VkDeviceMemory allocations (the latter remain in existing telemetry).
 // shadow_captures counts successful RGB captures, not actual ray launches.
+// Shared hardware reports dynamic host instance bytes through instance_upload_bytes;
+// its one-time 16 fixed bytes per instance are included in geometry_upload_bytes.
 PR_API uint32_t pr_resident_ray_query_abi_version();
 PR_API void* pr_resident_create_ray_query(uint32_t device_index,uint32_t validation,
     const uint32_t* vert,size_t vert_bytes,const uint32_t* frag,size_t frag_bytes);

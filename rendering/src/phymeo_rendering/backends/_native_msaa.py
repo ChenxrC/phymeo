@@ -31,6 +31,9 @@ def configure_msaa(device,samples):
         sensor_sampling='deterministic pixel center')
     if samples==1:
         return result
+    if getattr(device, '_shared_cuda_device', None) is not None:
+        from ._native_shared_matrices import require_shared_modes
+        require_shared_modes(device)
     if ct.sizeof(ResidentMsaaInfo)!=128:
         raise BackendUnavailableError('resident MSAA info layout mismatch')
     try:

@@ -1,6 +1,6 @@
 # Panda 白壳的软阴影与轮廓覆盖
 
-同一台 RTX 4060 Laptop GPU、720p、同一段 300 帧 Panda 运动，推荐观看档为**每灯 16 个主表面采样点，加四子像素轮廓覆盖**。固定近景的两轮同步 RGB 回放分别为 **57.41 和 59.30 FPS**，整帧 P95 为 **19.17 和 18.61 ms**。这次两轮共 600 帧均在 33.3 ms 内。计时从发起采集到取得 CPU 自有 RGB，影片按 30 FPS 播放。
+当前默认观看档和新片见[稳定环境光运动预览](../../examples/preview_stable_lighting/README.md)。本页记录早期稀疏反弹档的软阴影和轮廓。该档在 RTX 4060 Laptop GPU、720p 固定近景的两轮 300 帧同步 RGB 回放分别为 **57.41 和 59.30 FPS**，整帧 P95 为 **19.17 和 18.61 ms**。计时从发起采集到取得 CPU 自有 RGB，影片按 30 FPS 播放。
 
 [构建和回放](../../examples/preview_surface_quality/README.md) · [本机整臂切到夹爪的实拍影片](../../../artifacts/rendering/panda-surface-fix/sequence-media/panda-rigid-t4-p8-g2-k25-r2-age4-visibility-ratio-panel16-contour4-sequence-soft-studio.mp4) · [固定近景影片](../../../artifacts/rendering/panda-surface-fix/combined/motion.mp4)
 

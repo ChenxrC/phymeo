@@ -48,9 +48,12 @@ class RigidHistoryBackend(CompactBackend):
             device=underlying._delegate.device
             code=(ct.c_uint32*(len(self.history_shader)//4)).from_buffer_copy(self.history_shader)
             if self.history_api["setup"](device._handle,code,len(self.history_shader)):raise RuntimeError(device._error())
-            return RigidHistorySession(self,underlying)
+            return self._new_session(underlying)
         except BaseException:
             underlying.close();raise
+
+    def _new_session(self, underlying):
+        return RigidHistorySession(self, underlying)
 
 
 class RigidHistorySession(HistorySession):

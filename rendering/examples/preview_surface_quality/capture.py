@@ -17,27 +17,40 @@ def capture(args):
     from .runtime import SurfaceQualityBackend
     from preview_compact_rigid_history.runtime import RigidHistoryBackend
 
-    if args.baseline:
+    stable = (args.package / "stable-seal.json").is_file() and not args.baseline
+    if stable:
+        from preview_stable_lighting.runtime import StableBackend, activate as activate_stable
+        root, manifest = activate_stable(args.package)
+        backend = StableBackend
+    elif args.baseline:
         root, manifest = check_seal(args.package)
         backend = RigidHistoryBackend
     else:
         root, manifest = check_package(args.package)
         backend = SurfaceQualityBackend
-    activate(root)
+    if not stable:
+        activate(root)
     from phymeo_rendering.outputs import Channel
     delivery = Path(__file__).resolve().parents[1] / "preview_sparse_motion"
     shared = preview.load_delivery(delivery)
     out = args.output.resolve()
     out.mkdir(parents=True, exist_ok=False)
-    scene, studio, inputs, bindings = preview.prepare_inputs(args, out, shared, manifest["contract"])
+    if stable:
+        from preview_stable_lighting.scene import prepare_scene
+        scene, studio, inputs, bindings, _ = prepare_scene(
+            out, args.source_inputs, camera=args.camera, studio_look=args.studio_look)
+    else:
+        scene, studio, inputs, bindings = preview.prepare_inputs(args, out, shared, manifest["contract"])
     record = dict(camera=args.camera, lighting=args.studio_look, resolution=[1280, 720], seed=0,
                   source_inputs_sha256=digest(args.source_inputs),
+                  lighting_profile="stable-environment" if stable else "sparse-bounce",
                   source_manifest_sha256=digest(root / "source-manifest.json"), rounds=[])
     saved = {}
 
     def open_session(validation):
+        history = {} if stable else {"reuse_history": True}
         return backend(root, device_index=args.device_index, studio=studio, seed=0, exposure=8.,
-                       reuse_history=True, validation=validation).open_scene(scene)
+                       validation=validation, **history).open_scene(scene)
 
     def expose(session, i, channels):
         frame, request = inputs[i]
@@ -104,7 +117,7 @@ def capture(args):
                     for channel, name in ((Channel.INSTANCE_ID, "id"), (Channel.FORWARD_DEPTH, "depth"),
                                           (Channel.VALID, "valid")):
                         (out / f"frame-060-{name}.bin").write_bytes(planes[channel])
-                    if "contours" in manifest["contract"].get("surface_quality", {}):
+                    if stable or "contours" in manifest["contract"].get("surface_quality", {}):
                         from preview_contour_aa.calibrate import counts
                         record["contour_counts_frame60"] = counts(session)
     finally:
@@ -114,17 +127,26 @@ def capture(args):
 
 
 def main():
+    from preview_stable_lighting.build import DEFAULT_PACKAGE
+    from preview_lowres_filter._helpers import read
     cli = argparse.ArgumentParser(description=__doc__)
-    cli.add_argument("--package", type=Path, required=True)
+    cli.add_argument("--package", type=Path, default=DEFAULT_PACKAGE,
+                     help="Defaults to the stable motion preset. Pass a sealed sparse package to replay the older lighting.")
     cli.add_argument("--source-inputs", type=Path, required=True)
     cli.add_argument("--output", type=Path, required=True)
     cli.add_argument("--device-index", type=int, default=1)
     cli.add_argument("--baseline", action="store_true")
     cli.add_argument("--movie", action="store_true")
     cli.add_argument("--rounds", type=int, choices=(1, 2), default=2)
-    cli.add_argument("--camera", choices=("detail", "sequence"), default="detail")
-    cli.add_argument("--studio-look", choices=("recorded", "soft-studio"), default="recorded")
-    capture(cli.parse_args())
+    cli.add_argument("--camera", choices=("detail", "sequence"))
+    cli.add_argument("--studio-look", choices=("recorded", "soft-studio"))
+    args = cli.parse_args()
+    source = read(args.source_inputs)
+    args.camera = args.camera or source.get("camera", "detail")
+    args.studio_look = args.studio_look or source.get("studio_look", "recorded")
+    if args.package == DEFAULT_PACKAGE and not (args.package / "stable-seal.json").is_file():
+        cli.error("Build the default package with python -m preview_stable_lighting.build --parent PATH_TO_SURFACE_16_AA")
+    capture(args)
 
 
 if __name__ == "__main__":

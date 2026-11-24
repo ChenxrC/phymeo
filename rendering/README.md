@@ -10,6 +10,8 @@
 
 [Panda 抓取回放与同机位布光对照](results/r1/README.md)展示 R1 的两个归档姿态、固定及腕部相机，以及自研 Vulkan 的局部采集。
 
+[Panda 默认运动预览与实测影片](examples/preview_stable_lighting/README.md)使用逐像素 HDR 漫反射、面积灯软阴影、短程环境遮蔽和轮廓抗锯齿。
+
 [观看 Panda 抓取视频](results/panda-movies/README.md)，包括摄影棚全景、同步布光对比、木纹工作台全景与近景、同一方块的红漆与铜色金属对比。
 
 [打开本地影片页](results/index.html)。用同一段十秒真实抓放切换车间日光、双面积灯和摄影棚材质；点“搬运方块”可直接看夹指、金属反射和桌面投影。另有八世界同步回放与推 T 近景。[Panda 画质及延迟](results/r2/README.md) · [训练相机](results/r3/README.md) · [八世界资源和独跑对照](results/r4/README.md)

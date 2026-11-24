@@ -1,0 +1,123 @@
+{
+  "frames_checked": 240,
+  "size": [
+    1280,
+    720
+  ],
+  "frame_rate": 30,
+  "links_per_frame": 34,
+  "matching": [
+    "URDF and original converted meshes",
+    "stage geometry",
+    "all joints, link poses and base poses",
+    "all camera intrinsics, extrinsics and frame clocks",
+    "studio lighting, HDR panorama and exposure",
+    "device, film sampling and stream format"
+  ],
+  "film_aa": "grid2",
+  "exposure": 8.0,
+  "hdr_sha256": "a125ada38fc602025326f29b68df09531bb16f899f1973b03d9ac5ac98142548",
+  "urdf_sha256": "ba0980ed99e108591f8a8fa4251758520cc7387a1cb2ddf03c803aefc25396cf",
+  "movie_sha256": {
+    "studio": "76cb4a9d26765e9e805e0c3a93d374eb3c1d1729a7bbba734e75bf0928d8cea5",
+    "polished": "f13ccf77f677e557943617f3bc1930120d322a37abca232efad3996354560f8d"
+  },
+  "materials": {
+    "roughness_by_link": {
+      "left_arm_link1": [
+        0.41,
+        0.24
+      ],
+      "left_arm_link2": [
+        0.41,
+        0.24
+      ],
+      "left_arm_link3": [
+        0.41,
+        0.24
+      ],
+      "left_gripper_link": [
+        0.41,
+        0.24
+      ],
+      "right_arm_link1": [
+        0.41,
+        0.24
+      ],
+      "right_arm_link2": [
+        0.41,
+        0.24
+      ],
+      "right_arm_link3": [
+        0.41,
+        0.24
+      ],
+      "right_gripper_link": [
+        0.41,
+        0.24
+      ]
+    },
+    "camera_shell": {
+      "before": 0.4,
+      "after": 0.23,
+      "color_sha256": "f26a94b85fd86c71e0781ade3fc945071f03e8b410f5c8fefedf9dfc2865dad2",
+      "roughness_sha256": [
+        "9cbf095c462f0296fb94be825d4250b6d63ff27be1b42815fd5ddcc7bab95e20",
+        "6b92ec4114dfc680ce98eca4b7d0e8533bf46d1046f3917cbb4a9bc645f2d425"
+      ],
+      "unchanged_window_and_rim_texels": 3416,
+      "changed_roughness_texels": 193192
+    },
+    "normal_refinement": {
+      "targets": [
+        "left_arm_link1",
+        "left_arm_link2",
+        "left_arm_link3",
+        "left_gripper_link",
+        "right_arm_link1",
+        "right_arm_link2",
+        "right_arm_link3",
+        "right_gripper_link",
+        "zed_link"
+      ],
+      "changed_normals": 286756,
+      "receipt_sha256": "e9a97d427bf2ce359c6081471aac08bdb0e5eee32e9c64f3119298737aa32463"
+    },
+    "studio_details_sha256": "0f75015e0be32b0655ea050ade1d2783df77e2804a9f33b3bd9516f228dbbd04",
+    "polished_details_sha256": "0ad0997b8c04ee87bcb3e76b7739c769893d3851186f26b7fd902047799ddb3e"
+  },
+  "png_sha256": {
+    "0": {
+      "studio": "9a898004c8e6dbb5ca47c2a2f1c28b9705b1ed715e099511345b2f7e5209a70c",
+      "polished": "65c9623975b4c6f3bd0291ec9a84a03708a17b280705fc471d1c79d98ca98729"
+    },
+    "143": {
+      "studio": "2d26cceca95557831250995a0d8951ed1d97682ddb6daf2b4f4538bc9ea2cfa0",
+      "polished": "6fea755eb7db04d9bbf8f7b572c65c5224598f9a6e217e3dae7a8f6ddc2cac78"
+    }
+  },
+  "frame_143_crop_boxes": {
+    "Camera housing": [
+      506,
+      41,
+      668,
+      153
+    ],
+    "Near forearm": [
+      394,
+      233,
+      704,
+      371
+    ]
+  },
+  "frame_143_crop_changes": {
+    "Camera housing": {
+      "changed_pixels": 7206,
+      "mean_absolute_code_difference": 1.4425338036449147
+    },
+    "Near forearm": {
+      "changed_pixels": 9386,
+      "mean_absolute_code_difference": 0.774700015583606
+    }
+  }
+}

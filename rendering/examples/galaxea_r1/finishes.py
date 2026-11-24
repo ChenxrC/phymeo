@@ -38,12 +38,15 @@ _ARM = {
 _LINK_FINISH = {**_CHASSIS, **{f"{side}_{link}": finish
                 for side in ("left", "right") for link, finish in _ARM.items()}}
 
+# Polished paint on the covers uses the studio pigment and dielectric response.
+_POLISHED_ROUGHNESS = {"ivory enamel": .24, "sensor housing": .23}
+
 
 def apply_finish(scene, preset):
     """Keep URDF identity and transforms while changing the visual presentation."""
     if preset == "urdf":
         return scene
-    if preset != "studio":
+    if preset not in ("studio", "polished"):
         raise ValueError(f"unknown R1 material preset: {preset}")
     materials = []
     for material in scene.materials:
@@ -51,10 +54,13 @@ def apply_finish(scene, preset):
             link = material.id.removeprefix("r1-material-")
             if link not in _LINK_FINISH:
                 raise ValueError(f"no studio material declared for R1 link {link}")
-            color, metallic, roughness = _PALETTE[_LINK_FINISH[link]]
+            finish = _LINK_FINISH[link]
+            color, metallic, roughness = _PALETTE[finish]
+            if preset == "polished":
+                roughness = _POLISHED_ROUGHNESS.get(finish, roughness)
             material = Material(material.id, color, metallic, roughness)
         materials.append(material)
     bindings = [(m.id, m.base_color, m.metallic, m.roughness)
                 for m in materials if m.id.startswith("r1-material-")]
     signature = sha256(json.dumps(bindings, separators=(",", ":")).encode()).hexdigest()
-    return replace(scene, key=f"{scene.key}:studio-finish-v1:{signature}", materials=tuple(materials))
+    return replace(scene, key=f"{scene.key}:{preset}-finish-v1:{signature}", materials=tuple(materials))

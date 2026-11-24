@@ -162,7 +162,7 @@ def _camera_uv(position, groups, rows, islands, island_rows):
                     selection="whole existing normal-split front islands; affine local XY in a 2D atlas")
 
 
-def _camera_images():
+def _camera_images(shell=CAMERA[0]):
     u = (np.arange(_CAMERA_WIDTH) + .5) / _CAMERA_WIDTH
     v = (np.arange(_CAMERA_HEIGHT) + .5) / _CAMERA_HEIGHT
     x = _CAMERA_MIN[0] + _CAMERA_EXTENT[0] * u[None, :]
@@ -173,7 +173,7 @@ def _camera_images():
     # Shading and highlight position come from the actual PBR normal and light.
     rim = np.clip((.0125 - radius) / .0008, 0., 1.)
     lens = np.clip((.0098 - radius) / .0005, 0., 1.)
-    shell, glass = CAMERA
+    glass = CAMERA[1]
     def mix(channel):
         a = np.asarray(shell[channel])
         b = np.asarray(CAMERA_RIM[channel])
@@ -205,10 +205,12 @@ def _write_link(scene, link, directory, meshes, materials):
     if link == "zed_link":
         islands, island_rows = _groups(chunks, keep_normal_splits=True)
         uv, evidence = _camera_uv(position, groups, rows, islands, island_rows)
-        color_pixels, rough_pixels = _camera_images()
+        mat_id, = mat_ids
+        shell = (CAMERA[0][0], materials[mat_id].roughness)
+        color_pixels, rough_pixels = _camera_images(shell)
         color = _texture(directory, "stereo-color", color_pixels)
         rough = _texture(directory, "stereo-roughness", rough_pixels)
-        palette = dict(shell=CAMERA[0], rim=CAMERA_RIM, window=CAMERA[1])
+        palette = dict(shell=shell, rim=CAMERA_RIM, window=CAMERA[1])
     else:
         weight, evidence = _wheel_weights(groups, rows)
         if not np.any(weight == 1.) or not np.any(weight == 0.):

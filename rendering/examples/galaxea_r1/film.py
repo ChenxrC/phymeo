@@ -171,9 +171,12 @@ def run(args):
         raise FileExistsError(f"choose a new output directory: {trajectory} already exists")
     model = load_model(args.asset_dir, args.cache_dir or args.output/"model-cache")
     scene = apply_finish(stage(model, args.output/"stage"), args.finish)
-    if args.finish == "studio":
+    if args.finish in ("studio", "polished"):
         from .finish_details import apply_details
         scene = apply_details(scene, args.output/"finish-assets")
+    if args.finish == "polished":
+        from .polished_normals import PAINTED_SHELLS, smooth_painted_shells
+        scene = smooth_painted_shells(scene, args.output/"polished-normals", targets=PAINTED_SHELLS)
     frames, records = prepare(model,scene,args.frames)
     write_json(trajectory,dict(motion="authored joint-limited URDF forward kinematics",
                                mode="FK data only" if args.kinematics_only else "GPU film input",
@@ -270,8 +273,8 @@ def main():
     parser.add_argument("--package",type=Path,default=Path(__file__).resolve().parents[3]/"artifacts/rendering/panda-stable-surface/default")
     parser.add_argument("--device-index",type=int,default=1)
     parser.add_argument("--frames",type=int,default=240)
-    parser.add_argument("--finish",choices=("urdf","studio"),default="urdf",
-                        help="Factory URDF colors or the authored ocean enamel and satin metal look")
+    parser.add_argument("--finish",choices=("urdf","studio","polished"),default="urdf",
+                        help="Factory URDF, studio finishes, or studio with polished arm and head covers")
     parser.add_argument("--still",nargs="?",const=0,type=int,help="Render just this storyboard frame as a PNG")
     parser.add_argument("--samples",choices=("grid2","rotated4"),default="rotated4")
     parser.add_argument("--kinematics-only",action="store_true",help="Export the URDF trajectory and cameras without opening a GPU device")

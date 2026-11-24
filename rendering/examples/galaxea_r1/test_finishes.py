@@ -38,6 +38,24 @@ class R1Finishes(unittest.TestCase):
         self.assertGreater(link.metallic, tire.metallic)
         self.assertLess(max(tire.base_color), max(shell.base_color))
 
+    def test_polish_changes_only_the_head_and_white_arm_covers(self):
+        covers = {"zed_link"} | {f"{side}_{part}" for side in ("left", "right")
+                  for part in ("arm_link1", "arm_link2", "arm_link3", "gripper_link")}
+        links = covers | {"torso_link4", "left_arm_link5", "left_gripper_finger_link1",
+                          "wheel_motor_link2"}
+        scene = replace(self.scene, instances=(), materials=tuple(
+            Material("r1-material-"+link, (.45,.45,.45), 0., .65) for link in sorted(links)))
+        previous = apply_finish(scene, "studio")
+        polished = apply_finish(scene, "polished")
+        self.assertNotEqual(polished.key, previous.key)
+        for before, after in zip(previous.materials, polished.materials, strict=True):
+            link = after.id.removeprefix("r1-material-")
+            if link in covers:
+                self.assertLess(after.roughness, before.roughness)
+                self.assertEqual(replace(after, roughness=before.roughness), before)
+            else:
+                self.assertEqual(after, before)
+
 
 if __name__ == "__main__":
     unittest.main()

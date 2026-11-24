@@ -13,13 +13,55 @@
 const int studioAreaSamples = PR_STUDIO_AREA_GRID * PR_STUDIO_AREA_GRID;
 const int studioBrdfSamples = 8;
 
-#ifdef PR_STUDIO_SECONDARY_GRID
+#if defined(PR_PRIMARY_PANEL_SEQUENCE)
+#if PR_STUDIO_AREA_GRID != 2 || defined(PR_STUDIO_SECONDARY_GRID) || (PR_PRIMARY_PANEL_SEQUENCE != 8 && PR_PRIMARY_PANEL_SEQUENCE != 16)
+#error Primary panel sequences require a 2x2 secondary grid and 8 or 16 primary samples
+#endif
+layout(constant_id=107) const uint PR_PRIMARY_PANEL_SEQUENCE_SAMPLES=PR_PRIMARY_PANEL_SEQUENCE;
+#define PR_STUDIO_SEPARATE_BUDGET
+#define PR_STUDIO_FUNCTION residentStudioRadianceBudget
+#define PR_STUDIO_PRIMARY_BUDGET 4
+#define PR_STUDIO_SECONDARY_BUDGET 2
+#define PR_STUDIO_BUDGET_VALID (PR_PRIMARY_PANEL_SEQUENCE_SAMPLES==uint(PR_PRIMARY_PANEL_SEQUENCE))
+
+// Multi-jittered rectangle quadrature. Every equal-area cell and every
+// horizontal/vertical fine stratum contains one point. Interleaving the two
+// axes breaks the coincident shadow boundaries from collinear grid points.
+vec2 studioPanelPoint(int i, int panel) {
+#if PR_PRIMARY_PANEL_SEQUENCE == 16
+    const int yRank[16]=int[16](4,13,1,8,6,10,2,15,11,0,5,14,7,12,3,9);
+#else
+    const int yRank[8]=int[8](0,4,6,2,5,1,3,7);
+#endif
+    vec2 point=(vec2(i,yRank[i])+0.5)/float(PR_PRIMARY_PANEL_SEQUENCE);
+#if defined(PR_RESIDENT_PROGRESSIVE) && !defined(PR_PREVIEW_SPARSE_MAIN)
+    // Full progressive history only combines matching exposures. The native
+    // owner resets this batch index when the camera or scene state changes.
+    // Translate within each coarse cell so a long exposure covers its area.
+    uint batch=uint(u.options.w)>>1u;
+    if(batch!=0u) {
+        vec2 divisions=vec2(4,PR_PRIMARY_PANEL_SEQUENCE/4);
+        vec2 cell=point*divisions;
+        vec2 phase=fract(float(batch)*vec2(0.754877666,0.569840291));
+        point=(floor(cell)+fract(fract(cell)+phase))/divisions;
+    }
+#endif
+    // Motion uses one fixed pattern in emitter space, with no previous frame
+    // or screen-space noise. All visibility queries use the current scene.
+    if(panel==1) point=vec2(1.0-point.y,point.x);
+    return 2.0*point-1.0;
+}
+#elif defined(PR_STUDIO_SECONDARY_GRID)
 #if PR_STUDIO_AREA_GRID != 8 || PR_STUDIO_SECONDARY_GRID != 2
 #error Only primary 8 / secondary 2 split quadrature is supported
 #endif
 // Kept in the actual loaded SPIR-V and checked before any device allocation.
 layout(constant_id=73) const uint PR_SECONDARY_LIGHT_BUDGET=0x0802u;
 #define PR_STUDIO_FUNCTION residentStudioRadianceBudget
+#define PR_STUDIO_SEPARATE_BUDGET
+#define PR_STUDIO_PRIMARY_BUDGET PR_STUDIO_AREA_GRID
+#define PR_STUDIO_SECONDARY_BUDGET PR_STUDIO_SECONDARY_GRID
+#define PR_STUDIO_BUDGET_VALID (PR_SECONDARY_LIGHT_BUDGET==0x0802u)
 #else
 #define PR_STUDIO_FUNCTION residentStudioRadiance
 // Default/equal budgets preprocess to the original implementation and calls.
@@ -65,11 +107,13 @@ vec3 PR_STUDIO_FUNCTION(vec3 P, vec3 N, vec3 Ng, vec3 V, vec3 albedo,
 #ifdef PR_RESIDENT_INDIRECT
                             ,bool overrideDiffuse,vec3 diffuseIncoming
 #endif
-#ifdef PR_STUDIO_SECONDARY_GRID
+#ifdef PR_STUDIO_SEPARATE_BUDGET
                             ,int areaGrid
 #endif
                             ) {
-#ifdef PR_STUDIO_SECONDARY_GRID
+#ifdef PR_PRIMARY_PANEL_SEQUENCE
+    int studioAreaSamples=areaGrid==2 ? 4 : PR_PRIMARY_PANEL_SEQUENCE;
+#elif defined(PR_STUDIO_SECONDARY_GRID)
     int studioAreaSamples=areaGrid*areaGrid;
 #endif
     vec3 f0 = mix(vec3(0.04), albedo, metal);
@@ -108,7 +152,9 @@ vec3 PR_STUDIO_FUNCTION(vec3 P, vec3 N, vec3 Ng, vec3 V, vec3 albedo,
         vec3 emitterNormal = normalize(crossUW);
         if (dot(emitterNormal,biasP-panel.position.xyz) <= 0.0) continue;
         for (int i=0; i<studioAreaSamples; ++i) {
-#ifdef PR_STUDIO_SECONDARY_GRID
+#ifdef PR_PRIMARY_PANEL_SEQUENCE
+            vec2 ab=areaGrid==2 ? vec2(i&1,i>>1)-vec2(0.5) : studioPanelPoint(i,j);
+#elif defined(PR_STUDIO_SECONDARY_GRID)
             vec2 ab;
             if(areaGrid==2) ab=vec2(i&1,i>>1)-vec2(0.5);
             else ab=2.0*(vec2(i%areaGrid,i/areaGrid)+vec2(0.5))/float(areaGrid)-vec2(1.0);
@@ -164,7 +210,7 @@ vec3 PR_STUDIO_FUNCTION(vec3 P, vec3 N, vec3 Ng, vec3 V, vec3 albedo,
     return result;
 }
 
-#ifdef PR_STUDIO_SECONDARY_GRID
+#ifdef PR_STUDIO_SEPARATE_BUDGET
 // Both entry points instantiate the SAME integrator. Samples and MIS use the
 // selected grid inside that routine; GGX stays eight and shadows remain finite.
 vec3 residentStudioRadiance(vec3 P,vec3 N,vec3 Ng,vec3 V,vec3 albedo,float metal,float roughness
@@ -175,7 +221,7 @@ vec3 residentStudioRadiance(vec3 P,vec3 N,vec3 Ng,vec3 V,vec3 albedo,float metal
     ,bool overrideDiffuse,vec3 diffuseIncoming
 #endif
 ) {
-    if(PR_SECONDARY_LIGHT_BUDGET!=0x0802u)return vec3(0.0);
+    if(!PR_STUDIO_BUDGET_VALID)return vec3(0.0);
     return residentStudioRadianceBudget(P,N,Ng,V,albedo,metal,roughness
 #ifdef PR_RESIDENT_REFLECTION
         ,overrideSpecular,reflectedRadiance
@@ -183,7 +229,7 @@ vec3 residentStudioRadiance(vec3 P,vec3 N,vec3 Ng,vec3 V,vec3 albedo,float metal
 #ifdef PR_RESIDENT_INDIRECT
         ,overrideDiffuse,diffuseIncoming
 #endif
-        ,PR_STUDIO_AREA_GRID);
+        ,PR_STUDIO_PRIMARY_BUDGET);
 }
 vec3 residentStudioRadianceSecondary(vec3 P,vec3 N,vec3 Ng,vec3 V,vec3 albedo,float metal,float roughness
 #ifdef PR_RESIDENT_REFLECTION
@@ -193,7 +239,7 @@ vec3 residentStudioRadianceSecondary(vec3 P,vec3 N,vec3 Ng,vec3 V,vec3 albedo,fl
     ,bool overrideDiffuse,vec3 diffuseIncoming
 #endif
 ) {
-    if(PR_SECONDARY_LIGHT_BUDGET!=0x0802u)return vec3(0.0);
+    if(!PR_STUDIO_BUDGET_VALID)return vec3(0.0);
     return residentStudioRadianceBudget(P,N,Ng,V,albedo,metal,roughness
 #ifdef PR_RESIDENT_REFLECTION
         ,overrideSpecular,reflectedRadiance
@@ -201,7 +247,7 @@ vec3 residentStudioRadianceSecondary(vec3 P,vec3 N,vec3 Ng,vec3 V,vec3 albedo,fl
 #ifdef PR_RESIDENT_INDIRECT
         ,overrideDiffuse,diffuseIncoming
 #endif
-        ,PR_STUDIO_SECONDARY_GRID);
+        ,PR_STUDIO_SECONDARY_BUDGET);
 }
 #if defined(PR_RESIDENT_REFLECTION) || defined(PR_RESIDENT_INDIRECT)
 vec3 residentStudioRadianceSecondary(vec3 P,vec3 N,vec3 Ng,vec3 V,vec3 albedo,float metal,float roughness) {

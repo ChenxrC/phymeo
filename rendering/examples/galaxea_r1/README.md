@@ -1,5 +1,19 @@
 # 星海图 R1 · 三舵轮与双臂回放
 
+## 流水线分拣
+
+[观看 18 秒分拣影片](../../results/galaxea-r1/sorting/r1-conveyor-sorting.mp4) · [工位相机的四次抓拍](../../results/galaxea-r1/sorting/sorting-station-reads.png) · [片尾俯视料箱](../../results/galaxea-r1/sorting/sorted-bins.png)
+
+输送带每次进给 320 mm，到站停带。固定相机拍摄夹取位，按画面中央区域的颜色选箱。橙色方件送入 A 箱，蓝色六角件送入 B 箱。右上角小窗显示当次抓拍和选定的料箱。R1 夹起工件，放进对应料箱的下一个空位，随后松爪。
+
+成片中四件工件依次进入 A、B、B、A。用另一种上料顺序复验，去向随之变成 B、A、B、A。片尾用独立的实例图核对四件工件均可见，并逐件检查了落位。影片由 Phymeo Vulkan 渲染，H.264 成片为 1280 × 720、30 帧/秒。输送和抓放使用运动学回放，夹臂遵循 R1 官方 URDF 的关节限位。该场景验证了按图像选箱的流程，夹持力和打滑仍需动力学验证。[运行记录](../../results/galaxea-r1/sorting/render.json)
+
+使用下方的模型和环境配置，从仓库根目录运行以下命令。可用 `--order hex,block,hex,block` 复现换序上料。
+
+```powershell
+python -B -m galaxea_r1.sorting --asset-dir artifacts/rendering/galaxea-r1-assets --cache-dir artifacts/rendering/galaxea-model-cache --output artifacts/rendering/my-sorting-video --frames 540 --device-index 1 --validation
+```
+
 ## 装配车间的 A → B 取放
 
 [观看 10 秒操作影片](../../results/galaxea-r1/r1-workshop-transfer.mp4) · [车间全景](../../results/galaxea-r1/workshop-overview.png) · [夹取、搬运、松开三帧对照](../../results/galaxea-r1/workshop-operation.png)

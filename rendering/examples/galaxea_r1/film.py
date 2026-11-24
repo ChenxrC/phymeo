@@ -202,7 +202,7 @@ def run(args):
     write_json(args.output/"render.json", report)
 
 
-def capture_sequence(args, scene, frames, trajectory, studio, exposure, selected, *, stem="galaxea-r1"):
+def capture_sequence(args, scene, frames, trajectory, studio, exposure, selected, *, stem="galaxea-r1", annotate=None):
     """Record the supplied cameras and rigid poses with one resident Vulkan session."""
     from preview_stable_lighting.film_aa import film_capture
     from preview_stable_lighting.runtime import StableBackend
@@ -239,7 +239,7 @@ def capture_sequence(args, scene, frames, trajectory, studio, exposure, selected
             if i in selected:
                 Image.frombytes("RGB", SIZE, pixels).save(args.output/f"frame-{i:03}.png")
             if proc:
-                proc.stdin.write(pixels)
+                proc.stdin.write(annotate(i, pixels) if annotate is not None else pixels)
             if i % 30 == 0:
                 print(f"R1 frame {i}/{args.frames}", flush=True)
         if proc:

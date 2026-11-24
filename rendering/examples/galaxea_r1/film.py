@@ -183,12 +183,6 @@ def run(args):
                                ground_offset_m=model.floor_offset_m, frame_rate=FPS, frames=records))
     if args.kinematics_only:
         return
-    from preview_stable_lighting.film_aa import film_capture
-    from preview_stable_lighting.runtime import StableBackend
-    from preview_compact_rigid_history.state import bind_presentations
-    from phymeo_rendering.outputs import Channel
-    from phymeo_rendering.pipeline import CaptureRequest, RenderPath
-    bindings = bind_presentations([frame for frame,_ in frames], sha256(trajectory.read_bytes()).hexdigest())
     from phymeo_rendering.environment import RadianceEnvironment
     from phymeo_rendering.studio import StudioLighting
     panorama = Path(__file__).resolve().parents[1]/"materials"/"university_workshop_1k.hdr"
@@ -201,13 +195,29 @@ def run(args):
     exposure = 2./light_unit
     studio = StudioLighting(center_m=(.03,.04,.85),scale_m=1.5,panel_size_scale=1.55,
                             panel_strength=.52*light_unit,environment_map=environment)
+    selected = {0, round((args.frames-1)*.60), args.frames-1}
+    report = capture_sequence(args, scene, frames, trajectory, studio, exposure, selected)
+    report.update(model=model.diagnostics, camera_cuts=SHOT_CUTS, finish=args.finish,
+                  displayed_materials=[asdict(m) for m in scene.materials if m.id.startswith("r1-material-")])
+    write_json(args.output/"render.json", report)
+
+
+def capture_sequence(args, scene, frames, trajectory, studio, exposure, selected, *, stem="galaxea-r1"):
+    """Record the supplied cameras and rigid poses with one resident Vulkan session."""
+    from preview_stable_lighting.film_aa import film_capture
+    from preview_stable_lighting.runtime import StableBackend
+    from preview_compact_rigid_history.state import bind_presentations
+    from phymeo_rendering.outputs import Channel
+    from phymeo_rendering.pipeline import CaptureRequest, RenderPath
+    source = sha256(trajectory.read_bytes()).hexdigest()
+    bindings = bind_presentations([frame for frame,_ in frames], source)
+    proc = None
+    movie = args.output/(stem+".mp4")
+    temporary = args.output/(stem+".partial.mp4")
+    indices = range(args.frames) if args.still is None else (args.still,)
+    selected = set(selected) | {args.still}
     owner = StableBackend(args.package, studio=studio, device_index=args.device_index,
                           validation=args.validation, exposure=exposure, display_transform="pbr-neutral").open_scene(scene)
-    proc = None
-    movie = args.output/"galaxea-r1.mp4"
-    temporary = args.output/"galaxea-r1.partial.mp4"
-    indices = range(args.frames) if args.still is None else (args.still,)
-    selected = {0, round((args.frames-1)*.60), args.frames-1, args.still}
     try:
         if args.still is None:
             if movie.exists() or temporary.exists():
@@ -248,12 +258,10 @@ def run(args):
         raise RuntimeError("Vulkan reported errors or leaked R1 resources")
     report = dict(engine="Phymeo native resident Vulkan", device=device["device_name"], film_aa=args.samples,
                   validation_enabled=args.validation, validation_errors=device["validation_errors"],
-                  live_resources_after_close=device["live_resources"], model=model.diagnostics,
-                  width=SIZE[0], height=SIZE[1], exposure=exposure, camera_cuts=SHOT_CUTS,
+                  live_resources_after_close=device["live_resources"],
+                  width=SIZE[0], height=SIZE[1], exposure=exposure,
                   frame_rate=FPS, captures=len(indices), scene=scene.key, studio=asdict(studio),
-                  finish=args.finish,
-                  displayed_materials=[asdict(m) for m in scene.materials if m.id.startswith("r1-material-")],
-                  trajectory_sha256=sha256(trajectory.read_bytes()).hexdigest())
+                  trajectory_sha256=source)
     if args.still is None:
         stream = json.loads(subprocess.check_output(["ffprobe","-v","error","-count_frames","-select_streams","v:0",
             "-show_entries","stream=codec_name,width,height,nb_read_frames,avg_frame_rate,duration","-of","json",str(temporary)]))["streams"][0]
@@ -262,7 +270,7 @@ def run(args):
             raise RuntimeError(f"unexpected encoded R1 stream: {stream}")
         temporary.rename(movie)
         report.update(video=movie.name, stream=stream, movie_sha256=sha256(movie.read_bytes()).hexdigest())
-    write_json(args.output/"render.json", report)
+    return report
 
 
 def main():

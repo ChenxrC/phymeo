@@ -1,5 +1,23 @@
 # 星海图 R1 · 三舵轮与双臂回放
 
+## 装配车间的 A → B 取放
+
+[观看 10 秒操作影片](../../results/galaxea-r1/r1-workshop-transfer.mp4) · [车间全景](../../results/galaxea-r1/workshop-overview.png) · [夹取、搬运、松开三帧对照](../../results/galaxea-r1/workshop-operation.png)
+
+在 04 号工位，R1 从 A 治具夹起橙色三孔工件 P4，抬高 145 mm，平移约 311 mm 后落到 B 治具。约在 3.7 秒夹紧、5.6 秒经过两治具之间、8.4 秒松开。夹爪开始接近前先拍车间全景，此后三个动作共用同一个固定近景。台面、工具、料架、工位铭牌和混凝土地面均为场景内的几何或材质。
+
+这段操作采用 R1 官方 URDF 的关节限位与逆运动学。闭合间距按夹指网格和 56 mm 宽工件的倒角标定。夹持期间由夹爪位姿带动工件，松开后工件停在承托面。摩擦力、夹持载荷和滑移仍需动力学验证。
+
+两盏矩形面积灯与车间 HDR 环境共同照明。第 167 帧另做了 720p 固定机位对照，只移走悬空工件，再放回同一姿态。相同实例、相同中心深度的台面与治具区域内，7,360 个像素的主光项及总线性亮度均因遮挡下降至少 1%。工件复位后，显示图与线性图分别逐字节还原。影片用自研 Vulkan 在 RTX 4060 Laptop GPU 上渲染，四个子像素线性合成 720p，H.264 解码为 300 帧、30 FPS。[阴影对照记录](../../results/galaxea-r1/workshop-shadows.json) · [影片与运动检查记录](../../results/galaxea-r1/workshop-render.json)
+
+使用下方的模型来源与环境配置，从仓库根目录运行：
+
+```powershell
+python -B -m galaxea_r1.workshop --asset-dir artifacts/rendering/galaxea-r1-assets --cache-dir artifacts/rendering/galaxea-model-cache --output artifacts/rendering/my-workshop-video --device-index 1 --validation --verify-shadows
+```
+
+## 行驶与双臂展示
+
 [观看手臂与头罩亮面版](../../results/galaxea-r1/galaxea-r1-polished.mp4) · [亮面与上一版局部对照](../../results/galaxea-r1/polished-comparison.png) · [海蓝烤漆与缎面金属版](../../results/galaxea-r1/galaxea-r1-studio.mp4) · [原版 URDF 配色影片](../../results/galaxea-r1/galaxea-r1.mp4)
 
 影片长 8 秒。开场用地面半米刻度交代底盘行驶，约 3.6 秒切至双臂和夹爪，约 6.3 秒切至后侧全景。两个行驶段合计 1.14 米，车身累计转向约 20°。每个舵轮的偏角和滚动量分别由该轮的位置、滚动半径和底盘曲率求出。

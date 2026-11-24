@@ -1,0 +1,3965 @@
+{
+  "device": "NVIDIA GeForce RTX 4060 Laptop GPU",
+  "library_sha256": "d7f9221226fcc0cbef3725599e142c6cea009c4b4c48f810e088b64fb98848cb",
+  "validation": true,
+  "cleanup": {
+    "live_resources": 0,
+    "live_contexts": 0,
+    "live_frames": 0,
+    "validation_errors": 0
+  },
+  "output_after_close": {
+    "SW1": {
+      "abi_version": 1,
+      "phase": 0,
+      "capacity_bytes": 0,
+      "batches": 15,
+      "views": 30,
+      "image_bytes": 28347325,
+      "attachment_d2d_copies": 15,
+      "attachment_d2d_bytes": 28347328,
+      "materialization_d2d_copies": 0,
+      "materialization_d2d_bytes": 0,
+      "image_h2d_bytes": 0,
+      "image_d2h_bytes": 0,
+      "return_event_waits": 15,
+      "imports_created": 4,
+      "imports_destroyed": 4,
+      "imports_live": 0,
+      "slot_generations": 1,
+      "exports_open": false,
+      "return_pending": false
+    },
+    "SW4": {
+      "abi_version": 1,
+      "phase": 0,
+      "capacity_bytes": 0,
+      "batches": 15,
+      "views": 30,
+      "image_bytes": 28347325,
+      "attachment_d2d_copies": 15,
+      "attachment_d2d_bytes": 28347328,
+      "materialization_d2d_copies": 0,
+      "materialization_d2d_bytes": 0,
+      "image_h2d_bytes": 0,
+      "image_d2h_bytes": 0,
+      "return_event_waits": 15,
+      "imports_created": 4,
+      "imports_destroyed": 4,
+      "imports_live": 0,
+      "slot_generations": 1,
+      "exports_open": false,
+      "return_pending": false
+    },
+    "RQ1": {
+      "abi_version": 1,
+      "phase": 0,
+      "capacity_bytes": 0,
+      "batches": 15,
+      "views": 30,
+      "image_bytes": 28347325,
+      "attachment_d2d_copies": 15,
+      "attachment_d2d_bytes": 28347328,
+      "materialization_d2d_copies": 0,
+      "materialization_d2d_bytes": 0,
+      "image_h2d_bytes": 0,
+      "image_d2h_bytes": 0,
+      "return_event_waits": 15,
+      "imports_created": 4,
+      "imports_destroyed": 4,
+      "imports_live": 0,
+      "slot_generations": 1,
+      "exports_open": false,
+      "return_pending": false
+    },
+    "RQ4": {
+      "abi_version": 1,
+      "phase": 0,
+      "capacity_bytes": 0,
+      "batches": 16,
+      "views": 32,
+      "image_bytes": 28739450,
+      "attachment_d2d_copies": 16,
+      "attachment_d2d_bytes": 28739456,
+      "materialization_d2d_copies": 0,
+      "materialization_d2d_bytes": 0,
+      "image_h2d_bytes": 0,
+      "image_d2h_bytes": 0,
+      "return_event_waits": 16,
+      "imports_created": 4,
+      "imports_destroyed": 4,
+      "imports_live": 0,
+      "slot_generations": 1,
+      "exports_open": false,
+      "return_pending": false
+    }
+  },
+  "scene": "native-mounted-camera-dd247bb02779771b",
+  "size": [
+    320,
+    240
+  ],
+  "world_keys": [
+    41,
+    7
+  ],
+  "controls": {
+    "41": [
+      4.0,
+      0.65
+    ],
+    "7": [
+      -4.0,
+      -0.65
+    ]
+  },
+  "frames": [
+    {
+      "stage": "initial",
+      "ticks": [
+        0,
+        0
+      ],
+      "revision": 1,
+      "time_s": {
+        "41": 0.0,
+        "7": 0.0
+      },
+      "world_boundaries": [
+        [
+          "48893268e1f848bdaac61d4f54d15f7b",
+          0,
+          "initial"
+        ],
+        [
+          "48893268e1f848bdaac61d4f54d15f7b",
+          0,
+          "initial"
+        ]
+      ]
+    },
+    {
+      "stage": "step40",
+      "ticks": [
+        40,
+        40
+      ],
+      "revision": 41,
+      "time_s": {
+        "41": 0.04000000189989805,
+        "7": 0.04000000189989805
+      },
+      "world_boundaries": [
+        [
+          "48893268e1f848bdaac61d4f54d15f7b",
+          0,
+          "initial"
+        ],
+        [
+          "48893268e1f848bdaac61d4f54d15f7b",
+          0,
+          "initial"
+        ]
+      ]
+    },
+    {
+      "stage": "step80",
+      "ticks": [
+        80,
+        80
+      ],
+      "revision": 81,
+      "time_s": {
+        "41": 0.0800000037997961,
+        "7": 0.0800000037997961
+      },
+      "world_boundaries": [
+        [
+          "48893268e1f848bdaac61d4f54d15f7b",
+          0,
+          "initial"
+        ],
+        [
+          "48893268e1f848bdaac61d4f54d15f7b",
+          0,
+          "initial"
+        ]
+      ]
+    },
+    {
+      "stage": "reset41",
+      "ticks": [
+        0,
+        80
+      ],
+      "revision": 82,
+      "time_s": {
+        "41": 0.0,
+        "7": 0.0800000037997961
+      },
+      "world_boundaries": [
+        [
+          "48893268e1f848bdaac61d4f54d15f7b",
+          1,
+          "reset-states"
+        ],
+        [
+          "48893268e1f848bdaac61d4f54d15f7b",
+          0,
+          "initial"
+        ]
+      ]
+    }
+  ],
+  "captures": [
+    {
+      "mode": "SW1",
+      "stage": "initial",
+      "world": 41,
+      "view": "fixed",
+      "time_s": 0.0,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "41",
+        "epoch": 0,
+        "revision": 1,
+        "tick": 0,
+        "phase": "accepted_endpoint"
+      },
+      "plane_sha256": {
+        "srgb8_rgb": "0ae690dab73bbd7ccf346f63170f6f0d563728c7ae723c9db6301f1f14ea1d4b",
+        "forward_depth_m_f32": "797773ac47855129bfb9fc4e2e0415655f47fb5c53fe6bfd2f91ff687bde3d0f",
+        "instance_id_u32": "e477f3cadc5cebf7aefc01d01dddd3b2fe964f8b7f0555a033372e47dcaea09e",
+        "valid_u8": "9a50a7fbe32568ca90d5b0496ec5c0d0e86160b896964889f89a8c8b74ec0c15"
+      },
+      "archive_exact": true,
+      "block_centroid_xy": [
+        166.68957564575646,
+        103.13238007380073
+      ],
+      "gpu_consumer": [
+        1057304,
+        1137650,
+        1148653,
+        40238,
+        36562,
+        3459,
+        2418817,
+        0
+      ]
+    },
+    {
+      "mode": "SW1",
+      "stage": "initial",
+      "world": 41,
+      "view": "gimbal-cam",
+      "time_s": 0.0,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "41",
+        "epoch": 0,
+        "revision": 1,
+        "tick": 0,
+        "phase": "accepted_endpoint"
+      },
+      "plane_sha256": {
+        "srgb8_rgb": "daba14d465ab8f5e7aa6b7c90404dfd3b76581d734cb09636c3ad9c9e3758c12",
+        "forward_depth_m_f32": "92f4b39d35db53e6c0d1763ea556cca00c73958b684804ad5f290741a102b274",
+        "instance_id_u32": "32979ac06151ffc92550615f8c82619a012225b97b1218dde97bb8c828aa7ef4",
+        "valid_u8": "9b0d6a96016a55c89b8217d1b4a2dee87f4001dff9653a49ee66db0a618d3bc9"
+      },
+      "archive_exact": true,
+      "block_centroid_xy": [
+        161.9614236235519,
+        154.1129822047056
+      ],
+      "gpu_consumer": [
+        591923,
+        556550,
+        517856,
+        36487,
+        40313,
+        12093,
+        5015502,
+        0
+      ]
+    },
+    {
+      "mode": "SW1",
+      "stage": "initial",
+      "world": 7,
+      "view": "fixed",
+      "time_s": 0.0,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "7",
+        "epoch": 0,
+        "revision": 1,
+        "tick": 0,
+        "phase": "accepted_endpoint"
+      },
+      "plane_sha256": {
+        "srgb8_rgb": "0ae690dab73bbd7ccf346f63170f6f0d563728c7ae723c9db6301f1f14ea1d4b",
+        "forward_depth_m_f32": "797773ac47855129bfb9fc4e2e0415655f47fb5c53fe6bfd2f91ff687bde3d0f",
+        "instance_id_u32": "e477f3cadc5cebf7aefc01d01dddd3b2fe964f8b7f0555a033372e47dcaea09e",
+        "valid_u8": "9a50a7fbe32568ca90d5b0496ec5c0d0e86160b896964889f89a8c8b74ec0c15"
+      },
+      "archive_exact": true,
+      "block_centroid_xy": [
+        166.68957564575646,
+        103.13238007380073
+      ],
+      "gpu_consumer": [
+        1057304,
+        1137650,
+        1148653,
+        40238,
+        36562,
+        3459,
+        2418817,
+        0
+      ]
+    },
+    {
+      "mode": "SW1",
+      "stage": "initial",
+      "world": 7,
+      "view": "gimbal-cam",
+      "time_s": 0.0,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "7",
+        "epoch": 0,
+        "revision": 1,
+        "tick": 0,
+        "phase": "accepted_endpoint"
+      },
+      "plane_sha256": {
+        "srgb8_rgb": "daba14d465ab8f5e7aa6b7c90404dfd3b76581d734cb09636c3ad9c9e3758c12",
+        "forward_depth_m_f32": "92f4b39d35db53e6c0d1763ea556cca00c73958b684804ad5f290741a102b274",
+        "instance_id_u32": "32979ac06151ffc92550615f8c82619a012225b97b1218dde97bb8c828aa7ef4",
+        "valid_u8": "9b0d6a96016a55c89b8217d1b4a2dee87f4001dff9653a49ee66db0a618d3bc9"
+      },
+      "archive_exact": true,
+      "block_centroid_xy": [
+        161.9614236235519,
+        154.1129822047056
+      ],
+      "gpu_consumer": [
+        591923,
+        556550,
+        517856,
+        36487,
+        40313,
+        12093,
+        5015502,
+        0
+      ]
+    },
+    {
+      "mode": "SW4",
+      "stage": "initial",
+      "world": 41,
+      "view": "fixed",
+      "time_s": 0.0,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "41",
+        "epoch": 0,
+        "revision": 1,
+        "tick": 0,
+        "phase": "accepted_endpoint"
+      },
+      "plane_sha256": {
+        "srgb8_rgb": "df46e315a38bd81adca62dc9e8e4c539722e8e12356a3e5576a5ff9e65856bf7",
+        "forward_depth_m_f32": "797773ac47855129bfb9fc4e2e0415655f47fb5c53fe6bfd2f91ff687bde3d0f",
+        "instance_id_u32": "e477f3cadc5cebf7aefc01d01dddd3b2fe964f8b7f0555a033372e47dcaea09e",
+        "valid_u8": "9a50a7fbe32568ca90d5b0496ec5c0d0e86160b896964889f89a8c8b74ec0c15"
+      },
+      "archive_exact": true,
+      "block_centroid_xy": [
+        166.68957564575646,
+        103.13238007380073
+      ],
+      "gpu_consumer": [
+        1061933,
+        1141856,
+        1152656,
+        40238,
+        36562,
+        3459,
+        2418817,
+        0
+      ]
+    },
+    {
+      "mode": "SW4",
+      "stage": "initial",
+      "world": 41,
+      "view": "gimbal-cam",
+      "time_s": 0.0,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "41",
+        "epoch": 0,
+        "revision": 1,
+        "tick": 0,
+        "phase": "accepted_endpoint"
+      },
+      "plane_sha256": {
+        "srgb8_rgb": "7cd619cfe9b6290968ef3df5a7116fd3bbee0ba65b2d508eede6e94566f5206c",
+        "forward_depth_m_f32": "92f4b39d35db53e6c0d1763ea556cca00c73958b684804ad5f290741a102b274",
+        "instance_id_u32": "32979ac06151ffc92550615f8c82619a012225b97b1218dde97bb8c828aa7ef4",
+        "valid_u8": "9b0d6a96016a55c89b8217d1b4a2dee87f4001dff9653a49ee66db0a618d3bc9"
+      },
+      "archive_exact": true,
+      "block_centroid_xy": [
+        161.9614236235519,
+        154.1129822047056
+      ],
+      "gpu_consumer": [
+        597434,
+        562742,
+        524713,
+        36487,
+        40313,
+        12093,
+        5015502,
+        0
+      ]
+    },
+    {
+      "mode": "SW4",
+      "stage": "initial",
+      "world": 7,
+      "view": "fixed",
+      "time_s": 0.0,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "7",
+        "epoch": 0,
+        "revision": 1,
+        "tick": 0,
+        "phase": "accepted_endpoint"
+      },
+      "plane_sha256": {
+        "srgb8_rgb": "df46e315a38bd81adca62dc9e8e4c539722e8e12356a3e5576a5ff9e65856bf7",
+        "forward_depth_m_f32": "797773ac47855129bfb9fc4e2e0415655f47fb5c53fe6bfd2f91ff687bde3d0f",
+        "instance_id_u32": "e477f3cadc5cebf7aefc01d01dddd3b2fe964f8b7f0555a033372e47dcaea09e",
+        "valid_u8": "9a50a7fbe32568ca90d5b0496ec5c0d0e86160b896964889f89a8c8b74ec0c15"
+      },
+      "archive_exact": true,
+      "block_centroid_xy": [
+        166.68957564575646,
+        103.13238007380073
+      ],
+      "gpu_consumer": [
+        1061933,
+        1141856,
+        1152656,
+        40238,
+        36562,
+        3459,
+        2418817,
+        0
+      ]
+    },
+    {
+      "mode": "SW4",
+      "stage": "initial",
+      "world": 7,
+      "view": "gimbal-cam",
+      "time_s": 0.0,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "7",
+        "epoch": 0,
+        "revision": 1,
+        "tick": 0,
+        "phase": "accepted_endpoint"
+      },
+      "plane_sha256": {
+        "srgb8_rgb": "7cd619cfe9b6290968ef3df5a7116fd3bbee0ba65b2d508eede6e94566f5206c",
+        "forward_depth_m_f32": "92f4b39d35db53e6c0d1763ea556cca00c73958b684804ad5f290741a102b274",
+        "instance_id_u32": "32979ac06151ffc92550615f8c82619a012225b97b1218dde97bb8c828aa7ef4",
+        "valid_u8": "9b0d6a96016a55c89b8217d1b4a2dee87f4001dff9653a49ee66db0a618d3bc9"
+      },
+      "archive_exact": true,
+      "block_centroid_xy": [
+        161.9614236235519,
+        154.1129822047056
+      ],
+      "gpu_consumer": [
+        597434,
+        562742,
+        524713,
+        36487,
+        40313,
+        12093,
+        5015502,
+        0
+      ]
+    },
+    {
+      "mode": "RQ1",
+      "stage": "initial",
+      "world": 41,
+      "view": "fixed",
+      "time_s": 0.0,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "41",
+        "epoch": 0,
+        "revision": 1,
+        "tick": 0,
+        "phase": "accepted_endpoint"
+      },
+      "plane_sha256": {
+        "srgb8_rgb": "0ae690dab73bbd7ccf346f63170f6f0d563728c7ae723c9db6301f1f14ea1d4b",
+        "forward_depth_m_f32": "797773ac47855129bfb9fc4e2e0415655f47fb5c53fe6bfd2f91ff687bde3d0f",
+        "instance_id_u32": "e477f3cadc5cebf7aefc01d01dddd3b2fe964f8b7f0555a033372e47dcaea09e",
+        "valid_u8": "9a50a7fbe32568ca90d5b0496ec5c0d0e86160b896964889f89a8c8b74ec0c15"
+      },
+      "archive_exact": true,
+      "block_centroid_xy": [
+        166.68957564575646,
+        103.13238007380073
+      ],
+      "gpu_consumer": [
+        1057304,
+        1137650,
+        1148653,
+        40238,
+        36562,
+        3459,
+        2418817,
+        0
+      ]
+    },
+    {
+      "mode": "RQ1",
+      "stage": "initial",
+      "world": 41,
+      "view": "gimbal-cam",
+      "time_s": 0.0,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "41",
+        "epoch": 0,
+        "revision": 1,
+        "tick": 0,
+        "phase": "accepted_endpoint"
+      },
+      "plane_sha256": {
+        "srgb8_rgb": "daba14d465ab8f5e7aa6b7c90404dfd3b76581d734cb09636c3ad9c9e3758c12",
+        "forward_depth_m_f32": "92f4b39d35db53e6c0d1763ea556cca00c73958b684804ad5f290741a102b274",
+        "instance_id_u32": "32979ac06151ffc92550615f8c82619a012225b97b1218dde97bb8c828aa7ef4",
+        "valid_u8": "9b0d6a96016a55c89b8217d1b4a2dee87f4001dff9653a49ee66db0a618d3bc9"
+      },
+      "archive_exact": true,
+      "block_centroid_xy": [
+        161.9614236235519,
+        154.1129822047056
+      ],
+      "gpu_consumer": [
+        591923,
+        556550,
+        517856,
+        36487,
+        40313,
+        12093,
+        5015502,
+        0
+      ]
+    },
+    {
+      "mode": "RQ1",
+      "stage": "initial",
+      "world": 7,
+      "view": "fixed",
+      "time_s": 0.0,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "7",
+        "epoch": 0,
+        "revision": 1,
+        "tick": 0,
+        "phase": "accepted_endpoint"
+      },
+      "plane_sha256": {
+        "srgb8_rgb": "0ae690dab73bbd7ccf346f63170f6f0d563728c7ae723c9db6301f1f14ea1d4b",
+        "forward_depth_m_f32": "797773ac47855129bfb9fc4e2e0415655f47fb5c53fe6bfd2f91ff687bde3d0f",
+        "instance_id_u32": "e477f3cadc5cebf7aefc01d01dddd3b2fe964f8b7f0555a033372e47dcaea09e",
+        "valid_u8": "9a50a7fbe32568ca90d5b0496ec5c0d0e86160b896964889f89a8c8b74ec0c15"
+      },
+      "archive_exact": true,
+      "block_centroid_xy": [
+        166.68957564575646,
+        103.13238007380073
+      ],
+      "gpu_consumer": [
+        1057304,
+        1137650,
+        1148653,
+        40238,
+        36562,
+        3459,
+        2418817,
+        0
+      ]
+    },
+    {
+      "mode": "RQ1",
+      "stage": "initial",
+      "world": 7,
+      "view": "gimbal-cam",
+      "time_s": 0.0,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "7",
+        "epoch": 0,
+        "revision": 1,
+        "tick": 0,
+        "phase": "accepted_endpoint"
+      },
+      "plane_sha256": {
+        "srgb8_rgb": "daba14d465ab8f5e7aa6b7c90404dfd3b76581d734cb09636c3ad9c9e3758c12",
+        "forward_depth_m_f32": "92f4b39d35db53e6c0d1763ea556cca00c73958b684804ad5f290741a102b274",
+        "instance_id_u32": "32979ac06151ffc92550615f8c82619a012225b97b1218dde97bb8c828aa7ef4",
+        "valid_u8": "9b0d6a96016a55c89b8217d1b4a2dee87f4001dff9653a49ee66db0a618d3bc9"
+      },
+      "archive_exact": true,
+      "block_centroid_xy": [
+        161.9614236235519,
+        154.1129822047056
+      ],
+      "gpu_consumer": [
+        591923,
+        556550,
+        517856,
+        36487,
+        40313,
+        12093,
+        5015502,
+        0
+      ]
+    },
+    {
+      "mode": "RQ4",
+      "stage": "initial",
+      "world": 41,
+      "view": "fixed",
+      "time_s": 0.0,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "41",
+        "epoch": 0,
+        "revision": 1,
+        "tick": 0,
+        "phase": "accepted_endpoint"
+      },
+      "plane_sha256": {
+        "srgb8_rgb": "df46e315a38bd81adca62dc9e8e4c539722e8e12356a3e5576a5ff9e65856bf7",
+        "forward_depth_m_f32": "797773ac47855129bfb9fc4e2e0415655f47fb5c53fe6bfd2f91ff687bde3d0f",
+        "instance_id_u32": "e477f3cadc5cebf7aefc01d01dddd3b2fe964f8b7f0555a033372e47dcaea09e",
+        "valid_u8": "9a50a7fbe32568ca90d5b0496ec5c0d0e86160b896964889f89a8c8b74ec0c15"
+      },
+      "archive_exact": true,
+      "block_centroid_xy": [
+        166.68957564575646,
+        103.13238007380073
+      ],
+      "gpu_consumer": [
+        1061933,
+        1141856,
+        1152656,
+        40238,
+        36562,
+        3459,
+        2418817,
+        0
+      ]
+    },
+    {
+      "mode": "RQ4",
+      "stage": "initial",
+      "world": 41,
+      "view": "gimbal-cam",
+      "time_s": 0.0,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "41",
+        "epoch": 0,
+        "revision": 1,
+        "tick": 0,
+        "phase": "accepted_endpoint"
+      },
+      "plane_sha256": {
+        "srgb8_rgb": "7cd619cfe9b6290968ef3df5a7116fd3bbee0ba65b2d508eede6e94566f5206c",
+        "forward_depth_m_f32": "92f4b39d35db53e6c0d1763ea556cca00c73958b684804ad5f290741a102b274",
+        "instance_id_u32": "32979ac06151ffc92550615f8c82619a012225b97b1218dde97bb8c828aa7ef4",
+        "valid_u8": "9b0d6a96016a55c89b8217d1b4a2dee87f4001dff9653a49ee66db0a618d3bc9"
+      },
+      "archive_exact": true,
+      "block_centroid_xy": [
+        161.9614236235519,
+        154.1129822047056
+      ],
+      "gpu_consumer": [
+        597434,
+        562742,
+        524713,
+        36487,
+        40313,
+        12093,
+        5015502,
+        0
+      ]
+    },
+    {
+      "mode": "RQ4",
+      "stage": "initial",
+      "world": 7,
+      "view": "fixed",
+      "time_s": 0.0,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "7",
+        "epoch": 0,
+        "revision": 1,
+        "tick": 0,
+        "phase": "accepted_endpoint"
+      },
+      "plane_sha256": {
+        "srgb8_rgb": "df46e315a38bd81adca62dc9e8e4c539722e8e12356a3e5576a5ff9e65856bf7",
+        "forward_depth_m_f32": "797773ac47855129bfb9fc4e2e0415655f47fb5c53fe6bfd2f91ff687bde3d0f",
+        "instance_id_u32": "e477f3cadc5cebf7aefc01d01dddd3b2fe964f8b7f0555a033372e47dcaea09e",
+        "valid_u8": "9a50a7fbe32568ca90d5b0496ec5c0d0e86160b896964889f89a8c8b74ec0c15"
+      },
+      "archive_exact": true,
+      "block_centroid_xy": [
+        166.68957564575646,
+        103.13238007380073
+      ],
+      "gpu_consumer": [
+        1061933,
+        1141856,
+        1152656,
+        40238,
+        36562,
+        3459,
+        2418817,
+        0
+      ]
+    },
+    {
+      "mode": "RQ4",
+      "stage": "initial",
+      "world": 7,
+      "view": "gimbal-cam",
+      "time_s": 0.0,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "7",
+        "epoch": 0,
+        "revision": 1,
+        "tick": 0,
+        "phase": "accepted_endpoint"
+      },
+      "plane_sha256": {
+        "srgb8_rgb": "7cd619cfe9b6290968ef3df5a7116fd3bbee0ba65b2d508eede6e94566f5206c",
+        "forward_depth_m_f32": "92f4b39d35db53e6c0d1763ea556cca00c73958b684804ad5f290741a102b274",
+        "instance_id_u32": "32979ac06151ffc92550615f8c82619a012225b97b1218dde97bb8c828aa7ef4",
+        "valid_u8": "9b0d6a96016a55c89b8217d1b4a2dee87f4001dff9653a49ee66db0a618d3bc9"
+      },
+      "archive_exact": true,
+      "block_centroid_xy": [
+        161.9614236235519,
+        154.1129822047056
+      ],
+      "gpu_consumer": [
+        597434,
+        562742,
+        524713,
+        36487,
+        40313,
+        12093,
+        5015502,
+        0
+      ]
+    },
+    {
+      "mode": "SW1",
+      "stage": "step40",
+      "world": 41,
+      "view": "fixed",
+      "time_s": 0.04000000189989805,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "41",
+        "epoch": 0,
+        "revision": 41,
+        "tick": 40,
+        "phase": "accepted_endpoint"
+      },
+      "plane_sha256": {
+        "srgb8_rgb": "c72f183db7f58542ec289b33c7bdeef2f73fc40ab0173474145ac9e889852b46",
+        "forward_depth_m_f32": "c7d14c8c65a3c1f10d635d7e98c2c97a338404bd7d4943917613761e36076c0d",
+        "instance_id_u32": "9f555f4a6bda95fa716bcc8bd9a2bfb8e17ff8b9b52cbdd625eed872d5e435fa",
+        "valid_u8": "cc5e73b004063a46b553d490fe230582102a33b5730a42e81cea73499b593f6e"
+      },
+      "archive_exact": true,
+      "block_centroid_xy": [
+        166.56352087114337,
+        98.43330308529946
+      ],
+      "gpu_consumer": [
+        1078154,
+        1156560,
+        1164723,
+        40503,
+        36297,
+        3473,
+        2410725,
+        0
+      ]
+    },
+    {
+      "mode": "SW1",
+      "stage": "step40",
+      "world": 41,
+      "view": "gimbal-cam",
+      "time_s": 0.04000000189989805,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "41",
+        "epoch": 0,
+        "revision": 41,
+        "tick": 40,
+        "phase": "accepted_endpoint"
+      },
+      "plane_sha256": {
+        "srgb8_rgb": "f961b38d419024fcbeb514da19b28814a564b261a1dc340f299c5e15f01deb90",
+        "forward_depth_m_f32": "7832c492f7c0d033fbdb97cd2e57c84a6e49938a81d75e4bbb6b1f01329a45d8",
+        "instance_id_u32": "f964089954203800d6aac19a06f225fb9d82d9243809c445d001d836bf1e05a3",
+        "valid_u8": "4b206c47fc1b05735842ea933f2bf3eec1015e155e7587fa50b92f2f04ecdb95"
+      },
+      "archive_exact": true,
+      "block_centroid_xy": [
+        162.77933658304602,
+        153.82808227321365
+      ],
+      "gpu_consumer": [
+        539785,
+        505051,
+        468916,
+        34769,
+        42031,
+        12125,
+        5017236,
+        0
+      ]
+    },
+    {
+      "mode": "SW1",
+      "stage": "step40",
+      "world": 7,
+      "view": "fixed",
+      "time_s": 0.04000000189989805,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "7",
+        "epoch": 0,
+        "revision": 41,
+        "tick": 40,
+        "phase": "accepted_endpoint"
+      },
+      "plane_sha256": {
+        "srgb8_rgb": "40916c3080d1bde4f0db7859034d4eedd8a35ac61f9286c10ece48c72b574aa7",
+        "forward_depth_m_f32": "c616f2fb30706c9a70550dc6f8f9513e5868cc693651c3db256aace1c3e7cc60",
+        "instance_id_u32": "2bd42af67653f7a4f44b4162f4184f114fd8e201959ef8095dc1839e4aea0d44",
+        "valid_u8": "b8b20229a4021f4ce092ef4a426e04588d86a35a4646a44a15a7a00ce940622b"
+      },
+      "archive_exact": true,
+      "block_centroid_xy": [
+        166.77347034096218,
+        107.74638019617001
+      ],
+      "gpu_consumer": [
+        1030459,
+        1108400,
+        1119358,
+        39963,
+        36837,
+        3437,
+        2420680,
+        0
+      ]
+    },
+    {
+      "mode": "SW1",
+      "stage": "step40",
+      "world": 7,
+      "view": "gimbal-cam",
+      "time_s": 0.04000000189989805,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "7",
+        "epoch": 0,
+        "revision": 41,
+        "tick": 40,
+        "phase": "accepted_endpoint"
+      },
+      "plane_sha256": {
+        "srgb8_rgb": "ada74e7ada42e8f637bc6dbf536a9d46a3b7e7fffb8e92c30dfea7362bf0b6cd",
+        "forward_depth_m_f32": "295cf371cde82ce294e1ace02ab34ba19086e5ea0dd14d97a841807ff2432789",
+        "instance_id_u32": "280724cabd4c667374266519dc3f1551748bbb7fa80bae44e5ca1c08ffdb4090",
+        "valid_u8": "871b06331e040dfec5ea19d0f530c035813eb2046443f1a9daf406c213e6971e"
+      },
+      "archive_exact": true,
+      "block_centroid_xy": [
+        161.17924641868305,
+        154.30058986397015
+      ],
+      "gpu_consumer": [
+        652661,
+        617032,
+        575645,
+        38243,
+        38557,
+        12032,
+        5001069,
+        0
+      ]
+    },
+    {
+      "mode": "SW4",
+      "stage": "step40",
+      "world": 41,
+      "view": "fixed",
+      "time_s": 0.04000000189989805,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "41",
+        "epoch": 0,
+        "revision": 41,
+        "tick": 40,
+        "phase": "accepted_endpoint"
+      },
+      "plane_sha256": {
+        "srgb8_rgb": "da12f9cc8221d0227826e04ee918de461b908583964f012bee78986d11427ed6",
+        "forward_depth_m_f32": "c7d14c8c65a3c1f10d635d7e98c2c97a338404bd7d4943917613761e36076c0d",
+        "instance_id_u32": "9f555f4a6bda95fa716bcc8bd9a2bfb8e17ff8b9b52cbdd625eed872d5e435fa",
+        "valid_u8": "cc5e73b004063a46b553d490fe230582102a33b5730a42e81cea73499b593f6e"
+      },
+      "archive_exact": true,
+      "block_centroid_xy": [
+        166.56352087114337,
+        98.43330308529946
+      ],
+      "gpu_consumer": [
+        1082360,
+        1160437,
+        1168440,
+        40503,
+        36297,
+        3473,
+        2410725,
+        0
+      ]
+    },
+    {
+      "mode": "SW4",
+      "stage": "step40",
+      "world": 41,
+      "view": "gimbal-cam",
+      "time_s": 0.04000000189989805,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "41",
+        "epoch": 0,
+        "revision": 41,
+        "tick": 40,
+        "phase": "accepted_endpoint"
+      },
+      "plane_sha256": {
+        "srgb8_rgb": "5c74acbb145c8bcccb0c4732df47dc5ed5877551d8b7a48dbcb4516d3cadf423",
+        "forward_depth_m_f32": "7832c492f7c0d033fbdb97cd2e57c84a6e49938a81d75e4bbb6b1f01329a45d8",
+        "instance_id_u32": "f964089954203800d6aac19a06f225fb9d82d9243809c445d001d836bf1e05a3",
+        "valid_u8": "4b206c47fc1b05735842ea933f2bf3eec1015e155e7587fa50b92f2f04ecdb95"
+      },
+      "archive_exact": true,
+      "block_centroid_xy": [
+        162.77933658304602,
+        153.82808227321365
+      ],
+      "gpu_consumer": [
+        545694,
+        510957,
+        474888,
+        34769,
+        42031,
+        12125,
+        5017236,
+        0
+      ]
+    },
+    {
+      "mode": "SW4",
+      "stage": "step40",
+      "world": 7,
+      "view": "fixed",
+      "time_s": 0.04000000189989805,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "7",
+        "epoch": 0,
+        "revision": 41,
+        "tick": 40,
+        "phase": "accepted_endpoint"
+      },
+      "plane_sha256": {
+        "srgb8_rgb": "76c7810a3a6d5fbe1487c045ff077055356bc4f34f6b162cd7b4d7d821600a8e",
+        "forward_depth_m_f32": "c616f2fb30706c9a70550dc6f8f9513e5868cc693651c3db256aace1c3e7cc60",
+        "instance_id_u32": "2bd42af67653f7a4f44b4162f4184f114fd8e201959ef8095dc1839e4aea0d44",
+        "valid_u8": "b8b20229a4021f4ce092ef4a426e04588d86a35a4646a44a15a7a00ce940622b"
+      },
+      "archive_exact": true,
+      "block_centroid_xy": [
+        166.77347034096218,
+        107.74638019617001
+      ],
+      "gpu_consumer": [
+        1034658,
+        1112796,
+        1123962,
+        39963,
+        36837,
+        3437,
+        2420680,
+        0
+      ]
+    },
+    {
+      "mode": "SW4",
+      "stage": "step40",
+      "world": 7,
+      "view": "gimbal-cam",
+      "time_s": 0.04000000189989805,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "7",
+        "epoch": 0,
+        "revision": 41,
+        "tick": 40,
+        "phase": "accepted_endpoint"
+      },
+      "plane_sha256": {
+        "srgb8_rgb": "47d1f92d9e828ead2cc0bd3a532cc1b22f0ae31d0d12ca4108122b53df244eb3",
+        "forward_depth_m_f32": "295cf371cde82ce294e1ace02ab34ba19086e5ea0dd14d97a841807ff2432789",
+        "instance_id_u32": "280724cabd4c667374266519dc3f1551748bbb7fa80bae44e5ca1c08ffdb4090",
+        "valid_u8": "871b06331e040dfec5ea19d0f530c035813eb2046443f1a9daf406c213e6971e"
+      },
+      "archive_exact": true,
+      "block_centroid_xy": [
+        161.17924641868305,
+        154.30058986397015
+      ],
+      "gpu_consumer": [
+        658089,
+        623065,
+        582249,
+        38243,
+        38557,
+        12032,
+        5001069,
+        0
+      ]
+    },
+    {
+      "mode": "RQ1",
+      "stage": "step40",
+      "world": 41,
+      "view": "fixed",
+      "time_s": 0.04000000189989805,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "41",
+        "epoch": 0,
+        "revision": 41,
+        "tick": 40,
+        "phase": "accepted_endpoint"
+      },
+      "plane_sha256": {
+        "srgb8_rgb": "c72f183db7f58542ec289b33c7bdeef2f73fc40ab0173474145ac9e889852b46",
+        "forward_depth_m_f32": "c7d14c8c65a3c1f10d635d7e98c2c97a338404bd7d4943917613761e36076c0d",
+        "instance_id_u32": "9f555f4a6bda95fa716bcc8bd9a2bfb8e17ff8b9b52cbdd625eed872d5e435fa",
+        "valid_u8": "cc5e73b004063a46b553d490fe230582102a33b5730a42e81cea73499b593f6e"
+      },
+      "archive_exact": true,
+      "block_centroid_xy": [
+        166.56352087114337,
+        98.43330308529946
+      ],
+      "gpu_consumer": [
+        1078154,
+        1156560,
+        1164723,
+        40503,
+        36297,
+        3473,
+        2410725,
+        0
+      ]
+    },
+    {
+      "mode": "RQ1",
+      "stage": "step40",
+      "world": 41,
+      "view": "gimbal-cam",
+      "time_s": 0.04000000189989805,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "41",
+        "epoch": 0,
+        "revision": 41,
+        "tick": 40,
+        "phase": "accepted_endpoint"
+      },
+      "plane_sha256": {
+        "srgb8_rgb": "f961b38d419024fcbeb514da19b28814a564b261a1dc340f299c5e15f01deb90",
+        "forward_depth_m_f32": "7832c492f7c0d033fbdb97cd2e57c84a6e49938a81d75e4bbb6b1f01329a45d8",
+        "instance_id_u32": "f964089954203800d6aac19a06f225fb9d82d9243809c445d001d836bf1e05a3",
+        "valid_u8": "4b206c47fc1b05735842ea933f2bf3eec1015e155e7587fa50b92f2f04ecdb95"
+      },
+      "archive_exact": true,
+      "block_centroid_xy": [
+        162.77933658304602,
+        153.82808227321365
+      ],
+      "gpu_consumer": [
+        539785,
+        505051,
+        468916,
+        34769,
+        42031,
+        12125,
+        5017236,
+        0
+      ]
+    },
+    {
+      "mode": "RQ1",
+      "stage": "step40",
+      "world": 7,
+      "view": "fixed",
+      "time_s": 0.04000000189989805,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "7",
+        "epoch": 0,
+        "revision": 41,
+        "tick": 40,
+        "phase": "accepted_endpoint"
+      },
+      "plane_sha256": {
+        "srgb8_rgb": "40916c3080d1bde4f0db7859034d4eedd8a35ac61f9286c10ece48c72b574aa7",
+        "forward_depth_m_f32": "c616f2fb30706c9a70550dc6f8f9513e5868cc693651c3db256aace1c3e7cc60",
+        "instance_id_u32": "2bd42af67653f7a4f44b4162f4184f114fd8e201959ef8095dc1839e4aea0d44",
+        "valid_u8": "b8b20229a4021f4ce092ef4a426e04588d86a35a4646a44a15a7a00ce940622b"
+      },
+      "archive_exact": true,
+      "block_centroid_xy": [
+        166.77347034096218,
+        107.74638019617001
+      ],
+      "gpu_consumer": [
+        1030459,
+        1108400,
+        1119358,
+        39963,
+        36837,
+        3437,
+        2420680,
+        0
+      ]
+    },
+    {
+      "mode": "RQ1",
+      "stage": "step40",
+      "world": 7,
+      "view": "gimbal-cam",
+      "time_s": 0.04000000189989805,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "7",
+        "epoch": 0,
+        "revision": 41,
+        "tick": 40,
+        "phase": "accepted_endpoint"
+      },
+      "plane_sha256": {
+        "srgb8_rgb": "ada74e7ada42e8f637bc6dbf536a9d46a3b7e7fffb8e92c30dfea7362bf0b6cd",
+        "forward_depth_m_f32": "295cf371cde82ce294e1ace02ab34ba19086e5ea0dd14d97a841807ff2432789",
+        "instance_id_u32": "280724cabd4c667374266519dc3f1551748bbb7fa80bae44e5ca1c08ffdb4090",
+        "valid_u8": "871b06331e040dfec5ea19d0f530c035813eb2046443f1a9daf406c213e6971e"
+      },
+      "archive_exact": true,
+      "block_centroid_xy": [
+        161.17924641868305,
+        154.30058986397015
+      ],
+      "gpu_consumer": [
+        652661,
+        617032,
+        575645,
+        38243,
+        38557,
+        12032,
+        5001069,
+        0
+      ]
+    },
+    {
+      "mode": "RQ4",
+      "stage": "step40",
+      "world": 41,
+      "view": "fixed",
+      "time_s": 0.04000000189989805,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "41",
+        "epoch": 0,
+        "revision": 41,
+        "tick": 40,
+        "phase": "accepted_endpoint"
+      },
+      "plane_sha256": {
+        "srgb8_rgb": "da12f9cc8221d0227826e04ee918de461b908583964f012bee78986d11427ed6",
+        "forward_depth_m_f32": "c7d14c8c65a3c1f10d635d7e98c2c97a338404bd7d4943917613761e36076c0d",
+        "instance_id_u32": "9f555f4a6bda95fa716bcc8bd9a2bfb8e17ff8b9b52cbdd625eed872d5e435fa",
+        "valid_u8": "cc5e73b004063a46b553d490fe230582102a33b5730a42e81cea73499b593f6e"
+      },
+      "archive_exact": true,
+      "block_centroid_xy": [
+        166.56352087114337,
+        98.43330308529946
+      ],
+      "gpu_consumer": [
+        1082360,
+        1160437,
+        1168440,
+        40503,
+        36297,
+        3473,
+        2410725,
+        0
+      ]
+    },
+    {
+      "mode": "RQ4",
+      "stage": "step40",
+      "world": 41,
+      "view": "gimbal-cam",
+      "time_s": 0.04000000189989805,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "41",
+        "epoch": 0,
+        "revision": 41,
+        "tick": 40,
+        "phase": "accepted_endpoint"
+      },
+      "plane_sha256": {
+        "srgb8_rgb": "5c74acbb145c8bcccb0c4732df47dc5ed5877551d8b7a48dbcb4516d3cadf423",
+        "forward_depth_m_f32": "7832c492f7c0d033fbdb97cd2e57c84a6e49938a81d75e4bbb6b1f01329a45d8",
+        "instance_id_u32": "f964089954203800d6aac19a06f225fb9d82d9243809c445d001d836bf1e05a3",
+        "valid_u8": "4b206c47fc1b05735842ea933f2bf3eec1015e155e7587fa50b92f2f04ecdb95"
+      },
+      "archive_exact": true,
+      "block_centroid_xy": [
+        162.77933658304602,
+        153.82808227321365
+      ],
+      "gpu_consumer": [
+        545694,
+        510957,
+        474888,
+        34769,
+        42031,
+        12125,
+        5017236,
+        0
+      ]
+    },
+    {
+      "mode": "RQ4",
+      "stage": "step40",
+      "world": 7,
+      "view": "fixed",
+      "time_s": 0.04000000189989805,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "7",
+        "epoch": 0,
+        "revision": 41,
+        "tick": 40,
+        "phase": "accepted_endpoint"
+      },
+      "plane_sha256": {
+        "srgb8_rgb": "76c7810a3a6d5fbe1487c045ff077055356bc4f34f6b162cd7b4d7d821600a8e",
+        "forward_depth_m_f32": "c616f2fb30706c9a70550dc6f8f9513e5868cc693651c3db256aace1c3e7cc60",
+        "instance_id_u32": "2bd42af67653f7a4f44b4162f4184f114fd8e201959ef8095dc1839e4aea0d44",
+        "valid_u8": "b8b20229a4021f4ce092ef4a426e04588d86a35a4646a44a15a7a00ce940622b"
+      },
+      "archive_exact": true,
+      "block_centroid_xy": [
+        166.77347034096218,
+        107.74638019617001
+      ],
+      "gpu_consumer": [
+        1034658,
+        1112796,
+        1123962,
+        39963,
+        36837,
+        3437,
+        2420680,
+        0
+      ]
+    },
+    {
+      "mode": "RQ4",
+      "stage": "step40",
+      "world": 7,
+      "view": "gimbal-cam",
+      "time_s": 0.04000000189989805,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "7",
+        "epoch": 0,
+        "revision": 41,
+        "tick": 40,
+        "phase": "accepted_endpoint"
+      },
+      "plane_sha256": {
+        "srgb8_rgb": "47d1f92d9e828ead2cc0bd3a532cc1b22f0ae31d0d12ca4108122b53df244eb3",
+        "forward_depth_m_f32": "295cf371cde82ce294e1ace02ab34ba19086e5ea0dd14d97a841807ff2432789",
+        "instance_id_u32": "280724cabd4c667374266519dc3f1551748bbb7fa80bae44e5ca1c08ffdb4090",
+        "valid_u8": "871b06331e040dfec5ea19d0f530c035813eb2046443f1a9daf406c213e6971e"
+      },
+      "archive_exact": true,
+      "block_centroid_xy": [
+        161.17924641868305,
+        154.30058986397015
+      ],
+      "gpu_consumer": [
+        658089,
+        623065,
+        582249,
+        38243,
+        38557,
+        12032,
+        5001069,
+        0
+      ]
+    },
+    {
+      "mode": "SW1",
+      "stage": "step80",
+      "world": 41,
+      "view": "fixed",
+      "time_s": 0.0800000037997961,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "41",
+        "epoch": 0,
+        "revision": 81,
+        "tick": 80,
+        "phase": "accepted_endpoint"
+      },
+      "plane_sha256": {
+        "srgb8_rgb": "5a012649b69df43916e68901c8b4fbc8c7d7adc332996292e99923ba91f5e55e",
+        "forward_depth_m_f32": "8653a5c076f9b1d7cd951258d18b2710394187356698af655366fdc49e501c24",
+        "instance_id_u32": "193ca5a99678d38f139a338da1988d68e94ac4f1e09c522c838edefb2bd3f806",
+        "valid_u8": "598e340f934996f1990b3194157ac2891cdb5861b23300208b9dc3943da218b2"
+      },
+      "archive_exact": true,
+      "block_centroid_xy": [
+        166.0774193548387,
+        84.16043010752688
+      ],
+      "gpu_consumer": [
+        1116688,
+        1185544,
+        1183770,
+        41223,
+        35577,
+        3516,
+        2388422,
+        0
+      ]
+    },
+    {
+      "mode": "SW1",
+      "stage": "step80",
+      "world": 41,
+      "view": "gimbal-cam",
+      "time_s": 0.0800000037997961,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "41",
+        "epoch": 0,
+        "revision": 81,
+        "tick": 80,
+        "phase": "accepted_endpoint"
+      },
+      "plane_sha256": {
+        "srgb8_rgb": "ec3c344227ecc0b991292656b18ca8cc48e0611cbce0cf46b2d59929782bb934",
+        "forward_depth_m_f32": "92de7f2b93684a8120e58a86fe4aae2df24616c5f95d6af47253a72ece83412c",
+        "instance_id_u32": "cc4a4429160fa161dc851d269511faa643d350561440c1f49ffd9d6d8879bb95",
+        "valid_u8": "d0fad53b064d1750de8c6f4d2f96ec76cf3ed4c187dbc2ea1332dee5959da1a6"
+      },
+      "archive_exact": true,
+      "block_centroid_xy": [
+        164.78182032261861,
+        152.78452843518193
+      ],
+      "gpu_consumer": [
+        429077,
+        397321,
+        367476,
+        29917,
+        46883,
+        12177,
+        5006540,
+        0
+      ]
+    },
+    {
+      "mode": "SW1",
+      "stage": "step80",
+      "world": 7,
+      "view": "fixed",
+      "time_s": 0.0800000037997961,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "7",
+        "epoch": 0,
+        "revision": 81,
+        "tick": 80,
+        "phase": "accepted_endpoint"
+      },
+      "plane_sha256": {
+        "srgb8_rgb": "da2ccae64ab8c7e347c85792a62955e9acf31bea1a93f6ef9cecc6182c8c166c",
+        "forward_depth_m_f32": "9cce34ad7e52f758b0760eb5118386c21fdbb01c4e42ff10543dcecc57083ea3",
+        "instance_id_u32": "bcb71752227e761a6378e6789917e55719a580684a3943a94e23b6345193a723",
+        "valid_u8": "ba20d0227c0504ffec18640abc42c17e5a2add2430f9d0da0fb9c18b5cbc5797"
+      },
+      "archive_exact": true,
+      "block_centroid_xy": [
+        167.12657613967022,
+        120.61736178467507
+      ],
+      "gpu_consumer": [
+        945435,
+        1016249,
+        1026423,
+        39141,
+        37659,
+        3378,
+        2429764,
+        0
+      ]
+    },
+    {
+      "mode": "SW1",
+      "stage": "step80",
+      "world": 7,
+      "view": "gimbal-cam",
+      "time_s": 0.0800000037997961,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "7",
+        "epoch": 0,
+        "revision": 81,
+        "tick": 80,
+        "phase": "accepted_endpoint"
+      },
+      "plane_sha256": {
+        "srgb8_rgb": "fba49faeaba9feaef7b035acca2be8818c0dd1ac9d118151c60f828ebdcd7396",
+        "forward_depth_m_f32": "061800d03d066566d9438a24782a62dbddc9d0b4c854ab97c2217d7649ba26e1",
+        "instance_id_u32": "d213fe99e0cbc647d386d86cbb4b6a32882e445b3712f881019c32f5edb47a6a",
+        "valid_u8": "ed27519e65a98be04ff635c8fb7611054d9314615e3ad29261f96245255135c7"
+      },
+      "archive_exact": true,
+      "block_centroid_xy": [
+        158.79795364891518,
+        154.58296351084812
+      ],
+      "gpu_consumer": [
+        876157,
+        842638,
+        794184,
+        43689,
+        33111,
+        11840,
+        4949888,
+        0
+      ]
+    },
+    {
+      "mode": "SW4",
+      "stage": "step80",
+      "world": 41,
+      "view": "fixed",
+      "time_s": 0.0800000037997961,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "41",
+        "epoch": 0,
+        "revision": 81,
+        "tick": 80,
+        "phase": "accepted_endpoint"
+      },
+      "plane_sha256": {
+        "srgb8_rgb": "0a66240871d355cc10f1c04b9f457b73409e000c5e03c3e38f22ebb1ec5df762",
+        "forward_depth_m_f32": "8653a5c076f9b1d7cd951258d18b2710394187356698af655366fdc49e501c24",
+        "instance_id_u32": "193ca5a99678d38f139a338da1988d68e94ac4f1e09c522c838edefb2bd3f806",
+        "valid_u8": "598e340f934996f1990b3194157ac2891cdb5861b23300208b9dc3943da218b2"
+      },
+      "archive_exact": true,
+      "block_centroid_xy": [
+        166.0774193548387,
+        84.16043010752688
+      ],
+      "gpu_consumer": [
+        1120102,
+        1188599,
+        1186597,
+        41223,
+        35577,
+        3516,
+        2388422,
+        0
+      ]
+    },
+    {
+      "mode": "SW4",
+      "stage": "step80",
+      "world": 41,
+      "view": "gimbal-cam",
+      "time_s": 0.0800000037997961,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "41",
+        "epoch": 0,
+        "revision": 81,
+        "tick": 80,
+        "phase": "accepted_endpoint"
+      },
+      "plane_sha256": {
+        "srgb8_rgb": "a60db6b831c0faa540fbe04f0372a8e90e8e81a5e31331a80cfc4215f8d25ba8",
+        "forward_depth_m_f32": "92de7f2b93684a8120e58a86fe4aae2df24616c5f95d6af47253a72ece83412c",
+        "instance_id_u32": "cc4a4429160fa161dc851d269511faa643d350561440c1f49ffd9d6d8879bb95",
+        "valid_u8": "d0fad53b064d1750de8c6f4d2f96ec76cf3ed4c187dbc2ea1332dee5959da1a6"
+      },
+      "archive_exact": true,
+      "block_centroid_xy": [
+        164.78182032261861,
+        152.78452843518193
+      ],
+      "gpu_consumer": [
+        433771,
+        402070,
+        372371,
+        29917,
+        46883,
+        12177,
+        5006540,
+        0
+      ]
+    },
+    {
+      "mode": "SW4",
+      "stage": "step80",
+      "world": 7,
+      "view": "fixed",
+      "time_s": 0.0800000037997961,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "7",
+        "epoch": 0,
+        "revision": 81,
+        "tick": 80,
+        "phase": "accepted_endpoint"
+      },
+      "plane_sha256": {
+        "srgb8_rgb": "d1aeb504be57f1c71d951e1b774674f31e088049c34f69f4a986ff7f2a5ef016",
+        "forward_depth_m_f32": "9cce34ad7e52f758b0760eb5118386c21fdbb01c4e42ff10543dcecc57083ea3",
+        "instance_id_u32": "bcb71752227e761a6378e6789917e55719a580684a3943a94e23b6345193a723",
+        "valid_u8": "ba20d0227c0504ffec18640abc42c17e5a2add2430f9d0da0fb9c18b5cbc5797"
+      },
+      "archive_exact": true,
+      "block_centroid_xy": [
+        167.12657613967022,
+        120.61736178467507
+      ],
+      "gpu_consumer": [
+        950434,
+        1021003,
+        1031128,
+        39141,
+        37659,
+        3378,
+        2429764,
+        0
+      ]
+    },
+    {
+      "mode": "SW4",
+      "stage": "step80",
+      "world": 7,
+      "view": "gimbal-cam",
+      "time_s": 0.0800000037997961,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "7",
+        "epoch": 0,
+        "revision": 81,
+        "tick": 80,
+        "phase": "accepted_endpoint"
+      },
+      "plane_sha256": {
+        "srgb8_rgb": "afc7c8ddd8c8b9bcf8862e4545506b6380446a755b8b0073d82060df8253f396",
+        "forward_depth_m_f32": "061800d03d066566d9438a24782a62dbddc9d0b4c854ab97c2217d7649ba26e1",
+        "instance_id_u32": "d213fe99e0cbc647d386d86cbb4b6a32882e445b3712f881019c32f5edb47a6a",
+        "valid_u8": "ed27519e65a98be04ff635c8fb7611054d9314615e3ad29261f96245255135c7"
+      },
+      "archive_exact": true,
+      "block_centroid_xy": [
+        158.79795364891518,
+        154.58296351084812
+      ],
+      "gpu_consumer": [
+        883133,
+        849738,
+        801523,
+        43689,
+        33111,
+        11840,
+        4949888,
+        0
+      ]
+    },
+    {
+      "mode": "RQ1",
+      "stage": "step80",
+      "world": 41,
+      "view": "fixed",
+      "time_s": 0.0800000037997961,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "41",
+        "epoch": 0,
+        "revision": 81,
+        "tick": 80,
+        "phase": "accepted_endpoint"
+      },
+      "plane_sha256": {
+        "srgb8_rgb": "5a012649b69df43916e68901c8b4fbc8c7d7adc332996292e99923ba91f5e55e",
+        "forward_depth_m_f32": "8653a5c076f9b1d7cd951258d18b2710394187356698af655366fdc49e501c24",
+        "instance_id_u32": "193ca5a99678d38f139a338da1988d68e94ac4f1e09c522c838edefb2bd3f806",
+        "valid_u8": "598e340f934996f1990b3194157ac2891cdb5861b23300208b9dc3943da218b2"
+      },
+      "archive_exact": true,
+      "block_centroid_xy": [
+        166.0774193548387,
+        84.16043010752688
+      ],
+      "gpu_consumer": [
+        1116688,
+        1185544,
+        1183770,
+        41223,
+        35577,
+        3516,
+        2388422,
+        0
+      ]
+    },
+    {
+      "mode": "RQ1",
+      "stage": "step80",
+      "world": 41,
+      "view": "gimbal-cam",
+      "time_s": 0.0800000037997961,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "41",
+        "epoch": 0,
+        "revision": 81,
+        "tick": 80,
+        "phase": "accepted_endpoint"
+      },
+      "plane_sha256": {
+        "srgb8_rgb": "ec3c344227ecc0b991292656b18ca8cc48e0611cbce0cf46b2d59929782bb934",
+        "forward_depth_m_f32": "92de7f2b93684a8120e58a86fe4aae2df24616c5f95d6af47253a72ece83412c",
+        "instance_id_u32": "cc4a4429160fa161dc851d269511faa643d350561440c1f49ffd9d6d8879bb95",
+        "valid_u8": "d0fad53b064d1750de8c6f4d2f96ec76cf3ed4c187dbc2ea1332dee5959da1a6"
+      },
+      "archive_exact": true,
+      "block_centroid_xy": [
+        164.78182032261861,
+        152.78452843518193
+      ],
+      "gpu_consumer": [
+        429077,
+        397321,
+        367476,
+        29917,
+        46883,
+        12177,
+        5006540,
+        0
+      ]
+    },
+    {
+      "mode": "RQ1",
+      "stage": "step80",
+      "world": 7,
+      "view": "fixed",
+      "time_s": 0.0800000037997961,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "7",
+        "epoch": 0,
+        "revision": 81,
+        "tick": 80,
+        "phase": "accepted_endpoint"
+      },
+      "plane_sha256": {
+        "srgb8_rgb": "da2ccae64ab8c7e347c85792a62955e9acf31bea1a93f6ef9cecc6182c8c166c",
+        "forward_depth_m_f32": "9cce34ad7e52f758b0760eb5118386c21fdbb01c4e42ff10543dcecc57083ea3",
+        "instance_id_u32": "bcb71752227e761a6378e6789917e55719a580684a3943a94e23b6345193a723",
+        "valid_u8": "ba20d0227c0504ffec18640abc42c17e5a2add2430f9d0da0fb9c18b5cbc5797"
+      },
+      "archive_exact": true,
+      "block_centroid_xy": [
+        167.12657613967022,
+        120.61736178467507
+      ],
+      "gpu_consumer": [
+        945435,
+        1016249,
+        1026423,
+        39141,
+        37659,
+        3378,
+        2429764,
+        0
+      ]
+    },
+    {
+      "mode": "RQ1",
+      "stage": "step80",
+      "world": 7,
+      "view": "gimbal-cam",
+      "time_s": 0.0800000037997961,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "7",
+        "epoch": 0,
+        "revision": 81,
+        "tick": 80,
+        "phase": "accepted_endpoint"
+      },
+      "plane_sha256": {
+        "srgb8_rgb": "fba49faeaba9feaef7b035acca2be8818c0dd1ac9d118151c60f828ebdcd7396",
+        "forward_depth_m_f32": "061800d03d066566d9438a24782a62dbddc9d0b4c854ab97c2217d7649ba26e1",
+        "instance_id_u32": "d213fe99e0cbc647d386d86cbb4b6a32882e445b3712f881019c32f5edb47a6a",
+        "valid_u8": "ed27519e65a98be04ff635c8fb7611054d9314615e3ad29261f96245255135c7"
+      },
+      "archive_exact": true,
+      "block_centroid_xy": [
+        158.79795364891518,
+        154.58296351084812
+      ],
+      "gpu_consumer": [
+        876157,
+        842638,
+        794184,
+        43689,
+        33111,
+        11840,
+        4949888,
+        0
+      ]
+    },
+    {
+      "mode": "RQ4",
+      "stage": "step80",
+      "world": 41,
+      "view": "fixed",
+      "time_s": 0.0800000037997961,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "41",
+        "epoch": 0,
+        "revision": 81,
+        "tick": 80,
+        "phase": "accepted_endpoint"
+      },
+      "plane_sha256": {
+        "srgb8_rgb": "0a66240871d355cc10f1c04b9f457b73409e000c5e03c3e38f22ebb1ec5df762",
+        "forward_depth_m_f32": "8653a5c076f9b1d7cd951258d18b2710394187356698af655366fdc49e501c24",
+        "instance_id_u32": "193ca5a99678d38f139a338da1988d68e94ac4f1e09c522c838edefb2bd3f806",
+        "valid_u8": "598e340f934996f1990b3194157ac2891cdb5861b23300208b9dc3943da218b2"
+      },
+      "archive_exact": true,
+      "block_centroid_xy": [
+        166.0774193548387,
+        84.16043010752688
+      ],
+      "gpu_consumer": [
+        1120102,
+        1188599,
+        1186597,
+        41223,
+        35577,
+        3516,
+        2388422,
+        0
+      ]
+    },
+    {
+      "mode": "RQ4",
+      "stage": "step80",
+      "world": 41,
+      "view": "gimbal-cam",
+      "time_s": 0.0800000037997961,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "41",
+        "epoch": 0,
+        "revision": 81,
+        "tick": 80,
+        "phase": "accepted_endpoint"
+      },
+      "plane_sha256": {
+        "srgb8_rgb": "a60db6b831c0faa540fbe04f0372a8e90e8e81a5e31331a80cfc4215f8d25ba8",
+        "forward_depth_m_f32": "92de7f2b93684a8120e58a86fe4aae2df24616c5f95d6af47253a72ece83412c",
+        "instance_id_u32": "cc4a4429160fa161dc851d269511faa643d350561440c1f49ffd9d6d8879bb95",
+        "valid_u8": "d0fad53b064d1750de8c6f4d2f96ec76cf3ed4c187dbc2ea1332dee5959da1a6"
+      },
+      "archive_exact": true,
+      "block_centroid_xy": [
+        164.78182032261861,
+        152.78452843518193
+      ],
+      "gpu_consumer": [
+        433771,
+        402070,
+        372371,
+        29917,
+        46883,
+        12177,
+        5006540,
+        0
+      ]
+    },
+    {
+      "mode": "RQ4",
+      "stage": "step80",
+      "world": 7,
+      "view": "fixed",
+      "time_s": 0.0800000037997961,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "7",
+        "epoch": 0,
+        "revision": 81,
+        "tick": 80,
+        "phase": "accepted_endpoint"
+      },
+      "plane_sha256": {
+        "srgb8_rgb": "d1aeb504be57f1c71d951e1b774674f31e088049c34f69f4a986ff7f2a5ef016",
+        "forward_depth_m_f32": "9cce34ad7e52f758b0760eb5118386c21fdbb01c4e42ff10543dcecc57083ea3",
+        "instance_id_u32": "bcb71752227e761a6378e6789917e55719a580684a3943a94e23b6345193a723",
+        "valid_u8": "ba20d0227c0504ffec18640abc42c17e5a2add2430f9d0da0fb9c18b5cbc5797"
+      },
+      "archive_exact": true,
+      "block_centroid_xy": [
+        167.12657613967022,
+        120.61736178467507
+      ],
+      "gpu_consumer": [
+        950434,
+        1021003,
+        1031128,
+        39141,
+        37659,
+        3378,
+        2429764,
+        0
+      ]
+    },
+    {
+      "mode": "RQ4",
+      "stage": "step80",
+      "world": 7,
+      "view": "gimbal-cam",
+      "time_s": 0.0800000037997961,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "7",
+        "epoch": 0,
+        "revision": 81,
+        "tick": 80,
+        "phase": "accepted_endpoint"
+      },
+      "plane_sha256": {
+        "srgb8_rgb": "afc7c8ddd8c8b9bcf8862e4545506b6380446a755b8b0073d82060df8253f396",
+        "forward_depth_m_f32": "061800d03d066566d9438a24782a62dbddc9d0b4c854ab97c2217d7649ba26e1",
+        "instance_id_u32": "d213fe99e0cbc647d386d86cbb4b6a32882e445b3712f881019c32f5edb47a6a",
+        "valid_u8": "ed27519e65a98be04ff635c8fb7611054d9314615e3ad29261f96245255135c7"
+      },
+      "archive_exact": true,
+      "block_centroid_xy": [
+        158.79795364891518,
+        154.58296351084812
+      ],
+      "gpu_consumer": [
+        883133,
+        849738,
+        801523,
+        43689,
+        33111,
+        11840,
+        4949888,
+        0
+      ]
+    },
+    {
+      "mode": "SW1",
+      "stage": "reset41",
+      "world": 41,
+      "view": "fixed",
+      "time_s": 0.0,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "41",
+        "epoch": 1,
+        "revision": 82,
+        "tick": 0,
+        "phase": "accepted_endpoint"
+      },
+      "plane_sha256": {
+        "srgb8_rgb": "2508b97d7a0292e3ea43defdc9fb08cca4a03b02497741075e82fd4e4830cb43",
+        "forward_depth_m_f32": "392ef4cb345c468b414ed67c6b23e6ccc1fb19aade6976caafd4fd44c5ae1742",
+        "instance_id_u32": "f59c253c678d9e797bff9276e42bc5153afbbd02c309d2d73a76df5136bef7b8",
+        "valid_u8": "dca9b6709d379c71f2dceaea8c34701e3b1be46777218b098c403a990c1a3c96"
+      },
+      "archive_exact": true,
+      "block_centroid_xy": [
+        166.93860911270983,
+        116.5736211031175
+      ],
+      "gpu_consumer": [
+        973809,
+        1047249,
+        1058158,
+        39418,
+        37382,
+        3382,
+        2415293,
+        0
+      ]
+    },
+    {
+      "mode": "SW1",
+      "stage": "reset41",
+      "world": 41,
+      "view": "gimbal-cam",
+      "time_s": 0.0,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "41",
+        "epoch": 1,
+        "revision": 82,
+        "tick": 0,
+        "phase": "accepted_endpoint"
+      },
+      "plane_sha256": {
+        "srgb8_rgb": "681d469cc2a8997e4e418cf525b26495f4c140a69e76e90220f93cca775fec5e",
+        "forward_depth_m_f32": "d89d01c57204d77cce0ee8d721b153da1dee08d691375990e6e995f51999ab1c",
+        "instance_id_u32": "6069cca0c05f62e7ac48c525017448c24a7c8911eca0ee79fc9203c58ffeb4da",
+        "valid_u8": "59b4a57c54d5aa40c0669e471926d1bc6448fb034c5c82be975b6a35b0aebc2f"
+      },
+      "archive_exact": true,
+      "block_centroid_xy": [
+        160.13517124119505,
+        154.47133835316978
+      ],
+      "gpu_consumer": [
+        750423,
+        715813,
+        671828,
+        41131,
+        35669,
+        11960,
+        4984116,
+        0
+      ]
+    },
+    {
+      "mode": "SW1",
+      "stage": "reset41",
+      "world": 7,
+      "view": "fixed",
+      "time_s": 0.0800000037997961,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "7",
+        "epoch": 0,
+        "revision": 82,
+        "tick": 80,
+        "phase": "accepted_endpoint"
+      },
+      "plane_sha256": {
+        "srgb8_rgb": "da2ccae64ab8c7e347c85792a62955e9acf31bea1a93f6ef9cecc6182c8c166c",
+        "forward_depth_m_f32": "9cce34ad7e52f758b0760eb5118386c21fdbb01c4e42ff10543dcecc57083ea3",
+        "instance_id_u32": "bcb71752227e761a6378e6789917e55719a580684a3943a94e23b6345193a723",
+        "valid_u8": "ba20d0227c0504ffec18640abc42c17e5a2add2430f9d0da0fb9c18b5cbc5797"
+      },
+      "archive_exact": true,
+      "block_centroid_xy": [
+        167.12657613967022,
+        120.61736178467507
+      ],
+      "gpu_consumer": [
+        945435,
+        1016249,
+        1026423,
+        39141,
+        37659,
+        3378,
+        2429764,
+        0
+      ]
+    },
+    {
+      "mode": "SW1",
+      "stage": "reset41",
+      "world": 7,
+      "view": "gimbal-cam",
+      "time_s": 0.0800000037997961,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "7",
+        "epoch": 0,
+        "revision": 82,
+        "tick": 80,
+        "phase": "accepted_endpoint"
+      },
+      "plane_sha256": {
+        "srgb8_rgb": "fba49faeaba9feaef7b035acca2be8818c0dd1ac9d118151c60f828ebdcd7396",
+        "forward_depth_m_f32": "061800d03d066566d9438a24782a62dbddc9d0b4c854ab97c2217d7649ba26e1",
+        "instance_id_u32": "d213fe99e0cbc647d386d86cbb4b6a32882e445b3712f881019c32f5edb47a6a",
+        "valid_u8": "ed27519e65a98be04ff635c8fb7611054d9314615e3ad29261f96245255135c7"
+      },
+      "archive_exact": true,
+      "block_centroid_xy": [
+        158.79795364891518,
+        154.58296351084812
+      ],
+      "gpu_consumer": [
+        876157,
+        842638,
+        794184,
+        43689,
+        33111,
+        11840,
+        4949888,
+        0
+      ]
+    },
+    {
+      "mode": "SW4",
+      "stage": "reset41",
+      "world": 41,
+      "view": "fixed",
+      "time_s": 0.0,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "41",
+        "epoch": 1,
+        "revision": 82,
+        "tick": 0,
+        "phase": "accepted_endpoint"
+      },
+      "plane_sha256": {
+        "srgb8_rgb": "362caa3545294e2bd6fe05d15492dd8a85e1c11c7d81ddc9afdaf19ab3a4040a",
+        "forward_depth_m_f32": "392ef4cb345c468b414ed67c6b23e6ccc1fb19aade6976caafd4fd44c5ae1742",
+        "instance_id_u32": "f59c253c678d9e797bff9276e42bc5153afbbd02c309d2d73a76df5136bef7b8",
+        "valid_u8": "dca9b6709d379c71f2dceaea8c34701e3b1be46777218b098c403a990c1a3c96"
+      },
+      "archive_exact": true,
+      "block_centroid_xy": [
+        166.93860911270983,
+        116.5736211031175
+      ],
+      "gpu_consumer": [
+        978752,
+        1051775,
+        1062474,
+        39418,
+        37382,
+        3382,
+        2415293,
+        0
+      ]
+    },
+    {
+      "mode": "SW4",
+      "stage": "reset41",
+      "world": 41,
+      "view": "gimbal-cam",
+      "time_s": 0.0,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "41",
+        "epoch": 1,
+        "revision": 82,
+        "tick": 0,
+        "phase": "accepted_endpoint"
+      },
+      "plane_sha256": {
+        "srgb8_rgb": "25a494a2a40847b25f005e21573431eb0d6dfd74ad9f33457b2d3573dab1b35d",
+        "forward_depth_m_f32": "d89d01c57204d77cce0ee8d721b153da1dee08d691375990e6e995f51999ab1c",
+        "instance_id_u32": "6069cca0c05f62e7ac48c525017448c24a7c8911eca0ee79fc9203c58ffeb4da",
+        "valid_u8": "59b4a57c54d5aa40c0669e471926d1bc6448fb034c5c82be975b6a35b0aebc2f"
+      },
+      "archive_exact": true,
+      "block_centroid_xy": [
+        160.13517124119505,
+        154.47133835316978
+      ],
+      "gpu_consumer": [
+        756694,
+        722674,
+        679294,
+        41131,
+        35669,
+        11960,
+        4984116,
+        0
+      ]
+    },
+    {
+      "mode": "SW4",
+      "stage": "reset41",
+      "world": 7,
+      "view": "fixed",
+      "time_s": 0.0800000037997961,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "7",
+        "epoch": 0,
+        "revision": 82,
+        "tick": 80,
+        "phase": "accepted_endpoint"
+      },
+      "plane_sha256": {
+        "srgb8_rgb": "d1aeb504be57f1c71d951e1b774674f31e088049c34f69f4a986ff7f2a5ef016",
+        "forward_depth_m_f32": "9cce34ad7e52f758b0760eb5118386c21fdbb01c4e42ff10543dcecc57083ea3",
+        "instance_id_u32": "bcb71752227e761a6378e6789917e55719a580684a3943a94e23b6345193a723",
+        "valid_u8": "ba20d0227c0504ffec18640abc42c17e5a2add2430f9d0da0fb9c18b5cbc5797"
+      },
+      "archive_exact": true,
+      "block_centroid_xy": [
+        167.12657613967022,
+        120.61736178467507
+      ],
+      "gpu_consumer": [
+        950434,
+        1021003,
+        1031128,
+        39141,
+        37659,
+        3378,
+        2429764,
+        0
+      ]
+    },
+    {
+      "mode": "SW4",
+      "stage": "reset41",
+      "world": 7,
+      "view": "gimbal-cam",
+      "time_s": 0.0800000037997961,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "7",
+        "epoch": 0,
+        "revision": 82,
+        "tick": 80,
+        "phase": "accepted_endpoint"
+      },
+      "plane_sha256": {
+        "srgb8_rgb": "afc7c8ddd8c8b9bcf8862e4545506b6380446a755b8b0073d82060df8253f396",
+        "forward_depth_m_f32": "061800d03d066566d9438a24782a62dbddc9d0b4c854ab97c2217d7649ba26e1",
+        "instance_id_u32": "d213fe99e0cbc647d386d86cbb4b6a32882e445b3712f881019c32f5edb47a6a",
+        "valid_u8": "ed27519e65a98be04ff635c8fb7611054d9314615e3ad29261f96245255135c7"
+      },
+      "archive_exact": true,
+      "block_centroid_xy": [
+        158.79795364891518,
+        154.58296351084812
+      ],
+      "gpu_consumer": [
+        883133,
+        849738,
+        801523,
+        43689,
+        33111,
+        11840,
+        4949888,
+        0
+      ]
+    },
+    {
+      "mode": "RQ1",
+      "stage": "reset41",
+      "world": 41,
+      "view": "fixed",
+      "time_s": 0.0,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "41",
+        "epoch": 1,
+        "revision": 82,
+        "tick": 0,
+        "phase": "accepted_endpoint"
+      },
+      "plane_sha256": {
+        "srgb8_rgb": "2508b97d7a0292e3ea43defdc9fb08cca4a03b02497741075e82fd4e4830cb43",
+        "forward_depth_m_f32": "392ef4cb345c468b414ed67c6b23e6ccc1fb19aade6976caafd4fd44c5ae1742",
+        "instance_id_u32": "f59c253c678d9e797bff9276e42bc5153afbbd02c309d2d73a76df5136bef7b8",
+        "valid_u8": "dca9b6709d379c71f2dceaea8c34701e3b1be46777218b098c403a990c1a3c96"
+      },
+      "archive_exact": true,
+      "block_centroid_xy": [
+        166.93860911270983,
+        116.5736211031175
+      ],
+      "gpu_consumer": [
+        973809,
+        1047249,
+        1058158,
+        39418,
+        37382,
+        3382,
+        2415293,
+        0
+      ]
+    },
+    {
+      "mode": "RQ1",
+      "stage": "reset41",
+      "world": 41,
+      "view": "gimbal-cam",
+      "time_s": 0.0,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "41",
+        "epoch": 1,
+        "revision": 82,
+        "tick": 0,
+        "phase": "accepted_endpoint"
+      },
+      "plane_sha256": {
+        "srgb8_rgb": "681d469cc2a8997e4e418cf525b26495f4c140a69e76e90220f93cca775fec5e",
+        "forward_depth_m_f32": "d89d01c57204d77cce0ee8d721b153da1dee08d691375990e6e995f51999ab1c",
+        "instance_id_u32": "6069cca0c05f62e7ac48c525017448c24a7c8911eca0ee79fc9203c58ffeb4da",
+        "valid_u8": "59b4a57c54d5aa40c0669e471926d1bc6448fb034c5c82be975b6a35b0aebc2f"
+      },
+      "archive_exact": true,
+      "block_centroid_xy": [
+        160.13517124119505,
+        154.47133835316978
+      ],
+      "gpu_consumer": [
+        750423,
+        715813,
+        671828,
+        41131,
+        35669,
+        11960,
+        4984116,
+        0
+      ]
+    },
+    {
+      "mode": "RQ1",
+      "stage": "reset41",
+      "world": 7,
+      "view": "fixed",
+      "time_s": 0.0800000037997961,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "7",
+        "epoch": 0,
+        "revision": 82,
+        "tick": 80,
+        "phase": "accepted_endpoint"
+      },
+      "plane_sha256": {
+        "srgb8_rgb": "da2ccae64ab8c7e347c85792a62955e9acf31bea1a93f6ef9cecc6182c8c166c",
+        "forward_depth_m_f32": "9cce34ad7e52f758b0760eb5118386c21fdbb01c4e42ff10543dcecc57083ea3",
+        "instance_id_u32": "bcb71752227e761a6378e6789917e55719a580684a3943a94e23b6345193a723",
+        "valid_u8": "ba20d0227c0504ffec18640abc42c17e5a2add2430f9d0da0fb9c18b5cbc5797"
+      },
+      "archive_exact": true,
+      "block_centroid_xy": [
+        167.12657613967022,
+        120.61736178467507
+      ],
+      "gpu_consumer": [
+        945435,
+        1016249,
+        1026423,
+        39141,
+        37659,
+        3378,
+        2429764,
+        0
+      ]
+    },
+    {
+      "mode": "RQ1",
+      "stage": "reset41",
+      "world": 7,
+      "view": "gimbal-cam",
+      "time_s": 0.0800000037997961,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "7",
+        "epoch": 0,
+        "revision": 82,
+        "tick": 80,
+        "phase": "accepted_endpoint"
+      },
+      "plane_sha256": {
+        "srgb8_rgb": "fba49faeaba9feaef7b035acca2be8818c0dd1ac9d118151c60f828ebdcd7396",
+        "forward_depth_m_f32": "061800d03d066566d9438a24782a62dbddc9d0b4c854ab97c2217d7649ba26e1",
+        "instance_id_u32": "d213fe99e0cbc647d386d86cbb4b6a32882e445b3712f881019c32f5edb47a6a",
+        "valid_u8": "ed27519e65a98be04ff635c8fb7611054d9314615e3ad29261f96245255135c7"
+      },
+      "archive_exact": true,
+      "block_centroid_xy": [
+        158.79795364891518,
+        154.58296351084812
+      ],
+      "gpu_consumer": [
+        876157,
+        842638,
+        794184,
+        43689,
+        33111,
+        11840,
+        4949888,
+        0
+      ]
+    },
+    {
+      "mode": "RQ4",
+      "stage": "reset41",
+      "world": 41,
+      "view": "fixed",
+      "time_s": 0.0,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "41",
+        "epoch": 1,
+        "revision": 82,
+        "tick": 0,
+        "phase": "accepted_endpoint"
+      },
+      "plane_sha256": {
+        "srgb8_rgb": "362caa3545294e2bd6fe05d15492dd8a85e1c11c7d81ddc9afdaf19ab3a4040a",
+        "forward_depth_m_f32": "392ef4cb345c468b414ed67c6b23e6ccc1fb19aade6976caafd4fd44c5ae1742",
+        "instance_id_u32": "f59c253c678d9e797bff9276e42bc5153afbbd02c309d2d73a76df5136bef7b8",
+        "valid_u8": "dca9b6709d379c71f2dceaea8c34701e3b1be46777218b098c403a990c1a3c96"
+      },
+      "archive_exact": true,
+      "block_centroid_xy": [
+        166.93860911270983,
+        116.5736211031175
+      ],
+      "gpu_consumer": [
+        978752,
+        1051775,
+        1062474,
+        39418,
+        37382,
+        3382,
+        2415293,
+        0
+      ]
+    },
+    {
+      "mode": "RQ4",
+      "stage": "reset41",
+      "world": 41,
+      "view": "gimbal-cam",
+      "time_s": 0.0,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "41",
+        "epoch": 1,
+        "revision": 82,
+        "tick": 0,
+        "phase": "accepted_endpoint"
+      },
+      "plane_sha256": {
+        "srgb8_rgb": "25a494a2a40847b25f005e21573431eb0d6dfd74ad9f33457b2d3573dab1b35d",
+        "forward_depth_m_f32": "d89d01c57204d77cce0ee8d721b153da1dee08d691375990e6e995f51999ab1c",
+        "instance_id_u32": "6069cca0c05f62e7ac48c525017448c24a7c8911eca0ee79fc9203c58ffeb4da",
+        "valid_u8": "59b4a57c54d5aa40c0669e471926d1bc6448fb034c5c82be975b6a35b0aebc2f"
+      },
+      "archive_exact": true,
+      "block_centroid_xy": [
+        160.13517124119505,
+        154.47133835316978
+      ],
+      "gpu_consumer": [
+        756694,
+        722674,
+        679294,
+        41131,
+        35669,
+        11960,
+        4984116,
+        0
+      ]
+    },
+    {
+      "mode": "RQ4",
+      "stage": "reset41",
+      "world": 7,
+      "view": "fixed",
+      "time_s": 0.0800000037997961,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "7",
+        "epoch": 0,
+        "revision": 82,
+        "tick": 80,
+        "phase": "accepted_endpoint"
+      },
+      "plane_sha256": {
+        "srgb8_rgb": "d1aeb504be57f1c71d951e1b774674f31e088049c34f69f4a986ff7f2a5ef016",
+        "forward_depth_m_f32": "9cce34ad7e52f758b0760eb5118386c21fdbb01c4e42ff10543dcecc57083ea3",
+        "instance_id_u32": "bcb71752227e761a6378e6789917e55719a580684a3943a94e23b6345193a723",
+        "valid_u8": "ba20d0227c0504ffec18640abc42c17e5a2add2430f9d0da0fb9c18b5cbc5797"
+      },
+      "archive_exact": true,
+      "block_centroid_xy": [
+        167.12657613967022,
+        120.61736178467507
+      ],
+      "gpu_consumer": [
+        950434,
+        1021003,
+        1031128,
+        39141,
+        37659,
+        3378,
+        2429764,
+        0
+      ]
+    },
+    {
+      "mode": "RQ4",
+      "stage": "reset41",
+      "world": 7,
+      "view": "gimbal-cam",
+      "time_s": 0.0800000037997961,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "7",
+        "epoch": 0,
+        "revision": 82,
+        "tick": 80,
+        "phase": "accepted_endpoint"
+      },
+      "plane_sha256": {
+        "srgb8_rgb": "afc7c8ddd8c8b9bcf8862e4545506b6380446a755b8b0073d82060df8253f396",
+        "forward_depth_m_f32": "061800d03d066566d9438a24782a62dbddc9d0b4c854ab97c2217d7649ba26e1",
+        "instance_id_u32": "d213fe99e0cbc647d386d86cbb4b6a32882e445b3712f881019c32f5edb47a6a",
+        "valid_u8": "ed27519e65a98be04ff635c8fb7611054d9314615e3ad29261f96245255135c7"
+      },
+      "archive_exact": true,
+      "block_centroid_xy": [
+        158.79795364891518,
+        154.58296351084812
+      ],
+      "gpu_consumer": [
+        883133,
+        849738,
+        801523,
+        43689,
+        33111,
+        11840,
+        4949888,
+        0
+      ]
+    }
+  ],
+  "accepted_world_steps": 160,
+  "exposure": 1.0,
+  "source_archive": "C:\\Users\\38347\\.codex\\worktrees\\phymeo-rendering\\phymeo\\rendering\\results\\device-interop\\shared-camera-batch\\validation.json",
+  "source_archive_sha256": "2111f6215de5b3ef653f836ed5be4e94a75f3213dc01b3354dbb293344fe4dca",
+  "archive_identity_required": true,
+  "consumer_features": [
+    "roi_red_sum",
+    "roi_green_sum",
+    "roi_blue_sum",
+    "visible_pixels",
+    "background_positive_inf",
+    "moving_pixels",
+    "moving_depth_sum_mm",
+    "sensor_inconsistencies"
+  ],
+  "consumer_moving_ids": [
+    2,
+    3
+  ],
+  "consumer_valid_ids": [
+    1,
+    2,
+    3
+  ],
+  "timing": {
+    "modes": {
+      "SW1": {
+        "cpu_upload": {
+          "wall": {
+            "median_ms": 17.740299999999998,
+            "p95_ms": 18.41089
+          },
+          "wall_samples_ms": [
+            18.4854,
+            16.9952
+          ],
+          "stream_elapsed": {
+            "median_ms": 17.666048049926758,
+            "p95_ms": 18.29918670654297
+          },
+          "consumer_kernels": {
+            "median_ms": 5.253664016723633,
+            "p95_ms": 5.33911361694336
+          },
+          "counters": {
+            "readback_bytes": 7987200,
+            "submissions": 12,
+            "fence_wait_calls": 12,
+            "fence_wait_wall_ns": 4469700,
+            "attachment_d2d_copies": 0,
+            "attachment_d2d_bytes": 0,
+            "materialization_d2d_copies": 0,
+            "materialization_d2d_bytes": 0,
+            "image_d2h_bytes": 0,
+            "image_h2d_bytes": 0,
+            "return_event_waits": 0,
+            "output_batches": 0,
+            "output_views": 0,
+            "output_image_bytes": 0,
+            "pose_publications": 4,
+            "pose_captures": 8,
+            "pose_matrix_d2d_bytes": 2048,
+            "device_image_status_d2h_bytes": 0,
+            "cpu_native_batch_output_bytes": 7987200,
+            "host_transform_input_bytes": 0
+          },
+          "baseline_public_image_h2d_bytes": 7372800,
+          "final_consumer_values": [
+            [
+              1116688,
+              1185544,
+              1183770,
+              41223,
+              35577,
+              3516,
+              2388422,
+              0
+            ],
+            [
+              429077,
+              397321,
+              367476,
+              29917,
+              46883,
+              12177,
+              5006540,
+              0
+            ],
+            [
+              945435,
+              1016249,
+              1026423,
+              39141,
+              37659,
+              3378,
+              2429764,
+              0
+            ],
+            [
+              876157,
+              842638,
+              794184,
+              43689,
+              33111,
+              11840,
+              4949888,
+              0
+            ]
+          ],
+          "final_consumer_verification_d2h_bytes_outside_timing": 256
+        },
+        "direct_cuda": {
+          "wall": {
+            "median_ms": 14.14715,
+            "p95_ms": 14.590265
+          },
+          "wall_samples_ms": [
+            14.6395,
+            13.6548
+          ],
+          "stream_elapsed": {
+            "median_ms": 14.113088130950928,
+            "p95_ms": 14.555859041213989
+          },
+          "consumer_kernels": {
+            "median_ms": 5.136383771896362,
+            "p95_ms": 5.388902163505554
+          },
+          "counters": {
+            "readback_bytes": 0,
+            "submissions": 12,
+            "fence_wait_calls": 12,
+            "fence_wait_wall_ns": 3572100,
+            "attachment_d2d_copies": 4,
+            "attachment_d2d_bytes": 7987200,
+            "materialization_d2d_copies": 0,
+            "materialization_d2d_bytes": 0,
+            "image_d2h_bytes": 0,
+            "image_h2d_bytes": 0,
+            "return_event_waits": 4,
+            "output_batches": 4,
+            "output_views": 8,
+            "output_image_bytes": 7987200,
+            "pose_publications": 4,
+            "pose_captures": 8,
+            "pose_matrix_d2d_bytes": 2048,
+            "device_image_status_d2h_bytes": 4,
+            "cpu_native_batch_output_bytes": 0,
+            "host_transform_input_bytes": 0
+          },
+          "baseline_public_image_h2d_bytes": 0,
+          "final_consumer_values": [
+            [
+              1116688,
+              1185544,
+              1183770,
+              41223,
+              35577,
+              3516,
+              2388422,
+              0
+            ],
+            [
+              429077,
+              397321,
+              367476,
+              29917,
+              46883,
+              12177,
+              5006540,
+              0
+            ],
+            [
+              945435,
+              1016249,
+              1026423,
+              39141,
+              37659,
+              3378,
+              2429764,
+              0
+            ],
+            [
+              876157,
+              842638,
+              794184,
+              43689,
+              33111,
+              11840,
+              4949888,
+              0
+            ]
+          ],
+          "final_consumer_verification_d2h_bytes_outside_timing": 256
+        },
+        "paired_cpu_minus_direct_median_ms": 3.5931499999999996,
+        "faster_direct_rounds": 2
+      },
+      "SW4": {
+        "cpu_upload": {
+          "wall": {
+            "median_ms": 22.51285,
+            "p95_ms": 26.571445
+          },
+          "wall_samples_ms": [
+            18.0033,
+            27.0224
+          ],
+          "stream_elapsed": {
+            "median_ms": 22.458943367004395,
+            "p95_ms": 26.505256938934327
+          },
+          "consumer_kernels": {
+            "median_ms": 8.791631937026978,
+            "p95_ms": 11.228558087348938
+          },
+          "counters": {
+            "readback_bytes": 7987200,
+            "submissions": 12,
+            "fence_wait_calls": 12,
+            "fence_wait_wall_ns": 5727000,
+            "attachment_d2d_copies": 0,
+            "attachment_d2d_bytes": 0,
+            "materialization_d2d_copies": 0,
+            "materialization_d2d_bytes": 0,
+            "image_d2h_bytes": 0,
+            "image_h2d_bytes": 0,
+            "return_event_waits": 0,
+            "output_batches": 0,
+            "output_views": 0,
+            "output_image_bytes": 0,
+            "pose_publications": 4,
+            "pose_captures": 8,
+            "pose_matrix_d2d_bytes": 2048,
+            "device_image_status_d2h_bytes": 0,
+            "cpu_native_batch_output_bytes": 7987200,
+            "host_transform_input_bytes": 0
+          },
+          "baseline_public_image_h2d_bytes": 7372800,
+          "final_consumer_values": [
+            [
+              1120102,
+              1188599,
+              1186597,
+              41223,
+              35577,
+              3516,
+              2388422,
+              0
+            ],
+            [
+              433771,
+              402070,
+              372371,
+              29917,
+              46883,
+              12177,
+              5006540,
+              0
+            ],
+            [
+              950434,
+              1021003,
+              1031128,
+              39141,
+              37659,
+              3378,
+              2429764,
+              0
+            ],
+            [
+              883133,
+              849738,
+              801523,
+              43689,
+              33111,
+              11840,
+              4949888,
+              0
+            ]
+          ],
+          "final_consumer_verification_d2h_bytes_outside_timing": 256
+        },
+        "direct_cuda": {
+          "wall": {
+            "median_ms": 20.581,
+            "p95_ms": 24.88813
+          },
+          "wall_samples_ms": [
+            15.7953,
+            25.3667
+          ],
+          "stream_elapsed": {
+            "median_ms": 20.540319442749023,
+            "p95_ms": 24.84963455200195
+          },
+          "consumer_kernels": {
+            "median_ms": 7.8254077434539795,
+            "p95_ms": 9.547877955436707
+          },
+          "counters": {
+            "readback_bytes": 0,
+            "submissions": 12,
+            "fence_wait_calls": 12,
+            "fence_wait_wall_ns": 6810400,
+            "attachment_d2d_copies": 4,
+            "attachment_d2d_bytes": 7987200,
+            "materialization_d2d_copies": 0,
+            "materialization_d2d_bytes": 0,
+            "image_d2h_bytes": 0,
+            "image_h2d_bytes": 0,
+            "return_event_waits": 4,
+            "output_batches": 4,
+            "output_views": 8,
+            "output_image_bytes": 7987200,
+            "pose_publications": 4,
+            "pose_captures": 8,
+            "pose_matrix_d2d_bytes": 2048,
+            "device_image_status_d2h_bytes": 4,
+            "cpu_native_batch_output_bytes": 0,
+            "host_transform_input_bytes": 0
+          },
+          "baseline_public_image_h2d_bytes": 0,
+          "final_consumer_values": [
+            [
+              1120102,
+              1188599,
+              1186597,
+              41223,
+              35577,
+              3516,
+              2388422,
+              0
+            ],
+            [
+              433771,
+              402070,
+              372371,
+              29917,
+              46883,
+              12177,
+              5006540,
+              0
+            ],
+            [
+              950434,
+              1021003,
+              1031128,
+              39141,
+              37659,
+              3378,
+              2429764,
+              0
+            ],
+            [
+              883133,
+              849738,
+              801523,
+              43689,
+              33111,
+              11840,
+              4949888,
+              0
+            ]
+          ],
+          "final_consumer_verification_d2h_bytes_outside_timing": 256
+        },
+        "paired_cpu_minus_direct_median_ms": 1.9318499999999998,
+        "faster_direct_rounds": 2
+      },
+      "RQ1": {
+        "cpu_upload": {
+          "wall": {
+            "median_ms": 21.42945,
+            "p95_ms": 21.469545
+          },
+          "wall_samples_ms": [
+            21.3849,
+            21.474
+          ],
+          "stream_elapsed": {
+            "median_ms": 21.38827133178711,
+            "p95_ms": 21.42880744934082
+          },
+          "consumer_kernels": {
+            "median_ms": 7.420255899429321,
+            "p95_ms": 7.816457438468933
+          },
+          "counters": {
+            "readback_bytes": 7987200,
+            "submissions": 12,
+            "fence_wait_calls": 12,
+            "fence_wait_wall_ns": 5412500,
+            "attachment_d2d_copies": 0,
+            "attachment_d2d_bytes": 0,
+            "materialization_d2d_copies": 0,
+            "materialization_d2d_bytes": 0,
+            "image_d2h_bytes": 0,
+            "image_h2d_bytes": 0,
+            "return_event_waits": 0,
+            "output_batches": 0,
+            "output_views": 0,
+            "output_image_bytes": 0,
+            "pose_publications": 4,
+            "pose_captures": 8,
+            "pose_matrix_d2d_bytes": 2048,
+            "device_image_status_d2h_bytes": 0,
+            "cpu_native_batch_output_bytes": 7987200,
+            "host_transform_input_bytes": 0
+          },
+          "baseline_public_image_h2d_bytes": 7372800,
+          "final_consumer_values": [
+            [
+              1116688,
+              1185544,
+              1183770,
+              41223,
+              35577,
+              3516,
+              2388422,
+              0
+            ],
+            [
+              429077,
+              397321,
+              367476,
+              29917,
+              46883,
+              12177,
+              5006540,
+              0
+            ],
+            [
+              945435,
+              1016249,
+              1026423,
+              39141,
+              37659,
+              3378,
+              2429764,
+              0
+            ],
+            [
+              876157,
+              842638,
+              794184,
+              43689,
+              33111,
+              11840,
+              4949888,
+              0
+            ]
+          ],
+          "final_consumer_verification_d2h_bytes_outside_timing": 256
+        },
+        "direct_cuda": {
+          "wall": {
+            "median_ms": 15.2563,
+            "p95_ms": 15.47923
+          },
+          "wall_samples_ms": [
+            15.0086,
+            15.504
+          ],
+          "stream_elapsed": {
+            "median_ms": 14.935152053833008,
+            "p95_ms": 15.41889123916626
+          },
+          "consumer_kernels": {
+            "median_ms": 4.853872060775757,
+            "p95_ms": 4.861345553398133
+          },
+          "counters": {
+            "readback_bytes": 0,
+            "submissions": 12,
+            "fence_wait_calls": 12,
+            "fence_wait_wall_ns": 3936300,
+            "attachment_d2d_copies": 4,
+            "attachment_d2d_bytes": 7987200,
+            "materialization_d2d_copies": 0,
+            "materialization_d2d_bytes": 0,
+            "image_d2h_bytes": 0,
+            "image_h2d_bytes": 0,
+            "return_event_waits": 4,
+            "output_batches": 4,
+            "output_views": 8,
+            "output_image_bytes": 7987200,
+            "pose_publications": 4,
+            "pose_captures": 8,
+            "pose_matrix_d2d_bytes": 2048,
+            "device_image_status_d2h_bytes": 4,
+            "cpu_native_batch_output_bytes": 0,
+            "host_transform_input_bytes": 0
+          },
+          "baseline_public_image_h2d_bytes": 0,
+          "final_consumer_values": [
+            [
+              1116688,
+              1185544,
+              1183770,
+              41223,
+              35577,
+              3516,
+              2388422,
+              0
+            ],
+            [
+              429077,
+              397321,
+              367476,
+              29917,
+              46883,
+              12177,
+              5006540,
+              0
+            ],
+            [
+              945435,
+              1016249,
+              1026423,
+              39141,
+              37659,
+              3378,
+              2429764,
+              0
+            ],
+            [
+              876157,
+              842638,
+              794184,
+              43689,
+              33111,
+              11840,
+              4949888,
+              0
+            ]
+          ],
+          "final_consumer_verification_d2h_bytes_outside_timing": 256
+        },
+        "paired_cpu_minus_direct_median_ms": 6.17315,
+        "faster_direct_rounds": 2
+      },
+      "RQ4": {
+        "cpu_upload": {
+          "wall": {
+            "median_ms": 24.27635,
+            "p95_ms": 24.908015000000002
+          },
+          "wall_samples_ms": [
+            24.9782,
+            23.5745
+          ],
+          "stream_elapsed": {
+            "median_ms": 24.249184608459473,
+            "p95_ms": 24.873251819610594
+          },
+          "consumer_kernels": {
+            "median_ms": 9.143199920654297,
+            "p95_ms": 12.78942403793335
+          },
+          "counters": {
+            "readback_bytes": 7987200,
+            "submissions": 12,
+            "fence_wait_calls": 12,
+            "fence_wait_wall_ns": 8501800,
+            "attachment_d2d_copies": 0,
+            "attachment_d2d_bytes": 0,
+            "materialization_d2d_copies": 0,
+            "materialization_d2d_bytes": 0,
+            "image_d2h_bytes": 0,
+            "image_h2d_bytes": 0,
+            "return_event_waits": 0,
+            "output_batches": 0,
+            "output_views": 0,
+            "output_image_bytes": 0,
+            "pose_publications": 4,
+            "pose_captures": 8,
+            "pose_matrix_d2d_bytes": 2048,
+            "device_image_status_d2h_bytes": 0,
+            "cpu_native_batch_output_bytes": 7987200,
+            "host_transform_input_bytes": 0
+          },
+          "baseline_public_image_h2d_bytes": 7372800,
+          "final_consumer_values": [
+            [
+              1120102,
+              1188599,
+              1186597,
+              41223,
+              35577,
+              3516,
+              2388422,
+              0
+            ],
+            [
+              433771,
+              402070,
+              372371,
+              29917,
+              46883,
+              12177,
+              5006540,
+              0
+            ],
+            [
+              950434,
+              1021003,
+              1031128,
+              39141,
+              37659,
+              3378,
+              2429764,
+              0
+            ],
+            [
+              883133,
+              849738,
+              801523,
+              43689,
+              33111,
+              11840,
+              4949888,
+              0
+            ]
+          ],
+          "final_consumer_verification_d2h_bytes_outside_timing": 256
+        },
+        "direct_cuda": {
+          "wall": {
+            "median_ms": 13.66175,
+            "p95_ms": 14.047085
+          },
+          "wall_samples_ms": [
+            13.2336,
+            14.0899
+          ],
+          "stream_elapsed": {
+            "median_ms": 13.628943920135498,
+            "p95_ms": 14.020177793502807
+          },
+          "consumer_kernels": {
+            "median_ms": 4.8711838722229,
+            "p95_ms": 5.112628602981568
+          },
+          "counters": {
+            "readback_bytes": 0,
+            "submissions": 12,
+            "fence_wait_calls": 12,
+            "fence_wait_wall_ns": 3503500,
+            "attachment_d2d_copies": 4,
+            "attachment_d2d_bytes": 7987200,
+            "materialization_d2d_copies": 0,
+            "materialization_d2d_bytes": 0,
+            "image_d2h_bytes": 0,
+            "image_h2d_bytes": 0,
+            "return_event_waits": 4,
+            "output_batches": 4,
+            "output_views": 8,
+            "output_image_bytes": 7987200,
+            "pose_publications": 4,
+            "pose_captures": 8,
+            "pose_matrix_d2d_bytes": 2048,
+            "device_image_status_d2h_bytes": 4,
+            "cpu_native_batch_output_bytes": 0,
+            "host_transform_input_bytes": 0
+          },
+          "baseline_public_image_h2d_bytes": 0,
+          "final_consumer_values": [
+            [
+              1120102,
+              1188599,
+              1186597,
+              41223,
+              35577,
+              3516,
+              2388422,
+              0
+            ],
+            [
+              433771,
+              402070,
+              372371,
+              29917,
+              46883,
+              12177,
+              5006540,
+              0
+            ],
+            [
+              950434,
+              1021003,
+              1031128,
+              39141,
+              37659,
+              3378,
+              2429764,
+              0
+            ],
+            [
+              883133,
+              849738,
+              801523,
+              43689,
+              33111,
+              11840,
+              4949888,
+              0
+            ]
+          ],
+          "final_consumer_verification_d2h_bytes_outside_timing": 256
+        },
+        "paired_cpu_minus_direct_median_ms": 10.614600000000001,
+        "faster_direct_rounds": 2
+      }
+    },
+    "warmup_rounds": 1,
+    "timed_rounds": 2,
+    "starting_mode_order": [
+      "SW1",
+      "SW4",
+      "RQ1",
+      "RQ4"
+    ],
+    "reverse_order": false,
+    "scope": "one prepacked accepted endpoint; two world publications and four captures; common GPU consumer on a distinct nondefault stream; wall clock ends at its completion event; host baseline stages immutable CPU planes through reusable pinned buffers",
+    "stream_elapsed_scope": "event window starts before rendering and may include idle or host enqueue gaps",
+    "consumer_kernels_scope": "same event-bracketed RGB/depth/ID/valid reductions after upload or ready wait",
+    "archive_hardware_validation_and_hashing_in_timing": false
+  },
+  "cumulative_native": {
+    "SW1": {
+      "cpu_upload": {
+        "readback_bytes": 28347325,
+        "submissions": 49,
+        "fence_wait_calls": 49,
+        "fence_wait_wall_ns": 19152900,
+        "attachment_d2d_copies": 0,
+        "attachment_d2d_bytes": 0,
+        "materialization_d2d_copies": 0,
+        "materialization_d2d_bytes": 0,
+        "image_d2h_bytes": 0,
+        "image_h2d_bytes": 0,
+        "return_event_waits": 0,
+        "output_batches": 0,
+        "output_views": 0,
+        "output_image_bytes": 0,
+        "pose_publications": 15,
+        "pose_captures": 30,
+        "pose_matrix_d2d_bytes": 7680,
+        "device_image_status_d2h_bytes": 0,
+        "cpu_native_batch_output_bytes": 28347325,
+        "host_transform_input_bytes": 0
+      },
+      "direct_cuda": {
+        "readback_bytes": 0,
+        "submissions": 49,
+        "fence_wait_calls": 49,
+        "fence_wait_wall_ns": 17189900,
+        "attachment_d2d_copies": 15,
+        "attachment_d2d_bytes": 28347328,
+        "materialization_d2d_copies": 0,
+        "materialization_d2d_bytes": 0,
+        "image_d2h_bytes": 0,
+        "image_h2d_bytes": 0,
+        "return_event_waits": 14,
+        "output_batches": 15,
+        "output_views": 30,
+        "output_image_bytes": 28347325,
+        "pose_publications": 15,
+        "pose_captures": 30,
+        "pose_matrix_d2d_bytes": 7680,
+        "device_image_status_d2h_bytes": 15,
+        "cpu_native_batch_output_bytes": 0,
+        "host_transform_input_bytes": 0
+      }
+    },
+    "SW4": {
+      "cpu_upload": {
+        "readback_bytes": 28347325,
+        "submissions": 49,
+        "fence_wait_calls": 49,
+        "fence_wait_wall_ns": 21682300,
+        "attachment_d2d_copies": 0,
+        "attachment_d2d_bytes": 0,
+        "materialization_d2d_copies": 0,
+        "materialization_d2d_bytes": 0,
+        "image_d2h_bytes": 0,
+        "image_h2d_bytes": 0,
+        "return_event_waits": 0,
+        "output_batches": 0,
+        "output_views": 0,
+        "output_image_bytes": 0,
+        "pose_publications": 15,
+        "pose_captures": 30,
+        "pose_matrix_d2d_bytes": 7680,
+        "device_image_status_d2h_bytes": 0,
+        "cpu_native_batch_output_bytes": 28347325,
+        "host_transform_input_bytes": 0
+      },
+      "direct_cuda": {
+        "readback_bytes": 0,
+        "submissions": 49,
+        "fence_wait_calls": 49,
+        "fence_wait_wall_ns": 21876600,
+        "attachment_d2d_copies": 15,
+        "attachment_d2d_bytes": 28347328,
+        "materialization_d2d_copies": 0,
+        "materialization_d2d_bytes": 0,
+        "image_d2h_bytes": 0,
+        "image_h2d_bytes": 0,
+        "return_event_waits": 14,
+        "output_batches": 15,
+        "output_views": 30,
+        "output_image_bytes": 28347325,
+        "pose_publications": 15,
+        "pose_captures": 30,
+        "pose_matrix_d2d_bytes": 7680,
+        "device_image_status_d2h_bytes": 15,
+        "cpu_native_batch_output_bytes": 0,
+        "host_transform_input_bytes": 0
+      }
+    },
+    "RQ1": {
+      "cpu_upload": {
+        "readback_bytes": 28347325,
+        "submissions": 50,
+        "fence_wait_calls": 50,
+        "fence_wait_wall_ns": 24351300,
+        "attachment_d2d_copies": 0,
+        "attachment_d2d_bytes": 0,
+        "materialization_d2d_copies": 0,
+        "materialization_d2d_bytes": 0,
+        "image_d2h_bytes": 0,
+        "image_h2d_bytes": 0,
+        "return_event_waits": 0,
+        "output_batches": 0,
+        "output_views": 0,
+        "output_image_bytes": 0,
+        "pose_publications": 15,
+        "pose_captures": 30,
+        "pose_matrix_d2d_bytes": 7680,
+        "device_image_status_d2h_bytes": 0,
+        "cpu_native_batch_output_bytes": 28347325,
+        "host_transform_input_bytes": 0
+      },
+      "direct_cuda": {
+        "readback_bytes": 0,
+        "submissions": 50,
+        "fence_wait_calls": 50,
+        "fence_wait_wall_ns": 18792600,
+        "attachment_d2d_copies": 15,
+        "attachment_d2d_bytes": 28347328,
+        "materialization_d2d_copies": 0,
+        "materialization_d2d_bytes": 0,
+        "image_d2h_bytes": 0,
+        "image_h2d_bytes": 0,
+        "return_event_waits": 14,
+        "output_batches": 15,
+        "output_views": 30,
+        "output_image_bytes": 28347325,
+        "pose_publications": 15,
+        "pose_captures": 30,
+        "pose_matrix_d2d_bytes": 7680,
+        "device_image_status_d2h_bytes": 15,
+        "cpu_native_batch_output_bytes": 0,
+        "host_transform_input_bytes": 0
+      }
+    },
+    "RQ4": {
+      "cpu_upload": {
+        "readback_bytes": 28347325,
+        "submissions": 50,
+        "fence_wait_calls": 50,
+        "fence_wait_wall_ns": 31801600,
+        "attachment_d2d_copies": 0,
+        "attachment_d2d_bytes": 0,
+        "materialization_d2d_copies": 0,
+        "materialization_d2d_bytes": 0,
+        "image_d2h_bytes": 0,
+        "image_h2d_bytes": 0,
+        "return_event_waits": 0,
+        "output_batches": 0,
+        "output_views": 0,
+        "output_image_bytes": 0,
+        "pose_publications": 15,
+        "pose_captures": 30,
+        "pose_matrix_d2d_bytes": 7680,
+        "device_image_status_d2h_bytes": 0,
+        "cpu_native_batch_output_bytes": 28347325,
+        "host_transform_input_bytes": 0
+      },
+      "direct_cuda": {
+        "readback_bytes": 0,
+        "submissions": 53,
+        "fence_wait_calls": 53,
+        "fence_wait_wall_ns": 23092700,
+        "attachment_d2d_copies": 16,
+        "attachment_d2d_bytes": 28739456,
+        "materialization_d2d_copies": 0,
+        "materialization_d2d_bytes": 0,
+        "image_d2h_bytes": 0,
+        "image_h2d_bytes": 0,
+        "return_event_waits": 15,
+        "output_batches": 16,
+        "output_views": 32,
+        "output_image_bytes": 28739450,
+        "pose_publications": 16,
+        "pose_captures": 32,
+        "pose_matrix_d2d_bytes": 8192,
+        "device_image_status_d2h_bytes": 16,
+        "cpu_native_batch_output_bytes": 0,
+        "host_transform_input_bytes": 0
+      }
+    }
+  },
+  "lifetime": {
+    "slow_consumer": {
+      "pending_before_reuse": true,
+      "pending_after_reuse": false,
+      "delayed_consumer_stream_ms": 23.388160705566406,
+      "old_consumer_matches": true,
+      "verification_feature_d2h_bytes": 256
+    },
+    "initial_group_after_step80": {
+      "SW1": {
+        "initial_sha256": [
+          {
+            "srgb8_rgb": "0ae690dab73bbd7ccf346f63170f6f0d563728c7ae723c9db6301f1f14ea1d4b",
+            "forward_depth_m_f32": "797773ac47855129bfb9fc4e2e0415655f47fb5c53fe6bfd2f91ff687bde3d0f",
+            "instance_id_u32": "e477f3cadc5cebf7aefc01d01dddd3b2fe964f8b7f0555a033372e47dcaea09e",
+            "valid_u8": "9a50a7fbe32568ca90d5b0496ec5c0d0e86160b896964889f89a8c8b74ec0c15"
+          },
+          {
+            "srgb8_rgb": "daba14d465ab8f5e7aa6b7c90404dfd3b76581d734cb09636c3ad9c9e3758c12",
+            "forward_depth_m_f32": "92f4b39d35db53e6c0d1763ea556cca00c73958b684804ad5f290741a102b274",
+            "instance_id_u32": "32979ac06151ffc92550615f8c82619a012225b97b1218dde97bb8c828aa7ef4",
+            "valid_u8": "9b0d6a96016a55c89b8217d1b4a2dee87f4001dff9653a49ee66db0a618d3bc9"
+          },
+          {
+            "srgb8_rgb": "0ae690dab73bbd7ccf346f63170f6f0d563728c7ae723c9db6301f1f14ea1d4b",
+            "forward_depth_m_f32": "797773ac47855129bfb9fc4e2e0415655f47fb5c53fe6bfd2f91ff687bde3d0f",
+            "instance_id_u32": "e477f3cadc5cebf7aefc01d01dddd3b2fe964f8b7f0555a033372e47dcaea09e",
+            "valid_u8": "9a50a7fbe32568ca90d5b0496ec5c0d0e86160b896964889f89a8c8b74ec0c15"
+          },
+          {
+            "srgb8_rgb": "daba14d465ab8f5e7aa6b7c90404dfd3b76581d734cb09636c3ad9c9e3758c12",
+            "forward_depth_m_f32": "92f4b39d35db53e6c0d1763ea556cca00c73958b684804ad5f290741a102b274",
+            "instance_id_u32": "32979ac06151ffc92550615f8c82619a012225b97b1218dde97bb8c828aa7ef4",
+            "valid_u8": "9b0d6a96016a55c89b8217d1b4a2dee87f4001dff9653a49ee66db0a618d3bc9"
+          }
+        ],
+        "raw_oracle_d2h_bytes": 3686400
+      },
+      "SW4": {
+        "initial_sha256": [
+          {
+            "srgb8_rgb": "df46e315a38bd81adca62dc9e8e4c539722e8e12356a3e5576a5ff9e65856bf7",
+            "forward_depth_m_f32": "797773ac47855129bfb9fc4e2e0415655f47fb5c53fe6bfd2f91ff687bde3d0f",
+            "instance_id_u32": "e477f3cadc5cebf7aefc01d01dddd3b2fe964f8b7f0555a033372e47dcaea09e",
+            "valid_u8": "9a50a7fbe32568ca90d5b0496ec5c0d0e86160b896964889f89a8c8b74ec0c15"
+          },
+          {
+            "srgb8_rgb": "7cd619cfe9b6290968ef3df5a7116fd3bbee0ba65b2d508eede6e94566f5206c",
+            "forward_depth_m_f32": "92f4b39d35db53e6c0d1763ea556cca00c73958b684804ad5f290741a102b274",
+            "instance_id_u32": "32979ac06151ffc92550615f8c82619a012225b97b1218dde97bb8c828aa7ef4",
+            "valid_u8": "9b0d6a96016a55c89b8217d1b4a2dee87f4001dff9653a49ee66db0a618d3bc9"
+          },
+          {
+            "srgb8_rgb": "df46e315a38bd81adca62dc9e8e4c539722e8e12356a3e5576a5ff9e65856bf7",
+            "forward_depth_m_f32": "797773ac47855129bfb9fc4e2e0415655f47fb5c53fe6bfd2f91ff687bde3d0f",
+            "instance_id_u32": "e477f3cadc5cebf7aefc01d01dddd3b2fe964f8b7f0555a033372e47dcaea09e",
+            "valid_u8": "9a50a7fbe32568ca90d5b0496ec5c0d0e86160b896964889f89a8c8b74ec0c15"
+          },
+          {
+            "srgb8_rgb": "7cd619cfe9b6290968ef3df5a7116fd3bbee0ba65b2d508eede6e94566f5206c",
+            "forward_depth_m_f32": "92f4b39d35db53e6c0d1763ea556cca00c73958b684804ad5f290741a102b274",
+            "instance_id_u32": "32979ac06151ffc92550615f8c82619a012225b97b1218dde97bb8c828aa7ef4",
+            "valid_u8": "9b0d6a96016a55c89b8217d1b4a2dee87f4001dff9653a49ee66db0a618d3bc9"
+          }
+        ],
+        "raw_oracle_d2h_bytes": 3686400
+      },
+      "RQ1": {
+        "initial_sha256": [
+          {
+            "srgb8_rgb": "0ae690dab73bbd7ccf346f63170f6f0d563728c7ae723c9db6301f1f14ea1d4b",
+            "forward_depth_m_f32": "797773ac47855129bfb9fc4e2e0415655f47fb5c53fe6bfd2f91ff687bde3d0f",
+            "instance_id_u32": "e477f3cadc5cebf7aefc01d01dddd3b2fe964f8b7f0555a033372e47dcaea09e",
+            "valid_u8": "9a50a7fbe32568ca90d5b0496ec5c0d0e86160b896964889f89a8c8b74ec0c15"
+          },
+          {
+            "srgb8_rgb": "daba14d465ab8f5e7aa6b7c90404dfd3b76581d734cb09636c3ad9c9e3758c12",
+            "forward_depth_m_f32": "92f4b39d35db53e6c0d1763ea556cca00c73958b684804ad5f290741a102b274",
+            "instance_id_u32": "32979ac06151ffc92550615f8c82619a012225b97b1218dde97bb8c828aa7ef4",
+            "valid_u8": "9b0d6a96016a55c89b8217d1b4a2dee87f4001dff9653a49ee66db0a618d3bc9"
+          },
+          {
+            "srgb8_rgb": "0ae690dab73bbd7ccf346f63170f6f0d563728c7ae723c9db6301f1f14ea1d4b",
+            "forward_depth_m_f32": "797773ac47855129bfb9fc4e2e0415655f47fb5c53fe6bfd2f91ff687bde3d0f",
+            "instance_id_u32": "e477f3cadc5cebf7aefc01d01dddd3b2fe964f8b7f0555a033372e47dcaea09e",
+            "valid_u8": "9a50a7fbe32568ca90d5b0496ec5c0d0e86160b896964889f89a8c8b74ec0c15"
+          },
+          {
+            "srgb8_rgb": "daba14d465ab8f5e7aa6b7c90404dfd3b76581d734cb09636c3ad9c9e3758c12",
+            "forward_depth_m_f32": "92f4b39d35db53e6c0d1763ea556cca00c73958b684804ad5f290741a102b274",
+            "instance_id_u32": "32979ac06151ffc92550615f8c82619a012225b97b1218dde97bb8c828aa7ef4",
+            "valid_u8": "9b0d6a96016a55c89b8217d1b4a2dee87f4001dff9653a49ee66db0a618d3bc9"
+          }
+        ],
+        "raw_oracle_d2h_bytes": 3686400
+      },
+      "RQ4": {
+        "initial_sha256": [
+          {
+            "srgb8_rgb": "df46e315a38bd81adca62dc9e8e4c539722e8e12356a3e5576a5ff9e65856bf7",
+            "forward_depth_m_f32": "797773ac47855129bfb9fc4e2e0415655f47fb5c53fe6bfd2f91ff687bde3d0f",
+            "instance_id_u32": "e477f3cadc5cebf7aefc01d01dddd3b2fe964f8b7f0555a033372e47dcaea09e",
+            "valid_u8": "9a50a7fbe32568ca90d5b0496ec5c0d0e86160b896964889f89a8c8b74ec0c15"
+          },
+          {
+            "srgb8_rgb": "7cd619cfe9b6290968ef3df5a7116fd3bbee0ba65b2d508eede6e94566f5206c",
+            "forward_depth_m_f32": "92f4b39d35db53e6c0d1763ea556cca00c73958b684804ad5f290741a102b274",
+            "instance_id_u32": "32979ac06151ffc92550615f8c82619a012225b97b1218dde97bb8c828aa7ef4",
+            "valid_u8": "9b0d6a96016a55c89b8217d1b4a2dee87f4001dff9653a49ee66db0a618d3bc9"
+          },
+          {
+            "srgb8_rgb": "df46e315a38bd81adca62dc9e8e4c539722e8e12356a3e5576a5ff9e65856bf7",
+            "forward_depth_m_f32": "797773ac47855129bfb9fc4e2e0415655f47fb5c53fe6bfd2f91ff687bde3d0f",
+            "instance_id_u32": "e477f3cadc5cebf7aefc01d01dddd3b2fe964f8b7f0555a033372e47dcaea09e",
+            "valid_u8": "9a50a7fbe32568ca90d5b0496ec5c0d0e86160b896964889f89a8c8b74ec0c15"
+          },
+          {
+            "srgb8_rgb": "7cd619cfe9b6290968ef3df5a7116fd3bbee0ba65b2d508eede6e94566f5206c",
+            "forward_depth_m_f32": "92f4b39d35db53e6c0d1763ea556cca00c73958b684804ad5f290741a102b274",
+            "instance_id_u32": "32979ac06151ffc92550615f8c82619a012225b97b1218dde97bb8c828aa7ef4",
+            "valid_u8": "9b0d6a96016a55c89b8217d1b4a2dee87f4001dff9653a49ee66db0a618d3bc9"
+          }
+        ],
+        "raw_oracle_d2h_bytes": 3686400
+      }
+    },
+    "initial_group_after_reset41": {
+      "SW1": {
+        "initial_sha256": [
+          {
+            "srgb8_rgb": "0ae690dab73bbd7ccf346f63170f6f0d563728c7ae723c9db6301f1f14ea1d4b",
+            "forward_depth_m_f32": "797773ac47855129bfb9fc4e2e0415655f47fb5c53fe6bfd2f91ff687bde3d0f",
+            "instance_id_u32": "e477f3cadc5cebf7aefc01d01dddd3b2fe964f8b7f0555a033372e47dcaea09e",
+            "valid_u8": "9a50a7fbe32568ca90d5b0496ec5c0d0e86160b896964889f89a8c8b74ec0c15"
+          },
+          {
+            "srgb8_rgb": "daba14d465ab8f5e7aa6b7c90404dfd3b76581d734cb09636c3ad9c9e3758c12",
+            "forward_depth_m_f32": "92f4b39d35db53e6c0d1763ea556cca00c73958b684804ad5f290741a102b274",
+            "instance_id_u32": "32979ac06151ffc92550615f8c82619a012225b97b1218dde97bb8c828aa7ef4",
+            "valid_u8": "9b0d6a96016a55c89b8217d1b4a2dee87f4001dff9653a49ee66db0a618d3bc9"
+          },
+          {
+            "srgb8_rgb": "0ae690dab73bbd7ccf346f63170f6f0d563728c7ae723c9db6301f1f14ea1d4b",
+            "forward_depth_m_f32": "797773ac47855129bfb9fc4e2e0415655f47fb5c53fe6bfd2f91ff687bde3d0f",
+            "instance_id_u32": "e477f3cadc5cebf7aefc01d01dddd3b2fe964f8b7f0555a033372e47dcaea09e",
+            "valid_u8": "9a50a7fbe32568ca90d5b0496ec5c0d0e86160b896964889f89a8c8b74ec0c15"
+          },
+          {
+            "srgb8_rgb": "daba14d465ab8f5e7aa6b7c90404dfd3b76581d734cb09636c3ad9c9e3758c12",
+            "forward_depth_m_f32": "92f4b39d35db53e6c0d1763ea556cca00c73958b684804ad5f290741a102b274",
+            "instance_id_u32": "32979ac06151ffc92550615f8c82619a012225b97b1218dde97bb8c828aa7ef4",
+            "valid_u8": "9b0d6a96016a55c89b8217d1b4a2dee87f4001dff9653a49ee66db0a618d3bc9"
+          }
+        ],
+        "raw_oracle_d2h_bytes": 3686400
+      },
+      "SW4": {
+        "initial_sha256": [
+          {
+            "srgb8_rgb": "df46e315a38bd81adca62dc9e8e4c539722e8e12356a3e5576a5ff9e65856bf7",
+            "forward_depth_m_f32": "797773ac47855129bfb9fc4e2e0415655f47fb5c53fe6bfd2f91ff687bde3d0f",
+            "instance_id_u32": "e477f3cadc5cebf7aefc01d01dddd3b2fe964f8b7f0555a033372e47dcaea09e",
+            "valid_u8": "9a50a7fbe32568ca90d5b0496ec5c0d0e86160b896964889f89a8c8b74ec0c15"
+          },
+          {
+            "srgb8_rgb": "7cd619cfe9b6290968ef3df5a7116fd3bbee0ba65b2d508eede6e94566f5206c",
+            "forward_depth_m_f32": "92f4b39d35db53e6c0d1763ea556cca00c73958b684804ad5f290741a102b274",
+            "instance_id_u32": "32979ac06151ffc92550615f8c82619a012225b97b1218dde97bb8c828aa7ef4",
+            "valid_u8": "9b0d6a96016a55c89b8217d1b4a2dee87f4001dff9653a49ee66db0a618d3bc9"
+          },
+          {
+            "srgb8_rgb": "df46e315a38bd81adca62dc9e8e4c539722e8e12356a3e5576a5ff9e65856bf7",
+            "forward_depth_m_f32": "797773ac47855129bfb9fc4e2e0415655f47fb5c53fe6bfd2f91ff687bde3d0f",
+            "instance_id_u32": "e477f3cadc5cebf7aefc01d01dddd3b2fe964f8b7f0555a033372e47dcaea09e",
+            "valid_u8": "9a50a7fbe32568ca90d5b0496ec5c0d0e86160b896964889f89a8c8b74ec0c15"
+          },
+          {
+            "srgb8_rgb": "7cd619cfe9b6290968ef3df5a7116fd3bbee0ba65b2d508eede6e94566f5206c",
+            "forward_depth_m_f32": "92f4b39d35db53e6c0d1763ea556cca00c73958b684804ad5f290741a102b274",
+            "instance_id_u32": "32979ac06151ffc92550615f8c82619a012225b97b1218dde97bb8c828aa7ef4",
+            "valid_u8": "9b0d6a96016a55c89b8217d1b4a2dee87f4001dff9653a49ee66db0a618d3bc9"
+          }
+        ],
+        "raw_oracle_d2h_bytes": 3686400
+      },
+      "RQ1": {
+        "initial_sha256": [
+          {
+            "srgb8_rgb": "0ae690dab73bbd7ccf346f63170f6f0d563728c7ae723c9db6301f1f14ea1d4b",
+            "forward_depth_m_f32": "797773ac47855129bfb9fc4e2e0415655f47fb5c53fe6bfd2f91ff687bde3d0f",
+            "instance_id_u32": "e477f3cadc5cebf7aefc01d01dddd3b2fe964f8b7f0555a033372e47dcaea09e",
+            "valid_u8": "9a50a7fbe32568ca90d5b0496ec5c0d0e86160b896964889f89a8c8b74ec0c15"
+          },
+          {
+            "srgb8_rgb": "daba14d465ab8f5e7aa6b7c90404dfd3b76581d734cb09636c3ad9c9e3758c12",
+            "forward_depth_m_f32": "92f4b39d35db53e6c0d1763ea556cca00c73958b684804ad5f290741a102b274",
+            "instance_id_u32": "32979ac06151ffc92550615f8c82619a012225b97b1218dde97bb8c828aa7ef4",
+            "valid_u8": "9b0d6a96016a55c89b8217d1b4a2dee87f4001dff9653a49ee66db0a618d3bc9"
+          },
+          {
+            "srgb8_rgb": "0ae690dab73bbd7ccf346f63170f6f0d563728c7ae723c9db6301f1f14ea1d4b",
+            "forward_depth_m_f32": "797773ac47855129bfb9fc4e2e0415655f47fb5c53fe6bfd2f91ff687bde3d0f",
+            "instance_id_u32": "e477f3cadc5cebf7aefc01d01dddd3b2fe964f8b7f0555a033372e47dcaea09e",
+            "valid_u8": "9a50a7fbe32568ca90d5b0496ec5c0d0e86160b896964889f89a8c8b74ec0c15"
+          },
+          {
+            "srgb8_rgb": "daba14d465ab8f5e7aa6b7c90404dfd3b76581d734cb09636c3ad9c9e3758c12",
+            "forward_depth_m_f32": "92f4b39d35db53e6c0d1763ea556cca00c73958b684804ad5f290741a102b274",
+            "instance_id_u32": "32979ac06151ffc92550615f8c82619a012225b97b1218dde97bb8c828aa7ef4",
+            "valid_u8": "9b0d6a96016a55c89b8217d1b4a2dee87f4001dff9653a49ee66db0a618d3bc9"
+          }
+        ],
+        "raw_oracle_d2h_bytes": 3686400
+      },
+      "RQ4": {
+        "initial_sha256": [
+          {
+            "srgb8_rgb": "df46e315a38bd81adca62dc9e8e4c539722e8e12356a3e5576a5ff9e65856bf7",
+            "forward_depth_m_f32": "797773ac47855129bfb9fc4e2e0415655f47fb5c53fe6bfd2f91ff687bde3d0f",
+            "instance_id_u32": "e477f3cadc5cebf7aefc01d01dddd3b2fe964f8b7f0555a033372e47dcaea09e",
+            "valid_u8": "9a50a7fbe32568ca90d5b0496ec5c0d0e86160b896964889f89a8c8b74ec0c15"
+          },
+          {
+            "srgb8_rgb": "7cd619cfe9b6290968ef3df5a7116fd3bbee0ba65b2d508eede6e94566f5206c",
+            "forward_depth_m_f32": "92f4b39d35db53e6c0d1763ea556cca00c73958b684804ad5f290741a102b274",
+            "instance_id_u32": "32979ac06151ffc92550615f8c82619a012225b97b1218dde97bb8c828aa7ef4",
+            "valid_u8": "9b0d6a96016a55c89b8217d1b4a2dee87f4001dff9653a49ee66db0a618d3bc9"
+          },
+          {
+            "srgb8_rgb": "df46e315a38bd81adca62dc9e8e4c539722e8e12356a3e5576a5ff9e65856bf7",
+            "forward_depth_m_f32": "797773ac47855129bfb9fc4e2e0415655f47fb5c53fe6bfd2f91ff687bde3d0f",
+            "instance_id_u32": "e477f3cadc5cebf7aefc01d01dddd3b2fe964f8b7f0555a033372e47dcaea09e",
+            "valid_u8": "9a50a7fbe32568ca90d5b0496ec5c0d0e86160b896964889f89a8c8b74ec0c15"
+          },
+          {
+            "srgb8_rgb": "7cd619cfe9b6290968ef3df5a7116fd3bbee0ba65b2d508eede6e94566f5206c",
+            "forward_depth_m_f32": "92f4b39d35db53e6c0d1763ea556cca00c73958b684804ad5f290741a102b274",
+            "instance_id_u32": "32979ac06151ffc92550615f8c82619a012225b97b1218dde97bb8c828aa7ef4",
+            "valid_u8": "9b0d6a96016a55c89b8217d1b4a2dee87f4001dff9653a49ee66db0a618d3bc9"
+          }
+        ],
+        "raw_oracle_d2h_bytes": 3686400
+      }
+    },
+    "initial_group_after_native_close": {
+      "SW1": {
+        "initial_sha256": [
+          {
+            "srgb8_rgb": "0ae690dab73bbd7ccf346f63170f6f0d563728c7ae723c9db6301f1f14ea1d4b",
+            "forward_depth_m_f32": "797773ac47855129bfb9fc4e2e0415655f47fb5c53fe6bfd2f91ff687bde3d0f",
+            "instance_id_u32": "e477f3cadc5cebf7aefc01d01dddd3b2fe964f8b7f0555a033372e47dcaea09e",
+            "valid_u8": "9a50a7fbe32568ca90d5b0496ec5c0d0e86160b896964889f89a8c8b74ec0c15"
+          },
+          {
+            "srgb8_rgb": "daba14d465ab8f5e7aa6b7c90404dfd3b76581d734cb09636c3ad9c9e3758c12",
+            "forward_depth_m_f32": "92f4b39d35db53e6c0d1763ea556cca00c73958b684804ad5f290741a102b274",
+            "instance_id_u32": "32979ac06151ffc92550615f8c82619a012225b97b1218dde97bb8c828aa7ef4",
+            "valid_u8": "9b0d6a96016a55c89b8217d1b4a2dee87f4001dff9653a49ee66db0a618d3bc9"
+          },
+          {
+            "srgb8_rgb": "0ae690dab73bbd7ccf346f63170f6f0d563728c7ae723c9db6301f1f14ea1d4b",
+            "forward_depth_m_f32": "797773ac47855129bfb9fc4e2e0415655f47fb5c53fe6bfd2f91ff687bde3d0f",
+            "instance_id_u32": "e477f3cadc5cebf7aefc01d01dddd3b2fe964f8b7f0555a033372e47dcaea09e",
+            "valid_u8": "9a50a7fbe32568ca90d5b0496ec5c0d0e86160b896964889f89a8c8b74ec0c15"
+          },
+          {
+            "srgb8_rgb": "daba14d465ab8f5e7aa6b7c90404dfd3b76581d734cb09636c3ad9c9e3758c12",
+            "forward_depth_m_f32": "92f4b39d35db53e6c0d1763ea556cca00c73958b684804ad5f290741a102b274",
+            "instance_id_u32": "32979ac06151ffc92550615f8c82619a012225b97b1218dde97bb8c828aa7ef4",
+            "valid_u8": "9b0d6a96016a55c89b8217d1b4a2dee87f4001dff9653a49ee66db0a618d3bc9"
+          }
+        ],
+        "raw_oracle_d2h_bytes": 3686400
+      },
+      "SW4": {
+        "initial_sha256": [
+          {
+            "srgb8_rgb": "df46e315a38bd81adca62dc9e8e4c539722e8e12356a3e5576a5ff9e65856bf7",
+            "forward_depth_m_f32": "797773ac47855129bfb9fc4e2e0415655f47fb5c53fe6bfd2f91ff687bde3d0f",
+            "instance_id_u32": "e477f3cadc5cebf7aefc01d01dddd3b2fe964f8b7f0555a033372e47dcaea09e",
+            "valid_u8": "9a50a7fbe32568ca90d5b0496ec5c0d0e86160b896964889f89a8c8b74ec0c15"
+          },
+          {
+            "srgb8_rgb": "7cd619cfe9b6290968ef3df5a7116fd3bbee0ba65b2d508eede6e94566f5206c",
+            "forward_depth_m_f32": "92f4b39d35db53e6c0d1763ea556cca00c73958b684804ad5f290741a102b274",
+            "instance_id_u32": "32979ac06151ffc92550615f8c82619a012225b97b1218dde97bb8c828aa7ef4",
+            "valid_u8": "9b0d6a96016a55c89b8217d1b4a2dee87f4001dff9653a49ee66db0a618d3bc9"
+          },
+          {
+            "srgb8_rgb": "df46e315a38bd81adca62dc9e8e4c539722e8e12356a3e5576a5ff9e65856bf7",
+            "forward_depth_m_f32": "797773ac47855129bfb9fc4e2e0415655f47fb5c53fe6bfd2f91ff687bde3d0f",
+            "instance_id_u32": "e477f3cadc5cebf7aefc01d01dddd3b2fe964f8b7f0555a033372e47dcaea09e",
+            "valid_u8": "9a50a7fbe32568ca90d5b0496ec5c0d0e86160b896964889f89a8c8b74ec0c15"
+          },
+          {
+            "srgb8_rgb": "7cd619cfe9b6290968ef3df5a7116fd3bbee0ba65b2d508eede6e94566f5206c",
+            "forward_depth_m_f32": "92f4b39d35db53e6c0d1763ea556cca00c73958b684804ad5f290741a102b274",
+            "instance_id_u32": "32979ac06151ffc92550615f8c82619a012225b97b1218dde97bb8c828aa7ef4",
+            "valid_u8": "9b0d6a96016a55c89b8217d1b4a2dee87f4001dff9653a49ee66db0a618d3bc9"
+          }
+        ],
+        "raw_oracle_d2h_bytes": 3686400
+      },
+      "RQ1": {
+        "initial_sha256": [
+          {
+            "srgb8_rgb": "0ae690dab73bbd7ccf346f63170f6f0d563728c7ae723c9db6301f1f14ea1d4b",
+            "forward_depth_m_f32": "797773ac47855129bfb9fc4e2e0415655f47fb5c53fe6bfd2f91ff687bde3d0f",
+            "instance_id_u32": "e477f3cadc5cebf7aefc01d01dddd3b2fe964f8b7f0555a033372e47dcaea09e",
+            "valid_u8": "9a50a7fbe32568ca90d5b0496ec5c0d0e86160b896964889f89a8c8b74ec0c15"
+          },
+          {
+            "srgb8_rgb": "daba14d465ab8f5e7aa6b7c90404dfd3b76581d734cb09636c3ad9c9e3758c12",
+            "forward_depth_m_f32": "92f4b39d35db53e6c0d1763ea556cca00c73958b684804ad5f290741a102b274",
+            "instance_id_u32": "32979ac06151ffc92550615f8c82619a012225b97b1218dde97bb8c828aa7ef4",
+            "valid_u8": "9b0d6a96016a55c89b8217d1b4a2dee87f4001dff9653a49ee66db0a618d3bc9"
+          },
+          {
+            "srgb8_rgb": "0ae690dab73bbd7ccf346f63170f6f0d563728c7ae723c9db6301f1f14ea1d4b",
+            "forward_depth_m_f32": "797773ac47855129bfb9fc4e2e0415655f47fb5c53fe6bfd2f91ff687bde3d0f",
+            "instance_id_u32": "e477f3cadc5cebf7aefc01d01dddd3b2fe964f8b7f0555a033372e47dcaea09e",
+            "valid_u8": "9a50a7fbe32568ca90d5b0496ec5c0d0e86160b896964889f89a8c8b74ec0c15"
+          },
+          {
+            "srgb8_rgb": "daba14d465ab8f5e7aa6b7c90404dfd3b76581d734cb09636c3ad9c9e3758c12",
+            "forward_depth_m_f32": "92f4b39d35db53e6c0d1763ea556cca00c73958b684804ad5f290741a102b274",
+            "instance_id_u32": "32979ac06151ffc92550615f8c82619a012225b97b1218dde97bb8c828aa7ef4",
+            "valid_u8": "9b0d6a96016a55c89b8217d1b4a2dee87f4001dff9653a49ee66db0a618d3bc9"
+          }
+        ],
+        "raw_oracle_d2h_bytes": 3686400
+      },
+      "RQ4": {
+        "initial_sha256": [
+          {
+            "srgb8_rgb": "df46e315a38bd81adca62dc9e8e4c539722e8e12356a3e5576a5ff9e65856bf7",
+            "forward_depth_m_f32": "797773ac47855129bfb9fc4e2e0415655f47fb5c53fe6bfd2f91ff687bde3d0f",
+            "instance_id_u32": "e477f3cadc5cebf7aefc01d01dddd3b2fe964f8b7f0555a033372e47dcaea09e",
+            "valid_u8": "9a50a7fbe32568ca90d5b0496ec5c0d0e86160b896964889f89a8c8b74ec0c15"
+          },
+          {
+            "srgb8_rgb": "7cd619cfe9b6290968ef3df5a7116fd3bbee0ba65b2d508eede6e94566f5206c",
+            "forward_depth_m_f32": "92f4b39d35db53e6c0d1763ea556cca00c73958b684804ad5f290741a102b274",
+            "instance_id_u32": "32979ac06151ffc92550615f8c82619a012225b97b1218dde97bb8c828aa7ef4",
+            "valid_u8": "9b0d6a96016a55c89b8217d1b4a2dee87f4001dff9653a49ee66db0a618d3bc9"
+          },
+          {
+            "srgb8_rgb": "df46e315a38bd81adca62dc9e8e4c539722e8e12356a3e5576a5ff9e65856bf7",
+            "forward_depth_m_f32": "797773ac47855129bfb9fc4e2e0415655f47fb5c53fe6bfd2f91ff687bde3d0f",
+            "instance_id_u32": "e477f3cadc5cebf7aefc01d01dddd3b2fe964f8b7f0555a033372e47dcaea09e",
+            "valid_u8": "9a50a7fbe32568ca90d5b0496ec5c0d0e86160b896964889f89a8c8b74ec0c15"
+          },
+          {
+            "srgb8_rgb": "7cd619cfe9b6290968ef3df5a7116fd3bbee0ba65b2d508eede6e94566f5206c",
+            "forward_depth_m_f32": "92f4b39d35db53e6c0d1763ea556cca00c73958b684804ad5f290741a102b274",
+            "instance_id_u32": "32979ac06151ffc92550615f8c82619a012225b97b1218dde97bb8c828aa7ef4",
+            "valid_u8": "9b0d6a96016a55c89b8217d1b4a2dee87f4001dff9653a49ee66db0a618d3bc9"
+          }
+        ],
+        "raw_oracle_d2h_bytes": 3686400
+      }
+    }
+  },
+  "mixed_extent_mask": {
+    "SW1": {
+      "native_compact_image_bytes": 392125,
+      "raw_bridge_storage_bytes": 392128,
+      "raw_oracle_d2h_bytes": 353020,
+      "explicit_async_readback_public_bytes": 353020,
+      "views": [
+        {
+          "camera": "gimbal-cam",
+          "width": 157,
+          "height": 101,
+          "channels": [
+            "valid_u8",
+            "instance_id_u32"
+          ],
+          "sha256": {
+            "valid_u8": "e64501e776abd7d5a969017ac96e423d8c9799f651f3aeb4a2809dc297e4f702",
+            "instance_id_u32": "0c02bd79b39edd93e6c831a881ec33f33e4715eadcc783164f52da69b597f58f"
+          }
+        },
+        {
+          "camera": "fixed",
+          "width": 237,
+          "height": 165,
+          "channels": [
+            "forward_depth_m_f32",
+            "srgb8_rgb"
+          ],
+          "sha256": {
+            "forward_depth_m_f32": "e3bbf19ca7d71439ae09958b8d5c4fee0f44d46fc688a89093deb16cbddbb23b",
+            "srgb8_rgb": "790c3adb34fab5357503b72fff89b460cab5ae39d9dd852c8522e2fd9261ac41"
+          }
+        }
+      ]
+    },
+    "SW4": {
+      "native_compact_image_bytes": 392125,
+      "raw_bridge_storage_bytes": 392128,
+      "raw_oracle_d2h_bytes": 353020,
+      "explicit_async_readback_public_bytes": 353020,
+      "views": [
+        {
+          "camera": "gimbal-cam",
+          "width": 157,
+          "height": 101,
+          "channels": [
+            "valid_u8",
+            "instance_id_u32"
+          ],
+          "sha256": {
+            "valid_u8": "e64501e776abd7d5a969017ac96e423d8c9799f651f3aeb4a2809dc297e4f702",
+            "instance_id_u32": "0c02bd79b39edd93e6c831a881ec33f33e4715eadcc783164f52da69b597f58f"
+          }
+        },
+        {
+          "camera": "fixed",
+          "width": 237,
+          "height": 165,
+          "channels": [
+            "forward_depth_m_f32",
+            "srgb8_rgb"
+          ],
+          "sha256": {
+            "forward_depth_m_f32": "e3bbf19ca7d71439ae09958b8d5c4fee0f44d46fc688a89093deb16cbddbb23b",
+            "srgb8_rgb": "7266396e38ddf8b5d5eebae4d752f88934e94f0e1ec19843117c21c82834346e"
+          }
+        }
+      ]
+    },
+    "RQ1": {
+      "native_compact_image_bytes": 392125,
+      "raw_bridge_storage_bytes": 392128,
+      "raw_oracle_d2h_bytes": 353020,
+      "explicit_async_readback_public_bytes": 353020,
+      "views": [
+        {
+          "camera": "gimbal-cam",
+          "width": 157,
+          "height": 101,
+          "channels": [
+            "valid_u8",
+            "instance_id_u32"
+          ],
+          "sha256": {
+            "valid_u8": "e64501e776abd7d5a969017ac96e423d8c9799f651f3aeb4a2809dc297e4f702",
+            "instance_id_u32": "0c02bd79b39edd93e6c831a881ec33f33e4715eadcc783164f52da69b597f58f"
+          }
+        },
+        {
+          "camera": "fixed",
+          "width": 237,
+          "height": 165,
+          "channels": [
+            "forward_depth_m_f32",
+            "srgb8_rgb"
+          ],
+          "sha256": {
+            "forward_depth_m_f32": "e3bbf19ca7d71439ae09958b8d5c4fee0f44d46fc688a89093deb16cbddbb23b",
+            "srgb8_rgb": "790c3adb34fab5357503b72fff89b460cab5ae39d9dd852c8522e2fd9261ac41"
+          }
+        }
+      ]
+    },
+    "RQ4": {
+      "native_compact_image_bytes": 392125,
+      "raw_bridge_storage_bytes": 392128,
+      "raw_oracle_d2h_bytes": 353020,
+      "explicit_async_readback_public_bytes": 353020,
+      "views": [
+        {
+          "camera": "gimbal-cam",
+          "width": 157,
+          "height": 101,
+          "channels": [
+            "valid_u8",
+            "instance_id_u32"
+          ],
+          "sha256": {
+            "valid_u8": "e64501e776abd7d5a969017ac96e423d8c9799f651f3aeb4a2809dc297e4f702",
+            "instance_id_u32": "0c02bd79b39edd93e6c831a881ec33f33e4715eadcc783164f52da69b597f58f"
+          }
+        },
+        {
+          "camera": "fixed",
+          "width": 237,
+          "height": 165,
+          "channels": [
+            "forward_depth_m_f32",
+            "srgb8_rgb"
+          ],
+          "sha256": {
+            "forward_depth_m_f32": "e3bbf19ca7d71439ae09958b8d5c4fee0f44d46fc688a89093deb16cbddbb23b",
+            "srgb8_rgb": "7266396e38ddf8b5d5eebae4d752f88934e94f0e1ec19843117c21c82834346e"
+          }
+        }
+      ]
+    }
+  },
+  "guards": {
+    "stale_before_step40": "stale heterogeneous frame",
+    "SW1": {
+      "final_request_rejected": "mounted camera metadata differs from this publication",
+      "duplicate_world_group": "duplicate world in combined device image batch",
+      "different_frame_group": "image batches must belong to the same physics frame and device"
+    },
+    "SW4": {
+      "final_request_rejected": "mounted camera metadata differs from this publication",
+      "duplicate_world_group": "duplicate world in combined device image batch",
+      "different_frame_group": "image batches must belong to the same physics frame and device"
+    },
+    "RQ1": {
+      "final_request_rejected": "mounted camera metadata differs from this publication",
+      "duplicate_world_group": "duplicate world in combined device image batch",
+      "different_frame_group": "image batches must belong to the same physics frame and device"
+    },
+    "RQ4": {
+      "final_request_rejected": "mounted camera metadata differs from this publication",
+      "duplicate_world_group": "duplicate world in combined device image batch",
+      "different_frame_group": "image batches must belong to the same physics frame and device"
+    },
+    "stale_before_step80": "stale heterogeneous frame",
+    "stale_before_reset41": "stale heterogeneous frame"
+  },
+  "verification_public_plane_bytes_downloaded": 106043360,
+  "raw_oracle_scope": "sum of explicitly downloaded public plane payloads during quality, lifetime and mixed-channel checks; excluded from timed image transfers",
+  "quality_features_cpu_oracle_bytes_downloaded": 8192,
+  "sheet_mode": "RQ4"
+}

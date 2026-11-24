@@ -1,0 +1,23 @@
+cmake_minimum_required(VERSION 3.20)
+project(phymeo_vk_p0 LANGUAGES CXX)
+if(NOT WIN32 OR NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
+  message(FATAL_ERROR "P0 requires 64-bit Windows and opaque Win32 NT handles")
+endif()
+find_path(VULKAN_INCLUDE_DIR vulkan/vulkan.h HINTS "$ENV{VULKAN_SDK}/Include" REQUIRED)
+find_library(VULKAN_LIBRARY NAMES vulkan-1 HINTS "$ENV{VULKAN_SDK}/Lib" REQUIRED)
+find_program(GLSLANG_VALIDATOR NAMES glslang glslangValidator HINTS "$ENV{VULKAN_SDK}/Bin" REQUIRED)
+add_custom_command(OUTPUT "${CMAKE_BINARY_DIR}/p0_verify.comp.spv"
+  COMMAND "${GLSLANG_VALIDATOR}" -V --target-env vulkan1.1 "${CMAKE_CURRENT_SOURCE_DIR}/p0_verify.comp"
+          -o "${CMAKE_BINARY_DIR}/p0_verify.comp.spv"
+  DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/p0_verify.comp" VERBATIM)
+add_custom_target(p0_verify_shader DEPENDS "${CMAKE_BINARY_DIR}/p0_verify.comp.spv")
+add_library(phymeo_vk_p0 SHARED p0.cpp)
+add_dependencies(phymeo_vk_p0 p0_verify_shader)
+target_compile_features(phymeo_vk_p0 PRIVATE cxx_std_17)
+target_compile_definitions(phymeo_vk_p0 PRIVATE VK_USE_PLATFORM_WIN32_KHR WIN32_LEAN_AND_MEAN NOMINMAX PV0_BUILD)
+target_include_directories(phymeo_vk_p0 PRIVATE "${VULKAN_INCLUDE_DIR}")
+target_link_libraries(phymeo_vk_p0 PRIVATE "${VULKAN_LIBRARY}")
+if(MSVC)
+  target_compile_options(phymeo_vk_p0 PRIVATE /W4 /EHsc)
+endif()
+set_target_properties(phymeo_vk_p0 PROPERTIES RUNTIME_OUTPUT_DIRECTORY "$<1:${CMAKE_BINARY_DIR}>")

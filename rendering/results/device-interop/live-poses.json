@@ -1,0 +1,280 @@
+{
+  "scope": "Live accepted body-pose transport through a Vulkan compute SSBO",
+  "device_uuid": "3b78d98198a3be57a8cb4d72fdfbfa96",
+  "device_name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+  "cuda_ordinal": 0,
+  "slots": 2,
+  "phase": "accepted-integration-endpoint",
+  "compiled_timestep_s": 0.001,
+  "completed_steps": 24,
+  "accepted_world_steps": 48,
+  "pose_format": "contiguous FP32 body-to-world [R|p], 3x4 per body, native body ID order",
+  "physics_bytes_after_initial_controls": {
+    "static_uploaded_bytes": 31380,
+    "uploaded_bytes": 0,
+    "downloaded_bytes": 0,
+    "device_control_d2d_bytes": 0,
+    "control_host_uploaded_bytes": 0,
+    "area_copy_bytes": 0,
+    "control_copy_d2d_bytes": 0,
+    "control_audit_downloaded_bytes": 0,
+    "control_status_downloaded_bytes": 0,
+    "control_initial_uploaded_bytes": 0
+  },
+  "layout_upload_bytes": 12,
+  "audit": "Both 192-byte host reads occur after Vulkan completion and are used only for verification.",
+  "validation_enabled": true,
+  "validation_errors": 0,
+  "native_live_after": 0,
+  "exchanges": [
+    {
+      "slot": 0,
+      "slot_generation": 0,
+      "tick": 0,
+      "revision": 1,
+      "workspace_epoch": 1,
+      "world_keys": [
+        41,
+        7
+      ],
+      "world_ticks": [
+        0,
+        0
+      ],
+      "world_boundaries": [
+        [
+          "cc8363a606844d6d831821a1d8007f89",
+          0,
+          "initial"
+        ],
+        [
+          "cc8363a606844d6d831821a1d8007f89",
+          0,
+          "initial"
+        ]
+      ],
+      "body_offsets": [
+        0,
+        2,
+        4
+      ],
+      "native_comparison": [
+        {
+          "world": 41,
+          "control": 4.0,
+          "body_count": 2,
+          "position_max_abs_m": 0.0,
+          "rotation_max_abs": 0.0,
+          "slider_z_m": 0.0,
+          "reference_z_m": 0.0
+        },
+        {
+          "world": 7,
+          "control": -4.0,
+          "body_count": 2,
+          "position_max_abs_m": 0.0,
+          "rotation_max_abs": 0.0,
+          "slider_z_m": 0.0,
+          "reference_z_m": 0.0
+        }
+      ],
+      "vulkan": {
+        "checked_words": 48,
+        "words_different_from_marker": 36,
+        "first_input_word": 1065353216,
+        "last_input_word": 0,
+        "source_sha256": "40f48ff64b3fe66e5eafd6b77256d64267f10bf54334a4e6db3230de1c73af9c",
+        "result_sha256": "5b6f6b0b01a999531e5c0a94c58aafb70f3f440859f47de5fd7bd3548ad4c52a",
+        "verified_returned_words": 48
+      },
+      "bytes": {
+        "physics_solver": {
+          "static_uploaded_bytes": 0,
+          "uploaded_bytes": 0,
+          "downloaded_bytes": 0,
+          "device_control_d2d_bytes": 0,
+          "control_host_uploaded_bytes": 0,
+          "area_copy_bytes": 0,
+          "control_copy_d2d_bytes": 0,
+          "control_audit_downloaded_bytes": 0,
+          "control_status_downloaded_bytes": 0,
+          "control_initial_uploaded_bytes": 0
+        },
+        "observer_status_d2h": 40,
+        "snapshot_device_write": 192,
+        "snapshot_to_ssbo_d2d": 192,
+        "pose_h2d": 0,
+        "pose_d2h_for_transport": 0,
+        "source_oracle_d2h": 192,
+        "result_oracle_d2h": 192,
+        "vulkan_audit_to_host": 16
+      }
+    },
+    {
+      "slot": 1,
+      "slot_generation": 0,
+      "tick": 12,
+      "revision": 13,
+      "workspace_epoch": 2,
+      "world_keys": [
+        41,
+        7
+      ],
+      "world_ticks": [
+        12,
+        12
+      ],
+      "world_boundaries": [
+        [
+          "cc8363a606844d6d831821a1d8007f89",
+          0,
+          "initial"
+        ],
+        [
+          "cc8363a606844d6d831821a1d8007f89",
+          0,
+          "initial"
+        ]
+      ],
+      "body_offsets": [
+        0,
+        2,
+        4
+      ],
+      "native_comparison": [
+        {
+          "world": 41,
+          "control": 4.0,
+          "body_count": 2,
+          "position_max_abs_m": 1.0048997918510327e-10,
+          "rotation_max_abs": 0.0,
+          "slider_z_m": 0.0011535611702129245,
+          "reference_z_m": 0.0011535610697229453
+        },
+        {
+          "world": 7,
+          "control": -4.0,
+          "body_count": 2,
+          "position_max_abs_m": 1.0048997918510327e-10,
+          "rotation_max_abs": 0.0,
+          "slider_z_m": -0.0011535611702129245,
+          "reference_z_m": -0.0011535610697229453
+        }
+      ],
+      "vulkan": {
+        "checked_words": 48,
+        "words_different_from_marker": 36,
+        "first_input_word": 1065353216,
+        "last_input_word": 3130471191,
+        "source_sha256": "305b1c9f5733bf53e6c5b0598e0a73e2ba909aa07732f905e17fad92651f0771",
+        "result_sha256": "4266afa0eda5a396d501280cf87612f08de262b8286875d8aaffd54bffde9bd5",
+        "verified_returned_words": 48
+      },
+      "bytes": {
+        "physics_solver": {
+          "static_uploaded_bytes": 0,
+          "uploaded_bytes": 2016,
+          "downloaded_bytes": 7584,
+          "device_control_d2d_bytes": 0,
+          "control_host_uploaded_bytes": 2016,
+          "area_copy_bytes": 0,
+          "control_copy_d2d_bytes": 0,
+          "control_audit_downloaded_bytes": 0,
+          "control_status_downloaded_bytes": 0,
+          "control_initial_uploaded_bytes": 0
+        },
+        "observer_status_d2h": 40,
+        "snapshot_device_write": 192,
+        "snapshot_to_ssbo_d2d": 192,
+        "pose_h2d": 0,
+        "pose_d2h_for_transport": 0,
+        "source_oracle_d2h": 192,
+        "result_oracle_d2h": 192,
+        "vulkan_audit_to_host": 16
+      }
+    },
+    {
+      "slot": 0,
+      "slot_generation": 1,
+      "tick": 24,
+      "revision": 25,
+      "workspace_epoch": 3,
+      "world_keys": [
+        41,
+        7
+      ],
+      "world_ticks": [
+        24,
+        24
+      ],
+      "world_boundaries": [
+        [
+          "cc8363a606844d6d831821a1d8007f89",
+          0,
+          "initial"
+        ],
+        [
+          "cc8363a606844d6d831821a1d8007f89",
+          0,
+          "initial"
+        ]
+      ],
+      "body_offsets": [
+        0,
+        2,
+        4
+      ],
+      "native_comparison": [
+        {
+          "world": 41,
+          "control": 4.0,
+          "body_count": 2,
+          "position_max_abs_m": 4.908558117258655e-10,
+          "rotation_max_abs": 0.0,
+          "slider_z_m": 0.004430214408785105,
+          "reference_z_m": 0.004430213917929293
+        },
+        {
+          "world": 7,
+          "control": -4.0,
+          "body_count": 2,
+          "position_max_abs_m": 4.908558117258655e-10,
+          "rotation_max_abs": 0.0,
+          "slider_z_m": -0.004430214408785105,
+          "reference_z_m": -0.004430213917929293
+        }
+      ],
+      "vulkan": {
+        "checked_words": 48,
+        "words_different_from_marker": 36,
+        "first_input_word": 1065353216,
+        "last_input_word": 3146853205,
+        "source_sha256": "fec9a6725f78533489cae75ac07a4d16465d4eaa99d3a5b292768a5f44e52543",
+        "result_sha256": "ef692fce1de0783d5b166efdda4176149f331cf2c6e3a4ec7885ad91d012d2b7",
+        "verified_returned_words": 48
+      },
+      "bytes": {
+        "physics_solver": {
+          "static_uploaded_bytes": 0,
+          "uploaded_bytes": 2016,
+          "downloaded_bytes": 7584,
+          "device_control_d2d_bytes": 0,
+          "control_host_uploaded_bytes": 2016,
+          "area_copy_bytes": 0,
+          "control_copy_d2d_bytes": 0,
+          "control_audit_downloaded_bytes": 0,
+          "control_status_downloaded_bytes": 0,
+          "control_initial_uploaded_bytes": 0
+        },
+        "observer_status_d2h": 40,
+        "snapshot_device_write": 192,
+        "snapshot_to_ssbo_d2d": 192,
+        "pose_h2d": 0,
+        "pose_d2h_for_transport": 0,
+        "source_oracle_d2h": 192,
+        "result_oracle_d2h": 192,
+        "vulkan_audit_to_host": 16
+      }
+    }
+  ]
+}

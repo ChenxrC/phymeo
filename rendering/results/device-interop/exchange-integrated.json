@@ -1,0 +1,73 @@
+{
+  "device_uuid": "3b78d98198a3be57a8cb4d72fdfbfa96",
+  "device_name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+  "driver_version": 12070,
+  "words_per_slot": 513,
+  "slots": 2,
+  "validation_enabled": true,
+  "validation_errors": 0,
+  "native_live_after": 0,
+  "negative_controls": {
+    "foreign_uuid": "CUDA UUID does not match a Vulkan physical device",
+    "unsupported_handle_injected": "unsupported handle type OPAQUE_FD for Win32 P0",
+    "partial_initialization_injected": "injected initialization failure after first slot",
+    "pending_slot_reuse": "rejected before the original finish"
+  },
+  "exchanges": [
+    {
+      "slot": 1,
+      "generation": 0,
+      "marker": 878051329,
+      "vulkan_words": 513,
+      "injected_bad_marker": false,
+      "observed_mismatches": 0,
+      "cuda_verified_words": 513
+    },
+    {
+      "slot": 0,
+      "generation": 0,
+      "marker": 878051328,
+      "vulkan_words": 513,
+      "injected_bad_marker": false,
+      "observed_mismatches": 0,
+      "cuda_verified_words": 513
+    },
+    {
+      "slot": 1,
+      "generation": 1,
+      "marker": 878051585,
+      "vulkan_words": 513,
+      "injected_bad_marker": true,
+      "observed_mismatches": 513,
+      "cuda_verified_words": 513
+    },
+    {
+      "slot": 0,
+      "generation": 1,
+      "marker": 878051584,
+      "vulkan_words": 513,
+      "injected_bad_marker": false,
+      "observed_mismatches": 0,
+      "cuda_verified_words": 513
+    },
+    {
+      "slot": 1,
+      "generation": 2,
+      "marker": 878051841,
+      "vulkan_words": 513,
+      "injected_bad_marker": false,
+      "observed_mismatches": 0,
+      "cuda_verified_words": 513
+    },
+    {
+      "slot": 0,
+      "generation": 2,
+      "marker": 878051840,
+      "vulkan_words": 513,
+      "injected_bad_marker": false,
+      "observed_mismatches": 0,
+      "cuda_verified_words": 513
+    }
+  ],
+  "cuda_oracle_readback_bytes": 12312
+}

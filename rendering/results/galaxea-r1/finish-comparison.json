@@ -1,0 +1,60 @@
+{
+  "frames_checked": 240,
+  "size": [
+    1280,
+    720
+  ],
+  "frame_rate": 30,
+  "links_per_frame": 34,
+  "matching": [
+    "URDF and original converted meshes",
+    "stage geometry",
+    "all joints, link poses and base poses",
+    "all camera intrinsics, extrinsics and frame clocks",
+    "studio lighting, HDR panorama and exposure",
+    "device, film sampling and stream format"
+  ],
+  "film_aa": "grid2",
+  "exposure": 8.0,
+  "hdr_sha256": "a125ada38fc602025326f29b68df09531bb16f899f1973b03d9ac5ac98142548",
+  "urdf_sha256": "ba0980ed99e108591f8a8fa4251758520cc7387a1cb2ddf03c803aefc25396cf",
+  "movie_sha256": {
+    "urdf": "b0b2503f0fb5162b9333a1a8569db95ea1ea628f918d8eb30db0725acf5c9f26",
+    "studio": "76cb4a9d26765e9e805e0c3a93d374eb3c1d1729a7bbba734e75bf0928d8cea5"
+  },
+  "materials": {
+    "displayed_links": 34,
+    "links_with_changed_metallic_or_roughness": 34,
+    "textured_links": [
+      "wheel_motor_link1",
+      "wheel_motor_link2",
+      "wheel_motor_link3",
+      "zed_link"
+    ],
+    "studio_details_sha256": "0f75015e0be32b0655ea050ade1d2783df77e2804a9f33b3bd9516f228dbbd04"
+  },
+  "png_sha256": {
+    "0": {
+      "urdf": "b3f0a99ba485b8dcf6ca59484f3c1c7c6829e4711b14a84ab9408a5d1154ab43",
+      "studio": "9a898004c8e6dbb5ca47c2a2f1c28b9705b1ed715e099511345b2f7e5209a70c"
+    },
+    "143": {
+      "urdf": "d6f1bfa9dc47e3c1de3bcbc0020f3e02208e92bf587f5ac3410ccb9077c85210",
+      "studio": "2d26cceca95557831250995a0d8951ed1d97682ddb6daf2b4f4538bc9ea2cfa0"
+    }
+  },
+  "frame_143_crop_boxes": {
+    "Stereo camera": [
+      506,
+      41,
+      668,
+      153
+    ],
+    "Wrist and gripper": [
+      525,
+      260,
+      755,
+      387
+    ]
+  }
+}

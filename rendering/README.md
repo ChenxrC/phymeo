@@ -12,7 +12,7 @@
 
 [Panda 默认运动预览与实测影片](examples/preview_stable_lighting/README.md)使用逐像素 HDR 漫反射、面积灯软阴影、短程环境遮蔽和轮廓抗锯齿。
 
-[星海图 R1 轮式双臂机器人影片](results/galaxea-r1/galaxea-r1.mp4)展示三舵轮弧线行驶、停车展臂与夹爪开合。影片使用官方原版 R1 视觉模型和本引擎的四子像素影片档。[运动与复现](examples/galaxea_r1/README.md) · [Panda 抗锯齿局部对照](results/film-aa/finger-comparison.png)
+[星海图 R1 轮式双臂机器人材质版](results/galaxea-r1/galaxea-r1-studio.mp4)展示三舵轮弧线行驶、停车展臂与夹爪开合。可同帧比较原厂模型配色、海蓝烤漆、缎面连杆与橡胶胎面。[材质前后对照](results/galaxea-r1/finish-comparison.png) · [原配色影片及复现](examples/galaxea_r1/README.md) · [Panda 抗锯齿局部对照](results/film-aa/finger-comparison.png)
 
 [观看 Panda 抓取视频](results/panda-movies/README.md)，包括摄影棚全景、同步布光对比、木纹工作台全景与近景、同一方块的红漆与铜色金属对比。
 

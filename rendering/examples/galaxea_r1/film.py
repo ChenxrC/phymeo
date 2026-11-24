@@ -164,12 +164,16 @@ def run(args):
         from preview_stable_lighting.runtime import activate
         activate(args.package)
     from .model import load_model
+    from .finishes import apply_finish
     args.output.mkdir(parents=True, exist_ok=True)
     trajectory = args.output/"trajectory.json"
     if trajectory.exists():
         raise FileExistsError(f"choose a new output directory: {trajectory} already exists")
     model = load_model(args.asset_dir, args.cache_dir or args.output/"model-cache")
-    scene = stage(model, args.output/"stage")
+    scene = apply_finish(stage(model, args.output/"stage"), args.finish)
+    if args.finish == "studio":
+        from .finish_details import apply_details
+        scene = apply_details(scene, args.output/"finish-assets")
     frames, records = prepare(model,scene,args.frames)
     write_json(trajectory,dict(motion="authored joint-limited URDF forward kinematics",
                                mode="FK data only" if args.kinematics_only else "GPU film input",
@@ -244,6 +248,8 @@ def run(args):
                   live_resources_after_close=device["live_resources"], model=model.diagnostics,
                   width=SIZE[0], height=SIZE[1], exposure=exposure, camera_cuts=SHOT_CUTS,
                   frame_rate=FPS, captures=len(indices), scene=scene.key, studio=asdict(studio),
+                  finish=args.finish,
+                  displayed_materials=[asdict(m) for m in scene.materials if m.id.startswith("r1-material-")],
                   trajectory_sha256=sha256(trajectory.read_bytes()).hexdigest())
     if args.still is None:
         stream = json.loads(subprocess.check_output(["ffprobe","-v","error","-count_frames","-select_streams","v:0",
@@ -264,6 +270,8 @@ def main():
     parser.add_argument("--package",type=Path,default=Path(__file__).resolve().parents[3]/"artifacts/rendering/panda-stable-surface/default")
     parser.add_argument("--device-index",type=int,default=1)
     parser.add_argument("--frames",type=int,default=240)
+    parser.add_argument("--finish",choices=("urdf","studio"),default="urdf",
+                        help="Factory URDF colors or the authored ocean enamel and satin metal look")
     parser.add_argument("--still",nargs="?",const=0,type=int,help="Render just this storyboard frame as a PNG")
     parser.add_argument("--samples",choices=("grid2","rotated4"),default="rotated4")
     parser.add_argument("--kinematics-only",action="store_true",help="Export the URDF trajectory and cameras without opening a GPU device")

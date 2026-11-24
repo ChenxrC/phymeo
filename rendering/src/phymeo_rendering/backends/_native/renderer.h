@@ -157,6 +157,30 @@ PR_API int pr_resident_profile(void* context, PrResidentProfile* output);
 PR_API int pr_resident_render_planes(void* context, const float* world_from_mesh,
     uint32_t instance_count, const PrParams* params, uint32_t width, uint32_t height,
     uint32_t channel_mask, uint8_t* output, size_t output_bytes);
+
+// Win32 software-raster input. One dedicated SSBO per resident world, with
+// two column-major FP32 mat4 records (world, inverse) for each uploaded instance.
+// Caller serializes this context and imports all three borrowed opaque NT handles
+// into the selected CUDA device before dropping the originals here.
+struct PrResidentSharedExport {
+    uint64_t memory, writable, ready, allocation_bytes, buffer_bytes;
+};
+static_assert(sizeof(PrResidentSharedExport)==40,"resident shared transform ABI");
+PR_API uint32_t pr_resident_shared_abi_version();
+PR_API void* pr_resident_create_shared(uint32_t selected,uint32_t validation,
+    const uint32_t* vert,size_t vert_bytes,const uint32_t* frag,size_t frag_bytes,const uint8_t* cuda_uuid16);
+PR_API int pr_resident_shared_export(void* context,PrResidentSharedExport* output);
+PR_API int pr_resident_shared_drop_exports(void* context);
+// CUDA consumes writable, fills both matrices and signals ready. Begin acquires
+// that publication once. Any number of cameras may render before end returns
+// the slot and signals writable. End also returns a publication after a camera
+// error. A timeout (-2) retains ownership/resources: retry the same operation
+// or call end after the producer has signalled. CUDA must finish using the
+// imported objects before final teardown. pr_destroy retains the context on -2.
+PR_API int pr_resident_shared_begin(void* context);
+PR_API int pr_resident_render_shared_planes(void* context,const PrParams* params,
+    uint32_t width,uint32_t height,uint32_t channel_mask,uint8_t* output,size_t output_bytes);
+PR_API int pr_resident_shared_end(void* context);
 struct PrResidentReadbackInfo {
     uint32_t readback_abi_version, memory_type_index, memory_property_flags;
     uint32_t persistent_mapped, last_channel_mask, reserved[3];

@@ -177,6 +177,7 @@ void resident_set_msaa(Context& c,uint32_t samples,const uint32_t* vert,size_t v
                        const uint32_t* frag,size_t frag_bytes) {
     require(c.resident && !c.poisoned,"resident MSAA context unavailable");
     require(samples==1 || samples==4,"resident MSAA accepts only 1 or 4 samples");
+    require(!c.shared_input || samples==1,"shared resident transforms require single-sample raster");
     require(!c.progressive_info.shader_compatible||samples==1,"progressive requires MSAA1");
     require(c.properties.captures==0 && !c.msaa_state,"resident MSAA is immutable after configuration or capture");
     if(samples==1) return;

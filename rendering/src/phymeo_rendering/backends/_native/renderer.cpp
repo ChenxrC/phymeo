@@ -1,5 +1,20 @@
 #include "renderer.h"
+#ifdef _WIN32
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#ifndef VK_USE_PLATFORM_WIN32_KHR
+#define VK_USE_PLATFORM_WIN32_KHR
+#endif
+#include <windows.h>
+#endif
 #include <vulkan/vulkan.h>
+#ifdef interface
+#undef interface
+#endif
 #include <algorithm>
 #include <array>
 #include <atomic>
@@ -63,9 +78,23 @@ struct ResidentState;
 struct MsaaState;
 struct ProgressiveState;
 struct Context;
+struct SharedSlot {
+    enum class Phase { unused, external, acquiring, reading, releasing };
+    Phase phase=Phase::unused;
+    VkSemaphore writable{},ready{};
+    VkFence fence{};
+    VkCommandBuffer commands{};
+    void* handles[3]{};
+    bool exported=false;
+};
+void destroy_shared(Context&) noexcept;
+int drain_shared(Context&);
 void probe_msaa(Context&,const VkPhysicalDeviceLimits&);
 struct Context {
     bool resident = false;
+    bool shared_input=false;
+    bool shared_blas_compatible=false;
+    SharedSlot shared_slot{};
     bool surface_maps_compatible = false;
     bool display_compatible = false;
     PrResidentMsaaInfo msaa_info{};
@@ -132,6 +161,7 @@ struct Context {
             waited = vkDeviceWaitIdle(device);
             msaa_state.reset(); // framebuffers refer to the resident final color image
             progressive_state.reset();
+            destroy_shared(*this);
             resident_state.reset(); // dependent buffers/targets die before VkDevice
             release(pipeline, [&](auto h) { vkDestroyPipeline(device,h,nullptr); });
             release(pipeline_layout, [&](auto h) { vkDestroyPipelineLayout(device,h,nullptr); });
@@ -264,8 +294,19 @@ struct Context {
         acquire(value.view, "vkCreateImageView", [&](auto* output) { return vkCreateImageView(device, &view, nullptr, output); });
     }
     void init(uint32_t selected, bool validation, const uint32_t* vert, size_t vert_bytes,
-              const uint32_t* frag, size_t frag_bytes, bool resident_path = false, bool hardware_shadow = false) {
+              const uint32_t* frag, size_t frag_bytes, bool resident_path = false, bool hardware_shadow = false,
+              const uint8_t* shared_uuid=nullptr) {
         resident = resident_path; ray_query=hardware_shadow;
+        shared_input=shared_uuid!=nullptr;
+        shared_blas_compatible=resident && !ray_query && named_shader_marker(frag,frag_bytes,74,"PR_SHARED_BLAS_ABI");
+        if (shared_input) {
+#ifdef _WIN32
+            require(shared_blas_compatible,
+                    "shared matrices require the single-sample software resident shader with PR_SHARED_BLAS_ABI");
+#else
+            throw std::runtime_error("shared resident matrices require opaque Win32 handles");
+#endif
+        }
         normal_info.shader_compatible=resident && named_shader_marker(frag,frag_bytes,62,"PR_NORMAL_MAPS_ABI") &&
             named_shader_marker(vert,vert_bytes,63,"PR_NORMAL_VERTEX_ABI",0);
         if (resident) {
@@ -345,6 +386,8 @@ struct Context {
         VkPhysicalDeviceAccelerationStructurePropertiesKHR acceleration_limits{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_PROPERTIES_KHR};
         if (ray_query) identity.pNext=&acceleration_limits;
         vkGetPhysicalDeviceProperties2(physical, &description);
+        if (shared_input) require(std::memcmp(identity.deviceUUID,shared_uuid,VK_UUID_SIZE)==0,
+                                  "resident Vulkan device UUID differs from CUDA producer UUID");
         const auto& p = description.properties;
         if (resident) probe_msaa(*this,p.limits);
         VkPhysicalDeviceFeatures available_features{};
@@ -526,6 +569,27 @@ struct Context {
         // Optional support is reported false when independentBlend is absent.
         enabled_features.independentBlend=resident ? available_features.independentBlend : VK_FALSE;
         device_info.pEnabledFeatures=&enabled_features;
+#ifdef _WIN32
+        const char* shared_extensions[]={VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME,VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME};
+        if (shared_input) {
+            VkPhysicalDeviceExternalBufferInfo bi{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_BUFFER_INFO};
+            bi.usage=VK_BUFFER_USAGE_STORAGE_BUFFER_BIT|VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+            bi.handleType=VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
+            VkExternalBufferProperties bp{VK_STRUCTURE_TYPE_EXTERNAL_BUFFER_PROPERTIES};
+            vkGetPhysicalDeviceExternalBufferProperties(physical,&bi,&bp);
+            const auto mf=VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT | VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT;
+            require((bp.externalMemoryProperties.externalMemoryFeatures&mf)==mf &&
+                    (bp.externalMemoryProperties.compatibleHandleTypes&bi.handleType),"resident Win32 external SSBO unavailable");
+            VkPhysicalDeviceExternalSemaphoreInfo si{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_SEMAPHORE_INFO};
+            si.handleType=VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
+            VkExternalSemaphoreProperties sp{VK_STRUCTURE_TYPE_EXTERNAL_SEMAPHORE_PROPERTIES};
+            vkGetPhysicalDeviceExternalSemaphoreProperties(physical,&si,&sp);
+            const auto sf=VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT|VK_EXTERNAL_SEMAPHORE_FEATURE_IMPORTABLE_BIT;
+            require((sp.externalSemaphoreFeatures&sf)==sf && (sp.compatibleHandleTypes&si.handleType),
+                    "resident Win32 external binary semaphores unavailable");
+            device_info.enabledExtensionCount=2; device_info.ppEnabledExtensionNames=shared_extensions;
+        }
+#endif
         if (ray_query) {
             device_info.pNext=&address_features;
             device_info.enabledExtensionCount=static_cast<uint32_t>(ray_extensions.size());
@@ -853,6 +917,8 @@ int pr_counts(PrCounts* output) {
 int pr_destroy(void* handle,PrInfo* final_info) {
     if(!handle) { if(final_info) *final_info={}; return 0; }
     auto* context=static_cast<Context*>(handle);
+    if (context->shared_input && drain_shared(*context)!=0 && context->shared_slot.phase!=SharedPhase::unused)
+        return -2; // keep the handle while a live device cannot complete/return ownership
     VkResult waited=context->shutdown();
     if(final_info) context->info(final_info);
     uint64_t errors=context->errors.load();
@@ -864,6 +930,46 @@ int pr_destroy(void* handle,PrInfo* final_info) {
 
 
 uint32_t pr_resident_abi_version() { return 1; }
+uint32_t pr_resident_shared_abi_version() { return 1; }
+void* pr_resident_create_shared(uint32_t selected,uint32_t validation,const uint32_t* vert,size_t vert_bytes,
+                                const uint32_t* frag,size_t frag_bytes,const uint8_t* cuda_uuid16) {
+    try {
+        last_error.clear();
+        require(cuda_uuid16,"shared creation requires CUDA device UUID");
+        auto c=std::make_unique<Context>();
+        c->init(selected,validation!=0,vert,vert_bytes,frag,frag_bytes,true,false,cuda_uuid16);
+        return c.release();
+    } catch (const std::exception& e) { last_error=e.what(); return nullptr; }
+      catch (...) { last_error="unknown resident shared creation error"; return nullptr; }
+}
+int pr_resident_shared_export(void* context,PrResidentSharedExport* output) {
+    return shared_call([&]{
+        require(context && output,"null shared export argument");
+        *output={}; export_shared(*static_cast<Context*>(context),*output);
+    });
+}
+int pr_resident_shared_drop_exports(void* context) {
+    return shared_call([&]{
+        require(context,"null shared context");
+        auto& s=static_cast<Context*>(context)->shared_slot;
+        require(s.exported,"shared slot has not been exported");
+        drop_shared_handles(s);
+    });
+}
+int pr_resident_shared_begin(void* context) {
+    return shared_call([&]{require(context,"null shared begin context"); begin_shared(*static_cast<Context*>(context));});
+}
+int pr_resident_shared_end(void* context) {
+    return shared_call([&]{require(context,"null shared end context"); end_shared(*static_cast<Context*>(context));});
+}
+int pr_resident_render_shared_planes(void* context,const PrParams* params,uint32_t width,uint32_t height,
+                                     uint32_t mask,uint8_t* output,size_t bytes) {
+    return shared_call([&]{
+        require(context && params,"null shared capture argument");
+        auto& c=*static_cast<Context*>(context);
+        resident_render(c,nullptr,c.resident_properties.instance_count,*params,width,height,output,bytes,mask,true,true);
+    });
+}
 void* pr_resident_create(uint32_t selected, uint32_t validation,
                          const uint32_t* vert, size_t vert_bytes,
                          const uint32_t* frag, size_t frag_bytes) {

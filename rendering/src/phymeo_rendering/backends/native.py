@@ -7,7 +7,9 @@ and rectangular studio emitters require their explicit resident extensions.
 """
 
 import ctypes as ct
+from contextlib import ExitStack, contextmanager
 from copy import deepcopy
+from dataclasses import dataclass
 import hashlib
 import json
 import math
@@ -18,7 +20,7 @@ from ..assets import TexturedMaterial
 from ..outputs import Capture, Channel
 from ..studio import StudioLighting
 from ..pipeline import DefaultPassPlanner, RenderPath
-from ..scene import VisualScene, DirectionalLight, compose_pose
+from ..scene import VisualScene, DirectionalLight, FrameKey, compose_pose
 from . import BackendUnavailableError, UnsupportedRequestError, ValidatedRenderSession
 from ._native_resident import ResidentDevice, pack_scene
 from ._native_pixels import _image_planes
@@ -244,13 +246,13 @@ class _NativeDelegate:
             return False
         return True
 
-    def capture(self, frame, request):
+    def capture(self, frame, request, *, shared_matrices=None):
         camera = request.camera
         plan = DefaultPassPlanner().plan(request)
-        vertices = (
-            _instance_matrices(self.scene, frame) if self.resident
-            else _vertices(self.scene, self.meshes, frame)
-        )
+        vertices = shared_matrices
+        if vertices is None:
+            vertices = (_instance_matrices(self.scene, frame) if self.resident
+                        else _vertices(self.scene, self.meshes, frame))
         parameters = _parameters(self.scene, request, self.triangles, self.exposure, lights=self.effective_lights)
         if self.resident:
             parameters.counts[3] = len(self.scene.instances)
@@ -429,8 +431,93 @@ class _NativeDelegate:
         self.device.close()
 
 
+@dataclass(frozen=True, slots=True, eq=False)
+class DevicePoseExposure:
+    """Source identity and committed time for camera requests during one publication."""
+
+    key: FrameKey
+    time_s: float
+
+
 class NativeRenderSession(ValidatedRenderSession):
     """Checked session with native-specific device/provenance diagnostics."""
+
+    def __init__(self, scene, delegate, *, shared_cuda_device=None):
+        super().__init__(scene, delegate)
+        self._shared_cuda_device = shared_cuda_device
+        self._active_device_poses = None
+
+    @contextmanager
+    def publish_device_poses(self, binding, workspace, snapshot, *, producer_stream, time_s=None):
+        """Publish one world's accepted pose once and expose it to any number of cameras."""
+        with ExitStack() as pending:
+            with self._lock:
+                self._check_open()
+                if self._shared_cuda_device is None:
+                    raise UnsupportedRequestError("device poses require a shared_cuda_device session")
+                if self._active_device_poses is not None:
+                    raise RuntimeError("a device pose publication is already active")
+                if binding.scene is not self._scene:
+                    raise ValueError("device binding belongs to a different visual scene")
+                key = binding.frame_key(snapshot)
+                source_time = workspace.accepted_frame_time(snapshot.frame, binding.world_key)
+                if time_s is not None and time_s != source_time:
+                    raise ValueError("exposure time differs from the accepted physics clock")
+                import torch
+
+                ordinal = self._shared_cuda_device
+                if (not isinstance(producer_stream, torch.cuda.Stream)
+                        or producer_stream.device != torch.device("cuda", ordinal)
+                        or producer_stream == torch.cuda.default_stream(ordinal)):
+                    raise ValueError("pose producer needs a non-default CUDA stream on the matched device")
+                exchange = self._delegate.device.open_shared_matrices(cuda_device=ordinal)
+                with torch.cuda.stream(producer_stream):
+                    packed = binding.pack(snapshot)
+                lease = pending.enter_context(exchange.publish(packed, producer_stream=producer_stream))
+                exposure = DevicePoseExposure(key, source_time)
+                self._active_device_poses = exposure, lease, workspace, snapshot.frame, binding.world_key
+            try:
+                yield exposure
+            finally:
+                with self._lock:
+                    try:
+                        pending.close()
+                    finally:
+                        self._active_device_poses = None
+
+    def capture_device_poses(self, exposure, request):
+        """Draw a camera from an active publication, preserving normal sensor validation."""
+        with self._lock:
+            self._check_open()
+            active = self._active_device_poses
+            if active is None or exposure is not active[0]:
+                raise ValueError("foreign or expired device pose exposure")
+            self._check_request(request)
+            if exposure.key != request.camera.frame_key:
+                raise ValueError("camera frame key differs from the device pose publication")
+            if not self._supported(request):
+                raise UnsupportedRequestError("unsupported camera request for shared raster")
+            _, lease, workspace, frame, world = active
+            workspace.accepted_frame_time(frame, world)
+            result = self._delegate.capture(exposure, request, shared_matrices=lease)
+            workspace.accepted_frame_time(frame, world)
+            return self._validate_publication(result, exposure.key, exposure.time_s, request)
+
+    def close(self):
+        with self._lock:
+            if self._active_device_poses is not None:
+                raise RuntimeError("release the active device pose publication before closing")
+            if self._shared_cuda_device is not None and isinstance(self._close_error, TimeoutError):
+                # A native fence timeout retains ownership. Keep public capture
+                # closed while allowing the device to finish its pending release.
+                try:
+                    self._delegate.close()
+                except BaseException as error:
+                    self._close_error = error
+                    raise
+                self._close_error = None
+                return
+            super().close()
 
     def diagnostics(self):
         with self._lock:
@@ -442,6 +529,9 @@ class NativeRenderSession(ValidatedRenderSession):
         # Commit HOST history only after those gates; a rejected publication
         # discards the GPU mean rather than carrying unpublished data forward.
         with self._lock:
+            if self._shared_cuda_device is not None:
+                self._check_open()
+                raise UnsupportedRequestError("use capture_device_poses on a shared pose session")
             try:
                 result = super().capture(frame, request)
                 settling_info = None
@@ -555,6 +645,9 @@ class NativeBackend:
     resident=True requires the resident ABI and shaders, uploads indexed assets
     once, and submits rigid instance matrices per frame. The default False keeps
     the original ABI2-only library contract; neither mode falls back to the other.
+    shared_cuda_device selects a same-GPU Win32 matrix buffer. Publish device
+    poses once per world endpoint, then use capture_device_poses for each camera.
+    Software shadows traverse the current instances and their static mesh BVHs.
     studio=StudioLighting(...) is separately opt-in and requires the resident
     studio export. None retains only the declared scene lights.
     shadow_mode='ray_query' additionally requires resident=True, the hardware
@@ -614,6 +707,7 @@ class NativeBackend:
         validation=False,
         exposure=1.0,
         resident=False,
+        shared_cuda_device=None,
         studio=None,
         shadow_mode='software',
         area_light_grid=2,
@@ -634,6 +728,12 @@ class NativeBackend:
         if type(resident) is not bool:
             raise TypeError('resident must be bool')
         self.resident = resident
+        if shared_cuda_device is not None:
+            if type(shared_cuda_device) is not int or shared_cuda_device < 0:
+                raise ValueError("shared_cuda_device must be a nonnegative CUDA ordinal")
+            if not resident or shadow_mode != 'software' or msaa_samples != 1 or progressive:
+                raise UnsupportedRequestError("shared poses require single-sample resident software shadows")
+        self.shared_cuda_device = shared_cuda_device
         if not isinstance(display_transform, str):
             raise TypeError('display_transform must be clip or pbr-neutral')
         if display_transform not in ('clip', 'pbr-neutral'):
@@ -746,6 +846,7 @@ class NativeBackend:
                             and material.id in bound_materials for material in scene.materials)
         device = device_type(
             self.library_path, self.shader_directory, self.device_index, self.validation,
+            **({'shared_cuda_device': self.shared_cuda_device} if self.shared_cuda_device is not None else {}),
             **({'area_light_grid': self.area_light_grid} if self.area_light_grid != 2 else {}),
             **({'secondary_area_light_grid': self.secondary_area_light_grid} if self.secondary_area_light_grid != self.area_light_grid else {}),
             **({'normal_maps': True} if has_normal_maps else {}),
@@ -794,7 +895,7 @@ class NativeBackend:
 
                 indirect_info['seed_scope'] = 'seed + capture-local pixel + 0-based batch; state changes reset batch zero'
             return NativeRenderSession(scene, _NativeDelegate(
-                scene, meshes, device, self.exposure, resident=self.resident, studio=studio_info, textures=texture_info, environment=environment_info, shadow_mode=self.shadow_mode, area_light_grid=self.area_light_grid, secondary_area_light_grid=self.secondary_area_light_grid, display_info=display_info, msaa_info=msaa_info, normal_info=normal_info, reflection_info=reflection_info, indirect_info=indirect_info, progressive_history=progressive_history, spatial_info=spatial_info))
+                scene, meshes, device, self.exposure, resident=self.resident, studio=studio_info, textures=texture_info, environment=environment_info, shadow_mode=self.shadow_mode, area_light_grid=self.area_light_grid, secondary_area_light_grid=self.secondary_area_light_grid, display_info=display_info, msaa_info=msaa_info, normal_info=normal_info, reflection_info=reflection_info, indirect_info=indirect_info, progressive_history=progressive_history, spatial_info=spatial_info), shared_cuda_device=self.shared_cuda_device)
         except BaseException as primary:
             try:
                 device.close()

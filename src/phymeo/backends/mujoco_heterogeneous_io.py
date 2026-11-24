@@ -426,7 +426,7 @@ class MuJoCoTyxHeterogeneousWorkspace:
             self._counts["refreshes"] += 1
             return frame
 
-    def _values(self, frame):
+    def _check_current(self, frame):
         self._open()
         self._batch._check()
         _require(
@@ -434,6 +434,16 @@ class MuJoCoTyxHeterogeneousWorkspace:
             "foreign or superseded heterogeneous frame",
         )
         _require(frame.revision == self._batch._revision, "stale heterogeneous frame")
+
+    def accepted_frame_time(self, frame, world_key):
+        """Read the already committed host clock, rejecting stale or foreign observations."""
+        with self._batch._lock, self._lock:
+            self._check_current(frame)
+            owner = self._batch._buckets[self._batch.layout[world_key].bucket]
+            return float(owner._data[world_key].time)
+
+    def _values(self, frame):
+        self._check_current(frame)
         return {**self._banks[self._active], **self._masks}
 
     def readback(self, frame):

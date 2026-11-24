@@ -107,6 +107,8 @@ struct ResidentState {
     }
 };
 
+#include "resident_shared.inc"
+
 struct TriangleBounds {
     uint32_t source;
     std::array<float, 3> low, high, center;
@@ -386,7 +388,7 @@ void resident_upload(Context& c, const PrResidentVertex* vertices, uint32_t vert
     uint64_t bytes = 0;
     try {
     bytes = upload_static(c, uploads);
-    c.make_buffer(state->tlas, std::max<size_t>(1, instance_count ? 2ull*instance_count-1 : 0)*sizeof(GpuBvhNode),
+    c.make_buffer(state->tlas, std::max<size_t>(1, !c.shared_input && instance_count ? 2ull*instance_count-1 : 0)*sizeof(GpuBvhNode),
                   VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
     c.make_buffer(state->studio, sizeof(PrStudio), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
     std::vector<uint32_t> plain_metadata(4ull+instance_count,UINT32_MAX);
@@ -412,8 +414,11 @@ void resident_upload(Context& c, const PrResidentVertex* vertices, uint32_t vert
     c.environment_info.image_upload_bytes+=black_cube.size();
     c.environment_info.parameter_upload_bytes+=sizeof(default_environment);
     if (c.ray_query) state->acceleration=build_ray_geometry(c,*state,index_count/3);
-    c.make_buffer(state->transforms, std::max<size_t>(1, instance_count)*sizeof(GpuTransform),
-                  VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    auto transform_bytes=std::max<size_t>(1, instance_count)*sizeof(GpuTransform);
+    if (c.shared_input) {
+        require(instance_count!=0,"shared resident matrices require at least one instance");
+        create_shared_buffer(c,state->transforms,transform_bytes);
+    } else c.make_buffer(state->transforms,transform_bytes,VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
     if (c.errors.load() != errors_before) {
         c.poisoned = true;
         throw std::runtime_error("Vulkan validation failed during resident upload: "+c.validation_message);
@@ -425,7 +430,7 @@ void resident_upload(Context& c, const PrResidentVertex* vertices, uint32_t vert
     info.instanced_triangles = static_cast<uint32_t>(instanced_triangles);
     info.loaded = 1; ++info.upload_calls; info.geometry_upload_bytes += bytes;
     if (c.ray_query) c.ray_info.loaded=1;
-    c.profile.tlas_node_count = !c.ray_query && instance_count ? 2*instance_count-1 : 0;
+    c.profile.tlas_node_count = !c.ray_query && !c.shared_input && instance_count ? 2*instance_count-1 : 0;
     info.shadow_node_budget = c.ray_query ? 0 : node_budget + c.profile.tlas_node_count;
     c.resident_state = std::move(state);
 }
@@ -730,7 +735,7 @@ void validate_resident_params(const Context& c, const PrParams& params,
 
 void resident_render(Context& c, const float* matrices, uint32_t instance_count, const PrParams& params,
                      uint32_t width, uint32_t height, uint8_t* output, size_t output_bytes,
-                     uint32_t channel_mask=15u, bool compact=false) {
+                     uint32_t channel_mask=15u, bool compact=false, bool shared=false) {
     const auto prepare_begin=HostClock::now();
     require(c.resident && c.resident_state && !c.poisoned,
             "resident scene is not loaded or context failed; open an explicit new session");
@@ -740,13 +745,21 @@ void resident_render(Context& c, const float* matrices, uint32_t instance_count,
             "indirect shader requires successful explicit setup before capture");
     validate_resident_params(c, params, width, height, output, output_bytes, channel_mask, compact);
     auto& state = *c.resident_state;
+    require(shared==c.shared_input,"host and shared transform captures require their respective resident contexts");
+    if (shared) require(c.shared_slot.phase==SharedPhase::reading && !c.ray_query &&
+                        c.msaa_info.requested_samples==1 && !c.progressive_info.shader_compatible,
+                        "shared capture requires an acquired publication and single-sample software raster");
     require(!c.progressive_info.shader_compatible||c.progressive_info.enabled,"progressive shader requires setup");
     const bool progressive_rgb=c.progressive_info.enabled&&params.counts[2]!=0;
     require(!progressive_rgb||c.progressive_state->armed,"progressive RGB capture requires explicit history begin");
     const bool msaa_color=c.msaa_info.requested_samples==4 && params.counts[2]!=0;
     const bool center_pass=!msaa_color || (channel_mask&14u)!=0;
-    auto transforms = resident_transforms(state, matrices, instance_count);
-    auto tlas = c.ray_query ? std::vector<GpuBvhNode>{} : resident_tlas(state, transforms);
+    std::vector<GpuTransform> transforms;
+    std::vector<GpuBvhNode> tlas;
+    if (!shared) {
+        transforms=resident_transforms(state,matrices,instance_count);
+        if (!c.ray_query) tlas=resident_tlas(state,transforms);
+    }
     const auto upload_begin=HostClock::now();
     try {
     resident_target(c, state, width, height);
@@ -760,7 +773,7 @@ void resident_render(Context& c, const float* matrices, uint32_t instance_count,
             "resident readback target capacity mismatch");
     auto& info = c.resident_properties;
     uint64_t errors_before = c.errors.load();
-    if (instance_count) {
+    if (!shared && instance_count) {
         c.upload(state.transforms, transforms.data(), transforms.size()*sizeof(GpuTransform));
         if (!c.ray_query) c.upload(state.tlas, tlas.data(), tlas.size()*sizeof(GpuBvhNode));
     }
@@ -772,10 +785,11 @@ void resident_render(Context& c, const float* matrices, uint32_t instance_count,
         info.parameter_upload_bytes += sizeof(c.studio);
     }
     info.transform_upload_bytes += transforms.size()*sizeof(GpuTransform);
-    info.host_transform_input_bytes += static_cast<uint64_t>(instance_count)*64;
+    if (!shared) info.host_transform_input_bytes += static_cast<uint64_t>(instance_count)*64;
     PrParams submitted=params;
     // Reserved caller words never opt into a display change; only the checked setter does.
     submitted.options[2]=static_cast<float>(c.display_transform);
+    if (c.shared_blas_compatible) submitted.options[3]=shared ? -1.0f : 0.0f;
     // Resident shaders do not use the legacy triangle-count word. The caller
     // still supplies/validates it; only explicit indirect variants read a seed.
     if(c.indirect_info.enabled) submitted.counts[1]=c.indirect_info.seed;
@@ -795,8 +809,10 @@ void resident_render(Context& c, const float* matrices, uint32_t instance_count,
     if (c.ray_query) record_ray_update(c,state,frame.commands);
     const VkBuffer input_buffers[]{state.transforms.handle,frame.uniform.handle,state.tlas.handle,state.studio.handle};
     std::array<VkBufferMemoryBarrier, 4> inputs{};
+    uint32_t input_count=0;
     for (uint32_t i = 0; i < inputs.size(); ++i) {
-        auto& barrier = inputs[i];
+        if (shared && (i==0 || i==2)) continue; // ownership barrier covers transforms; shared fragment bypasses TLAS
+        auto& barrier = inputs[input_count++];
         barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
         barrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
         barrier.dstAccessMask = (i == 1 || i == 3) ? VK_ACCESS_UNIFORM_READ_BIT : VK_ACCESS_SHADER_READ_BIT;
@@ -805,7 +821,7 @@ void resident_render(Context& c, const float* matrices, uint32_t instance_count,
     }
     vkCmdPipelineBarrier(frame.commands, VK_PIPELINE_STAGE_HOST_BIT,
         VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
-        0, nullptr, static_cast<uint32_t>(inputs.size()), inputs.data(), 0, nullptr);
+        0, nullptr, input_count, inputs.data(), 0, nullptr);
     VkDeviceSize offset=0;
     if (center_pass) {
     std::array<VkClearValue, 6> clear{};

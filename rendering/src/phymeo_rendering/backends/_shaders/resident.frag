@@ -48,6 +48,7 @@ const float PI = 3.141592653589793;
 layout(constant_id=57) const uint PR_SURFACE_MAPS_ABI=1u;
 
 #ifndef PR_RESIDENT_RAY_QUERY
+layout(constant_id=74) const uint PR_SHARED_BLAS_ABI=1u;
 // Static per-mesh threaded BVHs, rigid instance transforms per frame.
 // Every escape index increases. Traversal is bounded by the actual node count,
 // never by an arbitrary work cutoff that could silently discard an occluder.
@@ -108,6 +109,13 @@ bool hitsInstance(uint slot, vec3 worldOrigin, vec3 worldDirection, float tMax) 
 }
 bool occluded(vec3 worldOrigin, vec3 worldDirection, float tMax) {
     if (u.counts.w == 0u || tMax <= u.options.y) return false;
+    // Shared poses are current on the device. The host-built instance tree
+    // has no bounds for this pose, so visit each mesh's resident BVH directly.
+    if (PR_SHARED_BLAS_ABI == 1u && u.options.w < 0.0) {
+        for (uint slot=0u; slot<u.counts.w; ++slot)
+            if (hitsInstance(slot,worldOrigin,worldDirection,tMax)) return true;
+        return false;
+    }
     uint count = 2u*u.counts.w-1u;
     uint node = 0u;
     for (uint visited=0u; visited<count && node<count; ++visited) {

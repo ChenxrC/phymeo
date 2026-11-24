@@ -128,7 +128,7 @@ class ResidentReadbackInfo(ct.Structure):
 class ResidentDevice(NativeDevice):
     _shader_prefix = 'resident'
 
-    def __init__(self, *args, area_light_grid=2, secondary_area_light_grid=None, normal_maps=False, reflection=False, indirect=False, progressive=False, spatial=False, settling=False):
+    def __init__(self, *args, area_light_grid=2, secondary_area_light_grid=None, normal_maps=False, reflection=False, indirect=False, progressive=False, spatial=False, settling=False, shared_cuda_device=None):
         if type(area_light_grid) is not int or area_light_grid not in (2, 4, 8):
             raise ValueError('area_light_grid must be 2, 4 or 8')
         if type(normal_maps) is not bool:
@@ -150,6 +150,17 @@ class ResidentDevice(NativeDevice):
         from ._native_secondary import secondary_grid
         self._secondary_area_light_grid = secondary_grid(area_light_grid, secondary_area_light_grid, resident=True,
             shadow_mode='ray_query' if self._shader_prefix=='resident_rayquery' else 'software')
+        self._shared_cuda_device = shared_cuda_device
+        self._shared_exchange = None
+        self._shared_identity = None
+        if shared_cuda_device is not None:
+            if type(shared_cuda_device) is not int or shared_cuda_device < 0:
+                raise ValueError('shared_cuda_device must be a nonnegative CUDA ordinal')
+            if (self._shader_prefix != 'resident' or area_light_grid != 2 or
+                    any((normal_maps, reflection, indirect, progressive, spatial, settling))):
+                raise UnsupportedRequestError('shared matrices require the standard resident software raster shaders')
+            from ._native_shared_matrices import cuda_identity
+            self._shared_identity = cuda_identity(shared_cuda_device)
         self._secondary_budget_marker = None
         self._resident_info = {}
         self._telemetry = None
@@ -203,6 +214,9 @@ class ResidentDevice(NativeDevice):
         if tuple(map(ct.sizeof, (ResidentVertex, ResidentMesh, ResidentInstance, ResidentInfo))) != (32,16,48,128):
             raise BackendUnavailableError('resident C ABI structure layout mismatch')
         lib = self._lib
+        if self._shared_identity is not None:
+            from ._native_shared_matrices import bind
+            bind(lib)
         if self._settling_requested:
             version = getattr(lib, 'pr_resident_settling_abi_version', None)
             if version is None:
@@ -336,6 +350,9 @@ class ResidentDevice(NativeDevice):
     def _create(self, *args):
         if self._lib.pr_resident_abi_version() != 1:
             raise BackendUnavailableError('unsupported resident Vulkan C ABI version')
+        if self._shared_identity is not None:
+            uuid = (ct.c_uint8*16).from_buffer_copy(self._shared_identity[2])
+            return self._lib.pr_resident_create_shared(*args, uuid)
         return self._lib.pr_resident_create(*args)
 
     def _remember_telemetry(self, value, *, final):
@@ -446,6 +463,8 @@ class ResidentDevice(NativeDevice):
                     raise RuntimeError(self._error())
                 self._remember_environment_info(environment)
         result.update(self._resident_info)
+        exchange = getattr(self, '_shared_exchange', None)
+        result['resident_shared_matrices'] = exchange.diagnostics() if exchange is not None else None
         result['resident_secondary_light_budget'] = dict(self._secondary_budget_marker) if self._secondary_budget_marker is not None else None
         result['resident_render_planes_available'] = self._render_planes_function is not None
         result['resident_environment_available'] = self._environment_function is not None and (self._environment_info is None or bool(self._environment_info['supported'] and self._environment_info['shader_compatible']))
@@ -575,6 +594,20 @@ class ResidentDevice(NativeDevice):
         self._require_compact_mask(parameters, mask)
         return self._capture_bytes(matrices,parameters,width,height,mask,image_channels=channels)
 
+    def open_shared_matrices(self, *, cuda_device):
+        """Import the resident slot once after upload, retaining it until device.close()."""
+        if self._handle is None or not self._uploaded:
+            raise RuntimeError('shared matrices require an open uploaded resident scene')
+        if (type(cuda_device) is not int or self._shared_cuda_device is None or
+                cuda_device != self._shared_cuda_device):
+            raise ValueError('CUDA ordinal must match the shared resident device configuration')
+        if self._last_info['device_uuid'] != self._shared_identity[2].hex():
+            raise BackendUnavailableError('resident Vulkan UUID differs from the CUDA device UUID')
+        if self._shared_exchange is None:
+            from ._native_shared_matrices import SharedMatrices
+            self._shared_exchange = SharedMatrices(self)
+        return self._shared_exchange.open()
+
     def _require_compact_mask(self, parameters, channel_mask):
         if type(channel_mask) is not int:
             raise TypeError('resident channel mask must be int, not bool')
@@ -586,6 +619,14 @@ class ResidentDevice(NativeDevice):
             raise ValueError('resident RGB uniform disagrees with channel mask')
 
     def _capture_bytes(self, matrices, parameters, width, height, channel_mask, *, image_channels=None):
+        if getattr(self, '_shared_cuda_device', None) is not None:
+            if self._shared_exchange is None:
+                raise RuntimeError('open the CUDA matrix exchange before rendering a shared capture')
+            with self._shared_exchange.capturing(matrices):
+                return self._read_capture(matrices, parameters, width, height, channel_mask, image_channels, shared=True)
+        return self._read_capture(matrices, parameters, width, height, channel_mask, image_channels, shared=False)
+
+    def _read_capture(self, matrices, parameters, width, height, channel_mask, image_channels, *, shared):
         if self._handle is None or not self._uploaded:
             raise RuntimeError('resident device is closed or has no uploaded scene')
         limits=self._last_info
@@ -593,7 +634,7 @@ class ResidentDevice(NativeDevice):
             not 0 < width <= min(limits['max_width'],2**32-1) or
             not 0 < height <= min(limits['max_height'],2**32-1) or width*height > 4096*4096):
             raise ValueError('native capture extent or pixel budget exceeded')
-        if len(matrices)!=16*self._instance_count or not all(math.isfinite(x) for x in matrices):
+        if not shared and (len(matrices)!=16*self._instance_count or not all(math.isfinite(x) for x in matrices)):
             raise ValueError('resident instance matrices are incomplete or nonfinite FP32')
         validate_parameters(parameters)
         if parameters.clipping[0]!=width or parameters.clipping[1]!=height:
@@ -606,7 +647,10 @@ class ResidentDevice(NativeDevice):
             self._output_buffer=(ct.c_uint8*size)()
             self._output_capacity=size
         output=self._output_buffer
-        if channel_mask is None:
+        if shared:
+            result=self._lib.pr_resident_render_shared_planes(self._handle,ct.byref(parameters),
+                width,height,mask,output,size)
+        elif channel_mask is None:
             result=self._lib.pr_resident_render(self._handle,matrices,self._instance_count,
                 ct.byref(parameters),width,height,output,size)
         else:
@@ -627,6 +671,10 @@ class ResidentDevice(NativeDevice):
         self._output_capacity = 0
         if self._handle is None:
             return
+        if getattr(self, '_shared_exchange', None) is not None:
+            # The Vulkan slot outlives CUDA imported objects. A timeout leaves
+            # both sides owned here so teardown can be retried.
+            self._shared_exchange.close()
         # Preserve resident counters at the last live point, without allowing a
         # failed diagnostic read to prevent the shared real Vulkan destruction.
         diagnostic_error = None
@@ -638,9 +686,11 @@ class ResidentDevice(NativeDevice):
             if self._resident_destroy is None:
                 super().close()
             else:
-                handle, self._handle = self._handle, None
                 final, telemetry = _Info(), ResidentTelemetry()
-                result = self._resident_destroy(handle, ct.byref(final), ct.byref(telemetry))
+                result = self._resident_destroy(self._handle, ct.byref(final), ct.byref(telemetry))
+                if result == -2:
+                    raise TimeoutError(self._error())
+                self._handle = None
                 self._remember(final)
                 self._remember_telemetry(telemetry, final=True)
                 if result:

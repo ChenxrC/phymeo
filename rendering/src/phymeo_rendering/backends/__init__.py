@@ -126,26 +126,25 @@ class ValidatedRenderSession:
                     f"channels={tuple(channel.value for channel in request.channels)!r}"
                 )
             result = self._delegate.capture(frame, request)
-            if not isinstance(result, Capture):
-                raise TypeError("delegate.capture must return Capture")
-            if result.frame_key != frame.key:
-                raise ValueError("capture frame_key does not match the source frame")
-            if result.time_s != frame.time_s:
-                raise ValueError("capture time_s does not match the source frame")
-            if result.camera != request.camera:
-                raise ValueError("capture camera does not match the requested exposure")
-            if tuple(plane.channel for plane in result.planes) != request.channels:
-                raise ValueError("capture channels must match request channels in order")
-            # Capture already validates layout, depth, masks and background.
-            # Only this scene-owning layer can validate positive instance IDs.
-            for plane in result.planes:
-                if plane.channel is Channel.INSTANCE_ID and not _scene_ids_valid(plane.data, self._instance_ids):
-                    for (identity,) in struct.iter_unpack("<I", plane.data):
-                        if identity != 0 and identity not in self._instance_ids:
-                            raise ValueError(
-                                f"capture instance ID {identity} is absent from the opened scene"
-                            )
-            return result
+            return self._validate_publication(result, frame.key, frame.time_s, request)
+
+    def _validate_publication(self, result, key, time_s, request):
+        if not isinstance(result, Capture):
+            raise TypeError("delegate.capture must return Capture")
+        if result.frame_key != key:
+            raise ValueError("capture frame_key does not match the source frame")
+        if result.time_s != time_s:
+            raise ValueError("capture time_s does not match the source frame")
+        if result.camera != request.camera:
+            raise ValueError("capture camera does not match the requested exposure")
+        if tuple(plane.channel for plane in result.planes) != request.channels:
+            raise ValueError("capture channels must match request channels in order")
+        for plane in result.planes:
+            if plane.channel is Channel.INSTANCE_ID and not _scene_ids_valid(plane.data, self._instance_ids):
+                for (identity,) in struct.iter_unpack("<I", plane.data):
+                    if identity != 0 and identity not in self._instance_ids:
+                        raise ValueError(f"capture instance ID {identity} is absent from the opened scene")
+        return result
 
     def close(self) -> None:
         """Close at most once; retain and report any uncertain release failure.

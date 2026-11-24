@@ -24,6 +24,20 @@ RTX 4060 Laptop GPU，1280×720，软棚和原运动机位。计时从公共 RGB
 
 [设备验收原始数据](../../../artifacts/rendering/panda-stable-surface/acceptance/report.json) · [默认入口逐帧耗时与轮廓计数](../../../artifacts/rendering/panda-stable-surface/default-entry/timings.json)
 
+## 影片抗锯齿
+
+同一条 300 帧 Panda 回放有两档。实时档适合交互。影片档在 2560×1440 重新计算可见性和光照，每四个子像素在线性 HDR 中合成一个 720p 像素，最后统一做曝光和显示变换。细小夹指、壳体内的小孔和同一零件上的斜边都能参与采样。附加的深度、实例 ID 与有效性使用原机位的中心采样。
+
+[720p 影片](../../results/film-aa/panda-film.mp4) · [同帧左右对照，左实时、右影片](../../../artifacts/rendering/film-aa-r1/panda/comparison.mp4) · [夹指局部与 8×8 参考](../../results/film-aa/finger-comparison.png)
+
+RTX 4060 Laptop GPU 上，实时和影片两档的平均采集速度分别为 61.83 和 1.96 FPS，P95 分别为 17.48 和 550.54 ms。影片档计入 HDR 读回、主机缩小及显示变换，两档均另行编码为每秒 30 帧。第 60 帧夹指轮廓与同场景 8×8 子像素参考的平均绝对误差从 3.30 降至 1.24 个 8 位色阶。独立的移动细杆对照中，相邻帧覆盖变化的误差降低了 69%。[Panda 逐帧记录](../../../artifacts/rendering/film-aa-r1/panda/report.json) · [解析斜边和细杆对照](../../../artifacts/rendering/film-aa-r1/calibration/report.json)
+
+可用下方构建步骤取得稳定渲染包，再运行同片对比。输出目录应使用新路径。
+
+```powershell
+python -B -m preview_stable_lighting.film_aa_bench panda --device-index 1 --package artifacts/rendering/panda-stable-surface/default --source-inputs artifacts/rendering/panda-surface-fix/sequence/inputs.json --output artifacts/rendering/my-panda-aa
+```
+
 ## 构建与拍摄
 
 从仓库根目录使用原 Vulkan 工具链、带 NumPy、Pillow 的 Python 和 FFmpeg。先按[软阴影与轮廓构建步骤](../preview_surface_quality/README.md)制成每灯 16 点且开启轮廓采样的父包。构建稳定档复用该包的 CMake 工具链配置、原生 DLL 和 Python 运行时，父包需保留。以下为本次使用的路径。

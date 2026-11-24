@@ -1,0 +1,4245 @@
+{
+  "scene": "native-mounted-camera-dd247bb02779771b",
+  "native_mjcf": "<mujoco model=\"camera-slide-and-gimbal\">\n<option timestep=\".001\" gravity=\"0 0 0\"/>\n<default><geom type=\"box\" contype=\"0\" conaffinity=\"0\"/></default>\n<worldbody>\n  <geom name=\"receiver\" size=\".42 .33 .012\" pos=\"0 0 -.17\" rgba=\".46 .53 .53 1\"/>\n  <body name=\"carriage\" pos=\"0 0 .015\" euler=\"0 0 90\">\n    <inertial pos=\"0 0 0\" mass=\".5\" diaginertia=\".001 .001 .001\"/>\n    <joint name=\"slide\" type=\"slide\" axis=\"0 0 1\" armature=\".04\" damping=\".2\"/>\n    <geom name=\"block\" size=\".073 .045 .034\" pos=\".012 -.014 .016\"\n          euler=\"0 0 18\" rgba=\".83 .29 .07 1\"/>\n    <body name=\"gimbal\" pos=\"0 0 .045\">\n      <inertial pos=\"0 0 0\" mass=\".07\" diaginertia=\".0003 .0003 .0003\"/>\n      <joint name=\"pitch\" type=\"hinge\" axis=\"0 1 0\" armature=\".012\" damping=\".05\"/>\n      <geom name=\"cap\" size=\".033 .052 .015\" pos=\"-.014 -.005 .020\"\n            euler=\"12 0 -17\" rgba=\".13 .37 .61 1\"/>\n      <camera name=\"gimbal-cam\" mode=\"fixed\" pos=\".28 -.28 .21\" xyaxes=\"1 1 0 -.375 .375 1\"/>\n    </body>\n  </body>\n</worldbody>\n<actuator>\n  <motor name=\"drive\" joint=\"slide\" gear=\"2\" ctrllimited=\"true\" ctrlrange=\"-5 5\"/>\n  <motor name=\"tilt\" joint=\"pitch\" gear=\"1\" ctrllimited=\"true\" ctrlrange=\"-1 1\"/>\n</actuator></mujoco>",
+  "controls": {
+    "41": [
+      4.0,
+      0.65
+    ],
+    "7": [
+      -4.0,
+      -0.65
+    ]
+  },
+  "device": "NVIDIA GeForce RTX 4060 Laptop GPU",
+  "device_index": 0,
+  "cuda_ordinal": 0,
+  "library": "C:\\Users\\38347\\.codex\\worktrees\\phymeo-rendering\\phymeo\\artifacts\\physics-vulkan-interop\\p1-raster-20261124\\build\\phymeo_native.dll",
+  "validation_enabled": true,
+  "cleanup": {
+    "live_resources": 0,
+    "live_contexts": 0,
+    "live_frames": 0,
+    "validation_errors": 0
+  },
+  "width": 320,
+  "height": 240,
+  "exposure": 1.0,
+  "display": "clip + IEC sRGB",
+  "native_reference": "MuJoCo CPU integration and independent cam_xpos / cam_xmat, fixed camera mode",
+  "modes": [
+    "SW1",
+    "SW4",
+    "RQ1",
+    "RQ4"
+  ],
+  "comparison": {
+    "SW1": {
+      "verified_view_pairs": 16,
+      "native_color_samples": 1,
+      "contour_display_linear_mae": 0.01612602333975733,
+      "rgb_max_codes_vs_host": 1,
+      "host_median_ms": 4.7884,
+      "host_p95_ms": 6.960355,
+      "shared_median_ms": 8.24735,
+      "shared_p95_ms": 11.372234999999998
+    },
+    "SW4": {
+      "verified_view_pairs": 16,
+      "native_color_samples": 4,
+      "contour_display_linear_mae": 0.004316961923996394,
+      "rgb_max_codes_vs_host": 1,
+      "host_median_ms": 5.10675,
+      "host_p95_ms": 6.677275,
+      "shared_median_ms": 8.7462,
+      "shared_p95_ms": 11.111329999999999
+    },
+    "RQ1": {
+      "verified_view_pairs": 16,
+      "native_color_samples": 1,
+      "contour_display_linear_mae": 0.01612602333975733,
+      "rgb_max_codes_vs_host": 1,
+      "host_median_ms": 5.002,
+      "host_p95_ms": 7.922365,
+      "shared_median_ms": 8.790949999999999,
+      "shared_p95_ms": 11.869639999999999
+    },
+    "RQ4": {
+      "verified_view_pairs": 16,
+      "native_color_samples": 4,
+      "contour_display_linear_mae": 0.004316961923996394,
+      "rgb_max_codes_vs_host": 1,
+      "host_median_ms": 5.3337,
+      "host_p95_ms": 7.819005,
+      "shared_median_ms": 9.04465,
+      "shared_p95_ms": 14.724019999999998
+    }
+  },
+  "frames": [
+    {
+      "stage": "initial",
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "41",
+        "epoch": 0,
+        "revision": 1,
+        "tick": 0,
+        "phase": "accepted_endpoint"
+      },
+      "time_s": 0.0,
+      "body_position_max_abs_m": 2.384185786297177e-09,
+      "body_rotation_max_abs": 2.220446049250313e-16,
+      "native_time": 0.0,
+      "native_camera_world_matrix": [
+        [
+          -0.7071067811865475,
+          -0.3312945782245396,
+          0.6246950475544244,
+          0.2800000000000001
+        ],
+        [
+          0.7071067811865477,
+          -0.33129457822453956,
+          0.6246950475544243,
+          0.2800000000000001
+        ],
+        [
+          0.0,
+          0.8834522085987725,
+          0.4685212856658181,
+          0.2700000000000001
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "body_pose_sha256": "53b190bf798eb49c74c7138e8453ed5f397e7e57563260e6785ef49345bd6707"
+    },
+    {
+      "stage": "initial",
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "7",
+        "epoch": 0,
+        "revision": 1,
+        "tick": 0,
+        "phase": "accepted_endpoint"
+      },
+      "time_s": 0.0,
+      "body_position_max_abs_m": 2.384185786297177e-09,
+      "body_rotation_max_abs": 2.220446049250313e-16,
+      "native_time": 0.0,
+      "native_camera_world_matrix": [
+        [
+          -0.7071067811865475,
+          -0.3312945782245396,
+          0.6246950475544244,
+          0.2800000000000001
+        ],
+        [
+          0.7071067811865477,
+          -0.33129457822453956,
+          0.6246950475544243,
+          0.2800000000000001
+        ],
+        [
+          0.0,
+          0.8834522085987725,
+          0.4685212856658181,
+          0.2700000000000001
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "body_pose_sha256": "53b190bf798eb49c74c7138e8453ed5f397e7e57563260e6785ef49345bd6707"
+    },
+    {
+      "stage": "step40",
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "41",
+        "epoch": 0,
+        "revision": 41,
+        "tick": 40,
+        "phase": "accepted_endpoint"
+      },
+      "time_s": 0.04000000189989805,
+      "body_position_max_abs_m": 1.5911846146243747e-09,
+      "body_rotation_max_abs": 2.9879349106032294e-08,
+      "native_time": 0.04000000000000003,
+      "native_camera_world_matrix": [
+        [
+          -0.7071067811865477,
+          -0.3312945782245397,
+          0.6246950475544242,
+          0.28
+        ],
+        [
+          0.7065133745784722,
+          -0.2948305518221994,
+          0.643361327135815,
+          0.28836657550472106
+        ],
+        [
+          -0.028962933928374013,
+          0.8962805633010469,
+          0.44254073293542007,
+          0.26905993928776933
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "body_pose_sha256": "6213f2b3d705d4b5d1e1372e79a09b445cc33ee6100a488cb8ef43e0679aedcb"
+    },
+    {
+      "stage": "step40",
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "7",
+        "epoch": 0,
+        "revision": 41,
+        "tick": 40,
+        "phase": "accepted_endpoint"
+      },
+      "time_s": 0.04000000189989805,
+      "body_position_max_abs_m": 1.94784117307778e-09,
+      "body_rotation_max_abs": 2.9879349106032294e-08,
+      "native_time": 0.04000000000000003,
+      "native_camera_world_matrix": [
+        [
+          -0.7071067811865479,
+          -0.3312945782245398,
+          0.6246950475544244,
+          0.28
+        ],
+        [
+          0.7065133745784724,
+          -0.36720255737300445,
+          0.6049802752160315,
+          0.2711634704383196
+        ],
+        [
+          0.028962933928373846,
+          0.8691410612194953,
+          0.4937154688284644,
+          0.2705875951695111
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "body_pose_sha256": "8987ce14f14f7b06dbd493a59d86a30e609454f8150422d25c7bf3f554dff6d7"
+    },
+    {
+      "stage": "step80",
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "41",
+        "epoch": 0,
+        "revision": 81,
+        "tick": 80,
+        "phase": "accepted_endpoint"
+      },
+      "time_s": 0.0800000037997961,
+      "body_position_max_abs_m": 1.267254173126231e-08,
+      "body_rotation_max_abs": 2.4029421230586934e-08,
+      "native_time": 0.08000000000000006,
+      "native_camera_world_matrix": [
+        [
+          -0.707106781186547,
+          -0.33129457822453967,
+          0.6246950475544244,
+          0.28000000000000014
+        ],
+        [
+          0.6987713819651812,
+          -0.19213994204539153,
+          0.6890579064325902,
+          0.3088486367171281
+        ],
+        [
+          -0.10825227825071909,
+          0.9237565399550997,
+          0.3673626262206201,
+          0.2667723764206579
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "body_pose_sha256": "6ea584d9916f1b1cc390df4e58e800000250c7b8c12f1e1ca710e8f7b6dfcc9a"
+    },
+    {
+      "stage": "step80",
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "7",
+        "epoch": 0,
+        "revision": 81,
+        "tick": 80,
+        "phase": "accepted_endpoint"
+      },
+      "time_s": 0.0800000037997961,
+      "body_position_max_abs_m": 1.1480448834644275e-08,
+      "body_rotation_max_abs": 2.4029421230586934e-08,
+      "native_time": 0.08000000000000006,
+      "native_camera_world_matrix": [
+        [
+          -0.7071067811865475,
+          -0.33129457822453956,
+          0.6246950475544242,
+          0.28000000000000014
+        ],
+        [
+          0.6987713819651808,
+          -0.4626385904842225,
+          0.5456043349729205,
+          0.24455006389194783
+        ],
+        [
+          0.10825227825071926,
+          0.822319546790538,
+          0.5586340548335134,
+          0.268276649036149
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "body_pose_sha256": "3bd22f86169ba898dfb84a27b3a3e50fe4f4455b59d99aaf640d7d0e0c198abc"
+    },
+    {
+      "stage": "reset41",
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "41",
+        "epoch": 1,
+        "revision": 82,
+        "tick": 0,
+        "phase": "accepted_endpoint"
+      },
+      "time_s": 0.0,
+      "body_position_max_abs_m": 9.238719927973094e-10,
+      "body_rotation_max_abs": 7.601532847623105e-09,
+      "native_time": 0.0,
+      "native_camera_world_matrix": [
+        [
+          -0.7071067811865477,
+          -0.33129457822453967,
+          0.6246950475544243,
+          0.28
+        ],
+        [
+          0.7042449312540563,
+          -0.40935714340942253,
+          0.580056726486856,
+          0.2599922699117761
+        ],
+        [
+          0.06355373162112232,
+          0.8501003655914413,
+          0.5227717394985392,
+          0.2623160677079619
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "body_pose_sha256": "f9b3c76de1690fae58d07853887071e1026702b30e045311ae3fdbf70dffe2c6"
+    },
+    {
+      "stage": "reset41",
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "7",
+        "epoch": 0,
+        "revision": 82,
+        "tick": 80,
+        "phase": "accepted_endpoint"
+      },
+      "time_s": 0.0800000037997961,
+      "body_position_max_abs_m": 1.1480448834644275e-08,
+      "body_rotation_max_abs": 2.4029421230586934e-08,
+      "native_time": 0.08000000000000006,
+      "native_camera_world_matrix": [
+        [
+          -0.7071067811865475,
+          -0.33129457822453956,
+          0.6246950475544242,
+          0.28000000000000014
+        ],
+        [
+          0.6987713819651808,
+          -0.4626385904842225,
+          0.5456043349729205,
+          0.24455006389194783
+        ],
+        [
+          0.10825227825071926,
+          0.822319546790538,
+          0.5586340548335134,
+          0.268276649036149
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "body_pose_sha256": "3bd22f86169ba898dfb84a27b3a3e50fe4f4455b59d99aaf640d7d0e0c198abc"
+    }
+  ],
+  "captures": [
+    {
+      "mode": "SW1",
+      "stage": "initial",
+      "world": 41,
+      "view": "fixed",
+      "time_s": 0.0,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "41",
+        "epoch": 0,
+        "revision": 1,
+        "tick": 0,
+        "phase": "accepted_endpoint"
+      },
+      "mount_translation_error_m": 1.0860483054271526e-08,
+      "mount_rotation_error_rad": 2.9802322387695312e-08,
+      "exact_instance_id": true,
+      "exact_valid": true,
+      "rgb_max_codes": 0,
+      "rgb_changed_pixels": 0,
+      "depth_max_abs_m": 0.0,
+      "jointly_valid_pixels": 40238,
+      "moving_pixels": 2168,
+      "centroid_xy": [
+        166.68957564575646,
+        103.13238007380073
+      ],
+      "plane_sha256": {
+        "srgb8_rgb": "0ae690dab73bbd7ccf346f63170f6f0d563728c7ae723c9db6301f1f14ea1d4b",
+        "forward_depth_m_f32": "797773ac47855129bfb9fc4e2e0415655f47fb5c53fe6bfd2f91ff687bde3d0f",
+        "instance_id_u32": "e477f3cadc5cebf7aefc01d01dddd3b2fe964f8b7f0555a033372e47dcaea09e",
+        "valid_u8": "9a50a7fbe32568ca90d5b0496ec5c0d0e86160b896964889f89a8c8b74ec0c15"
+      }
+    },
+    {
+      "mode": "SW1",
+      "stage": "initial",
+      "world": 41,
+      "view": "gimbal-cam",
+      "time_s": 0.0,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "41",
+        "epoch": 0,
+        "revision": 1,
+        "tick": 0,
+        "phase": "accepted_endpoint"
+      },
+      "mount_translation_error_m": 1.0860483054271526e-08,
+      "mount_rotation_error_rad": 2.9802322387695312e-08,
+      "exact_instance_id": true,
+      "exact_valid": true,
+      "rgb_max_codes": 0,
+      "rgb_changed_pixels": 0,
+      "depth_max_abs_m": 4.76837158203125e-07,
+      "jointly_valid_pixels": 36487,
+      "moving_pixels": 8373,
+      "centroid_xy": [
+        161.9614236235519,
+        154.1129822047056
+      ],
+      "plane_sha256": {
+        "srgb8_rgb": "daba14d465ab8f5e7aa6b7c90404dfd3b76581d734cb09636c3ad9c9e3758c12",
+        "forward_depth_m_f32": "92f4b39d35db53e6c0d1763ea556cca00c73958b684804ad5f290741a102b274",
+        "instance_id_u32": "32979ac06151ffc92550615f8c82619a012225b97b1218dde97bb8c828aa7ef4",
+        "valid_u8": "9b0d6a96016a55c89b8217d1b4a2dee87f4001dff9653a49ee66db0a618d3bc9"
+      }
+    },
+    {
+      "mode": "SW4",
+      "stage": "initial",
+      "world": 41,
+      "view": "fixed",
+      "time_s": 0.0,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "41",
+        "epoch": 0,
+        "revision": 1,
+        "tick": 0,
+        "phase": "accepted_endpoint"
+      },
+      "mount_translation_error_m": 1.0860483054271526e-08,
+      "mount_rotation_error_rad": 2.9802322387695312e-08,
+      "exact_instance_id": true,
+      "exact_valid": true,
+      "rgb_max_codes": 0,
+      "rgb_changed_pixels": 0,
+      "depth_max_abs_m": 0.0,
+      "jointly_valid_pixels": 40238,
+      "moving_pixels": 2168,
+      "centroid_xy": [
+        166.68957564575646,
+        103.13238007380073
+      ],
+      "plane_sha256": {
+        "srgb8_rgb": "df46e315a38bd81adca62dc9e8e4c539722e8e12356a3e5576a5ff9e65856bf7",
+        "forward_depth_m_f32": "797773ac47855129bfb9fc4e2e0415655f47fb5c53fe6bfd2f91ff687bde3d0f",
+        "instance_id_u32": "e477f3cadc5cebf7aefc01d01dddd3b2fe964f8b7f0555a033372e47dcaea09e",
+        "valid_u8": "9a50a7fbe32568ca90d5b0496ec5c0d0e86160b896964889f89a8c8b74ec0c15"
+      }
+    },
+    {
+      "mode": "SW4",
+      "stage": "initial",
+      "world": 41,
+      "view": "gimbal-cam",
+      "time_s": 0.0,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "41",
+        "epoch": 0,
+        "revision": 1,
+        "tick": 0,
+        "phase": "accepted_endpoint"
+      },
+      "mount_translation_error_m": 1.0860483054271526e-08,
+      "mount_rotation_error_rad": 2.9802322387695312e-08,
+      "exact_instance_id": true,
+      "exact_valid": true,
+      "rgb_max_codes": 1,
+      "rgb_changed_pixels": 2,
+      "depth_max_abs_m": 4.76837158203125e-07,
+      "jointly_valid_pixels": 36487,
+      "moving_pixels": 8373,
+      "centroid_xy": [
+        161.9614236235519,
+        154.1129822047056
+      ],
+      "plane_sha256": {
+        "srgb8_rgb": "7cd619cfe9b6290968ef3df5a7116fd3bbee0ba65b2d508eede6e94566f5206c",
+        "forward_depth_m_f32": "92f4b39d35db53e6c0d1763ea556cca00c73958b684804ad5f290741a102b274",
+        "instance_id_u32": "32979ac06151ffc92550615f8c82619a012225b97b1218dde97bb8c828aa7ef4",
+        "valid_u8": "9b0d6a96016a55c89b8217d1b4a2dee87f4001dff9653a49ee66db0a618d3bc9"
+      }
+    },
+    {
+      "mode": "RQ1",
+      "stage": "initial",
+      "world": 41,
+      "view": "fixed",
+      "time_s": 0.0,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "41",
+        "epoch": 0,
+        "revision": 1,
+        "tick": 0,
+        "phase": "accepted_endpoint"
+      },
+      "mount_translation_error_m": 1.0860483054271526e-08,
+      "mount_rotation_error_rad": 2.9802322387695312e-08,
+      "exact_instance_id": true,
+      "exact_valid": true,
+      "rgb_max_codes": 0,
+      "rgb_changed_pixels": 0,
+      "depth_max_abs_m": 0.0,
+      "jointly_valid_pixels": 40238,
+      "moving_pixels": 2168,
+      "centroid_xy": [
+        166.68957564575646,
+        103.13238007380073
+      ],
+      "plane_sha256": {
+        "srgb8_rgb": "0ae690dab73bbd7ccf346f63170f6f0d563728c7ae723c9db6301f1f14ea1d4b",
+        "forward_depth_m_f32": "797773ac47855129bfb9fc4e2e0415655f47fb5c53fe6bfd2f91ff687bde3d0f",
+        "instance_id_u32": "e477f3cadc5cebf7aefc01d01dddd3b2fe964f8b7f0555a033372e47dcaea09e",
+        "valid_u8": "9a50a7fbe32568ca90d5b0496ec5c0d0e86160b896964889f89a8c8b74ec0c15"
+      }
+    },
+    {
+      "mode": "RQ1",
+      "stage": "initial",
+      "world": 41,
+      "view": "gimbal-cam",
+      "time_s": 0.0,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "41",
+        "epoch": 0,
+        "revision": 1,
+        "tick": 0,
+        "phase": "accepted_endpoint"
+      },
+      "mount_translation_error_m": 1.0860483054271526e-08,
+      "mount_rotation_error_rad": 2.9802322387695312e-08,
+      "exact_instance_id": true,
+      "exact_valid": true,
+      "rgb_max_codes": 0,
+      "rgb_changed_pixels": 0,
+      "depth_max_abs_m": 4.76837158203125e-07,
+      "jointly_valid_pixels": 36487,
+      "moving_pixels": 8373,
+      "centroid_xy": [
+        161.9614236235519,
+        154.1129822047056
+      ],
+      "plane_sha256": {
+        "srgb8_rgb": "daba14d465ab8f5e7aa6b7c90404dfd3b76581d734cb09636c3ad9c9e3758c12",
+        "forward_depth_m_f32": "92f4b39d35db53e6c0d1763ea556cca00c73958b684804ad5f290741a102b274",
+        "instance_id_u32": "32979ac06151ffc92550615f8c82619a012225b97b1218dde97bb8c828aa7ef4",
+        "valid_u8": "9b0d6a96016a55c89b8217d1b4a2dee87f4001dff9653a49ee66db0a618d3bc9"
+      }
+    },
+    {
+      "mode": "RQ4",
+      "stage": "initial",
+      "world": 41,
+      "view": "fixed",
+      "time_s": 0.0,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "41",
+        "epoch": 0,
+        "revision": 1,
+        "tick": 0,
+        "phase": "accepted_endpoint"
+      },
+      "mount_translation_error_m": 1.0860483054271526e-08,
+      "mount_rotation_error_rad": 2.9802322387695312e-08,
+      "exact_instance_id": true,
+      "exact_valid": true,
+      "rgb_max_codes": 0,
+      "rgb_changed_pixels": 0,
+      "depth_max_abs_m": 0.0,
+      "jointly_valid_pixels": 40238,
+      "moving_pixels": 2168,
+      "centroid_xy": [
+        166.68957564575646,
+        103.13238007380073
+      ],
+      "plane_sha256": {
+        "srgb8_rgb": "df46e315a38bd81adca62dc9e8e4c539722e8e12356a3e5576a5ff9e65856bf7",
+        "forward_depth_m_f32": "797773ac47855129bfb9fc4e2e0415655f47fb5c53fe6bfd2f91ff687bde3d0f",
+        "instance_id_u32": "e477f3cadc5cebf7aefc01d01dddd3b2fe964f8b7f0555a033372e47dcaea09e",
+        "valid_u8": "9a50a7fbe32568ca90d5b0496ec5c0d0e86160b896964889f89a8c8b74ec0c15"
+      }
+    },
+    {
+      "mode": "RQ4",
+      "stage": "initial",
+      "world": 41,
+      "view": "gimbal-cam",
+      "time_s": 0.0,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "41",
+        "epoch": 0,
+        "revision": 1,
+        "tick": 0,
+        "phase": "accepted_endpoint"
+      },
+      "mount_translation_error_m": 1.0860483054271526e-08,
+      "mount_rotation_error_rad": 2.9802322387695312e-08,
+      "exact_instance_id": true,
+      "exact_valid": true,
+      "rgb_max_codes": 1,
+      "rgb_changed_pixels": 2,
+      "depth_max_abs_m": 4.76837158203125e-07,
+      "jointly_valid_pixels": 36487,
+      "moving_pixels": 8373,
+      "centroid_xy": [
+        161.9614236235519,
+        154.1129822047056
+      ],
+      "plane_sha256": {
+        "srgb8_rgb": "7cd619cfe9b6290968ef3df5a7116fd3bbee0ba65b2d508eede6e94566f5206c",
+        "forward_depth_m_f32": "92f4b39d35db53e6c0d1763ea556cca00c73958b684804ad5f290741a102b274",
+        "instance_id_u32": "32979ac06151ffc92550615f8c82619a012225b97b1218dde97bb8c828aa7ef4",
+        "valid_u8": "9b0d6a96016a55c89b8217d1b4a2dee87f4001dff9653a49ee66db0a618d3bc9"
+      }
+    },
+    {
+      "mode": "SW1",
+      "stage": "initial",
+      "world": 7,
+      "view": "fixed",
+      "time_s": 0.0,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "7",
+        "epoch": 0,
+        "revision": 1,
+        "tick": 0,
+        "phase": "accepted_endpoint"
+      },
+      "mount_translation_error_m": 1.0860483054271526e-08,
+      "mount_rotation_error_rad": 2.9802322387695312e-08,
+      "exact_instance_id": true,
+      "exact_valid": true,
+      "rgb_max_codes": 0,
+      "rgb_changed_pixels": 0,
+      "depth_max_abs_m": 0.0,
+      "jointly_valid_pixels": 40238,
+      "moving_pixels": 2168,
+      "centroid_xy": [
+        166.68957564575646,
+        103.13238007380073
+      ],
+      "plane_sha256": {
+        "srgb8_rgb": "0ae690dab73bbd7ccf346f63170f6f0d563728c7ae723c9db6301f1f14ea1d4b",
+        "forward_depth_m_f32": "797773ac47855129bfb9fc4e2e0415655f47fb5c53fe6bfd2f91ff687bde3d0f",
+        "instance_id_u32": "e477f3cadc5cebf7aefc01d01dddd3b2fe964f8b7f0555a033372e47dcaea09e",
+        "valid_u8": "9a50a7fbe32568ca90d5b0496ec5c0d0e86160b896964889f89a8c8b74ec0c15"
+      }
+    },
+    {
+      "mode": "SW1",
+      "stage": "initial",
+      "world": 7,
+      "view": "gimbal-cam",
+      "time_s": 0.0,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "7",
+        "epoch": 0,
+        "revision": 1,
+        "tick": 0,
+        "phase": "accepted_endpoint"
+      },
+      "mount_translation_error_m": 1.0860483054271526e-08,
+      "mount_rotation_error_rad": 2.9802322387695312e-08,
+      "exact_instance_id": true,
+      "exact_valid": true,
+      "rgb_max_codes": 0,
+      "rgb_changed_pixels": 0,
+      "depth_max_abs_m": 4.76837158203125e-07,
+      "jointly_valid_pixels": 36487,
+      "moving_pixels": 8373,
+      "centroid_xy": [
+        161.9614236235519,
+        154.1129822047056
+      ],
+      "plane_sha256": {
+        "srgb8_rgb": "daba14d465ab8f5e7aa6b7c90404dfd3b76581d734cb09636c3ad9c9e3758c12",
+        "forward_depth_m_f32": "92f4b39d35db53e6c0d1763ea556cca00c73958b684804ad5f290741a102b274",
+        "instance_id_u32": "32979ac06151ffc92550615f8c82619a012225b97b1218dde97bb8c828aa7ef4",
+        "valid_u8": "9b0d6a96016a55c89b8217d1b4a2dee87f4001dff9653a49ee66db0a618d3bc9"
+      }
+    },
+    {
+      "mode": "SW4",
+      "stage": "initial",
+      "world": 7,
+      "view": "fixed",
+      "time_s": 0.0,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "7",
+        "epoch": 0,
+        "revision": 1,
+        "tick": 0,
+        "phase": "accepted_endpoint"
+      },
+      "mount_translation_error_m": 1.0860483054271526e-08,
+      "mount_rotation_error_rad": 2.9802322387695312e-08,
+      "exact_instance_id": true,
+      "exact_valid": true,
+      "rgb_max_codes": 0,
+      "rgb_changed_pixels": 0,
+      "depth_max_abs_m": 0.0,
+      "jointly_valid_pixels": 40238,
+      "moving_pixels": 2168,
+      "centroid_xy": [
+        166.68957564575646,
+        103.13238007380073
+      ],
+      "plane_sha256": {
+        "srgb8_rgb": "df46e315a38bd81adca62dc9e8e4c539722e8e12356a3e5576a5ff9e65856bf7",
+        "forward_depth_m_f32": "797773ac47855129bfb9fc4e2e0415655f47fb5c53fe6bfd2f91ff687bde3d0f",
+        "instance_id_u32": "e477f3cadc5cebf7aefc01d01dddd3b2fe964f8b7f0555a033372e47dcaea09e",
+        "valid_u8": "9a50a7fbe32568ca90d5b0496ec5c0d0e86160b896964889f89a8c8b74ec0c15"
+      }
+    },
+    {
+      "mode": "SW4",
+      "stage": "initial",
+      "world": 7,
+      "view": "gimbal-cam",
+      "time_s": 0.0,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "7",
+        "epoch": 0,
+        "revision": 1,
+        "tick": 0,
+        "phase": "accepted_endpoint"
+      },
+      "mount_translation_error_m": 1.0860483054271526e-08,
+      "mount_rotation_error_rad": 2.9802322387695312e-08,
+      "exact_instance_id": true,
+      "exact_valid": true,
+      "rgb_max_codes": 1,
+      "rgb_changed_pixels": 2,
+      "depth_max_abs_m": 4.76837158203125e-07,
+      "jointly_valid_pixels": 36487,
+      "moving_pixels": 8373,
+      "centroid_xy": [
+        161.9614236235519,
+        154.1129822047056
+      ],
+      "plane_sha256": {
+        "srgb8_rgb": "7cd619cfe9b6290968ef3df5a7116fd3bbee0ba65b2d508eede6e94566f5206c",
+        "forward_depth_m_f32": "92f4b39d35db53e6c0d1763ea556cca00c73958b684804ad5f290741a102b274",
+        "instance_id_u32": "32979ac06151ffc92550615f8c82619a012225b97b1218dde97bb8c828aa7ef4",
+        "valid_u8": "9b0d6a96016a55c89b8217d1b4a2dee87f4001dff9653a49ee66db0a618d3bc9"
+      }
+    },
+    {
+      "mode": "RQ1",
+      "stage": "initial",
+      "world": 7,
+      "view": "fixed",
+      "time_s": 0.0,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "7",
+        "epoch": 0,
+        "revision": 1,
+        "tick": 0,
+        "phase": "accepted_endpoint"
+      },
+      "mount_translation_error_m": 1.0860483054271526e-08,
+      "mount_rotation_error_rad": 2.9802322387695312e-08,
+      "exact_instance_id": true,
+      "exact_valid": true,
+      "rgb_max_codes": 0,
+      "rgb_changed_pixels": 0,
+      "depth_max_abs_m": 0.0,
+      "jointly_valid_pixels": 40238,
+      "moving_pixels": 2168,
+      "centroid_xy": [
+        166.68957564575646,
+        103.13238007380073
+      ],
+      "plane_sha256": {
+        "srgb8_rgb": "0ae690dab73bbd7ccf346f63170f6f0d563728c7ae723c9db6301f1f14ea1d4b",
+        "forward_depth_m_f32": "797773ac47855129bfb9fc4e2e0415655f47fb5c53fe6bfd2f91ff687bde3d0f",
+        "instance_id_u32": "e477f3cadc5cebf7aefc01d01dddd3b2fe964f8b7f0555a033372e47dcaea09e",
+        "valid_u8": "9a50a7fbe32568ca90d5b0496ec5c0d0e86160b896964889f89a8c8b74ec0c15"
+      }
+    },
+    {
+      "mode": "RQ1",
+      "stage": "initial",
+      "world": 7,
+      "view": "gimbal-cam",
+      "time_s": 0.0,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "7",
+        "epoch": 0,
+        "revision": 1,
+        "tick": 0,
+        "phase": "accepted_endpoint"
+      },
+      "mount_translation_error_m": 1.0860483054271526e-08,
+      "mount_rotation_error_rad": 2.9802322387695312e-08,
+      "exact_instance_id": true,
+      "exact_valid": true,
+      "rgb_max_codes": 0,
+      "rgb_changed_pixels": 0,
+      "depth_max_abs_m": 4.76837158203125e-07,
+      "jointly_valid_pixels": 36487,
+      "moving_pixels": 8373,
+      "centroid_xy": [
+        161.9614236235519,
+        154.1129822047056
+      ],
+      "plane_sha256": {
+        "srgb8_rgb": "daba14d465ab8f5e7aa6b7c90404dfd3b76581d734cb09636c3ad9c9e3758c12",
+        "forward_depth_m_f32": "92f4b39d35db53e6c0d1763ea556cca00c73958b684804ad5f290741a102b274",
+        "instance_id_u32": "32979ac06151ffc92550615f8c82619a012225b97b1218dde97bb8c828aa7ef4",
+        "valid_u8": "9b0d6a96016a55c89b8217d1b4a2dee87f4001dff9653a49ee66db0a618d3bc9"
+      }
+    },
+    {
+      "mode": "RQ4",
+      "stage": "initial",
+      "world": 7,
+      "view": "fixed",
+      "time_s": 0.0,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "7",
+        "epoch": 0,
+        "revision": 1,
+        "tick": 0,
+        "phase": "accepted_endpoint"
+      },
+      "mount_translation_error_m": 1.0860483054271526e-08,
+      "mount_rotation_error_rad": 2.9802322387695312e-08,
+      "exact_instance_id": true,
+      "exact_valid": true,
+      "rgb_max_codes": 0,
+      "rgb_changed_pixels": 0,
+      "depth_max_abs_m": 0.0,
+      "jointly_valid_pixels": 40238,
+      "moving_pixels": 2168,
+      "centroid_xy": [
+        166.68957564575646,
+        103.13238007380073
+      ],
+      "plane_sha256": {
+        "srgb8_rgb": "df46e315a38bd81adca62dc9e8e4c539722e8e12356a3e5576a5ff9e65856bf7",
+        "forward_depth_m_f32": "797773ac47855129bfb9fc4e2e0415655f47fb5c53fe6bfd2f91ff687bde3d0f",
+        "instance_id_u32": "e477f3cadc5cebf7aefc01d01dddd3b2fe964f8b7f0555a033372e47dcaea09e",
+        "valid_u8": "9a50a7fbe32568ca90d5b0496ec5c0d0e86160b896964889f89a8c8b74ec0c15"
+      }
+    },
+    {
+      "mode": "RQ4",
+      "stage": "initial",
+      "world": 7,
+      "view": "gimbal-cam",
+      "time_s": 0.0,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "7",
+        "epoch": 0,
+        "revision": 1,
+        "tick": 0,
+        "phase": "accepted_endpoint"
+      },
+      "mount_translation_error_m": 1.0860483054271526e-08,
+      "mount_rotation_error_rad": 2.9802322387695312e-08,
+      "exact_instance_id": true,
+      "exact_valid": true,
+      "rgb_max_codes": 1,
+      "rgb_changed_pixels": 2,
+      "depth_max_abs_m": 4.76837158203125e-07,
+      "jointly_valid_pixels": 36487,
+      "moving_pixels": 8373,
+      "centroid_xy": [
+        161.9614236235519,
+        154.1129822047056
+      ],
+      "plane_sha256": {
+        "srgb8_rgb": "7cd619cfe9b6290968ef3df5a7116fd3bbee0ba65b2d508eede6e94566f5206c",
+        "forward_depth_m_f32": "92f4b39d35db53e6c0d1763ea556cca00c73958b684804ad5f290741a102b274",
+        "instance_id_u32": "32979ac06151ffc92550615f8c82619a012225b97b1218dde97bb8c828aa7ef4",
+        "valid_u8": "9b0d6a96016a55c89b8217d1b4a2dee87f4001dff9653a49ee66db0a618d3bc9"
+      }
+    },
+    {
+      "mode": "SW1",
+      "stage": "step40",
+      "world": 41,
+      "view": "fixed",
+      "time_s": 0.04000000189989805,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "41",
+        "epoch": 0,
+        "revision": 41,
+        "tick": 40,
+        "phase": "accepted_endpoint"
+      },
+      "mount_translation_error_m": 1.981693955182019e-08,
+      "mount_rotation_error_rad": 4.2146848510894035e-08,
+      "exact_instance_id": true,
+      "exact_valid": true,
+      "rgb_max_codes": 0,
+      "rgb_changed_pixels": 0,
+      "depth_max_abs_m": 0.0,
+      "jointly_valid_pixels": 40503,
+      "moving_pixels": 2204,
+      "centroid_xy": [
+        166.56352087114337,
+        98.43330308529946
+      ],
+      "plane_sha256": {
+        "srgb8_rgb": "c72f183db7f58542ec289b33c7bdeef2f73fc40ab0173474145ac9e889852b46",
+        "forward_depth_m_f32": "c7d14c8c65a3c1f10d635d7e98c2c97a338404bd7d4943917613761e36076c0d",
+        "instance_id_u32": "9f555f4a6bda95fa716bcc8bd9a2bfb8e17ff8b9b52cbdd625eed872d5e435fa",
+        "valid_u8": "cc5e73b004063a46b553d490fe230582102a33b5730a42e81cea73499b593f6e"
+      }
+    },
+    {
+      "mode": "SW1",
+      "stage": "step40",
+      "world": 41,
+      "view": "gimbal-cam",
+      "time_s": 0.04000000189989805,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "41",
+        "epoch": 0,
+        "revision": 41,
+        "tick": 40,
+        "phase": "accepted_endpoint"
+      },
+      "mount_translation_error_m": 1.981693955182019e-08,
+      "mount_rotation_error_rad": 4.2146848510894035e-08,
+      "exact_instance_id": true,
+      "exact_valid": true,
+      "rgb_max_codes": 1,
+      "rgb_changed_pixels": 1,
+      "depth_max_abs_m": 1.7881393432617188e-07,
+      "jointly_valid_pixels": 34769,
+      "moving_pixels": 8411,
+      "centroid_xy": [
+        162.77933658304602,
+        153.82808227321365
+      ],
+      "plane_sha256": {
+        "srgb8_rgb": "f961b38d419024fcbeb514da19b28814a564b261a1dc340f299c5e15f01deb90",
+        "forward_depth_m_f32": "7832c492f7c0d033fbdb97cd2e57c84a6e49938a81d75e4bbb6b1f01329a45d8",
+        "instance_id_u32": "f964089954203800d6aac19a06f225fb9d82d9243809c445d001d836bf1e05a3",
+        "valid_u8": "4b206c47fc1b05735842ea933f2bf3eec1015e155e7587fa50b92f2f04ecdb95"
+      }
+    },
+    {
+      "mode": "SW4",
+      "stage": "step40",
+      "world": 41,
+      "view": "fixed",
+      "time_s": 0.04000000189989805,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "41",
+        "epoch": 0,
+        "revision": 41,
+        "tick": 40,
+        "phase": "accepted_endpoint"
+      },
+      "mount_translation_error_m": 1.981693955182019e-08,
+      "mount_rotation_error_rad": 4.2146848510894035e-08,
+      "exact_instance_id": true,
+      "exact_valid": true,
+      "rgb_max_codes": 0,
+      "rgb_changed_pixels": 0,
+      "depth_max_abs_m": 0.0,
+      "jointly_valid_pixels": 40503,
+      "moving_pixels": 2204,
+      "centroid_xy": [
+        166.56352087114337,
+        98.43330308529946
+      ],
+      "plane_sha256": {
+        "srgb8_rgb": "da12f9cc8221d0227826e04ee918de461b908583964f012bee78986d11427ed6",
+        "forward_depth_m_f32": "c7d14c8c65a3c1f10d635d7e98c2c97a338404bd7d4943917613761e36076c0d",
+        "instance_id_u32": "9f555f4a6bda95fa716bcc8bd9a2bfb8e17ff8b9b52cbdd625eed872d5e435fa",
+        "valid_u8": "cc5e73b004063a46b553d490fe230582102a33b5730a42e81cea73499b593f6e"
+      }
+    },
+    {
+      "mode": "SW4",
+      "stage": "step40",
+      "world": 41,
+      "view": "gimbal-cam",
+      "time_s": 0.04000000189989805,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "41",
+        "epoch": 0,
+        "revision": 41,
+        "tick": 40,
+        "phase": "accepted_endpoint"
+      },
+      "mount_translation_error_m": 1.981693955182019e-08,
+      "mount_rotation_error_rad": 4.2146848510894035e-08,
+      "exact_instance_id": true,
+      "exact_valid": true,
+      "rgb_max_codes": 0,
+      "rgb_changed_pixels": 0,
+      "depth_max_abs_m": 1.7881393432617188e-07,
+      "jointly_valid_pixels": 34769,
+      "moving_pixels": 8411,
+      "centroid_xy": [
+        162.77933658304602,
+        153.82808227321365
+      ],
+      "plane_sha256": {
+        "srgb8_rgb": "5c74acbb145c8bcccb0c4732df47dc5ed5877551d8b7a48dbcb4516d3cadf423",
+        "forward_depth_m_f32": "7832c492f7c0d033fbdb97cd2e57c84a6e49938a81d75e4bbb6b1f01329a45d8",
+        "instance_id_u32": "f964089954203800d6aac19a06f225fb9d82d9243809c445d001d836bf1e05a3",
+        "valid_u8": "4b206c47fc1b05735842ea933f2bf3eec1015e155e7587fa50b92f2f04ecdb95"
+      }
+    },
+    {
+      "mode": "RQ1",
+      "stage": "step40",
+      "world": 41,
+      "view": "fixed",
+      "time_s": 0.04000000189989805,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "41",
+        "epoch": 0,
+        "revision": 41,
+        "tick": 40,
+        "phase": "accepted_endpoint"
+      },
+      "mount_translation_error_m": 1.981693955182019e-08,
+      "mount_rotation_error_rad": 4.2146848510894035e-08,
+      "exact_instance_id": true,
+      "exact_valid": true,
+      "rgb_max_codes": 0,
+      "rgb_changed_pixels": 0,
+      "depth_max_abs_m": 0.0,
+      "jointly_valid_pixels": 40503,
+      "moving_pixels": 2204,
+      "centroid_xy": [
+        166.56352087114337,
+        98.43330308529946
+      ],
+      "plane_sha256": {
+        "srgb8_rgb": "c72f183db7f58542ec289b33c7bdeef2f73fc40ab0173474145ac9e889852b46",
+        "forward_depth_m_f32": "c7d14c8c65a3c1f10d635d7e98c2c97a338404bd7d4943917613761e36076c0d",
+        "instance_id_u32": "9f555f4a6bda95fa716bcc8bd9a2bfb8e17ff8b9b52cbdd625eed872d5e435fa",
+        "valid_u8": "cc5e73b004063a46b553d490fe230582102a33b5730a42e81cea73499b593f6e"
+      }
+    },
+    {
+      "mode": "RQ1",
+      "stage": "step40",
+      "world": 41,
+      "view": "gimbal-cam",
+      "time_s": 0.04000000189989805,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "41",
+        "epoch": 0,
+        "revision": 41,
+        "tick": 40,
+        "phase": "accepted_endpoint"
+      },
+      "mount_translation_error_m": 1.981693955182019e-08,
+      "mount_rotation_error_rad": 4.2146848510894035e-08,
+      "exact_instance_id": true,
+      "exact_valid": true,
+      "rgb_max_codes": 1,
+      "rgb_changed_pixels": 1,
+      "depth_max_abs_m": 1.7881393432617188e-07,
+      "jointly_valid_pixels": 34769,
+      "moving_pixels": 8411,
+      "centroid_xy": [
+        162.77933658304602,
+        153.82808227321365
+      ],
+      "plane_sha256": {
+        "srgb8_rgb": "f961b38d419024fcbeb514da19b28814a564b261a1dc340f299c5e15f01deb90",
+        "forward_depth_m_f32": "7832c492f7c0d033fbdb97cd2e57c84a6e49938a81d75e4bbb6b1f01329a45d8",
+        "instance_id_u32": "f964089954203800d6aac19a06f225fb9d82d9243809c445d001d836bf1e05a3",
+        "valid_u8": "4b206c47fc1b05735842ea933f2bf3eec1015e155e7587fa50b92f2f04ecdb95"
+      }
+    },
+    {
+      "mode": "RQ4",
+      "stage": "step40",
+      "world": 41,
+      "view": "fixed",
+      "time_s": 0.04000000189989805,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "41",
+        "epoch": 0,
+        "revision": 41,
+        "tick": 40,
+        "phase": "accepted_endpoint"
+      },
+      "mount_translation_error_m": 1.981693955182019e-08,
+      "mount_rotation_error_rad": 4.2146848510894035e-08,
+      "exact_instance_id": true,
+      "exact_valid": true,
+      "rgb_max_codes": 0,
+      "rgb_changed_pixels": 0,
+      "depth_max_abs_m": 0.0,
+      "jointly_valid_pixels": 40503,
+      "moving_pixels": 2204,
+      "centroid_xy": [
+        166.56352087114337,
+        98.43330308529946
+      ],
+      "plane_sha256": {
+        "srgb8_rgb": "da12f9cc8221d0227826e04ee918de461b908583964f012bee78986d11427ed6",
+        "forward_depth_m_f32": "c7d14c8c65a3c1f10d635d7e98c2c97a338404bd7d4943917613761e36076c0d",
+        "instance_id_u32": "9f555f4a6bda95fa716bcc8bd9a2bfb8e17ff8b9b52cbdd625eed872d5e435fa",
+        "valid_u8": "cc5e73b004063a46b553d490fe230582102a33b5730a42e81cea73499b593f6e"
+      }
+    },
+    {
+      "mode": "RQ4",
+      "stage": "step40",
+      "world": 41,
+      "view": "gimbal-cam",
+      "time_s": 0.04000000189989805,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "41",
+        "epoch": 0,
+        "revision": 41,
+        "tick": 40,
+        "phase": "accepted_endpoint"
+      },
+      "mount_translation_error_m": 1.981693955182019e-08,
+      "mount_rotation_error_rad": 4.2146848510894035e-08,
+      "exact_instance_id": true,
+      "exact_valid": true,
+      "rgb_max_codes": 0,
+      "rgb_changed_pixels": 0,
+      "depth_max_abs_m": 1.7881393432617188e-07,
+      "jointly_valid_pixels": 34769,
+      "moving_pixels": 8411,
+      "centroid_xy": [
+        162.77933658304602,
+        153.82808227321365
+      ],
+      "plane_sha256": {
+        "srgb8_rgb": "5c74acbb145c8bcccb0c4732df47dc5ed5877551d8b7a48dbcb4516d3cadf423",
+        "forward_depth_m_f32": "7832c492f7c0d033fbdb97cd2e57c84a6e49938a81d75e4bbb6b1f01329a45d8",
+        "instance_id_u32": "f964089954203800d6aac19a06f225fb9d82d9243809c445d001d836bf1e05a3",
+        "valid_u8": "4b206c47fc1b05735842ea933f2bf3eec1015e155e7587fa50b92f2f04ecdb95"
+      }
+    },
+    {
+      "mode": "SW1",
+      "stage": "step40",
+      "world": 7,
+      "view": "fixed",
+      "time_s": 0.04000000189989805,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "7",
+        "epoch": 0,
+        "revision": 41,
+        "tick": 40,
+        "phase": "accepted_endpoint"
+      },
+      "mount_translation_error_m": 2.3061984500543396e-08,
+      "mount_rotation_error_rad": 0.0,
+      "exact_instance_id": true,
+      "exact_valid": true,
+      "rgb_max_codes": 0,
+      "rgb_changed_pixels": 0,
+      "depth_max_abs_m": 5.960464477539063e-08,
+      "jointly_valid_pixels": 39963,
+      "moving_pixels": 2141,
+      "centroid_xy": [
+        166.77347034096218,
+        107.74638019617001
+      ],
+      "plane_sha256": {
+        "srgb8_rgb": "40916c3080d1bde4f0db7859034d4eedd8a35ac61f9286c10ece48c72b574aa7",
+        "forward_depth_m_f32": "c616f2fb30706c9a70550dc6f8f9513e5868cc693651c3db256aace1c3e7cc60",
+        "instance_id_u32": "2bd42af67653f7a4f44b4162f4184f114fd8e201959ef8095dc1839e4aea0d44",
+        "valid_u8": "b8b20229a4021f4ce092ef4a426e04588d86a35a4646a44a15a7a00ce940622b"
+      }
+    },
+    {
+      "mode": "SW1",
+      "stage": "step40",
+      "world": 7,
+      "view": "gimbal-cam",
+      "time_s": 0.04000000189989805,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "7",
+        "epoch": 0,
+        "revision": 41,
+        "tick": 40,
+        "phase": "accepted_endpoint"
+      },
+      "mount_translation_error_m": 2.3061984500543396e-08,
+      "mount_rotation_error_rad": 0.0,
+      "exact_instance_id": true,
+      "exact_valid": true,
+      "rgb_max_codes": 1,
+      "rgb_changed_pixels": 1,
+      "depth_max_abs_m": 1.7881393432617188e-07,
+      "jointly_valid_pixels": 38243,
+      "moving_pixels": 8307,
+      "centroid_xy": [
+        161.17924641868305,
+        154.30058986397015
+      ],
+      "plane_sha256": {
+        "srgb8_rgb": "ada74e7ada42e8f637bc6dbf536a9d46a3b7e7fffb8e92c30dfea7362bf0b6cd",
+        "forward_depth_m_f32": "295cf371cde82ce294e1ace02ab34ba19086e5ea0dd14d97a841807ff2432789",
+        "instance_id_u32": "280724cabd4c667374266519dc3f1551748bbb7fa80bae44e5ca1c08ffdb4090",
+        "valid_u8": "871b06331e040dfec5ea19d0f530c035813eb2046443f1a9daf406c213e6971e"
+      }
+    },
+    {
+      "mode": "SW4",
+      "stage": "step40",
+      "world": 7,
+      "view": "fixed",
+      "time_s": 0.04000000189989805,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "7",
+        "epoch": 0,
+        "revision": 41,
+        "tick": 40,
+        "phase": "accepted_endpoint"
+      },
+      "mount_translation_error_m": 2.3061984500543396e-08,
+      "mount_rotation_error_rad": 0.0,
+      "exact_instance_id": true,
+      "exact_valid": true,
+      "rgb_max_codes": 0,
+      "rgb_changed_pixels": 0,
+      "depth_max_abs_m": 5.960464477539063e-08,
+      "jointly_valid_pixels": 39963,
+      "moving_pixels": 2141,
+      "centroid_xy": [
+        166.77347034096218,
+        107.74638019617001
+      ],
+      "plane_sha256": {
+        "srgb8_rgb": "76c7810a3a6d5fbe1487c045ff077055356bc4f34f6b162cd7b4d7d821600a8e",
+        "forward_depth_m_f32": "c616f2fb30706c9a70550dc6f8f9513e5868cc693651c3db256aace1c3e7cc60",
+        "instance_id_u32": "2bd42af67653f7a4f44b4162f4184f114fd8e201959ef8095dc1839e4aea0d44",
+        "valid_u8": "b8b20229a4021f4ce092ef4a426e04588d86a35a4646a44a15a7a00ce940622b"
+      }
+    },
+    {
+      "mode": "SW4",
+      "stage": "step40",
+      "world": 7,
+      "view": "gimbal-cam",
+      "time_s": 0.04000000189989805,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "7",
+        "epoch": 0,
+        "revision": 41,
+        "tick": 40,
+        "phase": "accepted_endpoint"
+      },
+      "mount_translation_error_m": 2.3061984500543396e-08,
+      "mount_rotation_error_rad": 0.0,
+      "exact_instance_id": true,
+      "exact_valid": true,
+      "rgb_max_codes": 0,
+      "rgb_changed_pixels": 0,
+      "depth_max_abs_m": 1.7881393432617188e-07,
+      "jointly_valid_pixels": 38243,
+      "moving_pixels": 8307,
+      "centroid_xy": [
+        161.17924641868305,
+        154.30058986397015
+      ],
+      "plane_sha256": {
+        "srgb8_rgb": "47d1f92d9e828ead2cc0bd3a532cc1b22f0ae31d0d12ca4108122b53df244eb3",
+        "forward_depth_m_f32": "295cf371cde82ce294e1ace02ab34ba19086e5ea0dd14d97a841807ff2432789",
+        "instance_id_u32": "280724cabd4c667374266519dc3f1551748bbb7fa80bae44e5ca1c08ffdb4090",
+        "valid_u8": "871b06331e040dfec5ea19d0f530c035813eb2046443f1a9daf406c213e6971e"
+      }
+    },
+    {
+      "mode": "RQ1",
+      "stage": "step40",
+      "world": 7,
+      "view": "fixed",
+      "time_s": 0.04000000189989805,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "7",
+        "epoch": 0,
+        "revision": 41,
+        "tick": 40,
+        "phase": "accepted_endpoint"
+      },
+      "mount_translation_error_m": 2.3061984500543396e-08,
+      "mount_rotation_error_rad": 0.0,
+      "exact_instance_id": true,
+      "exact_valid": true,
+      "rgb_max_codes": 0,
+      "rgb_changed_pixels": 0,
+      "depth_max_abs_m": 5.960464477539063e-08,
+      "jointly_valid_pixels": 39963,
+      "moving_pixels": 2141,
+      "centroid_xy": [
+        166.77347034096218,
+        107.74638019617001
+      ],
+      "plane_sha256": {
+        "srgb8_rgb": "40916c3080d1bde4f0db7859034d4eedd8a35ac61f9286c10ece48c72b574aa7",
+        "forward_depth_m_f32": "c616f2fb30706c9a70550dc6f8f9513e5868cc693651c3db256aace1c3e7cc60",
+        "instance_id_u32": "2bd42af67653f7a4f44b4162f4184f114fd8e201959ef8095dc1839e4aea0d44",
+        "valid_u8": "b8b20229a4021f4ce092ef4a426e04588d86a35a4646a44a15a7a00ce940622b"
+      }
+    },
+    {
+      "mode": "RQ1",
+      "stage": "step40",
+      "world": 7,
+      "view": "gimbal-cam",
+      "time_s": 0.04000000189989805,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "7",
+        "epoch": 0,
+        "revision": 41,
+        "tick": 40,
+        "phase": "accepted_endpoint"
+      },
+      "mount_translation_error_m": 2.3061984500543396e-08,
+      "mount_rotation_error_rad": 0.0,
+      "exact_instance_id": true,
+      "exact_valid": true,
+      "rgb_max_codes": 1,
+      "rgb_changed_pixels": 1,
+      "depth_max_abs_m": 1.7881393432617188e-07,
+      "jointly_valid_pixels": 38243,
+      "moving_pixels": 8307,
+      "centroid_xy": [
+        161.17924641868305,
+        154.30058986397015
+      ],
+      "plane_sha256": {
+        "srgb8_rgb": "ada74e7ada42e8f637bc6dbf536a9d46a3b7e7fffb8e92c30dfea7362bf0b6cd",
+        "forward_depth_m_f32": "295cf371cde82ce294e1ace02ab34ba19086e5ea0dd14d97a841807ff2432789",
+        "instance_id_u32": "280724cabd4c667374266519dc3f1551748bbb7fa80bae44e5ca1c08ffdb4090",
+        "valid_u8": "871b06331e040dfec5ea19d0f530c035813eb2046443f1a9daf406c213e6971e"
+      }
+    },
+    {
+      "mode": "RQ4",
+      "stage": "step40",
+      "world": 7,
+      "view": "fixed",
+      "time_s": 0.04000000189989805,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "7",
+        "epoch": 0,
+        "revision": 41,
+        "tick": 40,
+        "phase": "accepted_endpoint"
+      },
+      "mount_translation_error_m": 2.3061984500543396e-08,
+      "mount_rotation_error_rad": 0.0,
+      "exact_instance_id": true,
+      "exact_valid": true,
+      "rgb_max_codes": 0,
+      "rgb_changed_pixels": 0,
+      "depth_max_abs_m": 5.960464477539063e-08,
+      "jointly_valid_pixels": 39963,
+      "moving_pixels": 2141,
+      "centroid_xy": [
+        166.77347034096218,
+        107.74638019617001
+      ],
+      "plane_sha256": {
+        "srgb8_rgb": "76c7810a3a6d5fbe1487c045ff077055356bc4f34f6b162cd7b4d7d821600a8e",
+        "forward_depth_m_f32": "c616f2fb30706c9a70550dc6f8f9513e5868cc693651c3db256aace1c3e7cc60",
+        "instance_id_u32": "2bd42af67653f7a4f44b4162f4184f114fd8e201959ef8095dc1839e4aea0d44",
+        "valid_u8": "b8b20229a4021f4ce092ef4a426e04588d86a35a4646a44a15a7a00ce940622b"
+      }
+    },
+    {
+      "mode": "RQ4",
+      "stage": "step40",
+      "world": 7,
+      "view": "gimbal-cam",
+      "time_s": 0.04000000189989805,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "7",
+        "epoch": 0,
+        "revision": 41,
+        "tick": 40,
+        "phase": "accepted_endpoint"
+      },
+      "mount_translation_error_m": 2.3061984500543396e-08,
+      "mount_rotation_error_rad": 0.0,
+      "exact_instance_id": true,
+      "exact_valid": true,
+      "rgb_max_codes": 0,
+      "rgb_changed_pixels": 0,
+      "depth_max_abs_m": 1.7881393432617188e-07,
+      "jointly_valid_pixels": 38243,
+      "moving_pixels": 8307,
+      "centroid_xy": [
+        161.17924641868305,
+        154.30058986397015
+      ],
+      "plane_sha256": {
+        "srgb8_rgb": "47d1f92d9e828ead2cc0bd3a532cc1b22f0ae31d0d12ca4108122b53df244eb3",
+        "forward_depth_m_f32": "295cf371cde82ce294e1ace02ab34ba19086e5ea0dd14d97a841807ff2432789",
+        "instance_id_u32": "280724cabd4c667374266519dc3f1551748bbb7fa80bae44e5ca1c08ffdb4090",
+        "valid_u8": "871b06331e040dfec5ea19d0f530c035813eb2046443f1a9daf406c213e6971e"
+      }
+    },
+    {
+      "mode": "SW1",
+      "stage": "step80",
+      "world": 41,
+      "view": "fixed",
+      "time_s": 0.0800000037997961,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "41",
+        "epoch": 0,
+        "revision": 81,
+        "tick": 80,
+        "phase": "accepted_endpoint"
+      },
+      "mount_translation_error_m": 1.8099796291319857e-08,
+      "mount_rotation_error_rad": 2.9802322387695312e-08,
+      "exact_instance_id": true,
+      "exact_valid": true,
+      "rgb_max_codes": 0,
+      "rgb_changed_pixels": 0,
+      "depth_max_abs_m": 5.960464477539063e-08,
+      "jointly_valid_pixels": 41223,
+      "moving_pixels": 2325,
+      "centroid_xy": [
+        166.0774193548387,
+        84.16043010752688
+      ],
+      "plane_sha256": {
+        "srgb8_rgb": "5a012649b69df43916e68901c8b4fbc8c7d7adc332996292e99923ba91f5e55e",
+        "forward_depth_m_f32": "8653a5c076f9b1d7cd951258d18b2710394187356698af655366fdc49e501c24",
+        "instance_id_u32": "193ca5a99678d38f139a338da1988d68e94ac4f1e09c522c838edefb2bd3f806",
+        "valid_u8": "598e340f934996f1990b3194157ac2891cdb5861b23300208b9dc3943da218b2"
+      }
+    },
+    {
+      "mode": "SW1",
+      "stage": "step80",
+      "world": 41,
+      "view": "gimbal-cam",
+      "time_s": 0.0800000037997961,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "41",
+        "epoch": 0,
+        "revision": 81,
+        "tick": 80,
+        "phase": "accepted_endpoint"
+      },
+      "mount_translation_error_m": 1.8099796291319857e-08,
+      "mount_rotation_error_rad": 2.9802322387695312e-08,
+      "exact_instance_id": true,
+      "exact_valid": true,
+      "rgb_max_codes": 0,
+      "rgb_changed_pixels": 0,
+      "depth_max_abs_m": 5.960464477539063e-08,
+      "jointly_valid_pixels": 29917,
+      "moving_pixels": 8493,
+      "centroid_xy": [
+        164.78182032261861,
+        152.78452843518193
+      ],
+      "plane_sha256": {
+        "srgb8_rgb": "ec3c344227ecc0b991292656b18ca8cc48e0611cbce0cf46b2d59929782bb934",
+        "forward_depth_m_f32": "92de7f2b93684a8120e58a86fe4aae2df24616c5f95d6af47253a72ece83412c",
+        "instance_id_u32": "cc4a4429160fa161dc851d269511faa643d350561440c1f49ffd9d6d8879bb95",
+        "valid_u8": "d0fad53b064d1750de8c6f4d2f96ec76cf3ed4c187dbc2ea1332dee5959da1a6"
+      }
+    },
+    {
+      "mode": "SW4",
+      "stage": "step80",
+      "world": 41,
+      "view": "fixed",
+      "time_s": 0.0800000037997961,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "41",
+        "epoch": 0,
+        "revision": 81,
+        "tick": 80,
+        "phase": "accepted_endpoint"
+      },
+      "mount_translation_error_m": 1.8099796291319857e-08,
+      "mount_rotation_error_rad": 2.9802322387695312e-08,
+      "exact_instance_id": true,
+      "exact_valid": true,
+      "rgb_max_codes": 0,
+      "rgb_changed_pixels": 0,
+      "depth_max_abs_m": 5.960464477539063e-08,
+      "jointly_valid_pixels": 41223,
+      "moving_pixels": 2325,
+      "centroid_xy": [
+        166.0774193548387,
+        84.16043010752688
+      ],
+      "plane_sha256": {
+        "srgb8_rgb": "0a66240871d355cc10f1c04b9f457b73409e000c5e03c3e38f22ebb1ec5df762",
+        "forward_depth_m_f32": "8653a5c076f9b1d7cd951258d18b2710394187356698af655366fdc49e501c24",
+        "instance_id_u32": "193ca5a99678d38f139a338da1988d68e94ac4f1e09c522c838edefb2bd3f806",
+        "valid_u8": "598e340f934996f1990b3194157ac2891cdb5861b23300208b9dc3943da218b2"
+      }
+    },
+    {
+      "mode": "SW4",
+      "stage": "step80",
+      "world": 41,
+      "view": "gimbal-cam",
+      "time_s": 0.0800000037997961,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "41",
+        "epoch": 0,
+        "revision": 81,
+        "tick": 80,
+        "phase": "accepted_endpoint"
+      },
+      "mount_translation_error_m": 1.8099796291319857e-08,
+      "mount_rotation_error_rad": 2.9802322387695312e-08,
+      "exact_instance_id": true,
+      "exact_valid": true,
+      "rgb_max_codes": 0,
+      "rgb_changed_pixels": 0,
+      "depth_max_abs_m": 5.960464477539063e-08,
+      "jointly_valid_pixels": 29917,
+      "moving_pixels": 8493,
+      "centroid_xy": [
+        164.78182032261861,
+        152.78452843518193
+      ],
+      "plane_sha256": {
+        "srgb8_rgb": "a60db6b831c0faa540fbe04f0372a8e90e8e81a5e31331a80cfc4215f8d25ba8",
+        "forward_depth_m_f32": "92de7f2b93684a8120e58a86fe4aae2df24616c5f95d6af47253a72ece83412c",
+        "instance_id_u32": "cc4a4429160fa161dc851d269511faa643d350561440c1f49ffd9d6d8879bb95",
+        "valid_u8": "d0fad53b064d1750de8c6f4d2f96ec76cf3ed4c187dbc2ea1332dee5959da1a6"
+      }
+    },
+    {
+      "mode": "RQ1",
+      "stage": "step80",
+      "world": 41,
+      "view": "fixed",
+      "time_s": 0.0800000037997961,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "41",
+        "epoch": 0,
+        "revision": 81,
+        "tick": 80,
+        "phase": "accepted_endpoint"
+      },
+      "mount_translation_error_m": 1.8099796291319857e-08,
+      "mount_rotation_error_rad": 2.9802322387695312e-08,
+      "exact_instance_id": true,
+      "exact_valid": true,
+      "rgb_max_codes": 0,
+      "rgb_changed_pixels": 0,
+      "depth_max_abs_m": 5.960464477539063e-08,
+      "jointly_valid_pixels": 41223,
+      "moving_pixels": 2325,
+      "centroid_xy": [
+        166.0774193548387,
+        84.16043010752688
+      ],
+      "plane_sha256": {
+        "srgb8_rgb": "5a012649b69df43916e68901c8b4fbc8c7d7adc332996292e99923ba91f5e55e",
+        "forward_depth_m_f32": "8653a5c076f9b1d7cd951258d18b2710394187356698af655366fdc49e501c24",
+        "instance_id_u32": "193ca5a99678d38f139a338da1988d68e94ac4f1e09c522c838edefb2bd3f806",
+        "valid_u8": "598e340f934996f1990b3194157ac2891cdb5861b23300208b9dc3943da218b2"
+      }
+    },
+    {
+      "mode": "RQ1",
+      "stage": "step80",
+      "world": 41,
+      "view": "gimbal-cam",
+      "time_s": 0.0800000037997961,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "41",
+        "epoch": 0,
+        "revision": 81,
+        "tick": 80,
+        "phase": "accepted_endpoint"
+      },
+      "mount_translation_error_m": 1.8099796291319857e-08,
+      "mount_rotation_error_rad": 2.9802322387695312e-08,
+      "exact_instance_id": true,
+      "exact_valid": true,
+      "rgb_max_codes": 0,
+      "rgb_changed_pixels": 0,
+      "depth_max_abs_m": 5.960464477539063e-08,
+      "jointly_valid_pixels": 29917,
+      "moving_pixels": 8493,
+      "centroid_xy": [
+        164.78182032261861,
+        152.78452843518193
+      ],
+      "plane_sha256": {
+        "srgb8_rgb": "ec3c344227ecc0b991292656b18ca8cc48e0611cbce0cf46b2d59929782bb934",
+        "forward_depth_m_f32": "92de7f2b93684a8120e58a86fe4aae2df24616c5f95d6af47253a72ece83412c",
+        "instance_id_u32": "cc4a4429160fa161dc851d269511faa643d350561440c1f49ffd9d6d8879bb95",
+        "valid_u8": "d0fad53b064d1750de8c6f4d2f96ec76cf3ed4c187dbc2ea1332dee5959da1a6"
+      }
+    },
+    {
+      "mode": "RQ4",
+      "stage": "step80",
+      "world": 41,
+      "view": "fixed",
+      "time_s": 0.0800000037997961,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "41",
+        "epoch": 0,
+        "revision": 81,
+        "tick": 80,
+        "phase": "accepted_endpoint"
+      },
+      "mount_translation_error_m": 1.8099796291319857e-08,
+      "mount_rotation_error_rad": 2.9802322387695312e-08,
+      "exact_instance_id": true,
+      "exact_valid": true,
+      "rgb_max_codes": 0,
+      "rgb_changed_pixels": 0,
+      "depth_max_abs_m": 5.960464477539063e-08,
+      "jointly_valid_pixels": 41223,
+      "moving_pixels": 2325,
+      "centroid_xy": [
+        166.0774193548387,
+        84.16043010752688
+      ],
+      "plane_sha256": {
+        "srgb8_rgb": "0a66240871d355cc10f1c04b9f457b73409e000c5e03c3e38f22ebb1ec5df762",
+        "forward_depth_m_f32": "8653a5c076f9b1d7cd951258d18b2710394187356698af655366fdc49e501c24",
+        "instance_id_u32": "193ca5a99678d38f139a338da1988d68e94ac4f1e09c522c838edefb2bd3f806",
+        "valid_u8": "598e340f934996f1990b3194157ac2891cdb5861b23300208b9dc3943da218b2"
+      }
+    },
+    {
+      "mode": "RQ4",
+      "stage": "step80",
+      "world": 41,
+      "view": "gimbal-cam",
+      "time_s": 0.0800000037997961,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "41",
+        "epoch": 0,
+        "revision": 81,
+        "tick": 80,
+        "phase": "accepted_endpoint"
+      },
+      "mount_translation_error_m": 1.8099796291319857e-08,
+      "mount_rotation_error_rad": 2.9802322387695312e-08,
+      "exact_instance_id": true,
+      "exact_valid": true,
+      "rgb_max_codes": 0,
+      "rgb_changed_pixels": 0,
+      "depth_max_abs_m": 5.960464477539063e-08,
+      "jointly_valid_pixels": 29917,
+      "moving_pixels": 8493,
+      "centroid_xy": [
+        164.78182032261861,
+        152.78452843518193
+      ],
+      "plane_sha256": {
+        "srgb8_rgb": "a60db6b831c0faa540fbe04f0372a8e90e8e81a5e31331a80cfc4215f8d25ba8",
+        "forward_depth_m_f32": "92de7f2b93684a8120e58a86fe4aae2df24616c5f95d6af47253a72ece83412c",
+        "instance_id_u32": "cc4a4429160fa161dc851d269511faa643d350561440c1f49ffd9d6d8879bb95",
+        "valid_u8": "d0fad53b064d1750de8c6f4d2f96ec76cf3ed4c187dbc2ea1332dee5959da1a6"
+      }
+    },
+    {
+      "mode": "SW1",
+      "stage": "step80",
+      "world": 7,
+      "view": "fixed",
+      "time_s": 0.0800000037997961,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "7",
+        "epoch": 0,
+        "revision": 81,
+        "tick": 80,
+        "phase": "accepted_endpoint"
+      },
+      "mount_translation_error_m": 2.2997958040710033e-08,
+      "mount_rotation_error_rad": 0.0,
+      "exact_instance_id": true,
+      "exact_valid": true,
+      "rgb_max_codes": 0,
+      "rgb_changed_pixels": 0,
+      "depth_max_abs_m": 0.0,
+      "jointly_valid_pixels": 39141,
+      "moving_pixels": 2062,
+      "centroid_xy": [
+        167.12657613967022,
+        120.61736178467507
+      ],
+      "plane_sha256": {
+        "srgb8_rgb": "da2ccae64ab8c7e347c85792a62955e9acf31bea1a93f6ef9cecc6182c8c166c",
+        "forward_depth_m_f32": "9cce34ad7e52f758b0760eb5118386c21fdbb01c4e42ff10543dcecc57083ea3",
+        "instance_id_u32": "bcb71752227e761a6378e6789917e55719a580684a3943a94e23b6345193a723",
+        "valid_u8": "ba20d0227c0504ffec18640abc42c17e5a2add2430f9d0da0fb9c18b5cbc5797"
+      }
+    },
+    {
+      "mode": "SW1",
+      "stage": "step80",
+      "world": 7,
+      "view": "gimbal-cam",
+      "time_s": 0.0800000037997961,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "7",
+        "epoch": 0,
+        "revision": 81,
+        "tick": 80,
+        "phase": "accepted_endpoint"
+      },
+      "mount_translation_error_m": 2.2997958040710033e-08,
+      "mount_rotation_error_rad": 0.0,
+      "exact_instance_id": true,
+      "exact_valid": true,
+      "rgb_max_codes": 1,
+      "rgb_changed_pixels": 2,
+      "depth_max_abs_m": 1.7881393432617188e-07,
+      "jointly_valid_pixels": 43689,
+      "moving_pixels": 8112,
+      "centroid_xy": [
+        158.79795364891518,
+        154.58296351084812
+      ],
+      "plane_sha256": {
+        "srgb8_rgb": "fba49faeaba9feaef7b035acca2be8818c0dd1ac9d118151c60f828ebdcd7396",
+        "forward_depth_m_f32": "061800d03d066566d9438a24782a62dbddc9d0b4c854ab97c2217d7649ba26e1",
+        "instance_id_u32": "d213fe99e0cbc647d386d86cbb4b6a32882e445b3712f881019c32f5edb47a6a",
+        "valid_u8": "ed27519e65a98be04ff635c8fb7611054d9314615e3ad29261f96245255135c7"
+      }
+    },
+    {
+      "mode": "SW4",
+      "stage": "step80",
+      "world": 7,
+      "view": "fixed",
+      "time_s": 0.0800000037997961,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "7",
+        "epoch": 0,
+        "revision": 81,
+        "tick": 80,
+        "phase": "accepted_endpoint"
+      },
+      "mount_translation_error_m": 2.2997958040710033e-08,
+      "mount_rotation_error_rad": 0.0,
+      "exact_instance_id": true,
+      "exact_valid": true,
+      "rgb_max_codes": 0,
+      "rgb_changed_pixels": 0,
+      "depth_max_abs_m": 0.0,
+      "jointly_valid_pixels": 39141,
+      "moving_pixels": 2062,
+      "centroid_xy": [
+        167.12657613967022,
+        120.61736178467507
+      ],
+      "plane_sha256": {
+        "srgb8_rgb": "d1aeb504be57f1c71d951e1b774674f31e088049c34f69f4a986ff7f2a5ef016",
+        "forward_depth_m_f32": "9cce34ad7e52f758b0760eb5118386c21fdbb01c4e42ff10543dcecc57083ea3",
+        "instance_id_u32": "bcb71752227e761a6378e6789917e55719a580684a3943a94e23b6345193a723",
+        "valid_u8": "ba20d0227c0504ffec18640abc42c17e5a2add2430f9d0da0fb9c18b5cbc5797"
+      }
+    },
+    {
+      "mode": "SW4",
+      "stage": "step80",
+      "world": 7,
+      "view": "gimbal-cam",
+      "time_s": 0.0800000037997961,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "7",
+        "epoch": 0,
+        "revision": 81,
+        "tick": 80,
+        "phase": "accepted_endpoint"
+      },
+      "mount_translation_error_m": 2.2997958040710033e-08,
+      "mount_rotation_error_rad": 0.0,
+      "exact_instance_id": true,
+      "exact_valid": true,
+      "rgb_max_codes": 1,
+      "rgb_changed_pixels": 1,
+      "depth_max_abs_m": 1.7881393432617188e-07,
+      "jointly_valid_pixels": 43689,
+      "moving_pixels": 8112,
+      "centroid_xy": [
+        158.79795364891518,
+        154.58296351084812
+      ],
+      "plane_sha256": {
+        "srgb8_rgb": "afc7c8ddd8c8b9bcf8862e4545506b6380446a755b8b0073d82060df8253f396",
+        "forward_depth_m_f32": "061800d03d066566d9438a24782a62dbddc9d0b4c854ab97c2217d7649ba26e1",
+        "instance_id_u32": "d213fe99e0cbc647d386d86cbb4b6a32882e445b3712f881019c32f5edb47a6a",
+        "valid_u8": "ed27519e65a98be04ff635c8fb7611054d9314615e3ad29261f96245255135c7"
+      }
+    },
+    {
+      "mode": "RQ1",
+      "stage": "step80",
+      "world": 7,
+      "view": "fixed",
+      "time_s": 0.0800000037997961,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "7",
+        "epoch": 0,
+        "revision": 81,
+        "tick": 80,
+        "phase": "accepted_endpoint"
+      },
+      "mount_translation_error_m": 2.2997958040710033e-08,
+      "mount_rotation_error_rad": 0.0,
+      "exact_instance_id": true,
+      "exact_valid": true,
+      "rgb_max_codes": 0,
+      "rgb_changed_pixels": 0,
+      "depth_max_abs_m": 0.0,
+      "jointly_valid_pixels": 39141,
+      "moving_pixels": 2062,
+      "centroid_xy": [
+        167.12657613967022,
+        120.61736178467507
+      ],
+      "plane_sha256": {
+        "srgb8_rgb": "da2ccae64ab8c7e347c85792a62955e9acf31bea1a93f6ef9cecc6182c8c166c",
+        "forward_depth_m_f32": "9cce34ad7e52f758b0760eb5118386c21fdbb01c4e42ff10543dcecc57083ea3",
+        "instance_id_u32": "bcb71752227e761a6378e6789917e55719a580684a3943a94e23b6345193a723",
+        "valid_u8": "ba20d0227c0504ffec18640abc42c17e5a2add2430f9d0da0fb9c18b5cbc5797"
+      }
+    },
+    {
+      "mode": "RQ1",
+      "stage": "step80",
+      "world": 7,
+      "view": "gimbal-cam",
+      "time_s": 0.0800000037997961,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "7",
+        "epoch": 0,
+        "revision": 81,
+        "tick": 80,
+        "phase": "accepted_endpoint"
+      },
+      "mount_translation_error_m": 2.2997958040710033e-08,
+      "mount_rotation_error_rad": 0.0,
+      "exact_instance_id": true,
+      "exact_valid": true,
+      "rgb_max_codes": 1,
+      "rgb_changed_pixels": 2,
+      "depth_max_abs_m": 1.7881393432617188e-07,
+      "jointly_valid_pixels": 43689,
+      "moving_pixels": 8112,
+      "centroid_xy": [
+        158.79795364891518,
+        154.58296351084812
+      ],
+      "plane_sha256": {
+        "srgb8_rgb": "fba49faeaba9feaef7b035acca2be8818c0dd1ac9d118151c60f828ebdcd7396",
+        "forward_depth_m_f32": "061800d03d066566d9438a24782a62dbddc9d0b4c854ab97c2217d7649ba26e1",
+        "instance_id_u32": "d213fe99e0cbc647d386d86cbb4b6a32882e445b3712f881019c32f5edb47a6a",
+        "valid_u8": "ed27519e65a98be04ff635c8fb7611054d9314615e3ad29261f96245255135c7"
+      }
+    },
+    {
+      "mode": "RQ4",
+      "stage": "step80",
+      "world": 7,
+      "view": "fixed",
+      "time_s": 0.0800000037997961,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "7",
+        "epoch": 0,
+        "revision": 81,
+        "tick": 80,
+        "phase": "accepted_endpoint"
+      },
+      "mount_translation_error_m": 2.2997958040710033e-08,
+      "mount_rotation_error_rad": 0.0,
+      "exact_instance_id": true,
+      "exact_valid": true,
+      "rgb_max_codes": 0,
+      "rgb_changed_pixels": 0,
+      "depth_max_abs_m": 0.0,
+      "jointly_valid_pixels": 39141,
+      "moving_pixels": 2062,
+      "centroid_xy": [
+        167.12657613967022,
+        120.61736178467507
+      ],
+      "plane_sha256": {
+        "srgb8_rgb": "d1aeb504be57f1c71d951e1b774674f31e088049c34f69f4a986ff7f2a5ef016",
+        "forward_depth_m_f32": "9cce34ad7e52f758b0760eb5118386c21fdbb01c4e42ff10543dcecc57083ea3",
+        "instance_id_u32": "bcb71752227e761a6378e6789917e55719a580684a3943a94e23b6345193a723",
+        "valid_u8": "ba20d0227c0504ffec18640abc42c17e5a2add2430f9d0da0fb9c18b5cbc5797"
+      }
+    },
+    {
+      "mode": "RQ4",
+      "stage": "step80",
+      "world": 7,
+      "view": "gimbal-cam",
+      "time_s": 0.0800000037997961,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "7",
+        "epoch": 0,
+        "revision": 81,
+        "tick": 80,
+        "phase": "accepted_endpoint"
+      },
+      "mount_translation_error_m": 2.2997958040710033e-08,
+      "mount_rotation_error_rad": 0.0,
+      "exact_instance_id": true,
+      "exact_valid": true,
+      "rgb_max_codes": 1,
+      "rgb_changed_pixels": 1,
+      "depth_max_abs_m": 1.7881393432617188e-07,
+      "jointly_valid_pixels": 43689,
+      "moving_pixels": 8112,
+      "centroid_xy": [
+        158.79795364891518,
+        154.58296351084812
+      ],
+      "plane_sha256": {
+        "srgb8_rgb": "afc7c8ddd8c8b9bcf8862e4545506b6380446a755b8b0073d82060df8253f396",
+        "forward_depth_m_f32": "061800d03d066566d9438a24782a62dbddc9d0b4c854ab97c2217d7649ba26e1",
+        "instance_id_u32": "d213fe99e0cbc647d386d86cbb4b6a32882e445b3712f881019c32f5edb47a6a",
+        "valid_u8": "ed27519e65a98be04ff635c8fb7611054d9314615e3ad29261f96245255135c7"
+      }
+    },
+    {
+      "mode": "SW1",
+      "stage": "reset41",
+      "world": 41,
+      "view": "fixed",
+      "time_s": 0.0,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "41",
+        "epoch": 1,
+        "revision": 82,
+        "tick": 0,
+        "phase": "accepted_endpoint"
+      },
+      "mount_translation_error_m": 1.045629243605355e-08,
+      "mount_rotation_error_rad": 0.0,
+      "exact_instance_id": true,
+      "exact_valid": true,
+      "rgb_max_codes": 0,
+      "rgb_changed_pixels": 0,
+      "depth_max_abs_m": 5.960464477539063e-08,
+      "jointly_valid_pixels": 39418,
+      "moving_pixels": 2085,
+      "centroid_xy": [
+        166.93860911270983,
+        116.5736211031175
+      ],
+      "plane_sha256": {
+        "srgb8_rgb": "2508b97d7a0292e3ea43defdc9fb08cca4a03b02497741075e82fd4e4830cb43",
+        "forward_depth_m_f32": "392ef4cb345c468b414ed67c6b23e6ccc1fb19aade6976caafd4fd44c5ae1742",
+        "instance_id_u32": "f59c253c678d9e797bff9276e42bc5153afbbd02c309d2d73a76df5136bef7b8",
+        "valid_u8": "dca9b6709d379c71f2dceaea8c34701e3b1be46777218b098c403a990c1a3c96"
+      }
+    },
+    {
+      "mode": "SW1",
+      "stage": "reset41",
+      "world": 41,
+      "view": "gimbal-cam",
+      "time_s": 0.0,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "41",
+        "epoch": 1,
+        "revision": 82,
+        "tick": 0,
+        "phase": "accepted_endpoint"
+      },
+      "mount_translation_error_m": 1.045629243605355e-08,
+      "mount_rotation_error_rad": 0.0,
+      "exact_instance_id": true,
+      "exact_valid": true,
+      "rgb_max_codes": 1,
+      "rgb_changed_pixels": 4,
+      "depth_max_abs_m": 1.7881393432617188e-07,
+      "jointly_valid_pixels": 41131,
+      "moving_pixels": 8234,
+      "centroid_xy": [
+        160.13517124119505,
+        154.47133835316978
+      ],
+      "plane_sha256": {
+        "srgb8_rgb": "681d469cc2a8997e4e418cf525b26495f4c140a69e76e90220f93cca775fec5e",
+        "forward_depth_m_f32": "d89d01c57204d77cce0ee8d721b153da1dee08d691375990e6e995f51999ab1c",
+        "instance_id_u32": "6069cca0c05f62e7ac48c525017448c24a7c8911eca0ee79fc9203c58ffeb4da",
+        "valid_u8": "59b4a57c54d5aa40c0669e471926d1bc6448fb034c5c82be975b6a35b0aebc2f"
+      }
+    },
+    {
+      "mode": "SW4",
+      "stage": "reset41",
+      "world": 41,
+      "view": "fixed",
+      "time_s": 0.0,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "41",
+        "epoch": 1,
+        "revision": 82,
+        "tick": 0,
+        "phase": "accepted_endpoint"
+      },
+      "mount_translation_error_m": 1.045629243605355e-08,
+      "mount_rotation_error_rad": 0.0,
+      "exact_instance_id": true,
+      "exact_valid": true,
+      "rgb_max_codes": 0,
+      "rgb_changed_pixels": 0,
+      "depth_max_abs_m": 5.960464477539063e-08,
+      "jointly_valid_pixels": 39418,
+      "moving_pixels": 2085,
+      "centroid_xy": [
+        166.93860911270983,
+        116.5736211031175
+      ],
+      "plane_sha256": {
+        "srgb8_rgb": "362caa3545294e2bd6fe05d15492dd8a85e1c11c7d81ddc9afdaf19ab3a4040a",
+        "forward_depth_m_f32": "392ef4cb345c468b414ed67c6b23e6ccc1fb19aade6976caafd4fd44c5ae1742",
+        "instance_id_u32": "f59c253c678d9e797bff9276e42bc5153afbbd02c309d2d73a76df5136bef7b8",
+        "valid_u8": "dca9b6709d379c71f2dceaea8c34701e3b1be46777218b098c403a990c1a3c96"
+      }
+    },
+    {
+      "mode": "SW4",
+      "stage": "reset41",
+      "world": 41,
+      "view": "gimbal-cam",
+      "time_s": 0.0,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "41",
+        "epoch": 1,
+        "revision": 82,
+        "tick": 0,
+        "phase": "accepted_endpoint"
+      },
+      "mount_translation_error_m": 1.045629243605355e-08,
+      "mount_rotation_error_rad": 0.0,
+      "exact_instance_id": true,
+      "exact_valid": true,
+      "rgb_max_codes": 0,
+      "rgb_changed_pixels": 0,
+      "depth_max_abs_m": 1.7881393432617188e-07,
+      "jointly_valid_pixels": 41131,
+      "moving_pixels": 8234,
+      "centroid_xy": [
+        160.13517124119505,
+        154.47133835316978
+      ],
+      "plane_sha256": {
+        "srgb8_rgb": "25a494a2a40847b25f005e21573431eb0d6dfd74ad9f33457b2d3573dab1b35d",
+        "forward_depth_m_f32": "d89d01c57204d77cce0ee8d721b153da1dee08d691375990e6e995f51999ab1c",
+        "instance_id_u32": "6069cca0c05f62e7ac48c525017448c24a7c8911eca0ee79fc9203c58ffeb4da",
+        "valid_u8": "59b4a57c54d5aa40c0669e471926d1bc6448fb034c5c82be975b6a35b0aebc2f"
+      }
+    },
+    {
+      "mode": "RQ1",
+      "stage": "reset41",
+      "world": 41,
+      "view": "fixed",
+      "time_s": 0.0,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "41",
+        "epoch": 1,
+        "revision": 82,
+        "tick": 0,
+        "phase": "accepted_endpoint"
+      },
+      "mount_translation_error_m": 1.045629243605355e-08,
+      "mount_rotation_error_rad": 0.0,
+      "exact_instance_id": true,
+      "exact_valid": true,
+      "rgb_max_codes": 0,
+      "rgb_changed_pixels": 0,
+      "depth_max_abs_m": 5.960464477539063e-08,
+      "jointly_valid_pixels": 39418,
+      "moving_pixels": 2085,
+      "centroid_xy": [
+        166.93860911270983,
+        116.5736211031175
+      ],
+      "plane_sha256": {
+        "srgb8_rgb": "2508b97d7a0292e3ea43defdc9fb08cca4a03b02497741075e82fd4e4830cb43",
+        "forward_depth_m_f32": "392ef4cb345c468b414ed67c6b23e6ccc1fb19aade6976caafd4fd44c5ae1742",
+        "instance_id_u32": "f59c253c678d9e797bff9276e42bc5153afbbd02c309d2d73a76df5136bef7b8",
+        "valid_u8": "dca9b6709d379c71f2dceaea8c34701e3b1be46777218b098c403a990c1a3c96"
+      }
+    },
+    {
+      "mode": "RQ1",
+      "stage": "reset41",
+      "world": 41,
+      "view": "gimbal-cam",
+      "time_s": 0.0,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "41",
+        "epoch": 1,
+        "revision": 82,
+        "tick": 0,
+        "phase": "accepted_endpoint"
+      },
+      "mount_translation_error_m": 1.045629243605355e-08,
+      "mount_rotation_error_rad": 0.0,
+      "exact_instance_id": true,
+      "exact_valid": true,
+      "rgb_max_codes": 1,
+      "rgb_changed_pixels": 4,
+      "depth_max_abs_m": 1.7881393432617188e-07,
+      "jointly_valid_pixels": 41131,
+      "moving_pixels": 8234,
+      "centroid_xy": [
+        160.13517124119505,
+        154.47133835316978
+      ],
+      "plane_sha256": {
+        "srgb8_rgb": "681d469cc2a8997e4e418cf525b26495f4c140a69e76e90220f93cca775fec5e",
+        "forward_depth_m_f32": "d89d01c57204d77cce0ee8d721b153da1dee08d691375990e6e995f51999ab1c",
+        "instance_id_u32": "6069cca0c05f62e7ac48c525017448c24a7c8911eca0ee79fc9203c58ffeb4da",
+        "valid_u8": "59b4a57c54d5aa40c0669e471926d1bc6448fb034c5c82be975b6a35b0aebc2f"
+      }
+    },
+    {
+      "mode": "RQ4",
+      "stage": "reset41",
+      "world": 41,
+      "view": "fixed",
+      "time_s": 0.0,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "41",
+        "epoch": 1,
+        "revision": 82,
+        "tick": 0,
+        "phase": "accepted_endpoint"
+      },
+      "mount_translation_error_m": 1.045629243605355e-08,
+      "mount_rotation_error_rad": 0.0,
+      "exact_instance_id": true,
+      "exact_valid": true,
+      "rgb_max_codes": 0,
+      "rgb_changed_pixels": 0,
+      "depth_max_abs_m": 5.960464477539063e-08,
+      "jointly_valid_pixels": 39418,
+      "moving_pixels": 2085,
+      "centroid_xy": [
+        166.93860911270983,
+        116.5736211031175
+      ],
+      "plane_sha256": {
+        "srgb8_rgb": "362caa3545294e2bd6fe05d15492dd8a85e1c11c7d81ddc9afdaf19ab3a4040a",
+        "forward_depth_m_f32": "392ef4cb345c468b414ed67c6b23e6ccc1fb19aade6976caafd4fd44c5ae1742",
+        "instance_id_u32": "f59c253c678d9e797bff9276e42bc5153afbbd02c309d2d73a76df5136bef7b8",
+        "valid_u8": "dca9b6709d379c71f2dceaea8c34701e3b1be46777218b098c403a990c1a3c96"
+      }
+    },
+    {
+      "mode": "RQ4",
+      "stage": "reset41",
+      "world": 41,
+      "view": "gimbal-cam",
+      "time_s": 0.0,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "41",
+        "epoch": 1,
+        "revision": 82,
+        "tick": 0,
+        "phase": "accepted_endpoint"
+      },
+      "mount_translation_error_m": 1.045629243605355e-08,
+      "mount_rotation_error_rad": 0.0,
+      "exact_instance_id": true,
+      "exact_valid": true,
+      "rgb_max_codes": 0,
+      "rgb_changed_pixels": 0,
+      "depth_max_abs_m": 1.7881393432617188e-07,
+      "jointly_valid_pixels": 41131,
+      "moving_pixels": 8234,
+      "centroid_xy": [
+        160.13517124119505,
+        154.47133835316978
+      ],
+      "plane_sha256": {
+        "srgb8_rgb": "25a494a2a40847b25f005e21573431eb0d6dfd74ad9f33457b2d3573dab1b35d",
+        "forward_depth_m_f32": "d89d01c57204d77cce0ee8d721b153da1dee08d691375990e6e995f51999ab1c",
+        "instance_id_u32": "6069cca0c05f62e7ac48c525017448c24a7c8911eca0ee79fc9203c58ffeb4da",
+        "valid_u8": "59b4a57c54d5aa40c0669e471926d1bc6448fb034c5c82be975b6a35b0aebc2f"
+      }
+    },
+    {
+      "mode": "SW1",
+      "stage": "reset41",
+      "world": 7,
+      "view": "fixed",
+      "time_s": 0.0800000037997961,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "7",
+        "epoch": 0,
+        "revision": 82,
+        "tick": 80,
+        "phase": "accepted_endpoint"
+      },
+      "mount_translation_error_m": 2.2997958040710033e-08,
+      "mount_rotation_error_rad": 0.0,
+      "exact_instance_id": true,
+      "exact_valid": true,
+      "rgb_max_codes": 0,
+      "rgb_changed_pixels": 0,
+      "depth_max_abs_m": 0.0,
+      "jointly_valid_pixels": 39141,
+      "moving_pixels": 2062,
+      "centroid_xy": [
+        167.12657613967022,
+        120.61736178467507
+      ],
+      "plane_sha256": {
+        "srgb8_rgb": "da2ccae64ab8c7e347c85792a62955e9acf31bea1a93f6ef9cecc6182c8c166c",
+        "forward_depth_m_f32": "9cce34ad7e52f758b0760eb5118386c21fdbb01c4e42ff10543dcecc57083ea3",
+        "instance_id_u32": "bcb71752227e761a6378e6789917e55719a580684a3943a94e23b6345193a723",
+        "valid_u8": "ba20d0227c0504ffec18640abc42c17e5a2add2430f9d0da0fb9c18b5cbc5797"
+      }
+    },
+    {
+      "mode": "SW1",
+      "stage": "reset41",
+      "world": 7,
+      "view": "gimbal-cam",
+      "time_s": 0.0800000037997961,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "7",
+        "epoch": 0,
+        "revision": 82,
+        "tick": 80,
+        "phase": "accepted_endpoint"
+      },
+      "mount_translation_error_m": 2.2997958040710033e-08,
+      "mount_rotation_error_rad": 0.0,
+      "exact_instance_id": true,
+      "exact_valid": true,
+      "rgb_max_codes": 1,
+      "rgb_changed_pixels": 2,
+      "depth_max_abs_m": 1.7881393432617188e-07,
+      "jointly_valid_pixels": 43689,
+      "moving_pixels": 8112,
+      "centroid_xy": [
+        158.79795364891518,
+        154.58296351084812
+      ],
+      "plane_sha256": {
+        "srgb8_rgb": "fba49faeaba9feaef7b035acca2be8818c0dd1ac9d118151c60f828ebdcd7396",
+        "forward_depth_m_f32": "061800d03d066566d9438a24782a62dbddc9d0b4c854ab97c2217d7649ba26e1",
+        "instance_id_u32": "d213fe99e0cbc647d386d86cbb4b6a32882e445b3712f881019c32f5edb47a6a",
+        "valid_u8": "ed27519e65a98be04ff635c8fb7611054d9314615e3ad29261f96245255135c7"
+      }
+    },
+    {
+      "mode": "SW4",
+      "stage": "reset41",
+      "world": 7,
+      "view": "fixed",
+      "time_s": 0.0800000037997961,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "7",
+        "epoch": 0,
+        "revision": 82,
+        "tick": 80,
+        "phase": "accepted_endpoint"
+      },
+      "mount_translation_error_m": 2.2997958040710033e-08,
+      "mount_rotation_error_rad": 0.0,
+      "exact_instance_id": true,
+      "exact_valid": true,
+      "rgb_max_codes": 0,
+      "rgb_changed_pixels": 0,
+      "depth_max_abs_m": 0.0,
+      "jointly_valid_pixels": 39141,
+      "moving_pixels": 2062,
+      "centroid_xy": [
+        167.12657613967022,
+        120.61736178467507
+      ],
+      "plane_sha256": {
+        "srgb8_rgb": "d1aeb504be57f1c71d951e1b774674f31e088049c34f69f4a986ff7f2a5ef016",
+        "forward_depth_m_f32": "9cce34ad7e52f758b0760eb5118386c21fdbb01c4e42ff10543dcecc57083ea3",
+        "instance_id_u32": "bcb71752227e761a6378e6789917e55719a580684a3943a94e23b6345193a723",
+        "valid_u8": "ba20d0227c0504ffec18640abc42c17e5a2add2430f9d0da0fb9c18b5cbc5797"
+      }
+    },
+    {
+      "mode": "SW4",
+      "stage": "reset41",
+      "world": 7,
+      "view": "gimbal-cam",
+      "time_s": 0.0800000037997961,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "7",
+        "epoch": 0,
+        "revision": 82,
+        "tick": 80,
+        "phase": "accepted_endpoint"
+      },
+      "mount_translation_error_m": 2.2997958040710033e-08,
+      "mount_rotation_error_rad": 0.0,
+      "exact_instance_id": true,
+      "exact_valid": true,
+      "rgb_max_codes": 1,
+      "rgb_changed_pixels": 1,
+      "depth_max_abs_m": 1.7881393432617188e-07,
+      "jointly_valid_pixels": 43689,
+      "moving_pixels": 8112,
+      "centroid_xy": [
+        158.79795364891518,
+        154.58296351084812
+      ],
+      "plane_sha256": {
+        "srgb8_rgb": "afc7c8ddd8c8b9bcf8862e4545506b6380446a755b8b0073d82060df8253f396",
+        "forward_depth_m_f32": "061800d03d066566d9438a24782a62dbddc9d0b4c854ab97c2217d7649ba26e1",
+        "instance_id_u32": "d213fe99e0cbc647d386d86cbb4b6a32882e445b3712f881019c32f5edb47a6a",
+        "valid_u8": "ed27519e65a98be04ff635c8fb7611054d9314615e3ad29261f96245255135c7"
+      }
+    },
+    {
+      "mode": "RQ1",
+      "stage": "reset41",
+      "world": 7,
+      "view": "fixed",
+      "time_s": 0.0800000037997961,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "7",
+        "epoch": 0,
+        "revision": 82,
+        "tick": 80,
+        "phase": "accepted_endpoint"
+      },
+      "mount_translation_error_m": 2.2997958040710033e-08,
+      "mount_rotation_error_rad": 0.0,
+      "exact_instance_id": true,
+      "exact_valid": true,
+      "rgb_max_codes": 0,
+      "rgb_changed_pixels": 0,
+      "depth_max_abs_m": 0.0,
+      "jointly_valid_pixels": 39141,
+      "moving_pixels": 2062,
+      "centroid_xy": [
+        167.12657613967022,
+        120.61736178467507
+      ],
+      "plane_sha256": {
+        "srgb8_rgb": "da2ccae64ab8c7e347c85792a62955e9acf31bea1a93f6ef9cecc6182c8c166c",
+        "forward_depth_m_f32": "9cce34ad7e52f758b0760eb5118386c21fdbb01c4e42ff10543dcecc57083ea3",
+        "instance_id_u32": "bcb71752227e761a6378e6789917e55719a580684a3943a94e23b6345193a723",
+        "valid_u8": "ba20d0227c0504ffec18640abc42c17e5a2add2430f9d0da0fb9c18b5cbc5797"
+      }
+    },
+    {
+      "mode": "RQ1",
+      "stage": "reset41",
+      "world": 7,
+      "view": "gimbal-cam",
+      "time_s": 0.0800000037997961,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "7",
+        "epoch": 0,
+        "revision": 82,
+        "tick": 80,
+        "phase": "accepted_endpoint"
+      },
+      "mount_translation_error_m": 2.2997958040710033e-08,
+      "mount_rotation_error_rad": 0.0,
+      "exact_instance_id": true,
+      "exact_valid": true,
+      "rgb_max_codes": 1,
+      "rgb_changed_pixels": 2,
+      "depth_max_abs_m": 1.7881393432617188e-07,
+      "jointly_valid_pixels": 43689,
+      "moving_pixels": 8112,
+      "centroid_xy": [
+        158.79795364891518,
+        154.58296351084812
+      ],
+      "plane_sha256": {
+        "srgb8_rgb": "fba49faeaba9feaef7b035acca2be8818c0dd1ac9d118151c60f828ebdcd7396",
+        "forward_depth_m_f32": "061800d03d066566d9438a24782a62dbddc9d0b4c854ab97c2217d7649ba26e1",
+        "instance_id_u32": "d213fe99e0cbc647d386d86cbb4b6a32882e445b3712f881019c32f5edb47a6a",
+        "valid_u8": "ed27519e65a98be04ff635c8fb7611054d9314615e3ad29261f96245255135c7"
+      }
+    },
+    {
+      "mode": "RQ4",
+      "stage": "reset41",
+      "world": 7,
+      "view": "fixed",
+      "time_s": 0.0800000037997961,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "7",
+        "epoch": 0,
+        "revision": 82,
+        "tick": 80,
+        "phase": "accepted_endpoint"
+      },
+      "mount_translation_error_m": 2.2997958040710033e-08,
+      "mount_rotation_error_rad": 0.0,
+      "exact_instance_id": true,
+      "exact_valid": true,
+      "rgb_max_codes": 0,
+      "rgb_changed_pixels": 0,
+      "depth_max_abs_m": 0.0,
+      "jointly_valid_pixels": 39141,
+      "moving_pixels": 2062,
+      "centroid_xy": [
+        167.12657613967022,
+        120.61736178467507
+      ],
+      "plane_sha256": {
+        "srgb8_rgb": "d1aeb504be57f1c71d951e1b774674f31e088049c34f69f4a986ff7f2a5ef016",
+        "forward_depth_m_f32": "9cce34ad7e52f758b0760eb5118386c21fdbb01c4e42ff10543dcecc57083ea3",
+        "instance_id_u32": "bcb71752227e761a6378e6789917e55719a580684a3943a94e23b6345193a723",
+        "valid_u8": "ba20d0227c0504ffec18640abc42c17e5a2add2430f9d0da0fb9c18b5cbc5797"
+      }
+    },
+    {
+      "mode": "RQ4",
+      "stage": "reset41",
+      "world": 7,
+      "view": "gimbal-cam",
+      "time_s": 0.0800000037997961,
+      "frame_key": {
+        "scene_key": "native-mounted-camera-dd247bb02779771b",
+        "world_id": "7",
+        "epoch": 0,
+        "revision": 82,
+        "tick": 80,
+        "phase": "accepted_endpoint"
+      },
+      "mount_translation_error_m": 2.2997958040710033e-08,
+      "mount_rotation_error_rad": 0.0,
+      "exact_instance_id": true,
+      "exact_valid": true,
+      "rgb_max_codes": 1,
+      "rgb_changed_pixels": 1,
+      "depth_max_abs_m": 1.7881393432617188e-07,
+      "jointly_valid_pixels": 43689,
+      "moving_pixels": 8112,
+      "centroid_xy": [
+        158.79795364891518,
+        154.58296351084812
+      ],
+      "plane_sha256": {
+        "srgb8_rgb": "afc7c8ddd8c8b9bcf8862e4545506b6380446a755b8b0073d82060df8253f396",
+        "forward_depth_m_f32": "061800d03d066566d9438a24782a62dbddc9d0b4c854ab97c2217d7649ba26e1",
+        "instance_id_u32": "d213fe99e0cbc647d386d86cbb4b6a32882e445b3712f881019c32f5edb47a6a",
+        "valid_u8": "ed27519e65a98be04ff635c8fb7611054d9314615e3ad29261f96245255135c7"
+      }
+    }
+  ],
+  "moving_shadow_and_camera": {
+    "SW1/41": {
+      "fixed_receiver_pixels": 36779,
+      "brightened_18": 626,
+      "darkened_18": 880,
+      "witness_xy": [
+        194,
+        174
+      ],
+      "witness_before_rgb": [
+        0,
+        0,
+        0
+      ],
+      "witness_after_rgb": [
+        97,
+        104,
+        104
+      ],
+      "mount_motion_m": 0.02902864163040463,
+      "mount_rotation_rad": 0.15369619555791947
+    },
+    "SW1/7": {
+      "fixed_receiver_pixels": 35736,
+      "brightened_18": 815,
+      "darkened_18": 584,
+      "witness_xy": [
+        168,
+        192
+      ],
+      "witness_before_rgb": [
+        98,
+        104,
+        104
+      ],
+      "witness_after_rgb": [
+        0,
+        0,
+        0
+      ],
+      "mount_motion_m": 0.035491787932430505,
+      "mount_rotation_rad": 0.1536962341178568
+    },
+    "SW4/41": {
+      "fixed_receiver_pixels": 36779,
+      "brightened_18": 639,
+      "darkened_18": 880,
+      "witness_xy": [
+        191,
+        178
+      ],
+      "witness_before_rgb": [
+        0,
+        0,
+        0
+      ],
+      "witness_after_rgb": [
+        97,
+        104,
+        104
+      ],
+      "mount_motion_m": 0.02902864163040463,
+      "mount_rotation_rad": 0.15369619555791947
+    },
+    "SW4/7": {
+      "fixed_receiver_pixels": 35736,
+      "brightened_18": 815,
+      "darkened_18": 604,
+      "witness_xy": [
+        167,
+        193
+      ],
+      "witness_before_rgb": [
+        98,
+        104,
+        104
+      ],
+      "witness_after_rgb": [
+        0,
+        0,
+        0
+      ],
+      "mount_motion_m": 0.035491787932430505,
+      "mount_rotation_rad": 0.1536962341178568
+    },
+    "RQ1/41": {
+      "fixed_receiver_pixels": 36779,
+      "brightened_18": 626,
+      "darkened_18": 880,
+      "witness_xy": [
+        194,
+        174
+      ],
+      "witness_before_rgb": [
+        0,
+        0,
+        0
+      ],
+      "witness_after_rgb": [
+        97,
+        104,
+        104
+      ],
+      "mount_motion_m": 0.02902864163040463,
+      "mount_rotation_rad": 0.15369619555791947
+    },
+    "RQ1/7": {
+      "fixed_receiver_pixels": 35736,
+      "brightened_18": 815,
+      "darkened_18": 584,
+      "witness_xy": [
+        168,
+        192
+      ],
+      "witness_before_rgb": [
+        98,
+        104,
+        104
+      ],
+      "witness_after_rgb": [
+        0,
+        0,
+        0
+      ],
+      "mount_motion_m": 0.035491787932430505,
+      "mount_rotation_rad": 0.1536962341178568
+    },
+    "RQ4/41": {
+      "fixed_receiver_pixels": 36779,
+      "brightened_18": 639,
+      "darkened_18": 880,
+      "witness_xy": [
+        191,
+        178
+      ],
+      "witness_before_rgb": [
+        0,
+        0,
+        0
+      ],
+      "witness_after_rgb": [
+        97,
+        104,
+        104
+      ],
+      "mount_motion_m": 0.02902864163040463,
+      "mount_rotation_rad": 0.15369619555791947
+    },
+    "RQ4/7": {
+      "fixed_receiver_pixels": 35736,
+      "brightened_18": 815,
+      "darkened_18": 604,
+      "witness_xy": [
+        167,
+        193
+      ],
+      "witness_before_rgb": [
+        98,
+        104,
+        104
+      ],
+      "witness_after_rgb": [
+        0,
+        0,
+        0
+      ],
+      "mount_motion_m": 0.035491787932430505,
+      "mount_rotation_rad": 0.1536962341178568
+    }
+  },
+  "shadow_sheet_mode": "RQ4",
+  "physical_veto": {
+    "revision": 41,
+    "bucket_prepares": 1,
+    "accepted_worlds": {
+      "41": false,
+      "7": false
+    },
+    "injection": "explicit pre-commit veto after real GPU step preparation"
+  },
+  "observation_retry": {
+    "revision": 41,
+    "failed_snapshot_epoch": 2,
+    "recovered_snapshot_epoch": 3,
+    "publication_rejection": {
+      "SW1": "new exposure requires a successful observation refresh",
+      "SW4": "new exposure requires a successful observation refresh",
+      "RQ1": "new exposure requires a successful observation refresh",
+      "RQ4": "new exposure requires a successful observation refresh"
+    },
+    "exact_recovered_gpu_poses": true,
+    "injection": "controlled fault after actual CUDA body observer, before bank publication"
+  },
+  "rejected_publications": {
+    "SW1": {
+      "forged_mount": "mounted camera metadata differs from this publication",
+      "expired_exposure": "foreign or expired device pose exposure",
+      "stale_snapshot_before_step40": "stale heterogeneous frame",
+      "stale_snapshot_before_step80": "stale heterogeneous frame",
+      "stale_snapshot_before_reset41": "stale heterogeneous frame"
+    },
+    "SW4": {
+      "forged_mount": "mounted camera metadata differs from this publication",
+      "expired_exposure": "foreign or expired device pose exposure"
+    },
+    "RQ1": {
+      "forged_mount": "mounted camera metadata differs from this publication",
+      "expired_exposure": "foreign or expired device pose exposure"
+    },
+    "RQ4": {
+      "forged_mount": "mounted camera metadata differs from this publication",
+      "expired_exposure": "foreign or expired device pose exposure"
+    }
+  },
+  "accepted_steps": 80,
+  "accepted_world_steps": 160,
+  "world_reset_scope": 41,
+  "center_sensor_hashes_identical_across_modes": true,
+  "contour_reference": {
+    "scale": 4,
+    "world": 41,
+    "tick": 80,
+    "camera": "fixed",
+    "domain": "single-sample native host RGB8 decoded to display-linear then area averaged; mask from mixed supersample instance IDs including moving geometry",
+    "crop_xyxy": [
+      125,
+      34,
+      205,
+      114
+    ],
+    "errors": {
+      "SW1": {
+        "contour_pixels": 287,
+        "linear_mae": 0.01612602333975733,
+        "linear_rmse": 0.026832134450184186,
+        "srgb8_mae": 15.687572590011614
+      },
+      "SW4": {
+        "contour_pixels": 287,
+        "linear_mae": 0.004316961923996394,
+        "linear_rmse": 0.008405546169124842,
+        "srgb8_mae": 3.9291521486643437,
+        "linear_mae_ratio_to_matching_1x": 0.2677015798032051
+      },
+      "RQ1": {
+        "contour_pixels": 287,
+        "linear_mae": 0.01612602333975733,
+        "linear_rmse": 0.026832134450184186,
+        "srgb8_mae": 15.687572590011614
+      },
+      "RQ4": {
+        "contour_pixels": 287,
+        "linear_mae": 0.004316961923996394,
+        "linear_rmse": 0.008405546169124842,
+        "srgb8_mae": 3.9291521486643437,
+        "linear_mae_ratio_to_matching_1x": 0.2677015798032051
+      }
+    }
+  },
+  "timings": {
+    "scope": "wall ms for two worlds x (fixed + mounted), four synchronous RGB/ID/depth/valid captures; includes host D2H/body and camera composition+uploads, or shared pack/publication+camera metadata; both include returned CPU image planes; physics, source snapshot, oracle and IO excluded",
+    "warmup_rounds_excluded": 3,
+    "timed_rounds": 32,
+    "order": [
+      [
+        0,
+        "RQ4",
+        "host",
+        "shared"
+      ],
+      [
+        0,
+        "SW1",
+        "shared",
+        "host"
+      ],
+      [
+        0,
+        "SW4",
+        "host",
+        "shared"
+      ],
+      [
+        0,
+        "RQ1",
+        "shared",
+        "host"
+      ],
+      [
+        1,
+        "SW1",
+        "host",
+        "shared"
+      ],
+      [
+        1,
+        "SW4",
+        "shared",
+        "host"
+      ],
+      [
+        1,
+        "RQ1",
+        "host",
+        "shared"
+      ],
+      [
+        1,
+        "RQ4",
+        "shared",
+        "host"
+      ],
+      [
+        2,
+        "SW4",
+        "host",
+        "shared"
+      ],
+      [
+        2,
+        "RQ1",
+        "shared",
+        "host"
+      ],
+      [
+        2,
+        "RQ4",
+        "host",
+        "shared"
+      ],
+      [
+        2,
+        "SW1",
+        "shared",
+        "host"
+      ],
+      [
+        3,
+        "RQ1",
+        "host",
+        "shared"
+      ],
+      [
+        3,
+        "RQ4",
+        "shared",
+        "host"
+      ],
+      [
+        3,
+        "SW1",
+        "host",
+        "shared"
+      ],
+      [
+        3,
+        "SW4",
+        "shared",
+        "host"
+      ],
+      [
+        4,
+        "RQ4",
+        "host",
+        "shared"
+      ],
+      [
+        4,
+        "SW1",
+        "shared",
+        "host"
+      ],
+      [
+        4,
+        "SW4",
+        "host",
+        "shared"
+      ],
+      [
+        4,
+        "RQ1",
+        "shared",
+        "host"
+      ],
+      [
+        5,
+        "SW1",
+        "host",
+        "shared"
+      ],
+      [
+        5,
+        "SW4",
+        "shared",
+        "host"
+      ],
+      [
+        5,
+        "RQ1",
+        "host",
+        "shared"
+      ],
+      [
+        5,
+        "RQ4",
+        "shared",
+        "host"
+      ],
+      [
+        6,
+        "SW4",
+        "host",
+        "shared"
+      ],
+      [
+        6,
+        "RQ1",
+        "shared",
+        "host"
+      ],
+      [
+        6,
+        "RQ4",
+        "host",
+        "shared"
+      ],
+      [
+        6,
+        "SW1",
+        "shared",
+        "host"
+      ],
+      [
+        7,
+        "RQ1",
+        "host",
+        "shared"
+      ],
+      [
+        7,
+        "RQ4",
+        "shared",
+        "host"
+      ],
+      [
+        7,
+        "SW1",
+        "host",
+        "shared"
+      ],
+      [
+        7,
+        "SW4",
+        "shared",
+        "host"
+      ],
+      [
+        8,
+        "RQ4",
+        "host",
+        "shared"
+      ],
+      [
+        8,
+        "SW1",
+        "shared",
+        "host"
+      ],
+      [
+        8,
+        "SW4",
+        "host",
+        "shared"
+      ],
+      [
+        8,
+        "RQ1",
+        "shared",
+        "host"
+      ],
+      [
+        9,
+        "SW1",
+        "host",
+        "shared"
+      ],
+      [
+        9,
+        "SW4",
+        "shared",
+        "host"
+      ],
+      [
+        9,
+        "RQ1",
+        "host",
+        "shared"
+      ],
+      [
+        9,
+        "RQ4",
+        "shared",
+        "host"
+      ],
+      [
+        10,
+        "SW4",
+        "host",
+        "shared"
+      ],
+      [
+        10,
+        "RQ1",
+        "shared",
+        "host"
+      ],
+      [
+        10,
+        "RQ4",
+        "host",
+        "shared"
+      ],
+      [
+        10,
+        "SW1",
+        "shared",
+        "host"
+      ],
+      [
+        11,
+        "RQ1",
+        "host",
+        "shared"
+      ],
+      [
+        11,
+        "RQ4",
+        "shared",
+        "host"
+      ],
+      [
+        11,
+        "SW1",
+        "host",
+        "shared"
+      ],
+      [
+        11,
+        "SW4",
+        "shared",
+        "host"
+      ],
+      [
+        12,
+        "RQ4",
+        "host",
+        "shared"
+      ],
+      [
+        12,
+        "SW1",
+        "shared",
+        "host"
+      ],
+      [
+        12,
+        "SW4",
+        "host",
+        "shared"
+      ],
+      [
+        12,
+        "RQ1",
+        "shared",
+        "host"
+      ],
+      [
+        13,
+        "SW1",
+        "host",
+        "shared"
+      ],
+      [
+        13,
+        "SW4",
+        "shared",
+        "host"
+      ],
+      [
+        13,
+        "RQ1",
+        "host",
+        "shared"
+      ],
+      [
+        13,
+        "RQ4",
+        "shared",
+        "host"
+      ],
+      [
+        14,
+        "SW4",
+        "host",
+        "shared"
+      ],
+      [
+        14,
+        "RQ1",
+        "shared",
+        "host"
+      ],
+      [
+        14,
+        "RQ4",
+        "host",
+        "shared"
+      ],
+      [
+        14,
+        "SW1",
+        "shared",
+        "host"
+      ],
+      [
+        15,
+        "RQ1",
+        "host",
+        "shared"
+      ],
+      [
+        15,
+        "RQ4",
+        "shared",
+        "host"
+      ],
+      [
+        15,
+        "SW1",
+        "host",
+        "shared"
+      ],
+      [
+        15,
+        "SW4",
+        "shared",
+        "host"
+      ],
+      [
+        16,
+        "RQ4",
+        "host",
+        "shared"
+      ],
+      [
+        16,
+        "SW1",
+        "shared",
+        "host"
+      ],
+      [
+        16,
+        "SW4",
+        "host",
+        "shared"
+      ],
+      [
+        16,
+        "RQ1",
+        "shared",
+        "host"
+      ],
+      [
+        17,
+        "SW1",
+        "host",
+        "shared"
+      ],
+      [
+        17,
+        "SW4",
+        "shared",
+        "host"
+      ],
+      [
+        17,
+        "RQ1",
+        "host",
+        "shared"
+      ],
+      [
+        17,
+        "RQ4",
+        "shared",
+        "host"
+      ],
+      [
+        18,
+        "SW4",
+        "host",
+        "shared"
+      ],
+      [
+        18,
+        "RQ1",
+        "shared",
+        "host"
+      ],
+      [
+        18,
+        "RQ4",
+        "host",
+        "shared"
+      ],
+      [
+        18,
+        "SW1",
+        "shared",
+        "host"
+      ],
+      [
+        19,
+        "RQ1",
+        "host",
+        "shared"
+      ],
+      [
+        19,
+        "RQ4",
+        "shared",
+        "host"
+      ],
+      [
+        19,
+        "SW1",
+        "host",
+        "shared"
+      ],
+      [
+        19,
+        "SW4",
+        "shared",
+        "host"
+      ],
+      [
+        20,
+        "RQ4",
+        "host",
+        "shared"
+      ],
+      [
+        20,
+        "SW1",
+        "shared",
+        "host"
+      ],
+      [
+        20,
+        "SW4",
+        "host",
+        "shared"
+      ],
+      [
+        20,
+        "RQ1",
+        "shared",
+        "host"
+      ],
+      [
+        21,
+        "SW1",
+        "host",
+        "shared"
+      ],
+      [
+        21,
+        "SW4",
+        "shared",
+        "host"
+      ],
+      [
+        21,
+        "RQ1",
+        "host",
+        "shared"
+      ],
+      [
+        21,
+        "RQ4",
+        "shared",
+        "host"
+      ],
+      [
+        22,
+        "SW4",
+        "host",
+        "shared"
+      ],
+      [
+        22,
+        "RQ1",
+        "shared",
+        "host"
+      ],
+      [
+        22,
+        "RQ4",
+        "host",
+        "shared"
+      ],
+      [
+        22,
+        "SW1",
+        "shared",
+        "host"
+      ],
+      [
+        23,
+        "RQ1",
+        "host",
+        "shared"
+      ],
+      [
+        23,
+        "RQ4",
+        "shared",
+        "host"
+      ],
+      [
+        23,
+        "SW1",
+        "host",
+        "shared"
+      ],
+      [
+        23,
+        "SW4",
+        "shared",
+        "host"
+      ],
+      [
+        24,
+        "RQ4",
+        "host",
+        "shared"
+      ],
+      [
+        24,
+        "SW1",
+        "shared",
+        "host"
+      ],
+      [
+        24,
+        "SW4",
+        "host",
+        "shared"
+      ],
+      [
+        24,
+        "RQ1",
+        "shared",
+        "host"
+      ],
+      [
+        25,
+        "SW1",
+        "host",
+        "shared"
+      ],
+      [
+        25,
+        "SW4",
+        "shared",
+        "host"
+      ],
+      [
+        25,
+        "RQ1",
+        "host",
+        "shared"
+      ],
+      [
+        25,
+        "RQ4",
+        "shared",
+        "host"
+      ],
+      [
+        26,
+        "SW4",
+        "host",
+        "shared"
+      ],
+      [
+        26,
+        "RQ1",
+        "shared",
+        "host"
+      ],
+      [
+        26,
+        "RQ4",
+        "host",
+        "shared"
+      ],
+      [
+        26,
+        "SW1",
+        "shared",
+        "host"
+      ],
+      [
+        27,
+        "RQ1",
+        "host",
+        "shared"
+      ],
+      [
+        27,
+        "RQ4",
+        "shared",
+        "host"
+      ],
+      [
+        27,
+        "SW1",
+        "host",
+        "shared"
+      ],
+      [
+        27,
+        "SW4",
+        "shared",
+        "host"
+      ],
+      [
+        28,
+        "RQ4",
+        "host",
+        "shared"
+      ],
+      [
+        28,
+        "SW1",
+        "shared",
+        "host"
+      ],
+      [
+        28,
+        "SW4",
+        "host",
+        "shared"
+      ],
+      [
+        28,
+        "RQ1",
+        "shared",
+        "host"
+      ],
+      [
+        29,
+        "SW1",
+        "host",
+        "shared"
+      ],
+      [
+        29,
+        "SW4",
+        "shared",
+        "host"
+      ],
+      [
+        29,
+        "RQ1",
+        "host",
+        "shared"
+      ],
+      [
+        29,
+        "RQ4",
+        "shared",
+        "host"
+      ],
+      [
+        30,
+        "SW4",
+        "host",
+        "shared"
+      ],
+      [
+        30,
+        "RQ1",
+        "shared",
+        "host"
+      ],
+      [
+        30,
+        "RQ4",
+        "host",
+        "shared"
+      ],
+      [
+        30,
+        "SW1",
+        "shared",
+        "host"
+      ],
+      [
+        31,
+        "RQ1",
+        "host",
+        "shared"
+      ],
+      [
+        31,
+        "RQ4",
+        "shared",
+        "host"
+      ],
+      [
+        31,
+        "SW1",
+        "host",
+        "shared"
+      ],
+      [
+        31,
+        "SW4",
+        "shared",
+        "host"
+      ]
+    ],
+    "modes": {
+      "SW1": {
+        "host": {
+          "samples_ms": [
+            4.5738,
+            5.3685,
+            5.6608,
+            7.7479,
+            6.4269,
+            4.162,
+            4.5323,
+            5.5979,
+            3.8962,
+            5.216,
+            5.5631,
+            4.2764,
+            4.3586,
+            4.4687,
+            4.8246,
+            4.4759,
+            6.2475,
+            6.0551,
+            4.1293,
+            5.4715,
+            5.2148,
+            7.0054,
+            4.7522,
+            4.6186,
+            4.7193,
+            5.5644,
+            4.3547,
+            4.5527,
+            4.1648,
+            4.8809,
+            6.9235,
+            4.0678
+          ],
+          "median_ms": 4.7884,
+          "p95_ms": 6.960355
+        },
+        "shared": {
+          "samples_ms": [
+            7.2059,
+            7.9218,
+            10.4584,
+            9.8933,
+            9.8828,
+            8.2598,
+            8.2349,
+            9.8222,
+            7.5262,
+            8.6328,
+            12.6584,
+            6.7275,
+            7.5476,
+            7.5022,
+            8.9008,
+            7.0111,
+            7.7578,
+            9.8239,
+            7.5329,
+            8.8329,
+            9.8272,
+            10.5144,
+            8.4137,
+            7.8533,
+            8.1457,
+            9.8494,
+            7.4553,
+            9.1388,
+            7.954,
+            7.9481,
+            12.4207,
+            7.7604
+          ],
+          "median_ms": 8.24735,
+          "p95_ms": 11.372234999999998
+        }
+      },
+      "SW4": {
+        "host": {
+          "samples_ms": [
+            4.9839,
+            5.0482,
+            4.7915,
+            6.5627,
+            6.0002,
+            4.4664,
+            5.1885,
+            5.7082,
+            5.6766,
+            5.0817,
+            5.0301,
+            4.3359,
+            4.4548,
+            5.0349,
+            6.0992,
+            5.0781,
+            7.0404,
+            5.1468,
+            5.2749,
+            5.8138,
+            5.2613,
+            5.1318,
+            4.659,
+            5.1861,
+            4.8187,
+            5.8609,
+            6.6935,
+            4.9353,
+            4.7183,
+            4.7429,
+            6.664,
+            4.8815
+          ],
+          "median_ms": 5.10675,
+          "p95_ms": 6.677275
+        },
+        "shared": {
+          "samples_ms": [
+            10.3031,
+            8.4981,
+            8.5923,
+            11.2628,
+            8.993,
+            7.6351,
+            7.8661,
+            8.7059,
+            8.5899,
+            9.4034,
+            8.2163,
+            7.8655,
+            7.7927,
+            8.0668,
+            10.7147,
+            8.1803,
+            15.5328,
+            8.4784,
+            9.1085,
+            9.3249,
+            7.9963,
+            9.361,
+            8.2977,
+            8.8302,
+            9.3533,
+            10.2865,
+            10.9874,
+            8.0618,
+            9.4868,
+            8.5239,
+            10.6833,
+            8.7865
+          ],
+          "median_ms": 8.7462,
+          "p95_ms": 11.111329999999999
+        }
+      },
+      "RQ1": {
+        "host": {
+          "samples_ms": [
+            6.0313,
+            7.7848,
+            5.7565,
+            8.592,
+            4.2471,
+            6.8769,
+            4.5894,
+            4.433,
+            6.1504,
+            4.8356,
+            4.6037,
+            6.2719,
+            4.5889,
+            4.4078,
+            4.8861,
+            5.1358,
+            6.1667,
+            4.8646,
+            4.5666,
+            4.5945,
+            6.8222,
+            5.8271,
+            4.8233,
+            4.3776,
+            8.0905,
+            6.0959,
+            4.6692,
+            5.0017,
+            4.8487,
+            5.0023,
+            5.6616,
+            7.2765
+          ],
+          "median_ms": 5.002,
+          "p95_ms": 7.922365
+        },
+        "shared": {
+          "samples_ms": [
+            10.6149,
+            9.0438,
+            10.872,
+            11.5289,
+            9.1786,
+            8.1125,
+            8.4237,
+            8.6258,
+            8.7037,
+            9.0358,
+            7.648,
+            9.2677,
+            7.8639,
+            8.6125,
+            7.8714,
+            9.7634,
+            12.2861,
+            7.4842,
+            7.399,
+            7.4239,
+            9.8012,
+            10.9542,
+            7.2345,
+            7.4746,
+            11.4878,
+            12.3548,
+            8.4933,
+            9.1622,
+            7.7645,
+            8.134,
+            8.8782,
+            10.6822
+          ],
+          "median_ms": 8.790949999999999,
+          "p95_ms": 11.869639999999999
+        }
+      },
+      "RQ4": {
+        "host": {
+          "samples_ms": [
+            5.3334,
+            5.3009,
+            5.7132,
+            7.6395,
+            6.351,
+            5.2541,
+            5.0076,
+            5.0779,
+            5.2206,
+            5.4092,
+            5.4966,
+            4.7313,
+            5.1218,
+            6.4616,
+            5.0165,
+            6.0589,
+            5.334,
+            4.7575,
+            5.0582,
+            5.0716,
+            6.3444,
+            4.6769,
+            6.4998,
+            5.3584,
+            5.0933,
+            8.0384,
+            5.0523,
+            9.0586,
+            5.3465,
+            5.7841,
+            6.7061,
+            4.8127
+          ],
+          "median_ms": 5.3337,
+          "p95_ms": 7.819005
+        },
+        "shared": {
+          "samples_ms": [
+            9.8426,
+            9.8021,
+            8.6173,
+            16.0031,
+            9.1885,
+            7.8208,
+            9.0409,
+            8.0586,
+            8.4387,
+            11.4916,
+            11.708,
+            7.6471,
+            8.0094,
+            9.6911,
+            8.4623,
+            9.4843,
+            7.7926,
+            8.2758,
+            7.7645,
+            9.0484,
+            10.8046,
+            9.3259,
+            12.1698,
+            8.1195,
+            8.2495,
+            17.4137,
+            9.4627,
+            8.916,
+            8.4047,
+            8.205,
+            13.6775,
+            9.6075
+          ],
+          "median_ms": 9.04465,
+          "p95_ms": 14.724019999999998
+        }
+      }
+    },
+    "host_body_readback_bytes_including_warmups": 40320
+  },
+  "native_counters": {
+    "SW1": {
+      "device": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "msaa": {
+        "requested_samples": 1,
+        "actual_color_samples": 1,
+        "sensor_samples": 1,
+        "resolve_space": "none (single sample)",
+        "sensor_sampling": "deterministic pixel center"
+      },
+      "shared": {
+        "cuda_ordinal": 0,
+        "device_uuid": "3b78d98198a3be57a8cb4d72fdfbfa96",
+        "graphics_instances": 3,
+        "camera_capacity": 1,
+        "matrix_record_bytes": 128,
+        "slot_bytes": 512,
+        "publications": 78,
+        "captures": 156,
+        "matrix_d2d_copies": 78,
+        "matrix_d2d_bytes": 39936,
+        "closed": false,
+        "imported_cuda_resources": 4,
+        "exports_open": false
+      },
+      "shared_host_transform_input_bytes": 0,
+      "host_transform_input_bytes": 29952,
+      "shared_camera": {
+        "resident_shared_camera_abi_version": 1,
+        "resident_shared_camera_capacity": 1,
+        "resident_shared_camera_d2d_bytes": 5928
+      },
+      "ray_query": {
+        "host": null,
+        "shared": null
+      },
+      "shader_sha256": {
+        "vert": "b1cb30601e2f8ff78e7a14818d3253ec95806b4ba22039b106927ffa4ca86810",
+        "frag": "138576de11b8e00cfafbda203561394795fad1944aeeeb0590a13f0121d349e5"
+      },
+      "validation_errors": 0
+    },
+    "SW4": {
+      "device": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "msaa": {
+        "requested_samples": 4,
+        "actual_color_samples": 4,
+        "sensor_samples": 1,
+        "resolve_space": "display-linear then IEC sRGB once",
+        "sensor_sampling": "deterministic pixel center"
+      },
+      "shared": {
+        "cuda_ordinal": 0,
+        "device_uuid": "3b78d98198a3be57a8cb4d72fdfbfa96",
+        "graphics_instances": 3,
+        "camera_capacity": 1,
+        "matrix_record_bytes": 128,
+        "slot_bytes": 512,
+        "publications": 78,
+        "captures": 156,
+        "matrix_d2d_copies": 78,
+        "matrix_d2d_bytes": 39936,
+        "closed": false,
+        "imported_cuda_resources": 4,
+        "exports_open": false
+      },
+      "shared_host_transform_input_bytes": 0,
+      "host_transform_input_bytes": 29952,
+      "shared_camera": {
+        "resident_shared_camera_abi_version": 1,
+        "resident_shared_camera_capacity": 1,
+        "resident_shared_camera_d2d_bytes": 5928
+      },
+      "ray_query": {
+        "host": null,
+        "shared": null
+      },
+      "shader_sha256": {
+        "vert": "b1cb30601e2f8ff78e7a14818d3253ec95806b4ba22039b106927ffa4ca86810",
+        "frag": "138576de11b8e00cfafbda203561394795fad1944aeeeb0590a13f0121d349e5",
+        "msaa_resolve_vert": "d9bbb44453660efa44c1f5f6c2861102b62f6b23b400400fac7d7f3faa02b798",
+        "msaa_resolve_frag": "bc140bc9ce2668db043516fc6d35e11a26689b2b45d2f1d38d39972e1902c707"
+      },
+      "validation_errors": 0
+    },
+    "RQ1": {
+      "device": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "msaa": {
+        "requested_samples": 1,
+        "actual_color_samples": 1,
+        "sensor_samples": 1,
+        "resolve_space": "none (single sample)",
+        "sensor_sampling": "deterministic pixel center"
+      },
+      "shared": {
+        "cuda_ordinal": 0,
+        "device_uuid": "3b78d98198a3be57a8cb4d72fdfbfa96",
+        "graphics_instances": 3,
+        "camera_capacity": 1,
+        "matrix_record_bytes": 128,
+        "slot_bytes": 512,
+        "publications": 78,
+        "captures": 156,
+        "matrix_d2d_copies": 78,
+        "matrix_d2d_bytes": 39936,
+        "closed": false,
+        "imported_cuda_resources": 4,
+        "exports_open": false
+      },
+      "shared_host_transform_input_bytes": 0,
+      "host_transform_input_bytes": 29952,
+      "shared_camera": {
+        "resident_shared_camera_abi_version": 1,
+        "resident_shared_camera_capacity": 1,
+        "resident_shared_camera_d2d_bytes": 5928
+      },
+      "ray_query": {
+        "host": {
+          "ray_query_abi_version": 1,
+          "enabled": 1,
+          "blas_count": 3,
+          "tlas_instance_count": 3,
+          "primitive_count": 36,
+          "loaded": 1,
+          "poisoned": 0,
+          "max_meshes": 1024,
+          "max_instances": 1024,
+          "max_triangles": 524288,
+          "build_flags": 4,
+          "update_flags": 5,
+          "trace_flags": 6,
+          "max_acceleration_bytes": 536870912,
+          "acceleration_buffer_bytes": 12544,
+          "scratch_buffer_bytes": 2303,
+          "blas_builds": 3,
+          "tlas_builds": 1,
+          "tlas_updates": 155,
+          "instance_upload_bytes": 29952,
+          "shadow_captures": 156,
+          "capture_scope": "successful RGB-requested captures, not ray count or visible shadow pixel count",
+          "buffer_scope": "logical AS and scratch buffer bytes; actual VkDeviceMemory allocation telemetry is separate",
+          "update_scope": "each capture builds or updates TLAS, including two cameras at the same frame key",
+          "upload_scope": "additional VkAccelerationStructureInstanceKHR records, 64 bytes per instance per capture; not the ordinary forward/inverse matrix buffer",
+          "snapshot": "last live query, retained after close; final allocation teardown is reported by resident telemetry"
+        },
+        "shared": {
+          "ray_query_abi_version": 1,
+          "enabled": 1,
+          "blas_count": 3,
+          "tlas_instance_count": 3,
+          "primitive_count": 36,
+          "loaded": 1,
+          "poisoned": 0,
+          "max_meshes": 1024,
+          "max_instances": 1024,
+          "max_triangles": 524288,
+          "build_flags": 4,
+          "update_flags": 5,
+          "trace_flags": 6,
+          "max_acceleration_bytes": 536870912,
+          "acceleration_buffer_bytes": 12544,
+          "scratch_buffer_bytes": 2303,
+          "blas_builds": 3,
+          "tlas_builds": 1,
+          "tlas_updates": 77,
+          "instance_upload_bytes": 0,
+          "shadow_captures": 156,
+          "capture_scope": "successful RGB-requested captures, not ray count or visible shadow pixel count",
+          "buffer_scope": "logical AS and scratch buffer bytes; actual VkDeviceMemory allocation telemetry is separate",
+          "update_scope": "one GPU TLAS build or update per acquired matrix publication, shared across its camera draws",
+          "upload_scope": "instance_upload_bytes counts host TLAS-instance uploads; shared instance records are generated on the GPU",
+          "snapshot": "last live query, retained after close; final allocation teardown is reported by resident telemetry",
+          "instance_source": "Vulkan compute over the shared device matrix buffer"
+        }
+      },
+      "shader_sha256": {
+        "vert": "b1069d14f062dcf3b441d1c44286068b92754557dbe8ce8327e9407cd7c0ec82",
+        "frag": "7b54bc5140c4e40d24152f54c57e98aaa5a16a4b58d54be10edd3542fe9c9593",
+        "shared_instances_compute": "c52345aabe9e162cf0e44216dae21ce1dd71103718aa9014dae75713cc219df5"
+      },
+      "validation_errors": 0
+    },
+    "RQ4": {
+      "device": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "msaa": {
+        "requested_samples": 4,
+        "actual_color_samples": 4,
+        "sensor_samples": 1,
+        "resolve_space": "display-linear then IEC sRGB once",
+        "sensor_sampling": "deterministic pixel center"
+      },
+      "shared": {
+        "cuda_ordinal": 0,
+        "device_uuid": "3b78d98198a3be57a8cb4d72fdfbfa96",
+        "graphics_instances": 3,
+        "camera_capacity": 1,
+        "matrix_record_bytes": 128,
+        "slot_bytes": 512,
+        "publications": 78,
+        "captures": 156,
+        "matrix_d2d_copies": 78,
+        "matrix_d2d_bytes": 39936,
+        "closed": false,
+        "imported_cuda_resources": 4,
+        "exports_open": false
+      },
+      "shared_host_transform_input_bytes": 0,
+      "host_transform_input_bytes": 29952,
+      "shared_camera": {
+        "resident_shared_camera_abi_version": 1,
+        "resident_shared_camera_capacity": 1,
+        "resident_shared_camera_d2d_bytes": 5928
+      },
+      "ray_query": {
+        "host": {
+          "ray_query_abi_version": 1,
+          "enabled": 1,
+          "blas_count": 3,
+          "tlas_instance_count": 3,
+          "primitive_count": 36,
+          "loaded": 1,
+          "poisoned": 0,
+          "max_meshes": 1024,
+          "max_instances": 1024,
+          "max_triangles": 524288,
+          "build_flags": 4,
+          "update_flags": 5,
+          "trace_flags": 6,
+          "max_acceleration_bytes": 536870912,
+          "acceleration_buffer_bytes": 12544,
+          "scratch_buffer_bytes": 2303,
+          "blas_builds": 3,
+          "tlas_builds": 1,
+          "tlas_updates": 155,
+          "instance_upload_bytes": 29952,
+          "shadow_captures": 156,
+          "capture_scope": "successful RGB-requested captures, not ray count or visible shadow pixel count",
+          "buffer_scope": "logical AS and scratch buffer bytes; actual VkDeviceMemory allocation telemetry is separate",
+          "update_scope": "each capture builds or updates TLAS, including two cameras at the same frame key",
+          "upload_scope": "additional VkAccelerationStructureInstanceKHR records, 64 bytes per instance per capture; not the ordinary forward/inverse matrix buffer",
+          "snapshot": "last live query, retained after close; final allocation teardown is reported by resident telemetry"
+        },
+        "shared": {
+          "ray_query_abi_version": 1,
+          "enabled": 1,
+          "blas_count": 3,
+          "tlas_instance_count": 3,
+          "primitive_count": 36,
+          "loaded": 1,
+          "poisoned": 0,
+          "max_meshes": 1024,
+          "max_instances": 1024,
+          "max_triangles": 524288,
+          "build_flags": 4,
+          "update_flags": 5,
+          "trace_flags": 6,
+          "max_acceleration_bytes": 536870912,
+          "acceleration_buffer_bytes": 12544,
+          "scratch_buffer_bytes": 2303,
+          "blas_builds": 3,
+          "tlas_builds": 1,
+          "tlas_updates": 77,
+          "instance_upload_bytes": 0,
+          "shadow_captures": 156,
+          "capture_scope": "successful RGB-requested captures, not ray count or visible shadow pixel count",
+          "buffer_scope": "logical AS and scratch buffer bytes; actual VkDeviceMemory allocation telemetry is separate",
+          "update_scope": "one GPU TLAS build or update per acquired matrix publication, shared across its camera draws",
+          "upload_scope": "instance_upload_bytes counts host TLAS-instance uploads; shared instance records are generated on the GPU",
+          "snapshot": "last live query, retained after close; final allocation teardown is reported by resident telemetry",
+          "instance_source": "Vulkan compute over the shared device matrix buffer"
+        }
+      },
+      "shader_sha256": {
+        "vert": "b1069d14f062dcf3b441d1c44286068b92754557dbe8ce8327e9407cd7c0ec82",
+        "frag": "7b54bc5140c4e40d24152f54c57e98aaa5a16a4b58d54be10edd3542fe9c9593",
+        "shared_instances_compute": "c52345aabe9e162cf0e44216dae21ce1dd71103718aa9014dae75713cc219df5",
+        "msaa_resolve_vert": "d9bbb44453660efa44c1f5f6c2861102b62f6b23b400400fac7d7f3faa02b798",
+        "msaa_resolve_frag": "bc140bc9ce2668db043516fc6d35e11a26689b2b45d2f1d38d39972e1902c707"
+      },
+      "validation_errors": 0
+    }
+  },
+  "workspace": {
+    "refreshes": 5,
+    "failed_refreshes": 1,
+    "kernels": 41,
+    "status_downloaded_bytes": 240,
+    "explicit_readback_bytes": 0,
+    "output_d2d_bytes": 1440,
+    "body_pose_snapshots": 5,
+    "body_pose_layout_upload_bytes": 12,
+    "allocated_payload_bytes": 2452
+  },
+  "measured_bytes": {
+    "verification_body_pose_readback_bytes": 1152,
+    "verification_image_readback_bytes_host_and_shared": 117964800,
+    "timing_host_body_readback_bytes": 40320,
+    "binding_static_h2d_bytes": 1088,
+    "pack_status_d2h_bytes": 312,
+    "public_camera_metadata_d2h_bytes": 14976,
+    "visual_and_camera_pack_bytes": 159744
+  }
+}

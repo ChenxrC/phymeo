@@ -1,0 +1,642 @@
+{
+  "schema": "live-camera-route-comparison-v1",
+  "routes": [
+    "cpu_upload",
+    "direct_cuda",
+    "direct_cuda",
+    "cpu_upload"
+  ],
+  "world_keys": [
+    41,
+    7,
+    305,
+    11,
+    203,
+    59,
+    997,
+    2
+  ],
+  "device": "NVIDIA GeForce RTX 4060 Laptop GPU",
+  "repeated_batches": 300,
+  "matched_sensor_and_clock_batches": 300,
+  "gates": {
+    "physics_to_consumer_ms": {
+      "p95_gain_ms": [
+        -0.2445999794872762,
+        3.8290899305138737
+      ],
+      "baseline_drift_ms": 15.520895016379654,
+      "both_gains_exceed_baseline_drift": false
+    },
+    "packed_to_consumer_ms": {
+      "p95_gain_ms": [
+        6.478320001042441,
+        5.564470021636218
+      ],
+      "baseline_drift_ms": 8.80666995362845,
+      "both_gains_exceed_baseline_drift": false
+    }
+  },
+  "measurements": [
+    {
+      "route": "cpu_upload",
+      "stats": {
+        "physics_to_consumer_ms": {
+          "median_ms": 95.5188000225462,
+          "p95_ms": 124.76360998989549,
+          "camera_images_per_s": 159.89935774427823
+        },
+        "packed_to_consumer_ms": {
+          "median_ms": 35.11764996801503,
+          "p95_ms": 49.96797498606612,
+          "camera_images_per_s": 430.2455524145274
+        },
+        "step_call_ms": {
+          "median_ms": 48.3296999882441,
+          "p95_ms": 59.38126998953522
+        },
+        "snapshot_and_pack_ms": {
+          "median_ms": 11.904999992111698,
+          "p95_ms": 17.322600027546287
+        },
+        "consumer_event_ms": {
+          "median_ms": 8.881264209747314,
+          "p95_ms": 14.184526443481445
+        }
+      },
+      "memory": {
+        "process": {
+          "source": "Win32_PerfFormattedData_GPUPerformanceCounters_GPUProcessMemory",
+          "pid": 63720,
+          "device_luid_hex": "ef22010000000000",
+          "adapter_bound": true,
+          "samples": 90,
+          "period_requested_s": 0.25,
+          "max_observed_sample_gap_s": 0.3816619000281207,
+          "peak_device_memory_bytes": 622383104,
+          "peak_shared_memory_bytes": 472268800,
+          "scope": "current Python PID on Vulkan LUID; WDDM dedicated usage, not whole GPU or isolated session allocation",
+          "limitation": "sampling can miss shorter peaks; refresh cadence and CIM query overhead exceed requested sleep interval",
+          "unavailable_reason": null,
+          "errors": []
+        },
+        "torch_peak_allocated_bytes": 25392128,
+        "torch_peak_reserved_bytes": 44040192,
+        "vulkan_device_local_peak_sum_upper_bytes": 97586560,
+        "vulkan_host_visible_peak_sum_upper_bytes": 15981440,
+        "solver_manifest_payload_bytes": 908852
+      },
+      "host_image_upload_bytes": 4423680000,
+      "counters": {
+        "render": {
+          "submissions": 7200,
+          "fence_wait_calls": 7200,
+          "fence_wait_wall_ns": 1580110200,
+          "readback_bytes": 4792320000,
+          "device_local_bytes_current": 0,
+          "device_local_bytes_peak": 0,
+          "host_visible_bytes_current": 0,
+          "host_visible_bytes_peak": 0,
+          "mapped_readback_capacity": 0,
+          "publications": 2400,
+          "captures": 4800,
+          "matrix_d2d_copies": 2400,
+          "matrix_d2d_bytes": 3110400,
+          "tlas_builds": 0,
+          "tlas_updates": 2400,
+          "instance_upload_bytes": 0,
+          "camera_uniform_d2d_bytes": 182400,
+          "host_transform_input_bytes": 0,
+          "batch_publications": 2400,
+          "native_batch_calls": 2400,
+          "native_batch_views": 4800,
+          "native_batch_output_bytes": 4792320000,
+          "profile_captures": 4800,
+          "profile_timestamp_samples": 4800,
+          "profile_gpu_total_ns": 798018592,
+          "profile_gpu_render_ns": 302867680,
+          "profile_gpu_copy_ns": 495150912,
+          "profile_host_prepare_ns": 3578000,
+          "profile_host_upload_ns": 8966200,
+          "profile_host_record_ns": 263609900,
+          "profile_host_submit_ns": 94411600,
+          "profile_host_wait_ns": 991443100,
+          "profile_host_readback_ns": 740321300,
+          "attachment_d2d_copies": 0,
+          "attachment_d2d_bytes": 0,
+          "materialization_d2d_copies": 0,
+          "materialization_d2d_bytes": 0,
+          "image_d2h_bytes": 0,
+          "image_h2d_bytes": 0,
+          "return_event_waits": 0,
+          "output_batches": 0,
+          "output_views": 0,
+          "output_image_bytes": 0,
+          "pose_publications": 2400,
+          "pose_captures": 4800,
+          "pose_matrix_d2d_bytes": 3110400,
+          "device_image_status_d2h_bytes": 0,
+          "cpu_native_batch_output_bytes": 4792320000
+        },
+        "physics": {
+          "completed_kernels": 24000,
+          "synchronizations": 4815,
+          "device_allocations": 291,
+          "static_uploaded_bytes": 320064,
+          "uploaded_bytes": 684336,
+          "downloaded_bytes": 186132120,
+          "device_control_d2d_bytes": 0,
+          "control_host_uploaded_bytes": 684336,
+          "area_copy_bytes": 0,
+          "area_copies": 0,
+          "completed_steps": 300,
+          "accepted_world_steps": 2400,
+          "failed_batches": 0,
+          "device_control_submissions": 0,
+          "device_control_refusals": 0,
+          "control_copy_d2d_bytes": 0,
+          "control_audit_downloaded_bytes": 0,
+          "control_status_downloaded_bytes": 0,
+          "control_initial_uploaded_bytes": 0,
+          "control_pack_kernels": 0,
+          "control_submissions": 1,
+          "control_refusals": 0,
+          "boundary_operations": 1,
+          "boundary_refusals": 0,
+          "boundary_clones": 1,
+          "bucket_physics_prepares": 2400,
+          "retained_cleanup_owners": 0
+        },
+        "workspace": {
+          "refreshes": 300,
+          "failed_refreshes": 0,
+          "kernels": 14700,
+          "status_downloaded_bytes": 48000,
+          "explicit_readback_bytes": 0,
+          "output_d2d_bytes": 993600,
+          "body_pose_snapshots": 300,
+          "body_pose_layout_upload_bytes": 0,
+          "allocated_payload_bytes": 0
+        },
+        "packing": {
+          "packs": 300,
+          "status_readback_bytes": 300,
+          "camera_metadata_readback_bytes": 115200,
+          "packed_output_bytes": 3110400
+        }
+      },
+      "source_report": "report.json",
+      "source_sha256": "35bee1d7b0089ef773f3ed216c6c401f45597e634929f8d1594c80a4582566e2"
+    },
+    {
+      "route": "direct_cuda",
+      "stats": {
+        "physics_to_consumer_ms": {
+          "median_ms": 90.8276999834925,
+          "p95_ms": 125.00820996938276,
+          "camera_images_per_s": 166.1654194492739
+        },
+        "packed_to_consumer_ms": {
+          "median_ms": 28.477750020101666,
+          "p95_ms": 43.48965498502368,
+          "camera_images_per_s": 526.6574007314755
+        },
+        "step_call_ms": {
+          "median_ms": 49.189900018973276,
+          "p95_ms": 65.82677000551485
+        },
+        "snapshot_and_pack_ms": {
+          "median_ms": 12.855100037995726,
+          "p95_ms": 17.353504966013134
+        },
+        "consumer_event_ms": {
+          "median_ms": 9.436240196228027,
+          "p95_ms": 15.383961200714111
+        }
+      },
+      "memory": {
+        "process": {
+          "source": "Win32_PerfFormattedData_GPUPerformanceCounters_GPUProcessMemory",
+          "pid": 16636,
+          "device_luid_hex": "ef22010000000000",
+          "adapter_bound": true,
+          "samples": 87,
+          "period_requested_s": 0.25,
+          "max_observed_sample_gap_s": 0.40332139999372885,
+          "peak_device_memory_bytes": 671305728,
+          "peak_shared_memory_bytes": 435306496,
+          "scope": "current Python PID on Vulkan LUID; WDDM dedicated usage, not whole GPU or isolated session allocation",
+          "limitation": "sampling can miss shorter peaks; refresh cadence and CIM query overhead exceed requested sleep interval",
+          "unavailable_reason": null,
+          "errors": []
+        },
+        "torch_peak_allocated_bytes": 26620928,
+        "torch_peak_reserved_bytes": 52428800,
+        "vulkan_device_local_peak_sum_upper_bytes": 113560960,
+        "vulkan_host_visible_peak_sum_upper_bytes": 1095168,
+        "solver_manifest_payload_bytes": 908852
+      },
+      "host_image_upload_bytes": 0,
+      "counters": {
+        "render": {
+          "submissions": 7200,
+          "fence_wait_calls": 7200,
+          "fence_wait_wall_ns": 1279646400,
+          "readback_bytes": 0,
+          "device_local_bytes_current": 0,
+          "device_local_bytes_peak": 0,
+          "host_visible_bytes_current": 0,
+          "host_visible_bytes_peak": 0,
+          "mapped_readback_capacity": 0,
+          "publications": 2400,
+          "captures": 4800,
+          "matrix_d2d_copies": 2400,
+          "matrix_d2d_bytes": 3110400,
+          "tlas_builds": 0,
+          "tlas_updates": 2400,
+          "instance_upload_bytes": 0,
+          "camera_uniform_d2d_bytes": 182400,
+          "host_transform_input_bytes": 0,
+          "batch_publications": 0,
+          "native_batch_calls": 0,
+          "native_batch_views": 0,
+          "native_batch_output_bytes": 0,
+          "profile_captures": 4800,
+          "profile_timestamp_samples": 4800,
+          "profile_gpu_total_ns": 454275456,
+          "profile_gpu_render_ns": 308917760,
+          "profile_gpu_copy_ns": 145357696,
+          "profile_host_prepare_ns": 3355100,
+          "profile_host_upload_ns": 7865600,
+          "profile_host_record_ns": 255531600,
+          "profile_host_submit_ns": 118047000,
+          "profile_host_wait_ns": 623665700,
+          "profile_host_readback_ns": 0,
+          "attachment_d2d_copies": 2400,
+          "attachment_d2d_bytes": 4792320000,
+          "materialization_d2d_copies": 0,
+          "materialization_d2d_bytes": 0,
+          "image_d2h_bytes": 0,
+          "image_h2d_bytes": 0,
+          "return_event_waits": 2400,
+          "output_batches": 2400,
+          "output_views": 4800,
+          "output_image_bytes": 4792320000,
+          "pose_publications": 2400,
+          "pose_captures": 4800,
+          "pose_matrix_d2d_bytes": 3110400,
+          "device_image_status_d2h_bytes": 2400,
+          "cpu_native_batch_output_bytes": 0
+        },
+        "physics": {
+          "completed_kernels": 24000,
+          "synchronizations": 4815,
+          "device_allocations": 291,
+          "static_uploaded_bytes": 320064,
+          "uploaded_bytes": 684336,
+          "downloaded_bytes": 186132120,
+          "device_control_d2d_bytes": 0,
+          "control_host_uploaded_bytes": 684336,
+          "area_copy_bytes": 0,
+          "area_copies": 0,
+          "completed_steps": 300,
+          "accepted_world_steps": 2400,
+          "failed_batches": 0,
+          "device_control_submissions": 0,
+          "device_control_refusals": 0,
+          "control_copy_d2d_bytes": 0,
+          "control_audit_downloaded_bytes": 0,
+          "control_status_downloaded_bytes": 0,
+          "control_initial_uploaded_bytes": 0,
+          "control_pack_kernels": 0,
+          "control_submissions": 1,
+          "control_refusals": 0,
+          "boundary_operations": 1,
+          "boundary_refusals": 0,
+          "boundary_clones": 1,
+          "bucket_physics_prepares": 2400,
+          "retained_cleanup_owners": 0
+        },
+        "workspace": {
+          "refreshes": 300,
+          "failed_refreshes": 0,
+          "kernels": 14700,
+          "status_downloaded_bytes": 48000,
+          "explicit_readback_bytes": 0,
+          "output_d2d_bytes": 993600,
+          "body_pose_snapshots": 300,
+          "body_pose_layout_upload_bytes": 0,
+          "allocated_payload_bytes": 0
+        },
+        "packing": {
+          "packs": 300,
+          "status_readback_bytes": 300,
+          "camera_metadata_readback_bytes": 115200,
+          "packed_output_bytes": 3110400
+        }
+      },
+      "source_report": "report.json",
+      "source_sha256": "b7799e962ce448dda976f7f6da72668cc87b3865dd7245d2634ccd5659bb2cb1"
+    },
+    {
+      "route": "direct_cuda",
+      "stats": {
+        "physics_to_consumer_ms": {
+          "median_ms": 84.24164997995831,
+          "p95_ms": 105.41362504300196,
+          "camera_images_per_s": 184.02270552161303
+        },
+        "packed_to_consumer_ms": {
+          "median_ms": 25.91274998849258,
+          "p95_ms": 35.59683501080145,
+          "camera_images_per_s": 593.9413527786144
+        },
+        "step_call_ms": {
+          "median_ms": 46.00329999811947,
+          "p95_ms": 55.08940497238655
+        },
+        "snapshot_and_pack_ms": {
+          "median_ms": 11.849199974676594,
+          "p95_ms": 15.92393000610173
+        },
+        "consumer_event_ms": {
+          "median_ms": 8.795135974884033,
+          "p95_ms": 12.307620763778688
+        }
+      },
+      "memory": {
+        "process": {
+          "source": "Win32_PerfFormattedData_GPUPerformanceCounters_GPUProcessMemory",
+          "pid": 10248,
+          "device_luid_hex": "ef22010000000000",
+          "adapter_bound": true,
+          "samples": 78,
+          "period_requested_s": 0.25,
+          "max_observed_sample_gap_s": 0.3905271000112407,
+          "peak_device_memory_bytes": 679432192,
+          "peak_shared_memory_bytes": 435306496,
+          "scope": "current Python PID on Vulkan LUID; WDDM dedicated usage, not whole GPU or isolated session allocation",
+          "limitation": "sampling can miss shorter peaks; refresh cadence and CIM query overhead exceed requested sleep interval",
+          "unavailable_reason": null,
+          "errors": []
+        },
+        "torch_peak_allocated_bytes": 26620928,
+        "torch_peak_reserved_bytes": 52428800,
+        "vulkan_device_local_peak_sum_upper_bytes": 113560960,
+        "vulkan_host_visible_peak_sum_upper_bytes": 1095168,
+        "solver_manifest_payload_bytes": 908852
+      },
+      "host_image_upload_bytes": 0,
+      "counters": {
+        "render": {
+          "submissions": 7200,
+          "fence_wait_calls": 7200,
+          "fence_wait_wall_ns": 1224506100,
+          "readback_bytes": 0,
+          "device_local_bytes_current": 0,
+          "device_local_bytes_peak": 0,
+          "host_visible_bytes_current": 0,
+          "host_visible_bytes_peak": 0,
+          "mapped_readback_capacity": 0,
+          "publications": 2400,
+          "captures": 4800,
+          "matrix_d2d_copies": 2400,
+          "matrix_d2d_bytes": 3110400,
+          "tlas_builds": 0,
+          "tlas_updates": 2400,
+          "instance_upload_bytes": 0,
+          "camera_uniform_d2d_bytes": 182400,
+          "host_transform_input_bytes": 0,
+          "batch_publications": 0,
+          "native_batch_calls": 0,
+          "native_batch_views": 0,
+          "native_batch_output_bytes": 0,
+          "profile_captures": 4800,
+          "profile_timestamp_samples": 4800,
+          "profile_gpu_total_ns": 437436320,
+          "profile_gpu_render_ns": 292141888,
+          "profile_gpu_copy_ns": 145294432,
+          "profile_host_prepare_ns": 2803800,
+          "profile_host_upload_ns": 6861800,
+          "profile_host_record_ns": 222952300,
+          "profile_host_submit_ns": 106623900,
+          "profile_host_wait_ns": 602913500,
+          "profile_host_readback_ns": 0,
+          "attachment_d2d_copies": 2400,
+          "attachment_d2d_bytes": 4792320000,
+          "materialization_d2d_copies": 0,
+          "materialization_d2d_bytes": 0,
+          "image_d2h_bytes": 0,
+          "image_h2d_bytes": 0,
+          "return_event_waits": 2400,
+          "output_batches": 2400,
+          "output_views": 4800,
+          "output_image_bytes": 4792320000,
+          "pose_publications": 2400,
+          "pose_captures": 4800,
+          "pose_matrix_d2d_bytes": 3110400,
+          "device_image_status_d2h_bytes": 2400,
+          "cpu_native_batch_output_bytes": 0
+        },
+        "physics": {
+          "completed_kernels": 24000,
+          "synchronizations": 4815,
+          "device_allocations": 291,
+          "static_uploaded_bytes": 320064,
+          "uploaded_bytes": 684336,
+          "downloaded_bytes": 186132120,
+          "device_control_d2d_bytes": 0,
+          "control_host_uploaded_bytes": 684336,
+          "area_copy_bytes": 0,
+          "area_copies": 0,
+          "completed_steps": 300,
+          "accepted_world_steps": 2400,
+          "failed_batches": 0,
+          "device_control_submissions": 0,
+          "device_control_refusals": 0,
+          "control_copy_d2d_bytes": 0,
+          "control_audit_downloaded_bytes": 0,
+          "control_status_downloaded_bytes": 0,
+          "control_initial_uploaded_bytes": 0,
+          "control_pack_kernels": 0,
+          "control_submissions": 1,
+          "control_refusals": 0,
+          "boundary_operations": 1,
+          "boundary_refusals": 0,
+          "boundary_clones": 1,
+          "bucket_physics_prepares": 2400,
+          "retained_cleanup_owners": 0
+        },
+        "workspace": {
+          "refreshes": 300,
+          "failed_refreshes": 0,
+          "kernels": 14700,
+          "status_downloaded_bytes": 48000,
+          "explicit_readback_bytes": 0,
+          "output_d2d_bytes": 993600,
+          "body_pose_snapshots": 300,
+          "body_pose_layout_upload_bytes": 0,
+          "allocated_payload_bytes": 0
+        },
+        "packing": {
+          "packs": 300,
+          "status_readback_bytes": 300,
+          "camera_metadata_readback_bytes": 115200,
+          "packed_output_bytes": 3110400
+        }
+      },
+      "source_report": "report.json",
+      "source_sha256": "0781523288d595d267646c713fcdf12a0c4295a5f2289ff9d01d28ab15137970"
+    },
+    {
+      "route": "cpu_upload",
+      "stats": {
+        "physics_to_consumer_ms": {
+          "median_ms": 90.06225000484847,
+          "p95_ms": 109.24271497351583,
+          "camera_images_per_s": 172.27983748685457
+        },
+        "packed_to_consumer_ms": {
+          "median_ms": 32.618950004689395,
+          "p95_ms": 41.16130503243767,
+          "camera_images_per_s": 473.56172469368903
+        },
+        "step_call_ms": {
+          "median_ms": 45.701449998887256,
+          "p95_ms": 54.43237003928516
+        },
+        "snapshot_and_pack_ms": {
+          "median_ms": 11.65815003332682,
+          "p95_ms": 14.013725012773648
+        },
+        "consumer_event_ms": {
+          "median_ms": 8.974688053131104,
+          "p95_ms": 12.648769426345833
+        }
+      },
+      "memory": {
+        "process": {
+          "source": "Win32_PerfFormattedData_GPUPerformanceCounters_GPUProcessMemory",
+          "pid": 35004,
+          "device_luid_hex": "ef22010000000000",
+          "adapter_bound": true,
+          "samples": 84,
+          "period_requested_s": 0.25,
+          "max_observed_sample_gap_s": 0.4033350000390783,
+          "peak_device_memory_bytes": 622383104,
+          "peak_shared_memory_bytes": 472268800,
+          "scope": "current Python PID on Vulkan LUID; WDDM dedicated usage, not whole GPU or isolated session allocation",
+          "limitation": "sampling can miss shorter peaks; refresh cadence and CIM query overhead exceed requested sleep interval",
+          "unavailable_reason": null,
+          "errors": []
+        },
+        "torch_peak_allocated_bytes": 25392128,
+        "torch_peak_reserved_bytes": 44040192,
+        "vulkan_device_local_peak_sum_upper_bytes": 97586560,
+        "vulkan_host_visible_peak_sum_upper_bytes": 15981440,
+        "solver_manifest_payload_bytes": 908852
+      },
+      "host_image_upload_bytes": 4423680000,
+      "counters": {
+        "render": {
+          "submissions": 7200,
+          "fence_wait_calls": 7200,
+          "fence_wait_wall_ns": 1455486900,
+          "readback_bytes": 4792320000,
+          "device_local_bytes_current": 0,
+          "device_local_bytes_peak": 0,
+          "host_visible_bytes_current": 0,
+          "host_visible_bytes_peak": 0,
+          "mapped_readback_capacity": 0,
+          "publications": 2400,
+          "captures": 4800,
+          "matrix_d2d_copies": 2400,
+          "matrix_d2d_bytes": 3110400,
+          "tlas_builds": 0,
+          "tlas_updates": 2400,
+          "instance_upload_bytes": 0,
+          "camera_uniform_d2d_bytes": 182400,
+          "host_transform_input_bytes": 0,
+          "batch_publications": 2400,
+          "native_batch_calls": 2400,
+          "native_batch_views": 4800,
+          "native_batch_output_bytes": 4792320000,
+          "profile_captures": 4800,
+          "profile_timestamp_samples": 4800,
+          "profile_gpu_total_ns": 750916800,
+          "profile_gpu_render_ns": 289974048,
+          "profile_gpu_copy_ns": 460942752,
+          "profile_host_prepare_ns": 3098400,
+          "profile_host_upload_ns": 7617200,
+          "profile_host_record_ns": 226845600,
+          "profile_host_submit_ns": 86783700,
+          "profile_host_wait_ns": 916553400,
+          "profile_host_readback_ns": 577556200,
+          "attachment_d2d_copies": 0,
+          "attachment_d2d_bytes": 0,
+          "materialization_d2d_copies": 0,
+          "materialization_d2d_bytes": 0,
+          "image_d2h_bytes": 0,
+          "image_h2d_bytes": 0,
+          "return_event_waits": 0,
+          "output_batches": 0,
+          "output_views": 0,
+          "output_image_bytes": 0,
+          "pose_publications": 2400,
+          "pose_captures": 4800,
+          "pose_matrix_d2d_bytes": 3110400,
+          "device_image_status_d2h_bytes": 0,
+          "cpu_native_batch_output_bytes": 4792320000
+        },
+        "physics": {
+          "completed_kernels": 24000,
+          "synchronizations": 4815,
+          "device_allocations": 291,
+          "static_uploaded_bytes": 320064,
+          "uploaded_bytes": 684336,
+          "downloaded_bytes": 186132120,
+          "device_control_d2d_bytes": 0,
+          "control_host_uploaded_bytes": 684336,
+          "area_copy_bytes": 0,
+          "area_copies": 0,
+          "completed_steps": 300,
+          "accepted_world_steps": 2400,
+          "failed_batches": 0,
+          "device_control_submissions": 0,
+          "device_control_refusals": 0,
+          "control_copy_d2d_bytes": 0,
+          "control_audit_downloaded_bytes": 0,
+          "control_status_downloaded_bytes": 0,
+          "control_initial_uploaded_bytes": 0,
+          "control_pack_kernels": 0,
+          "control_submissions": 1,
+          "control_refusals": 0,
+          "boundary_operations": 1,
+          "boundary_refusals": 0,
+          "boundary_clones": 1,
+          "bucket_physics_prepares": 2400,
+          "retained_cleanup_owners": 0
+        },
+        "workspace": {
+          "refreshes": 300,
+          "failed_refreshes": 0,
+          "kernels": 14700,
+          "status_downloaded_bytes": 48000,
+          "explicit_readback_bytes": 0,
+          "output_d2d_bytes": 993600,
+          "body_pose_snapshots": 300,
+          "body_pose_layout_upload_bytes": 0,
+          "allocated_payload_bytes": 0
+        },
+        "packing": {
+          "packs": 300,
+          "status_readback_bytes": 300,
+          "camera_metadata_readback_bytes": 115200,
+          "packed_output_bytes": 3110400
+        }
+      },
+      "source_report": "report.json",
+      "source_sha256": "120c5eabdbcd44587230efea367877d92bcdd22b655c4616d3066fcadff3bb92"
+    }
+  ]
+}

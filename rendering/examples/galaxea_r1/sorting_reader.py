@@ -25,17 +25,22 @@ def classify_station_rgb(rgb):
     return chosen, dict(roi_xyxy=roi, fraction=fractions)
 
 
-def read_part(owner, frame, layout, output):
+def station_camera(frame_key, layout):
+    """Registered intrinsics and optical pose of the conveyor's fixed RGB reader."""
     from _panda_scene import look_at
-    from preview_compact_rigid_history.state import bind_presentations, frame_digest
     from phymeo_rendering.cameras import Camera
-    from phymeo_rendering.outputs import Channel
-    from phymeo_rendering.pipeline import CaptureRequest, RenderPath
     x,y = layout.pick_xy
     z = layout.support_z
-    camera = Camera("belt-color-reader", frame.key,
-                    look_at((x+.29,y+.06,z+.205),(x,y,z+.032),(0.,0.,1.)),
-                    320,192,620.,620.,160.,96.,.015,8.)
+    return Camera("belt-color-reader", frame_key,
+                  look_at((x+.29,y+.06,z+.205),(x,y,z+.032),(0.,0.,1.)),
+                  320,192,620.,620.,160.,96.,.015,8.)
+
+
+def read_part(owner, frame, layout, output):
+    from preview_compact_rigid_history.state import bind_presentations, frame_digest
+    from phymeo_rendering.outputs import Channel
+    from phymeo_rendering.pipeline import CaptureRequest, RenderPath
+    camera = station_camera(frame.key, layout)
     # Arrivals are sparse in time. Each sensor exposure starts a new observation.
     owner.reset_history()
     source = frame_digest(frame)

@@ -105,6 +105,10 @@ class PreviewContracts(unittest.TestCase):
         self.assertEqual(self.p.media_profile_name(policy,{}),old)
         self.assertEqual(self.p.media_profile_name(policy,dict(camera="sequence",studio_look="soft-studio")),
                          old+"-sequence-soft-studio")
+        policy["surface_quality"]={"panels":{"primary_samples_per_panel":16}}
+        self.assertEqual(self.p.media_profile_name(policy,{}),old+"-panel16")
+        policy["surface_quality"]["contours"]={"marker":104}
+        self.assertEqual(self.p.media_profile_name(policy,{}),old+"-panel16-contour4")
 
     def test_camera_cut_keeps_the_observed_reset_and_pair_binding(self):
         values=[self.record(i) for i in range(3)]

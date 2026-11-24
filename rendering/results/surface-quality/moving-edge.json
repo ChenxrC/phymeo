@@ -1,0 +1,1008 @@
+{
+  "schema": "phymeo-compact-contour-motion-v1",
+  "source_sha256": "c7a0d9e0edd45e371efed5c60bf21a336ba1a8b3e873f871022f6f82459e351c",
+  "history_shader_sha256": "8dc91796a94fc5621f872cef1d24641eca3b59ce9192a72a4b7b9086dd406378",
+  "dll_sha256": "20de94b05b7afbf503fe06f5d5da887ccd334d23453e8527f9442c1a8663200b",
+  "phases_px": [
+    0.0,
+    0.0625,
+    0.125,
+    0.1875,
+    0.25,
+    0.3125,
+    0.375,
+    0.4375,
+    0.5,
+    0.5625,
+    0.625,
+    0.6875,
+    0.75,
+    0.8125,
+    0.875,
+    0.9375
+  ],
+  "scope": "0.625-pixel-wide rod against empty unlit background",
+  "metric": "absolute error of adjacent normalized linear brightness changes against polygon/pixel intersection area changes",
+  "modes": {
+    "current": {
+      "score": {
+        "region_pixels": 224,
+        "transitions": 15,
+        "center_transition_mae": 0.06706486891631643,
+        "contour_transition_mae": 0.057432755421880984,
+        "fractional_reduction": 0.1436238324189435,
+        "center_per_transition": [
+          0.06705655650931609,
+          0.06705655650933233,
+          0.06705655650931863,
+          0.06705655650932295,
+          0.06711148814994582,
+          0.06705655650932739,
+          0.06705655650931965,
+          0.06705655650931572,
+          0.06705655650932359,
+          0.06705655650932853,
+          0.06712631097361513,
+          0.0670565565093062,
+          0.0670565565093199,
+          0.0670565565093284,
+          0.06705655650932599
+        ],
+        "contour_per_transition": [
+          0.057018866213886125,
+          0.05701888663647952,
+          0.05701891517486235,
+          0.0574250942980532,
+          0.058189741558856846,
+          0.056460713286019724,
+          0.05701873729224248,
+          0.05876255712290985,
+          0.05701886621389818,
+          0.056460868351230306,
+          0.0570188978123513,
+          0.05883243092954097,
+          0.05701884286433374,
+          0.05646082098682369,
+          0.05976709258672651
+        ],
+        "vacated_observations": 76,
+        "vacated_rgb_mismatches": 0,
+        "vacated_linear_max_abs": 0.0,
+        "empty_endpoints_exact": true
+      },
+      "captures": [
+        {
+          "sensor_check": {
+            "passed": true,
+            "tested_pixels": 12288,
+            "boundary_pixels_excluded": [],
+            "mismatch_count": 0,
+            "first_mismatches": []
+          },
+          "contour": {
+            "candidate_pixels": 0,
+            "resolved_pixels": 0,
+            "unsupported_pixels": 0,
+            "visibility_rays": 0
+          },
+          "center_sensors_sha256": {
+            "forward_depth_m_f32": "42bd22a7ff7abb6fc4b3a3acd20c9a5d7900742b1fc8b229c19b22af9e0fde3e",
+            "instance_id_u32": "90b7607c4133f542e0228c30990f126e327b2381370e15e52acc32274291db62",
+            "valid_u8": "68a5dedcd504c737ab6bbb9eca24e4566d44bb00dc9a107d4c78ef66edd97ef1"
+          },
+          "history_accepted": 0,
+          "history_age_sum": 12288,
+          "history_sequence": 0
+        },
+        {
+          "sensor_check": {
+            "passed": true,
+            "tested_pixels": 12288,
+            "boundary_pixels_excluded": [],
+            "mismatch_count": 0,
+            "first_mismatches": []
+          },
+          "contour": {
+            "candidate_pixels": 0,
+            "resolved_pixels": 0,
+            "unsupported_pixels": 0,
+            "visibility_rays": 0
+          },
+          "center_sensors_sha256": {
+            "forward_depth_m_f32": "92a1bc24e43857e68a44e05b921328480378af2be407d7a37cb32c2f29f87bfa",
+            "instance_id_u32": "2aae7dc846aaf25f1cadf55f1666862046c6db9d65d84bdc07fa039dac405606",
+            "valid_u8": "f3cc103136423a57975750907ebc1d367e2985ac6338976d4d5a439f50323f4a"
+          },
+          "history_accepted": 0,
+          "history_age_sum": 0,
+          "history_sequence": 1
+        },
+        {
+          "sensor_check": {
+            "passed": true,
+            "tested_pixels": 12288,
+            "boundary_pixels_excluded": [],
+            "mismatch_count": 0,
+            "first_mismatches": []
+          },
+          "contour": {
+            "candidate_pixels": 250,
+            "resolved_pixels": 115,
+            "unsupported_pixels": 0,
+            "visibility_rays": 1000
+          },
+          "center_sensors_sha256": {
+            "forward_depth_m_f32": "00bd33222ada8b09dde7474821eedb97eb22c5d8ab7a374ba1d9aa7993651092",
+            "instance_id_u32": "f1f5d30064fe772a5b641196e4d7e903bcbfdfc14ca20f55dada90969f6578bf",
+            "valid_u8": "9e7d0fe6569415064d38fea212de55562e70887c53d204d4e170efaefd11bef9"
+          },
+          "history_accepted": 0,
+          "history_age_sum": 38,
+          "history_sequence": 2
+        },
+        {
+          "sensor_check": {
+            "passed": true,
+            "tested_pixels": 12288,
+            "boundary_pixels_excluded": [],
+            "mismatch_count": 0,
+            "first_mismatches": []
+          },
+          "contour": {
+            "candidate_pixels": 250,
+            "resolved_pixels": 115,
+            "unsupported_pixels": 0,
+            "visibility_rays": 1000
+          },
+          "center_sensors_sha256": {
+            "forward_depth_m_f32": "96775bc4d52ed73aa282ff82d4f30898c0fdbb5909b019237a5fa038933a3337",
+            "instance_id_u32": "a35dd5911bbf022ddd3403ba666ddbdaf1f3cf3e2e61a7e36289e0b2304a9fa6",
+            "valid_u8": "ef1345a91d35b43ba90c96fb801ae760f702e1e6bdeb5a928650c8bd25e6d268"
+          },
+          "history_accepted": 0,
+          "history_age_sum": 39,
+          "history_sequence": 3
+        },
+        {
+          "sensor_check": {
+            "passed": true,
+            "tested_pixels": 12288,
+            "boundary_pixels_excluded": [],
+            "mismatch_count": 0,
+            "first_mismatches": []
+          },
+          "contour": {
+            "candidate_pixels": 250,
+            "resolved_pixels": 115,
+            "unsupported_pixels": 0,
+            "visibility_rays": 1000
+          },
+          "center_sensors_sha256": {
+            "forward_depth_m_f32": "c7406a65ab30e4a56343a7bcca9e5fd254df67ccf19006d2dedf71fc8c2eaa95",
+            "instance_id_u32": "3227a3bffabd8271e8ef24e447ae791460b9a09ec1d489ea99404cb974b17607",
+            "valid_u8": "c22fa57cfde597b179bb249954e84fe6e49f2a5f6473ddc699a853a2c294620f"
+          },
+          "history_accepted": 0,
+          "history_age_sum": 38,
+          "history_sequence": 4
+        },
+        {
+          "sensor_check": {
+            "passed": true,
+            "tested_pixels": 12288,
+            "boundary_pixels_excluded": [],
+            "mismatch_count": 0,
+            "first_mismatches": []
+          },
+          "contour": {
+            "candidate_pixels": 250,
+            "resolved_pixels": 115,
+            "unsupported_pixels": 0,
+            "visibility_rays": 1000
+          },
+          "center_sensors_sha256": {
+            "forward_depth_m_f32": "f1989d2fc5e3cc934d25674f613602d8fa0841189a5c9b7e39f07b11fb1ed16c",
+            "instance_id_u32": "42270f4d20c249d1a580a8443336da248122e15951401d34138f4ccf9d87e80a",
+            "valid_u8": "5ad32ce391e39510ebcaaac3c52e19f861aad8302d380998adee2e1f48bb2e0e"
+          },
+          "history_accepted": 0,
+          "history_age_sum": 38,
+          "history_sequence": 5
+        },
+        {
+          "sensor_check": {
+            "passed": true,
+            "tested_pixels": 12288,
+            "boundary_pixels_excluded": [],
+            "mismatch_count": 0,
+            "first_mismatches": []
+          },
+          "contour": {
+            "candidate_pixels": 250,
+            "resolved_pixels": 114,
+            "unsupported_pixels": 0,
+            "visibility_rays": 1000
+          },
+          "center_sensors_sha256": {
+            "forward_depth_m_f32": "fde80d79f8a7ee7b46c5c23a947dda2310ad0b9661a469dbfafa529b90124463",
+            "instance_id_u32": "ffda2eba3170482199847f9e9d12e5db2f02c917ed0d8e0102a86bc54493456f",
+            "valid_u8": "8bc55e92fdfbad89c9a3f6d4a2396667fd3d603630728d9a2fab38c4926e2a7a"
+          },
+          "history_accepted": 0,
+          "history_age_sum": 38,
+          "history_sequence": 6
+        },
+        {
+          "sensor_check": {
+            "passed": true,
+            "tested_pixels": 12288,
+            "boundary_pixels_excluded": [],
+            "mismatch_count": 0,
+            "first_mismatches": []
+          },
+          "contour": {
+            "candidate_pixels": 244,
+            "resolved_pixels": 112,
+            "unsupported_pixels": 0,
+            "visibility_rays": 976
+          },
+          "center_sensors_sha256": {
+            "forward_depth_m_f32": "a60a785d0bb3ecfdeb767f8adbe3470186f5dafec1b97a3dd30da787787f1823",
+            "instance_id_u32": "b2289fb190230e058422a93e488336fe212d1d8739c6bfcc94a1f790df6dbba0",
+            "valid_u8": "cb566c7e4a5622614b23135f431cf563e5870fae830f112f27c764354b8b811b"
+          },
+          "history_accepted": 0,
+          "history_age_sum": 25,
+          "history_sequence": 7
+        },
+        {
+          "sensor_check": {
+            "passed": true,
+            "tested_pixels": 12288,
+            "boundary_pixels_excluded": [],
+            "mismatch_count": 0,
+            "first_mismatches": []
+          },
+          "contour": {
+            "candidate_pixels": 244,
+            "resolved_pixels": 112,
+            "unsupported_pixels": 0,
+            "visibility_rays": 976
+          },
+          "center_sensors_sha256": {
+            "forward_depth_m_f32": "0671b3489508539fb7476433c8211953dcd59dfd4288df4bdcc3eb8bf71d57d3",
+            "instance_id_u32": "02067321e842e995aaffcea194feab22c72ccdf467fce25d6dcba887f32932fd",
+            "valid_u8": "298506f96e2ef4b3de1fa50970eca9cfa8885717b194e354f0ca79cd726e8870"
+          },
+          "history_accepted": 0,
+          "history_age_sum": 25,
+          "history_sequence": 8
+        },
+        {
+          "sensor_check": {
+            "passed": true,
+            "tested_pixels": 12288,
+            "boundary_pixels_excluded": [],
+            "mismatch_count": 0,
+            "first_mismatches": []
+          },
+          "contour": {
+            "candidate_pixels": 244,
+            "resolved_pixels": 112,
+            "unsupported_pixels": 0,
+            "visibility_rays": 976
+          },
+          "center_sensors_sha256": {
+            "forward_depth_m_f32": "aa425e410c0e3c1efc1d1052dd79e8a8e2cc4f7ae48aabc560d0bfcf5ef4e1b9",
+            "instance_id_u32": "711315ecf2f07a0b2d07fa9590892d606f9ef35f89ac3a869a2f8e3854c88588",
+            "valid_u8": "bdcf590fe913427b2e401116bd9bfdbe50e4ea3766244f81fd83f8ac842e3bae"
+          },
+          "history_accepted": 0,
+          "history_age_sum": 35,
+          "history_sequence": 9
+        },
+        {
+          "sensor_check": {
+            "passed": true,
+            "tested_pixels": 12288,
+            "boundary_pixels_excluded": [],
+            "mismatch_count": 0,
+            "first_mismatches": []
+          },
+          "contour": {
+            "candidate_pixels": 246,
+            "resolved_pixels": 114,
+            "unsupported_pixels": 0,
+            "visibility_rays": 984
+          },
+          "center_sensors_sha256": {
+            "forward_depth_m_f32": "20e53f7c616bc9a3bb7bd6f421026e24428503d340880057244ceca1e0ec9d81",
+            "instance_id_u32": "989d5860a26ed1da9902a2fb7785fbc3bd7c45cb9364914012aa202383a94059",
+            "valid_u8": "aadf07bb837120fdb06348bfee75d2c152241a23e4c239141a9ec87a75ecf826"
+          },
+          "history_accepted": 0,
+          "history_age_sum": 44,
+          "history_sequence": 10
+        },
+        {
+          "sensor_check": {
+            "passed": true,
+            "tested_pixels": 12288,
+            "boundary_pixels_excluded": [],
+            "mismatch_count": 0,
+            "first_mismatches": []
+          },
+          "contour": {
+            "candidate_pixels": 244,
+            "resolved_pixels": 114,
+            "unsupported_pixels": 0,
+            "visibility_rays": 976
+          },
+          "center_sensors_sha256": {
+            "forward_depth_m_f32": "f848b00df5c8c06141e9cd4f650ed50822bf17654e318356a5092b7acd6ff61a",
+            "instance_id_u32": "8ebbf75d064fd87b90b6b9cb0211471195d4a18cb35dbfe1b061191292074135",
+            "valid_u8": "52e15dd023b6155cdb56995ca9f19dad002b5425465afe6fd0e781c6c81592fc"
+          },
+          "history_accepted": 0,
+          "history_age_sum": 34,
+          "history_sequence": 11
+        },
+        {
+          "sensor_check": {
+            "passed": true,
+            "tested_pixels": 12288,
+            "boundary_pixels_excluded": [],
+            "mismatch_count": 0,
+            "first_mismatches": []
+          },
+          "contour": {
+            "candidate_pixels": 244,
+            "resolved_pixels": 114,
+            "unsupported_pixels": 0,
+            "visibility_rays": 976
+          },
+          "center_sensors_sha256": {
+            "forward_depth_m_f32": "e3484e0a42e7eacea596bdc45985d91906d571ab14a4105f1534d12ead4f11a1",
+            "instance_id_u32": "7d4c1e854d244d88e32a57b3249d5ef32f359c3de007a4507d739ebfb78b9a6c",
+            "valid_u8": "09eb5dc9ceb86195c401b61859d5d951906594a920dc7a093ae547bcfc934296"
+          },
+          "history_accepted": 0,
+          "history_age_sum": 35,
+          "history_sequence": 12
+        },
+        {
+          "sensor_check": {
+            "passed": true,
+            "tested_pixels": 12288,
+            "boundary_pixels_excluded": [],
+            "mismatch_count": 0,
+            "first_mismatches": []
+          },
+          "contour": {
+            "candidate_pixels": 246,
+            "resolved_pixels": 114,
+            "unsupported_pixels": 0,
+            "visibility_rays": 984
+          },
+          "center_sensors_sha256": {
+            "forward_depth_m_f32": "4a8be6470cb786ee9897fd8d739c4ab8086dccb25005a5fd4c310c5c20ec0b07",
+            "instance_id_u32": "cdbb3d4cf1c57712828ac863cd63b7bdf11a140403db4eb4872b45fc03865ba4",
+            "valid_u8": "25eed5cf3f30a7e7def9d4e060bb8e1bf2bc47d3e8241b155bed5f0366712408"
+          },
+          "history_accepted": 0,
+          "history_age_sum": 36,
+          "history_sequence": 13
+        },
+        {
+          "sensor_check": {
+            "passed": true,
+            "tested_pixels": 12288,
+            "boundary_pixels_excluded": [],
+            "mismatch_count": 0,
+            "first_mismatches": []
+          },
+          "contour": {
+            "candidate_pixels": 244,
+            "resolved_pixels": 112,
+            "unsupported_pixels": 0,
+            "visibility_rays": 976
+          },
+          "center_sensors_sha256": {
+            "forward_depth_m_f32": "dc59940960f3e77cd51587117acc4f19dd936a65a3656f0e9f004de3ab5346b7",
+            "instance_id_u32": "54493eda3cab1de28d6a45a93e7b1ad3d6c03c266d46c2be0a76d7d8090893a9",
+            "valid_u8": "9e030f1dfd3092280ad736ecad1532bae2eaaa8a2d060b91943c4fc26311869c"
+          },
+          "history_accepted": 0,
+          "history_age_sum": 45,
+          "history_sequence": 14
+        },
+        {
+          "sensor_check": {
+            "passed": true,
+            "tested_pixels": 12288,
+            "boundary_pixels_excluded": [],
+            "mismatch_count": 0,
+            "first_mismatches": []
+          },
+          "contour": {
+            "candidate_pixels": 244,
+            "resolved_pixels": 112,
+            "unsupported_pixels": 0,
+            "visibility_rays": 976
+          },
+          "center_sensors_sha256": {
+            "forward_depth_m_f32": "b6d75d95434e5b9b356872f3d1c32d7d4c22ecc5476d5590a8fab9f1e4ddc6b4",
+            "instance_id_u32": "f7545ec3cdb491bc430263ac7a5b4d360191d8d31f46bf3f58b41ca65b99bf0a",
+            "valid_u8": "d76aa8e1a13aae3bae4b4c6810263b7f0c9f2de11479d464e0f67fb5f455054e"
+          },
+          "history_accepted": 0,
+          "history_age_sum": 36,
+          "history_sequence": 15
+        },
+        {
+          "sensor_check": {
+            "passed": true,
+            "tested_pixels": 12288,
+            "boundary_pixels_excluded": [],
+            "mismatch_count": 0,
+            "first_mismatches": []
+          },
+          "contour": {
+            "candidate_pixels": 244,
+            "resolved_pixels": 112,
+            "unsupported_pixels": 0,
+            "visibility_rays": 976
+          },
+          "center_sensors_sha256": {
+            "forward_depth_m_f32": "f75b72c1c1f6316ba91a8367dcfdf0cec59991768305b4ba6768b261750c0c56",
+            "instance_id_u32": "f594d6a1e01ffeb21b4ef1a8303f9c3afe7b0e54763f38bdd00d5a1823679298",
+            "valid_u8": "83f75a719738b56b8207e57ae53dc7d8098c4c82e4a0f6bdf196bf12136a922b"
+          },
+          "history_accepted": 0,
+          "history_age_sum": 36,
+          "history_sequence": 16
+        },
+        {
+          "sensor_check": {
+            "passed": true,
+            "tested_pixels": 12288,
+            "boundary_pixels_excluded": [],
+            "mismatch_count": 0,
+            "first_mismatches": []
+          },
+          "contour": {
+            "candidate_pixels": 250,
+            "resolved_pixels": 115,
+            "unsupported_pixels": 0,
+            "visibility_rays": 1000
+          },
+          "center_sensors_sha256": {
+            "forward_depth_m_f32": "9397821246ec7d187b122bc682c99b4bac38646a492112493cfa5721debffddb",
+            "instance_id_u32": "50ae9e22e8e18286d483bbde595adcf06e060571b6677b27ae22fe3b013442c5",
+            "valid_u8": "452c941770aac2c3722c0d839728826d8c05716c7d8245d5e40a974533b8d15e"
+          },
+          "history_accepted": 0,
+          "history_age_sum": 37,
+          "history_sequence": 17
+        },
+        {
+          "sensor_check": {
+            "passed": true,
+            "tested_pixels": 12288,
+            "boundary_pixels_excluded": [],
+            "mismatch_count": 0,
+            "first_mismatches": []
+          },
+          "contour": {
+            "candidate_pixels": 0,
+            "resolved_pixels": 0,
+            "unsupported_pixels": 0,
+            "visibility_rays": 0
+          },
+          "center_sensors_sha256": {
+            "forward_depth_m_f32": "92a1bc24e43857e68a44e05b921328480378af2be407d7a37cb32c2f29f87bfa",
+            "instance_id_u32": "2aae7dc846aaf25f1cadf55f1666862046c6db9d65d84bdc07fa039dac405606",
+            "valid_u8": "f3cc103136423a57975750907ebc1d367e2985ac6338976d4d5a439f50323f4a"
+          },
+          "history_accepted": 0,
+          "history_age_sum": 0,
+          "history_sequence": 18
+        }
+      ],
+      "cleanup": true
+    },
+    "rigid_history": {
+      "score": {
+        "region_pixels": 224,
+        "transitions": 15,
+        "center_transition_mae": 0.06706486891631643,
+        "contour_transition_mae": 0.057432755421880984,
+        "fractional_reduction": 0.1436238324189435,
+        "center_per_transition": [
+          0.06705655650931609,
+          0.06705655650933233,
+          0.06705655650931863,
+          0.06705655650932295,
+          0.06711148814994582,
+          0.06705655650932739,
+          0.06705655650931965,
+          0.06705655650931572,
+          0.06705655650932359,
+          0.06705655650932853,
+          0.06712631097361513,
+          0.0670565565093062,
+          0.0670565565093199,
+          0.0670565565093284,
+          0.06705655650932599
+        ],
+        "contour_per_transition": [
+          0.057018866213886125,
+          0.05701888663647952,
+          0.05701891517486235,
+          0.0574250942980532,
+          0.058189741558856846,
+          0.056460713286019724,
+          0.05701873729224248,
+          0.05876255712290985,
+          0.05701886621389818,
+          0.056460868351230306,
+          0.0570188978123513,
+          0.05883243092954097,
+          0.05701884286433374,
+          0.05646082098682369,
+          0.05976709258672651
+        ],
+        "vacated_observations": 76,
+        "vacated_rgb_mismatches": 0,
+        "vacated_linear_max_abs": 0.0,
+        "empty_endpoints_exact": true
+      },
+      "captures": [
+        {
+          "sensor_check": {
+            "passed": true,
+            "tested_pixels": 12288,
+            "boundary_pixels_excluded": [],
+            "mismatch_count": 0,
+            "first_mismatches": []
+          },
+          "contour": {
+            "candidate_pixels": 0,
+            "resolved_pixels": 0,
+            "unsupported_pixels": 0,
+            "visibility_rays": 0
+          },
+          "center_sensors_sha256": {
+            "forward_depth_m_f32": "42bd22a7ff7abb6fc4b3a3acd20c9a5d7900742b1fc8b229c19b22af9e0fde3e",
+            "instance_id_u32": "90b7607c4133f542e0228c30990f126e327b2381370e15e52acc32274291db62",
+            "valid_u8": "68a5dedcd504c737ab6bbb9eca24e4566d44bb00dc9a107d4c78ef66edd97ef1"
+          },
+          "history_accepted": 0,
+          "history_age_sum": 12288,
+          "history_sequence": 0
+        },
+        {
+          "sensor_check": {
+            "passed": true,
+            "tested_pixels": 12288,
+            "boundary_pixels_excluded": [],
+            "mismatch_count": 0,
+            "first_mismatches": []
+          },
+          "contour": {
+            "candidate_pixels": 0,
+            "resolved_pixels": 0,
+            "unsupported_pixels": 0,
+            "visibility_rays": 0
+          },
+          "center_sensors_sha256": {
+            "forward_depth_m_f32": "92a1bc24e43857e68a44e05b921328480378af2be407d7a37cb32c2f29f87bfa",
+            "instance_id_u32": "2aae7dc846aaf25f1cadf55f1666862046c6db9d65d84bdc07fa039dac405606",
+            "valid_u8": "f3cc103136423a57975750907ebc1d367e2985ac6338976d4d5a439f50323f4a"
+          },
+          "history_accepted": 0,
+          "history_age_sum": 0,
+          "history_sequence": 1
+        },
+        {
+          "sensor_check": {
+            "passed": true,
+            "tested_pixels": 12288,
+            "boundary_pixels_excluded": [],
+            "mismatch_count": 0,
+            "first_mismatches": []
+          },
+          "contour": {
+            "candidate_pixels": 250,
+            "resolved_pixels": 115,
+            "unsupported_pixels": 0,
+            "visibility_rays": 1000
+          },
+          "center_sensors_sha256": {
+            "forward_depth_m_f32": "00bd33222ada8b09dde7474821eedb97eb22c5d8ab7a374ba1d9aa7993651092",
+            "instance_id_u32": "f1f5d30064fe772a5b641196e4d7e903bcbfdfc14ca20f55dada90969f6578bf",
+            "valid_u8": "9e7d0fe6569415064d38fea212de55562e70887c53d204d4e170efaefd11bef9"
+          },
+          "history_accepted": 0,
+          "history_age_sum": 38,
+          "history_sequence": 2
+        },
+        {
+          "sensor_check": {
+            "passed": true,
+            "tested_pixels": 12288,
+            "boundary_pixels_excluded": [],
+            "mismatch_count": 0,
+            "first_mismatches": []
+          },
+          "contour": {
+            "candidate_pixels": 250,
+            "resolved_pixels": 115,
+            "unsupported_pixels": 0,
+            "visibility_rays": 1000
+          },
+          "center_sensors_sha256": {
+            "forward_depth_m_f32": "96775bc4d52ed73aa282ff82d4f30898c0fdbb5909b019237a5fa038933a3337",
+            "instance_id_u32": "a35dd5911bbf022ddd3403ba666ddbdaf1f3cf3e2e61a7e36289e0b2304a9fa6",
+            "valid_u8": "ef1345a91d35b43ba90c96fb801ae760f702e1e6bdeb5a928650c8bd25e6d268"
+          },
+          "history_accepted": 29,
+          "history_age_sum": 68,
+          "history_sequence": 3
+        },
+        {
+          "sensor_check": {
+            "passed": true,
+            "tested_pixels": 12288,
+            "boundary_pixels_excluded": [],
+            "mismatch_count": 0,
+            "first_mismatches": []
+          },
+          "contour": {
+            "candidate_pixels": 250,
+            "resolved_pixels": 115,
+            "unsupported_pixels": 0,
+            "visibility_rays": 1000
+          },
+          "center_sensors_sha256": {
+            "forward_depth_m_f32": "c7406a65ab30e4a56343a7bcca9e5fd254df67ccf19006d2dedf71fc8c2eaa95",
+            "instance_id_u32": "3227a3bffabd8271e8ef24e447ae791460b9a09ec1d489ea99404cb974b17607",
+            "valid_u8": "c22fa57cfde597b179bb249954e84fe6e49f2a5f6473ddc699a853a2c294620f"
+          },
+          "history_accepted": 30,
+          "history_age_sum": 91,
+          "history_sequence": 4
+        },
+        {
+          "sensor_check": {
+            "passed": true,
+            "tested_pixels": 12288,
+            "boundary_pixels_excluded": [],
+            "mismatch_count": 0,
+            "first_mismatches": []
+          },
+          "contour": {
+            "candidate_pixels": 250,
+            "resolved_pixels": 115,
+            "unsupported_pixels": 0,
+            "visibility_rays": 1000
+          },
+          "center_sensors_sha256": {
+            "forward_depth_m_f32": "f1989d2fc5e3cc934d25674f613602d8fa0841189a5c9b7e39f07b11fb1ed16c",
+            "instance_id_u32": "42270f4d20c249d1a580a8443336da248122e15951401d34138f4ccf9d87e80a",
+            "valid_u8": "5ad32ce391e39510ebcaaac3c52e19f861aad8302d380998adee2e1f48bb2e0e"
+          },
+          "history_accepted": 24,
+          "history_age_sum": 92,
+          "history_sequence": 5
+        },
+        {
+          "sensor_check": {
+            "passed": true,
+            "tested_pixels": 12288,
+            "boundary_pixels_excluded": [],
+            "mismatch_count": 0,
+            "first_mismatches": []
+          },
+          "contour": {
+            "candidate_pixels": 250,
+            "resolved_pixels": 114,
+            "unsupported_pixels": 0,
+            "visibility_rays": 1000
+          },
+          "center_sensors_sha256": {
+            "forward_depth_m_f32": "fde80d79f8a7ee7b46c5c23a947dda2310ad0b9661a469dbfafa529b90124463",
+            "instance_id_u32": "ffda2eba3170482199847f9e9d12e5db2f02c917ed0d8e0102a86bc54493456f",
+            "valid_u8": "8bc55e92fdfbad89c9a3f6d4a2396667fd3d603630728d9a2fab38c4926e2a7a"
+          },
+          "history_accepted": 32,
+          "history_age_sum": 102,
+          "history_sequence": 6
+        },
+        {
+          "sensor_check": {
+            "passed": true,
+            "tested_pixels": 12288,
+            "boundary_pixels_excluded": [],
+            "mismatch_count": 0,
+            "first_mismatches": []
+          },
+          "contour": {
+            "candidate_pixels": 244,
+            "resolved_pixels": 112,
+            "unsupported_pixels": 0,
+            "visibility_rays": 976
+          },
+          "center_sensors_sha256": {
+            "forward_depth_m_f32": "a60a785d0bb3ecfdeb767f8adbe3470186f5dafec1b97a3dd30da787787f1823",
+            "instance_id_u32": "b2289fb190230e058422a93e488336fe212d1d8739c6bfcc94a1f790df6dbba0",
+            "valid_u8": "cb566c7e4a5622614b23135f431cf563e5870fae830f112f27c764354b8b811b"
+          },
+          "history_accepted": 18,
+          "history_age_sum": 63,
+          "history_sequence": 7
+        },
+        {
+          "sensor_check": {
+            "passed": true,
+            "tested_pixels": 12288,
+            "boundary_pixels_excluded": [],
+            "mismatch_count": 0,
+            "first_mismatches": []
+          },
+          "contour": {
+            "candidate_pixels": 244,
+            "resolved_pixels": 112,
+            "unsupported_pixels": 0,
+            "visibility_rays": 976
+          },
+          "center_sensors_sha256": {
+            "forward_depth_m_f32": "0671b3489508539fb7476433c8211953dcd59dfd4288df4bdcc3eb8bf71d57d3",
+            "instance_id_u32": "02067321e842e995aaffcea194feab22c72ccdf467fce25d6dcba887f32932fd",
+            "valid_u8": "298506f96e2ef4b3de1fa50970eca9cfa8885717b194e354f0ca79cd726e8870"
+          },
+          "history_accepted": 19,
+          "history_age_sum": 68,
+          "history_sequence": 8
+        },
+        {
+          "sensor_check": {
+            "passed": true,
+            "tested_pixels": 12288,
+            "boundary_pixels_excluded": [],
+            "mismatch_count": 0,
+            "first_mismatches": []
+          },
+          "contour": {
+            "candidate_pixels": 244,
+            "resolved_pixels": 112,
+            "unsupported_pixels": 0,
+            "visibility_rays": 976
+          },
+          "center_sensors_sha256": {
+            "forward_depth_m_f32": "aa425e410c0e3c1efc1d1052dd79e8a8e2cc4f7ae48aabc560d0bfcf5ef4e1b9",
+            "instance_id_u32": "711315ecf2f07a0b2d07fa9590892d606f9ef35f89ac3a869a2f8e3854c88588",
+            "valid_u8": "bdcf590fe913427b2e401116bd9bfdbe50e4ea3766244f81fd83f8ac842e3bae"
+          },
+          "history_accepted": 21,
+          "history_age_sum": 81,
+          "history_sequence": 9
+        },
+        {
+          "sensor_check": {
+            "passed": true,
+            "tested_pixels": 12288,
+            "boundary_pixels_excluded": [],
+            "mismatch_count": 0,
+            "first_mismatches": []
+          },
+          "contour": {
+            "candidate_pixels": 246,
+            "resolved_pixels": 114,
+            "unsupported_pixels": 0,
+            "visibility_rays": 984
+          },
+          "center_sensors_sha256": {
+            "forward_depth_m_f32": "20e53f7c616bc9a3bb7bd6f421026e24428503d340880057244ceca1e0ec9d81",
+            "instance_id_u32": "989d5860a26ed1da9902a2fb7785fbc3bd7c45cb9364914012aa202383a94059",
+            "valid_u8": "aadf07bb837120fdb06348bfee75d2c152241a23e4c239141a9ec87a75ecf826"
+          },
+          "history_accepted": 29,
+          "history_age_sum": 99,
+          "history_sequence": 10
+        },
+        {
+          "sensor_check": {
+            "passed": true,
+            "tested_pixels": 12288,
+            "boundary_pixels_excluded": [],
+            "mismatch_count": 0,
+            "first_mismatches": []
+          },
+          "contour": {
+            "candidate_pixels": 244,
+            "resolved_pixels": 114,
+            "unsupported_pixels": 0,
+            "visibility_rays": 976
+          },
+          "center_sensors_sha256": {
+            "forward_depth_m_f32": "f848b00df5c8c06141e9cd4f650ed50822bf17654e318356a5092b7acd6ff61a",
+            "instance_id_u32": "8ebbf75d064fd87b90b6b9cb0211471195d4a18cb35dbfe1b061191292074135",
+            "valid_u8": "52e15dd023b6155cdb56995ca9f19dad002b5425465afe6fd0e781c6c81592fc"
+          },
+          "history_accepted": 27,
+          "history_age_sum": 82,
+          "history_sequence": 11
+        },
+        {
+          "sensor_check": {
+            "passed": true,
+            "tested_pixels": 12288,
+            "boundary_pixels_excluded": [],
+            "mismatch_count": 0,
+            "first_mismatches": []
+          },
+          "contour": {
+            "candidate_pixels": 244,
+            "resolved_pixels": 114,
+            "unsupported_pixels": 0,
+            "visibility_rays": 976
+          },
+          "center_sensors_sha256": {
+            "forward_depth_m_f32": "e3484e0a42e7eacea596bdc45985d91906d571ab14a4105f1534d12ead4f11a1",
+            "instance_id_u32": "7d4c1e854d244d88e32a57b3249d5ef32f359c3de007a4507d739ebfb78b9a6c",
+            "valid_u8": "09eb5dc9ceb86195c401b61859d5d951906594a920dc7a093ae547bcfc934296"
+          },
+          "history_accepted": 27,
+          "history_age_sum": 94,
+          "history_sequence": 12
+        },
+        {
+          "sensor_check": {
+            "passed": true,
+            "tested_pixels": 12288,
+            "boundary_pixels_excluded": [],
+            "mismatch_count": 0,
+            "first_mismatches": []
+          },
+          "contour": {
+            "candidate_pixels": 246,
+            "resolved_pixels": 114,
+            "unsupported_pixels": 0,
+            "visibility_rays": 984
+          },
+          "center_sensors_sha256": {
+            "forward_depth_m_f32": "4a8be6470cb786ee9897fd8d739c4ab8086dccb25005a5fd4c310c5c20ec0b07",
+            "instance_id_u32": "cdbb3d4cf1c57712828ac863cd63b7bdf11a140403db4eb4872b45fc03865ba4",
+            "valid_u8": "25eed5cf3f30a7e7def9d4e060bb8e1bf2bc47d3e8241b155bed5f0366712408"
+          },
+          "history_accepted": 29,
+          "history_age_sum": 104,
+          "history_sequence": 13
+        },
+        {
+          "sensor_check": {
+            "passed": true,
+            "tested_pixels": 12288,
+            "boundary_pixels_excluded": [],
+            "mismatch_count": 0,
+            "first_mismatches": []
+          },
+          "contour": {
+            "candidate_pixels": 244,
+            "resolved_pixels": 112,
+            "unsupported_pixels": 0,
+            "visibility_rays": 976
+          },
+          "center_sensors_sha256": {
+            "forward_depth_m_f32": "dc59940960f3e77cd51587117acc4f19dd936a65a3656f0e9f004de3ab5346b7",
+            "instance_id_u32": "54493eda3cab1de28d6a45a93e7b1ad3d6c03c266d46c2be0a76d7d8090893a9",
+            "valid_u8": "9e030f1dfd3092280ad736ecad1532bae2eaaa8a2d060b91943c4fc26311869c"
+          },
+          "history_accepted": 30,
+          "history_age_sum": 116,
+          "history_sequence": 14
+        },
+        {
+          "sensor_check": {
+            "passed": true,
+            "tested_pixels": 12288,
+            "boundary_pixels_excluded": [],
+            "mismatch_count": 0,
+            "first_mismatches": []
+          },
+          "contour": {
+            "candidate_pixels": 244,
+            "resolved_pixels": 112,
+            "unsupported_pixels": 0,
+            "visibility_rays": 976
+          },
+          "center_sensors_sha256": {
+            "forward_depth_m_f32": "b6d75d95434e5b9b356872f3d1c32d7d4c22ecc5476d5590a8fab9f1e4ddc6b4",
+            "instance_id_u32": "f7545ec3cdb491bc430263ac7a5b4d360191d8d31f46bf3f58b41ca65b99bf0a",
+            "valid_u8": "d76aa8e1a13aae3bae4b4c6810263b7f0c9f2de11479d464e0f67fb5f455054e"
+          },
+          "history_accepted": 27,
+          "history_age_sum": 92,
+          "history_sequence": 15
+        },
+        {
+          "sensor_check": {
+            "passed": true,
+            "tested_pixels": 12288,
+            "boundary_pixels_excluded": [],
+            "mismatch_count": 0,
+            "first_mismatches": []
+          },
+          "contour": {
+            "candidate_pixels": 244,
+            "resolved_pixels": 112,
+            "unsupported_pixels": 0,
+            "visibility_rays": 976
+          },
+          "center_sensors_sha256": {
+            "forward_depth_m_f32": "f75b72c1c1f6316ba91a8367dcfdf0cec59991768305b4ba6768b261750c0c56",
+            "instance_id_u32": "f594d6a1e01ffeb21b4ef1a8303f9c3afe7b0e54763f38bdd00d5a1823679298",
+            "valid_u8": "83f75a719738b56b8207e57ae53dc7d8098c4c82e4a0f6bdf196bf12136a922b"
+          },
+          "history_accepted": 26,
+          "history_age_sum": 93,
+          "history_sequence": 16
+        },
+        {
+          "sensor_check": {
+            "passed": true,
+            "tested_pixels": 12288,
+            "boundary_pixels_excluded": [],
+            "mismatch_count": 0,
+            "first_mismatches": []
+          },
+          "contour": {
+            "candidate_pixels": 250,
+            "resolved_pixels": 115,
+            "unsupported_pixels": 0,
+            "visibility_rays": 1000
+          },
+          "center_sensors_sha256": {
+            "forward_depth_m_f32": "9397821246ec7d187b122bc682c99b4bac38646a492112493cfa5721debffddb",
+            "instance_id_u32": "50ae9e22e8e18286d483bbde595adcf06e060571b6677b27ae22fe3b013442c5",
+            "valid_u8": "452c941770aac2c3722c0d839728826d8c05716c7d8245d5e40a974533b8d15e"
+          },
+          "history_accepted": 30,
+          "history_age_sum": 110,
+          "history_sequence": 17
+        },
+        {
+          "sensor_check": {
+            "passed": true,
+            "tested_pixels": 12288,
+            "boundary_pixels_excluded": [],
+            "mismatch_count": 0,
+            "first_mismatches": []
+          },
+          "contour": {
+            "candidate_pixels": 0,
+            "resolved_pixels": 0,
+            "unsupported_pixels": 0,
+            "visibility_rays": 0
+          },
+          "center_sensors_sha256": {
+            "forward_depth_m_f32": "92a1bc24e43857e68a44e05b921328480378af2be407d7a37cb32c2f29f87bfa",
+            "instance_id_u32": "2aae7dc846aaf25f1cadf55f1666862046c6db9d65d84bdc07fa039dac405606",
+            "valid_u8": "f3cc103136423a57975750907ebc1d367e2985ac6338976d4d5a439f50323f4a"
+          },
+          "history_accepted": 0,
+          "history_age_sum": 0,
+          "history_sequence": 18
+        }
+      ],
+      "cleanup": true
+    }
+  },
+  "history_comparison": {
+    "rgb_changed_observations": 0,
+    "max_linear_abs": 0.0,
+    "sensor_hashes_equal": true
+  },
+  "passed_controls": true
+}

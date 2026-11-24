@@ -1,0 +1,189 @@
+{
+  "frame": 60,
+  "size": [
+    1280,
+    720
+  ],
+  "white_shell_box": [
+    457,
+    110,
+    795,
+    355
+  ],
+  "local_penumbra_polygons": [
+    [
+      [
+        138,
+        115
+      ],
+      [
+        214,
+        100
+      ],
+      [
+        216,
+        115
+      ],
+      [
+        140,
+        134
+      ]
+    ],
+    [
+      [
+        142,
+        144
+      ],
+      [
+        210,
+        126
+      ],
+      [
+        218,
+        137
+      ],
+      [
+        149,
+        158
+      ]
+    ]
+  ],
+  "local_lower_diagonal_detail": [
+    129,
+    177,
+    225,
+    240
+  ],
+  "variants": {
+    "baseline": {
+      "center_sha256": {
+        "id": "bc69b5e50916d2714d788c7471fc19228f0252714dcc02460b2256dbf4b1cfc3",
+        "depth": "f2bbf77c25fdaa7abea0ab3c44e831a8050a21e15968f174d92383ea9793a81e",
+        "valid": "61a2ef4589e9c6a3b5163bdebdf5830681c6941d5fd51a1b5c6e00dd2bc5cc07"
+      },
+      "timings_sha256": "6a99302bdf66e5590503c5f3ac8d3ecdd0fbd5f1f8c24188883d577a1b02725a",
+      "successive_frame_changed_pixels": [
+        670931,
+        675970
+      ],
+      "penumbra": {
+        "pixels": 2393,
+        "rgb_mae": 3.8792310906811536,
+        "rgb_rmse": 4.788913812208999,
+        "vertical_samples": 1777,
+        "local_slope_residual_p95": 6.05414999999999,
+        "reference_local_slope_residual_p95": 3.1419599999999943,
+        "local_slope_residual_mae_vs_reference": 1.9611813449634201
+      },
+      "white_shell_id_contours": {
+        "hit_miss": {
+          "pixels": 1816,
+          "rgb_mae": 17.56479441997063,
+          "rgb_rmse": 36.05906854559499
+        },
+        "distinct_hit_ids": {
+          "pixels": 3085,
+          "rgb_mae": 11.707509454349001,
+          "rgb_rmse": 17.718426160575877
+        },
+        "lower_diagonal": {
+          "pixels": 247,
+          "rgb_mae": 13.765182186234817,
+          "rgb_rmse": 24.410844695164567
+        }
+      }
+    },
+    "shadow": {
+      "center_sha256": {
+        "id": "bc69b5e50916d2714d788c7471fc19228f0252714dcc02460b2256dbf4b1cfc3",
+        "depth": "f2bbf77c25fdaa7abea0ab3c44e831a8050a21e15968f174d92383ea9793a81e",
+        "valid": "61a2ef4589e9c6a3b5163bdebdf5830681c6941d5fd51a1b5c6e00dd2bc5cc07"
+      },
+      "timings_sha256": "9792fefbda0f6dea41bdf2af96feff49d5c3c84653eece8090b5435f88c94595",
+      "successive_frame_changed_pixels": [
+        672623,
+        678281
+      ],
+      "penumbra": {
+        "pixels": 2393,
+        "rgb_mae": 3.016576124808469,
+        "rgb_rmse": 3.987338925793955,
+        "vertical_samples": 1777,
+        "local_slope_residual_p95": 2.0905499999999932,
+        "reference_local_slope_residual_p95": 3.1419599999999943,
+        "local_slope_residual_mae_vs_reference": 1.4970883792909389
+      },
+      "white_shell_id_contours": {
+        "hit_miss": {
+          "pixels": 1816,
+          "rgb_mae": 17.527716593245227,
+          "rgb_rmse": 35.89353700224556
+        },
+        "distinct_hit_ids": {
+          "pixels": 3085,
+          "rgb_mae": 11.450891410048623,
+          "rgb_rmse": 17.46058306878974
+        },
+        "lower_diagonal": {
+          "pixels": 247,
+          "rgb_mae": 13.76923076923077,
+          "rgb_rmse": 24.429495899537777
+        }
+      }
+    },
+    "combined": {
+      "center_sha256": {
+        "id": "bc69b5e50916d2714d788c7471fc19228f0252714dcc02460b2256dbf4b1cfc3",
+        "depth": "f2bbf77c25fdaa7abea0ab3c44e831a8050a21e15968f174d92383ea9793a81e",
+        "valid": "61a2ef4589e9c6a3b5163bdebdf5830681c6941d5fd51a1b5c6e00dd2bc5cc07"
+      },
+      "timings_sha256": "3849ed4f6e2a2ceac4946f532e179ef19a26cdce1de52033cf7fc2320701bc6c",
+      "successive_frame_changed_pixels": [
+        673038,
+        678636
+      ],
+      "penumbra": {
+        "pixels": 2393,
+        "rgb_mae": 3.016576124808469,
+        "rgb_rmse": 3.987338925793955,
+        "vertical_samples": 1777,
+        "local_slope_residual_p95": 2.0905499999999932,
+        "reference_local_slope_residual_p95": 3.1419599999999943,
+        "local_slope_residual_mae_vs_reference": 1.4970883792909389
+      },
+      "white_shell_id_contours": {
+        "hit_miss": {
+          "pixels": 1816,
+          "rgb_mae": 8.77129221732746,
+          "rgb_rmse": 17.377270502089505
+        },
+        "distinct_hit_ids": {
+          "pixels": 3085,
+          "rgb_mae": 9.75894111291194,
+          "rgb_rmse": 14.213350797641368
+        },
+        "lower_diagonal": {
+          "pixels": 247,
+          "rgb_mae": 9.35897435897436,
+          "rgb_rmse": 15.33895044681078
+        }
+      }
+    }
+  },
+  "reference_sha256": "81e2f067143e4230da368b56bf7817dc457f0481507d96e590bab3ab4e389f02",
+  "frame60_contour_isolation": {
+    "adjacent_id_transition": {
+      "pixels": 16974,
+      "changed_rgb_pixels": 5197
+    },
+    "no_adjacent_id_transition": {
+      "pixels": 904626,
+      "changed_rgb_pixels": 0
+    },
+    "visible_body_interior": {
+      "pixels": 349871,
+      "changed_rgb_pixels": 0
+    }
+  },
+  "center_sensors_identical": true
+}

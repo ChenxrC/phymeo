@@ -1,0 +1,146 @@
+{
+  "package_seal_sha256": "b17e417084ce584f0783e388611bbbfccbbb95753e98e4933dfb85cb17ec3256",
+  "panels": {
+    "primary_samples_per_panel": 16,
+    "secondary_samples_per_panel": 4,
+    "brdf_directions": 8,
+    "marker_id": 107,
+    "marker_name": "PR_PRIMARY_PANEL_SEQUENCE_SAMPLES",
+    "motion": "fixed in emitter space, current geometry, no direct-light history",
+    "progressive": "within-cell shift per unchanged-state batch, reset on state change"
+  },
+  "roi": [
+    20,
+    20,
+    44,
+    44
+  ],
+  "scope": "Current primary linear RGB includes diffuse and specular panel lighting. No HDR, directional lights or reflected-environment radiance in this fixture. Displayed RGB is checked separately and includes reconstructed indirect light.",
+  "states": [
+    "partly blocked",
+    "partly blocked",
+    "clear",
+    "partly blocked"
+  ],
+  "records": [
+    {
+      "label": "moving",
+      "frame": 0,
+      "reuse_history": true,
+      "effective_seed": 0,
+      "primary_roi_mean": 0.05901653692126274,
+      "primary_roi_sha256": "46cd03499334fab6c5a7aa47f35ab8a199fdf9a7588fa4fc443f33a773333667",
+      "max_history_age": 1
+    },
+    {
+      "label": "moving",
+      "frame": 1,
+      "reuse_history": true,
+      "effective_seed": 2654435769,
+      "primary_roi_mean": 0.05901653692126274,
+      "primary_roi_sha256": "46cd03499334fab6c5a7aa47f35ab8a199fdf9a7588fa4fc443f33a773333667",
+      "max_history_age": 2
+    },
+    {
+      "label": "moving",
+      "frame": 2,
+      "reuse_history": true,
+      "effective_seed": 1013904242,
+      "primary_roi_mean": 0.1821121871471405,
+      "primary_roi_sha256": "09584b9b4d99cbf6337d3424eab732e0eae3a95f40bcb97cba992768c84b53a7",
+      "max_history_age": 1
+    },
+    {
+      "label": "moving",
+      "frame": 3,
+      "reuse_history": true,
+      "effective_seed": 3668340011,
+      "primary_roi_mean": 0.05901653692126274,
+      "primary_roi_sha256": "46cd03499334fab6c5a7aa47f35ab8a199fdf9a7588fa4fc443f33a773333667",
+      "max_history_age": 1
+    },
+    {
+      "label": "fresh",
+      "frame": 2,
+      "reuse_history": false,
+      "effective_seed": 1013904242,
+      "primary_roi_mean": 0.1821121871471405,
+      "primary_roi_sha256": "09584b9b4d99cbf6337d3424eab732e0eae3a95f40bcb97cba992768c84b53a7",
+      "max_history_age": 1
+    },
+    {
+      "label": "fresh",
+      "frame": 3,
+      "reuse_history": false,
+      "effective_seed": 3668340011,
+      "primary_roi_mean": 0.05901653692126274,
+      "primary_roi_sha256": "46cd03499334fab6c5a7aa47f35ab8a199fdf9a7588fa4fc443f33a773333667",
+      "max_history_age": 1
+    }
+  ],
+  "comparisons": [
+    {
+      "frame": 2,
+      "primary_matches_fresh": true,
+      "max_displayed_rgb8_difference": 0,
+      "min_signed_primary_change": 0.11073612421751022,
+      "mean_signed_primary_change": 0.12309565395116806
+    },
+    {
+      "frame": 3,
+      "primary_matches_fresh": true,
+      "max_displayed_rgb8_difference": 0,
+      "min_signed_primary_change": 0.11073612421751022,
+      "mean_signed_primary_change": 0.12309565395116806
+    }
+  ],
+  "emitter": {
+    "scope": "experimental NativeStudio ABI fixture before first capture",
+    "payload_f32le_sha256": "650db90ca6caccebf2da44afb7b2c5a81839e7fe7ac1e261079ae11c5a0e211d",
+    "bytes": 144,
+    "environment": [
+      0,
+      0,
+      0
+    ],
+    "panels": [
+      {
+        "position": [
+          0,
+          0,
+          1
+        ],
+        "half_u": [
+          0.5,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "half_v": [
+          0.0,
+          -0.5,
+          0.0,
+          0.0
+        ],
+        "emission": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "emission": [
+          0,
+          0,
+          0
+        ]
+      }
+    ]
+  },
+  "passed": true,
+  "full_frame_sensor_sha256": {
+    "FORWARD_DEPTH": "6cd5825acad6b77ecdff2c923bd79f58425f93812e760243954638e9f4afde56",
+    "INSTANCE_ID": "20991320440caacea16b70e9f59131dae5c3de673bb8330d6680fc5332af196f",
+    "VALID": "6ba042a6672c64272ce75901468fd210026cd674fe9f1e11b46c9302e47e2136"
+  }
+}

@@ -75,6 +75,10 @@ def media_profile_name(policy,summary):
     require(camera in ("detail","sequence") and look in ("recorded","soft-studio"),"unknown captured presentation")
     name=f"rigid-t4-p{policy['paths_per_anchor']}-g{policy['area_light_grid']}-k25-r2-age4"
     if policy.get("estimator")=="visibility-ratio":name+="-visibility-ratio"
+    quality=policy.get("surface_quality")
+    if quality:
+        name+=f"-panel{quality['panels']['primary_samples_per_panel']}"
+        if "contours" in quality:name+="-contour4"
     if camera!="detail" or look!="recorded":name+="-"+camera+"-"+look
     return name
 
@@ -166,7 +170,11 @@ def capture_owner(args,root,policy,shared,scene,studio,inputs,bindings,output,na
     shader_shas={digest(p) for p in (root/"build").glob("*.spv")}
     try:
         start=perf_counter()
-        owner=RigidHistoryBackend(root,device_index=args.device_index,studio=studio,seed=args.seed,exposure=8.,
+        backend=RigidHistoryBackend
+        if "surface_quality" in policy:
+            from preview_surface_quality.runtime import SurfaceQualityBackend
+            backend=SurfaceQualityBackend
+        owner=backend(root,device_index=args.device_index,studio=studio,seed=args.seed,exposure=8.,
             validation=args.validation,reuse_history=reuse).open_scene(scene)
         row["open_ms"]=1000*(perf_counter()-start)
         for i in WARMUP:

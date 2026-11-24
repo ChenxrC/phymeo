@@ -121,6 +121,13 @@ class RigidHistorySession(HistorySession):
             value["presentation"]=None if self.last_plan is None else deepcopy(self.last_plan["key"]["presentation"])
             value["unobserved_secondary_visibility"]=bool(self.last_rigid["moved_instances"])
             value["rigid_shader_sha256"]=self.backend.history_shader_sha256
+            quality=value["contract"].get("surface_quality")
+            if quality:
+                value["surface_quality"]=deepcopy(quality)
+                profile=value["device"].get("resident_profile")
+                if profile is not None:
+                    profile["gpu_scope"]="TLAS + primary panel shading + compact GI/filter + rigid history + copies"
+                    if "contours" in quality:profile["gpu_scope"]+=" including four-ray candidate contour resolve"
             return value
 
     def close(self):

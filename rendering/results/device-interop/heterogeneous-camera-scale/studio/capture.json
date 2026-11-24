@@ -1,0 +1,939 @@
+{
+  "size": [
+    800,
+    600
+  ],
+  "views": [
+    {
+      "world": "41",
+      "camera": "fixed",
+      "tick": 32,
+      "time_s": 0.03200000151991844,
+      "original_scene": "camera-p4-v1:e8c808c9b6eab93e9537ec98260049a0e24964f77e0592f44dfbb814dd2e47dd",
+      "studio_scene": "camera-p4-v1:e8c808c9b6eab93e9537ec98260049a0e24964f77e0592f44dfbb814dd2e47dd:photo-studio-v3",
+      "camera_pose": {
+        "position_m": [
+          0.84,
+          -0.85,
+          0.56
+        ],
+        "orientation_xyzw": [
+          -0.5206584481580424,
+          -0.17191399242681216,
+          -0.2622035762206413,
+          -0.7941093401960714
+        ]
+      },
+      "robot": {
+        "matched_pixels": 11474,
+        "original_pixels": 11474,
+        "median_srgb_luma_before": 0.0,
+        "median_srgb_luma_studio": 93.37119999999999,
+        "depth_delta_max_m": 0.0
+      },
+      "workpiece": {
+        "matched_pixels": 919,
+        "original_pixels": 919,
+        "median_srgb_luma_before": 0.0,
+        "median_srgb_luma_studio": 128.19140000000002,
+        "depth_delta_max_m": 0.0
+      },
+      "black_percent_before": 34.98520833333333,
+      "black_percent_studio": 0.0,
+      "baseline_host_vs_shared": {
+        "instance_disagreements": 0,
+        "max_depth_delta_on_same_id_m": 1.1920928955078125e-07
+      }
+    },
+    {
+      "world": "41",
+      "camera": "wrist",
+      "tick": 32,
+      "time_s": 0.03200000151991844,
+      "original_scene": "camera-p4-v1:e8c808c9b6eab93e9537ec98260049a0e24964f77e0592f44dfbb814dd2e47dd",
+      "studio_scene": "camera-p4-v1:e8c808c9b6eab93e9537ec98260049a0e24964f77e0592f44dfbb814dd2e47dd:photo-studio-v3",
+      "camera_pose": {
+        "position_m": [
+          0.28037741780281067,
+          -0.21999159455299377,
+          0.3949020802974701
+        ],
+        "orientation_xyzw": [
+          0.3469345542650685,
+          -0.08524935139757821,
+          -0.22287586858462077,
+          0.9070255290485716
+        ]
+      },
+      "robot": {
+        "matched_pixels": 75598,
+        "original_pixels": 75598,
+        "median_srgb_luma_before": 0.0,
+        "median_srgb_luma_studio": 88.84639999999999,
+        "depth_delta_max_m": 0.0
+      },
+      "workpiece": {
+        "matched_pixels": 5655,
+        "original_pixels": 5655,
+        "median_srgb_luma_before": 54.0552,
+        "median_srgb_luma_studio": 137.14579999999998,
+        "depth_delta_max_m": 0.0
+      },
+      "black_percent_before": 13.655208333333333,
+      "black_percent_studio": 0.0,
+      "baseline_host_vs_shared": {
+        "instance_disagreements": 0,
+        "max_depth_delta_on_same_id_m": 7.3909759521484375e-06
+      }
+    },
+    {
+      "world": "7",
+      "camera": "fixed",
+      "tick": 32,
+      "time_s": 0.03200000151991844,
+      "original_scene": "camera-p4-v1:45b4d6762192746570c308985855ac53ca9720a5f3d63b724ad5e9db8c2e5405",
+      "studio_scene": "camera-p4-v1:45b4d6762192746570c308985855ac53ca9720a5f3d63b724ad5e9db8c2e5405:photo-studio-v3",
+      "camera_pose": {
+        "position_m": [
+          0.84,
+          -0.85,
+          0.56
+        ],
+        "orientation_xyzw": [
+          -0.5206584481580424,
+          -0.17191399242681216,
+          -0.2622035762206413,
+          -0.7941093401960714
+        ]
+      },
+      "robot": {
+        "matched_pixels": 11428,
+        "original_pixels": 11428,
+        "median_srgb_luma_before": 0.0,
+        "median_srgb_luma_studio": 93.9796,
+        "depth_delta_max_m": 0.0
+      },
+      "workpiece": {
+        "matched_pixels": 2387,
+        "original_pixels": 2387,
+        "median_srgb_luma_before": 0.0,
+        "median_srgb_luma_studio": 129.60219999999998,
+        "depth_delta_max_m": 0.0
+      },
+      "black_percent_before": 35.267291666666665,
+      "black_percent_studio": 0.0,
+      "baseline_host_vs_shared": {
+        "instance_disagreements": 0,
+        "max_depth_delta_on_same_id_m": 0.0
+      }
+    },
+    {
+      "world": "7",
+      "camera": "wrist",
+      "tick": 32,
+      "time_s": 0.03200000151991844,
+      "original_scene": "camera-p4-v1:45b4d6762192746570c308985855ac53ca9720a5f3d63b724ad5e9db8c2e5405",
+      "studio_scene": "camera-p4-v1:45b4d6762192746570c308985855ac53ca9720a5f3d63b724ad5e9db8c2e5405:photo-studio-v3",
+      "camera_pose": {
+        "position_m": [
+          0.2823057770729065,
+          -0.22028285264968872,
+          0.395474910736084
+        ],
+        "orientation_xyzw": [
+          0.34614996195872966,
+          -0.07872663262971355,
+          -0.22621138902791363,
+          0.9070891514205306
+        ]
+      },
+      "robot": {
+        "matched_pixels": 75593,
+        "original_pixels": 75593,
+        "median_srgb_luma_before": 0.0,
+        "median_srgb_luma_studio": 88.98679999999999,
+        "depth_delta_max_m": 0.0
+      },
+      "workpiece": {
+        "matched_pixels": 13235,
+        "original_pixels": 13235,
+        "median_srgb_luma_before": 89.2188,
+        "median_srgb_luma_studio": 169.05259999999998,
+        "depth_delta_max_m": 0.0
+      },
+      "black_percent_before": 14.625208333333333,
+      "black_percent_studio": 0.0,
+      "baseline_host_vs_shared": {
+        "instance_disagreements": 0,
+        "max_depth_delta_on_same_id_m": 7.152557373046875e-07
+      }
+    },
+    {
+      "world": "305",
+      "camera": "fixed",
+      "tick": 32,
+      "time_s": 0.03200000151991844,
+      "original_scene": "camera-p4-v1:cce332ec46de5378df8fb76bd5f2bc2ce33507b5f815d01703ec6e5d53c0a900",
+      "studio_scene": "camera-p4-v1:cce332ec46de5378df8fb76bd5f2bc2ce33507b5f815d01703ec6e5d53c0a900:photo-studio-v3",
+      "camera_pose": {
+        "position_m": [
+          0.84,
+          -0.85,
+          0.56
+        ],
+        "orientation_xyzw": [
+          -0.5206584481580424,
+          -0.17191399242681216,
+          -0.2622035762206413,
+          -0.7941093401960714
+        ]
+      },
+      "robot": {
+        "matched_pixels": 11430,
+        "original_pixels": 11430,
+        "median_srgb_luma_before": 0.0,
+        "median_srgb_luma_studio": 95.11269999999999,
+        "depth_delta_max_m": 0.0
+      },
+      "workpiece": {
+        "matched_pixels": 2533,
+        "original_pixels": 2533,
+        "median_srgb_luma_before": 0.0,
+        "median_srgb_luma_studio": 160.2252,
+        "depth_delta_max_m": 0.0
+      },
+      "black_percent_before": 35.241458333333334,
+      "black_percent_studio": 0.0,
+      "baseline_host_vs_shared": {
+        "instance_disagreements": 0,
+        "max_depth_delta_on_same_id_m": 1.1920928955078125e-07
+      }
+    },
+    {
+      "world": "305",
+      "camera": "wrist",
+      "tick": 32,
+      "time_s": 0.03200000151991844,
+      "original_scene": "camera-p4-v1:cce332ec46de5378df8fb76bd5f2bc2ce33507b5f815d01703ec6e5d53c0a900",
+      "studio_scene": "camera-p4-v1:cce332ec46de5378df8fb76bd5f2bc2ce33507b5f815d01703ec6e5d53c0a900:photo-studio-v3",
+      "camera_pose": {
+        "position_m": [
+          0.28262650966644287,
+          -0.22035974264144897,
+          0.395142525434494
+        ],
+        "orientation_xyzw": [
+          0.3461950208621743,
+          -0.07853118705670402,
+          -0.22546714786865812,
+          0.9072741732363356
+        ]
+      },
+      "robot": {
+        "matched_pixels": 75579,
+        "original_pixels": 75579,
+        "median_srgb_luma_before": 0.0,
+        "median_srgb_luma_studio": 90.7256,
+        "depth_delta_max_m": 0.0
+      },
+      "workpiece": {
+        "matched_pixels": 14698,
+        "original_pixels": 14698,
+        "median_srgb_luma_before": 108.705,
+        "median_srgb_luma_studio": 209.9692,
+        "depth_delta_max_m": 0.0
+      },
+      "black_percent_before": 14.810208333333334,
+      "black_percent_studio": 0.0,
+      "baseline_host_vs_shared": {
+        "instance_disagreements": 0,
+        "max_depth_delta_on_same_id_m": 2.3245811462402344e-06
+      }
+    },
+    {
+      "world": "11",
+      "camera": "fixed",
+      "tick": 32,
+      "time_s": 0.03200000151991844,
+      "original_scene": "camera-p4-v1:e06f49966ab8242a11264ac2a6216fd882e5fec5b4442a6ba1280226e2d4065c",
+      "studio_scene": "camera-p4-v1:e06f49966ab8242a11264ac2a6216fd882e5fec5b4442a6ba1280226e2d4065c:photo-studio-v3",
+      "camera_pose": {
+        "position_m": [
+          0.84,
+          -0.85,
+          0.56
+        ],
+        "orientation_xyzw": [
+          -0.5206584481580424,
+          -0.17191399242681216,
+          -0.2622035762206413,
+          -0.7941093401960714
+        ]
+      },
+      "robot": {
+        "matched_pixels": 11383,
+        "original_pixels": 11383,
+        "median_srgb_luma_before": 0.0,
+        "median_srgb_luma_studio": 95.35539999999999,
+        "depth_delta_max_m": 0.0
+      },
+      "workpiece": {
+        "matched_pixels": 1926,
+        "original_pixels": 1926,
+        "median_srgb_luma_before": 0.0,
+        "median_srgb_luma_studio": 181.448,
+        "depth_delta_max_m": 0.0
+      },
+      "black_percent_before": 35.284166666666664,
+      "black_percent_studio": 0.0,
+      "baseline_host_vs_shared": {
+        "instance_disagreements": 0,
+        "max_depth_delta_on_same_id_m": 1.1920928955078125e-07
+      }
+    },
+    {
+      "world": "11",
+      "camera": "wrist",
+      "tick": 32,
+      "time_s": 0.03200000151991844,
+      "original_scene": "camera-p4-v1:e06f49966ab8242a11264ac2a6216fd882e5fec5b4442a6ba1280226e2d4065c",
+      "studio_scene": "camera-p4-v1:e06f49966ab8242a11264ac2a6216fd882e5fec5b4442a6ba1280226e2d4065c:photo-studio-v3",
+      "camera_pose": {
+        "position_m": [
+          0.2824636399745941,
+          -0.22053152322769165,
+          0.3946112096309662
+        ],
+        "orientation_xyzw": [
+          0.3467852109806432,
+          -0.07852048774740253,
+          -0.22582918591770187,
+          0.9069596072796013
+        ]
+      },
+      "robot": {
+        "matched_pixels": 75577,
+        "original_pixels": 75577,
+        "median_srgb_luma_before": 0.0,
+        "median_srgb_luma_studio": 89.92779999999999,
+        "depth_delta_max_m": 0.0
+      },
+      "workpiece": {
+        "matched_pixels": 10011,
+        "original_pixels": 10011,
+        "median_srgb_luma_before": 13.703199999999999,
+        "median_srgb_luma_studio": 204.23659999999998,
+        "depth_delta_max_m": 0.0
+      },
+      "black_percent_before": 14.96625,
+      "black_percent_studio": 0.0,
+      "baseline_host_vs_shared": {
+        "instance_disagreements": 0,
+        "max_depth_delta_on_same_id_m": 8.660554885864258e-05
+      }
+    },
+    {
+      "world": "203",
+      "camera": "fixed",
+      "tick": 32,
+      "time_s": 0.03200000151991844,
+      "original_scene": "camera-p4-v1:f2b60b6af0af753dd75369b10656cdace8cbd496be4dc33aec814b89ad557f59",
+      "studio_scene": "camera-p4-v1:f2b60b6af0af753dd75369b10656cdace8cbd496be4dc33aec814b89ad557f59:photo-studio-v3",
+      "camera_pose": {
+        "position_m": [
+          0.84,
+          -0.85,
+          0.56
+        ],
+        "orientation_xyzw": [
+          -0.5206584481580424,
+          -0.17191399242681216,
+          -0.2622035762206413,
+          -0.7941093401960714
+        ]
+      },
+      "robot": {
+        "matched_pixels": 11423,
+        "original_pixels": 11423,
+        "median_srgb_luma_before": 0.0,
+        "median_srgb_luma_studio": 94.78739999999999,
+        "depth_delta_max_m": 0.0
+      },
+      "workpiece": {
+        "matched_pixels": 2106,
+        "original_pixels": 2106,
+        "median_srgb_luma_before": 0.0,
+        "median_srgb_luma_studio": 155.24200000000002,
+        "depth_delta_max_m": 0.0
+      },
+      "black_percent_before": 35.201458333333335,
+      "black_percent_studio": 0.0,
+      "baseline_host_vs_shared": {
+        "instance_disagreements": 1,
+        "max_depth_delta_on_same_id_m": 1.1920928955078125e-07
+      }
+    },
+    {
+      "world": "203",
+      "camera": "wrist",
+      "tick": 32,
+      "time_s": 0.03200000151991844,
+      "original_scene": "camera-p4-v1:f2b60b6af0af753dd75369b10656cdace8cbd496be4dc33aec814b89ad557f59",
+      "studio_scene": "camera-p4-v1:f2b60b6af0af753dd75369b10656cdace8cbd496be4dc33aec814b89ad557f59:photo-studio-v3",
+      "camera_pose": {
+        "position_m": [
+          0.2827095091342926,
+          -0.22060638666152954,
+          0.3944600224494934
+        ],
+        "orientation_xyzw": [
+          0.34679113848727666,
+          -0.07833860013234029,
+          -0.2253141209706525,
+          0.9071011613305463
+        ]
+      },
+      "robot": {
+        "matched_pixels": 75563,
+        "original_pixels": 75563,
+        "median_srgb_luma_before": 0.0,
+        "median_srgb_luma_studio": 89.50259999999999,
+        "depth_delta_max_m": 0.0
+      },
+      "workpiece": {
+        "matched_pixels": 11723,
+        "original_pixels": 11723,
+        "median_srgb_luma_before": 104.97139999999999,
+        "median_srgb_luma_studio": 178.2042,
+        "depth_delta_max_m": 0.0
+      },
+      "black_percent_before": 14.137916666666667,
+      "black_percent_studio": 0.0,
+      "baseline_host_vs_shared": {
+        "instance_disagreements": 2,
+        "max_depth_delta_on_same_id_m": 1.3262033462524414e-05
+      }
+    },
+    {
+      "world": "59",
+      "camera": "fixed",
+      "tick": 32,
+      "time_s": 0.03200000151991844,
+      "original_scene": "camera-p4-v1:319b910182e955aeb650f782a5f0c433be4ded9b801ec273e603cb5a15c1bf50",
+      "studio_scene": "camera-p4-v1:319b910182e955aeb650f782a5f0c433be4ded9b801ec273e603cb5a15c1bf50:photo-studio-v3",
+      "camera_pose": {
+        "position_m": [
+          0.84,
+          -0.85,
+          0.56
+        ],
+        "orientation_xyzw": [
+          -0.5206584481580424,
+          -0.17191399242681216,
+          -0.2622035762206413,
+          -0.7941093401960714
+        ]
+      },
+      "robot": {
+        "matched_pixels": 8753,
+        "original_pixels": 8753,
+        "median_srgb_luma_before": 0.0,
+        "median_srgb_luma_studio": 95.42119999999998,
+        "depth_delta_max_m": 0.0
+      },
+      "workpiece": {
+        "matched_pixels": 4668,
+        "original_pixels": 4668,
+        "median_srgb_luma_before": 68.0638,
+        "median_srgb_luma_studio": 146.3418,
+        "depth_delta_max_m": 0.0
+      },
+      "black_percent_before": 34.58083333333333,
+      "black_percent_studio": 0.0,
+      "baseline_host_vs_shared": {
+        "instance_disagreements": 0,
+        "max_depth_delta_on_same_id_m": 1.1920928955078125e-07
+      }
+    },
+    {
+      "world": "59",
+      "camera": "wrist",
+      "tick": 32,
+      "time_s": 0.03200000151991844,
+      "original_scene": "camera-p4-v1:319b910182e955aeb650f782a5f0c433be4ded9b801ec273e603cb5a15c1bf50",
+      "studio_scene": "camera-p4-v1:319b910182e955aeb650f782a5f0c433be4ded9b801ec273e603cb5a15c1bf50:photo-studio-v3",
+      "camera_pose": {
+        "position_m": [
+          0.19217728078365326,
+          -0.11379104852676392,
+          0.3799999952316284
+        ],
+        "orientation_xyzw": [
+          0.3061667052188647,
+          -0.18410045495000815,
+          -0.4813121618073952,
+          0.8004421115851643
+        ]
+      },
+      "robot": {
+        "matched_pixels": 59334,
+        "original_pixels": 59334,
+        "median_srgb_luma_before": 73.0,
+        "median_srgb_luma_studio": 97.5656,
+        "depth_delta_max_m": 0.0
+      },
+      "workpiece": {
+        "matched_pixels": 17093,
+        "original_pixels": 17093,
+        "median_srgb_luma_before": 88.13239999999999,
+        "median_srgb_luma_studio": 172.057,
+        "depth_delta_max_m": 0.0
+      },
+      "black_percent_before": 12.032083333333334,
+      "black_percent_studio": 0.0,
+      "baseline_host_vs_shared": {
+        "instance_disagreements": 0,
+        "max_depth_delta_on_same_id_m": 2.1755695343017578e-05
+      }
+    },
+    {
+      "world": "997",
+      "camera": "fixed",
+      "tick": 32,
+      "time_s": 0.03200000151991844,
+      "original_scene": "camera-p4-v1:438a83debb8b9fc60a4f60746364ef258bb01eaa49e5dbffb9efc323d5f22203",
+      "studio_scene": "camera-p4-v1:438a83debb8b9fc60a4f60746364ef258bb01eaa49e5dbffb9efc323d5f22203:photo-studio-v3",
+      "camera_pose": {
+        "position_m": [
+          0.84,
+          -0.85,
+          0.56
+        ],
+        "orientation_xyzw": [
+          -0.5206584481580424,
+          -0.17191399242681216,
+          -0.2622035762206413,
+          -0.7941093401960714
+        ]
+      },
+      "robot": {
+        "matched_pixels": 8859,
+        "original_pixels": 8859,
+        "median_srgb_luma_before": 0.0,
+        "median_srgb_luma_studio": 95.80179999999999,
+        "depth_delta_max_m": 0.0
+      },
+      "workpiece": {
+        "matched_pixels": 5377,
+        "original_pixels": 5377,
+        "median_srgb_luma_before": 111.685,
+        "median_srgb_luma_studio": 187.39339999999999,
+        "depth_delta_max_m": 0.0
+      },
+      "black_percent_before": 34.819375,
+      "black_percent_studio": 0.0,
+      "baseline_host_vs_shared": {
+        "instance_disagreements": 0,
+        "max_depth_delta_on_same_id_m": 1.1920928955078125e-07
+      }
+    },
+    {
+      "world": "997",
+      "camera": "wrist",
+      "tick": 32,
+      "time_s": 0.03200000151991844,
+      "original_scene": "camera-p4-v1:438a83debb8b9fc60a4f60746364ef258bb01eaa49e5dbffb9efc323d5f22203",
+      "studio_scene": "camera-p4-v1:438a83debb8b9fc60a4f60746364ef258bb01eaa49e5dbffb9efc323d5f22203:photo-studio-v3",
+      "camera_pose": {
+        "position_m": [
+          0.2790200114250183,
+          -0.21990494430065155,
+          0.3799999952316284
+        ],
+        "orientation_xyzw": [
+          0.34692046427119083,
+          -0.08530666365012457,
+          -0.22302571073072427,
+          0.9069886972613281
+        ]
+      },
+      "robot": {
+        "matched_pixels": 59334,
+        "original_pixels": 59334,
+        "median_srgb_luma_before": 53.0,
+        "median_srgb_luma_studio": 91.14959999999999,
+        "depth_delta_max_m": 0.0
+      },
+      "workpiece": {
+        "matched_pixels": 27472,
+        "original_pixels": 27472,
+        "median_srgb_luma_before": 111.4566,
+        "median_srgb_luma_studio": 221.3646,
+        "depth_delta_max_m": 0.0
+      },
+      "black_percent_before": 13.029375000000002,
+      "black_percent_studio": 0.0,
+      "baseline_host_vs_shared": {
+        "instance_disagreements": 0,
+        "max_depth_delta_on_same_id_m": 1.7881393432617188e-07
+      }
+    },
+    {
+      "world": "2",
+      "camera": "fixed",
+      "tick": 32,
+      "time_s": 0.03200000151991844,
+      "original_scene": "camera-p4-v1:60ec8ac9e94c6c423bf863eb9b3373fb66cd66936535b0029bece33f0b263cfa",
+      "studio_scene": "camera-p4-v1:60ec8ac9e94c6c423bf863eb9b3373fb66cd66936535b0029bece33f0b263cfa:photo-studio-v3",
+      "camera_pose": {
+        "position_m": [
+          0.84,
+          -0.85,
+          0.56
+        ],
+        "orientation_xyzw": [
+          -0.5206584481580424,
+          -0.17191399242681216,
+          -0.2622035762206413,
+          -0.7941093401960714
+        ]
+      },
+      "robot": {
+        "matched_pixels": 8714,
+        "original_pixels": 8714,
+        "median_srgb_luma_before": 0.0,
+        "median_srgb_luma_studio": 99.80579999999999,
+        "depth_delta_max_m": 0.0
+      },
+      "workpiece": {
+        "matched_pixels": 3958,
+        "original_pixels": 3958,
+        "median_srgb_luma_before": 0.0,
+        "median_srgb_luma_studio": 151.7524,
+        "depth_delta_max_m": 0.0
+      },
+      "black_percent_before": 34.59291666666667,
+      "black_percent_studio": 0.0,
+      "baseline_host_vs_shared": {
+        "instance_disagreements": 0,
+        "max_depth_delta_on_same_id_m": 0.0
+      }
+    },
+    {
+      "world": "2",
+      "camera": "wrist",
+      "tick": 32,
+      "time_s": 0.03200000151991844,
+      "original_scene": "camera-p4-v1:60ec8ac9e94c6c423bf863eb9b3373fb66cd66936535b0029bece33f0b263cfa",
+      "studio_scene": "camera-p4-v1:60ec8ac9e94c6c423bf863eb9b3373fb66cd66936535b0029bece33f0b263cfa:photo-studio-v3",
+      "camera_pose": {
+        "position_m": [
+          0.2804358899593353,
+          -0.22003114223480225,
+          0.3749178349971771
+        ],
+        "orientation_xyzw": [
+          0.3469425629240625,
+          -0.08521672838495017,
+          -0.22279058670906607,
+          0.9070464826616544
+        ]
+      },
+      "robot": {
+        "matched_pixels": 59329,
+        "original_pixels": 59329,
+        "median_srgb_luma_before": 53.0,
+        "median_srgb_luma_studio": 94.28079999999999,
+        "depth_delta_max_m": 0.0
+      },
+      "workpiece": {
+        "matched_pixels": 21272,
+        "original_pixels": 21272,
+        "median_srgb_luma_before": 99.8758,
+        "median_srgb_luma_studio": 198.2762,
+        "depth_delta_max_m": 0.0
+      },
+      "black_percent_before": 12.128124999999999,
+      "black_percent_studio": 0.0,
+      "baseline_host_vs_shared": {
+        "instance_disagreements": 0,
+        "max_depth_delta_on_same_id_m": 0.0
+      }
+    }
+  ],
+  "device_diagnostic": {
+    "41": {
+      "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "msaa": 4,
+      "ray_query_shots": 2,
+      "sky_draws": 0,
+      "environment_loaded": false,
+      "validation_errors": 0,
+      "area_samples_per_panel": 4,
+      "pose_path": "host-snapshot",
+      "fragment_sha256": "7b54bc5140c4e40d24152f54c57e98aaa5a16a4b58d54be10edd3542fe9c9593"
+    },
+    "7": {
+      "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "msaa": 4,
+      "ray_query_shots": 2,
+      "sky_draws": 0,
+      "environment_loaded": false,
+      "validation_errors": 0,
+      "area_samples_per_panel": 4,
+      "pose_path": "host-snapshot",
+      "fragment_sha256": "7b54bc5140c4e40d24152f54c57e98aaa5a16a4b58d54be10edd3542fe9c9593"
+    },
+    "305": {
+      "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "msaa": 4,
+      "ray_query_shots": 2,
+      "sky_draws": 0,
+      "environment_loaded": false,
+      "validation_errors": 0,
+      "area_samples_per_panel": 4,
+      "pose_path": "host-snapshot",
+      "fragment_sha256": "7b54bc5140c4e40d24152f54c57e98aaa5a16a4b58d54be10edd3542fe9c9593"
+    },
+    "11": {
+      "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "msaa": 4,
+      "ray_query_shots": 2,
+      "sky_draws": 0,
+      "environment_loaded": false,
+      "validation_errors": 0,
+      "area_samples_per_panel": 4,
+      "pose_path": "host-snapshot",
+      "fragment_sha256": "7b54bc5140c4e40d24152f54c57e98aaa5a16a4b58d54be10edd3542fe9c9593"
+    },
+    "203": {
+      "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "msaa": 4,
+      "ray_query_shots": 2,
+      "sky_draws": 0,
+      "environment_loaded": false,
+      "validation_errors": 0,
+      "area_samples_per_panel": 4,
+      "pose_path": "host-snapshot",
+      "fragment_sha256": "7b54bc5140c4e40d24152f54c57e98aaa5a16a4b58d54be10edd3542fe9c9593"
+    },
+    "59": {
+      "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "msaa": 4,
+      "ray_query_shots": 2,
+      "sky_draws": 0,
+      "environment_loaded": false,
+      "validation_errors": 0,
+      "area_samples_per_panel": 4,
+      "pose_path": "host-snapshot",
+      "fragment_sha256": "7b54bc5140c4e40d24152f54c57e98aaa5a16a4b58d54be10edd3542fe9c9593"
+    },
+    "997": {
+      "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "msaa": 4,
+      "ray_query_shots": 2,
+      "sky_draws": 0,
+      "environment_loaded": false,
+      "validation_errors": 0,
+      "area_samples_per_panel": 4,
+      "pose_path": "host-snapshot",
+      "fragment_sha256": "7b54bc5140c4e40d24152f54c57e98aaa5a16a4b58d54be10edd3542fe9c9593"
+    },
+    "2": {
+      "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "msaa": 4,
+      "ray_query_shots": 2,
+      "sky_draws": 0,
+      "environment_loaded": false,
+      "validation_errors": 0,
+      "area_samples_per_panel": 4,
+      "pose_path": "host-snapshot",
+      "fragment_sha256": "7b54bc5140c4e40d24152f54c57e98aaa5a16a4b58d54be10edd3542fe9c9593"
+    }
+  },
+  "device_studio": {
+    "41": {
+      "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "msaa": 4,
+      "ray_query_shots": 2,
+      "sky_draws": 2,
+      "environment_loaded": true,
+      "validation_errors": 0,
+      "area_samples_per_panel": 64,
+      "pose_path": "host-snapshot",
+      "fragment_sha256": "ff7f38b122b01303c686c1c0f4db7815e05ee332ee6490ec6ecb8bcf851259d8"
+    },
+    "7": {
+      "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "msaa": 4,
+      "ray_query_shots": 2,
+      "sky_draws": 2,
+      "environment_loaded": true,
+      "validation_errors": 0,
+      "area_samples_per_panel": 64,
+      "pose_path": "host-snapshot",
+      "fragment_sha256": "ff7f38b122b01303c686c1c0f4db7815e05ee332ee6490ec6ecb8bcf851259d8"
+    },
+    "305": {
+      "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "msaa": 4,
+      "ray_query_shots": 2,
+      "sky_draws": 2,
+      "environment_loaded": true,
+      "validation_errors": 0,
+      "area_samples_per_panel": 64,
+      "pose_path": "host-snapshot",
+      "fragment_sha256": "ff7f38b122b01303c686c1c0f4db7815e05ee332ee6490ec6ecb8bcf851259d8"
+    },
+    "11": {
+      "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "msaa": 4,
+      "ray_query_shots": 2,
+      "sky_draws": 2,
+      "environment_loaded": true,
+      "validation_errors": 0,
+      "area_samples_per_panel": 64,
+      "pose_path": "host-snapshot",
+      "fragment_sha256": "ff7f38b122b01303c686c1c0f4db7815e05ee332ee6490ec6ecb8bcf851259d8"
+    },
+    "203": {
+      "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "msaa": 4,
+      "ray_query_shots": 2,
+      "sky_draws": 2,
+      "environment_loaded": true,
+      "validation_errors": 0,
+      "area_samples_per_panel": 64,
+      "pose_path": "host-snapshot",
+      "fragment_sha256": "ff7f38b122b01303c686c1c0f4db7815e05ee332ee6490ec6ecb8bcf851259d8"
+    },
+    "59": {
+      "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "msaa": 4,
+      "ray_query_shots": 2,
+      "sky_draws": 2,
+      "environment_loaded": true,
+      "validation_errors": 0,
+      "area_samples_per_panel": 64,
+      "pose_path": "host-snapshot",
+      "fragment_sha256": "ff7f38b122b01303c686c1c0f4db7815e05ee332ee6490ec6ecb8bcf851259d8"
+    },
+    "997": {
+      "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "msaa": 4,
+      "ray_query_shots": 2,
+      "sky_draws": 2,
+      "environment_loaded": true,
+      "validation_errors": 0,
+      "area_samples_per_panel": 64,
+      "pose_path": "host-snapshot",
+      "fragment_sha256": "ff7f38b122b01303c686c1c0f4db7815e05ee332ee6490ec6ecb8bcf851259d8"
+    },
+    "2": {
+      "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "msaa": 4,
+      "ray_query_shots": 2,
+      "sky_draws": 2,
+      "environment_loaded": true,
+      "validation_errors": 0,
+      "area_samples_per_panel": 64,
+      "pose_path": "host-snapshot",
+      "fragment_sha256": "ff7f38b122b01303c686c1c0f4db7815e05ee332ee6490ec6ecb8bcf851259d8"
+    }
+  },
+  "device_live": {
+    "41": {
+      "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "msaa": 4,
+      "ray_query_shots": 2,
+      "sky_draws": 0,
+      "environment_loaded": false,
+      "validation_errors": 0,
+      "area_samples_per_panel": 4,
+      "pose_path": "shared-cuda",
+      "fragment_sha256": "7b54bc5140c4e40d24152f54c57e98aaa5a16a4b58d54be10edd3542fe9c9593"
+    },
+    "7": {
+      "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "msaa": 4,
+      "ray_query_shots": 2,
+      "sky_draws": 0,
+      "environment_loaded": false,
+      "validation_errors": 0,
+      "area_samples_per_panel": 4,
+      "pose_path": "shared-cuda",
+      "fragment_sha256": "7b54bc5140c4e40d24152f54c57e98aaa5a16a4b58d54be10edd3542fe9c9593"
+    },
+    "305": {
+      "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "msaa": 4,
+      "ray_query_shots": 2,
+      "sky_draws": 0,
+      "environment_loaded": false,
+      "validation_errors": 0,
+      "area_samples_per_panel": 4,
+      "pose_path": "shared-cuda",
+      "fragment_sha256": "7b54bc5140c4e40d24152f54c57e98aaa5a16a4b58d54be10edd3542fe9c9593"
+    },
+    "11": {
+      "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "msaa": 4,
+      "ray_query_shots": 2,
+      "sky_draws": 0,
+      "environment_loaded": false,
+      "validation_errors": 0,
+      "area_samples_per_panel": 4,
+      "pose_path": "shared-cuda",
+      "fragment_sha256": "7b54bc5140c4e40d24152f54c57e98aaa5a16a4b58d54be10edd3542fe9c9593"
+    },
+    "203": {
+      "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "msaa": 4,
+      "ray_query_shots": 2,
+      "sky_draws": 0,
+      "environment_loaded": false,
+      "validation_errors": 0,
+      "area_samples_per_panel": 4,
+      "pose_path": "shared-cuda",
+      "fragment_sha256": "7b54bc5140c4e40d24152f54c57e98aaa5a16a4b58d54be10edd3542fe9c9593"
+    },
+    "59": {
+      "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "msaa": 4,
+      "ray_query_shots": 2,
+      "sky_draws": 0,
+      "environment_loaded": false,
+      "validation_errors": 0,
+      "area_samples_per_panel": 4,
+      "pose_path": "shared-cuda",
+      "fragment_sha256": "7b54bc5140c4e40d24152f54c57e98aaa5a16a4b58d54be10edd3542fe9c9593"
+    },
+    "997": {
+      "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "msaa": 4,
+      "ray_query_shots": 2,
+      "sky_draws": 0,
+      "environment_loaded": false,
+      "validation_errors": 0,
+      "area_samples_per_panel": 4,
+      "pose_path": "shared-cuda",
+      "fragment_sha256": "7b54bc5140c4e40d24152f54c57e98aaa5a16a4b58d54be10edd3542fe9c9593"
+    },
+    "2": {
+      "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "msaa": 4,
+      "ray_query_shots": 2,
+      "sky_draws": 0,
+      "environment_loaded": false,
+      "validation_errors": 0,
+      "area_samples_per_panel": 4,
+      "pose_path": "shared-cuda",
+      "fragment_sha256": "7b54bc5140c4e40d24152f54c57e98aaa5a16a4b58d54be10edd3542fe9c9593"
+    }
+  },
+  "exposure": 7.0,
+  "display": "pbr-neutral",
+  "source_step": 32,
+  "source_revision": 33,
+  "note": "Both looks share the same single accepted CUDA body-pose snapshot."
+}

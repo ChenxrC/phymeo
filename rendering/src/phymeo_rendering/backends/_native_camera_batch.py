@@ -33,32 +33,38 @@ def bind_camera_batch(lib):
     return draw
 
 
+def batch_views(device, rows, *, device_output=False):
+    if not 1 <= len(rows) <= MAX_VIEWS:
+        raise ValueError(f'camera batch requires 1..{MAX_VIEWS} views')
+    views = (ResidentBatchView * len(rows))()
+    spans = []
+    total_bytes = total_pixels = 0
+    for i, (params, width, height, channels, slot) in enumerate(rows):
+        device._validate_capture_view(params, width, height)
+        if not channels or any(not isinstance(ch, Channel) for ch in channels) or len(set(channels)) != len(channels):
+            raise ValueError('batch views require unique native channels')
+        mask = sum(1 << bit for bit, ch in enumerate(Channel) if ch in channels)
+        device._require_compact_mask(params, mask, require_host_export=not device_output)
+        if slot is not None and (type(slot) is not int or not 0 <= slot < device._shared_camera_capacity):
+            raise ValueError('invalid shared camera index')
+        pixels = width * height
+        total_pixels += pixels
+        if total_pixels > MAX_TOTAL_PIXELS:
+            raise ValueError('camera batch total pixel budget exceeded')
+        size = pixels * sum(b for bit, b in enumerate((4, 4, 4, 1)) if mask & (1 << bit))
+        if device_output:
+            total_bytes = (total_bytes + 3) & ~3  # VkBufferImageCopy::bufferOffset
+        views[i] = ResidentBatchView(params, width, height, mask, FIXED_CAMERA if slot is None else slot)
+        spans.append((total_bytes, total_bytes + size, pixels, channels, mask))
+        total_bytes += size
+    return views, spans, total_bytes
+
+
 def render_shared_batch(device, lease, rows):
     if device._shared_exchange is None:
         raise RuntimeError('shared camera batch requires an open CUDA matrix exchange')
-    if not 1 <= len(rows) <= MAX_VIEWS:
-        raise ValueError(f'camera batch requires 1..{MAX_VIEWS} views')
     with device._shared_exchange.capturing(lease, camera_count=len(rows)):
-        views = (ResidentBatchView * len(rows))()
-        spans = []
-        total_bytes = total_pixels = 0
-        for i, (params, width, height, channels, slot) in enumerate(rows):
-            device._validate_capture_view(params, width, height)
-            if not channels or any(not isinstance(ch, Channel) for ch in channels) or len(set(channels)) != len(channels):
-                raise ValueError('batch views require unique native channels')
-            mask = sum(1 << bit for bit, ch in enumerate(Channel) if ch in channels)
-            device._require_compact_mask(params, mask)
-            if slot is not None and (type(slot) is not int or not 0 <= slot < device._shared_camera_capacity):
-                raise ValueError('invalid shared camera index')
-            pixels = width * height
-            total_pixels += pixels
-            if total_pixels > MAX_TOTAL_PIXELS:
-                raise ValueError('camera batch total pixel budget exceeded')
-            size = pixels * sum(b for bit, b in enumerate((4, 4, 4, 1)) if mask & (1 << bit))
-            views[i] = ResidentBatchView(params, width, height, mask, FIXED_CAMERA if slot is None else slot)
-            spans.append((total_bytes, total_bytes + size, pixels, channels, mask))
-            total_bytes += size
-
+        views, spans, total_bytes = batch_views(device, rows)
         if device._shared_batch_draw is None:
             device._shared_batch_draw = bind_camera_batch(device._lib)
         output = device._reserve_output(total_bytes)

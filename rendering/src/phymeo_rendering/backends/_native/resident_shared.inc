@@ -2,8 +2,9 @@
 // and descriptor binding read this allocation directly on every camera draw.
 struct SharedTimeout : std::runtime_error {
     SharedTimeout() : std::runtime_error("shared transform ownership fence timed out; context retained") {}
+    explicit SharedTimeout(const char* message) : std::runtime_error(message) {}
 };
-void drop_shared_handles(SharedSlot& s) noexcept {
+void drop_shared_handles(ExternalSync& s) noexcept {
 #ifdef _WIN32
     for (auto& h:s.handles) release(h,[](void* v){ CloseHandle(v); });
 #else
@@ -104,47 +105,55 @@ void finish_shared_ownership(Context& c) {
     }
     s.phase=s.phase==SharedPhase::acquiring ? SharedPhase::reading : SharedPhase::external;
 }
+#ifdef _WIN32
+void create_external_exports(Context& c,ExternalSync& s,const Buffer& buffer) {
+    auto memory_handle=reinterpret_cast<PFN_vkGetMemoryWin32HandleKHR>(vkGetDeviceProcAddr(c.device,"vkGetMemoryWin32HandleKHR"));
+    auto semaphore_handle=reinterpret_cast<PFN_vkGetSemaphoreWin32HandleKHR>(vkGetDeviceProcAddr(c.device,"vkGetSemaphoreWin32HandleKHR"));
+    require(memory_handle && semaphore_handle,"Win32 external handle functions unavailable");
+    VkExportSemaphoreWin32HandleInfoKHR win{VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_WIN32_HANDLE_INFO_KHR};
+    win.dwAccess=GENERIC_ALL;
+    VkExportSemaphoreCreateInfo ext{VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO};
+    ext.pNext=&win; ext.handleTypes=VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
+    VkSemaphoreCreateInfo si{VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO}; si.pNext=&ext;
+    for (auto* owner:{&s.writable,&s.ready})
+        acquire(*owner,"create shared buffer semaphore",[&](auto out){return vkCreateSemaphore(c.device,&si,nullptr,out);});
+    VkMemoryGetWin32HandleInfoKHR mem{VK_STRUCTURE_TYPE_MEMORY_GET_WIN32_HANDLE_INFO_KHR};
+    mem.memory=buffer.memory; mem.handleType=VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
+    acquire(s.handles[0],"export dedicated allocation",[&](auto out){return memory_handle(c.device,&mem,out);});
+    VkSemaphoreGetWin32HandleInfoKHR sem{VK_STRUCTURE_TYPE_SEMAPHORE_GET_WIN32_HANDLE_INFO_KHR};
+    sem.handleType=VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
+    sem.semaphore=s.writable;
+    acquire(s.handles[1],"export writable semaphore",[&](auto out){return semaphore_handle(c.device,&sem,out);});
+    sem.semaphore=s.ready;
+    acquire(s.handles[2],"export ready semaphore",[&](auto out){return semaphore_handle(c.device,&sem,out);});
+}
+#endif
+PrResidentSharedExport describe_external(const ExternalSync& s,const Buffer& buffer,uint64_t bytes) {
+    return {reinterpret_cast<uintptr_t>(s.handles[0]),reinterpret_cast<uintptr_t>(s.handles[1]),
+            reinterpret_cast<uintptr_t>(s.handles[2]),buffer.allocation.bytes,bytes};
+}
 void export_shared(Context& c,PrResidentSharedExport& output) {
 #ifdef _WIN32
     require(c.shared_input && c.resident_state && !c.poisoned,"shared geometry has not been uploaded");
     auto& s=c.shared_slot;
     require(!s.exported && (s.phase==SharedPhase::unused || s.phase==SharedPhase::releasing),
             "shared slot already exported");
-    auto memory_handle=reinterpret_cast<PFN_vkGetMemoryWin32HandleKHR>(vkGetDeviceProcAddr(c.device,"vkGetMemoryWin32HandleKHR"));
-    auto semaphore_handle=reinterpret_cast<PFN_vkGetSemaphoreWin32HandleKHR>(vkGetDeviceProcAddr(c.device,"vkGetSemaphoreWin32HandleKHR"));
-    require(memory_handle && semaphore_handle,"Win32 external handle functions unavailable");
     auto& buffer=c.resident_state->transforms;
     if (s.phase==SharedPhase::unused) try {
-        VkExportSemaphoreWin32HandleInfoKHR win{VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_WIN32_HANDLE_INFO_KHR};
-        win.dwAccess=GENERIC_ALL;
-        VkExportSemaphoreCreateInfo ext{VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO};
-        ext.pNext=&win; ext.handleTypes=VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
-        VkSemaphoreCreateInfo si{VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO}; si.pNext=&ext;
-        for (auto* owner:{&s.writable,&s.ready})
-            acquire(*owner,"create shared transform semaphore",[&](auto out){return vkCreateSemaphore(c.device,&si,nullptr,out);});
+        create_external_exports(c,s,buffer);
         VkFenceCreateInfo fi{VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};
         acquire(s.fence,"create shared ownership fence",[&](auto out){return vkCreateFence(c.device,&fi,nullptr,out);});
         VkCommandBufferAllocateInfo ci{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
         ci.commandPool=c.command_pool; ci.level=VK_COMMAND_BUFFER_LEVEL_PRIMARY; ci.commandBufferCount=1;
         acquire(s.commands,"allocate shared ownership command",[&](auto out){return vkAllocateCommandBuffers(c.device,&ci,out);});
-        VkMemoryGetWin32HandleInfoKHR mem{VK_STRUCTURE_TYPE_MEMORY_GET_WIN32_HANDLE_INFO_KHR};
-        mem.memory=buffer.memory; mem.handleType=VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
-        acquire(s.handles[0],"export transform allocation",[&](auto out){return memory_handle(c.device,&mem,out);});
-        VkSemaphoreGetWin32HandleInfoKHR sem{VK_STRUCTURE_TYPE_SEMAPHORE_GET_WIN32_HANDLE_INFO_KHR};
-        sem.handleType=VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
-        sem.semaphore=s.writable;
-        acquire(s.handles[1],"export writable semaphore",[&](auto out){return semaphore_handle(c.device,&sem,out);});
-        sem.semaphore=s.ready;
-        acquire(s.handles[2],"export ready semaphore",[&](auto out){return semaphore_handle(c.device,&sem,out);});
         enqueue_shared_ownership(c,false,true);
     } catch (...) { destroy_shared(c); throw; }
     // Complete the initial release before publishing handles. A timeout here
     // retains the fence, allocation and handles for a retry of export or close.
     finish_shared_ownership(c);
     s.exported=true;
-    output={reinterpret_cast<uintptr_t>(s.handles[0]),reinterpret_cast<uintptr_t>(s.handles[1]),
-            reinterpret_cast<uintptr_t>(s.handles[2]),buffer.allocation.bytes,
-            (static_cast<uint64_t>(c.resident_properties.instance_count)+c.shared_camera_capacity)*sizeof(GpuTransform)};
+    output=describe_external(s,buffer,(static_cast<uint64_t>(c.resident_properties.instance_count)+
+                                      c.shared_camera_capacity)*sizeof(GpuTransform));
 #else
     (void)c; (void)output;
     throw std::runtime_error("resident external handles require Win32");

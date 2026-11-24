@@ -159,6 +159,7 @@ class ResidentDevice(NativeDevice):
         self._shared_camera_d2d_bytes = 0
         self._shared_exchange = None
         self._shared_batch_draw = None
+        self._device_output = None
         self._shared_batch_calls = self._shared_batch_views = self._shared_batch_bytes = 0
         self._shared_identity = None
         if shared_cuda_device is not None:
@@ -495,6 +496,8 @@ class ResidentDevice(NativeDevice):
             abi_version=1 if getattr(self, '_shared_batch_draw', None) is not None else None,
             calls=getattr(self, '_shared_batch_calls', 0), views=getattr(self, '_shared_batch_views', 0),
             output_bytes=getattr(self, '_shared_batch_bytes', 0))
+        output = getattr(self, '_device_output', None)
+        result['resident_device_output'] = output.diagnostics() if output is not None else None
         exchange = getattr(self, '_shared_exchange', None)
         result['resident_shared_matrices'] = exchange.diagnostics() if exchange is not None else None
         result['resident_secondary_light_budget'] = dict(self._secondary_budget_marker) if self._secondary_budget_marker is not None else None
@@ -646,12 +649,21 @@ class ResidentDevice(NativeDevice):
         from ._native_camera_batch import render_shared_batch
         return render_shared_batch(self, lease, rows)
 
-    def _require_compact_mask(self, parameters, channel_mask):
+    def render_shared_device_image_batch(self, lease, rows, *, consumer_stream):
+        """Copy the exported attachment batch into Torch-owned device storage on consumer_stream."""
+        if self._handle is None or self._shared_exchange is None:
+            raise RuntimeError('shared device image output requires an open CUDA matrix exchange')
+        if self._device_output is None:
+            from ._native_device_output import DeviceImageOutput
+            self._device_output = DeviceImageOutput(self)
+        return self._device_output.capture(lease, rows, consumer_stream)
+
+    def _require_compact_mask(self, parameters, channel_mask, *, require_host_export=True):
         if type(channel_mask) is not int:
             raise TypeError('resident channel mask must be int, not bool')
         if not 0 < channel_mask <= 15:
             raise ValueError('resident channel mask must be nonzero bits 0..3')
-        if self._render_planes_function is None:
+        if require_host_export and self._render_planes_function is None:
             raise BackendUnavailableError('native compact readback export is unavailable')
         if parameters.counts[2] != bool(channel_mask&1):
             raise ValueError('resident RGB uniform disagrees with channel mask')
@@ -724,6 +736,9 @@ class ResidentDevice(NativeDevice):
         self._output_capacity = 0
         if self._handle is None:
             return
+        if getattr(self, '_device_output', None) is not None:
+            # CUDA attachment return needs the matrix exchange's retained context.
+            self._device_output.close()
         if getattr(self, '_shared_exchange', None) is not None:
             # The Vulkan slot outlives CUDA imported objects. A timeout leaves
             # both sides owned here so teardown can be retried.

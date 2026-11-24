@@ -121,6 +121,7 @@ struct ResidentState {
 
 void record_shared_ray_update(Context&,ResidentState&,VkCommandBuffer);
 #include "resident_shared.inc"
+#include "resident_device_output.inc"
 
 struct TriangleBounds {
     uint32_t source;
@@ -212,23 +213,40 @@ uint64_t elapsed_ns(HostClock::time_point begin, HostClock::time_point end = Hos
 }
 struct SubmitTiming { uint64_t submit, wait; };
 SubmitTiming submit_and_wait(Context& c, FrameResources& frame,
-                             const VkCommandBuffer* commands=nullptr,uint32_t count=1) {
+                             const VkCommandBuffer* commands=nullptr,uint32_t count=1,DeviceOutput* output=nullptr) {
     auto submitted_at = HostClock::now();
     VkSubmitInfo submit{VK_STRUCTURE_TYPE_SUBMIT_INFO};
     submit.commandBufferCount = count; submit.pCommandBuffers = commands ? commands : &frame.commands;
+    VkPipelineStageFlags wait_stage=VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+    if (output) {
+        if (output->returned) {
+            submit.waitSemaphoreCount=1; submit.pWaitSemaphores=&output->writable;
+            submit.pWaitDstStageMask=&wait_stage;
+        }
+        submit.signalSemaphoreCount=1; submit.pSignalSemaphores=&output->ready;
+    }
     VkResult result = vkQueueSubmit(c.queue, 1, &submit, frame.fence);
     frame.submitted = result == VK_SUCCESS || result == VK_ERROR_DEVICE_LOST;
     if (result != VK_SUCCESS) { c.poisoned = true; check(result, "resident vkQueueSubmit"); }
+    if (output) {
+        output->info.phase=2; output->pending_fence=frame.fence; output->returned=false;
+    }
     uint64_t submit_ns = elapsed_ns(submitted_at);
     ++c.telemetry.submissions; // only successful vkQueueSubmit calls
     auto before = std::chrono::steady_clock::now();
-    result = vkWaitForFences(c.device, 1, &frame.fence, VK_TRUE, UINT64_MAX);
+    result = vkWaitForFences(c.device, 1, &frame.fence, VK_TRUE, output ? 30000000000ull : UINT64_MAX);
     auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(
         std::chrono::steady_clock::now() - before).count();
     c.telemetry.fence_wait_wall_ns += static_cast<uint64_t>(std::max<int64_t>(0, elapsed));
     ++c.telemetry.fence_wait_calls;
+    if (output && result==VK_ERROR_DEVICE_LOST) { output->info.phase=1; output->pending_fence={}; }
+    if (output && result==VK_TIMEOUT) {
+        c.poisoned=true;
+        throw SharedTimeout("device output submission timed out; outstanding CUDA lease and fence retained");
+    }
     if (result != VK_SUCCESS) { c.poisoned = true; check(result, "resident vkWaitForFences"); }
     frame.submitted = false;
+    if (output) output->pending_fence={};
     return {submit_ns, static_cast<uint64_t>(std::max<int64_t>(0, elapsed))};
 }
 
@@ -608,23 +626,31 @@ std::vector<GpuBvhNode> resident_tlas(const ResidentState& state,
     return output;
 }
 
+void ensure_host_readback(Context& c,FrameResources& frame,uint32_t width,uint32_t height) {
+    if (frame.readback_mapping) return;
+    frame.readback_capacity=static_cast<size_t>(width)*height*13+(c.progressive_info.shader_compatible?8:0);
+    c.make_buffer(frame.readback,frame.readback_capacity,VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                  VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                  VK_MEMORY_PROPERTY_HOST_CACHED_BIT);
+    void* readback_mapping=nullptr;
+    check(vkMapMemory(c.device,frame.readback.memory,0,VK_WHOLE_SIZE,0,&readback_mapping),
+          "resident persistent readback map");
+    frame.readback_mapping=readback_mapping; // own a mapping only after VK_SUCCESS
+    ++c.readback_info.map_calls;
+}
+
 FrameResources& resident_target(Context& c, ResidentState& state, uint32_t width, uint32_t height,
-                                std::unique_ptr<FrameResources>& owner) {
-    if (owner && owner->width == width && owner->height == height) return *owner;
+                                std::unique_ptr<FrameResources>& owner,bool host_readback=true) {
+    if (owner && owner->width==width && owner->height==height) {
+        if (host_readback) ensure_host_readback(c,*owner,width,height);
+        return *owner;
+    }
     const auto& info = c.resident_properties;
     uint64_t errors_before = c.errors.load();
     auto frame = std::make_unique<FrameResources>(c);
     c.make_buffer(frame->uniform, sizeof(PrParams), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT |
                   (c.shared_camera_capacity ? VK_BUFFER_USAGE_TRANSFER_DST_BIT : 0));
-    frame->readback_capacity=static_cast<size_t>(width)*height*13+(c.progressive_info.shader_compatible?8:0);
-    c.make_buffer(frame->readback,frame->readback_capacity,VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-                  VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                  VK_MEMORY_PROPERTY_HOST_CACHED_BIT);
-    void* readback_mapping=nullptr;
-    check(vkMapMemory(c.device,frame->readback.memory,0,VK_WHOLE_SIZE,0,&readback_mapping),
-          "resident persistent readback map");
-    frame->readback_mapping=readback_mapping; // own a mapping only after VK_SUCCESS
-    ++c.readback_info.map_calls;
+    if (host_readback) ensure_host_readback(c,*frame,width,height);
     std::array<VkImageView, 6> views{};
     for (uint32_t i = 0; i < (c.spatial_info.enabled&&!c.settling_info.enabled?6u:5u); ++i) {
         c.make_image(frame->images[i], width, height, c.attachment_format(i), i == 4, VK_SAMPLE_COUNT_1_BIT,
@@ -729,12 +755,12 @@ size_t compact_pixel_bytes(uint32_t channel_mask) {
 }
 void validate_resident_params(const Context& c, const PrParams& params,
                               uint32_t width, uint32_t height, uint8_t* output, size_t output_bytes,
-                              uint32_t channel_mask, bool compact) {
+                              uint32_t channel_mask, bool compact,bool device_pixels=false) {
     require(width && height && width <= c.properties.max_width && height <= c.properties.max_height,
             "resident capture extent exceeds device capability");
     require(static_cast<uint64_t>(width)*height <= 4096ull*4096ull, "resident pixel budget exceeded");
     const size_t bytes_per_pixel=compact_pixel_bytes(channel_mask);
-    require(output && output_bytes==static_cast<size_t>(width)*height*bytes_per_pixel,
+    require((output || device_pixels) && output_bytes==static_cast<size_t>(width)*height*bytes_per_pixel,
             "resident output byte extent mismatch");
     require(!compact || params.counts[2]==((channel_mask & 1u) ? 1u : 0u),
             "resident output mask disagrees with RGB request");

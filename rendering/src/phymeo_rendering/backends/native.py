@@ -311,16 +311,24 @@ class _NativeDelegate:
         )
         return result
 
-    def capture_shared_batch(self, exposure, requests, *, shared_matrices, shared_camera_indices):
+    def _shared_view_rows(self, requests, shared_camera_indices):
         rows = []
         for request, slot in zip(requests, shared_camera_indices, strict=True):
             params = _parameters(self.scene, request, self.triangles, self.exposure,
                                  lights=self.effective_lights, device_camera=slot is not None)
             params.counts[3] = len(self.scene.instances)
             rows.append((params, request.camera.width, request.camera.height, request.channels, slot))
+        return rows
+
+    def capture_shared_batch(self, exposure, requests, *, shared_matrices, shared_camera_indices):
+        rows = self._shared_view_rows(requests, shared_camera_indices)
         planes = self.device.render_shared_image_planes_batch(shared_matrices, rows)
         return tuple(Capture(exposure.key, exposure.time_s, request.camera, view)
                      for request, view in zip(requests, planes, strict=True))
+
+    def capture_shared_device_batch(self, requests, slots, lease, stream):
+        return self.device.render_shared_device_image_batch(
+            lease, self._shared_view_rows(requests, slots), consumer_stream=stream)
 
     def diagnostics(self):
         device_info = self.device.info()
@@ -479,6 +487,8 @@ class NativeRenderSession(ValidatedRenderSession):
         self._shared_cuda_device = shared_cuda_device
         self._active_device_poses = None
         self._published_device_pose_batches = 0
+        self._submitted_device_image_batches = 0
+        self._device_image_status_d2h_bytes = 0
 
     def publish_device_poses(self, binding, workspace, snapshot, *, producer_stream, time_s=None):
         """Publish one world's accepted pose once and expose it to any number of cameras."""
@@ -580,6 +590,19 @@ class NativeRenderSession(ValidatedRenderSession):
             active.workspace.accepted_frame_time(active.frame, active.binding.world_key)
             return self._validate_publication(result, exposure.key, exposure.time_s, request)
 
+    def _shared_batch_inputs(self, exposure, requests):
+        active = self._current_publication(exposure)
+        if isinstance(requests, (Mapping, Set, str, bytes)):
+            raise TypeError("camera batch requests must be an ordered iterable of CaptureRequest")
+        views = tuple(islice(requests, MAX_VIEWS + 1))
+        if not 1 <= len(views) <= MAX_VIEWS:
+            raise ValueError(f"camera batch requires 1..{MAX_VIEWS} views")
+        slots = tuple(self._device_camera_slot(active, request) for request in views)
+        if sum(r.camera.width * r.camera.height for r in views) > MAX_TOTAL_PIXELS:
+            raise ValueError("camera batch total pixel budget exceeded")
+        self._current_publication(exposure)
+        return active, views, slots
+
     def capture_device_poses_batch(self, exposure, requests) -> tuple[Capture, ...]:
         """Capture 1..16 ordered fixed or mounted views in one native submission.
 
@@ -588,16 +611,7 @@ class NativeRenderSession(ValidatedRenderSession):
         validated before publication, and each plane owns its immutable bytes.
         """
         with self._lock:
-            active = self._current_publication(exposure)
-            if isinstance(requests, (Mapping, Set, str, bytes)):
-                raise TypeError("camera batch requests must be an ordered iterable of CaptureRequest")
-            views = tuple(islice(requests, MAX_VIEWS + 1))
-            if not 1 <= len(views) <= MAX_VIEWS:
-                raise ValueError(f"camera batch requires 1..{MAX_VIEWS} views")
-            slots = tuple(self._device_camera_slot(active, request) for request in views)
-            if sum(r.camera.width * r.camera.height for r in views) > MAX_TOTAL_PIXELS:
-                raise ValueError("camera batch total pixel budget exceeded")
-            self._current_publication(exposure)
+            active, views, slots = self._shared_batch_inputs(exposure, requests)
             results = self._delegate.capture_shared_batch(exposure, views, shared_matrices=active.lease,
                                                           shared_camera_indices=slots)
             if not isinstance(results, tuple) or len(results) != len(views):
@@ -607,6 +621,21 @@ class NativeRenderSession(ValidatedRenderSession):
             self._current_publication(exposure)
             self._published_device_pose_batches += 1
             return checked
+
+    def capture_device_poses_device_batch(self, exposure, requests, *, consumer_stream):
+        """Submit an ordered world and return owned device images with a completion event."""
+        from ..device_images import check_image_stream, publish_device_images
+
+        with self._lock:
+            active, views, slots = self._shared_batch_inputs(exposure, requests)
+            check_image_stream(consumer_stream, self._shared_cuda_device)
+            planes = self._delegate.capture_shared_device_batch(views, slots, active.lease, consumer_stream)
+            ticket = publish_device_images(active, views, planes, self._instance_ids, consumer_stream)
+            self._device_image_status_d2h_bytes += int(any(
+                channel is not Channel.RGB for view in views for channel in view.channels))
+            self._current_publication(exposure)
+            self._submitted_device_image_batches += 1
+            return ticket
 
     def close(self):
         with self._lock:
@@ -626,7 +655,9 @@ class NativeRenderSession(ValidatedRenderSession):
 
     def diagnostics(self):
         with self._lock:
-            return dict(self._delegate.diagnostics(), published_device_pose_batches=self._published_device_pose_batches)
+            return dict(self._delegate.diagnostics(), published_device_pose_batches=self._published_device_pose_batches,
+                        submitted_device_image_batches=self._submitted_device_image_batches,
+                        device_image_status_d2h_bytes=self._device_image_status_d2h_bytes)
 
 
     def capture(self, frame, request):

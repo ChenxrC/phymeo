@@ -96,6 +96,35 @@ def cuda_identity(ordinal):
     return driver, device, uuid
 
 
+def import_external_slot(driver, raw, imports):
+    """Import one dedicated Win32 buffer and two semaphores in the current CUDA context.
+
+    Each acquisition is immediately registered for reverse-order cleanup, including
+    when a later import fails. The Vulkan owner retains the three original NT handles.
+    """
+    d = driver
+    desc = d.CUDA_EXTERNAL_MEMORY_HANDLE_DESC()
+    desc.type = d.CUexternalMemoryHandleType.CU_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32
+    desc.handle.win32.handle = raw.memory
+    desc.size = raw.allocation_bytes
+    desc.flags = 1  # CUDA_EXTERNAL_MEMORY_DEDICATED
+    memory = _cu(d.cuImportExternalMemory, desc)
+    imports.append((d.cuDestroyExternalMemory, memory))
+    mapping = d.CUDA_EXTERNAL_MEMORY_BUFFER_DESC()
+    mapping.size = raw.buffer_bytes
+    address = _cu(d.cuExternalMemoryGetMappedBuffer, memory, mapping)
+    imports.append((d.cuMemFree, address))
+    semaphores = []
+    for handle in (raw.writable, raw.ready):
+        desc = d.CUDA_EXTERNAL_SEMAPHORE_HANDLE_DESC()
+        desc.type = d.CUexternalSemaphoreHandleType.CU_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32
+        desc.handle.win32.handle = handle
+        semaphore = _cu(d.cuImportExternalSemaphore, desc)
+        imports.append((d.cuDestroyExternalSemaphore, semaphore))
+        semaphores.append(semaphore)
+    return address, *semaphores
+
+
 class SharedMatrices:
     """One imported device-local SSBO, one active publication, multiple raster views.
 
@@ -181,26 +210,7 @@ class SharedMatrices:
                 raw.buffer_bytes != self._size or raw.allocation_bytes < self._size):
             raise RuntimeError("resident matrix export has invalid size or handles")
         with self._current():
-            desc = d.CUDA_EXTERNAL_MEMORY_HANDLE_DESC()
-            desc.type = d.CUexternalMemoryHandleType.CU_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32
-            desc.handle.win32.handle = raw.memory
-            desc.size = raw.allocation_bytes
-            desc.flags = 1  # CUDA_EXTERNAL_MEMORY_DEDICATED
-            memory = _cu(d.cuImportExternalMemory, desc)
-            self._imports.append((d.cuDestroyExternalMemory, memory))
-            mapping = d.CUDA_EXTERNAL_MEMORY_BUFFER_DESC()
-            mapping.size = raw.buffer_bytes
-            self._address = _cu(d.cuExternalMemoryGetMappedBuffer, memory, mapping)
-            self._imports.append((d.cuMemFree, self._address))
-            semaphores = []
-            for handle in (raw.writable, raw.ready):
-                desc = d.CUDA_EXTERNAL_SEMAPHORE_HANDLE_DESC()
-                desc.type = d.CUexternalSemaphoreHandleType.CU_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32
-                desc.handle.win32.handle = handle
-                semaphore = _cu(d.cuImportExternalSemaphore, desc)
-                self._imports.append((d.cuDestroyExternalSemaphore, semaphore))
-                semaphores.append(semaphore)
-            self._writable, self._ready = semaphores
+            self._address, self._writable, self._ready = import_external_slot(d, raw, self._imports)
         # CUDA imports retain their references; the exporting API owns and
         # closes the original three NT handles, even after a partial import.
         self._call("pr_resident_shared_drop_exports")

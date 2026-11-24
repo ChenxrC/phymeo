@@ -79,15 +79,24 @@ struct ResidentState;
 struct MsaaState;
 struct ProgressiveState;
 struct Context;
-struct SharedSlot {
+struct ExternalSync {
+    VkSemaphore writable{},ready{};
+    void* handles[3]{};
+};
+struct SharedSlot : ExternalSync {
     enum class Phase { unused, external, acquiring, reading, releasing };
     Phase phase=Phase::unused;
-    VkSemaphore writable{},ready{};
     VkFence fence{};
     VkCommandBuffer commands{};
-    void* handles[3]{};
     bool exported=false;
 };
+struct DeviceOutput : ExternalSync {
+    Buffer buffer{};
+    bool returned=false;
+    VkFence pending_fence{}; // borrowed from the submitted primary frame
+    PrResidentDeviceOutputInfo info{1,0,0,0,0,0};
+};
+void destroy_device_output(Context&) noexcept;
 void destroy_shared(Context&) noexcept;
 int drain_shared(Context&);
 void probe_msaa(Context&,const VkPhysicalDeviceLimits&);
@@ -98,6 +107,7 @@ struct Context {
     uint64_t shared_camera_d2d_bytes=0;
     bool shared_blas_compatible=false;
     SharedSlot shared_slot{};
+    DeviceOutput device_output{};
     bool surface_maps_compatible = false;
     bool display_compatible = false;
     PrResidentMsaaInfo msaa_info{};
@@ -164,6 +174,7 @@ struct Context {
             waited = vkDeviceWaitIdle(device);
             progressive_state.reset();
             destroy_shared(*this);
+            destroy_device_output(*this);
             resident_state.reset(); // dependent buffers/targets die before VkDevice
             msaa_state.reset(); // per-camera framebuffers die before their shared render passes
             release(pipeline, [&](auto h) { vkDestroyPipeline(device,h,nullptr); });
@@ -930,6 +941,7 @@ int pr_counts(PrCounts* output) {
 int pr_destroy(void* handle,PrInfo* final_info) {
     if(!handle) { if(final_info) *final_info={}; return 0; }
     auto* context=static_cast<Context*>(handle);
+    if (outstanding_device_output(*context)) return -2;
     if (context->shared_input && drain_shared(*context)!=0 && context->shared_slot.phase!=SharedPhase::unused)
         return -2; // keep the handle while a live device cannot complete/return ownership
     VkResult waited=context->shutdown();
@@ -999,6 +1011,61 @@ int pr_resident_shared_end(void* context) {
 }
 uint32_t pr_resident_shared_camera_abi_version() { return 1; }
 uint32_t pr_resident_shared_batch_abi_version() { return 1; }
+uint32_t pr_resident_device_output_abi_version() { return 1; }
+int pr_resident_device_output_export(void* context,uint64_t capacity,PrResidentSharedExport* output) {
+    return shared_call([&]{
+        require(context && output,"null device output export argument");
+        *output={}; export_device_output(*static_cast<Context*>(context),capacity,*output);
+    });
+}
+int pr_resident_device_output_drop_exports(void* context) {
+    return shared_call([&]{
+        require(context,"null device output context");
+        auto& slot=static_cast<Context*>(context)->device_output;
+        require(slot.info.phase,"device output is not configured");
+        drop_shared_handles(slot);
+    });
+}
+int pr_resident_render_shared_batch_device(void* context,const PrResidentBatchView* views,uint32_t count,size_t bytes) {
+    return shared_call([&]{
+        require(context,"null device camera batch context");
+        resident_shared_batch(*static_cast<Context*>(context),views,count,nullptr,bytes,true);
+    });
+}
+int pr_resident_device_output_return(void* context) {
+    return shared_call([&]{require(context,"null device output context"); return_device_output(*static_cast<Context*>(context));});
+}
+int pr_resident_device_output_retire(void* context) {
+    return shared_call([&]{
+        require(context,"null device output context");
+        auto& c=*static_cast<Context*>(context);
+        require(c.device_output.info.phase!=2,"cannot retire a CUDA-owned image slot");
+        destroy_device_output(c);
+    });
+}
+int pr_resident_device_output_info(void* context,PrResidentDeviceOutputInfo* output) {
+    return shared_call([&]{
+        require(context && output,"null device output info argument");
+        auto& c=*static_cast<Context*>(context);
+        auto& slot=c.device_output;
+        *output=slot.info;
+        if (!slot.pending_fence) return;
+        // A timed-out submission owns the slot, but its CUDA ready signal may
+        // never have executed. Only a completed fence permits the CUDA wait.
+        output->phase=3;
+        const auto rc=vkGetFenceStatus(c.device,slot.pending_fence);
+        if (rc==VK_NOT_READY) return;
+        if (rc==VK_ERROR_DEVICE_LOST) {
+            c.poisoned=true;
+            slot.pending_fence={};
+            slot.info.phase=1;
+            output->phase=1;
+            return;
+        }
+        check(rc,"query pending device output fence");
+        output->phase=2;
+    });
+}
 int pr_resident_render_shared_batch(void* context,const PrResidentBatchView* views,
                                     uint32_t count,uint8_t* output,size_t output_bytes) {
     return shared_call([&]{
@@ -1096,6 +1163,7 @@ int pr_resident_destroy(void* handle, PrInfo* final_info, PrResidentTelemetry* f
     }
     auto* context = static_cast<Context*>(handle);
     if (!context->resident) { last_error = "context does not use resident rendering"; return -1; }
+    if (outstanding_device_output(*context)) return -2;
     if (context->shared_input && drain_shared(*context)!=0 && context->shared_slot.phase!=SharedPhase::unused)
         return -2;
     VkResult waited = context->shutdown();
@@ -1178,16 +1246,19 @@ int pr_resident_readback_info(void* handle, PrResidentReadbackInfo* output) {
     *output=context.readback_info;
     output->memory_type_index=UINT32_MAX; output->memory_property_flags=0;
     output->persistent_mapped=0; output->capacity_bytes=0;
-    if (context.resident_state && context.resident_state->target) {
-        const auto& frame=*context.resident_state->target;
-        output->memory_type_index=frame.readback.allocation.type_index;
-        output->memory_property_flags=frame.readback.allocation.property_flags;
-        output->persistent_mapped=frame.readback_mapping ? 1u : 0u;
-        output->capacity_bytes=frame.readback_capacity;
-        for (const auto& extra:context.resident_state->additional_targets) if (extra) {
-            output->capacity_bytes+=extra->readback_capacity;
-            if (!extra->readback_mapping) output->persistent_mapped=0;
-        }
+    if (context.resident_state) {
+        auto add=[&](const std::unique_ptr<FrameResources>& frame) {
+            if (!frame || !frame->readback.memory) return;
+            if (!output->capacity_bytes) {
+                output->memory_type_index=frame->readback.allocation.type_index;
+                output->memory_property_flags=frame->readback.allocation.property_flags;
+                output->persistent_mapped=1;
+            }
+            output->capacity_bytes+=frame->readback_capacity;
+            if (!frame->readback_mapping) output->persistent_mapped=0;
+        };
+        add(context.resident_state->target);
+        for (const auto& extra:context.resident_state->additional_targets) add(extra);
     }
     return 0;
 }

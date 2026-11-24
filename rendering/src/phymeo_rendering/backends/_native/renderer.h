@@ -200,6 +200,28 @@ static_assert(sizeof(PrResidentBatchView)==288,"resident packed batch camera ABI
 PR_API uint32_t pr_resident_shared_batch_abi_version();
 PR_API int pr_resident_render_shared_batch(void* context,const PrResidentBatchView* views,
     uint32_t count,uint8_t* output,size_t output_bytes);
+// Vulkan-produced pixels in one dedicated, opaque Win32 allocation. View
+// starts are aligned to four bytes, compact planes are contiguous within
+// each view and occupied_bytes ends at the last pixel. Padding is unspecified.
+// Import memory/writable/ready into CUDA, then release the borrowed NT handles.
+// Vulkan signals ready; CUDA waits, copies, signals writable and completes
+// its stream/event before acknowledging return. The next render consumes writable.
+struct PrResidentDeviceOutputInfo {
+    // 0 empty, 1 no CUDA lease (includes a lost device), 2 ready for CUDA,
+    // 3 Vulkan submission pending after an error/timeout. Poll info for phase 2
+    // before waiting on the CUDA ready semaphore. Phase 3 retains the slot.
+    uint32_t abi_version,phase;
+    uint64_t capacity_bytes,batches,views,image_bytes; // successful payload bytes excluding padding
+};
+static_assert(sizeof(PrResidentDeviceOutputInfo)==40,"device output info ABI");
+PR_API uint32_t pr_resident_device_output_abi_version();
+PR_API int pr_resident_device_output_export(void*,uint64_t capacity,PrResidentSharedExport*);
+PR_API int pr_resident_device_output_drop_exports(void*);
+PR_API int pr_resident_render_shared_batch_device(void*,const PrResidentBatchView*,uint32_t count,size_t occupied_bytes);
+PR_API int pr_resident_device_output_return(void*);
+// After returning output and destroying CUDA imports, retire permits a new capacity.
+PR_API int pr_resident_device_output_retire(void*);
+PR_API int pr_resident_device_output_info(void*,PrResidentDeviceOutputInfo*);
 PR_API int pr_resident_render_shared_camera_planes(void* context,uint32_t camera_index,const PrParams* params,
     uint32_t width,uint32_t height,uint32_t mask,uint8_t* output,size_t bytes);
 PR_API int pr_resident_render_shared_planes(void* context,const PrParams* params,

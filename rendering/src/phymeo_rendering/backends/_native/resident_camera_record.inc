@@ -14,8 +14,10 @@ void upload_camera_params(Context& c,FrameResources& frame,const PrParams& param
     c.upload(frame.uniform, &submitted, sizeof(submitted));
     info.parameter_upload_bytes += sizeof(params);
 }
+struct DeviceOutputSlice { VkDeviceSize offset; bool acquire,release; };
 void record_camera(Context& c,FrameResources& frame,const PrParams& params,uint32_t channel_mask,
-                   uint32_t camera_index,uint32_t progressive_batch,size_t output_bytes) {
+                   uint32_t camera_index,uint32_t progressive_batch,size_t output_bytes,
+                   const DeviceOutputSlice* device_slice=nullptr) {
     auto& state=*c.resident_state;
     const auto& info=c.resident_properties;
     const uint32_t instance_count=info.instance_count,width=frame.width,height=frame.height;
@@ -28,6 +30,7 @@ void record_camera(Context& c,FrameResources& frame,const PrParams& params,uint3
     VkCommandBufferBeginInfo begin{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
     begin.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
     check(vkBeginCommandBuffer(frame.commands, &begin), "resident begin frame");
+    if (device_slice && device_slice->acquire) device_output_ownership(c,frame.commands,true);
     if (frame.timestamps) {
         vkCmdResetQueryPool(frame.commands,frame.timestamps,0,3);
         vkCmdWriteTimestamp(frame.commands,VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,frame.timestamps,0);
@@ -125,20 +128,24 @@ void record_camera(Context& c,FrameResources& frame,const PrParams& params,uint3
         // All preceding formats are four bytes; VALID (one byte) is last.
         // Thus odd width/height and VALID-only still satisfy copy alignment.
         VkBufferImageCopy copy{};
-        copy.bufferOffset = offset;
+        copy.bufferOffset = offset+(device_slice ? device_slice->offset : 0);
         copy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         copy.imageSubresource.layerCount = 1;
         copy.imageExtent = {width,height,1};
         vkCmdCopyImageToBuffer(frame.commands, i==0&&progressive_rgb?c.progressive_state->display.handle:frame.images[i].handle, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                              frame.readback.handle, 1, &copy);
+                              device_slice ? c.device_output.buffer.handle : frame.readback.handle, 1, &copy);
         offset += pixels*bytes_per_pixel[i];
     }
-    VkBufferMemoryBarrier host{VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER};
-    host.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT; host.dstAccessMask = VK_ACCESS_HOST_READ_BIT;
-    host.srcQueueFamilyIndex = host.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    host.buffer = frame.readback.handle; host.size = VK_WHOLE_SIZE;
-    vkCmdPipelineBarrier(frame.commands, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_HOST_BIT,
-                         0, 0, nullptr, 1, &host, 0, nullptr);
+    if (device_slice) {
+        if (device_slice->release) device_output_ownership(c,frame.commands,false);
+    } else {
+        VkBufferMemoryBarrier host{VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER};
+        host.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT; host.dstAccessMask = VK_ACCESS_HOST_READ_BIT;
+        host.srcQueueFamilyIndex = host.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        host.buffer = frame.readback.handle; host.size = VK_WHOLE_SIZE;
+        vkCmdPipelineBarrier(frame.commands, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_HOST_BIT,
+                             0, 0, nullptr, 1, &host, 0, nullptr);
+    }
     if (frame.timestamps)
         vkCmdWriteTimestamp(frame.commands,VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,frame.timestamps,2);
     check(vkEndCommandBuffer(frame.commands), "resident end frame");

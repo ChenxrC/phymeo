@@ -5,7 +5,9 @@
 | 任务 | 已验证的策略包 | 实际轨迹录像 |
 | --- | --- | --- |
 | 6 kg 侧缘箱，抬起后运输和放置 | [搬运 CEM](../../artifacts/mtt-bimanual-20261126/carry-policy.zip) · [带视觉神经网络的搬运模型](../../artifacts/mtt-bimanual-20261126/carry-neural-policy.zip) | [搬运 CEM 中文慢放，36 秒](../../artifacts/mtt-bimanual-20261126/carry-studio-zh.mp4) · [视觉网络回放，36 秒](../../artifacts/mtt-bimanual-20261126/carry-neural-studio.mp4) |
-| 9 kg T 件，平移并对准目标朝向 | [两种机械臂装配共同训练的 PushT 策略](../../artifacts/mtt-bimanual-20261126/push-crossfit-policy.zip) | [对应冻结模型回放，30 秒](../../artifacts/mtt-bimanual-20261126/push-crossfit-studio.mp4) |
+| 9 kg T 件，平移并对准目标朝向 | [两种机械臂装配共同训练的 PushT 策略](../../artifacts/mtt-bimanual-20261126/push-crossfit-policy.zip) | [两个装配、相反转向，36 秒](../../artifacts/mtt-bimanual-20261126/push-crossed-pair-studio.mp4) · [单次成功回合，30 秒](../../artifacts/mtt-bimanual-20261126/push-crossfit-studio.mp4) |
+
+一次下载可取得两份冻结策略、两段 36 秒录像、解包重放命令、留出与单臂结果，以及一个可选的神经网络搬运策略。每段主录像各含两次独立成功回合，画面标出仿真时钟与慢放倍率。交付包共 15 个文件，逐项解压校验通过，SHA-256 为 `501bc616f13815466991b1971eb5ecb34a9e1d6d4c45219f3661cf46bf683392`。[下载双臂交付包](../../artifacts/mtt-bimanual-20261126/S4000-bimanual-delivery.zip)
 
 在已装好 Phymeo、MuJoCo、Tyx MUSA 与 Vulkan 渲染库的 S4000 环境中，将 `PHYMEO_RENDER_LIBRARY` 指向该机实际构建的 `libphymeo_native.so`。解压搬运 CEM 包后，在解压目录运行以下命令。模型包内附精确版本的控制、观测、场景生成源码和训练检查点。新回合的 XML、真实状态轨迹和结果写入 `my-replay`。
 
@@ -129,6 +131,8 @@ PushT 原策略在完整交叉中为 **12/16**。两个构型都能朝两个方�
 保留原 9 kg T 形工件、相机、关节限矩、目标和三个终态门槛。在每个训练初态分别装上左六右七和左七右六两套实体关节树，训练两代，每代五组候选。每代先按在这两种构型上的成功总数排序，再按平均回报排序。在独立的 82001、82002 两个初态和两种装配上与原 CEM 参数比较，选出新权重后冻结。
 
 在 83001–83004 四个新初态及各自的两种装配上，新权重 **8/8** 完成，原权重在完全相同的八次中 **6/8** 完成。平均回报由 1.939 提高到 2.185。另两个录像种子 84001、84002 也各跑了两种装配，四次均满足位置、角度和停稳门槛，每次实际运动 1.30–1.46 秒。两组成绩分别报告，录像种子未参与训练或选模。[训练入口](../../examples/bimanual_crossed_refinement.py) · [配对留出](../../artifacts/mtt-bimanual-20261126/push-crossfit-holdout.json) · [录像回合结果](../../artifacts/mtt-bimanual-20261126/push-crossfit-films.json)
+
+同一冻结 PushT 策略在 83001–83004 的每个初态、每种装配都另跑三个配对对照。仅启用左臂、仅启用右臂以及双臂均启用但双腕图像全黑，各为 0/8。保留正常双臂与双腕图像时为 8/8。计分要求同时达到位置、朝向和停稳门槛。重物在未达到目标时仍可能被推动。[三个对照的逐回合记录](../../artifacts/mtt-bimanual-20261126/push-crossfit-controls.json)
 
 ### 28 N 工具的独立试验
 

@@ -197,6 +197,28 @@ class MuJoCoTyxStepReceipt:
     constraints: tuple = ()
 
 
+def _musa_t4_pairs_supported(plan, model, mj):
+    # The T4 compiler orders every pair by native geometry type, then by ID.
+    # Check all eligible pairs before allocating, including initially separated ones.
+    shapes = model.geom_type[plan.pair_ids[: plan.npair, :2]]
+    dims = plan.pair_condim[: plan.npair]
+    plane, sphere = mj.mjtGeom.mjGEOM_PLANE, mj.mjtGeom.mjGEOM_SPHERE
+    capsule = mj.mjtGeom.mjGEOM_CAPSULE
+    basic = np.isin(shapes[:, 0], (plane, sphere)) & np.isin(dims, (1, 3))
+    round_pairs = np.all(np.isin(shapes, (plane, sphere, capsule)), axis=1)
+    return bool(np.all(basic | (round_pairs & np.isin(dims, (1, 3, 6)))))
+
+
+def _constraint_friction_label(dry_rows, dimensions):
+    if not dimensions:
+        return "native-dof-loss" if dry_rows else "none"
+    # Keep the existing condim 1/3 family name for that established domain.
+    family = "-".join(map(str, dimensions)) if 6 in dimensions else "1-3"
+    if dry_rows:
+        return f"native-dof-loss-and-pyramidal-condim{family}"
+    return f"pyramidal-condim{family}-only"
+
+
 def _require_musa_plan(plan, model, mj):
     from .mujoco_tyx import MuJoCoTyxIssue
     from .mujoco_tyx._constraint_model import TyxConstraintModel
@@ -223,9 +245,8 @@ def _require_musa_plan(plan, model, mj):
     if (
         type(plan) is TyxConstraintModel
         and (fixed or floating)
-        and not plan.extended_contacts
         and (plan.npair or plan.nlimit or plan.nfriction)
-        and np.all(np.isin(plan.pair_condim[: plan.npair], (1, 3)))
+        and _musa_t4_pairs_supported(plan, model, mj)
     ):
         return
     raise MuJoCoTyxUnsupported(
@@ -234,7 +255,8 @@ def _require_musa_plan(plan, model, mj):
                 "musa-domain",
                 "MUSA admits the unrestricted prismatic solver, a single free-root scalar "
                 "tree without contact, or fixed/single-free-root scalar trees with T4 "
-                "hinge/slide limits, joint dry friction or basic pyramidal contacts (condim 1/3)",
+                "hinge/slide limits, DOF dry friction, basic condim 1/3 contacts, or "
+                "plane/sphere/capsule pairs with condim 1/3/6",
             ),
         )
     )
@@ -245,7 +267,8 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
 
     MUSA executes the unrestricted prismatic route, a single unconstrained
     floating tree, and the fixed/single-floating tree T4 solve for scalar
-    joint limits, DOF dry friction and basic primitive condim 1/3 contacts.
+    joint limits, DOF dry friction, basic primitive condim 1/3 contacts and
+    plane/sphere/capsule pairs with condim 1/3/6.
 
     Floating domain: one native free root and 0..29 hinge/slide joints, full
     root/joint coupling, origin world linear and local angular velocities.
@@ -485,15 +508,17 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                 g1_supported=self._plan.kind == 3 and mode != "musa",
             )
             if mode == "musa":
-                dimensions = self._plan.pair_condim[: self._plan.npair]
+                dimensions = tuple(
+                    sorted(set(map(int, self._plan.pair_condim[: self._plan.npair])))
+                )
                 info.update(
-                    contact_dimensions=tuple(sorted(set(map(int, dimensions)))),
+                    contact_dimensions=dimensions,
                     contact_law=MIXED_LAW if self._plan.npair else "none",
                     limits="none",
                     joint_limits_supported=False,
                     scalar_joint_limits_supported=False,
                     dry_friction_supported=False,
-                    friction="pyramidal-condim1-3-only",
+                    friction=_constraint_friction_label(self._plan.nfriction, dimensions),
                 )
             self._capabilities = MappingProxyType(info)
 
@@ -582,10 +607,8 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
             rows = "mixed-contact-joint-constraints" if self._plan.npair else "joint-constraints"
             activation = "-filterexact" if hasattr(self._plan, "activation") else ""
             dimensions = tuple(sorted(set(map(int, self._plan.pair_condim[: self._plan.npair]))))
-            contact_rows = sum(
-                1 if int(self._plan.pair_condim[int(slot[0])]) == 1 else 4
-                for slot in self._plan.slot_ids[: self._plan.nslot]
-            )
+            slot_dims = self._plan.pair_condim[self._plan.slot_ids[: self._plan.nslot, 0]]
+            contact_rows = int(np.maximum(1, 2 * (slot_dims - 1)).sum())
             info.update(
                 domain=f"{family}-{joints}-{rows}{activation}-v1",
                 contact_dimensions=dimensions,
@@ -594,15 +617,7 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                 scalar_joint_limits_supported=bool(self._plan.nlimit),
                 ball_angular_limits_supported=False,
                 dry_friction_supported=bool(self._plan.nfriction),
-                friction=(
-                    "native-dof-loss-and-pyramidal-condim1-3"
-                    if self._plan.nfriction and self._plan.npair
-                    else "native-dof-loss"
-                    if self._plan.nfriction
-                    else "pyramidal-condim1-3-only"
-                    if self._plan.npair
-                    else "none"
-                ),
+                friction=_constraint_friction_label(self._plan.nfriction, dimensions),
                 native_dry_dof_ids=tuple(map(int, self._plan.friction_ids[: self._plan.nfriction])),
                 native_scalar_limit_joint_ids=tuple(
                     map(int, self._plan.limit_ids[: self._plan.nlimit, 0])

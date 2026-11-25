@@ -11,7 +11,9 @@ import tyx as tx
 
 @tx.func
 def _bit(code: tx.i32, axis: tx.i32) -> tx.i32:
-    return (code // (1 + axis * (axis + 1) // 2)) % 2
+    # The three box axes carry corner weights 1, 2 and 4. Keep each divisor
+    # literal so a device compiler needn't prove a computed one is nonzero.
+    return (code // 2 if axis == 1 else code // 4 if axis == 2 else code) % 2
 
 
 def extended_contacts(

@@ -414,6 +414,14 @@ def test_contact_capacity_rejects_both_worlds_before_publication(tmp_path):
         pytest.param(source(condim=4), id="fixed-torsional"),
         pytest.param(source(free=True, condim=4), id="floating-torsional"),
         pytest.param(
+            source(free=True, condim=4).replace('type="sphere" size=".1"', 'type="capsule" size=".1 .2"'),
+            id="capsule-condim4",
+        ),
+        pytest.param(
+            source(free=True, condim=6).replace('type="sphere" size=".1"', 'type="box" size=".06 .06 .1"'),
+            id="plane-box-condim6",
+        ),
+        pytest.param(
             '<mujoco><default><geom contype="0" conaffinity="0"/></default><worldbody>'
             '<body><freejoint/><geom size=".1"/></body>'
             '<body><freejoint/><geom size=".1"/></body></worldbody></mujoco>',

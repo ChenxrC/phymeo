@@ -597,6 +597,7 @@ def run_path(
     with MuJoCoTyxRuntime(
         normal._compile(xml), mode=mode, initial_states={0: initial(model, q, v)}
     ) as runtime:
+        device_before = runtime.musa_device_report() if mode == "musa" else None
         start = runtime.snapshot()[0]
         cpu = mj.MjData(model)
         cpu.qpos[:], cpu.qvel[:] = start.q, start.v
@@ -621,6 +622,8 @@ def run_path(
                 runtime.step(h)
                 after = runtime.snapshot()[0]
                 row = after.last_step
+                if mode == "musa":
+                    assert row.backend == "mujoco-tyx-musa"
                 assert abs(after.time - (tick + 1) * h) <= 2e-6
                 assert abs(cpu.time - tick * h) <= 2e-6
                 for field in ("ctrl", "qfrc_applied", "xfrc_applied"):
@@ -727,6 +730,13 @@ def run_path(
             _save(path, payload)
             previous = present
             previous_signature = signature
+        if device_before is not None:
+            device_after = runtime.musa_device_report()
+            completed = device_after["completed_kernels"] - device_before["completed_kernels"]
+            assert device_after["backend"] == "musa" and device_after["device_name"] and device_after["arch"]
+            assert completed == device_after["launched_kernels"] - device_before["launched_kernels"] >= steps
+            assert device_after["downloaded_bytes"] > device_before["downloaded_bytes"]
+            _save(path, {"device_before": device_before, "device_after": device_after})
         return model, states, runtime.snapshot()[0], selected
 
 
@@ -934,6 +944,121 @@ def test_torsional_and_rolling_couples(mode, dim, axis, speed, tmp_path):
     )
     assert work < 0 and nonzero_body_torque
     assert np.all(actual_couple_max[native_couple_max > 1e-5] > 1e-5)
+
+
+def _six_dimensional_capsule_xml(pair):
+    from xml.etree import ElementTree
+
+    import test_mujoco_tyx_finite_contacts as finite
+
+    cases = {
+        "plane-capsule": (normal.GEOMETRY_CASES, "plane-capsule-one"),
+        "sphere-capsule": (normal.GEOMETRY_CASES, "sphere-capsule-side"),
+        "capsule-capsule": (finite.GEOMETRY, "cap-cap-skew"),
+    }
+    candidates, name = cases[pair]
+    root = ElementTree.fromstring(next(case.xml for case in candidates if case.name == name))
+    root.find("option").set("cone", "pyramidal")
+    geom = root.find("./default/geom")
+    geom.set("condim", "6")
+    # Spin and roll friction coefficients have length units here, relative
+    # to the 0.1 m radius. Both are large enough for resolved contact torques.
+    geom.set("friction", ".6 .04 .025")
+    return ElementTree.tostring(root, encoding="unicode")
+
+
+@pytest.mark.musa
+@pytest.mark.skipif(os.environ.get("PHYMEO_TEST_MUSA") != "1", reason="requires a MUSA GPU")
+@pytest.mark.parametrize("pair", ["plane-capsule", "sphere-capsule", "capsule-capsule"])
+@pytest.mark.parametrize("excitation,component", [("spin", 3), ("roll", 4)], ids=["spin", "roll"])
+def test_musa_capsule_six_dimensional_reactions(pair, excitation, component, monkeypatch, tmp_path):
+    import json
+    import sys
+
+    from phymeo.backends.mujoco_tyx import _kernels
+
+    mj = normal._deps()
+    xml = _six_dimensional_capsule_xml(pair)
+    model = mj.MjModel.from_xml_string(xml)
+    reference = native(mj, model, model.qpos0, np.zeros(6), packet(model))
+    assert len(reference["contacts"]) == 1
+    jac = reference["contacts"][0]["jacobian"]
+    # Prepare point kinematics independently from the native relative Jacobian.
+    # Roll starts without tangential sliding. Spin is about the contact normal.
+    point_speed = np.zeros(6)
+    point_speed[0], point_speed[component] = -0.02, 1.2
+    initial_velocity = np.linalg.solve(jac, point_speed)
+    preload = -15.0 * np.r_[jac[0, :3], np.zeros(3)]  # inward 15 N, no applied torque
+    path = tmp_path / "capsule-six.jsonl"
+    steps = 8
+
+    def forbidden(*args, **kwargs):
+        pytest.fail("MUSA step invoked a CPU simulation or Tyx interpreter")
+
+    original_step = MuJoCoTyxRuntime.step
+
+    def guarded_step(runtime, h):
+        # run_path calls native MuJoCo independently outside this interval.
+        with monkeypatch.context() as guard:
+            guard.setattr(mj, "mj_forward", forbidden)
+            guard.setattr(mj, "mj_step", forbidden)
+            guard.setattr(type(_kernels.advance), "__call__", forbidden)
+            guard.setitem(sys.modules, "warp", None)
+            guard.setitem(sys.modules, "mujoco_warp", None)
+            return original_step(runtime, h)
+
+    monkeypatch.setattr(MuJoCoTyxRuntime, "step", guarded_step)
+    _, states, _, _ = run_path(
+        xml,
+        "musa",
+        path,
+        v=initial_velocity,
+        steps=steps,
+        controls=lambda m, t: packet(m, preload),
+        tiny=False,
+    )
+    # Compare the independently evolved trajectory's world force and moment,
+    # in addition to run_path's full same-input CPU row/wrench checks.
+    for state in states:
+        assert state["count"] == state["native_count"] == 1 and state["efc"] == 10
+        np.testing.assert_allclose(state["wrench"], state["continuous_wrench"], **FORCE_TOL)
+    with path.open(encoding="utf8") as stream:
+        rows = [r for line in stream if "actual" in (r := json.loads(line))]
+    assert len(rows) == steps
+    torques, native_torques, powers = [], [], []
+    for record in rows:
+        actual = record["actual"]
+        contact = actual["contacts"][0]
+        assert contact["dimension"] == 6 and contact["active"]
+        speed = np.asarray(contact["jacobian"]) @ actual["input_v"]
+        if not torques:
+            np.testing.assert_allclose(speed, point_speed, rtol=0, atol=2e-5)
+        torque = contact["wrench_contact_frame"][component]
+        expected = record["oracle"]["contacts"][0]["wrench_contact_frame"][component]
+        torques.append(torque)
+        native_torques.append(expected)
+        powers.append(torque * speed[component])
+    # Require a resolved, opposing pure couple at the excited input. This
+    # excludes a spurious pass from a normal or tangential force's moment arm.
+    minimum_couple = 5 * FORCE_TOL["atol"]
+    work = float(model.opt.timestep) * sum(powers)
+    _save(
+        path,
+        dict(
+            pair=pair,
+            excitation=excitation,
+            component=component,
+            initial_v=initial_velocity,
+            point_speed=point_speed,
+            preload=preload,
+            torque_Nm=torques,
+            native_torque_Nm=native_torques,
+            minimum_couple_Nm=minimum_couple,
+            work_J=work,
+        ),
+    )
+    assert torques[0] < -minimum_couple and native_torques[0] < -minimum_couple
+    assert work < 0
 
 
 @pytest.mark.parametrize("mode", MODES)

@@ -76,12 +76,17 @@ def compare_background_focus(session, frame, camera, focus, aperture, sharp, fin
 def assemble(root, cache):
     assets = load_home_assets(root, cache / "objects")
     room = build_room(cache / "room")
+    return assemble_sources(assets, room, HOME_PLACEMENTS, root, "home-breakfast-ten")
+
+
+def assemble_sources(assets, room, placements, root, scene_name):
+    """Keep the imported assets, their component IDs and their poses in one resident scene."""
     meshes, materials, instances = list(room.meshes), list(room.materials), list(room.instances)
     poses = [NodePose(ROOM_NODE, Pose())]
     asset_ids, sources = {}, {}
     next_id = max(item.id for item in instances) + 1
-    if {a.key for a in assets} != set(HOME_PLACEMENTS):
-        raise ValueError("the dining room layout requires the ten selected asset categories")
+    if {a.key for a in assets} != set(placements):
+        raise ValueError("the room layout must place every selected category")
     for asset in assets:
         meshes.extend(asset.meshes)
         materials.extend(asset.materials)
@@ -90,12 +95,12 @@ def assemble(root, cache):
             instances.append(replace(part, id=next_id))
             ids.append(next_id)
             next_id += 1
-        poses.append(NodePose(asset.node_key, HOME_PLACEMENTS[asset.key]))
+        poses.append(NodePose(asset.node_key, placements[asset.key]))
         asset_ids[asset.key] = ids
         sources[asset.key] = dict(source=asset.source.relative_to(root).as_posix(),
-                                  bounds_m=asset.bounds, position_m=HOME_PLACEMENTS[asset.key].position_m,
+                                  bounds_m=asset.bounds, position_m=placements[asset.key].position_m,
                                   import_details=asset.details)
-    scene = VisualScene("home-breakfast-ten:" + room.key, tuple(meshes), tuple(materials), tuple(instances), room.lights)
+    scene = VisualScene(scene_name + ":" + room.key, tuple(meshes), tuple(materials), tuple(instances), room.lights)
     return scene, tuple(poses), asset_ids, sources
 
 

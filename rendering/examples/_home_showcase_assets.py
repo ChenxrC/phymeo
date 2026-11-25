@@ -1,4 +1,4 @@
-"""Import the ten original household GLBs into native resident studio geometry."""
+"""Import numbered household GLBs into native resident studio geometry."""
 
 from dataclasses import dataclass
 from hashlib import sha256
@@ -13,7 +13,8 @@ from PIL import Image
 
 from _panda_scene import write_mesh
 from galaxea_r1.finish_details import _store
-from phymeo_rendering.assets import Mesh, TexturedMaterial, TextureChannel, TextureMap
+from preview_stable_lighting.shell_normals import _publish
+from phymeo_rendering.assets import Material, Mesh, TexturedMaterial, TextureChannel, TextureMap
 from phymeo_rendering.scene import Instance
 
 
@@ -24,7 +25,7 @@ class HomeAsset:
     node_key: str
     bounds: tuple
     meshes: tuple[Mesh, ...]
-    materials: tuple[TexturedMaterial, ...]
+    materials: tuple[Material, ...]
     instances: tuple[Instance, ...]
     details: dict
 
@@ -82,7 +83,7 @@ def _parts(doc, buf, vendor):
     # Vendor scale is applied in glTF Y-up world. Rotate +90 about X for Z-up.
     y_to_z = np.array(((1, 0, 0), (0, 0, -1), (0, 1, 0)))
     root = np.eye(4)
-    root[:3, :3] = y_to_z @ np.diag(vendor['scale'])
+    root[:3, :3] = y_to_z @ np.diag(np.broadcast_to(vendor['scale'], (3,)))
     root = root @ np.array(vendor.get('transform_matrix', np.eye(4)), dtype=float)
 
     def visit(index, parent):
@@ -96,7 +97,7 @@ def _parts(doc, buf, vendor):
                 attrs = prim['attributes']
                 pos = _accessor(doc, buf, attrs['POSITION']) @ linear.T + matrix[:3, 3]
                 norm = _accessor(doc, buf, attrs['NORMAL']) @ np.linalg.inv(linear)
-                uv = _accessor(doc, buf, attrs['TEXCOORD_0'])
+                uv = _accessor(doc, buf, attrs['TEXCOORD_0']) if 'TEXCOORD_0' in attrs else None
                 tri = _accessor(doc, buf, prim['indices']).reshape(-1, 3)
                 if np.linalg.det(linear) < 0:
                     tri = tri[:, (0, 2, 1)]
@@ -108,7 +109,7 @@ def _parts(doc, buf, vendor):
         yield from visit(index, root)
 
 
-def _image(doc, buf, ref, role, folder):
+def _source_image(doc, buf, ref):
     if ref.get('texCoord', 0) != 0 or ref.get('extensions') or ref.get('scale', 1) != 1:
         raise ValueError('expected untransformed primary-UV texture, unit normal scale')
     image = doc['images'][doc['textures'][ref['index']]['source']]
@@ -117,7 +118,26 @@ def _image(doc, buf, ref, role, folder):
     raw = bytes(buf[start:start + view['byteLength']])
     with Image.open(BytesIO(raw)) as src:
         rgb = src.convert('RGB')  # All imported glTF materials use OPAQUE.
-        original_size = rgb.size
+    return raw, image.get('name', f'image-{ref["index"]}'), rgb
+
+
+def _image(doc, buf, ref, role, folder, *, neutralize_empty_normals=False, coating=None):
+    raw, name, rgb = _source_image(doc, buf, ref)
+    original_size = rgb.size
+    if coating is not None:
+        pixels = np.array(rgb)
+        if role == 'color':
+            pixels[coating] = (42, 42, 42)
+        elif role == 'metal-rough':
+            pixels[..., 1][coating] = 148
+        rgb = Image.fromarray(pixels)
+    replaced = 0
+    if neutralize_empty_normals:
+        pixels = np.array(rgb)
+        empty = np.all(pixels == 0, axis=2)
+        replaced = int(np.count_nonzero(empty))
+        pixels[empty] = (128, 128, 255)
+        rgb = Image.fromarray(pixels)
     size = tuple(max(1, round(n * min(1, 1024 / max(original_size)))) for n in original_size)
     if size != original_size:
         if role == 'color':
@@ -140,25 +160,147 @@ def _image(doc, buf, ref, role, folder):
     packed = BytesIO()
     rgb.save(packed, 'PNG', compress_level=2)
     path, digest = _store(folder, role, packed.getvalue(), 'png')
-    details = dict(source_name=image['name'], source_sha256=sha256(raw).hexdigest(),
+    details = dict(source_name=name, source_sha256=sha256(raw).hexdigest(),
                    source_size=original_size, derived_sha256=digest, derived_size=rgb.size)
+    if neutralize_empty_normals:
+        details['empty_normal_repair'] = dict(texels=replaced, source_rgb=[0, 0, 0],
+                                              replacement_rgb=[128, 128, 255])
     return TextureMap(path.resolve().as_uri(), digest), rgb, details
 
 
-def _surface_maps(doc, buf, mat, folder):
+def _surface_maps(doc, buf, mat, folder, *, repair_charcoal=False):
     if mat.get('alphaMode', 'OPAQUE') != 'OPAQUE':
         raise ValueError('transparent GLB material needs a dedicated render path')
     pbr = mat['pbrMetallicRoughness']
-    color, _, col = _image(doc, buf, pbr['baseColorTexture'], 'color', folder)
-    packed, mr, mr_info = _image(doc, buf, pbr['metallicRoughnessTexture'], 'metal-rough', folder)
-    normal, _, nrm = _image(doc, buf, mat['normalTexture'], 'normal', folder)
+    color = rough = normal = col = mr_info = nrm = None
+    coating = None
+    if repair_charcoal:
+        # The vendor thumbnail shows dark paint with exposed wood at the corners.
+        # The default black, zero-roughness texels also have a black normal map.
+        # Use all three source maps to distinguish the missing paint from real grain.
+        def source_pixels(ref):
+            return np.asarray(_source_image(doc, buf, ref)[2])
+        base = source_pixels(pbr['baseColorTexture'])
+        packed_pixels = source_pixels(pbr['metallicRoughnessTexture'])
+        normals = source_pixels(mat['normalTexture'])
+        if not (base.shape == packed_pixels.shape == normals.shape):
+            raise ValueError('wooden block coating requires co-registered source maps')
+        coating = ((base == 0).all(2) & (normals == 0).all(2)
+                   & (packed_pixels[..., 1] == 0) & (packed_pixels[..., 2] == 0))
+    if 'baseColorTexture' in pbr:
+        color, _, col = _image(doc, buf, pbr['baseColorTexture'], 'color', folder, coating=coating)
+    metal = pbr.get('metallicFactor', 1.)
+    if 'metallicRoughnessTexture' in pbr:
+        packed, mr, mr_info = _image(doc, buf, pbr['metallicRoughnessTexture'], 'metal-rough', folder, coating=coating)
+        rough = TextureChannel(packed, 'g')
+        metal = np.asarray(mr.getchannel('B')).astype('f4') / 255 * metal
+    if 'normalTexture' in mat:
+        normal, _, nrm = _image(doc, buf, mat['normalTexture'], 'normal', folder,
+                                neutralize_empty_normals=repair_charcoal)
     factors = tuple(pbr.get('baseColorFactor', (1, 1, 1, 1))[:3]), pbr.get('roughnessFactor', 1.)
-    metal = (np.asarray(mr.getchannel('B')).astype('f4') / 255) * pbr.get('metallicFactor', 1.)
-    return (color, TextureChannel(packed, 'g'), normal, factors, metal,
-            dict(name=mat.get('name'), color=col, metallic_roughness=mr_info, normal=nrm))
+    detail = dict(name=mat.get('name'), color=col, metallic_roughness=mr_info, normal=nrm)
+    if coating is not None:
+        detail['finish_approximation'] = dict(
+            surface='dark painted coating, informed by vendor preview', source_texels=int(coating.sum()),
+            mask='exact black albedo, zero roughness and metalness, and black tangent normal at the same UV',
+            base_srgb8=[42, 42, 42], roughness=148 / 255, metallic=0)
+    return color, rough, normal, factors, metal, detail
 
 
-def _load_one(source, folder, ordinal):
+def _boundary_edges(tri):
+    edges = np.concatenate((tri[:, [0, 1]], tri[:, [1, 2]], tri[:, [2, 0]])).astype(np.int64)
+    encoded = (np.min(edges, axis=1) << 32) | np.max(edges, axis=1)
+    keys, counts = np.unique(encoded, return_counts=True)
+    return keys[counts == 1]
+
+
+def _display_lod(positions, triangles, target, folder):
+    """Retain original vertex tuples and locked UV-island boundaries in display LODs."""
+    if target is None or len(triangles) <= target:
+        return triangles, None
+    from vtkmodules.util.numpy_support import numpy_to_vtk, numpy_to_vtkIdTypeArray, vtk_to_numpy
+    from vtkmodules.vtkCommonCore import vtkPoints, vtkVersion
+    from vtkmodules.vtkCommonDataModel import vtkCellArray, vtkPolyData
+    from vtkmodules.vtkFiltersCore import vtkDecimatePro
+    from vtkmodules.vtkFiltersGeneral import vtkDistancePolyDataFilter
+
+    version = vtkVersion.GetVTKVersion()
+    key = sha256(f'fixed-seams-v2/{target}/{version}'.encode() + positions.tobytes() + triangles.tobytes()).hexdigest()
+    cache = folder / ('lod-' + key + '.npz')
+    if cache.is_file():
+        with np.load(cache, allow_pickle=False) as data:
+            tri = data['triangles']
+            audit = json.loads(str(data['audit'].item()))
+        if audit['indices_sha256'] != sha256(tri.tobytes()).hexdigest():
+            raise ValueError(f'cached display LOD indices differ: {cache}')
+        return tri, audit
+    def surface(vertices, faces):
+        poly = vtkPolyData()
+        pts = vtkPoints()
+        pts.SetData(numpy_to_vtk(vertices, deep=True))
+        poly.SetPoints(pts)
+        cells = vtkCellArray()
+        cells.SetData(numpy_to_vtkIdTypeArray(3 * np.arange(len(faces)+1, dtype='int64'), deep=True),
+                      numpy_to_vtkIdTypeArray(faces.ravel().astype('int64'), deep=True))
+        poly.SetPolys(cells)
+        return poly
+
+    boundary = _boundary_edges(triangles)
+    locked = np.unique(np.r_[boundary >> 32, boundary & 0xffffffff])
+    # VTK's boundary-deletion flag still allows a collapse between distinct
+    # boundary fans. A disconnected temporary fan pins such a vertex as
+    # non-manifold in the topology-preserving reducer. Strip every guard face
+    # and check the resulting edges against the original exact source IDs.
+    step = float(np.max(np.ptp(positions, axis=0))) * .001
+    guard_points = np.vstack((positions, positions[locked] + [0., 0., step],
+                              positions[locked] + [0., step, 0.]))
+    guard_ids = len(positions) + np.arange(len(locked))
+    guards = np.column_stack((locked, guard_ids, guard_ids + len(locked)))
+    guarded = surface(guard_points, np.vstack((triangles, guards)))
+    ids = numpy_to_vtk(np.arange(len(guard_points), dtype='int32'), deep=True)
+    ids.SetName('source vertex')
+    guarded.GetPointData().AddArray(ids)
+    reducer = vtkDecimatePro()
+    reducer.SetInputData(guarded)
+    reducer.SetTargetReduction(1. - (target + len(guards)) / (len(triangles) + len(guards)))
+    reducer.PreserveTopologyOn()
+    reducer.BoundaryVertexDeletionOff()
+    reducer.SplittingOff()
+    reducer.Update()
+    reduced = reducer.GetOutput()
+    source_ids = vtk_to_numpy(reduced.GetPointData().GetArray('source vertex'))
+    tri = source_ids[vtk_to_numpy(reduced.GetPolys().GetConnectivityArray()).reshape(-1, 3)]
+    tri = tri[np.all(tri < len(positions), axis=1)]
+    if (not len(tri) or not np.array_equal(guard_points[source_ids], vtk_to_numpy(reduced.GetPoints().GetData()))
+            or not np.array_equal(_boundary_edges(tri), boundary)):
+        raise ValueError('display simplification moved original vertices or changed an open seam')
+    distance = vtkDistancePolyDataFilter()
+    distance.SetInputData(0, surface(positions, triangles))
+    used, inverse = np.unique(tri, return_inverse=True)
+    distance.SetInputData(1, surface(positions[used], inverse.reshape(-1, 3)))
+    distance.SignedDistanceOff()
+    distance.ComputeCellCenterDistanceOn()
+    distance.ComputeSecondDistanceOn()
+    distance.Update()
+    stats = {}
+    for side, direction in enumerate(('source_to_lod', 'lod_to_source')):
+        surface = distance.GetOutput(side)
+        error = np.concatenate([vtk_to_numpy(attrs.GetArray('Distance')) for attrs in
+                                (surface.GetPointData(), surface.GetCellData())])
+        if not np.isfinite(error).all():
+            raise ValueError('nonfinite display LOD sample distance')
+        stats[direction] = dict(samples=len(error), p95_m=float(np.percentile(error, 95)), max_m=float(error.max()))
+    audit = dict(method='vtkDecimatePro, topology preserved, no split, boundary deletion disabled',
+                 vtk=version, target=target, source=len(triangles), display=len(tri), boundary_edges=len(boundary),
+                 original_vertices_and_uvs=True, distance_method='vertices and face centers to other triangle surface',
+                 distance=stats, indices_sha256=sha256(tri.tobytes()).hexdigest())
+    with BytesIO() as packed:
+        np.savez_compressed(packed, triangles=tri, audit=np.asarray(json.dumps(audit)))
+        _publish(cache, packed.getvalue())
+    return tri, audit
+
+
+def _load_one(source, folder, ordinal, target=None):
     group = source.parent.parent.name
     raw = source.read_bytes()
     doc, buf = _read_glb(raw)
@@ -177,7 +319,8 @@ def _load_one(source, folder, ordinal):
     folder.mkdir(parents=True, exist_ok=True)
     for part_id, (mi, pos, norm, uv, tri) in enumerate(parts):
         if mi not in material_cache:
-            material_cache[mi] = _surface_maps(doc, buf, doc['materials'][mi], folder)
+            material_cache[mi] = _surface_maps(doc, buf, doc['materials'][mi], folder,
+                                                repair_charcoal=group == '086_woodenblock')
         color, rough, normal_map, (color_factor, rough_factor), metal, _ = material_cache[mi]
         # Check the actual stored FP32 positions and UVs in FP64 intermediates,
         # exactly as the strict geometry and derivative-tangent importers do.
@@ -197,16 +340,27 @@ def _load_one(source, folder, ordinal):
         if np.any(sizes[tri] == 0):
             raise ValueError(f'{group}: original shaded vertex has no defined normal')
         norm = norm / np.where(sizes == 0, 1, sizes)[:, None]
-        uvs = uv[tri].astype(float)
-        u, v = uvs[:, 1]-uvs[:, 0], uvs[:, 2]-uvs[:, 0]
-        a, b = u[:, 0]*v[:, 1], u[:, 1]*v[:, 0]
-        stable = np.abs(a-b) > (2**-18) * (np.abs(a)+np.abs(b))
+        tri, lod = _display_lod(positions, tri, target, folder)
+        if lod is not None:
+            corners = positions[tri].astype(float)
+            face_vectors = np.cross(corners[:, 1]-corners[:, 0], corners[:, 2]-corners[:, 0])
+        if uv is None and any((color, rough, normal_map)):
+            raise ValueError(f'{group}: a textured primitive lost its source UVs')
+        stable = np.zeros(len(tri), dtype=bool)
+        if normal_map is not None:
+            uvs = uv[tri].astype(float)
+            u, v = uvs[:, 1]-uvs[:, 0], uvs[:, 2]-uvs[:, 0]
+            a, b = u[:, 0]*v[:, 1], u[:, 1]*v[:, 0]
+            stable = np.abs(a-b) > (2**-18) * (np.abs(a)+np.abs(b))
         # Native metallic is scalar. Use the source B channel at triangle
         # centroids to group faces by metallicity; preserve source UVs and all
         # original nonzero-area triangles, including singular-UV triangles.
-        h, w = metal.shape
-        coord = np.floor((uvs.mean(axis=1) % 1.) * [w, h]).astype(int)
-        metallic = metal[coord[:, 1], coord[:, 0]]
+        if np.isscalar(metal):
+            metallic = np.full(len(tri), metal)
+        else:
+            h, w = metal.shape
+            coord = np.floor((uv[tri].astype(float).mean(axis=1) % 1.) * [w, h]).astype(int)
+            metallic = metal[coord[:, 1], coord[:, 0]]
         # This showcase's glazed ceramic plate is dielectric. Preserve its
         # continuous albedo, roughness and normal maps. Applying the generic
         # centroid approximation here produces visible triangular patches.
@@ -218,17 +372,21 @@ def _load_one(source, folder, ordinal):
             key = f'{node}-p{part_id}-s{slot}'
             if len(refs) > 65536 or selected.sum() > 65536:
                 raise ValueError(f'{key}: primitive exceeds native mesh-file capacity')
-            mesh = write_mesh(folder, key, positions[refs], norm[refs], reindex.reshape(-1, 3), texcoords=uv[refs])
+            mesh = write_mesh(folder, key, positions[refs], norm[refs], reindex.reshape(-1, 3),
+                              texcoords=uv[refs] if uv is not None else None)
             average = 0. if glazed_plate else float(
                 np.average(metallic[selected], weights=np.linalg.norm(face_vectors[selected], axis=1)))
-            mat = TexturedMaterial(key+'-pbr', color_factor, average, rough_factor,
-                                   color, rough, normal_map if slot % 2 else None)
+            maps = (color, rough, normal_map if slot % 2 else None)
+            mat = (TexturedMaterial(key+'-pbr', color_factor, average, rough_factor, *maps)
+                   if any(maps) else Material(key+'-pbr', color_factor, average, rough_factor))
             meshes.append(mesh)
             materials.append(mat)
             instances.append(Instance(2000+ordinal*100+len(instances), mesh.id, mat.id, node))
         stats.append(dict(source_triangles=len(good), retained_triangles=len(tri), zero_area_removed=dropped,
                           derivative_normal_triangles=int(stable.sum()),
-                          singular_uv_using_original_vertex_normals=int((~stable).sum())))
+                          singular_uv_using_original_vertex_normals=int((~stable).sum()) if normal_map else 0))
+        if target is not None:
+            stats[-1]['lod'] = lod
     bounds = tuple(tuple(float(n) for n in x-origin) for x in (low, high))
     details = dict(group=group, variant=source.parent.name, source=str(source), source_sha256=sha256(raw).hexdigest(),
                    metadata=str(metadata), vendor_scale=vendor['scale'], bounds_m=bounds, nodes=len(doc['nodes']),
@@ -246,12 +404,14 @@ def _load_one(source, folder, ordinal):
     return HomeAsset(group, source, node, bounds, tuple(meshes), tuple(materials), tuple(instances), details)
 
 
-def load_home_assets(source_root: Path, cache: Path) -> tuple[HomeAsset, ...]:
-    """First ten numbered asset groups, lowest numbered authored base per group."""
+def load_home_assets(source_root: Path, cache: Path, count: int = 10) -> tuple[HomeAsset, ...]:
+    """Lowest numbered authored base per group, with display LODs for the 30-piece room."""
+    if count not in (10, 30):
+        raise ValueError('expected a ten- or thirty-piece showcase')
     groups = sorted((d for d in Path(source_root).iterdir() if d.is_dir() and re.match(r'^\d+_', d.name)),
-                    key=_order)[:10]
-    if len(groups) != 10:
-        raise ValueError('expected at least ten numbered household asset groups')
+                    key=_order)[:count]
+    if len(groups) != count:
+        raise ValueError(f'expected at least {count} numbered household asset groups')
     result = []
     for ordinal, group in enumerate(groups):
         variants = sorted((d for d in group.iterdir() if d.is_dir() and re.fullmatch(r'base\d+', d.name)),
@@ -259,5 +419,10 @@ def load_home_assets(source_root: Path, cache: Path) -> tuple[HomeAsset, ...]:
         if not variants:
             raise ValueError(f'{group.name} has no numbered base variants')
         source = (variants[0] / (variants[0].name + '.glb')).resolve(strict=True)
-        result.append(_load_one(source, Path(cache).resolve()/group.name, ordinal))
+        folder = Path(cache).resolve()
+        if count == 30:
+            folder = folder / 'collection-30'
+        result.append(_load_one(source, folder/group.name, ordinal, target=14500 if count == 30 else None))
+    if count == 30 and sum(p['retained_triangles'] for a in result for p in a.details['parts']) > 475000:
+        raise ValueError('display LOD exceeds object allocation within the 524288-triangle studio budget')
     return tuple(result)

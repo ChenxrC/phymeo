@@ -28,6 +28,8 @@ with closing(renderer.open_scene(scene)) as session:
 
 在装有 NumPy、Pillow 和 OpenCV（`cv2`）的 Python 环境中运行，并将带 libx264 的 FFmpeg 和 ffprobe 放入 PATH。传入 `--assets`、`--cache`、`--output`、`--library` 和 `--device-index` 可复现。加 `--preview` 可输出同机位静帧、轮廓误差和景深参考；加 `--motion-check` 可先录一秒餐桌特写，检查运镜中的稳定性。三个模式可分别指定输出目录。
 
+[三十件家居巡游](examples/film_home_collection.py)使用相同的命令行路径参数，另需 VTK 生成展示网格。一个常驻场景同时加载前三十个类别，镜头在料理台、早餐架、餐桌、玄关和书桌之间移动。它使用深焦与空间超采样保留椅背竖条和小物件边缘。`--preview` 输出章节静帧与三十件物品的带时间索引图；完整模式录制 30 秒，并记录每件模型在抽检镜头中实际覆盖的像素。
+
 高采样影片可用 `StudioRenderer(library_path=library_path, panel_samples=64)`。`size=(宽, 高)` 设置相机默认尺寸，`studio=` 接受自定义灯光。已有标定相机可以直接传给 `CaptureRequest`，保留其尺寸、焦距和主点。`area_light_grid=8` 同样选择每盏灯 64 个样点。[公共接口](src/phymeo_rendering/photography.py)
 
 [Panda 抓取回放与同机位布光对照](results/r1/README.md)展示 R1 的两个归档姿态、固定及腕部相机，以及自研 Vulkan 的局部采集。

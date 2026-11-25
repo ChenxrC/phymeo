@@ -24,6 +24,8 @@ with closing(renderer.open_scene(scene)) as session:
     image = session.capture(frame, CaptureRequest(camera, RenderPath.RASTER, (Channel.RGB,)))
 ```
 
+[家庭餐厅资产展示示例](examples/film_home_showcase.py)演示如何覆盖每灯采样数。它从本地家居资产包按类别编号选前十类，各取编号最小的 GLB，在同一场景内运镜 30 秒，以每灯 64 采样输出视频。传入 `--assets`、`--cache`、`--output`、`--library` 与 `--device-index` 可复现。加 `--preview` 可先检查餐桌、杯具和玄关的构图。
+
 高采样影片可用 `StudioRenderer(library_path=library_path, panel_samples=64)`。`size=(宽, 高)` 设置相机默认尺寸，`studio=` 接受自定义灯光。已有标定相机可以直接传给 `CaptureRequest`，保留其尺寸、焦距和主点。`area_light_grid=8` 同样选择每盏灯 64 个样点。[公共接口](src/phymeo_rendering/photography.py)
 
 [Panda 抓取回放与同机位布光对照](results/r1/README.md)展示 R1 的两个归档姿态、固定及腕部相机，以及自研 Vulkan 的局部采集。

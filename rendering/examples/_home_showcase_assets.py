@@ -13,7 +13,6 @@ from PIL import Image
 
 from _panda_scene import write_mesh
 from galaxea_r1.finish_details import _store
-from preview_stable_lighting.shell_normals import _publish
 from phymeo_rendering.assets import Material, Mesh, TexturedMaterial, TextureChannel, TextureMap
 from phymeo_rendering.scene import Instance
 
@@ -207,100 +206,23 @@ def _surface_maps(doc, buf, mat, folder, *, repair_charcoal=False):
     return color, rough, normal, factors, metal, detail
 
 
-def _boundary_edges(tri):
-    edges = np.concatenate((tri[:, [0, 1]], tri[:, [1, 2]], tri[:, [2, 0]])).astype(np.int64)
-    encoded = (np.min(edges, axis=1) << 32) | np.max(edges, axis=1)
-    keys, counts = np.unique(encoded, return_counts=True)
-    return keys[counts == 1]
+def _file_chunks(triangles):
+    """Partition one material group only when the shared glTF decoder requires it."""
+    from phymeo_rendering.mesh_data import _MAX_TRIANGLES, _MAX_VERTICES
+    if len(triangles) > _MAX_TRIANGLES:
+        for offset in range(0, len(triangles), _MAX_TRIANGLES):
+            yield from _file_chunks(triangles[offset:offset + _MAX_TRIANGLES])
+        return
+    refs, inverse = np.unique(triangles, return_inverse=True)
+    if len(refs) > _MAX_VERTICES:
+        half = len(triangles) // 2
+        yield from _file_chunks(triangles[:half])
+        yield from _file_chunks(triangles[half:])
+        return
+    yield refs, inverse.reshape(-1, 3)
 
 
-def _display_lod(positions, triangles, target, folder):
-    """Retain original vertex tuples and locked UV-island boundaries in display LODs."""
-    if target is None or len(triangles) <= target:
-        return triangles, None
-    from vtkmodules.util.numpy_support import numpy_to_vtk, numpy_to_vtkIdTypeArray, vtk_to_numpy
-    from vtkmodules.vtkCommonCore import vtkPoints, vtkVersion
-    from vtkmodules.vtkCommonDataModel import vtkCellArray, vtkPolyData
-    from vtkmodules.vtkFiltersCore import vtkDecimatePro
-    from vtkmodules.vtkFiltersGeneral import vtkDistancePolyDataFilter
-
-    version = vtkVersion.GetVTKVersion()
-    key = sha256(f'fixed-seams-v2/{target}/{version}'.encode() + positions.tobytes() + triangles.tobytes()).hexdigest()
-    cache = folder / ('lod-' + key + '.npz')
-    if cache.is_file():
-        with np.load(cache, allow_pickle=False) as data:
-            tri = data['triangles']
-            audit = json.loads(str(data['audit'].item()))
-        if audit['indices_sha256'] != sha256(tri.tobytes()).hexdigest():
-            raise ValueError(f'cached display LOD indices differ: {cache}')
-        return tri, audit
-    def surface(vertices, faces):
-        poly = vtkPolyData()
-        pts = vtkPoints()
-        pts.SetData(numpy_to_vtk(vertices, deep=True))
-        poly.SetPoints(pts)
-        cells = vtkCellArray()
-        cells.SetData(numpy_to_vtkIdTypeArray(3 * np.arange(len(faces)+1, dtype='int64'), deep=True),
-                      numpy_to_vtkIdTypeArray(faces.ravel().astype('int64'), deep=True))
-        poly.SetPolys(cells)
-        return poly
-
-    boundary = _boundary_edges(triangles)
-    locked = np.unique(np.r_[boundary >> 32, boundary & 0xffffffff])
-    # VTK's boundary-deletion flag still allows a collapse between distinct
-    # boundary fans. A disconnected temporary fan pins such a vertex as
-    # non-manifold in the topology-preserving reducer. Strip every guard face
-    # and check the resulting edges against the original exact source IDs.
-    step = float(np.max(np.ptp(positions, axis=0))) * .001
-    guard_points = np.vstack((positions, positions[locked] + [0., 0., step],
-                              positions[locked] + [0., step, 0.]))
-    guard_ids = len(positions) + np.arange(len(locked))
-    guards = np.column_stack((locked, guard_ids, guard_ids + len(locked)))
-    guarded = surface(guard_points, np.vstack((triangles, guards)))
-    ids = numpy_to_vtk(np.arange(len(guard_points), dtype='int32'), deep=True)
-    ids.SetName('source vertex')
-    guarded.GetPointData().AddArray(ids)
-    reducer = vtkDecimatePro()
-    reducer.SetInputData(guarded)
-    reducer.SetTargetReduction(1. - (target + len(guards)) / (len(triangles) + len(guards)))
-    reducer.PreserveTopologyOn()
-    reducer.BoundaryVertexDeletionOff()
-    reducer.SplittingOff()
-    reducer.Update()
-    reduced = reducer.GetOutput()
-    source_ids = vtk_to_numpy(reduced.GetPointData().GetArray('source vertex'))
-    tri = source_ids[vtk_to_numpy(reduced.GetPolys().GetConnectivityArray()).reshape(-1, 3)]
-    tri = tri[np.all(tri < len(positions), axis=1)]
-    if (not len(tri) or not np.array_equal(guard_points[source_ids], vtk_to_numpy(reduced.GetPoints().GetData()))
-            or not np.array_equal(_boundary_edges(tri), boundary)):
-        raise ValueError('display simplification moved original vertices or changed an open seam')
-    distance = vtkDistancePolyDataFilter()
-    distance.SetInputData(0, surface(positions, triangles))
-    used, inverse = np.unique(tri, return_inverse=True)
-    distance.SetInputData(1, surface(positions[used], inverse.reshape(-1, 3)))
-    distance.SignedDistanceOff()
-    distance.ComputeCellCenterDistanceOn()
-    distance.ComputeSecondDistanceOn()
-    distance.Update()
-    stats = {}
-    for side, direction in enumerate(('source_to_lod', 'lod_to_source')):
-        surface = distance.GetOutput(side)
-        error = np.concatenate([vtk_to_numpy(attrs.GetArray('Distance')) for attrs in
-                                (surface.GetPointData(), surface.GetCellData())])
-        if not np.isfinite(error).all():
-            raise ValueError('nonfinite display LOD sample distance')
-        stats[direction] = dict(samples=len(error), p95_m=float(np.percentile(error, 95)), max_m=float(error.max()))
-    audit = dict(method='vtkDecimatePro, topology preserved, no split, boundary deletion disabled',
-                 vtk=version, target=target, source=len(triangles), display=len(tri), boundary_edges=len(boundary),
-                 original_vertices_and_uvs=True, distance_method='vertices and face centers to other triangle surface',
-                 distance=stats, indices_sha256=sha256(tri.tobytes()).hexdigest())
-    with BytesIO() as packed:
-        np.savez_compressed(packed, triangles=tri, audit=np.asarray(json.dumps(audit)))
-        _publish(cache, packed.getvalue())
-    return tri, audit
-
-
-def _load_one(source, folder, ordinal, target=None):
+def _load_one(source, folder, ordinal):
     group = source.parent.parent.name
     raw = source.read_bytes()
     doc, buf = _read_glb(raw)
@@ -340,10 +262,6 @@ def _load_one(source, folder, ordinal, target=None):
         if np.any(sizes[tri] == 0):
             raise ValueError(f'{group}: original shaded vertex has no defined normal')
         norm = norm / np.where(sizes == 0, 1, sizes)[:, None]
-        tri, lod = _display_lod(positions, tri, target, folder)
-        if lod is not None:
-            corners = positions[tri].astype(float)
-            face_vectors = np.cross(corners[:, 1]-corners[:, 0], corners[:, 2]-corners[:, 0])
         if uv is None and any((color, rough, normal_map)):
             raise ValueError(f'{group}: a textured primitive lost its source UVs')
         stable = np.zeros(len(tri), dtype=bool)
@@ -368,25 +286,24 @@ def _load_one(source, folder, ordinal, target=None):
         slots = metal_levels * 2 + stable
         for slot in np.unique(slots):
             selected = slots == slot
-            refs, reindex = np.unique(tri[selected].ravel(), return_inverse=True)
             key = f'{node}-p{part_id}-s{slot}'
-            if len(refs) > 65536 or selected.sum() > 65536:
-                raise ValueError(f'{key}: primitive exceeds native mesh-file capacity')
-            mesh = write_mesh(folder, key, positions[refs], norm[refs], reindex.reshape(-1, 3),
-                              texcoords=uv[refs] if uv is not None else None)
             average = 0. if glazed_plate else float(
                 np.average(metallic[selected], weights=np.linalg.norm(face_vectors[selected], axis=1)))
             maps = (color, rough, normal_map if slot % 2 else None)
             mat = (TexturedMaterial(key+'-pbr', color_factor, average, rough_factor, *maps)
                    if any(maps) else Material(key+'-pbr', color_factor, average, rough_factor))
-            meshes.append(mesh)
             materials.append(mat)
-            instances.append(Instance(2000+ordinal*100+len(instances), mesh.id, mat.id, node))
+            for chunk, (refs, local) in enumerate(_file_chunks(tri[selected])):
+                name = key if not chunk else f'{key}-chunk{chunk}'
+                mesh = write_mesh(folder, name, positions[refs], norm[refs], local,
+                                  texcoords=uv[refs] if uv is not None else None)
+                meshes.append(mesh)
+                if len(instances) >= 100:
+                    raise ValueError(f'{group}: no remaining stable instance IDs for this group')
+                instances.append(Instance(2000+ordinal*100+len(instances), mesh.id, mat.id, node))
         stats.append(dict(source_triangles=len(good), retained_triangles=len(tri), zero_area_removed=dropped,
                           derivative_normal_triangles=int(stable.sum()),
                           singular_uv_using_original_vertex_normals=int((~stable).sum()) if normal_map else 0))
-        if target is not None:
-            stats[-1]['lod'] = lod
     bounds = tuple(tuple(float(n) for n in x-origin) for x in (low, high))
     details = dict(group=group, variant=source.parent.name, source=str(source), source_sha256=sha256(raw).hexdigest(),
                    metadata=str(metadata), vendor_scale=vendor['scale'], bounds_m=bounds, nodes=len(doc['nodes']),
@@ -405,7 +322,7 @@ def _load_one(source, folder, ordinal, target=None):
 
 
 def load_home_assets(source_root: Path, cache: Path, count: int = 10) -> tuple[HomeAsset, ...]:
-    """Lowest numbered authored base per group, with display LODs for the 30-piece room."""
+    """Import every valid source triangle from the lowest numbered authored variant."""
     if count not in (10, 30):
         raise ValueError('expected a ten- or thirty-piece showcase')
     groups = sorted((d for d in Path(source_root).iterdir() if d.is_dir() and re.match(r'^\d+_', d.name)),
@@ -421,8 +338,6 @@ def load_home_assets(source_root: Path, cache: Path, count: int = 10) -> tuple[H
         source = (variants[0] / (variants[0].name + '.glb')).resolve(strict=True)
         folder = Path(cache).resolve()
         if count == 30:
-            folder = folder / 'collection-30'
-        result.append(_load_one(source, folder/group.name, ordinal, target=14500 if count == 30 else None))
-    if count == 30 and sum(p['retained_triangles'] for a in result for p in a.details['parts']) > 475000:
-        raise ValueError('display LOD exceeds object allocation within the 524288-triangle studio budget')
+            folder = folder / 'collection-30-source'
+        result.append(_load_one(source, folder/group.name, ordinal))
     return tuple(result)

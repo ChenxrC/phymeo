@@ -26,6 +26,39 @@ with closing(renderer.open_scene(scene)) as session:
 
 [家庭餐厅资产展示示例](examples/film_home_showcase.py)从本地家居资产包按编号选前十类，各取编号最小的 GLB，在同一间餐厅内运镜 30 秒。影片以 2880×1620 渲染，每灯采样 64 次，开启 4× MSAA，再在线性显示光空间按面积缩到 1440×810。摄影窗景与扫描材质用作布景；焦点随镜头从餐厅全景移到餐桌和玄关，利用渲染深度计算景深。
 
+### 按设备容量准备场景
+
+在安装有原生 resident Vulkan 后端的环境，`prepare_scene` 查询所选 GPU 和当前着色器的几何、颜色／粗糙度数组、法线数组限额。它在第一次上传前选定一套显示资产，整段回放和所有相机共享。已经满足限额的场景直接使用原对象。原有 `open_scene(scene)` 仍执行严格上传。
+
+```python
+# 每个元素是一对绑定同一物理帧的 (SceneFrame, Camera)。
+plan = renderer.prepare_scene(
+    scene, usage="film", cameras=shot_list,
+    preserve_detail=(gripper_node_id,), cache_dir=cache_directory,
+)
+with closing(renderer.open_scene(plan)) as session:
+    for source_frame, source_camera in replay:
+        frame, camera = plan.bind_view(source_frame, source_camera)
+        rgb = session.capture(frame, CaptureRequest(camera, RenderPath.RASTER, (Channel.RGB,)))
+```
+
+| 用途 | 资源选择和输出 |
+| --- | --- |
+| `sensor`（默认） | 要求原始网格、贴图和帧身份；超出预算时报告失败。适用于训练标签和需要与源几何逐像素对照的观测。 |
+| `film`、`preview` | 只有超预算时才允许生成派生资源。两者采用相同的容量规则，使用传入机位的真实内参、分辨率和节点位姿分配网格细节。深度和实例轮廓对应本次选定的几何。 |
+
+`preserve_detail` 接受节点、网格、材质或整数实例 ID。选中实例的网格和材质会被保护，复用同一资源的其他实例也保留对应细节。若关注的是夹指轮廓或椅背细杆，可用 `preserve_meshes=(mesh_id,)` 单独锁定网格，木纹贴图仍参与容量分配。刻字、测量标记等需要原始纹理的对象可用 `preserve_materials=(material_id,)`。相机权重使用所给机位中投影包围盒的最大跨度，仅用于分配三角形。遮挡、纹理清晰度和最终轮廓仍需在成片上检查。
+
+`plan.report` 可直接写入 JSON。它列出设备、适配前后的唯一与实例化几何成本、各网格的内容哈希与双向表面距离采样，以及两个独立纹理数组的带边界字节数、每张派生图的原始和选定尺寸。网格与贴图写入派生缓存，源文件保留。影像适配依赖可用 `pip install "phymeo-rendering[prepare]"` 安装。指定的预算、保护对象或图层数无法同时满足时，准备调用会说明哪一项超限。
+
+在 RTX 4060 Laptop 上的三组验收可用[严格模式对照脚本](examples/verify_scene_preparation.py)和[三十件巡游](examples/film_home_collection.py)复现。
+
+| 场景 | 实测结果 |
+| --- | --- |
+| 十件餐厅，`--case ten` | 含布景 332,777 个三角形。三个机位的 RGB、正向深度、实例 ID、有效掩码与直接打开原场景逐字节相同。 |
+| 三十件房间，`--preview` | 含布景从 1,018,749 降到 524,259 个三角形，保留全部 210 个实例。40 层颜色／粗糙度数组从 250.8 降到 127.8 MiB，29 层法线数组原样保留。13 个实际机位覆盖全部 30 件物体。椅背在三个高度都能区分五根竖条和中间四道缝。 |
+| 双 Panda，`--case robots` | 120 个实例共享 58 份网格。两个回放状态各采集一次总览和两个腕部视图，四个输出平面与原场景逐字节相同。运动臂更新时，静止臂腕部视图中的自身 ID 与深度保持一致。 |
+
 在装有 NumPy、Pillow 和 OpenCV（`cv2`）的 Python 环境中运行，并将带 libx264 的 FFmpeg 和 ffprobe 放入 PATH。传入 `--assets`、`--cache`、`--output`、`--library` 和 `--device-index` 可复现。加 `--preview` 可输出同机位静帧、轮廓误差和景深参考；加 `--motion-check` 可先录一秒餐桌特写，检查运镜中的稳定性。三个模式可分别指定输出目录。
 
 [三十件家居巡游](examples/film_home_collection.py)使用相同的命令行路径参数，另需 VTK 生成展示网格。一个常驻场景同时加载前三十个类别，镜头在料理台、早餐架、餐桌、玄关和书桌之间移动。它使用深焦与空间超采样保留椅背竖条和小物件边缘。`--preview` 输出章节静帧与三十件物品的带时间索引图；完整模式录制 30 秒，并记录每件模型在抽检镜头中实际覆盖的像素。

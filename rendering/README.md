@@ -26,6 +26,14 @@ with closing(renderer.open_scene(scene)) as session:
 
 [家庭餐厅资产展示示例](examples/film_home_showcase.py)从本地家居资产包按编号选前十类，各取编号最小的 GLB，在同一间餐厅内运镜 30 秒。影片以 2880×1620 渲染，每灯采样 64 次，开启 4× MSAA，再在线性显示光空间按面积缩到 1440×810。摄影窗景与扫描材质用作布景；焦点随镜头从餐厅全景移到餐桌和玄关，利用渲染深度计算景深。
 
+### 训练与测试相机查看器
+
+Windows 下双击 [启动查看器](examples/open_training_viewer.cmd) 可在本机浏览器查看八工位回放。这个入口使用本项目已有的 Python 3.13 环境、Vulkan 库和回放资产。在终端运行同一脚本并附加 `--scene panda` 可查看双 Panda 的总览与两个腕部镜头，`--scene eight-live` 可查看现场推进的八个物理环境。用 Ctrl+C 关闭启动窗口中的服务。其他设备可用环境变量 `PHYVIEW_DEVICE`、`PHYVIEW_LIBRARY` 选择显卡和原生库，也可直接运行 [Python 入口](examples/view_training.py)。
+
+默认暂停在总览。数字 0 返回总览，1–8 切换已注册的近景，空格播放或暂停，左右方向键单步。回放可拖动时间轴或输入帧号，现场仿真只支持当前帧和向前单步。RGB、深度、实例 ID 都从选中镜头按需采集。深度使用镜头固定的米制范围映射到灰度，实例使用稳定的颜色编码。训练代码通过原生 `Capture` 读取数值平面。页面上的采集时间包含位姿更新与原生读回，首次切入工位还包含打开该渲染场景的时间。
+
+其他训练任务可将数据源工厂传给 [ViewerServer](src/phymeo_rendering/viewer.py)。工厂创建、`describe()`、`capture(camera_id, frame_index, channel_id)` 和 `close()` 在同一个线程执行。`describe()` 提供机位、通道、帧范围和采样频率；`capture()` 返回显示 PNG、实际帧索引、仿真秒数和采集毫秒数。[三个源的适配示例](examples/_training_view_sources.py) 演示如何校验相机和仿真帧。
+
 ### 按设备容量准备场景
 
 在安装有原生 resident Vulkan 后端的环境，`prepare_scene` 查询所选 GPU 和当前着色器的几何、颜色／粗糙度数组、法线数组限额。它在第一次上传前选定一套显示资产，整段回放和所有相机共享。已经满足限额的场景直接使用原对象。原有 `open_scene(scene)` 仍执行严格上传。

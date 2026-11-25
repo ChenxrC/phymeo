@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Phymeo 渲染工作台</title>
+  <link rel="stylesheet" href="/viewer.css">
+  <script src="/viewer.js" defer></script>
+</head>
+<body>
+  <svg xmlns="http://www.w3.org/2000/svg" class="symbols" aria-hidden="true">
+    <symbol id="camera" viewBox="0 0 24 24"><path d="M3 7.5h4l1.8-2.3h5.5L16 7.5h3.5a1.5 1.5 0 0 1 1.5 1.5v9a1.5 1.5 0 0 1-1.5 1.5h-16A1.5 1.5 0 0 1 2 18V9a1.5 1.5 0 0 1 1-1.5Z"/><circle cx="11.5" cy="13.5" r="3.2"/></symbol>
+    <symbol id="overview" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5 9-5Zm-9 9 9 5 9-5M3 16l9 5 9-5"/></symbol>
+    <symbol id="wrist" viewBox="0 0 24 24"><path d="M3 21h9m-7-1 3-7 6-4m1-2 2-4 4 2m-4-2 1 5m-9 5 4 7"/><circle cx="8.5" cy="12.5" r="2"/><circle cx="14.5" cy="8.5" r="1.8"/></symbol>
+    <symbol id="keyboard" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M5.5 9h.1m3.3 0H9m3.2 0h.1m3.1 0h.1m3.1 0h.1M5.5 12h.1m3.3 0H9m3.2 0h.1m3.1 0h.1m3.1 0h.1M8 15h8"/></symbol>
+    <symbol id="expand" viewBox="0 0 24 24"><path d="M4 9V4h5m6 0h5v5m0 6v5h-5m-6 0H4v-5"/></symbol>
+    <symbol id="collapse" viewBox="0 0 24 24"><path d="M4 9h5V4m6 0v5h5m0 6h-5v5m-6 0v-5H4"/></symbol>
+    <symbol id="play" viewBox="0 0 24 24"><path d="m8 5 11 7-11 7V5Z" fill="currentColor" stroke-linejoin="round"/></symbol>
+    <symbol id="pause" viewBox="0 0 24 24"><path d="M8 5v14m8-14v14" stroke-width="3.8"/></symbol>
+    <symbol id="prev" viewBox="0 0 24 24"><path d="M6 5v14m12-14L9 12l9 7V5Z"/></symbol>
+    <symbol id="next" viewBox="0 0 24 24"><path d="M18 5v14M6 5l9 7-9 7V5Z"/></symbol>
+    <symbol id="close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+    <symbol id="chevron" viewBox="0 0 24 24"><path d="m8 10 4 4 4-4"/></symbol>
+    <symbol id="screen" viewBox="0 0 24 24"><rect x="2.8" y="4" width="18.4" height="13.5" rx="2"/><path d="M9 21h6m-3-3v3"/></symbol>
+  </svg>
+  <header class="topbar">
+    <div class="brand"><svg class="brand-mark" viewBox="0 0 42 42" aria-hidden="true"><rect width="42" height="42" rx="11" fill="#3356b8"/><g fill="none" stroke="#fbfbff" stroke-linejoin="round" stroke-linecap="round"><path d="m9.5 16.2 11.6-6.6 11.2 6.4-11.5 6.6-11.3-6.4Z" stroke-width="1.8"/><path d="M10 21.3 20.9 28l11-6.6M10.5 26.4 20.9 32.7l10.6-6.4" stroke-width="1.8"/></g></svg><span>Phymeo</span></div>
+    <span class="product">渲染工作台</span>
+    <div class="top-actions"><span class="mode" id="mode" hidden></span>
+      <button type="button" id="help" class="icon-button" title="键盘快捷键" aria-label="键盘快捷键"><svg class="icon"><use href="#keyboard"/></svg></button>
+    </div>
+  </header>
+  <main>
+    <div class="scene-heading"><h1 id="title">场景查看器</h1><span id="play-state" class="play-state" hidden></span></div>
+    <div class="workspace">
+      <aside class="camera-rack" aria-label="场景机位">
+        <div class="rack-head"><h2>机位</h2><span id="camera-count"></span><button id="camera-toggle" class="rack-toggle" type="button" aria-controls="camera-list" aria-expanded="false"><span id="mobile-camera">选择机位</span><svg class="icon"><use href="#chevron"/></svg></button></div>
+        <nav id="camera-list" aria-label="选择机位"></nav>
+      </aside>
+      <div class="desk">
+        <section class="monitor" id="monitor" aria-label="渲染画面">
+          <header class="monitor-head">
+            <div class="view-title"><svg class="icon"><use href="#screen"/></svg><h2 id="camera-title">画面</h2></div>
+            <div class="monitor-actions"><div id="channels" class="channels" role="group" aria-label="显示通道"></div>
+              <button type="button" class="icon-button" id="fullscreen" aria-label="全屏画面" title="全屏画面" hidden><svg class="icon"><use href="#expand"/></svg></button>
+            </div>
+          </header>
+          <div class="viewport" id="viewport">
+            <img id="picture" alt="" hidden>
+            <div id="stage-message" class="stage-message" role="status"><span class="wait-ring" aria-hidden="true"></span><strong id="stage-title">正在连接场景</strong><span id="stage-detail"></span><button type="button" id="retry" hidden>重试</button></div>
+          </div>
+          <div class="image-meta"><span class="meta-frame" id="captured-frame">尚未显示画面</span><span id="channel-note"></span></div>
+        </section>
+        <section class="transport" aria-label="帧播放控制">
+          <div class="transport-heading"><h2>时间轴</h2><div class="telemetry"><span>仿真时间 <b id="sim-time">—</b></span><span title="位姿更新、当前相机采集与读回，不含 PNG 编码和网络传输">采集耗时 <b id="render-ms">—</b></span></div></div>
+          <div class="track" id="track"><input id="seek" type="range" min="0" max="0" step="1" value="0" disabled aria-label="选择帧"><div class="ruler" id="ruler" aria-hidden="true"></div></div>
+          <div class="transport-row">
+            <div class="transport-buttons">
+              <button type="button" id="prev-frame" class="icon-button" title="上一帧 (←)" aria-label="上一帧" disabled><svg class="icon"><use href="#prev"/></svg></button>
+              <button type="button" id="playback" class="playback" title="播放 (空格)" disabled><svg class="icon"><use href="#play"/></svg><span>播放</span></button>
+              <button type="button" id="next-frame" class="icon-button" title="下一帧 (→)" aria-label="下一帧" disabled><svg class="icon"><use href="#next"/></svg></button>
+            </div>
+            <label class="frame-entry" for="frame-number">帧号 <input id="frame-number" type="number" min="0" value="0" step="1" inputmode="numeric" autocomplete="off" disabled><span id="frame-limit"></span></label>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+  <dialog id="shortcuts" aria-labelledby="shortcuts-title">
+    <div class="dialog-head"><h2 id="shortcuts-title">键盘快捷键</h2><button type="button" id="close-dialog" class="icon-button" aria-label="关闭"><svg class="icon"><use href="#close"/></svg></button></div>
+    <dl><div><dt>切换机位</dt><dd><kbd>0</kbd> ～ <kbd>8</kbd></dd></div><div><dt>逐帧查看</dt><dd><kbd>←</kbd> <kbd>→</kbd></dd></div><div><dt>播放或暂停</dt><dd><kbd>空格</kbd></dd></div><div><dt>关闭此窗口</dt><dd><kbd>Esc</kbd></dd></div></dl>
+  </dialog>
+</body>
+</html>

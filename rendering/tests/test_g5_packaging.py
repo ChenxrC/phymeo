@@ -9,6 +9,7 @@ import importlib.util
 import io
 import os
 from pathlib import Path
+from shutil import copytree
 import tempfile
 import tomllib
 import unittest
@@ -55,7 +56,7 @@ class G5PackagingTests(unittest.TestCase):
             cls.files[path.relative_to(ROOT / "src").as_posix()] = path.read_bytes()
         settings = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))["tool"]["setuptools"]
         excluded = settings["exclude-package-data"]["*"]
-        for package in ("phymeo_rendering.backends", "phymeo_rendering._studio_assets"):
+        for package in ("phymeo_rendering", "phymeo_rendering.backends", "phymeo_rendering._studio_assets"):
             prefix = package.replace(".", "/")
             source = ROOT / settings["package-dir"].get(package, "src/" + prefix)
             for pattern in settings["package-data"][package]:
@@ -236,6 +237,8 @@ class G5PackagingTests(unittest.TestCase):
     def test_other_hidden_and_nested_control_files_remain_byte_checked(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)/"rendering"
+            viewer_assets = Path("src/phymeo_rendering/viewer_assets")
+            copytree(ROOT / viewer_assets, root / viewer_assets)
             assets = root/"assets/panda"
             assets.mkdir(parents=True)
             path = Path(temporary)/"candidate.whl"

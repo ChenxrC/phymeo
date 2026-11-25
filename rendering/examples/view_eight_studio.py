@@ -315,9 +315,18 @@ def main(argv=None):
     p.add_argument('--motion',type=Path,help='replay an existing motion archive instead of stepping live physics')
     p.add_argument('--fps',type=int,default=30,help='target refresh rate')
     p.add_argument('--smoke-frames',type=int,metavar='N',help='close after N actual window frames')
+    p.add_argument('--web',action='store_true',help='open the multi-camera RGB/depth/ID browser viewer')
+    p.add_argument('--port',type=int,default=0,help='local web viewer port (0 chooses an available port)')
     args = p.parse_args(argv)
     if not 1<=args.fps<=1000 or args.device_index<0 or (args.smoke_frames is not None and args.smoke_frames<1):
         p.error('fps must be 1..1000, device index nonnegative and smoke-frame count positive')
+    if args.web:
+        if args.smoke_frames or not 0 <= args.port <= 65535:
+            p.error('--web requires a valid port and does not accept --smoke-frames')
+        from view_training import show
+        return show('eight' if args.motion else 'eight-live', library=args.library, device_index=args.device_index,
+                    motion=args.motion, assets=args.assets, area_grid=args.area_grid, wide_size=args.wide_size,
+                    port=args.port, live_fps=args.fps)
     root = tk.Tk()
     window = StudioWindow(root,args)
     try:

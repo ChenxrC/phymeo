@@ -26,6 +26,7 @@ include-package-data = false
 "phymeo_rendering._studio_assets" = "examples/materials"
 
 [tool.setuptools.package-data]
+"phymeo_rendering" = ["viewer_assets/*.html", "viewer_assets/*.css", "viewer_assets/*.js"]
 "phymeo_rendering.backends" = [
     "_native/CMakeLists.txt", "_native/*.cmake", "_native/*.cpp",
     "_native/*.h", "_native/*.hpp", "_native/*.inc", "_shaders/*",

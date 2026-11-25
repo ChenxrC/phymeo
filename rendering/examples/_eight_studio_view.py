@@ -1,4 +1,5 @@
 """On-demand Vulkan cameras on eight live studio mechanisms or one accepted pose archive."""
+from bisect import bisect_right
 from contextlib import ExitStack, closing
 from dataclasses import replace
 from pathlib import Path
@@ -13,7 +14,9 @@ from _manipulation_photo_studio import studio_lighting
 from _studio_grasp_control import grasp_setup
 from _studio_pusht_control import PushController
 from phymeo.training.manipulation_tasks import H, manipulation_scenes
-from record_eight_studio import CAMERA_SIZE, build_scenes, capture, local_frame, renderer, station_camera
+from record_eight_studio import CAMERA_SIZE, build_scenes, local_frame, renderer, station_camera
+from phymeo_rendering.outputs import Channel
+from phymeo_rendering.pipeline import CaptureRequest, RenderPath
 
 
 class _LiveWorlds:
@@ -90,6 +93,13 @@ class StudioView:
         if set(self._source.models) != set(WORLD_KEYS):
             raise ValueError('the viewer needs all eight registered studio worlds')
         self.last_tick = self._source.last_tick if self._live else int(self._source.ticks[-1])
+        self.fps = getattr(args, 'live_fps', 30) if self._live else self._source.report['fps']
+        if self._live:
+            if type(self.fps) is not int or not 1 <= self.fps <= 1000:
+                raise ValueError('live camera fps must be an integer in 1..1000')
+            self.frame_ticks = (*_schedule(self.fps, 30)[0].tolist(), self.last_tick)
+        else:
+            self.frame_ticks = tuple(int(tick) for tick in self._source.ticks)
         self._end_on = {r['world'] for r in self._source.report['worlds']
                         if (r.get('task') or {}).get('worktop_contact')}
         self._scenes, self._nodes, self.names, _ = build_scenes(self._source, self._assets)
@@ -118,12 +128,29 @@ class StudioView:
 
     def capture_view(self, index, tick):
         """Render one RGB exposure. Archive playback holds the last available sample."""
+        shot = self._capture_tick(index, tick, Channel.RGB, seek=False)
+        return np.frombuffer(shot.planes[0].data, np.uint8).reshape(shot.camera.height, shot.camera.width, 3)
+
+    def capture_at(self, index, frame_index, channel):
+        """Render one native plane at an exact archive index or current/next live exposure."""
+        if type(frame_index) is not int or not 0 <= frame_index < len(self.frame_ticks):
+            raise ValueError('frame index is outside the studio timeline')
+        if self._live:
+            current = max(0, bisect_right(self.frame_ticks, self._requested_tick)-1)
+            if frame_index not in (current, current+1):
+                raise ValueError(f'live physics is at frame {current}; request the current or next frame')
+        return self._capture_tick(index, self.frame_ticks[frame_index], channel, seek=not self._live)
+
+    def _capture_tick(self, index, tick, channel, *, seek):
         if self._closed:
             raise RuntimeError('studio viewer is closed')
         if type(index) is not int or index not in self.capture_counts:
             raise ValueError('choose overview 0 or station 1 through 8')
-        if type(tick) is not int or not 0 <= tick <= 30000 or tick < self._requested_tick:
-            raise ValueError('tick must be a non-decreasing integer in 0..30000')
+        if channel not in (Channel.RGB, Channel.FORWARD_DEPTH, Channel.INSTANCE_ID):
+            raise ValueError('unsupported studio image channel')
+        last = self.last_tick if seek else 30000
+        if type(tick) is not int or not 0 <= tick <= last or (not seek and tick < self._requested_tick):
+            raise ValueError('invalid studio tick or attempted backwards advancement')
         self._requested_tick = tick
         sample = None
         if self._live:
@@ -153,6 +180,8 @@ class StudioView:
             backend = self._renderers[0 if index == 0 else 1]
             session = self._stack.enter_context(closing(backend.open_scene(scene)))
             self._sessions[index] = session
-        rgb, _ = capture(self._sessions[index], frame, camera, False)
+        shot = self._sessions[index].capture(frame, CaptureRequest(camera, RenderPath.RASTER, (channel,)))
+        if (shot.camera, shot.frame_key, shot.time_s) != (camera, frame.key, frame.time_s):
+            raise RuntimeError('native studio returned a different exposure')
         self.capture_counts[index] += 1
-        return rgb
+        return shot

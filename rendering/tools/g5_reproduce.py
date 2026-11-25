@@ -130,6 +130,10 @@ def inspect_wheel(path, rendering_root=None):
         require(STUDIO_PREFIX + name, digest)
     for name in PREPARATION_SOURCES:
         require(name)
+    for asset in ('index.html', 'viewer.css', 'viewer.js'):
+        relative = 'phymeo_rendering/viewer_assets/' + asset
+        digest = sha256((Path(rendering_root) / 'src' / relative).read_bytes()) if rendering_root else None
+        require(relative, digest)
     native_prefix = "phymeo_rendering/backends/"
     for name in ("_native/CMakeLists.txt", "_native/renderer.cpp", "_native/renderer.h", "_native/resident.inc",
                  "_shaders/native.vert", "_shaders/native.frag", "_shaders/resident.vert", "_shaders/resident.frag"):

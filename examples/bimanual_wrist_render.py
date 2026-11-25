@@ -560,7 +560,10 @@ def record(args):
     chosen = np.searchsorted(elapsed, clock + 1e-9, side="right") - 1
     chosen[-1] = len(times) - 1
     fresh = np.unique(chosen)
-    inspected = set(fresh[np.linspace(0, len(fresh) - 1, min(7, len(fresh)), dtype=int)].tolist())
+    if getattr(args, "inspect_all_states", False):
+        inspected = set(fresh.tolist())
+    else:
+        inspected = set(fresh[np.linspace(0, len(fresh) - 1, min(7, len(fresh)), dtype=int)].tolist())
     frames = []
     tmp = output.with_name(output.stem + ".partial.mp4")
     encoder = [_ffmpeg(), "-hide_banner", "-loglevel", "error", "-nostdin", "-n",

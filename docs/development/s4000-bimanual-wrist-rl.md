@@ -5,9 +5,9 @@
 | 任务 | 已验证的策略包 | 实际轨迹录像 |
 | --- | --- | --- |
 | 6 kg 侧缘箱，抬起后运输和放置 | [搬运 CEM](../../artifacts/mtt-bimanual-20261126/carry-policy.zip) · [带视觉神经网络的搬运模型](../../artifacts/mtt-bimanual-20261126/carry-neural-policy.zip) | [搬运 CEM 中文慢放，36 秒](../../artifacts/mtt-bimanual-20261126/carry-studio-zh.mp4) · [视觉网络回放，36 秒](../../artifacts/mtt-bimanual-20261126/carry-neural-studio.mp4) |
-| 9 kg T 件，平移并对准目标朝向 | [两种机械臂装配共同训练的 PushT 策略](../../artifacts/mtt-bimanual-20261126/push-crossfit-policy.zip) | [两个装配、相反转向，36 秒](../../artifacts/mtt-bimanual-20261126/push-crossed-pair-studio.mp4) · [单次成功回合，30 秒](../../artifacts/mtt-bimanual-20261126/push-crossfit-studio.mp4) |
+| 9 kg T 件，平移并对准目标朝向 | [两种机械臂装配共同训练的 PushT 策略](../../artifacts/mtt-bimanual-20261126/push-crossfit-policy.zip) | [两个装配、相反转向，中文慢放 36 秒](../../artifacts/mtt-bimanual-20261126/push-crossed-pair-studio-zh.mp4) · [单次成功回合，30 秒](../../artifacts/mtt-bimanual-20261126/push-crossfit-studio.mp4) |
 
-一次下载可取得两份冻结策略、两段 36 秒录像、解包重放命令、留出与单臂结果，以及一个可选的神经网络搬运策略。每段主录像各含两次独立成功回合，画面标出仿真时钟与慢放倍率。交付包共 15 个文件，逐项解压校验通过，SHA-256 为 `501bc616f13815466991b1971eb5ecb34a9e1d6d4c45219f3661cf46bf683392`。[下载双臂交付包](../../artifacts/mtt-bimanual-20261126/S4000-bimanual-delivery.zip)
+一次下载可取得两份冻结策略、两段带中文字幕的 36 秒录像、解包重放命令、留出与单臂结果、28 N 实验，以及一个可选的神经网络搬运策略。每段主录像各含两次独立成功回合，画面标出仿真时钟与慢放倍率。交付包共 17 个文件，逐项解压校验通过，SHA-256 为 `dd12d68fbba647b95ef28b0ae96ae2b34bd329e055b9607b9e687267472e4d00`。[下载双臂交付包](../../artifacts/mtt-bimanual-20261126/S4000-bimanual-wrist-RL.zip)
 
 在已装好 Phymeo、MuJoCo、Tyx MUSA 与 Vulkan 渲染库的 S4000 环境中，将 `PHYMEO_RENDER_LIBRARY` 指向该机实际构建的 `libphymeo_native.so`。解压搬运 CEM 包后，在解压目录运行以下命令。模型包内附精确版本的控制、观测、场景生成源码和训练检查点。新回合的 XML、真实状态轨迹和结果写入 `my-replay`。
 
@@ -158,3 +158,5 @@ PushT 原策略在完整交叉中为 **12/16**。两个构型都能朝两个方�
 | 87004 | 58.54 | 44.06 | 179.65° |
 
 在相同的四个工件与目标上，仅左臂、仅右臂、双腕画面遮黑三组均未离台运输，各为 0/4。八个单臂回合中，停用臂的所有电机峰值扭矩均为零，停用臂与箱子的实际接触时间也为零。双臂对照说明这套夹具有足够的侧夹承载能力；迁移结果中仍待解决的是搬运后释放时的位姿。[四垫实验入口](../../examples/bimanual_flat_gripper.py) · [单左](../../artifacts/mtt-bimanual-20261126/flat-left-ablations.json) · [单右](../../artifacts/mtt-bimanual-20261126/flat-right-ablations.json) · [遮黑](../../artifacts/mtt-bimanual-20261126/flat-black-ablations.json)
+
+单独回放开发种子 701，可以按实际运动速度查看八枚垫如何接触箱壁、抬起和释放。影片为 64 fps、162 帧，使用未训练的先验控制器。可见性核查在原轨迹用到的每个决策状态上按几何实例编号检查，左右夹具各有四枚垫在一个腕部视角中同时可见。[平侧箱原速录像](../../artifacts/mtt-bimanual-20261126/flat-prior-realtime-studio.mp4) · [相机、接触垫与时间记录](../../artifacts/mtt-bimanual-20261126/flat-prior-realtime.json)

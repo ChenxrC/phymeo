@@ -239,6 +239,19 @@ def _capacity_at_pose(model, data, q):
     bias = np.empty(model.nv)
     mj.mj_rne(model, data, 0, bias)
     body = model.body("payload").id
+    table = model.geom("table").id
+    payload_geoms = np.flatnonzero(model.geom_bodyid == body)
+    if (model.opt.cone != mj.mjtCone.mjCONE_PYRAMIDAL
+            or not len(payload_geoms) or np.any(model.geom_type[payload_geoms] != mj.mjtGeom.mjGEOM_BOX)
+            or model.geom_type[table] != mj.mjtGeom.mjGEOM_PLANE
+            or not np.allclose(data.geom_xmat[table].reshape(3, 3)[:, 2], [0., 0., 1.])
+            or np.any(model.opt.gravity[:2] != 0.) or model.opt.gravity[2] >= 0.):
+        raise ValueError("static capacity requires a box payload, a horizontal support plane and downward gravity")
+    # Support function of an oriented box: this is the minimum over all eight
+    # corners, including the separately oriented boxes that form the side lips.
+    rotations = data.geom_xmat[payload_geoms].reshape(-1, 3, 3)
+    clearance = float(np.min(data.geom_xpos[payload_geoms, 2] - data.geom_xpos[table, 2]
+                             - np.sum(abs(rotations[:, 2, :])*model.geom_size[payload_geoms], axis=1)))
     accepted_pad_names = {f"{side}_{suffix}": side for side in SIDES
                           for suffix in ("pad", "pad_a", "pad_b")}
     pads = {i: accepted_pad_names[model.geom(i).name] for i in range(model.ngeom)
@@ -300,7 +313,22 @@ def _capacity_at_pose(model, data, q):
     def interval_result(result, sign=1.):
         return {"status": result["status"], "value_n": None if result["value"] is None else sign*result["value"]}
 
+    def support_at_weight(force, moment, inequalities, capacity):
+        equations = np.vstack((force, moment))
+        target = np.array([0., 0., weight, 0., 0., 0.])
+        # Test the weight itself: if arm gravity requires contact even at rest
+        # the feasible interval need not start at zero.
+        result = solve(np.zeros(force.shape[1]), inequalities, capacity, equations, target)
+        status, x = result["status"], result["x"]
+        report = {"lp_status": status, "feasible": True if status == 0 else False if status == 2 else None}
+        if x is not None:
+            report.update(force_world_n=(force @ x).tolist(), moment_about_com_nm=(moment @ x).tolist(),
+                          pyramid_ray_amplitudes_n=x.tolist(),
+                          max_joint_bound_violation_nm=max(0., float(np.max(inequalities @ x - capacity))))
+        return report
+
     reports = {}
+    independent = {}
     for side, arm in arms.items():
         up = arm["rays"][2]
         peak = solve(-up, arm["a"], arm["b"])
@@ -314,8 +342,24 @@ def _capacity_at_pose(model, data, q):
         }
         if len(arm["contacts"]) == 1:
             reports[side].update(arm["contacts"][0])
+        balance = np.vstack((arm["rays"][:2], arm["moments"]))
+        best = solve(-up, arm["a"], arm["b"], balance, np.zeros(5))
+        maximum = interval_result(best, -1.)
+        if best["x"] is not None:
+            x = best["x"]
+            maximum.update(force_world_n=(arm["rays"] @ x).tolist(),
+                           moment_about_com_nm=(arm["moments"] @ x).tolist(),
+                           torque_nm=(arm["bias"] + arm["a"][:len(arm["bias"])] @ x).tolist(),
+                           margin_over_weight_n=maximum["value_n"]-weight)
+        independent[side] = {"contact_count": len(arm["contacts"]), "max_balanced_vertical": maximum,
+                             "at_weight": support_at_weight(arm["rays"], arm["moments"], arm["a"], arm["b"])}
+    for side in SIDES:
+        if side not in independent:
+            independent[side] = {"contact_count": 0, "max_balanced_vertical": None,
+                                 "at_weight": {"lp_status": None, "feasible": False, "reason": "no payload contact"}}
     row = {"contacts": sum(len(values) for values in contacts.values()), "bilateral": len(arms) == 2,
-           "weight_n": weight, "arms": reports}
+           "clearance_m": clearance, "clear_of_table": clearance >= .003,
+           "weight_n": weight, "arms": reports, "single_arm_equilibrium": independent}
     if len(arms) != 2:
         return row
     left, right = [arms[side] for side in SIDES]
@@ -325,6 +369,7 @@ def _capacity_at_pose(model, data, q):
     nl, nr = la.shape[1], ra.shape[1]
     inequalities = np.block([[la, np.zeros((len(la), nr))], [np.zeros((len(ra), nl)), ra]])
     capacity = np.r_[left["b"], right["b"]]
+    row["dual_at_weight_equilibrium"] = support_at_weight(flat, moment, inequalities, capacity)
     # No floor or merely convenient support reactions are available in these LPs.
     # All normal/tangent components remain jointly constrained by both arm motors.
     for label, eq in (("force_only", flat[:2]), ("force_and_moment", np.vstack((flat[:2], moment)))):
@@ -348,7 +393,38 @@ def _capacity_at_pose(model, data, q):
     return row
 
 
-def audit_capacity(path, *, stride=5, xml_path=None):
+def _capacity_load_evidence(path, receipt_path, trace_sha, model_sha, ticks):
+    explicit = receipt_path is not None
+    receipt_path = path.with_suffix(".json") if receipt_path is None else receipt_path
+    if not explicit and not receipt_path.is_file():
+        return None, {"status": "no archived contact measurements"}
+    raw = receipt_path.read_bytes()
+    receipt = json.loads(raw)
+    source = {"path": str(receipt_path), "sha256": hashlib.sha256(raw).hexdigest()}
+    if "trajectory_sha256" not in receipt and not explicit:
+        return None, dict(source, status="no trajectory digest in legacy receipt")
+    if (receipt.get("trajectory_sha256") != trace_sha or receipt.get("scene_sha256") != model_sha
+            or receipt.get("physics_ticks") != ticks[-1] or receipt.get("decisions") != len(ticks)-1):
+        raise ValueError("contact receipt is not bound to this trajectory and XML")
+    diagnostics = receipt.get("decision_diagnostics", [])
+    if len(diagnostics) != len(ticks)-1:
+        raise ValueError("contact receipt lacks the full measured decision history")
+    loads = {}
+    for index, diagnostic in enumerate(diagnostics, 1):
+        tick = int(ticks[index])
+        if diagnostic.get("input_tick") != ticks[index-1] or diagnostic.get("output_tick") != tick:
+            raise ValueError("archived contact observation belongs to a different decision")
+        measured = diagnostic["measured"]
+        normal = np.asarray(measured["pad_normal_n"], dtype=float)
+        floor = float(measured["floor_vertical_n"])
+        if normal.shape != (2,) or not np.isfinite(normal).all() or np.any(normal < 0.) or not np.isfinite(floor):
+            raise ValueError("invalid recorded two-wrist or floor force")
+        loads[tick] = {"force_input_tick": tick-1, "published_tick": tick,
+                       "pad_normal_n": normal.tolist(), "floor_vertical_n": floor}
+    return loads, dict(source, status="trajectory, model and decision ticks verified")
+
+
+def audit_capacity(path, *, stride=5, xml_path=None, receipt_path=None):
     import mujoco as mj
 
     if stride < 1:
@@ -369,15 +445,50 @@ def audit_capacity(path, *, stride=5, xml_path=None):
     ids = list(range(0, len(q), stride))
     if ids[-1] != len(q)-1:
         ids.append(len(q)-1)
-    rows = [dict(tick=int(ticks[i]), time_s=float(times[i]), **_capacity_at_pose(model, data, q[i]))
-            for i in ids]
+    trace_sha = hashlib.sha256(path.read_bytes()).hexdigest()
+    loads, load_evidence = _capacity_load_evidence(path, receipt_path, trace_sha, sha, ticks)
+    rows, qualified = [], []
+    for i in ids:
+        tick = int(ticks[i])
+        row = dict(tick=tick, time_s=float(times[i]), **_capacity_at_pose(model, data, q[i]))
+        load = loads.get(tick) if loads is not None else None
+        row["preceding_step_load"] = load
+        row["qualified_airborne_and_loaded"] = bool(
+            load is not None and row["clear_of_table"] and row["bilateral"]
+            and min(load["pad_normal_n"]) >= 1. and load["floor_vertical_n"] < .05*row["weight_n"])
+        rows.append(row)
+        if row["qualified_airborne_and_loaded"]:
+            qualified.append(row)
+    weight_tests = [[row["single_arm_equilibrium"][side]["at_weight"]["feasible"] for side in SIDES]
+                    + [row["dual_at_weight_equilibrium"]["feasible"]] for row in qualified]
+    summary = {"qualified_count": len(qualified), "qualified_ticks": [row["tick"] for row in qualified],
+               "geometrically_clear_with_two_contacts": sum(r["clear_of_table"] and r["bilateral"] for r in rows),
+               "both_required_and_sufficient_ticks": [row["tick"] for row, outcomes in zip(qualified, weight_tests)
+                                                      if outcomes == [False, False, True]],
+               "full_weight_feasible_counts": {name: sum(outcomes[j] is True for outcomes in weight_tests)
+                                                for j, name in enumerate((*SIDES, "both"))},
+               "numerically_undetermined_ticks": [row["tick"] for row, outcomes in zip(qualified, weight_tests)
+                                                   if None in outcomes]}
+    summary["single_arm_vertical_optima_n"] = {}
+    for side in SIDES:
+        optima = [row["single_arm_equilibrium"][side]["max_balanced_vertical"] for row in qualified]
+        finite = [opt["value_n"] for opt in optima if opt["status"] == 0]
+        summary["single_arm_vertical_optima_n"][side] = {
+            "finite_count": len(finite), "minimum_finite": min(finite, default=None),
+            "maximum_finite": max(finite, default=None), "unbounded_count": sum(opt["status"] == 3 for opt in optima)}
     return {"schema": "bimanual-single-arm-and-grasp-static-capacity-v1", "trajectory": str(path),
+            "trajectory_sha256": trace_sha, "load_evidence": load_evidence,
+            "airborne_static_support": summary,
             "model_sha256": sha, "source_path": str(xml_path), "sampled_indices": ids,
             "assumptions": ["sampled geometry held fixed", "static arm bias and original unit-gear motor limits",
                             "native condim3 point contacts sharing the motor limits on each arm",
                             "payload supports its own weight without the table",
                             "tangent-pyramid coefficients are native contact values",
-                            "local arm maximum allows unconstrained horizontal reactions; combined solve balances them",
+                            "unbalanced_local_max_vertical bounds local vertical force with unconstrained resultant and moment",
+                            "single_arm_equilibrium uses only that arm with zero net Fx, Fy and zero moment about the payload COM",
+                            "dual_at_weight_equilibrium and each at_weight test enforce (0,0,weight) N and zero COM moment",
+                            "interpret static support only at qualified sampled poses, with all box corners >=3mm above the plane, both arms in geometric contact, each pad group >=1N and floor Fz <0.05 mg on the preceding physical input",
+                            "pose geometry uses the stored output state. Measured force belongs to the immediately preceding physical step. The LP witness is hypothetical static support at this geometry",
                             "moment residual is minimized as a diagnostic only; exact feasibility shown independently"],
             "lp_status": {"0": "optimal", "2": "infeasible", "3": "unbounded"},
             "bilateral_samples": sum(row["bilateral"] for row in rows), "samples": rows}
@@ -415,13 +526,16 @@ def main():
     p.add_argument("--cache-root", type=Path)
     p.add_argument("--capacity-trace", type=Path, help="audit a saved qpos/ticks/time_s NPZ without simulation")
     p.add_argument("--model-xml", type=Path, help="defaults to the trajectory's sibling XML")
+    p.add_argument("--capacity-receipt", type=Path, help="digest-matched decision/load JSON; defaults to sibling if available")
     p.add_argument("--capacity-stride", type=int, default=5)
     p.add_argument("--output", type=Path, required=True)
     args = p.parse_args()
     if args.capacity_trace is not None:
-        report = audit_capacity(args.capacity_trace, xml_path=args.model_xml, stride=args.capacity_stride)
+        report = audit_capacity(args.capacity_trace, xml_path=args.model_xml, stride=args.capacity_stride,
+                                receipt_path=args.capacity_receipt)
         _save(args.output, report)
-        print(f"Audited {len(report['samples'])} postures, {report['bilateral_samples']} bilateral", flush=True)
+        print(f"Audited {len(report['samples'])} postures, {report['bilateral_samples']} bilateral, "
+              f"{report['airborne_static_support']['qualified_count']} airborne with recorded bilateral loading", flush=True)
         return
     if args.mode is None:
         p.error("--mode is required for simulation")

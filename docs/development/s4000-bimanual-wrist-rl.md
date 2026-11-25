@@ -85,3 +85,17 @@ python examples/bimanual_musa_train.py --task carry --stage train --mode musa \
 | 仅网络的腕图遮黑，原视觉控制器仍能看到 | 8/8 | 4/8 |
 
 搬运网络在这八次共改变了 1,264 个决策，PushT 网络改变了 1,204 个。搬运能从训练后的模型完成任务，成功率与原 CEM 相同。PushT 的这次网络训练降低了留出成功数。两项的遮挡对照均支持整套策略依赖实时视觉。单独遮黑神经分支后的成功数保持不变，尚无该分支独立提供必需视觉信息的证据。[搬运新留出](../../artifacts/mtt-bimanual-20261126/carry-spsa-holdout.json) · [PushT 新留出](../../artifacts/mtt-bimanual-20261126/push-spsa-holdout.json)
+
+## 交换两条机械臂后还能否完成同一个目标
+
+原训练按种子奇偶指定左右轴数，PushT 的目标转向也依赖奇偶。为分开这两个因素，在 70001–70008 八组新工件和目标上，各自跑一次左六右七和一次左七右六，打乱执行顺序。每对都核对工件初态、目标、工具与腕镜的初始空间位姿。七轴模型实际多一段有质量的连杆和一个限矩 8 Nm 的驱动铰链。
+
+| 原冻结 CEM | 左六右七 | 左七右六 | 合计 |
+| --- | ---: | ---: | ---: |
+| 6 kg 侧缘箱 | 8/8 | 8/8 | **16/16** |
+| 9 kg PushT，目标 −15° | 2/4 | 4/4 | 6/8 |
+| 9 kg PushT，目标 +15° | 4/4 | 2/4 | 6/8 |
+
+PushT 原策略在完整交叉中为 **12/16**。两个构型都能朝两个方向完成任务，仍有四次没有达到规定的终态。每个压缩包均包含 16 个实际回合、源场景、轨迹以及逐步实测记录。[搬运构型汇总](../../artifacts/mtt-bimanual-20261126/carry-crossed-layouts.json) · [搬运完整记录](../../artifacts/mtt-bimanual-20261126/carry-crossed-evidence.tgz) · [PushT 构型汇总](../../artifacts/mtt-bimanual-20261126/push-crossed-layouts.json) · [PushT 完整记录](../../artifacts/mtt-bimanual-20261126/push-crossed-evidence.tgz)
+
+对两个成功搬运回合再问一个静力问题：在实际离台且两腕均有载荷的每个决策姿态，给定腕边与箱侧缘的接触几何、摩擦和原电机限矩，能否平衡 58.86 N 重力，同时保持水平合力与重心力矩为零？两回合分别有 112、113 个合格姿态，双臂在全部 225 个都能静托。在其中 83、81 个姿态，任何一只腕单独都不能静托，两个回合合计 **164/225**。另外 61 个姿态中至少有一侧具备理想静力平衡解。该结果描述已记录的姿态与力矩约束；实际单臂动态尝试另有四次有效对照。[43001 离台姿态](../../artifacts/mtt-bimanual-20261126/carry-capacity-43001.json) · [43002 离台姿态](../../artifacts/mtt-bimanual-20261126/carry-capacity-43002.json)

@@ -1,0 +1,1060 @@
+{
+  "physics": {
+    "format": "studio-motion-v1",
+    "backend": "MuJoCo CPU mj_step",
+    "mujoco_version": "3.3.7",
+    "control": "joint PD with gravity/bias compensation through the original motors, 4 ms hold",
+    "fps": 30,
+    "seconds": 30,
+    "frames": 900,
+    "step_s": 0.001,
+    "end_tick": 30000,
+    "worlds": [
+      {
+        "world": 41,
+        "model_key": "grasp-sphere",
+        "mjcf_sha256": "e8c808c9b6eab93e9537ec98260049a0e24964f77e0592f44dfbb814dd2e47dd",
+        "body_names": [
+          "world",
+          "link0",
+          "link1",
+          "link2",
+          "link3",
+          "tool",
+          "left-finger-body",
+          "right-finger-body",
+          "object"
+        ],
+        "actuated_joints": [
+          "joint0",
+          "joint1",
+          "joint2",
+          "joint3",
+          "left-finger",
+          "right-finger"
+        ],
+        "actuator_names": [
+          "motor-joint0",
+          "motor-joint1",
+          "motor-joint2",
+          "motor-joint3",
+          "motor-left-finger",
+          "motor-right-finger"
+        ],
+        "end_time_s": 30.00000000001368,
+        "tool_axis_travel_m": [
+          0.056511576565431376,
+          0.3056050080014501,
+          0.06034371875917749
+        ],
+        "object_axis_travel_m": [
+          0.0,
+          0.0,
+          0.002008114787675014
+        ],
+        "cycle_s": 7.3,
+        "workpiece_bounds": {
+          "table_xy_m": [
+            [
+              -0.3,
+              0.75
+            ],
+            [
+              -0.34,
+              0.34
+            ]
+          ],
+          "enclosing_radius_m": 0.025,
+          "checked_states": 30001,
+          "centre_min_m": [
+            0.4,
+            0.0,
+            0.023991885212324985
+          ],
+          "centre_max_m": [
+            0.4,
+            0.0,
+            0.026
+          ]
+        },
+        "observed_contact_warnings": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "world": 7,
+        "model_key": "grasp-box",
+        "mjcf_sha256": "45b4d6762192746570c308985855ac53ca9720a5f3d63b724ad5e9db8c2e5405",
+        "body_names": [
+          "world",
+          "link0",
+          "link1",
+          "link2",
+          "link3",
+          "tool",
+          "left-finger-body",
+          "right-finger-body",
+          "object"
+        ],
+        "actuated_joints": [
+          "joint0",
+          "joint1",
+          "joint2",
+          "joint3",
+          "left-finger",
+          "right-finger"
+        ],
+        "actuator_names": [
+          "motor-joint0",
+          "motor-joint1",
+          "motor-joint2",
+          "motor-joint3",
+          "motor-left-finger",
+          "motor-right-finger"
+        ],
+        "end_time_s": 30.00000000001368,
+        "tool_axis_travel_m": [
+          0.06837648031075005,
+          0.247790600223662,
+          0.09233378519718219
+        ],
+        "object_axis_travel_m": [
+          0.03862861713962018,
+          0.022801748361731565,
+          0.009293376748493381
+        ],
+        "cycle_s": 7.71,
+        "workpiece_bounds": {
+          "table_xy_m": [
+            [
+              -0.3,
+              0.75
+            ],
+            [
+              -0.34,
+              0.34
+            ]
+          ],
+          "enclosing_radius_m": 0.04924428900898052,
+          "checked_states": 30001,
+          "centre_min_m": [
+            0.39648679795566183,
+            -0.0021803124965347398,
+            0.02839488609052999
+          ],
+          "centre_max_m": [
+            0.435115415095282,
+            0.020621435865196824,
+            0.03768826283902337
+          ]
+        },
+        "observed_contact_warnings": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "world": 305,
+        "model_key": "place-block",
+        "mjcf_sha256": "cce332ec46de5378df8fb76bd5f2bc2ce33507b5f815d01703ec6e5d53c0a900",
+        "body_names": [
+          "world",
+          "link0",
+          "link1",
+          "link2",
+          "link3",
+          "link4",
+          "tool",
+          "left-finger-body",
+          "right-finger-body",
+          "object"
+        ],
+        "actuated_joints": [
+          "joint0",
+          "joint1",
+          "joint2",
+          "joint3",
+          "joint4",
+          "left-finger",
+          "right-finger"
+        ],
+        "actuator_names": [
+          "motor-joint0",
+          "motor-joint1",
+          "motor-joint2",
+          "motor-joint3",
+          "motor-joint4",
+          "motor-left-finger",
+          "motor-right-finger"
+        ],
+        "end_time_s": 30.00000000001368,
+        "tool_axis_travel_m": [
+          0.08059749246585446,
+          0.2679518837779254,
+          0.09134960858140817
+        ],
+        "object_axis_travel_m": [
+          0.09674751566193979,
+          0.022403671120629944,
+          0.010730564412470868
+        ],
+        "cycle_s": 8.12,
+        "workpiece_bounds": {
+          "table_xy_m": [
+            [
+              -0.3,
+              0.75
+            ],
+            [
+              -0.34,
+              0.34
+            ]
+          ],
+          "enclosing_radius_m": 0.05338539126015656,
+          "checked_states": 30001,
+          "centre_min_m": [
+            0.3894516547001984,
+            -0.004171576420434223,
+            0.023376068413126977
+          ],
+          "centre_max_m": [
+            0.48619917036213817,
+            0.01823209470019572,
+            0.034106632825597845
+          ]
+        },
+        "observed_contact_warnings": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "world": 11,
+        "model_key": "place-capsule",
+        "mjcf_sha256": "e06f49966ab8242a11264ac2a6216fd882e5fec5b4442a6ba1280226e2d4065c",
+        "body_names": [
+          "world",
+          "link0",
+          "link1",
+          "link2",
+          "link3",
+          "link4",
+          "link5",
+          "tool",
+          "left-finger-body",
+          "right-finger-body",
+          "object"
+        ],
+        "actuated_joints": [
+          "joint0",
+          "joint1",
+          "joint2",
+          "joint3",
+          "joint4",
+          "joint5",
+          "left-finger",
+          "right-finger"
+        ],
+        "actuator_names": [
+          "motor-joint0",
+          "motor-joint1",
+          "motor-joint2",
+          "motor-joint3",
+          "motor-joint4",
+          "motor-joint5",
+          "motor-left-finger",
+          "motor-right-finger"
+        ],
+        "end_time_s": 30.00000000001368,
+        "tool_axis_travel_m": [
+          0.06068846553560425,
+          0.2593754386959472,
+          0.10693868750317406
+        ],
+        "object_axis_travel_m": [
+          0.072989818641234,
+          9.818727988692926e-08,
+          0.03413920690387978
+        ],
+        "cycle_s": 8.53,
+        "workpiece_bounds": {
+          "table_xy_m": [
+            [
+              -0.3,
+              0.75
+            ],
+            [
+              -0.34,
+              0.34
+            ]
+          ],
+          "enclosing_radius_m": 0.052,
+          "checked_states": 30001,
+          "centre_min_m": [
+            0.39854234028118485,
+            -9.818727988423016e-08,
+            0.018860793096120217
+          ],
+          "centre_max_m": [
+            0.47153215892241884,
+            2.6991004667404397e-18,
+            0.053
+          ]
+        },
+        "observed_contact_warnings": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "world": 203,
+        "model_key": "place-compound",
+        "mjcf_sha256": "f2b60b6af0af753dd75369b10656cdace8cbd496be4dc33aec814b89ad557f59",
+        "body_names": [
+          "world",
+          "link0",
+          "link1",
+          "link2",
+          "link3",
+          "link4",
+          "link5",
+          "link6",
+          "tool",
+          "left-finger-body",
+          "right-finger-body",
+          "object"
+        ],
+        "actuated_joints": [
+          "joint0",
+          "joint1",
+          "joint2",
+          "joint3",
+          "joint4",
+          "joint5",
+          "joint6",
+          "left-finger",
+          "right-finger"
+        ],
+        "actuator_names": [
+          "motor-joint0",
+          "motor-joint1",
+          "motor-joint2",
+          "motor-joint3",
+          "motor-joint4",
+          "motor-joint5",
+          "motor-joint6",
+          "motor-left-finger",
+          "motor-right-finger"
+        ],
+        "end_time_s": 30.00000000001368,
+        "tool_axis_travel_m": [
+          0.07228107891826935,
+          0.28039290933464583,
+          0.09562324293935445
+        ],
+        "object_axis_travel_m": [
+          0.06432122279727698,
+          0.041192525216208316,
+          0.01998434018044814
+        ],
+        "cycle_s": 8.94,
+        "workpiece_bounds": {
+          "table_xy_m": [
+            [
+              -0.3,
+              0.75
+            ],
+            [
+              -0.34,
+              0.34
+            ]
+          ],
+          "enclosing_radius_m": 0.06632821228400684,
+          "checked_states": 30001,
+          "centre_min_m": [
+            0.3972613668290916,
+            -5.50279904418636e-18,
+            0.01401712235257241
+          ],
+          "centre_max_m": [
+            0.46158258962636856,
+            0.04119252521620831,
+            0.03400146253302055
+          ]
+        },
+        "observed_contact_warnings": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "world": 59,
+        "model_key": "pusht-planar",
+        "mjcf_sha256": "319b910182e955aeb650f782a5f0c433be4ded9b801ec273e603cb5a15c1bf50",
+        "body_names": [
+          "world",
+          "link0",
+          "link1",
+          "tool",
+          "object"
+        ],
+        "actuated_joints": [
+          "joint0",
+          "joint1"
+        ],
+        "actuator_names": [
+          "motor-joint0",
+          "motor-joint1"
+        ],
+        "end_time_s": 30.00000000001368,
+        "tool_axis_travel_m": [
+          0.12076327964293415,
+          0.2645429824223863,
+          0.0
+        ],
+        "object_axis_travel_m": [
+          0.047308570528622695,
+          0.06984399716966509,
+          0.0018820104842826625
+        ],
+        "cycle_s": 9.35,
+        "workpiece_bounds": {
+          "table_xy_m": [
+            [
+              -0.3,
+              0.75
+            ],
+            [
+              -0.34,
+              0.34
+            ]
+          ],
+          "enclosing_radius_m": 0.1070941386804988,
+          "checked_states": 30001,
+          "centre_min_m": [
+            0.52,
+            -0.002690020606934245,
+            0.014117989515717338
+          ],
+          "centre_max_m": [
+            0.5673085705286227,
+            0.06715397656273085,
+            0.016
+          ]
+        },
+        "observed_contact_warnings": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "world": 997,
+        "model_key": "pusht-redundant",
+        "mjcf_sha256": "438a83debb8b9fc60a4f60746364ef258bb01eaa49e5dbffb9efc323d5f22203",
+        "body_names": [
+          "world",
+          "link0",
+          "link1",
+          "link2",
+          "tool",
+          "object"
+        ],
+        "actuated_joints": [
+          "joint0",
+          "joint1",
+          "joint2"
+        ],
+        "actuator_names": [
+          "motor-joint0",
+          "motor-joint1",
+          "motor-joint2"
+        ],
+        "end_time_s": 30.00000000001368,
+        "tool_axis_travel_m": [
+          0.1245375220437065,
+          0.2208118312754545,
+          0.0
+        ],
+        "object_axis_travel_m": [
+          0.05970265923182805,
+          0.04461297063380981,
+          0.002534030078788241
+        ],
+        "cycle_s": 9.76,
+        "workpiece_bounds": {
+          "table_xy_m": [
+            [
+              -0.3,
+              0.75
+            ],
+            [
+              -0.34,
+              0.34
+            ]
+          ],
+          "enclosing_radius_m": 0.11657480512225277,
+          "checked_states": 30001,
+          "centre_min_m": [
+            0.52,
+            -0.006224492482027831,
+            0.01411798951572532
+          ],
+          "centre_max_m": [
+            0.5797026592318281,
+            0.03838847815178198,
+            0.01665201959451356
+          ]
+        },
+        "observed_contact_warnings": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "world": 2,
+        "model_key": "pusht-cartesian",
+        "mjcf_sha256": "60ec8ac9e94c6c423bf863eb9b3373fb66cd66936535b0029bece33f0b263cfa",
+        "body_names": [
+          "world",
+          "link0",
+          "link1",
+          "link2",
+          "link3",
+          "tool",
+          "object"
+        ],
+        "actuated_joints": [
+          "joint0",
+          "joint1",
+          "joint2",
+          "joint3"
+        ],
+        "actuator_names": [
+          "motor-joint0",
+          "motor-joint1",
+          "motor-joint2",
+          "motor-joint3"
+        ],
+        "end_time_s": 30.00000000001368,
+        "tool_axis_travel_m": [
+          0.11485630321684126,
+          0.15731178041340205,
+          0.03221233728427714
+        ],
+        "object_axis_travel_m": [
+          0.043725140778275384,
+          0.07494232021727287,
+          0.002458578606292762
+        ],
+        "cycle_s": 10.17,
+        "workpiece_bounds": {
+          "table_xy_m": [
+            [
+              -0.3,
+              0.75
+            ],
+            [
+              -0.34,
+              0.34
+            ]
+          ],
+          "enclosing_radius_m": 0.0977829407105405,
+          "checked_states": 30001,
+          "centre_min_m": [
+            0.5199999999999546,
+            -0.008648379335913312,
+            0.01411798951571077
+          ],
+          "centre_max_m": [
+            0.56372514077823,
+            0.06629394088135956,
+            0.016576568122003532
+          ]
+        },
+        "observed_contact_warnings": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      }
+    ],
+    "archive_sha256": "fbeae4bad54b0429c32330e841d1f8442cbd803ddeb1876a4339670573d74ed9"
+  },
+  "motion_archive_sha256": "fbeae4bad54b0429c32330e841d1f8442cbd803ddeb1876a4339670573d74ed9",
+  "offsets": {
+    "41": [
+      -1.995,
+      -0.595,
+      0.0
+    ],
+    "7": [
+      -0.815,
+      -0.595,
+      0.0
+    ],
+    "305": [
+      0.365,
+      -0.595,
+      0.0
+    ],
+    "11": [
+      1.545,
+      -0.595,
+      0.0
+    ],
+    "203": [
+      -1.995,
+      0.595,
+      0.0
+    ],
+    "59": [
+      -0.815,
+      0.595,
+      0.0
+    ],
+    "997": [
+      0.365,
+      0.595,
+      0.0
+    ],
+    "2": [
+      1.545,
+      0.595,
+      0.0
+    ]
+  },
+  "overview_size": [
+    1440,
+    810
+  ],
+  "closeup_size": [
+    640,
+    480
+  ],
+  "visible_workpiece_samples": {
+    "0": {
+      "41": {
+        "overview_pixels": 101,
+        "independent_camera_pixels": 597
+      },
+      "7": {
+        "overview_pixels": 241,
+        "independent_camera_pixels": 1538
+      },
+      "305": {
+        "overview_pixels": 317,
+        "independent_camera_pixels": 1650
+      },
+      "11": {
+        "overview_pixels": 163,
+        "independent_camera_pixels": 1201
+      },
+      "203": {
+        "overview_pixels": 207,
+        "independent_camera_pixels": 1378
+      },
+      "59": {
+        "overview_pixels": 480,
+        "independent_camera_pixels": 3028
+      },
+      "997": {
+        "overview_pixels": 563,
+        "independent_camera_pixels": 3484
+      },
+      "2": {
+        "overview_pixels": 437,
+        "independent_camera_pixels": 2572
+      }
+    },
+    "225": {
+      "41": {
+        "overview_pixels": 128,
+        "independent_camera_pixels": 621
+      },
+      "7": {
+        "overview_pixels": 360,
+        "independent_camera_pixels": 1534
+      },
+      "305": {
+        "overview_pixels": 329,
+        "independent_camera_pixels": 1677
+      },
+      "11": {
+        "overview_pixels": 323,
+        "independent_camera_pixels": 1409
+      },
+      "203": {
+        "overview_pixels": 265,
+        "independent_camera_pixels": 1480
+      },
+      "59": {
+        "overview_pixels": 447,
+        "independent_camera_pixels": 3071
+      },
+      "997": {
+        "overview_pixels": 593,
+        "independent_camera_pixels": 3626
+      },
+      "2": {
+        "overview_pixels": 353,
+        "independent_camera_pixels": 2583
+      }
+    },
+    "450": {
+      "41": {
+        "overview_pixels": 141,
+        "independent_camera_pixels": 621
+      },
+      "7": {
+        "overview_pixels": 336,
+        "independent_camera_pixels": 1549
+      },
+      "305": {
+        "overview_pixels": 456,
+        "independent_camera_pixels": 2166
+      },
+      "11": {
+        "overview_pixels": 323,
+        "independent_camera_pixels": 1409
+      },
+      "203": {
+        "overview_pixels": 265,
+        "independent_camera_pixels": 1480
+      },
+      "59": {
+        "overview_pixels": 511,
+        "independent_camera_pixels": 3048
+      },
+      "997": {
+        "overview_pixels": 597,
+        "independent_camera_pixels": 3718
+      },
+      "2": {
+        "overview_pixels": 411,
+        "independent_camera_pixels": 2580
+      }
+    },
+    "675": {
+      "41": {
+        "overview_pixels": 141,
+        "independent_camera_pixels": 621
+      },
+      "7": {
+        "overview_pixels": 397,
+        "independent_camera_pixels": 1679
+      },
+      "305": {
+        "overview_pixels": 456,
+        "independent_camera_pixels": 2166
+      },
+      "11": {
+        "overview_pixels": 323,
+        "independent_camera_pixels": 1409
+      },
+      "203": {
+        "overview_pixels": 265,
+        "independent_camera_pixels": 1480
+      },
+      "59": {
+        "overview_pixels": 467,
+        "independent_camera_pixels": 3017
+      },
+      "997": {
+        "overview_pixels": 597,
+        "independent_camera_pixels": 3718
+      },
+      "2": {
+        "overview_pixels": 390,
+        "independent_camera_pixels": 2580
+      }
+    },
+    "899": {
+      "41": {
+        "overview_pixels": 141,
+        "independent_camera_pixels": 621
+      },
+      "7": {
+        "overview_pixels": 410,
+        "independent_camera_pixels": 1855
+      },
+      "305": {
+        "overview_pixels": 456,
+        "independent_camera_pixels": 2166
+      },
+      "11": {
+        "overview_pixels": 323,
+        "independent_camera_pixels": 1409
+      },
+      "203": {
+        "overview_pixels": 265,
+        "independent_camera_pixels": 1480
+      },
+      "59": {
+        "overview_pixels": 501,
+        "independent_camera_pixels": 3166
+      },
+      "997": {
+        "overview_pixels": 597,
+        "independent_camera_pixels": 3718
+      },
+      "2": {
+        "overview_pixels": 411,
+        "independent_camera_pixels": 2580
+      }
+    }
+  },
+  "vulkan": {
+    "overview": {
+      "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "ray_shadow_frames": 900,
+      "msaa": 4,
+      "samples_per_panel": 64,
+      "triangles": 27050,
+      "validation_errors": 0
+    },
+    "41": {
+      "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "ray_shadow_frames": 900,
+      "msaa": 4,
+      "samples_per_panel": 64,
+      "triangles": 3528,
+      "validation_errors": 0
+    },
+    "7": {
+      "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "ray_shadow_frames": 900,
+      "msaa": 4,
+      "samples_per_panel": 64,
+      "triangles": 3372,
+      "validation_errors": 0
+    },
+    "305": {
+      "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "ray_shadow_frames": 900,
+      "msaa": 4,
+      "samples_per_panel": 64,
+      "triangles": 3564,
+      "validation_errors": 0
+    },
+    "11": {
+      "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "ray_shadow_frames": 900,
+      "msaa": 4,
+      "samples_per_panel": 64,
+      "triangles": 3936,
+      "validation_errors": 0
+    },
+    "203": {
+      "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "ray_shadow_frames": 900,
+      "msaa": 4,
+      "samples_per_panel": 64,
+      "triangles": 3960,
+      "validation_errors": 0
+    },
+    "59": {
+      "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "ray_shadow_frames": 900,
+      "msaa": 4,
+      "samples_per_panel": 64,
+      "triangles": 2976,
+      "validation_errors": 0
+    },
+    "997": {
+      "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "ray_shadow_frames": 900,
+      "msaa": 4,
+      "samples_per_panel": 64,
+      "triangles": 3168,
+      "validation_errors": 0
+    },
+    "2": {
+      "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "ray_shadow_frames": 900,
+      "msaa": 4,
+      "samples_per_panel": 64,
+      "triangles": 3360,
+      "validation_errors": 0
+    }
+  },
+  "encoded": {
+    "overview.mp4": {
+      "codec": "h264",
+      "pixel_format": "yuv420p",
+      "size": [
+        1440,
+        810
+      ],
+      "decoded_frames": 900,
+      "fps": 30,
+      "duration_s": 30.0,
+      "motion_lag_frames": 15,
+      "max_changed_fraction_at_5_levels": 0.039388020833333336
+    },
+    "multiview.mp4": {
+      "codec": "h264",
+      "pixel_format": "yuv420p",
+      "size": [
+        1920,
+        804
+      ],
+      "decoded_frames": 900,
+      "fps": 30,
+      "duration_s": 30.0,
+      "motion_lag_frames": 15,
+      "max_changed_fraction_at_5_levels": 0.053059895833333336
+    },
+    "cameras/41-grasp-sphere.mp4": {
+      "codec": "h264",
+      "pixel_format": "yuv420p",
+      "size": [
+        640,
+        480
+      ],
+      "decoded_frames": 900,
+      "fps": 30,
+      "duration_s": 30.0,
+      "motion_lag_frames": 15,
+      "max_changed_fraction_at_5_levels": 0.0984157986111111
+    },
+    "cameras/7-grasp-box.mp4": {
+      "codec": "h264",
+      "pixel_format": "yuv420p",
+      "size": [
+        640,
+        480
+      ],
+      "decoded_frames": 900,
+      "fps": 30,
+      "duration_s": 30.0,
+      "motion_lag_frames": 15,
+      "max_changed_fraction_at_5_levels": 0.09016927083333333
+    },
+    "cameras/305-place-block.mp4": {
+      "codec": "h264",
+      "pixel_format": "yuv420p",
+      "size": [
+        640,
+        480
+      ],
+      "decoded_frames": 900,
+      "fps": 30,
+      "duration_s": 30.0,
+      "motion_lag_frames": 15,
+      "max_changed_fraction_at_5_levels": 0.08539496527777778
+    },
+    "cameras/11-place-capsule.mp4": {
+      "codec": "h264",
+      "pixel_format": "yuv420p",
+      "size": [
+        640,
+        480
+      ],
+      "decoded_frames": 900,
+      "fps": 30,
+      "duration_s": 30.0,
+      "motion_lag_frames": 15,
+      "max_changed_fraction_at_5_levels": 0.09049479166666667
+    },
+    "cameras/203-place-compound.mp4": {
+      "codec": "h264",
+      "pixel_format": "yuv420p",
+      "size": [
+        640,
+        480
+      ],
+      "decoded_frames": 900,
+      "fps": 30,
+      "duration_s": 30.0,
+      "motion_lag_frames": 15,
+      "max_changed_fraction_at_5_levels": 0.0900607638888889
+    },
+    "cameras/59-pusht-planar.mp4": {
+      "codec": "h264",
+      "pixel_format": "yuv420p",
+      "size": [
+        640,
+        480
+      ],
+      "decoded_frames": 900,
+      "fps": 30,
+      "duration_s": 30.0,
+      "motion_lag_frames": 15,
+      "max_changed_fraction_at_5_levels": 0.09212239583333333
+    },
+    "cameras/997-pusht-redundant.mp4": {
+      "codec": "h264",
+      "pixel_format": "yuv420p",
+      "size": [
+        640,
+        480
+      ],
+      "decoded_frames": 900,
+      "fps": 30,
+      "duration_s": 30.0,
+      "motion_lag_frames": 15,
+      "max_changed_fraction_at_5_levels": 0.0673828125
+    },
+    "cameras/2-pusht-cartesian.mp4": {
+      "codec": "h264",
+      "pixel_format": "yuv420p",
+      "size": [
+        640,
+        480
+      ],
+      "decoded_frames": 900,
+      "fps": 30,
+      "duration_s": 30.0,
+      "motion_lag_frames": 15,
+      "max_changed_fraction_at_5_levels": 0.07074652777777778
+    }
+  }
+}

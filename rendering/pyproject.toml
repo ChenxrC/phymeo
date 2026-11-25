@@ -15,14 +15,14 @@ textures = ["Pillow==12.2.0"]
 ibl = ["numpy==1.26.4"]
 
 [tool.setuptools]
-# The fourth entry is a data-only namespace. Map the existing, pinned asset
-# directory directly into the wheel rather than maintaining a second copy.
-packages = ["phymeo_rendering", "phymeo_rendering.adapters", "phymeo_rendering.backends", "phymeo_rendering._panda_assets"]
+# Map the pinned data directories directly into the wheel.
+packages = ["phymeo_rendering", "phymeo_rendering.adapters", "phymeo_rendering.backends", "phymeo_rendering._panda_assets", "phymeo_rendering._studio_assets"]
 include-package-data = false
 
 [tool.setuptools.package-dir]
 "" = "src"
 "phymeo_rendering._panda_assets" = "assets/panda"
+"phymeo_rendering._studio_assets" = "examples/materials"
 
 [tool.setuptools.package-data]
 "phymeo_rendering.backends" = [
@@ -30,6 +30,7 @@ include-package-data = false
     "_native/*.h", "_native/*.hpp", "_native/*.inc", "_shaders/*",
 ]
 "phymeo_rendering._panda_assets" = ["*", "meshes/*.gltf", "original/*"]
+"phymeo_rendering._studio_assets" = ["university_workshop_1k.hdr", "NOTICE.md"]
 
 [tool.setuptools.exclude-package-data]
 # This wheel carries platform-independent build INPUTS, never a local build.

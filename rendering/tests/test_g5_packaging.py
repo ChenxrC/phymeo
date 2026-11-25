@@ -20,6 +20,7 @@ from phymeo_rendering import panda_visuals
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "assets" / "panda"
 PREFIX = "phymeo_rendering/_panda_assets/"
+STUDIO = "phymeo_rendering/_studio_assets/"
 DIST = "phymeo_rendering-0.1.0a0.dist-info/"
 
 
@@ -50,11 +51,17 @@ class G5PackagingTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.files = {}
-        for path in (ROOT / "src" / "phymeo_rendering").rglob("*"):
-            if path.is_file() and path.suffix in {".py", ".cpp", ".h", ".inc", ".vert", ".frag", ".glsl"}:
-                cls.files[path.relative_to(ROOT / "src").as_posix()] = path.read_bytes()
-        cmake = ROOT / "src/phymeo_rendering/backends/_native/CMakeLists.txt"
-        cls.files[cmake.relative_to(ROOT / "src").as_posix()] = cmake.read_bytes()
+        for path in (ROOT / "src/phymeo_rendering").rglob("*.py"):
+            cls.files[path.relative_to(ROOT / "src").as_posix()] = path.read_bytes()
+        settings = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))["tool"]["setuptools"]
+        excluded = settings["exclude-package-data"]["*"]
+        for package in ("phymeo_rendering.backends", "phymeo_rendering._studio_assets"):
+            prefix = package.replace(".", "/")
+            source = ROOT / settings["package-dir"].get(package, "src/" + prefix)
+            for pattern in settings["package-data"][package]:
+                for path in source.glob(pattern):
+                    if path.is_file() and not any(fnmatch.fnmatchcase(path.name, e) for e in excluded):
+                        cls.files[prefix + "/" + path.relative_to(source).as_posix()] = path.read_bytes()
         for path in DATA.rglob("*"):
             if path.is_file():
                 cls.files[PREFIX + path.relative_to(DATA).as_posix()] = path.read_bytes()
@@ -67,11 +74,11 @@ class G5PackagingTests(unittest.TestCase):
             b"Provides-Extra: ibl\nRequires-Dist: numpy==1.26.4; extra == 'ibl'\n\n"
         )
 
-    def inspect(self, files=None):
+    def inspect(self, files=None, *, root=ROOT):
         with tempfile.TemporaryDirectory() as temp:
             path = Path(temp) / "phymeo_rendering-0.1.0a0-py3-none-any.whl"
             path.write_bytes(wheel_bytes(self.files if files is None else files))
-            return driver().inspect_wheel(path, ROOT)
+            return driver().inspect_wheel(path, root)
 
     def test_texture_dependency_is_optional_pinned_and_separate_from_sapien(self):
         config = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
@@ -157,8 +164,28 @@ class G5PackagingTests(unittest.TestCase):
         self.assertEqual(report["panda"]["manifest_sha256"], panda_visuals._MANIFEST_SHA256)
         self.assertEqual(report["panda"]["instances"], 59)
         self.assertIn("phymeo_rendering/backends/_native/resident.inc", report["native_sources"])
+        self.assertIn("phymeo_rendering/backends/_shaders/resident_progressive.comp", report["native_sources"])
+        self.assertEqual(report["studio_asset_sha256"], {
+            name: hashlib.sha256(self.files[STUDIO+name]).hexdigest()
+            for name in ("university_workshop_1k.hdr", "NOTICE.md")
+        })
         self.assertEqual(report["platform_binaries"], [])
         self.assertEqual(report["base_dependencies"], [])
+
+    def test_studio_resources_are_checked_without_a_source_tree(self):
+        # Each fixture has a valid, regenerated RECORD, including the tampered one.
+        for name in ("university_workshop_1k.hdr", "NOTICE.md"):
+            member = STUDIO + name
+            for missing in (True, False):
+                with self.subTest(member=name, missing=missing):
+                    files = dict(self.files)
+                    if missing:
+                        del files[member]
+                    else:
+                        files[member] += b"altered"
+                    reason = "missing wheel resource" if missing else "SHA256 digest mismatch"
+                    with self.assertRaisesRegex(ValueError, reason):
+                        self.inspect(files, root=None)
 
     def test_git_root_controls_are_not_required_distribution_assets(self):
         files = dict(self.files)

@@ -9,26 +9,13 @@ import numpy as np
 from _panda_scene import write_mesh
 from galaxea_r1.finish_details import _store, _texture, _with_uv
 from phymeo_rendering.assets import Material, Mesh, TextureChannel, TexturedMaterial
-from phymeo_rendering.environment import RadianceEnvironment
 from phymeo_rendering.mesh_data import _local_path, load_mesh
+from phymeo_rendering.photography import STUDIO_DISPLAY, STUDIO_EXPOSURE, studio_lighting
 from phymeo_rendering.scene import Instance
-from phymeo_rendering.studio import StudioLighting
 from preview_stable_lighting.shell_normals import _replace_normals
 
 
-STUDIO_EXPOSURE = 7.0
-STUDIO_DISPLAY = 'pbr-neutral'
 _SET_NODE = 'photo-studio-set'
-
-
-def studio_lighting():
-    """Two rectangular softboxes, with measured workshop radiance for bounce and reflections."""
-    hdr = Path(__file__).resolve().parent / 'materials' / 'university_workshop_1k.hdr'
-    sky = RadianceEnvironment(hdr.as_uri(),
-        'a125ada38fc602025326f29b68df09531bb16f899f1973b03d9ac5ac98142548',
-        strength=.075, yaw_degrees=35., face_size=128)
-    return StudioLighting(center_m=(.19, 0., .10), scale_m=.64,
-                          panel_size_scale=.48, panel_strength=.135, environment_map=sky)
 
 
 def _bench_maps(directory):

@@ -8,6 +8,24 @@
 
 这个目录是一个独立 Python 项目，发行名为 `phymeo-rendering`，导入名为 `phymeo_rendering`。基础包仅依赖 Python 3.11+ 标准库，可读取程序场景、规划一次曝光，并校验后端返回的帧包。G3 已接通三条真实离屏路径。可并排查看[标定桌原图、测量结果与复现步骤](results/g3/README.md)。
 
+## 摄影渲染 API
+
+`StudioRenderer` 默认拍摄 1440 × 810 图像。每盏矩形灯使用 16 个采样点（4 × 4），颜色使用 4× MSAA，阴影使用硬件光线查询。工作室 HDR 环境和两块软箱提供照明。默认曝光为 7.0，合成后的线性 RGB 经 `pbr-neutral` 变换输出。运行需要支持 Vulkan ray query 的 GPU、配有对应 SPIR-V 的原生库，以及 `phymeo-rendering[ibl]`。带纹理的场景还需 `textures` 依赖。
+
+```python
+from contextlib import closing
+from phymeo_rendering import StudioRenderer
+from phymeo_rendering.outputs import Channel
+from phymeo_rendering.pipeline import CaptureRequest, RenderPath
+
+renderer = StudioRenderer(library_path=library_path)
+with closing(renderer.open_scene(scene)) as session:
+    camera = renderer.camera("main", frame.key, camera_pose)
+    image = session.capture(frame, CaptureRequest(camera, RenderPath.RASTER, (Channel.RGB,)))
+```
+
+高采样影片可用 `StudioRenderer(library_path=library_path, panel_samples=64)`。`size=(宽, 高)` 设置相机默认尺寸，`studio=` 接受自定义灯光。已有标定相机可以直接传给 `CaptureRequest`，保留其尺寸、焦距和主点。`area_light_grid=8` 同样选择每盏灯 64 个样点。[公共接口](src/phymeo_rendering/photography.py)
+
 [Panda 抓取回放与同机位布光对照](results/r1/README.md)展示 R1 的两个归档姿态、固定及腕部相机，以及自研 Vulkan 的局部采集。
 
 [Panda 默认运动预览与实测影片](examples/preview_stable_lighting/README.md)使用逐像素 HDR 漫反射、面积灯软阴影、短程环境遮蔽和轮廓抗锯齿。

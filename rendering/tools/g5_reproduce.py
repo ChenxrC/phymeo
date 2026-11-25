@@ -23,6 +23,11 @@ import zipfile
 
 MANIFEST_SHA256 = "d6c5f952ec5e293403d37962a5a462a70fb1359307479c87e744dfb80b4846e4"
 ASSET_PREFIX = "phymeo_rendering/_panda_assets/"
+STUDIO_PREFIX = "phymeo_rendering/_studio_assets/"
+STUDIO_ASSETS = {
+    "university_workshop_1k.hdr": "a125ada38fc602025326f29b68df09531bb16f899f1973b03d9ac5ac98142548",
+    "NOTICE.md": "5f5e06c50f199c223dd1588946f66899ec30a4d07909407d6ab0108d0e4912a0",
+}
 SOURCE_EXTENSIONS = {".cmake", ".cpp", ".h", ".hpp", ".inc", ".vert", ".frag", ".glsl", ".comp", ".geom", ".tesc", ".tese", ".rgen", ".rchit", ".rmiss", ".rahit", ".rint", ".rcall"}
 BINARY_EXTENSIONS = {".dll", ".pyd", ".so", ".dylib", ".spv", ".exe", ".lib", ".a", ".o", ".obj"}
 F0_FILES = ("integration/__init__.py", "integration/_g1_table.py", "integration/_r0_table.py",
@@ -113,6 +118,8 @@ def inspect_wheel(path, rendering_root=None):
     resources += [(r["archive_file"], r["archive_sha256"]) for r in manifest["sources"]]
     for name, digest in resources:
         require(ASSET_PREFIX + _safe_name(name), digest)
+    for name, digest in STUDIO_ASSETS.items():
+        require(STUDIO_PREFIX + name, digest)
     native_prefix = "phymeo_rendering/backends/"
     for name in ("_native/CMakeLists.txt", "_native/renderer.cpp", "_native/renderer.h", "_native/resident.inc",
                  "_shaders/native.vert", "_shaders/native.frag", "_shaders/resident.vert", "_shaders/resident.frag"):
@@ -145,6 +152,7 @@ def inspect_wheel(path, rendering_root=None):
         "base_dependencies": [], "optional_dependencies": dependencies,
         "native_sources": sorted(n for n in files if n.startswith(native_prefix + "_native/") or n.startswith(native_prefix + "_shaders/")),
         "source_files_compared": checked_sources,
+        "studio_asset_sha256": dict(STUDIO_ASSETS),
         "panda": {"manifest_sha256": MANIFEST_SHA256, "files_verified": len(resources) + 1,
                   "instances": len(manifest["instances"]), "meshes": len(manifest["meshes"]),
                   "source_control_files_omitted": omitted_source_controls},

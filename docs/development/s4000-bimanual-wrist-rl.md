@@ -2,16 +2,24 @@
 
 这组实验分别训练重物搬运和 PushT。每台机械臂有六个或七个受限力矩驱动的转动关节。每个场景共用一个自由刚体、一张工作台与一套动力学求解器。策略从左右腕 RGB 和自身关节观测产生动作。位置、接触力、目标误差由独立评分器读取。[预登记目标和成功条件](s4000-bimanual-wrist-rl-plan.md)
 
-| 任务 | 已验证的策略包 | 两种构型实际轨迹的 36 秒录像 |
+| 任务 | 已验证的策略包 | 实际轨迹录像 |
 | --- | --- | --- |
-| 6 kg 侧缘箱，抬起后运输和放置 | [搬运 CEM](../../artifacts/mtt-bimanual-20261126/carry-policy.zip) · [带视觉神经网络的搬运模型](../../artifacts/mtt-bimanual-20261126/carry-neural-policy.zip) | [搬运 CEM 回放](../../artifacts/mtt-bimanual-20261126/carry-studio.mp4) |
-| 9 kg T 件，平移并对准目标朝向 | [PushT CEM](../../artifacts/mtt-bimanual-20261126/push-t-policy.zip) · [视觉神经网络实验包](../../artifacts/mtt-bimanual-20261126/push-t-neural-policy.zip) | [PushT CEM 回放](../../artifacts/mtt-bimanual-20261126/push-t-studio.mp4) |
+| 6 kg 侧缘箱，抬起后运输和放置 | [搬运 CEM](../../artifacts/mtt-bimanual-20261126/carry-policy.zip) · [带视觉神经网络的搬运模型](../../artifacts/mtt-bimanual-20261126/carry-neural-policy.zip) | [搬运 CEM 中文慢放，36 秒](../../artifacts/mtt-bimanual-20261126/carry-studio-zh.mp4) · [视觉网络回放，36 秒](../../artifacts/mtt-bimanual-20261126/carry-neural-studio.mp4) |
+| 9 kg T 件，平移并对准目标朝向 | [两种机械臂装配共同训练的 PushT 策略](../../artifacts/mtt-bimanual-20261126/push-crossfit-policy.zip) | [对应冻结模型回放，30 秒](../../artifacts/mtt-bimanual-20261126/push-crossfit-studio.mp4) |
 
-在已装好 Phymeo、MuJoCo、Tyx MUSA 与 Vulkan 渲染库的 S4000 环境中，将任一 CEM 包解压，在解压目录运行以下命令。将 `PHYMEO_RENDER_LIBRARY` 指向该机实际构建的 `libphymeo_native.so`。模型包内附精确版本的控制、观测、场景生成源码和训练检查点。新回合的 XML、真实状态轨迹和结果写入 `my-replay`。
+在已装好 Phymeo、MuJoCo、Tyx MUSA 与 Vulkan 渲染库的 S4000 环境中，将 `PHYMEO_RENDER_LIBRARY` 指向该机实际构建的 `libphymeo_native.so`。解压搬运 CEM 包后，在解压目录运行以下命令。模型包内附精确版本的控制、观测、场景生成源码和训练检查点。新回合的 XML、真实状态轨迹和结果写入 `my-replay`。
 
 ```bash
 python bimanual_policy_replay.py --policy . --source-dir ./sources --seed 55001 55002 \
     --out ./my-replay --library "$PHYMEO_RENDER_LIBRARY" --device-index 0
+```
+
+解压表中的 PushT 包后，在解压目录用以下命令运行。一个种子会生成相同工件和目标的两种装配。输出目录和设备缓存放在包外。S4000 实测重新加载后，种子 85001 在两种装配上均完成。[独立解包与重放结果](../../artifacts/mtt-bimanual-20261126/push-crossfit-zipreload.json)
+
+```bash
+python -B run_policy.py verify
+python -B run_policy.py run --seed 85001 --out ../new-push-replay \
+    --cache-dir ../musa-cache --library "$PHYMEO_RENDER_LIBRARY" --device-index 0
 ```
 
 ## 在设备上运行
@@ -140,3 +148,5 @@ PushT 原策略在完整交叉中为 **12/16**。两个构型都能朝两个方�
 | 87002 | 56.53 | 84.41 | 5.13° |
 | 87003 | 57.43 | 63.71 | 1.45° |
 | 87004 | 58.54 | 44.06 | 179.65° |
+
+在相同的四个工件与目标上，仅左臂、仅右臂、双腕画面遮黑三组均未离台运输，各为 0/4。八个单臂回合中，停用臂的所有电机峰值扭矩均为零，停用臂与箱子的实际接触时间也为零。双臂对照说明这套夹具有足够的侧夹承载能力；迁移结果中仍待解决的是搬运后释放时的位姿。[四垫实验入口](../../examples/bimanual_flat_gripper.py) · [单左](../../artifacts/mtt-bimanual-20261126/flat-left-ablations.json) · [单右](../../artifacts/mtt-bimanual-20261126/flat-right-ablations.json) · [遮黑](../../artifacts/mtt-bimanual-20261126/flat-black-ablations.json)

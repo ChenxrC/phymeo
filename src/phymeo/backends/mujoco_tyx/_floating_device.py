@@ -44,13 +44,11 @@ class TyxFloatingDevice(TyxDevice):
         self.geometry = (kernels.geometry, kernels.geometry_other)
         self.mechanics = (kernels.mechanics, kernels.mechanics_other)
         self.solve = (kernels.solve, kernels.solve_other)
+        self.native_integrators = kernels.native_integrators
         self._prepare_allocations(plan, self.nworld, nbody, capacities, resource_budget)
         try:
-            self.runtime = tx.Runtime(
-                backend="cuda" if mode == "cuda" else "cpu", cache_root=cache_root
-            )
-            self.resources.set_runtime(self.runtime)
-            with tx.use_runtime(self.runtime):
+            self._open_runtime(cache_root)
+            with self.runtime_scope():
                 for name in (
                     "parents",
                     "ranges",
@@ -116,11 +114,12 @@ class TyxFloatingDevice(TyxDevice):
 
     def advance(self, controls, applied, body_force):
         old, new = self.active, 1 - self.active
-        with self.tx.use_runtime(self.runtime):
+        with self.runtime_scope():
             self._put(self.controls, controls)
             self._put(self.applied_input, applied)
             self._put(self.body_force, body_force)
-            self.geometry[old](
+            self.launch_kernel(
+                self.geometry[old],
                 self.nworld,
                 self.nbody,
                 self.plan.nv,
@@ -140,10 +139,10 @@ class TyxFloatingDevice(TyxDevice):
                 self.work,
                 self.work_rotation,
                 self.status,
-                mode=self.mode,
             )
             self.counts["completed_kernels"] += 1
-            self.mechanics[old](
+            self.launch_kernel(
+                self.mechanics[old],
                 self.nworld,
                 self.nbody,
                 self.plan.nv,
@@ -178,11 +177,11 @@ class TyxFloatingDevice(TyxDevice):
                 self.actuator,
                 self.work,
                 self.status,
-                mode=self.mode,
             )
             self.counts["completed_kernels"] += 1
             _actuator_device.advance(self, old, new)
-            self.solve[old](
+            self.launch_kernel(
+                self.native_integrators[old],
                 self.nworld,
                 self.plan.nv,
                 self.h,
@@ -208,7 +207,7 @@ class TyxFloatingDevice(TyxDevice):
                 self.plan.nq,
                 len(self.plan.joint_ids),
                 self.joints,
-                mode=self.mode,
+                0,  # Ordinary floating step computes its own integration velocity.
             )
             self.counts["completed_kernels"] += 1
             self.runtime.sync()
@@ -216,7 +215,7 @@ class TyxFloatingDevice(TyxDevice):
 
     def download(self):
         old, target = self.active, 1 - self.active
-        with self.tx.use_runtime(self.runtime):
+        with self.runtime_scope():
             motion = self._get(self.motion)
             result = {
                 name: self._get(buffer)

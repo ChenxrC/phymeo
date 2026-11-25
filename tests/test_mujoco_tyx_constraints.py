@@ -958,7 +958,7 @@ def test_oblique_offset_inertia_complete_six_dimensional_response(mode, mass, h,
     )
 
 
-@pytest.mark.parametrize("mode", MODES)
+@pytest.mark.parametrize("mode", MODES_WITH_MUSA)
 def test_two_feet_shared_mass_is_not_independent_contacts(mode, tmp_path):
     mj = normal._deps()
     xml = free_xml(dim=3, two=True, offset=False)
@@ -1089,7 +1089,7 @@ def test_dry_friction_bounded_force_with_viscous_damping(mode, kind, load, veloc
     assert abs(rows[0].force) <= float(np.float32(0.2))
 
 
-@pytest.mark.parametrize("mode", MODES)
+@pytest.mark.parametrize("mode", MODES_WITH_MUSA)
 def test_free_root_all_six_dof_dry_rows(mode, tmp_path):
     body = (
         '<body name="free" quat=".96 .18 -.12 .1"><joint type="free" frictionloss=".2"/>'

@@ -1,6 +1,7 @@
 """Independent native free-root cases, authored before T2 product execution."""
 
 import json
+import os
 from collections.abc import Mapping
 from dataclasses import dataclass, fields, is_dataclass
 
@@ -13,6 +14,10 @@ from phymeo.builders.mujoco_compiler import compile_mujoco_xml
 from phymeo.training.resident_stepper import PhysicsStepFailure
 
 MODES = ("interpret", pytest.param("cuda", marks=pytest.mark.cuda))
+MODES_WITH_MUSA = (*MODES, pytest.param("musa", marks=(
+    pytest.mark.musa,
+    pytest.mark.skipif(os.environ.get("PHYMEO_TEST_MUSA") != "1", reason="requires a MUSA GPU"),
+)))
 H = 0.001
 TOL = {
     "body_position": (3e-5, 4e-5),
@@ -232,7 +237,7 @@ def _assert_dynamics(row, expected):
     np.testing.assert_allclose(row.qfrc_actuator, expected["native_actuator"], rtol=4e-4, atol=4e-4)
 
 
-@pytest.mark.parametrize("mode", MODES)
+@pytest.mark.parametrize("mode", MODES_WITH_MUSA)
 @pytest.mark.parametrize("case", CASES, ids=lambda x: x.name)
 def test_native_floating_dynamics_and_continuous_euler(mode, case, tmp_path):
     mj = _deps()
@@ -342,7 +347,7 @@ def _rotation(quaternion):
     )
 
 
-@pytest.mark.parametrize("mode", MODES)
+@pytest.mark.parametrize("mode", MODES_WITH_MUSA)
 def test_free_gyro_analytic_mass_bias_and_bounded_world_momentum(mode, tmp_path):
     mj = _deps()
     case = CASES[0]
@@ -435,7 +440,7 @@ def test_offset_root_analytic_jacobian_mass_and_world_wrench_origin(mode, tmp_pa
         )
 
 
-@pytest.mark.parametrize("mode", MODES)
+@pytest.mark.parametrize("mode", MODES_WITH_MUSA)
 def test_root_and_child_loads_create_real_reciprocal_acceleration(mode, tmp_path):
     mj = _deps()
     case = CASES[2]
@@ -536,7 +541,7 @@ def test_floating_sparse_reset_clone_preserves_next_real_step(mode, keys, tmp_pa
                 )
 
 
-@pytest.mark.parametrize("mode", MODES)
+@pytest.mark.parametrize("mode", MODES_WITH_MUSA)
 def test_floating_late_download_failure_rolls_back_full_batch_and_retries(
     mode, monkeypatch, tmp_path
 ):
@@ -587,7 +592,7 @@ def test_floating_late_download_failure_rolls_back_full_batch_and_retries(
             )
 
 
-@pytest.mark.parametrize("mode", MODES)
+@pytest.mark.parametrize("mode", MODES_WITH_MUSA)
 def test_floating_step_has_no_cpu_warp_or_host_dynamics_fallback(mode, monkeypatch, tmp_path):
     import importlib
     import sys
@@ -631,7 +636,7 @@ def test_floating_step_has_no_cpu_warp_or_host_dynamics_fallback(mode, monkeypat
         state = runtime.snapshot()[0]
         assert runtime.counters["completed_kernels"] > count
         assert runtime.capabilities["implementation"] == "tyx"
-        assert runtime.capabilities["gpu"] is (mode == "cuda")
+        assert runtime.capabilities["gpu"] is (mode in ("cuda", "musa"))
         _assert_dynamics(state.last_step, expected)
         _save(
             tmp_path / "no-fallback.jsonl",

@@ -262,22 +262,16 @@ class TyxConstraintDevice(TyxDevice):
         # Shared native tail retains physical M acceleration. The live mode
         # consumes the common velocity; the old mode solves M+hD as before.
         # Both integrate native q/clock once; constraint/rows are disposable.
-        live_velocity = bool(getattr(self.plan, "area_friction_laws", ()))
+        use_common_velocity = int(bool(getattr(self.plan, "area_friction_laws", ())))
+        joint_count = len(self.plan.joint_ids)
         if self.plan.base.kind == 2:
-            joint_count = len(self.plan.joint_ids)
             solve_args = (self.nworld, self.plan.nv, self.plan.nq, joint_count, self.h, self.joints)
-            integrator = self.native_integrators[old]
-            tail = (int(live_velocity),)
+            tail = (use_common_velocity,)
         else:
             solve_args = (self.nworld, self.plan.nv, self.h)
-            tail = (self.plan.nq, len(self.plan.joint_ids), self.joints)
-            integrator = self.solve[old]
-            if live_velocity:
-                from ._floating_kernels import solve_live, solve_live_other
-
-                integrator = (solve_live, solve_live_other)[old]
+            tail = (self.plan.nq, joint_count, self.joints, use_common_velocity)
         self.launch_kernel(
-            integrator,
+            self.native_integrators[old],
             *solve_args,
             self.vectors,
             self.mass,

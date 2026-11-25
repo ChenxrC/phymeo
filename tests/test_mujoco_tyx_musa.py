@@ -409,7 +409,23 @@ def test_contact_capacity_rejects_both_worlds_before_publication(tmp_path):
 
 
 @pytest.mark.parametrize(
-    "xml", [source(condim=4), source(free=True, condim=3)], ids=("torsional", "floating")
+    "xml",
+    [
+        pytest.param(source(condim=4), id="fixed-torsional"),
+        pytest.param(source(free=True, condim=4), id="floating-torsional"),
+        pytest.param(
+            '<mujoco><default><geom contype="0" conaffinity="0"/></default><worldbody>'
+            '<body><freejoint/><geom size=".1"/></body>'
+            '<body><freejoint/><geom size=".1"/></body></worldbody></mujoco>',
+            id="two-free-roots",
+        ),
+        pytest.param(
+            '<mujoco><default><geom contype="0" conaffinity="0"/></default><worldbody>'
+            '<body><freejoint/><geom size=".1"/></body>'
+            '<body><joint type="hinge"/><geom size=".1"/></body></worldbody></mujoco>',
+            id="free-and-independent-hinge",
+        ),
+    ],
 )
 def test_unported_mixed_models_are_rejected_before_device_allocation(monkeypatch, xml):
     from phymeo.backends._mujoco_tyx_runtime import MuJoCoTyxRuntime, MuJoCoTyxUnsupported

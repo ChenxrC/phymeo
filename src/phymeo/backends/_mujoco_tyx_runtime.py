@@ -200,6 +200,7 @@ class MuJoCoTyxStepReceipt:
 def _require_musa_plan(plan, model, mj):
     from .mujoco_tyx import MuJoCoTyxIssue
     from .mujoco_tyx._constraint_model import TyxConstraintModel
+    from .mujoco_tyx._floating_model import TyxFloatingModel
     from .mujoco_tyx._model import TyxModel
     from .mujoco_tyx._tree_model import TyxTreeModel
 
@@ -207,11 +208,21 @@ def _require_musa_plan(plan, model, mj):
         # compile_model has already checked the all-prismatic layout, fixed
         # mass matrix, and at most one plane/sphere normal pair.
         return
+    base = plan.base if type(plan) is TyxConstraintModel else plan
+    scalar = np.isin(model.jnt_type, (mj.mjtJoint.mjJNT_SLIDE, mj.mjtJoint.mjJNT_HINGE))
+    fixed = type(base) is TyxTreeModel and base.kind == 2 and np.all(scalar)
+    floating = (
+        type(base) is TyxFloatingModel
+        and base.kind == 3
+        and len(base.free_root_bodies) == 1
+        and np.all(scalar | (model.jnt_type == mj.mjtJoint.mjJNT_FREE))
+        and np.all(model.body_rootid[model.jnt_bodyid] == base.free_root_bodies[0])
+    )
+    if floating and plan is base:
+        return
     if (
         type(plan) is TyxConstraintModel
-        and type(plan.base) is TyxTreeModel
-        and plan.base.kind == 2
-        and np.all(np.isin(model.jnt_type, (mj.mjtJoint.mjJNT_SLIDE, mj.mjtJoint.mjJNT_HINGE)))
+        and (fixed or floating)
         and not plan.extended_contacts
         and (plan.npair or plan.nlimit or plan.nfriction)
         and np.all(np.isin(plan.pair_condim[: plan.npair], (1, 3)))
@@ -221,9 +232,9 @@ def _require_musa_plan(plan, model, mj):
         (
             MuJoCoTyxIssue(
                 "musa-domain",
-                "MUSA admits the unrestricted prismatic solver or a fixed-base scalar-joint "
-                "tree with hinge/slide soft limits, joint dry friction, or basic primitive "
-                "pyramidal contacts (condim 1/3)",
+                "MUSA admits the unrestricted prismatic solver, a single free-root scalar "
+                "tree without contact, or fixed/single-free-root scalar trees with T4 "
+                "hinge/slide limits, joint dry friction or basic pyramidal contacts (condim 1/3)",
             ),
         )
     )
@@ -232,9 +243,9 @@ def _require_musa_plan(plan, model, mj):
 class MuJoCoTyxRuntime(MuJoCoRuntime):
     """Own TYX interpret, CUDA or MUSA execution and atomic publication for sparse worlds.
 
-    MUSA executes the unrestricted prismatic route and the fixed-base scalar
-    tree's T4 solve for scalar joint limits, DOF dry friction and basic
-    primitive contacts (native pyramidal condim 1/3), separately or together.
+    MUSA executes the unrestricted prismatic route, a single unconstrained
+    floating tree, and the fixed/single-floating tree T4 solve for scalar
+    joint limits, DOF dry friction and basic primitive condim 1/3 contacts.
 
     Floating domain: one native free root and 0..29 hinge/slide joints, full
     root/joint coupling, origin world linear and local angular velocities.
@@ -400,7 +411,9 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
             device_control_host_audit="exact-channels-on-submission",
             g1_supported=False,
         )
-        if mode == "musa" and not getattr(self._plan, "constraint_contact", False):
+        if mode == "musa":
+            info.update(device_controls=False, device_control_host_audit=None)
+        if mode == "musa" and self._plan.kind == 0:
             has_contact_pair = self._plan.pair is not None
             family = "single-slide" if self._plan.nv == 1 else "prismatic"
             info.update(
@@ -416,8 +429,20 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                 ),
                 friction="none",
                 limits="unsupported",
-                device_controls=False,
-                device_control_host_audit=None,
+            )
+        if (
+            mode == "musa"
+            and self._plan.kind == 3
+            and not getattr(self._plan, "constraint_contact", False)
+        ):
+            info.update(
+                contact_law="none",
+                contact_dimensions=(),
+                friction="none",
+                limits="none",
+                joint_limits_supported=False,
+                scalar_joint_limits_supported=False,
+                dry_friction_supported=False,
             )
         if getattr(self._plan, "normal_contact", False):
             info.update(
@@ -457,7 +482,7 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                 mixed_articulated_constraints_supported=self._plan.kind in (2, 3),
                 floating_mixed_constraints_supported=self._plan.kind == 3,
                 # Compatibility alias: model-domain support, not a trajectory claim.
-                g1_supported=self._plan.kind == 3,
+                g1_supported=self._plan.kind == 3 and mode != "musa",
             )
             if mode == "musa":
                 dimensions = self._plan.pair_condim[: self._plan.npair]
@@ -469,8 +494,6 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                     scalar_joint_limits_supported=False,
                     dry_friction_supported=False,
                     friction="pyramidal-condim1-3-only",
-                    device_controls=False,
-                    device_control_host_audit=None,
                 )
             self._capabilities = MappingProxyType(info)
 
@@ -603,8 +626,10 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                 articulation_root_body_ids=tree_roots,
                 free_root_body_ids=self._plan.free_root_bodies,
                 max_generalized_velocities=35,
-                max_generalized_positions=45,
+                max_generalized_positions=36 if mode == "musa" else 45,
             )
+            if mode == "musa":
+                info["articulation_root_scope"] = "single-free-root"
             if len(tree_roots) > 1:
                 info["domain"] = info["domain"].replace("free-root-", "forest-")
                 info["g1_supported"] = False

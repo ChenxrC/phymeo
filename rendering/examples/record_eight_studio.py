@@ -27,6 +27,14 @@ from phymeo_rendering.scene import FrameKey, NodePose, SceneFrame
 
 OVERVIEW_SIZE = (1440, 810)
 CAMERA_SIZE = (640, 480)
+ROUND_PART_POSE = look_at((1.32,-.22,.31), (.23,.025,.09), (0.,0.,1.))
+
+
+def station_camera(frame, key, end_on, size=CAMERA_SIZE):
+    """Use the same optics in the interactive viewer and the studio films."""
+    w, h = size
+    pose = ROUND_PART_POSE if key in end_on else FIXED_POSE
+    return Camera('station', frame.key, pose, w, h, .96*w, .96*w, w/2, h/2, .012, 4.)
 
 
 def renderer(args, lighting):
@@ -107,7 +115,6 @@ def record(args, motion):
     scenes, nodes, names, objects = build_scenes(motion, args.motion / 'meshes')
     end_on = {row['world'] for row in motion.report['worlds'] if row.get('task', {}).get('worktop_contact')}
     combined = build_eight_studio(scenes, nodes, motion.models, args.motion / 'meshes' / 'overview', end_on=end_on)
-    round_part_camera = look_at((1.32,-.22,.31), (.23,.025,.09), (0.,0.,1.))
     total = len(motion.ticks)
     checks = {0, total//4, total//2, 3*total//4, total-1}
     lift = lift_checkpoint(motion)
@@ -129,9 +136,7 @@ def record(args, motion):
             wide, wide_ids = capture(hero, full, combined.camera(full.key, *OVERVIEW_SIZE), i in checks)
             tiles, tile_ids = {}, {}
             for key, frame in frames.items():
-                w, h = CAMERA_SIZE
-                camera_pose = round_part_camera if key in end_on else FIXED_POSE
-                cam = Camera('station', frame.key, camera_pose, w, h, .96*w, .96*w, w/2, h/2, .012, 4.)
+                cam = station_camera(frame, key, end_on)
                 tiles[key], tile_ids[key] = capture(closeups[key], frame, cam, i in checks)
             if i in checks:
                 visible[i] = visibility(wide_ids, tile_ids, combined, objects, scenes)

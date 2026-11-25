@@ -1,0 +1,48 @@
+{
+  "observed_intervals": 900,
+  "wall_s": 30.121566899993923,
+  "first_tick": 0,
+  "last_observed_tick": 30000,
+  "last_presented_tick": 30000,
+  "presented_frames": 901,
+  "display_fps": 29.878923728904077,
+  "interval_ms_p50": 33.27315000933595,
+  "interval_ms_p95": 39.594254989060566,
+  "interval_ms_p99": 43.30969303613528,
+  "fraction_within_33_33_ms": 0.5122222222222222,
+  "min_1second_block_fps": 29.15776625740695,
+  "capture_counts": {
+    "0": 901,
+    "1": 0,
+    "2": 0,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0,
+    "7": 0,
+    "8": 0
+  },
+  "endpoint_error_by_world": {
+    "41": 0.0,
+    "7": 0.0,
+    "305": 0.0,
+    "11": 0.0,
+    "203": 0.0,
+    "59": 0.0,
+    "997": 0.0,
+    "2": 0.0
+  },
+  "diagnostics": {
+    "0": {
+      "errors": 0,
+      "device": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "msaa": 4,
+      "samples": 16,
+      "shadows": 901
+    }
+  },
+  "source_rgb_size": [
+    1440,
+    810
+  ]
+}

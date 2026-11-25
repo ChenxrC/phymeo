@@ -420,3 +420,56 @@ def test_unported_mixed_models_are_rejected_before_device_allocation(monkeypatch
     monkeypatch.setattr(MuJoCoTyxRuntime, "_build_device", forbidden)
     with pytest.raises(MuJoCoTyxUnsupported, match="musa-domain"):
         MuJoCoRuntime(compile_source(xml), mode="musa")
+
+
+def test_joint_limit_overflow_preserves_last_accepted_batch(tmp_path):
+    from test_mujoco_tyx_constraints import joint_xml
+
+    # The upper-limit margin begins at 0.19 rad. Only world 4 enters it
+    # during the first accepted step. Both worlds always have one dry row.
+    starts = {4: MuJoCoInitialState([0.1895], [1.5]), 91: MuJoCoInitialState([0.0], [0.0])}
+    compilation = compile_source(joint_xml("hinge", dry=0.2))
+    for capacity in (1, 2):
+        with MuJoCoRuntime(
+            compilation,
+            mode="musa",
+            world_keys=tuple(starts),
+            initial_states=starts,
+            contact_capacity=0,
+            constraint_capacity=capacity,
+            cache_root=tmp_path / "compile",
+        ) as runtime:
+            assert all(runtime.step(runtime.timestep).values())
+            before = runtime.integration_snapshot()
+            assert before[4].q.item() > 0.19 and abs(before[91].q.item()) < 0.19
+            for state in before.values():
+                assert state.tick == 1 and [
+                    r.constraint_type for r in state.last_step.constraints
+                ] == [1]
+                assert not state.last_step.contacts
+            if capacity == 2:
+                assert all(runtime.step(runtime.timestep).values())
+                after = runtime.integration_snapshot()
+                assert all(s.tick == 2 for s in after.values())
+                assert [r.constraint_type for r in after[4].last_step.constraints] == [1, 3]
+                assert [r.constraint_type for r in after[91].last_step.constraints] == [1]
+                continue
+            device = runtime.musa_device_report()
+            with pytest.raises(PhysicsStepFailure) as result:
+                runtime.step(runtime.timestep)
+            assert result.value.acceptance_known
+            assert result.value.accepted_worlds == dict.fromkeys(starts, False)
+            assert "capacity" in str(result.value.__cause__)
+            after = runtime.musa_device_report()
+            assert (after["active_bank"], after["revision"]) == (
+                device["active_bank"],
+                device["revision"],
+            )
+            for key, state in runtime.integration_snapshot().items():
+                assert (state.tick, state.time) == (before[key].tick, before[key].time)
+                np.testing.assert_array_equal(state.q, before[key].q)
+                np.testing.assert_array_equal(state.v, before[key].v)
+                assert [r.constraint_type for r in state.last_step.constraints] == [1]
+                np.testing.assert_array_equal(
+                    state.last_step.qfrc_constraint, before[key].last_step.qfrc_constraint
+                )

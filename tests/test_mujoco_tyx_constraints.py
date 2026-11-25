@@ -15,6 +15,11 @@ from phymeo.backends._mujoco_tyx_runtime import MuJoCoTyxRuntime
 from phymeo.backends.mujoco_runtime import MuJoCoControl, MuJoCoInitialState
 
 MODES = normal.MODES
+MUSA_MARKS = (
+    pytest.mark.musa,
+    pytest.mark.skipif(os.environ.get("PHYMEO_TEST_MUSA") != "1", reason="requires a MUSA GPU"),
+)
+MODES_WITH_MUSA = (*MODES, pytest.param("musa", marks=MUSA_MARKS))
 FORCE_TOL = normal.FORCE_TOL
 ROW_TOL = dict(rtol=5e-4, atol=4e-4)
 FLOOR = '<geom name="floor" type="plane" size="2 2 .1"/>'
@@ -778,13 +783,7 @@ def test_native_minmu_authored_zero_is_not_condim1(mode, tmp_path):
         assert len(after.last_step.constraints) == 4
 
 
-@pytest.mark.parametrize(
-    "mode",
-    (*MODES, pytest.param("musa", marks=(
-        pytest.mark.musa,
-        pytest.mark.skipif(os.environ.get("PHYMEO_TEST_MUSA") != "1", reason="requires a MUSA GPU"),
-    ))),
-)
+@pytest.mark.parametrize("mode", MODES_WITH_MUSA)
 @pytest.mark.parametrize("axis,speed", [(0, -0.4), (0, 0.4), (1, -0.4), (1, 0.4)])
 def test_both_signed_sliding_directions(mode, axis, speed, tmp_path):
     import json
@@ -1028,7 +1027,7 @@ def test_finite_surface_full_manifold_friction(mode, shape, tmp_path):
     )
 
 
-@pytest.mark.parametrize("mode", MODES)
+@pytest.mark.parametrize("mode", MODES_WITH_MUSA)
 @pytest.mark.parametrize("kind", ["hinge", "slide"])
 @pytest.mark.parametrize("side", [-1, 1])
 @pytest.mark.parametrize("position", [0.195, 0.205])
@@ -1069,7 +1068,7 @@ def test_both_joint_limit_sides_survive_overlapping_margins(mode, tmp_path):
     np.testing.assert_allclose(rows[0].jacobian, -rows[1].jacobian, rtol=0, atol=0)
 
 
-@pytest.mark.parametrize("mode", MODES)
+@pytest.mark.parametrize("mode", MODES_WITH_MUSA)
 @pytest.mark.parametrize("kind", ["hinge", "slide"])
 @pytest.mark.parametrize(
     "load,velocity", [(-0.1, 0), (0.1, 0), (-0.3, 0), (0.3, 0), (0, -0.4), (0, 0.4)]
@@ -1242,8 +1241,16 @@ def test_oblique_plane_frame_full_friction_wrench(mode, tmp_path):
     assert any(np.linalg.norm(c.wrench_contact_frame[3:]) > 1e-6 for c in after.last_step.contacts)
 
 
-@pytest.mark.parametrize("mode", MODES)
-@pytest.mark.parametrize("dim", [3, 6])
+@pytest.mark.parametrize(
+    "dim,mode",
+    (
+        (3, "interpret"),
+        pytest.param(3, "cuda", marks=pytest.mark.cuda),
+        pytest.param(3, "musa", marks=MUSA_MARKS),
+        (6, "interpret"),
+        pytest.param(6, "cuda", marks=pytest.mark.cuda),
+    ),
+)
 def test_same_input_mixed_classes_share_one_physical_solve(mode, dim, tmp_path):
     def controls(model, time):
         return packet(model, np.array([0.03, -0.981]))

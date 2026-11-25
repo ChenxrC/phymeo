@@ -1,6 +1,6 @@
 # 在摩尔线程 GPU 上运行 Phymeo 关节动力学与接触
 
-`MuJoCoRuntime(..., mode="musa")` 使用 CPU MuJoCo 编译模型，然后由摩尔线程 GPU 执行 Phymeo 的 Tyx 内核。全移动关节模型可走恒质量路径。固定基座、由移动或转动关节构成的树也可运行基本几何体的金字塔接触求解，接触维数支持 `condim=1`（法向）和 `condim=3`（法向及两个切向）。同批世界共用模型，各自保存初态、控制和接触状态。
+`MuJoCoRuntime(..., mode="musa")` 使用 CPU MuJoCo 编译模型，然后由摩尔线程 GPU 执行 Phymeo 的 Tyx 内核。全移动关节模型可走恒质量路径。固定基座、由移动或转动关节构成的树可共同求解关节软限位、关节干摩擦和基本几何体的金字塔接触。接触维数支持 `condim=1`（法向）和 `condim=3`（法向及两个切向）。没有接触几何对的模型也可直接求解关节约束。同批世界共用模型，各自保存初态、控制和接触状态。
 
 ## 运行
 
@@ -114,4 +114,31 @@ with MuJoCoRuntime(model, mode="musa", world_keys=tuple(starts), initial_states=
 
 另一项测试使用两条各含转动和移动关节的分支，让两个可动球形末端相碰。四个自由度连续推进 16 步，两侧关节均收到反作用，完整状态和接触载荷按步与 CPU 对照。容量测试在一个世界接触、另一个世界分离时，将最多四条摩擦约束行限制为三条，确认整批拒绝且两边都保留上一状态。
 
-这里实测的几何组合为球–平面和球–球。固定基座入口仍排除关节限位、关节干摩擦和扩展接触几何。浮动基座、扭转或滚动接触摩擦（`condim=4/6`）及整机 G1 步态尚未在 MUSA 开放。
+这里实测的几何组合为球–平面和球–球。扩展接触几何、浮动基座、扭转或滚动接触摩擦（`condim=4/6`）及整机 G1 步态尚未在 MUSA 开放。
+
+## 关节端挡与干摩擦
+
+从 MJCF 的 `range`、`limited`、`margin` 和 `frictionloss` 声明关节约束。转动关节的干摩擦力矩单位为 N·m，移动关节的干摩擦力单位为 N。接近端挡时，软限位按 MuJoCo 的 `margin` 可以提前产生反力。用 `sim.integration_snapshot()[world].last_step.constraints` 读取实际参与该步求解的行，用同一记录的 `qfrc_constraint` 读取合成后的关节广义力。
+
+同一套原生 Tyx 约束内核在 S4000 上通过了 16 个上下限用例、12 个干摩擦用例和 1 个球–平面接触与关节约束同时生效的用例。另外验证了整批回滚：两个世界先成功推进一步，随后仅一个世界进入限位区。容量设为一行时，两个世界都保留已接受的步；允许两行时，两者正常推进。
+
+```bash
+export PHYMEO_TEST_MUSA=1
+python -m pytest -v --require-tyx tests/test_mujoco_tyx_musa_joint_arm.py
+python -m pytest -v --require-tyx -m musa \
+  tests/test_mujoco_tyx_constraints.py::test_joint_limit_inside_margin_and_outside_bounds \
+  tests/test_mujoco_tyx_constraints.py::test_dry_friction_bounded_force_with_viscous_damping \
+  tests/test_mujoco_tyx_constraints.py::test_same_input_mixed_classes_share_one_physical_solve \
+  tests/test_mujoco_tyx_musa.py::test_joint_limit_overflow_preserves_last_accepted_batch
+```
+
+### 一台双关节机械臂，两个独立世界
+
+测试用肩部转动关节串联伸缩关节，两个电机分别驱动，无重力、无外部接触。两个世界从肩角 ±0.165 rad 静止起步，向相反的端挡驱动，在 140 ms 同时反向，再推进到 280 ms。关节范围为 ±0.2，限位裕量为 0.01，分别使用转动轴的 rad 和伸缩轴的 m。表中时间以该步计算约束的步首为准，力矩取绝对值。
+
+| 肩部初始驱动力矩 | 首次限位承载 | 峰值限位反力矩 | 反向后退出限位区 |
+| ---: | ---: | ---: | ---: |
+| +1.60 N·m | 57 ms | 9.151 N·m | 151 ms |
+| −1.36 N·m | 63 ms | 8.255 N·m | 153 ms |
+
+两条轨迹的肩部干摩擦力矩峰值均为 0.200 N·m，伸缩轴干摩擦力峰值均为 0.200 N，每个世界的两条轴全程干摩擦功均为负。560 份步记录逐步比对独立 CPU MuJoCo 轨迹，包括关节位移、速度、逐行约束及广义反力、末端位置和姿态。末端位置各分量最大绝对差低于 4.0 × 10⁻⁸ m。完整轨迹与两世界摘要由机械臂测试写入 pytest 临时目录的 `joint-arm-traces.json` 与 `joint-arm-summary.json`。

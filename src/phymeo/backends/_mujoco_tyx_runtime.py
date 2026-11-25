@@ -212,8 +212,8 @@ def _require_musa_plan(plan, model, mj):
         and type(plan.base) is TyxTreeModel
         and plan.base.kind == 2
         and np.all(np.isin(model.jnt_type, (mj.mjtJoint.mjJNT_SLIDE, mj.mjtJoint.mjJNT_HINGE)))
-        and not (plan.extended_contacts or plan.nlimit or plan.nfriction)
-        and plan.npair
+        and not plan.extended_contacts
+        and (plan.npair or plan.nlimit or plan.nfriction)
         and np.all(np.isin(plan.pair_condim[: plan.npair], (1, 3)))
     ):
         return
@@ -222,7 +222,8 @@ def _require_musa_plan(plan, model, mj):
             MuJoCoTyxIssue(
                 "musa-domain",
                 "MUSA admits the unrestricted prismatic solver or a fixed-base scalar-joint "
-                "tree with basic primitive pyramidal contacts (condim 1/3), without joint rows",
+                "tree with hinge/slide soft limits, joint dry friction, or basic primitive "
+                "pyramidal contacts (condim 1/3)",
             ),
         )
     )
@@ -232,7 +233,8 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
     """Own TYX interpret, CUDA or MUSA execution and atomic publication for sparse worlds.
 
     MUSA executes the unrestricted prismatic route and the fixed-base scalar
-    tree's basic primitive contact route with native pyramidal condim 1/3.
+    tree's T4 solve for scalar joint limits, DOF dry friction and basic
+    primitive contacts (native pyramidal condim 1/3), separately or together.
 
     Floating domain: one native free root and 0..29 hinge/slide joints, full
     root/joint coupling, origin world linear and local angular velocities.
@@ -461,7 +463,11 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                 dimensions = self._plan.pair_condim[: self._plan.npair]
                 info.update(
                     contact_dimensions=tuple(sorted(set(map(int, dimensions)))),
-                    limits="unsupported",
+                    contact_law=MIXED_LAW if self._plan.npair else "none",
+                    limits="none",
+                    joint_limits_supported=False,
+                    scalar_joint_limits_supported=False,
+                    dry_friction_supported=False,
                     friction="pyramidal-condim1-3-only",
                     device_controls=False,
                     device_control_host_audit=None,
@@ -542,13 +548,14 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
             self._capabilities = MappingProxyType(info)
 
         if (
-            np.any(self._model.jnt_type == self._mj.mjtJoint.mjJNT_BALL)
+            (mode == "musa" or np.any(self._model.jnt_type == self._mj.mjtJoint.mjJNT_BALL))
             and getattr(self._plan, "constraint_contact", False)
             and (self._plan.nfriction or self._plan.nlimit)
         ):
             # A T4 wrapper also represents joint-only models. Report its actual
             # declared row families without borrowing the contact-only labels.
             family = "free" if self._plan.kind == 3 else "fixed"
+            joints = "scalar" if mode == "musa" else "ball"
             rows = "mixed-contact-joint-constraints" if self._plan.npair else "joint-constraints"
             activation = "-filterexact" if hasattr(self._plan, "activation") else ""
             dimensions = tuple(sorted(set(map(int, self._plan.pair_condim[: self._plan.npair]))))
@@ -557,7 +564,7 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                 for slot in self._plan.slot_ids[: self._plan.nslot]
             )
             info.update(
-                domain=f"{family}-ball-{rows}{activation}-v1",
+                domain=f"{family}-{joints}-{rows}{activation}-v1",
                 contact_dimensions=dimensions,
                 limits="native-scalar-soft-constraints" if self._plan.nlimit else "none",
                 joint_limits_supported=bool(self._plan.nlimit),

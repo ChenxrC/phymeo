@@ -170,6 +170,7 @@ def _load_one(source, folder, ordinal):
     origin = (low + high) * .5
     origin[2] = low[2]
     node = 'home-' + group
+    glazed_plate = group == '003_plate'
     meshes, materials, instances = [], [], []
     material_cache = {}
     stats = []
@@ -206,7 +207,11 @@ def _load_one(source, folder, ordinal):
         h, w = metal.shape
         coord = np.floor((uvs.mean(axis=1) % 1.) * [w, h]).astype(int)
         metallic = metal[coord[:, 1], coord[:, 0]]
-        slots = np.rint(metallic * 7).astype(int) * 2 + stable
+        # This showcase's glazed ceramic plate is dielectric. Preserve its
+        # continuous albedo, roughness and normal maps. Applying the generic
+        # centroid approximation here produces visible triangular patches.
+        metal_levels = np.zeros(len(tri), dtype=int) if glazed_plate else np.rint(metallic * 7).astype(int)
+        slots = metal_levels * 2 + stable
         for slot in np.unique(slots):
             selected = slots == slot
             refs, reindex = np.unique(tri[selected].ravel(), return_inverse=True)
@@ -214,7 +219,8 @@ def _load_one(source, folder, ordinal):
             if len(refs) > 65536 or selected.sum() > 65536:
                 raise ValueError(f'{key}: primitive exceeds native mesh-file capacity')
             mesh = write_mesh(folder, key, positions[refs], norm[refs], reindex.reshape(-1, 3), texcoords=uv[refs])
-            average = float(np.average(metallic[selected], weights=np.linalg.norm(face_vectors[selected], axis=1)))
+            average = 0. if glazed_plate else float(
+                np.average(metallic[selected], weights=np.linalg.norm(face_vectors[selected], axis=1)))
             mat = TexturedMaterial(key+'-pbr', color_factor, average, rough_factor,
                                    color, rough, normal_map if slot % 2 else None)
             meshes.append(mesh)
@@ -227,9 +233,16 @@ def _load_one(source, folder, ordinal):
     details = dict(group=group, variant=source.parent.name, source=str(source), source_sha256=sha256(raw).hexdigest(),
                    metadata=str(metadata), vendor_scale=vendor['scale'], bounds_m=bounds, nodes=len(doc['nodes']),
                    material_maps=[entry[-1] for entry in material_cache.values()], parts=stats,
-                   metallic='source packed B sampled at triangle centroid, up to eight area-weighted material levels',
+                   metallic=('uniform dielectric metalness 0 for this glazed ceramic plate' if glazed_plate else
+                             'source packed B sampled at triangle centroid, up to eight area-weighted material levels'),
                    uv_origin='glTF top left', frame='source node transforms then vendor scale then Y-up to Z-up',
                    tangent_frame='native UV derivatives; original normals on singular UV faces')
+    if glazed_plate:
+        details['material_override'] = dict(
+            surface='glazed ceramic', property='metallic', value=0.,
+            source='original packed B preserved in the cached image',
+            retained=['all nonzero-area triangles', 'base color texture', 'roughness texture G', 'normal texture'],
+            reason='avoid false triangular metallicity transitions from per-face quantization')
     return HomeAsset(group, source, node, bounds, tuple(meshes), tuple(materials), tuple(instances), details)
 
 

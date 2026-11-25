@@ -128,8 +128,9 @@ def prepare_entry(device):
     old, new = device.active, 1 - device.active
     plan, cap = device.plan, device.capacities[0]
     na = _na(plan)
-    with device.tx.use_runtime(device.runtime):
-        kernels.state(
+    with device.runtime_scope():
+        device.launch_kernel(
+            device.musa_entry_state if device.mode == "musa" else kernels.state,
             device.nworld,
             max(8, int(plan.nq)),
             max(8, int(plan.nv)),
@@ -143,7 +144,6 @@ def prepare_entry(device):
             device.entry_meta[old],
             *(getattr(device, name)[new] for name in ENTRY_FIELDS),
             device.status,
-            mode=device.mode,
         )
         device.counts["completed_kernels"] += 1
         if getattr(plan, "area_friction_laws", ()):

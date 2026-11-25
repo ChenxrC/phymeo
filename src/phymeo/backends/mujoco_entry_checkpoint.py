@@ -44,7 +44,7 @@ def _entry_binding(runtime):
 
 
 def _accepted_entry(device):
-    with device.tx.use_runtime(device.runtime):
+    with device.runtime_scope():
         device.runtime.sync()
         device.counts["synchronizations"] += 1
         return {name: device._get(banks[device.active]) for name, banks in device.entry.items()}
@@ -157,7 +157,7 @@ def _validate_entry(runtime, record, ticks, receipts, clock):
 
 def _write_entry(device, record):
     # Allowed only at explicit state restoration boundaries, not per-step packing.
-    with device.tx.use_runtime(device.runtime):
+    with device.runtime_scope():
         for name, value in record.items():
             device._put(device.entry[name][device.active], value)
         device.runtime.sync()

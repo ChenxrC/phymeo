@@ -198,7 +198,10 @@ class MuJoCoTyxStepReceipt:
 
 
 class MuJoCoTyxRuntime(MuJoCoRuntime):
-    """Own TYX interpret/CUDA execution and atomic publication for sparse worlds.
+    """Own TYX interpret, CUDA or MUSA execution and atomic publication for sparse worlds.
+
+    MUSA currently admits the original one-slide constant-mass route with no
+    contact pairs, auxiliary constraints or device control imports.
 
     Floating domain: one native free root and 0..29 hinge/slide joints, full
     root/joint coupling, origin world linear and local angular velocities.
@@ -239,6 +242,8 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
     ):
         if not isinstance(area_pressure_pairs, tuple):
             raise ValueError("area_pressure_pairs must be a tuple")
+        if mode == "musa" and (area_pressure_pairs or area_friction_laws):
+            raise ValueError("MUSA does not support area-pressure or area-friction declarations")
         from .area_friction_law import capture_pair_laws
 
         self._area_friction_laws = capture_pair_laws(area_pressure_pairs, area_friction_laws)
@@ -253,8 +258,8 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
         self._resource_budget = resource_budget
         if implementation not in (None, "tyx"):
             raise ValueError("MuJoCoTyxRuntime requires implementation='tyx'")
-        if mode not in ("interpret", "cuda"):
-            raise ValueError("MuJoCo TYX mode must be interpret or cuda")
+        if mode not in ("interpret", "cuda", "musa"):
+            raise ValueError("MuJoCo TYX mode must be interpret, cuda or musa")
         self._contact_capacity = _capacity(contact_capacity, "contact_capacity")
         self._constraint_capacity = _capacity(constraint_capacity, "constraint_capacity")
         self._mode, self._cache_root = mode, cache_root
@@ -276,6 +281,21 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
             )
         else:
             self._plan = compile_model(self._mj, self._model)
+        if mode == "musa":
+            from .mujoco_tyx import MuJoCoTyxIssue
+            from .mujoco_tyx._model import TyxModel
+
+            if not (
+                type(self._plan) is TyxModel
+                and self._plan.kind == 0
+                and self._plan.nq == self._plan.nv == self._model.njnt == 1
+                and self._model.jnt_type[0] == self._mj.mjtJoint.mjJNT_SLIDE
+                and not self._model.jnt_limited[0]
+                and self._plan.pair is None
+            ):
+                raise MuJoCoTyxUnsupported(
+                    (MuJoCoTyxIssue("musa-domain", "MUSA requires one unrestricted slide without contact"),)
+                )
         if getattr(self._plan, "constraint_contact", False):
             if self._contact_capacity > 128 or self._constraint_capacity > 512:
                 raise ValueError("T4 contact/constraint capacities cannot exceed 128/512")
@@ -313,7 +333,7 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
             backend=f"mujoco-tyx-{mode}",
             mode=mode,
             implementation="tyx",
-            gpu=mode == "cuda",
+            gpu=mode in ("cuda", "musa"),
             native_model=False,
             contact_law=LAW,
             domain=(
@@ -360,6 +380,14 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
             device_control_host_audit="exact-channels-on-submission",
             g1_supported=False,
         )
+        if mode == "musa":
+            info.update(
+                domain="single-slide-no-contact-v1",
+                contact_law="none",
+                numerical_solver="constant-mass-damped-euler",
+                device_controls=False,
+                device_control_host_audit=None,
+            )
         if getattr(self._plan, "normal_contact", False):
             info.update(
                 normal_candidate_slots=len(self._plan.slot_ids),
@@ -620,7 +648,7 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
         return MappingProxyType({**self._device.counts, **self._extra_counts})
 
     def resource_snapshot(self):
-        """CUDA array payload only; native contexts and HOST peaks remain unknown."""
+        """Solver-bank array payload only; native contexts and HOST peaks remain unknown."""
         with self._lock:
             device = getattr(self, "_device", None)
             return MappingProxyType(
@@ -634,9 +662,23 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                     if self._resource_budget is None
                     else self._resource_budget.snapshot(),
                     retained_owner_count=len(self._checkpoint_retired),
-                    completeness="Solver-bank CUDA payload only; HOST/native/context/JIT/external controls/workspaces unknown",
+                    completeness=(
+                        "Solver-bank MUSA payload only; HOST/native/context/JIT/external controls/workspaces unknown"
+                        if self._mode == "musa"
+                        else "Solver-bank CUDA payload only; HOST/native/context/JIT/external controls/workspaces unknown"
+                    ),
                 )
             )
+
+    def musa_device_report(self):
+        """Return detached driver and launch counters for the active MUSA bank owner."""
+        with self._lock:
+            self._check_open()
+            if self._mode != "musa":
+                raise ValueError("musa_device_report requires mode='musa'")
+            report = copy.deepcopy(dict(self._device.runtime.report()))
+            report.update(active_bank=self._device.active, revision=self._checkpoint_revision)
+            return report
 
     def _initial_data(self, packet):
         # Preserve the original FP64 declaration checks and native initial
@@ -839,6 +881,8 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
         with self._lock:
             self._check_open()
             try:
+                if self._mode == "musa":
+                    raise ValueError("MUSA accepts host MuJoCoControl inputs; device control import is unavailable")
                 return submit(
                     self, (ctrl, qfrc_applied, xfrc_applied), expected_revision, producer_stream
                 )
@@ -1048,18 +1092,18 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                 from .mujoco_tyx._entry_storage import prepare_entry
 
                 prepare_entry(self._device)
-                with self._device.tx.use_runtime(self._device.runtime):
+                with self._device.runtime_scope():
                     self._device.runtime.sync()
                     self._device.counts["synchronizations"] += 1
                 result = self._device.download()
-                with self._device.tx.use_runtime(self._device.runtime):
+                with self._device.runtime_scope():
                     result["entry_meta"] = self._device._get(
                         self._device.entry["entry_meta"][1 - self._device.active]
                     )
                 if self._area_pressure_pairs:
                     from .mujoco_area_pressure_device import AREA_FIELDS
 
-                    with self._device.tx.use_runtime(self._device.runtime):
+                    with self._device.runtime_scope():
                         for name in AREA_FIELDS:
                             result[name] = self._device._get(
                                 self._device.entry[name][1 - self._device.active]
@@ -1204,7 +1248,7 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                         source_solver=self._plan.source_solver,
                         numerical_solver=(
                             self._capabilities["numerical_solver"]
-                            if self._area_friction_laws
+                            if self._area_friction_laws or self._mode == "musa"
                             else "pyramidal-box-active-set-v1"
                             if getattr(self._plan, "constraint_contact", False)
                             else "normal-dual-active-set-v1"
@@ -1597,6 +1641,8 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
 
         with self._lock:
             self._check_open()
+            if self._mode == "musa":
+                raise ValueError("MUSA does not support resident task workspaces")
             return MuJoCoTyxTaskWorkspace(self, spec, cache_root=cache_root)
 
     def _refresh_task_workspace(self, workspace, expected_revision):
@@ -1634,7 +1680,7 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
             ).payload_bytes
             admission = (
                 self._resource_budget.admit(2 * size)
-                if self._resource_budget is not None and self._mode == "cuda"
+                if self._resource_budget is not None and self._mode in ("cuda", "musa")
                 else nullcontext()
             )
             with admission:

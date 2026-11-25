@@ -4,6 +4,8 @@
 
 当前能力与尚缺模块见[2026-11-11功能全景](docs/development/phymeo-newton-panorama-2026-11-11.md)和[已实现连接图](docs/architecture/phymeo-newton-parity-2026-11-11.html)。新接口入口：[统一场景/CPU MuJoCo编译](docs/architecture/unified-scene-compilation.md)、[物理中途恢复](docs/development/mujoco-tyx-checkpoint.md)、[设备观测/奖励](docs/development/mujoco-tyx-task-workspace.md)、[设备控制输入](docs/development/mujoco-tyx-device-controls.md)、[resident设备接触](docs/development/resident-device-contact.md)。各页明确区分已验范围、待验组合与安装包状态。
 
+摩尔线程 GPU 的动力学入口、可运行示例和 S4000 逐步对照结果见[在 MUSA 上运行双世界滑块](docs/development/mujoco-tyx-musa-slider.md)。
+
 ## 从一个可运行的场景开始
 
 在已安装本地 Phymeo 的环境中，从仓库根目录执行下列示例。第一个运行 Panda 抓起边长 50 mm、质量 100 g 的自由立方体，在持载时接受新的放置距离，然后松指。第二个用刚体和可动布面构建同一场景，记录四个物理步的接触力和深度观测。输出路径请选择新文件。

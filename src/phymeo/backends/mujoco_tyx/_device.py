@@ -1,5 +1,6 @@
 """Owned TYX resident buffers and atomic candidate bank; no host physics step."""
 
+from contextlib import nullcontext
 from types import MappingProxyType
 
 import numpy as np
@@ -44,11 +45,26 @@ class TyxDevice:
         )
         self._prepare_allocations(plan, self.nworld, nbody, capacities, resource_budget)
         try:
-            self.runtime = tx.Runtime(
-                backend="cuda" if mode == "cuda" else "cpu", cache_root=cache_root
-            )
+            if mode == "musa":
+                from ..tyx_musa import MusaRuntime
+                from ..tyx_musa.compiler import MusaKernel
+                from . import _entry_kernels
+
+                self.runtime = MusaRuntime()
+            else:
+                self.runtime = tx.Runtime(
+                    backend="cuda" if mode == "cuda" else "cpu", cache_root=cache_root
+                )
             self.resources.set_runtime(self.runtime)
-            with tx.use_runtime(self.runtime):
+            if mode == "musa":
+                arch = self.runtime.report()["arch"]
+                self.kernels = tuple(
+                    MusaKernel(kernel, cache_root=cache_root, arch=arch) for kernel in self.kernels
+                )
+                self.musa_entry_state = MusaKernel(
+                    _entry_kernels.state, cache_root=cache_root, arch=arch
+                )
+            with self.runtime_scope():
                 for name in (
                     "matrices",
                     "vectors",
@@ -92,13 +108,13 @@ class TyxDevice:
         self._shared_resource_budget = resource_budget is not None
         self._allocation_budget = resource_budget
         self._allocation_reservation = None
-        if self.mode == "cuda":
+        if self.mode in ("cuda", "musa"):
             if self._allocation_budget is None:
                 self._allocation_budget = MuJoCoTyxResourceBudget(
                     self.allocation_manifest.payload_bytes
                 )
             self._allocation_reservation = self._allocation_budget.reserve(
-                self.allocation_manifest.payload_bytes
+                self.allocation_manifest.payload_bytes, backend=self.mode
             )
         try:
             self.resources = DeviceResources(self._allocation_reservation)
@@ -169,7 +185,11 @@ class TyxDevice:
         return MappingProxyType(
             dict(
                 schema="mujoco-tyx-device-allocation-v1",
-                scope="registered-cuda-array-payload-only",
+                scope=(
+                    "registered-musa-array-payload-only"
+                    if self.mode == "musa"
+                    else "registered-cuda-array-payload-only"
+                ),
                 mode=self.mode,
                 manifest=self.allocation_manifest,
                 manifest_payload_bytes=self.allocation_manifest.payload_bytes,
@@ -199,7 +219,7 @@ class TyxDevice:
             raise RuntimeError("TYX buffers require a declared allocation")
         if self.mode == "interpret":
             return value.copy()
-        result = self.tx.cuda_array(value)
+        result = self.runtime.from_numpy(value) if self.mode == "musa" else self.tx.cuda_array(value)
         self.resources.add_buffer(result)
         entry = self._allocation_entry
         if (
@@ -207,7 +227,7 @@ class TyxDevice:
             or np.dtype(result.dtype) != np.dtype(entry.dtype)
             or result.nbytes != entry.nbytes
         ):
-            raise RuntimeError("CUDA allocation differs from its manifest")
+            raise RuntimeError(f"{self.mode.upper()} allocation differs from its manifest")
         self.counts["device_allocations"] += 1
         self.counts["static_uploaded_bytes"] += value.nbytes
         return result
@@ -215,7 +235,7 @@ class TyxDevice:
     def _put(self, buffer, value):
         if self.mode == "interpret":
             np.copyto(buffer, value)
-        elif isinstance(value, self.tx.CudaArray):
+        elif self.mode == "cuda" and isinstance(value, self.tx.CudaArray):
             buffer.copy_from_device(value)
             self.counts["device_control_d2d_bytes"] = (
                 self.counts.get("device_control_d2d_bytes", 0) + value.nbytes
@@ -234,14 +254,25 @@ class TyxDevice:
         self.counts["downloaded_bytes"] += result.nbytes
         return result
 
+    def runtime_scope(self):
+        # MUSA owns an explicit stream. TYX interpret and CUDA use the current runtime.
+        return nullcontext() if self.mode == "musa" else self.tx.use_runtime(self.runtime)
+
+    def launch_kernel(self, kernel, *args):
+        if self.mode == "musa":
+            self.runtime.launch(kernel, *args)
+        else:
+            kernel(*args, mode=self.mode)
+
     def advance(self, controls, applied, body_force):
         plan = self.plan
         old, new = self.active, 1 - self.active
-        with self.tx.use_runtime(self.runtime):
+        with self.runtime_scope():
             self._put(self.controls, controls)
             self._put(self.applied, applied)
             self._put(self.body_force, body_force)
-            self.kernels[old](
+            self.launch_kernel(
+                self.kernels[old],
                 self.nworld,
                 plan.kind,
                 plan.nq,
@@ -276,7 +307,6 @@ class TyxDevice:
                 self.constraint,
                 self.rows,
                 self.status,
-                mode=self.mode,
             )
             self.counts["completed_kernels"] += 1
             self.runtime.sync()
@@ -284,7 +314,7 @@ class TyxDevice:
 
     def download(self):
         target = 1 - self.active
-        with self.tx.use_runtime(self.runtime):
+        with self.runtime_scope():
             return {
                 name: self._get(value)
                 for name, value in (

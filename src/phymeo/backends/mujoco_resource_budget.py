@@ -1,4 +1,4 @@
-"""Shared limits for registered TYX CUDA array payload, not total GPU memory."""
+"""Shared limits for the registered TYX device array payload."""
 
 from contextlib import contextmanager
 from threading import RLock
@@ -22,7 +22,7 @@ def _bytes(value, name):
 
 
 class MuJoCoTyxResourceBudget:
-    """One shared, reentrant CUDA payload budget for related runtime owners.
+    """One shared, reentrant device payload budget for related runtime owners.
 
     Native contexts, JIT/cache, allocator overhead, HOST arrays and JSON are
     outside this measured scope. UNKNOWN payload remains part of current_bytes.
@@ -42,7 +42,7 @@ class MuJoCoTyxResourceBudget:
 
     def _admit(self, additional):
         if self._current + self._reserved + additional > self._limit:
-            raise MemoryError("TYX registered CUDA payload budget exceeded")
+            raise MemoryError("TYX registered device payload budget exceeded")
 
     @contextmanager
     def admit(self, additional_bytes):
@@ -57,14 +57,17 @@ class MuJoCoTyxResourceBudget:
             self._admit(additional)
             yield
 
-    def reserve(self, payload_bytes):
+    def reserve(self, payload_bytes, *, backend="cuda"):
         """Reserve a complete leaf manifest before its Runtime/staging creation."""
         size = _bytes(payload_bytes, "payload_bytes")
+        if backend not in ("cuda", "musa"):
+            raise ValueError("unknown TYX allocation backend")
         with self._lock:
             self._admit(size)
             identity = self._next_owner
             self._next_owner += 1
             self._owners[identity] = dict(
+                backend=backend,
                 manifest_payload_bytes=size,
                 reserved_bytes=size,
                 finished=False,
@@ -77,6 +80,14 @@ class MuJoCoTyxResourceBudget:
     def snapshot(self):
         with self._lock:
             owners = []
+            backends = {row["backend"] for row in self._owners.values()}
+            scope = "registered-cuda-array-payload-only"
+            if "musa" in backends:
+                scope = (
+                    "registered-musa-array-payload-only"
+                    if len(backends) == 1
+                    else "registered-device-array-payload-only"
+                )
             unknown = 0
             for identity, row in self._owners.items():
                 allocations = tuple(
@@ -105,7 +116,7 @@ class MuJoCoTyxResourceBudget:
             return MappingProxyType(
                 dict(
                     schema="mujoco-tyx-device-payload-budget-v1",
-                    scope="registered-cuda-array-payload-only",
+                    scope=scope,
                     device_payload_limit_bytes=self._limit,
                     current_bytes=self._current,
                     peak_bytes=self._peak,

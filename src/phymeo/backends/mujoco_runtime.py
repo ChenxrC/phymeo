@@ -249,7 +249,7 @@ class MuJoCoRuntime:
 
     def __new__(cls, compilation, *, mode="cpu", implementation=None, **options):
         if cls is MuJoCoRuntime:
-            if mode in {"cuda", "interpret"}:
+            if mode in {"cuda", "interpret", "musa"}:
                 selected = "tyx" if implementation is None else implementation
                 if selected == "tyx":
                     from ._mujoco_tyx_runtime import MuJoCoTyxRuntime

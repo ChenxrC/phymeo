@@ -36,6 +36,7 @@ addopts = "-ra --strict-markers"
 markers = [
     "tyx: requires the separately installed pinned tyx runtime",
     "cuda: requires actual CUDA hardware execution",
+    "musa: requires actual Moore Threads hardware and MCC",
 ]
 
 [tool.ruff]

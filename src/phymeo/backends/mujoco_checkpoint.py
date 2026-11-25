@@ -287,7 +287,7 @@ def _bank_shapes(binding, count):
 
 def _accepted_bank(device):
     # Read the accepted bank, never download()'s possibly rejected candidate.
-    with device.tx.use_runtime(device.runtime):
+    with device.runtime_scope():
         device.runtime.sync()
         device.counts["synchronizations"] += 1
         banks = (device.q, device.v, device.time)

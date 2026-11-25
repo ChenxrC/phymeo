@@ -2,13 +2,18 @@
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from .live_viewer import LiveSceneViewer as LiveSceneViewer
     from .photography import StudioRenderer as StudioRenderer
     from .preparation import PreparedScene as PreparedScene
 
-__all__ = ['StudioRenderer', 'PreparedScene']
+__all__ = ['StudioRenderer', 'PreparedScene', 'LiveSceneViewer']
 
 
 def __getattr__(name):
+    if name == 'LiveSceneViewer':
+        from .live_viewer import LiveSceneViewer
+        globals()[name] = LiveSceneViewer
+        return LiveSceneViewer
     if name == 'PreparedScene':
         from .preparation import PreparedScene
         globals()[name] = PreparedScene

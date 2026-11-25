@@ -3,6 +3,8 @@
 Run a ViewerServer as a context manager. Its source factory, describe,
 capture and close methods all run on one dedicated thread. A source returns
 (PNG bytes, source frame index, simulation seconds, capture milliseconds).
+Observe-mode sources also expose a thread-safe latest_frame() index and a
+capture_latest(camera, channel) method, which pins a published snapshot.
 """
 from concurrent.futures import ThreadPoolExecutor
 from http import HTTPStatus
@@ -20,15 +22,25 @@ _STATIC = {'/': ('index.html', 'text/html; charset=utf-8'),
            '/viewer.js': ('viewer.js', 'text/javascript; charset=utf-8')}
 
 
+class ViewerFrameUnavailable(LookupError):
+    """Requested observation has not been published or has left the source buffer."""
+
+
+def _frame_number(text):
+    if not re.fullmatch(r'[0-9]{1,16}', text):
+        raise ValueError('Expected a nonnegative frame index')
+    return int(text)
+
+
 def _manifest(source):
     # Copy the public metadata, including optional per-camera and channel legends.
     data = json.loads(json.dumps(source.describe(), allow_nan=False))
     if not isinstance(data['title'], str) or not data['title'].strip():
         raise ValueError('viewer needs a scene title')
-    if data['mode'] not in ('live', 'replay') or not 0 < data['fps'] <= 1000:
+    if data['mode'] not in ('live', 'replay', 'observe') or not 0 < data['fps'] <= 1000:
         raise ValueError('invalid viewer mode or frame rate')
     count = data['frame_count']
-    if not (count is None and data['mode'] == 'live') and (type(count) is not int or count < 1):
+    if not (count is None and data['mode'] in ('live', 'observe')) and (type(count) is not int or count < 1):
         raise ValueError('frame_count must be positive for a recording')
     for field in ('cameras', 'channels'):
         ids = [entry['id'] for entry in data[field]]
@@ -36,8 +48,9 @@ def _manifest(source):
                 or not all(re.fullmatch(r'[A-Za-z0-9_.-]+', name) for name in ids)
                 or not all(isinstance(entry['label'], str) and entry['label'] for entry in data[field])):
             raise ValueError(f'invalid {field} in viewer metadata')
-    index = data.setdefault('current_frame', 0)
-    if type(index) is not int or index < 0 or (count is not None and index >= count):
+    index = data.setdefault('current_frame', None if data['mode'] == 'observe' else 0)
+    if not (index is None and data['mode'] == 'observe') and (
+            type(index) is not int or index < 0 or (count is not None and index >= count)):
         raise ValueError('invalid starting frame')
     return data
 
@@ -53,7 +66,8 @@ class _ViewerHandler(BaseHTTPRequestHandler):
     def _send(self, code, mime, body, **headers):
         self.send_response(code)
         self.send_header('Content-Type', mime)
-        self.send_header('Content-Length', str(len(body)))
+        if code != HTTPStatus.NO_CONTENT:
+            self.send_header('Content-Length', str(len(body)))
         self.send_header('Cache-Control', 'no-store')
         self.send_header('X-Content-Type-Options', 'nosniff')
         self.send_header('Content-Security-Policy',
@@ -93,25 +107,38 @@ class _ViewerHandler(BaseHTTPRequestHandler):
         if path.path != '/api/frame':
             return self._json(404, {'error': 'Unknown viewer resource'})
         try:
-            params = parse_qs(path.query, strict_parsing=True, keep_blank_values=True, max_num_fields=3)
-            if params.keys() != {'camera', 'frame', 'channel'} or any(len(v) != 1 for v in params.values()):
+            params = parse_qs(path.query, strict_parsing=True, keep_blank_values=True, max_num_fields=4)
+            required = {'camera', 'frame', 'channel'}
+            if params.keys() not in (required, required | {'after'}) or any(len(v) != 1 for v in params.values()):
                 raise ValueError('Expected camera, frame and channel')
-            if not re.fullmatch(r'[0-9]{1,12}', params['frame'][0]):
-                raise ValueError('Expected a nonnegative frame index')
-            camera, index, channel = params['camera'][0], int(params['frame'][0]), params['channel'][0]
+            camera, channel = params['camera'][0], params['channel'][0]
+            mode = self.server.scene_info['mode']
+            latest = params['frame'][0] == 'latest' and mode == 'observe'
+            index = None if latest else _frame_number(params['frame'][0])
+            if 'after' in params and not latest:
+                raise ValueError('after is only valid with frame=latest')
+            after = _frame_number(params['after'][0]) if 'after' in params else None
             self.server.validate_request_values(camera, index, channel)
         except ValueError as exc:
             return self._json(400, {'error': str(exc)})
+        if mode == 'observe':
+            current = self.server.metadata()['current_frame']
+            if latest and (current is None or current == after):
+                return self._send(204, 'image/png', b'')
+            if not latest and (current is None or index > current):
+                return self._json(409, {'error': '这帧尚未发布', 'current_frame': current})
         if not self.server.capture_slot.acquire(blocking=False):
             return self._json(HTTPStatus.TOO_MANY_REQUESTS, {'error': '另一个视图正在采集，请稍后重试'})
         try:
-            if self.server.scene_info['mode'] == 'live':
+            if mode == 'live':
                 current = self.server.metadata()['current_frame']
                 if index not in (current, current + 1):
                     return self._json(409, {'error': '现场仿真只能查看当前帧或前进一步', 'current_frame': current})
             try:
                 png, actual, seconds, duration = self.server.owner.submit(
                     self.server.capture, camera, index, channel).result()
+            except ViewerFrameUnavailable as exc:
+                return self._json(410, {'error': str(exc), 'current_frame': self.server.metadata()['current_frame']})
             except Exception as exc:
                 return self._json(500, {'error': f'{type(exc).__name__}: {exc}'})
         finally:
@@ -148,6 +175,8 @@ class ViewerServer(ThreadingHTTPServer):
         return f'http://127.0.0.1:{self.server_port}/'
 
     def metadata(self):
+        if self.scene_info['mode'] == 'observe':
+            return dict(self.scene_info, current_frame=self.source.latest_frame())
         with self.state_lock:
             return dict(self.scene_info, current_frame=self.current_frame)
 
@@ -155,17 +184,21 @@ class ViewerServer(ThreadingHTTPServer):
         if camera not in self.cameras or channel not in self.channels:
             raise ValueError('Unknown camera or channel')
         count = self.scene_info['frame_count']
-        if count is not None and index >= count:
+        if count is not None and index is not None and index >= count:
             raise ValueError('Requested frame exceeds the scene duration')
 
     def capture(self, camera, index, channel):
-        png, actual, seconds, duration = self.source.capture(camera, index, channel)
-        if (type(actual) is not int or index != actual or not isinstance(png, bytes)
+        if index is None:
+            png, actual, seconds, duration = self.source.capture_latest(camera, channel)
+        else:
+            png, actual, seconds, duration = self.source.capture(camera, index, channel)
+        if (type(actual) is not int or actual < 0 or (index is not None and index != actual) or not isinstance(png, bytes)
                 or not png.startswith(b'\x89PNG\r\n\x1a\n') or not math.isfinite(seconds) or seconds < 0
                 or not math.isfinite(duration) or duration < 0):
             raise ValueError('Source returned invalid image, timing or frame identity')
-        with self.state_lock:
-            self.current_frame = actual
+        if self.scene_info['mode'] != 'observe':
+            with self.state_lock:
+                self.current_frame = actual
         return png, actual, seconds, duration
 
     def server_close(self):

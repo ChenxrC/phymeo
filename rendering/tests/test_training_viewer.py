@@ -5,7 +5,7 @@ import json
 from threading import Event, Thread, get_ident
 import unittest
 
-from phymeo_rendering.viewer import ViewerServer
+from phymeo_rendering.viewer import ViewerFrameUnavailable, ViewerServer
 
 
 class Source:
@@ -39,8 +39,8 @@ class Source:
 
 
 class ViewerTests(unittest.TestCase):
-    def start(self, mode='replay'):
-        self.server = ViewerServer(lambda: Source(mode))
+    def start(self, mode='replay', factory=None):
+        self.server = ViewerServer(factory or (lambda: Source(mode)))
         thread = Thread(target=self.server.serve_forever, kwargs={'poll_interval': .02})
         thread.start()
         def finish():
@@ -105,6 +105,40 @@ class ViewerTests(unittest.TestCase):
                 source.release.set()
             self.assertEqual(pending.result()[0], 200)
         self.assertEqual(len(source.calls), 1)
+
+    def test_passive_monitor_only_renders_published_snapshots(self):
+        class Observer(Source):
+            latest = None
+
+            def describe(self):
+                return dict(super().describe(), mode='observe', current_frame=None, frame_count=None)
+
+            def latest_frame(self):
+                return self.latest
+
+            def capture_latest(self, camera, channel):
+                return self.capture(camera, self.latest, channel)
+
+            def capture(self, camera, frame, channel):
+                if self.latest - frame >= 2:
+                    raise ViewerFrameUnavailable('expired')
+                return super().capture(camera, frame, channel)
+
+        source = self.start(factory=Observer)
+        path = '/api/frame?camera=wrist&channel=depth&frame='
+        self.assertEqual(self.get(path+'latest')[0], 204)
+        self.assertIsNone(json.loads(self.get('/api/scene')[2])['current_frame'])
+        source.latest = 23
+        self.assertEqual(json.loads(self.get('/api/scene')[2])['current_frame'], 23)
+        self.assertEqual(self.get(path+'latest&after=23')[0], 204)
+        self.assertEqual(self.get(path+'24')[0], 409)
+        self.assertEqual(self.get(path+'20')[0], 410)
+        self.assertEqual(self.get(path+'22&after=21')[0], 400)
+        self.assertEqual(source.calls, [])
+        self.assertEqual(self.get(path+'22')[1]['X-Frame-Index'], '22')
+        self.assertEqual(self.get(path+'latest&after=10')[1]['X-Frame-Index'], '23')
+        self.assertEqual(source.calls, [('wrist',22,'depth'), ('wrist',23,'depth')])
+        self.assertEqual(json.loads(self.get('/api/scene')[2])['current_frame'], 23)
 
 
 def source_data():

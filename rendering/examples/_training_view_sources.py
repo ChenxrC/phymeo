@@ -1,13 +1,10 @@
 """On-demand, single-camera training image sources for the local viewer."""
 from dataclasses import replace
-from io import BytesIO
 from pathlib import Path
 from time import perf_counter
 from types import SimpleNamespace
 
-import numpy as np
-from PIL import Image
-
+from phymeo_rendering._viewer_planes import channel_metadata, display_png as _image
 from phymeo_rendering.outputs import Channel
 from phymeo_rendering.pipeline import CaptureRequest, RenderPath
 
@@ -18,49 +15,8 @@ DEFAULT_ASSETS = ROOT/'artifacts/training-view/assets'
 PLANES = {'rgb': Channel.RGB, 'depth': Channel.FORWARD_DEPTH, 'id': Channel.INSTANCE_ID}
 
 
-def _id_colors(ids):
-    # Odd multiplication permutes all 24-bit scene IDs. Fold the upper byte
-    # for larger uint32 owners. The original full ID is used before colorization.
-    low = ids & np.uint32(0xffffff)
-    upper = (ids >> 24)*np.uint32(0x5bd1e995)
-    packed = ((low ^ upper)*np.uint32(0x9e3779b1)) & np.uint32(0xffffff)
-    packed = np.where((ids != 0) & (packed == 0), np.uint32(0x010101), packed)
-    return np.stack((packed >> 16, packed >> 8, packed), axis=-1).astype(np.uint8)
-
-
-def _image(shot, channel, depth_range):
-    if tuple(plane.channel for plane in shot.planes) != (channel,):
-        raise ValueError('source did not return the requested native plane')
-    w, h = shot.camera.width, shot.camera.height
-    raw = shot.planes[0].data
-    if channel is Channel.RGB:
-        image = Image.frombytes('RGB', (w,h), raw)
-    elif channel is Channel.FORWARD_DEPTH:
-        z = np.frombuffer(raw, '<f4').reshape(h,w)
-        lo, hi = depth_range
-        hit = np.isfinite(z)
-        gray = np.zeros((h,w), np.uint8)
-        gray[hit] = np.rint(255-223*np.clip((z[hit]-lo)/(hi-lo), 0, 1)).astype(np.uint8)
-        image = Image.fromarray(gray)
-    else:
-        ids = np.frombuffer(raw, '<u4').reshape(h,w)
-        image = Image.fromarray(_id_colors(ids))
-    buf = BytesIO()
-    image.save(buf, format='PNG', compress_level=1)
-    return buf.getvalue()
-
-
 def _channels():
-    ids = np.asarray([0,1,2,3,1001], dtype=np.uint32)
-    colors = _id_colors(ids)
-    return [
-        dict(id='rgb', label='RGB', description='原生相机的 RGB 显示图像。'),
-        dict(id='depth', label='深度', unit='m', colors=['#ffffff','#202020'], invalid_color='#000000',
-             description='相机光轴深度（米）。各镜头使用固定范围，近白、远灰，未命中为黑。'),
-        dict(id='id', label='实例 ID', invalid_color='#000000',
-             description='原生像素中心的 uint32 实例 ID。零为背景，同一场景中的同一实例保持同色。',
-             legend=[dict(id=int(i), color='#'+bytes(rgb).hex()) for i,rgb in zip(ids,colors,strict=True)]),
-    ]
+    return channel_metadata(tuple(PLANES.values()))
 
 
 class _TrainingSource:

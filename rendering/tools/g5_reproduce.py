@@ -28,6 +28,8 @@ STUDIO_ASSETS = {
     "university_workshop_1k.hdr": "a125ada38fc602025326f29b68df09531bb16f899f1973b03d9ac5ac98142548",
     "NOTICE.md": "5f5e06c50f199c223dd1588946f66899ec30a4d07909407d6ab0108d0e4912a0",
 }
+PREPARATION_SOURCES = tuple("phymeo_rendering/" + name for name in (
+    "preparation.py", "_prepare_geometry.py", "_prepare_textures.py", "_prepare_cache.py"))
 SOURCE_EXTENSIONS = {".cmake", ".cpp", ".h", ".hpp", ".inc", ".vert", ".frag", ".glsl", ".comp", ".geom", ".tesc", ".tese", ".rgen", ".rchit", ".rmiss", ".rahit", ".rint", ".rcall"}
 BINARY_EXTENSIONS = {".dll", ".pyd", ".so", ".dylib", ".spv", ".exe", ".lib", ".a", ".o", ".obj"}
 F0_FILES = ("integration/__init__.py", "integration/_g1_table.py", "integration/_r0_table.py",
@@ -92,18 +94,24 @@ def inspect_wheel(path, rendering_root=None):
     if metadata.get("Name") != "phymeo-rendering":
         raise ValueError("wrong wheel distribution")
     dependencies = metadata.get_all("Requires-Dist", [])
-    optional = re.compile(r"([^;]+)\s*;\s*extra\s*==\s*(['\"])([^'\"]+)\2")
+    optional = re.compile(r"([A-Za-z0-9_.-]+)\s*([^;]+?)\s*;\s*extra\s*==\s*(['\"])([^'\"]+)\3")
     allowed = {("sapien==3.0.3", "sapien"), ("numpy==1.26.4", "sapien"),
-               ("pillow==12.2.0", "textures"), ("numpy==1.26.4", "ibl")}
+               ("pillow==12.2.0", "textures"), ("numpy==1.26.4", "ibl"),
+               ("pillow==12.2.0", "prepare"), ("vtk<10,>=9.3", "prepare"),
+               ("numpy<3,>=1.26", "prepare")}
     observed = set()
     for row in dependencies:
         matched = optional.fullmatch(row)
-        pair = (matched[1].strip().lower(), matched[3]) if matched else None
+        # Packaging backends can reorder comma-separated version bounds.
+        pair = None
+        if matched:
+            bounds = ",".join(sorted(part.strip() for part in matched[2].split(",")))
+            pair = (matched[1].lower() + bounds, matched[4])
         if pair not in allowed or pair in observed:
             raise ValueError("base dependencies or undeclared optional dependency in rendering wheel")
         observed.add(pair)
-    if observed != allowed or set(metadata.get_all("Provides-Extra", [])) != {"sapien", "textures", "ibl"}:
-        raise ValueError("wheel must preserve the pinned reference, texture and IBL dependencies")
+    if observed != allowed or set(metadata.get_all("Provides-Extra", [])) != {extra for _, extra in allowed}:
+        raise ValueError("wheel must preserve the reference, texture, IBL and preparation dependencies")
 
     def require(name, digest=None):
         _safe_name(name)
@@ -120,6 +128,8 @@ def inspect_wheel(path, rendering_root=None):
         require(ASSET_PREFIX + _safe_name(name), digest)
     for name, digest in STUDIO_ASSETS.items():
         require(STUDIO_PREFIX + name, digest)
+    for name in PREPARATION_SOURCES:
+        require(name)
     native_prefix = "phymeo_rendering/backends/"
     for name in ("_native/CMakeLists.txt", "_native/renderer.cpp", "_native/renderer.h", "_native/resident.inc",
                  "_shaders/native.vert", "_shaders/native.frag", "_shaders/resident.vert", "_shaders/resident.frag"):
@@ -152,6 +162,7 @@ def inspect_wheel(path, rendering_root=None):
         "base_dependencies": [], "optional_dependencies": dependencies,
         "native_sources": sorted(n for n in files if n.startswith(native_prefix + "_native/") or n.startswith(native_prefix + "_shaders/")),
         "source_files_compared": checked_sources,
+        "preparation_sources": list(PREPARATION_SOURCES),
         "studio_asset_sha256": dict(STUDIO_ASSETS),
         "panda": {"manifest_sha256": MANIFEST_SHA256, "files_verified": len(resources) + 1,
                   "instances": len(manifest["instances"]), "meshes": len(manifest["meshes"]),

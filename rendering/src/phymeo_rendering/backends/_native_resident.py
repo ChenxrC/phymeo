@@ -281,6 +281,12 @@ class ResidentDevice(NativeDevice):
             version.argtypes=[]; version.restype=ct.c_uint32
             if version()!=1:
                 raise BackendUnavailableError('native resident normal-map ABI is unsupported')
+            from ._native_normal import ResidentNormalInfo
+            self._normal_info_function = getattr(lib, 'pr_resident_normal_info', None)
+            if self._normal_info_function is None or ct.sizeof(ResidentNormalInfo) != 128:
+                raise BackendUnavailableError('native normal-map capacity query unavailable')
+            self._normal_info_function.argtypes = [ct.c_void_p, ct.POINTER(ResidentNormalInfo)]
+            self._normal_info_function.restype = ct.c_int
         lib.pr_resident_abi_version.argtypes = []
         lib.pr_resident_abi_version.restype = ct.c_uint32
         lib.pr_resident_create.argtypes = lib.pr_create.argtypes

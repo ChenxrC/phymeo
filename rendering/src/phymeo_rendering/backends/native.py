@@ -24,8 +24,9 @@ from ..studio import StudioLighting
 from ..pipeline import DefaultPassPlanner, RenderPath
 from ..scene import VisualScene, DirectionalLight, FrameKey, Pose, compose_pose
 from ..cameras import Camera
+from ..preparation import PreparedScene
 from . import BackendUnavailableError, UnsupportedRequestError, ValidatedRenderSession
-from ._native_resident import ResidentDevice, pack_scene
+from ._native_resident import ResidentDevice, pack_scene, _limits
 from ._native_camera_batch import MAX_TOTAL_PIXELS, MAX_VIEWS
 from ._native_pixels import _image_planes
 from ._native_ray_query import RayQueryResidentDevice
@@ -967,7 +968,43 @@ class NativeBackend:
         )
         self.device_index, self.validation, self.exposure = device_index, validation, exposure
 
-    def open_scene(self, scene: VisualScene) -> NativeRenderSession:
+    def prepare_scene(self, scene: VisualScene, *, usage='sensor', cameras=(), preserve_detail=(),
+                      preserve_meshes=(), preserve_materials=(), cache_dir=None) -> PreparedScene:
+        """Fit immutable visual resources to this resident renderer before upload.
+
+        Cameras are (source SceneFrame, Camera) pairs. Film and preview may adapt;
+        sensor requires original resources. Pass the result to open_scene().
+        """
+        from ..preparation import prepare_for_limits
+        if not isinstance(scene, VisualScene):
+            raise TypeError("scene must be VisualScene")
+        if not self.resident:
+            raise UnsupportedRequestError("scene preparation requires resident Vulkan")
+        require_library(self.library_path)
+        device = self._scene_device(scene)
+        try:
+            info = device.info()
+        finally:
+            device.close()
+        geometry = _limits(info)
+        if any('resident_' + name not in info for name in geometry):
+            raise BackendUnavailableError("resident geometry limits unavailable")
+        def array_limits(extension):
+            caps = info.get(extension) or {}
+            return {key: caps.get(key, 0) for key in
+                    ('max_textures', 'max_layers', 'max_width', 'max_height', 'max_array_bytes')}
+        return prepare_for_limits(
+            scene, usage=usage, cameras=cameras, preserve_detail=preserve_detail,
+            preserve_meshes=preserve_meshes, preserve_materials=preserve_materials, cache_dir=cache_dir,
+            geometry_limits=geometry, color_limits=array_limits('resident_texture_info'),
+            normal_limits=array_limits('resident_normal_info'),
+            device={'name': info['device_name'], 'uuid': info['device_uuid']})
+
+    def open_scene(self, scene: VisualScene | PreparedScene) -> NativeRenderSession:
+        selected_meshes = None
+        if isinstance(scene, PreparedScene):
+            selected_meshes = scene.report['geometry']['meshes']
+            scene = scene.scene
         if not isinstance(scene, VisualScene):
             raise TypeError("scene must be VisualScene")
         if not self.resident and any(isinstance(m,TexturedMaterial) for m in scene.materials):
@@ -983,27 +1020,14 @@ class NativeBackend:
         from ..mesh_data import load_mesh
 
         meshes = {mesh.id: load_mesh(mesh) for mesh in scene.meshes}
+        if selected_meshes is not None:
+            for mesh_id, decoded in meshes.items():
+                if decoded.source_sha256 != selected_meshes[mesh_id]['output_sha256']:
+                    raise ValueError(f"prepared mesh {mesh_id!r} changed before upload")
         triangles = sum(len(meshes[item.mesh_id].triangles) for item in scene.instances)
         if not self.resident and triangles > 4096:
             raise UnsupportedRequestError("native raster currently supports at most 4096 triangles")
-        device_type = (RayQueryResidentDevice if self.shadow_mode=='ray_query' else
-                       (ResidentDevice if self.resident else NativeDevice))
-        bound_materials={instance.material_id for instance in scene.instances}
-        has_normal_maps=any(isinstance(material,TexturedMaterial) and material.normal_map is not None
-                            and material.id in bound_materials for material in scene.materials)
-        device = device_type(
-            self.library_path, self.shader_directory, self.device_index, self.validation,
-            **({'shared_cuda_device': self.shared_cuda_device} if self.shared_cuda_device is not None else {}),
-            **({'shared_camera_capacity': self.shared_camera_capacity} if self.shared_camera_capacity else {}),
-            **({'area_light_grid': self.area_light_grid} if self.area_light_grid != 2 else {}),
-            **({'secondary_area_light_grid': self.secondary_area_light_grid} if self.secondary_area_light_grid != self.area_light_grid else {}),
-            **({'normal_maps': True} if has_normal_maps else {}),
-            **({'reflection': True} if self.reflection_mode=='single_bounce' else {}),
-            **({'indirect': True} if self.indirect_mode!='none' else {}),
-            **({'progressive': True} if self.progressive else {}),
-            **({'spatial': True} if self.spatial_filter != 'none' else {}),
-            **({'settling': True} if self.spatial_filter == 'guided_settling' else {})
-        )
+        device = self._scene_device(scene)
         try:
             display_info = configure_display(device, self.display_transform)
             if not self.resident and triangles * 3 > device.info()["max_vertices"]:
@@ -1050,3 +1074,23 @@ class NativeBackend:
             except BaseException as cleanup:
                 raise BaseExceptionGroup("native scene open and cleanup failed", [primary, cleanup])
             raise
+
+    def _scene_device(self, scene):
+        device_type = (RayQueryResidentDevice if self.shadow_mode=='ray_query' else
+                       (ResidentDevice if self.resident else NativeDevice))
+        bound_materials={instance.material_id for instance in scene.instances}
+        has_normal_maps=any(isinstance(material,TexturedMaterial) and material.normal_map is not None
+                            and material.id in bound_materials for material in scene.materials)
+        return device_type(
+            self.library_path, self.shader_directory, self.device_index, self.validation,
+            **({'shared_cuda_device': self.shared_cuda_device} if self.shared_cuda_device is not None else {}),
+            **({'shared_camera_capacity': self.shared_camera_capacity} if self.shared_camera_capacity else {}),
+            **({'area_light_grid': self.area_light_grid} if self.area_light_grid != 2 else {}),
+            **({'secondary_area_light_grid': self.secondary_area_light_grid} if self.secondary_area_light_grid != self.area_light_grid else {}),
+            **({'normal_maps': True} if has_normal_maps else {}),
+            **({'reflection': True} if self.reflection_mode=='single_bounce' else {}),
+            **({'indirect': True} if self.indirect_mode!='none' else {}),
+            **({'progressive': True} if self.progressive else {}),
+            **({'spatial': True} if self.spatial_filter != 'none' else {}),
+            **({'settling': True} if self.spatial_filter == 'guided_settling' else {})
+        )

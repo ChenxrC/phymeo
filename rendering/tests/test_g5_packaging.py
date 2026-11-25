@@ -71,7 +71,10 @@ class G5PackagingTests(unittest.TestCase):
             b"Provides-Extra: sapien\nRequires-Dist: sapien==3.0.3; extra == 'sapien'\n"
             b"Requires-Dist: numpy==1.26.4; extra == 'sapien'\n"
             b"Provides-Extra: textures\nRequires-Dist: Pillow==12.2.0; extra == 'textures'\n"
-            b"Provides-Extra: ibl\nRequires-Dist: numpy==1.26.4; extra == 'ibl'\n\n"
+            b"Provides-Extra: ibl\nRequires-Dist: numpy==1.26.4; extra == 'ibl'\n"
+            b"Provides-Extra: prepare\nRequires-Dist: Pillow==12.2.0; extra == 'prepare'\n"
+            b"Requires-Dist: vtk<10,>=9.3; extra == 'prepare'\n"
+            b"Requires-Dist: numpy>=1.26,<3; extra == 'prepare'\n\n"
         )
 
     def inspect(self, files=None, *, root=ROOT):
@@ -87,7 +90,7 @@ class G5PackagingTests(unittest.TestCase):
         self.assertEqual(config["project"]["optional-dependencies"]["sapien"], ["sapien==3.0.3", "numpy==1.26.4"])
         report = self.inspect()
         self.assertEqual(report["base_dependencies"], [])
-        self.assertEqual(len(report["optional_dependencies"]), 4)
+        self.assertIn("Pillow==12.2.0; extra == 'textures'", report["optional_dependencies"])
         files = dict(self.files)
         files[DIST + "METADATA"] = files[DIST + "METADATA"].replace(
             b"Pillow==12.2.0; extra == 'textures'", b"Pillow==12.2.0; extra == 'sapien'")
@@ -119,6 +122,35 @@ class G5PackagingTests(unittest.TestCase):
                 files[DIST + "METADATA"] = corrupt
                 with self.assertRaisesRegex(ValueError, "dependenc"):
                     self.inspect(files)
+
+    def test_prepare_extra_requires_pillow_vtk_and_numpy_only_by_request(self):
+        config = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+        self.assertCountEqual(config["project"]["optional-dependencies"]["prepare"],
+                              ["Pillow==12.2.0", "vtk>=9.3,<10", "numpy>=1.26,<3"])
+        complete = self.files[DIST + "METADATA"]
+        for label, corrupt in (
+            ("no extra", complete.replace(b"Provides-Extra: prepare\n", b"")),
+            ("missing dependency", complete.replace(b"Requires-Dist: Pillow==12.2.0; extra == 'prepare'\n", b"")),
+            ("different numpy floor", complete.replace(b"numpy>=1.26,<3", b"numpy>=1.20,<3")),
+            ("unbounded vtk", complete.replace(b"vtk<10,>=9.3", b"vtk>=9.3")),
+            ("mandatory vtk", complete.replace(b"vtk<10,>=9.3; extra == 'prepare'", b"vtk<10,>=9.3")),
+        ):
+            with self.subTest(corruption=label):
+                files = dict(self.files)
+                files[DIST + "METADATA"] = corrupt
+                with self.assertRaisesRegex(ValueError, "dependenc"):
+                    self.inspect(files, root=None)
+
+    def test_prepare_sources_required_even_in_standalone_wheel(self):
+        expected = {"phymeo_rendering/" + name for name in
+                    ("preparation.py", "_prepare_geometry.py", "_prepare_textures.py", "_prepare_cache.py")}
+        self.assertEqual(set(self.inspect(root=None)["preparation_sources"]), expected)
+        for path in sorted(expected):
+            with self.subTest(missing=path):
+                files = dict(self.files)
+                del files[path]
+                with self.assertRaisesRegex(ValueError, "missing wheel resource"):
+                    self.inspect(files, root=None)
 
     def test_package_maps_existing_assets_without_repository_copy(self):
         config = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))

@@ -12,6 +12,7 @@ readme = "README.md"
 [project.optional-dependencies]
 sapien = ["sapien==3.0.3", "numpy==1.26.4"]
 textures = ["Pillow==12.2.0"]
+prepare = ["Pillow==12.2.0", "vtk>=9.3,<10", "numpy>=1.26,<3"]
 ibl = ["numpy==1.26.4"]
 
 [tool.setuptools]

@@ -72,7 +72,7 @@ def make_rated_scene(seed, guard_profile="capsule", controller="transfer"):
     source = make_scene("push_t", seed)
     root = ET.fromstring(source.xml)
     motors = root.find("actuator")
-    guided = controller == "guided-wrist"
+    guided = controller in ("guided-wrist", "guided-path")
     shift = np.array((GUIDE_RECESS if guided else RECESS, 0., 0.))
     initial = [*source.start_xyz, 1., 0., 0., 0.]
     for side, count in zip(SIDES, source.arm_dofs, strict=True):
@@ -418,6 +418,150 @@ class GuidedWrist(Tools):
         return ctrl, axes
 
 
+class GuidedPath(GuidedWrist):
+    """Follow a planar approach curve using registered pixels and prior wrist loads."""
+
+    def __init__(self, *args):
+        super().__init__(*args)
+        self.goal_views = []
+        self.fixed_goal = self.start_pose = self.previous_yaw = None
+        self.vision_bias = np.zeros(2)
+        self.path_observation = {}
+        self.release = False
+        self.dtheta = 0.
+        self.pad_radius = self.model.geom_size[self.model.geom("left_pad").id, 0]
+        self.rear_extent = self.model.geom_size[self.model.geom("payload_0").id, 0]
+        self.lateral_rest = self.mount0[:, 1] - np.mean(self.mount0[:, 1])
+
+    def decide(self, state, rgb):
+        # Reuse the checkpoint's arm actions. Its input contains wrist images
+        # and arm/slide encoders. The task scorer's payload pose is not an input.
+        Tools.decide(self, state, rgb)
+        self.gain_force[:] = 0.
+        f = self.actor.features
+        self.path_observation = {"status": "waiting for registered workpiece and floor outline"}
+        if f.get("object_fit_error_px") is None or f.get("goal_xy") is None:
+            self.previous_yaw = None
+            return
+        dt = self.repeat * TIMESTEP
+        goal = np.r_[f["goal_xy"], f["goal_yaw"]]
+        if self.fixed_goal is None:
+            if sum(count[1] for count in f["pixel_counts"]) < 4:
+                return
+            self.goal_views.append(goal)
+            if len(self.goal_views) < 5:
+                return
+            # Independent static floor geometry, registered before loading.
+            # Reject inconsistent views rather than moving the goal after a push.
+            views = np.array(self.goal_views[-5:])
+            center = np.median(views, axis=0)
+            if np.max(np.linalg.norm(views[:, :2]-center[:2], axis=1)) > .008 or np.ptp(views[:, 2]) > .10:
+                self.goal_views = self.goal_views[-4:]
+                return
+            self.fixed_goal = center
+
+        raw_xy = np.asarray(f["object_xy"])
+        yaw = float(goal[2]-f["image_yaw_error"])
+        normal = np.array((np.cos(yaw), np.sin(yaw)))
+        # A frictionless spherical tip touching the flat rear face constrains
+        # only the normal coordinate. Its tangential coordinate stays visual.
+        # Use a measured compressive wrench from the last completed step.
+        tips = self.actor.data.site_xpos[self.tip, :2]
+        pushes = -self.wrist_reaction[:, :2]
+        loads = np.linalg.norm(pushes, axis=1)
+        aligned = (loads > 3.) & (pushes @ normal > np.cos(.16)*loads)
+        tactile_update = False
+        if np.any(aligned):
+            n = pushes[aligned].sum(axis=0)
+            n /= np.linalg.norm(n)
+            center_n = np.mean(tips[aligned] @ n) + self.pad_radius + self.rear_extent
+            bias = float(center_n-raw_xy @ n)
+            if abs(bias) < .030:
+                normal = n
+                yaw = float(np.arctan2(n[1], n[0]))
+                self.vision_bias += .30*(bias-self.vision_bias @ n)*n
+                tactile_update = True
+        obj = raw_xy+self.vision_bias
+        if self.start_pose is None:
+            self.start_pose = np.r_[obj, yaw]
+        x0, y0, yaw0 = self.start_pose
+        gx, gy, ga = self.fixed_goal
+        length = gx-x0
+        if length < .045:
+            self.path_observation["status"] = "target outside forward approach domain"
+            return
+        # Cubic y(x) fixes both measured positions and both endpoint tangents.
+        # The signed cross-track error steers the T before the final turn.
+        u = float(np.clip((obj[0]-x0)/length, 0., 1.))
+        m0, m1 = np.tan(yaw0), np.tan(ga)
+        rise = gy-y0
+        path_y = y0+rise*u*u*(3.-2.*u)+length*u*(1.-u)*((1.-u)*m0-u*m1)
+        slope = 6.*u*(1.-u)*rise/length + (3.*u*u-4.*u+1.)*m0 + (3.*u*u-2.*u)*m1
+        err_xy = self.fixed_goal[:2]-obj
+        radius = float(np.linalg.norm(err_xy))
+        cross = float(path_y-obj[1])
+        # One nominal half-width of tool spacing is the cross-track lookahead.
+        lookahead = .5*np.ptp(self.lateral_rest)
+        heading = np.arctan(slope + cross/lookahead)
+        # Once within the final cm, the terminal pose dominates steering.
+        blend = np.clip((radius-.010)/.020, 0., 1.)
+        heading = float(np.clip(ga + blend*(heading-ga), -.50, .50))
+        self.face_yaw = float(np.clip(yaw, -.55, .55))
+        tangent = np.array((-normal[1], normal[0]))
+        if self.previous_yaw is not None:
+            self.dtheta += .2*(np.clip((yaw-self.previous_yaw)/dt, -1., 1.)-self.dtheta)
+        else:
+            self.dtheta = 0.
+        self.previous_yaw = yaw
+        projected_levers = (tips-obj) @ tangent
+        for i, ix in enumerate(self.arm_slots):
+            if not self.enabled[i]:
+                continue
+            qa = self.task.q_indices[ix]
+            learned = self.reference_j[i] @ (self.task.target[ix]-self.rest[qa])
+            desired = self.mount0[i].copy()
+            desired[0] += .33*(obj[0]-x0) + np.clip(learned[0], -.012, .012)
+            lever = self.lateral_rest[i] + np.clip(learned[1], -.004, .004)
+            # Transfer the signed T-local lever to the carriage line, including
+            # the exposed rod length; this keeps both normal wrenches centered.
+            desired[1] = obj[1] + (lever + normal[1]*(desired[0]-obj[0]))/max(.6, normal[0])
+            ds = desired-self.mount_goal[i]
+            self.mount_goal[i] += ds*min(1., .038*dt/max(np.linalg.norm(ds), 1e-12))
+
+        self.path_observation = dict(status="tracking", fixed_visual_goal=self.fixed_goal.tolist(),
+            estimated_center_xy_m=obj.tolist(), estimated_yaw_rad=yaw, tactile_normal_update=tactile_update,
+            initial_visual_pose=self.start_pose.tolist(), path_fraction=u, path_y_m=float(path_y),
+            cross_track_error_m=cross, heading_command_rad=heading, xy_error_m=err_xy.tolist(),
+            contact_levers_m=projected_levers.tolist())
+        self.release = (radius < (.015 if self.release else .010) and abs(ga-yaw) < (.08 if self.release else .055))
+        if self.release:
+            self.path_observation["status"] = "visually aligned; unloading"
+            return
+        # Real rear-face contacts can push only in the measured normal
+        # direction. Stop if the required correction is behind both tools.
+        advance = float(err_xy @ normal)
+        if advance <= 0. and radius >= .015:
+            self.path_observation["status"] = "outside reachable rear-face correction"
+            return
+        align = float(heading-yaw)
+        torque = float(3.8*self.actor.gains[4]*align - .65*self.dtheta)
+        left, right = map(float, projected_levers)
+        if left <= .020 or right >= -.020:
+            self.path_observation["status"] = "rear tool lines do not straddle the visual center"
+            return
+        # tau = -lL*FL - lR*FR. If the requested torque cannot fit at
+        # full translation force, reserve headroom for differential effort.
+        span = left-right
+        max_sum = min((span*RATED_N+torque)/(-right), (span*RATED_N-torque)/left)
+        nominal = float(np.clip(max_sum, 46.5, 51.))
+        if radius < .015 and abs(ga-yaw) >= .055:
+            advance = max(advance, .008)
+        total = nominal*np.tanh(max(0., advance)*self.actor.gains[2]/.006)
+        fl = float(np.clip((-torque-right*total)/span, max(0., total-RATED_N), min(RATED_N, total)))
+        self.gain_force = np.array((fl, total-fl))
+        self.path_observation.update(requested_torque_nm=torque, allocated_torque_nm=-left*fl-right*(total-fl))
+
+
 def measured_step(tool, before, after, axes, diagnostic):
     m, task = tool.model, tool.task
     diagnostic.qpos[:] = before.q
@@ -527,8 +671,8 @@ def run(args):
     model = comp.mj_model
     layout = guard_layout(model, args.guard_profile)
     write_json(args.out/"guard-layout.json", layout)
-    guided = args.controller == "guided-wrist"
-    controller_type = GuidedWrist if guided else Tools
+    guided = args.controller in ("guided-wrist", "guided-path")
+    controller_type = {"transfer": Tools, "guided-wrist": GuidedWrist, "guided-path": GuidedPath}[args.controller]
     actors = [controller_type(model, scene, name, actor_type, weights, repeat) for name in args.groups]
     keys = tuple(range(len(actors)))
     start_q = model.key("rated-level-start").qpos if guided else model.qpos0
@@ -575,6 +719,8 @@ def run(args):
                                    visual_object_xy=features.get("object_xy"), visual_goal_xy=features.get("goal_xy"),
                                    visual_yaw_error_rad=features.get("image_yaw_error"),
                                    drive_demand_n=tool.gain_force.tolist()))
+                if isinstance(tool, GuidedPath):
+                    evidence[k][-1]["guidance"] = tool.path_observation.copy()
             for _ in range(repeat):
                 pending = {k: actors[k].controls(states[k]) for k in keys}
                 runtime.set_controls({k: MuJoCoControl(pending[k][0]) for k in keys})
@@ -601,6 +747,9 @@ def run(args):
                                goal_error_m=mt["goal_error_xy_m"], yaw_error_rad=mt["goal_yaw_error_rad"],
                                goal_dwell_s=mt["goal_dwell_s"], success=mt["success"])
                     rows[k].append(row)
+                    if isinstance(tool, GuidedPath):
+                        row["poststep_payload_origin_xy_m"] = q[addr:addr+2].tolist()
+                        row["poststep_payload_com_xy_m"] = com[:2].tolist()
             for k in keys:
                 st, trace = states[k], traces[k]
                 p = actors[k].task.potential(metrics[k])
@@ -668,8 +817,8 @@ def main():
     p.add_argument("--prior", action="store_true", help="develop using the untrained registered actor")
     parser.add_argument("--seed", type=int, default=55001)
     parser.add_argument("--mode", choices=("cpu", "musa"), default="cpu")
-    parser.add_argument("--controller", choices=("transfer", "guided-wrist"), default="transfer",
-                        help="original unrestricted actor transfer or level carriage with tactile force ramp")
+    parser.add_argument("--controller", choices=("transfer", "guided-wrist", "guided-path"), default="transfer",
+                        help="original transfer, level carriage, or the same carriage with planar visual path guidance")
     parser.add_argument("--guard-profile", choices=("capsule", "two-sphere-cover"), default="capsule",
                         help="original exact capsules or a conservative payload guard with two spheres per capsule")
     parser.add_argument("--groups", choices=("both", "left", "right"), nargs="+", default=["both", "left", "right"])

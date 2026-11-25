@@ -87,7 +87,7 @@ def record(args, walk, visual, renderer, prepared):
         result = dict(motion=walk.report(), visual=visual.report, frames=count, fps=FPS,
                       video_seconds=count/FPS, size=SIZE, view=args.view,
                       geometry_adapted=prepared.report['adapted'], lighting='StudioRenderer default',
-                      device=prepared.report['device'], placement=placement)
+                      device=prepared.report['device'], render_profile=renderer.probe_device(), placement=placement)
         (staging/'run.json').write_text(json.dumps(result, indent=2, ensure_ascii=False, allow_nan=False),
                                         encoding='utf-8')
         for file in staging.iterdir():
@@ -95,14 +95,14 @@ def record(args, walk, visual, renderer, prepared):
     print(output/movie, flush=True)
 
 
-def observe(args, walk, visual, make_renderer, prepared):
+def observe(args, walk, visual, renderer, prepared):
     def bind_camera(frame, view):
         source_key = replace(frame.key, scene_key=visual.scene.key)
         source_camera = camera(visual, replace(frame, key=source_key), view)
         return replace(source_camera, frame_key=frame.key)
 
     callbacks = {v: (lambda f, v=v: bind_camera(f, v)) for v in VIEWS}
-    with LiveSceneViewer(prepared.scene, cameras=callbacks, camera_labels=VIEWS, renderer_factory=make_renderer,
+    with LiveSceneViewer(prepared.scene, cameras=callbacks, camera_labels=VIEWS, renderer_factory=lambda: renderer,
                          title='Unitree G1 · 行走', fps=15, port=args.port) as monitor:
         print(monitor.url, flush=True)
         start = perf_counter()
@@ -128,7 +128,9 @@ def main():
     parser.add_argument('--assets', type=Path, default=ROOT/'artifacts/unitree-walk')
     parser.add_argument('--download', action='store_true', help='fetch the pinned official model and walking policy')
     parser.add_argument('--library', type=Path, required=True, help='matching resident Vulkan library and shaders')
-    parser.add_argument('--device-index', type=int, default=0)
+    parser.add_argument('--device-index', type=int, help='pin a Vulkan physical device (default: automatic)')
+    parser.add_argument('--profile', choices=('auto', 'strict', 'compatible'), default='auto',
+                        help='Vulkan studio profile used for both viewing and recording')
     parser.add_argument('--view', choices=VIEWS, default='follow', help='recording camera')
     parser.add_argument('--record', type=Path, help='write MP4, original stills and run.json instead of serving')
     parser.add_argument('--duration', type=float, help='simulated seconds; default 6 for recording, 30 for live')
@@ -139,24 +141,22 @@ def main():
         args.duration = 6 if args.record else 30
     if not 1/FPS <= args.duration <= 3600:
         parser.error('duration must be between one frame and one hour')
+    library = args.library.resolve(strict=True)
+    renderer = StudioRenderer.for_device(library_path=library, shader_directory=library.parent,
+                                         device_index=args.device_index, profile=args.profile)
+    print(json.dumps(renderer.probe_device(), ensure_ascii=False), flush=True)
     if args.download:
         fetch_assets(args.assets)
-    library = args.library.resolve(strict=True)
     walk = UnitreeWalk(args.assets)
     visual = build_unitree_visual(walk.model, args.assets/'visual-cache', robot='g1')
-
-    def make_renderer():
-        return StudioRenderer(library_path=library, shader_directory=library.parent, device_index=args.device_index)
-
     first = snapshot(walk, visual)
-    renderer = make_renderer()
     prepared = renderer.prepare_scene(visual.scene, usage='film' if args.record else 'preview',
                                       cameras=[(first, camera(visual, first, v)) for v in VIEWS],
                                       cache_dir=args.assets/'prepared')
     if args.record:
         record(args, walk, visual, renderer, prepared)
     else:
-        observe(args, walk, visual, make_renderer, prepared)
+        observe(args, walk, visual, renderer, prepared)
 
 
 if __name__ == '__main__':

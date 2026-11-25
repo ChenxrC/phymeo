@@ -39,12 +39,32 @@
 
 **画面怎么读。** “仿真时间”取自所显示的物理帧；“采集耗时”统计该数据源采集所选机位/通道的时间，PNG 编码和网络传输另计。深度图显示沿相机光轴的米制距离，每个机位有自己的灰度量程。实例图给同一场景内的固定实例 ID 着色，背景为黑。需要用于训练的数值深度或精确整数 ID 时，从原生 `Capture` 读取对应数据平面。网页里的 PNG 用于观察。[数据平面定义](../src/phymeo_rendering/outputs.py)
 
+## 在新设备上检查驱动
+
+安装渲染包并准备好配套的原生库与 SPIR-V 后，可以先检查指定 GPU。此命令不需要机器人、策略或图形窗口。Linux 将库路径换成 `/实际构建目录/libphymeo_native.so`。
+
+```powershell
+python -m phymeo_rendering.doctor --library .\artifacts\rendering\quickstart-build\phymeo_native.dll --device-index 0
+```
+
+成功时 JSON 会给出实际设备、阴影路径、颜色采样数和降档原因。失败返回非零退出码和诊断。加 `--validation` 可同时检查 Vulkan 验证层。检查通过后，仍须用实际场景采集一帧，以验证材质、资源容量与相机输出。
+
+| 摄影档 | 适用场景 | 行为 |
+| --- | --- | --- |
+| `auto`（默认） | 同一程序部署到不同 GPU | 优先硬件光线查询。缺少该能力时用同一 GPU 的 BVH 着色器求阴影，独立选择可用的 4× 或 1× 颜色采样 |
+| `strict` | 要求硬件光线查询与 4× MSAA 的对照实验 | 原样要求这两项能力，设备缺项时启动失败 |
+| `compatible` | 在多张卡上复现相同的阴影算法 | 固定 GPU 着色器阴影，仍可使用 4× 颜色采样和工作室 HDR |
+
+G1 查看和录制均接受 `--profile`。在自己的 Python 程序中，用 `StudioRenderer.for_device(library_path=library, device_index=0, profile="auto")` 提前检查，调用 `renderer.probe_device()` 读取选择结果。直接构造 `StudioRenderer(...)` 时会推迟至首次使用设备。显式请求的效果须得到满足。硬件计算工具能看到 GPU 时，也应检查 Vulkan 加载器与厂商 ICD 清单是否真正挂载入容器；两套驱动入口可以有不同的可用状态。
+
+2026-11-25 的实机对照中，Windows 上的 RTX 4060 Laptop GPU 通过 `strict`。Linux 上的摩尔线程 S4000（驱动 5.2.0，Vulkan 1.3.290）通过 `auto`，G1 录制实际使用 GPU 着色器阴影和 4× MSAA。把同一 S4000 切到 `strict` 会报告 `ray_query` 缺项；指向该容器原先的空 ICD 清单会报告 `icd`。可据这两个结果区分“选兼容档即可”和“先修容器的图形驱动挂载”。
+
 ## 准备 Windows 环境
 
 | 部分 | 需要什么 |
 | --- | --- |
 | Python | 基础包要求 Python 3.11+。下方用 64 位 Python 3.11 单独建环境，与 `ibl` 声明的 NumPy 版本匹配。已配置的本机启动脚本则调用 `py -3.13` |
-| 运行摄影路径 | 提供 Vulkan 驱动的显卡。`StudioRenderer` 默认启用硬件光线查询、4× MSAA 和 HDR 环境照明，需要相应设备能力。示例中的设备号是 Vulkan 枚举序号 |
+| 运行摄影路径 | 提供 Vulkan 图形队列的显卡及匹配的驱动。摄影档按设备能力选择，示例中的设备号是 Vulkan 枚举序号 |
 | 仿真与图像 | 牛顿摆/多米诺使用项目指定的 MuJoCo 3.3.7。`ibl` 安装 HDR 环境所需的 NumPy，`textures` 安装纹理读取所需的 Pillow |
 | 原生渲染 | 当前源码构建的 `phymeo_native.dll` 和同次构建的 `*.spv` 放在同一目录。Python wheel 带原生源码和着色器源码；平台二进制需另行构建或由项目提供 |
 | 本机编译 | Visual Studio 2022 C++ 桌面开发工具、CMake ≥ 3.20、Vulkan SDK。CMake 从 SDK 查找头文件、加载器导入库和 `glslang` 或 `glslangValidator` |
@@ -106,7 +126,7 @@ $renderDll = (Resolve-Path .\artifacts\rendering\quickstart-build\phymeo_native.
 Invoke-Item .\artifacts\unitree-walk-preview\g1-walk.mp4
 ```
 
-默认机位是前侧跟拍。录制时加 `--view fixed` 选择固定场边机位，也可使用 `side` 或 `front`。网页上可直接切镜。渲染器使用默认 HDR 环境、两盏矩形面光源（每灯 16 采样）、4× MSAA 和光线查询阴影；示例将宇树的外观网格放在带世界坐标刻度的展示地面上。物理地面来自官方场景。运动策略、可见网格与自研渲染器的职责可以分别更换。
+默认机位是前侧跟拍。录制时加 `--view fixed` 选择固定场边机位，也可使用 `side` 或 `front`。网页上可直接切镜。渲染器使用默认 HDR 环境和两盏矩形面光源（每灯 16 采样）。启动时打印实际摄影档，录制时写入 `run.json` 的 `render_profile`。示例将宇树的外观网格放在带世界坐标刻度的展示地面上。物理地面来自官方场景。
 
 ### 自己导入模型时需要哪些数据
 
@@ -176,7 +196,7 @@ ssh -N -L 8765:127.0.0.1:8765 username@simulation-host
 | 现象 | 首先检查 |
 | --- | --- |
 | 终端提示找不到 DLL 或着色器 | 核对 `--library` 的绝对路径和同目录的 `*.spv`，使用同次编译的整套产物。`native_shader_manifest.txt` 位于构建目录，可核实本次应生成的 SPIR-V |
-| 页面能打开，第一张图报 Vulkan 设备或验证层错误 | 核对所选设备的 Vulkan 能力。摄影默认需要硬件光线查询和 4× MSAA。开启 validation 的示例还需要 `VK_LAYER_KHRONOS_validation`；便携验证层的 `VK_LAYER_PATH` 应指向其 manifest 目录 |
+| 页面能打开，第一张图报 Vulkan 设备或验证层错误 | 对同一库和设备号运行上方驱动检查。开启 validation 的示例还需要 `VK_LAYER_KHRONOS_validation`；便携验证层的 `VK_LAYER_PATH` 应指向其 manifest 目录 |
 | 运行 `.cmd` 时找不到 Python 或模块 | 本机脚本固定调用 `py -3.13`。若依赖安装在其他解释器里，用该环境的 `python.exe` 直接运行对应 `.py` 并传入 `--library` |
 | 八工位缺少 `motion.npz` | 使用 `--motion` 指定完整八工位归档目录。只想先验证浏览器与渲染链路，可以运行牛顿摆 |
 | 观察模式一直等待首帧，或仿真瞬间结束 | 确认宿主进程仍在运行、进入了 `with LiveSceneViewer(...)`、且已经 `publish` 了属于该场景的帧。短时批处理可改用已保存的轨迹回放 |

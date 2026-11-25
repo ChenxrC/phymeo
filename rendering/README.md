@@ -12,7 +12,7 @@
 
 ## 摄影渲染 API
 
-`StudioRenderer` 默认拍摄 1440 × 810 图像。每盏矩形灯使用 16 个采样点（4 × 4），颜色使用 4× MSAA，阴影使用硬件光线查询。工作室 HDR 环境和两块软箱提供照明。默认曝光为 7.0，合成后的线性 RGB 经 `pbr-neutral` 变换输出。运行需要支持 Vulkan ray query 的 GPU、配有对应 SPIR-V 的原生库，以及 `phymeo-rendering[ibl]`。带纹理的场景还需 `textures` 依赖。
+`StudioRenderer` 默认拍摄 1440 × 810 图像，每盏矩形灯 16 个采样点。它在所选 Vulkan GPU 上优先使用硬件光线查询和 4× 颜色 MSAA。设备缺少光线查询时，同一块 GPU 改用着色器遍历 BVH 计算阴影；颜色采样能力独立检查。工作室 HDR、两盏软箱、曝光 7.0 和 `pbr-neutral` 显示变换沿用同一套设置。运行需要配套的原生库、SPIR-V 和 `phymeo-rendering[ibl]`。带纹理的场景还需 `textures` 依赖。换设备后可先运行 `python -m phymeo_rendering.doctor --library <原生库路径> --device-index 0`。[驱动检查与三种摄影档](docs/quickstart-zh.md#在新设备上检查驱动)
 
 ```python
 from contextlib import closing

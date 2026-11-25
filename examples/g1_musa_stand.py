@@ -14,6 +14,7 @@ import g1_mujoco_tyx_policy as g1
 import mujoco as mj
 import numpy as np
 import prepare_g1_stand_assets as assets_spec
+from _g1_stand_balance import CAPTURE_GAIN, HEEL_M, LOAD_THRESHOLD_N, SIDE_M, TOE_M, AnkleBalance
 
 from phymeo.backends.mujoco_tyx import _kernels
 
@@ -57,6 +58,7 @@ def run(args, journal):
         steps=args.steps,
         drift_limits=DRIFT_LIMITS,
         settling_time_s=g1.SETTLING,
+        controller=args.controller,
     )
     start = time.perf_counter()
     with g1.runtime_for(compilation, q, v, 0, "musa", args.cache_root) as runtime:
@@ -74,6 +76,23 @@ def run(args, journal):
         gpu_control, cpu_control = (
             g1.Controller(protocol, state.q, H, stand=True) for _ in range(2)
         )
+        gpu_balance = cpu_balance = None
+        previous_gpu_load = previous_cpu_load = None
+        if args.controller == "balance":
+            gpu_balance = AnkleBalance(protocol, state.q)
+            cpu_balance = AnkleBalance(protocol, cpu.qpos)
+            journal.write(
+                "balance_law",
+                capture_gain=CAPTURE_GAIN,
+                heel_m=HEEL_M,
+                toe_m=TOE_M,
+                side_m=SIDE_M,
+                minimum_loaded_foot_n=LOAD_THRESHOLD_N,
+                total_vertical_budget_n=protocol.weight,
+                joint_order=[["left_pitch", "left_roll"], ["right_pitch", "right_roll"]],
+                observer="per-lane MuJoCo kinematics and subtree COM Jacobian on the current input",
+                support_feedback="previously completed step's input-phase contact load",
+            )
         feet = g1.endpoint_foot_centers(protocol, state.q)
         for stats in (gpu_stats, cpu_stats):
             stats.foot_origin = feet[:, :2].copy()
@@ -92,6 +111,11 @@ def run(args, journal):
         for tick in range(args.steps):
             step_start = time.perf_counter()
             proposal = gpu_control.propose(state.q, state.v, state.time, tick)
+            gpu_observation = None
+            if gpu_balance is not None:
+                proposal, gpu_observation = gpu_balance.correct(
+                    proposal, state.q, state.v, previous_gpu_load
+                )
             requested = g1.packet_for(protocol, proposal, tick * H, 0)
             runtime.set_controls({0: requested})
             product_before = runtime.counters["completed_kernels"]
@@ -137,6 +161,11 @@ def run(args, journal):
             # This reference feeds back its own state and never receives a subsequent device pose.
             cpu_q, cpu_v, cpu_t = cpu.qpos.copy(), cpu.qvel.copy(), cpu.time
             cpu_proposal = cpu_control.propose(cpu_q, cpu_v, cpu_t, tick)
+            cpu_observation = None
+            if cpu_balance is not None:
+                cpu_proposal, cpu_observation = cpu_balance.correct(
+                    cpu_proposal, cpu_q, cpu_v, previous_cpu_load
+                )
             cpu_packet = g1.packet_for(protocol, cpu_proposal, tick * H, 0)
             g1.set_native(cpu, cpu_packet)
             mj.mj_step(model, cpu)
@@ -147,6 +176,15 @@ def run(args, journal):
                 )
             native = g1.native_fields(model, cpu, cpu_q, cpu_v, cpu_packet, full=False)
             cpu_loads = g1.support(protocol, native["contacts"], cpu_v, native["body_com"])
+            balance_record = {}
+            if gpu_balance is not None:
+                balance_record = {
+                    "load_source_tick": tick if previous_gpu_load is not None else None,
+                    "gpu_balance": gpu_observation,
+                    "cpu_balance": cpu_observation,
+                }
+                previous_gpu_load = gpu_loads["foot_force_world"][:, 2].copy()
+                previous_cpu_load = cpu_loads["foot_force_world"][:, 2].copy()
             _, _, cpu_fail, _ = cpu_stats.update(
                 cpu.qpos,
                 cpu.qvel,
@@ -176,6 +214,7 @@ def run(args, journal):
                 difference=difference,
                 completed_kernels=report["completed_kernels"],
                 gpu_step_wall_s=gpu_wall,
+                **balance_record,
             )
             if tick < 2 or (tick + 1) % 25 == 0 or tick + 1 == args.steps:
                 print(
@@ -195,6 +234,7 @@ def run(args, journal):
         failures = gpu["checkpoint_failures"] + reference["checkpoint_failures"]
         return {
             "status": "FAIL" if failures else ("STAND_PASS" if assessed else "PROBE_ONLY"),
+            "controller": args.controller,
             "steps": args.steps,
             "simulated_s": H * args.steps,
             "wall_s": time.perf_counter() - start,
@@ -213,6 +253,12 @@ def main():
         "--assets", type=Path, required=True, help="directory with pinned G1 XML and deploy.yaml"
     )
     parser.add_argument("--cache-root", type=Path)
+    parser.add_argument(
+        "--controller",
+        choices=("pd", "balance"),
+        default="pd",
+        help="original joint PD, or PD plus load-gated capture-point ankle feedback",
+    )
     parser.add_argument("--output", type=Path, required=True, help="new .jsonl or .jsonl.gz path")
     parser.add_argument(
         "--steps", type=int, default=MIN_STAND_STEPS, help="2 for a probe; 250 for standing"

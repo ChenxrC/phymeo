@@ -203,10 +203,11 @@ def _musa_t4_pairs_supported(plan, model, mj):
     shapes = model.geom_type[plan.pair_ids[: plan.npair, :2]]
     dims = plan.pair_condim[: plan.npair]
     plane, sphere = mj.mjtGeom.mjGEOM_PLANE, mj.mjtGeom.mjGEOM_SPHERE
-    capsule = mj.mjtGeom.mjGEOM_CAPSULE
+    capsule, box = mj.mjtGeom.mjGEOM_CAPSULE, mj.mjtGeom.mjGEOM_BOX
     basic = np.isin(shapes[:, 0], (plane, sphere)) & np.isin(dims, (1, 3))
     round_pairs = np.all(np.isin(shapes, (plane, sphere, capsule)), axis=1)
-    return bool(np.all(basic | (round_pairs & np.isin(dims, (1, 3, 6)))))
+    capsule_box = (shapes[:, 0] == capsule) & (shapes[:, 1] == box) & np.isin(dims, (1, 3))
+    return bool(np.all(basic | capsule_box | (round_pairs & np.isin(dims, (1, 3, 6)))))
 
 
 def _constraint_friction_label(dry_rows, dimensions):
@@ -266,7 +267,7 @@ def _require_musa_plan(plan, model, mj):
                 "MUSA admits the unrestricted prismatic solver, a single free-root scalar "
                 "tree without contact, or T4 contact between a free rigid payload and up to "
                 "two fixed-base scalar trees, or fixed/single-free-root scalar trees with T4 "
-                "hinge/slide limits, DOF dry friction, basic condim 1/3 contacts, or "
+                "hinge/slide limits, DOF dry friction, basic or capsule/box condim 1/3 contacts, or "
                 "plane/sphere/capsule pairs with condim 1/3/6",
             ),
         )
@@ -278,7 +279,7 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
 
     MUSA executes the unrestricted prismatic route, a single unconstrained
     floating tree, and the fixed/single-floating tree T4 solve for scalar
-    joint limits, DOF dry friction, basic primitive condim 1/3 contacts and
+    joint limits, DOF dry friction, basic primitive and capsule/box condim 1/3 contacts and
     plane/sphere/capsule pairs with condim 1/3/6.
 
     Floating domain: one native free root and 0..29 hinge/slide joints, full

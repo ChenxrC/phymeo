@@ -1,5 +1,7 @@
 # Phymeo 独立渲染引擎
 
+[渲染快速入门（中文）](docs/quickstart-zh.md)提供启动命令、后台仿真接入、相机查看和模型下载后的行走示例。
+
 [打开引擎架构图](architecture.html) · [画质目标与 R0–R4 路线图](../docs/rendering/roadmap.html)
 
 [开发计划与 agent 分工](plans/README.md)列出七个模块的任务单、合并次序及整机验收方法。接手单个模块从分工表进入，负责集成或签收可直接阅读[上下游合并计划](plans/08-integration.md)和[最终验收规程](plans/09-acceptance.md)。

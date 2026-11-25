@@ -185,7 +185,8 @@ def prepare_entry(device):
             device.status,
         )
         if route == "legacy":
-            kernels.legacy(
+            device.launch_kernel(
+                device.musa_entry_legacy if device.mode == "musa" else kernels.legacy,
                 device.nworld,
                 cap,
                 device.rows,
@@ -193,7 +194,6 @@ def prepare_entry(device):
                 device.entry_legacy_ids,
                 device.entry_legacy_frame,
                 *outputs,
-                mode=device.mode,
             )
         elif route == "normal":
             kernels.normal(

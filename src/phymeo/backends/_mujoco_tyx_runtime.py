@@ -200,8 +200,8 @@ class MuJoCoTyxStepReceipt:
 class MuJoCoTyxRuntime(MuJoCoRuntime):
     """Own TYX interpret, CUDA or MUSA execution and atomic publication for sparse worlds.
 
-    MUSA currently admits the original one-slide constant-mass route with no
-    contact pairs, auxiliary constraints or device control imports.
+    MUSA admits one unrestricted slide on the constant-mass route, optionally
+    with one frictionless sphere against a static plane.
 
     Floating domain: one native free root and 0..29 hinge/slide joints, full
     root/joint coupling, origin world linear and local angular velocities.
@@ -285,16 +285,23 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
             from .mujoco_tyx import MuJoCoTyxIssue
             from .mujoco_tyx._model import TyxModel
 
+            # This lowerer admits at most one static-plane/mobile-sphere pair
+            # and requires its mixed MuJoCo contact dimension to be one.
             if not (
                 type(self._plan) is TyxModel
                 and self._plan.kind == 0
                 and self._plan.nq == self._plan.nv == self._model.njnt == 1
                 and self._model.jnt_type[0] == self._mj.mjtJoint.mjJNT_SLIDE
                 and not self._model.jnt_limited[0]
-                and self._plan.pair is None
             ):
                 raise MuJoCoTyxUnsupported(
-                    (MuJoCoTyxIssue("musa-domain", "MUSA requires one unrestricted slide without contact"),)
+                    (
+                        MuJoCoTyxIssue(
+                            "musa-domain",
+                            "MUSA requires one unrestricted slide with at most one "
+                            "condim=1 plane/sphere pair",
+                        ),
+                    )
                 )
         if getattr(self._plan, "constraint_contact", False):
             if self._contact_capacity > 128 or self._constraint_capacity > 512:
@@ -381,10 +388,20 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
             g1_supported=False,
         )
         if mode == "musa":
+            has_contact_pair = self._plan.pair is not None
             info.update(
-                domain="single-slide-no-contact-v1",
-                contact_law="none",
-                numerical_solver="constant-mass-damped-euler",
+                domain=(
+                    "single-slide-plane-sphere-normal-v1"
+                    if has_contact_pair
+                    else "single-slide-no-contact-v1"
+                ),
+                contact_law=LAW if has_contact_pair else "none",
+                contact_dimensions=(1,) if has_contact_pair else (),
+                numerical_solver=(
+                    "single-normal-direct-qp" if has_contact_pair else "constant-mass-damped-euler"
+                ),
+                friction="none",
+                limits="unsupported",
                 device_controls=False,
                 device_control_host_audit=None,
             )

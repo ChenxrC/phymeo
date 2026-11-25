@@ -64,6 +64,10 @@ class TyxDevice:
                 self.musa_entry_state = MusaKernel(
                     _entry_kernels.state, cache_root=cache_root, arch=arch
                 )
+                if plan.pair is not None:
+                    self.musa_entry_legacy = MusaKernel(
+                        _entry_kernels.legacy, cache_root=cache_root, arch=arch
+                    )
             with self.runtime_scope():
                 for name in (
                     "matrices",

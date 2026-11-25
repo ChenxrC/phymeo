@@ -1,6 +1,6 @@
 # 在摩尔线程 GPU 上运行 Phymeo 滑块动力学
 
-`MuJoCoRuntime(..., mode="musa")` 使用 CPU MuJoCo 编译模型，然后由 Phymeo 在 MUSA 设备上推进状态。当前入口支持一个无限位移动关节、无接触对的模型，可在一个批次内用不同控制推进多个同构世界。
+`MuJoCoRuntime(..., mode="musa")` 使用 CPU MuJoCo 编译模型，然后由 Phymeo 在 MUSA 设备上推进状态。当前入口支持一个无限位移动关节，可以自由运动，也可以让一个球形碰撞体与一个静态平面产生无摩擦法向接触（有效 `condim=1`）。同批世界共用模型，各自保存初态、控制和接触状态。
 
 ## 运行
 
@@ -39,7 +39,7 @@ with MuJoCoRuntime(model, mode="musa", world_keys=(4, 91)) as sim:
     print(sim.musa_device_report())
 ```
 
-CPU 完成 MJCF 编译。Phymeo 复用现有 Tyx 动力学内核的中间表示，按设备报告的架构用 MCC 编译。GPU 保存当前状态和候选状态，成功读回并检查整批候选结果后才切换。控制目前从主机上传，显式 `snapshot()` 可在 CPU 上计算派生观测；验收逐步禁止在 `step()` 内调用 CPU MuJoCo 积分、前向计算或 Tyx 解释器。接触、多关节、训练张量互操作需要后续单独验证。该入口与 Vulkan 渲染的设备选择各自独立。
+CPU 完成 MJCF 编译。Phymeo 复用现有 Tyx 动力学内核的中间表示，按设备报告的架构用 MCC 编译。GPU 保存当前状态和候选状态，成功读回并检查整批候选结果后才切换。控制目前从主机上传。要读取此次运动实际使用的接触力，取 `sim.integration_snapshot()[world].last_step.contacts`，其中 `wrench_contact_frame[0]` 是步首求出的法向力（N）。显式 `sim.snapshot()[world].contacts` 则会在 CPU 上按步末姿态重新计算接触。多关节、摩擦和训练张量互操作需要后续单独验证。该入口与 Vulkan 渲染的设备选择各自独立。
 
 ## S4000 实测
 
@@ -54,4 +54,44 @@ CPU 完成 MJCF 编译。Phymeo 复用现有 Tyx 动力学内核的中间表示�
 | 登记的设备数组 | 38 个，共 31,380 字节，关闭后预算占用归零 |
 | 累计传输 | 主机到设备 35,412 字节，设备到主机 15,168 字节 |
 
-同机另验收了两个边界。候选读回故障时，两世界均保留上一帧的位置、速度、时间与状态版本，恢复读回后只推进一个有效步。带球–平面接触的模型在分配设备缓冲前被明确拒绝。另有 3 项原有 Tyx 解释路径回归通过。本次运行没有单独计时 JIT、传输及稳态积分，不能由验收时长推算吞吐量。
+无接触批次还注入了候选读回故障。两世界均保留上一帧的位置、速度、时间与状态版本，恢复读回后只推进一个有效步。无接触版本 `753abbc7` 另有 3 项 Tyx 解释路径回归通过。表内统计属于无接触批次。JIT、传输及稳态积分尚未单独计时。
+
+## 从两个高度落地并持续承载
+
+下面的模型给质量 0.5 kg、半径 100 mm 的球加一个竖直移动关节。球心在关节零位时高 99 mm，因此初始关节位移 7 mm 和 21 mm 分别给出 6 mm 和 20 mm 的净间隙。
+
+```python
+from phymeo.backends.mujoco_runtime import MuJoCoInitialState, MuJoCoRuntime
+from phymeo.builders.mujoco_compiler import compile_mujoco_xml
+
+xml = """<mujoco><option timestep=".001" gravity="0 0 -9.81"/>
+  <worldbody>
+    <geom name="floor" type="plane" size="2 2 .1" condim="1"/>
+    <body name="body" pos="0 0 .099">
+      <joint name="slide" type="slide" axis="0 0 1"/>
+      <geom name="ball" type="sphere" size=".1" mass=".5" condim="1"
+            solref=".006 1" solimp=".85 .95 .002 .4 2"/>
+    </body>
+  </worldbody></mujoco>"""
+model = compile_mujoco_xml(xml, require_asset=False)
+starts = {4: MuJoCoInitialState([.007], [0.]), 91: MuJoCoInitialState([.021], [0.])}
+with MuJoCoRuntime(model, mode="musa", world_keys=tuple(starts), initial_states=starts,
+                   contact_capacity=1, constraint_capacity=1) as sim:
+    for _ in range(240):
+        sim.step(sim.timestep)
+    for world, state in sim.integration_snapshot().items():
+        print(world, state.last_step.contact_time, state.last_step.contacts[0].wrench_contact_frame[0])
+```
+
+每个世界共推进 240 ms。独立的 CPU MuJoCo 逐步比较位置、速度和入步法向力。首次非零力与首次接触在两个后端的采样时刻一致。表中时间是 1 ms 离散采样时间。
+
+| 初始净间隙 | 首次非零力的步首时刻 | 峰值法向力 | 最大压入 | 末 40 ms 平均支撑力 | 最后一步压入 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 6 mm | 35 ms | 29.152 N | 1.624 mm | 4.90496 N | 0.23417 mm |
+| 20 mm | 64 ms | 50.496 N | 2.944 mm | 4.90434 N | 0.23419 mm |
+
+第一个世界在第 35 步的端点观测首次出现接触，第 36 步的求解使用该姿态施力，两者都对应 35 ms。第二个世界对应第 64 步端点和第 65 步步首。若把入步法向力标在步末，会把冲击峰画晚一拍。
+
+两条轨迹的 GPU 对 CPU 最大绝对差分别为位置 6.25 × 10⁻⁹ m 以内、速度 4.60 × 10⁻⁷ m/s 以内、法向力 9.47 × 10⁻⁵ N 以内。约 0.234 mm 的静止压入也出现在 CPU 参考中，是这组软接触参数共同给出的承载变形。理论重力载荷为 4.905 N。
+
+本批在 S4000 上整批发射并完成 720 次内核。抽查接触转换和末帧时，直接读取 GPU 已接受缓冲中的几何 ID、接触数和法向力。接触容量设为零、仅一个世界落在接触区时，整批返回容量错误，两个世界均保留上次状态。测试还覆盖了摩擦模型拒绝、无接触回归及原 Tyx 解释路径，合计 7 项通过。

@@ -8,6 +8,9 @@ import mujoco as mj
 import numpy as np
 
 from _heterogeneous_camera_worlds import WORLD_KEYS
+from _studio_contact_evidence import ContactEvidence
+from _studio_grasp_control import grasp_setup, studio_grasp_mjcf
+from _studio_pusht_control import PushController
 from phymeo.builders.mujoco_compiler import compile_mujoco_xml
 from phymeo.training.manipulation_tasks import H, manipulation_scenes
 
@@ -21,61 +24,18 @@ class StudioMotion:
     report: dict
 
 
-def _model(scene):
-    return compile_mujoco_xml(scene.mjcf, require_asset=False).fresh_native_model()
+def _model(scene, *, contact_demonstration=True):
+    source = studio_grasp_mjcf(scene) if contact_demonstration and scene.finger_geom_names else scene.mjcf
+    return compile_mujoco_xml(source, require_asset=False).fresh_native_model()
 
 
-def _targets(scene):
-    """Joint travel, in radians/metres, for slow reach, close, traverse and release beats."""
-    count = len(scene.robot_joint_names)
-    home = np.zeros(count)
-    reach, close, lift, traverse = (home.copy() for _ in range(4))
-    if scene.finger_geom_names:
-        if 'P' in scene.robot_kinds:
-            # The freely rolling ball needs an overhead pre-grasp. Raise the
-            # vertical slide before bringing the pads together and traversing.
-            reach[scene.robot_kinds.index('P')] = .025
-            lift[scene.robot_kinds.index('P')] = .06
-        else:
-            reach[1:3] = (.28, -.18)
-            lift[1:3] = (-.31, .24)
-        close[:] = reach
-        close[-2:] = .052
-        lift[-2:] = close[-2:]
-        traverse[:] = lift
-        traverse[0] = .50
-    else:
-        # Approach from the side, sweep laterally, retract, then return above
-        # the same work area. Only original joint motors act on the mechanism.
-        if scene.robot_kinds == 'PPPR':
-            reach[:3] = (.083, -.055, -.020)
-            close[:3] = (.113, -.024, -.020)
-            lift[:3] = (.105, .055, -.020)
-            traverse[:3] = (.015, .085, .025)
-        else:
-            straight = (-.44, .82) if count == 2 else (-.54, 1.13, -.54)
-            reach[:] = straight
-            reach[0] -= .14
-            close[:] = straight
-            lift[:] = close
-            lift[0] += .15
-            traverse[0] = .34
-    return np.asarray((home, reach, close, lift, traverse, lift, close, reach, home))
-
-
-def _record(scene, model, ticks, end_tick, world_index):
+def _record(scene, model, ticks, end_tick):
     data = mj.MjData(model)
     mj.mj_forward(model, data)
     if model.opt.timestep != H:
         raise ValueError('studio playback requires the registered 1 ms models')
-    joints = np.array([model.joint(n).id for n in scene.robot_joint_names])
-    actors = np.array([model.actuator(n).id for n in scene.actuator_names])
-    q, v = model.jnt_qposadr[joints], model.jnt_dofadr[joints]
-    slide = model.jnt_type[joints] == mj.mjtJoint.mjJNT_SLIDE
-    kp, kd = np.where(slide, 230., 28.), np.where(slide, 10., 2.4)
-    spans = np.array((0., .16, .25, .41, .56, .69, .79, .88, 1.))
-    targets = _targets(scene)
-    cycle_s = 7.3 + .41 * world_index
+    controller = grasp_setup(scene, model, data) if scene.finger_geom_names else PushController(scene, model, data)
+    evidence = ContactEvidence(scene, model, controller.setup)
     pose_rows = np.empty((len(ticks), model.nbody, 3, 4))
     object_id = model.body(scene.object_key).id
     free_joint = model.body_jntadr[object_id]
@@ -98,17 +58,12 @@ def _record(scene, model, ticks, end_tick, world_index):
         if tick == end_tick:
             break
         if tick % 4 == 0:
-            phase = (tick * H / cycle_s) % 1.
-            seg = np.searchsorted(spans, phase, side='right') - 1
-            u = (phase - spans[seg]) / (spans[seg + 1] - spans[seg])
-            smooth = u * u * (3. - 2. * u)
-            desired = targets[seg] + smooth * (targets[seg + 1] - targets[seg])
-            torque = kp * (desired - data.qpos[q]) - kd * data.qvel[v] + data.qfrc_bias[v]
-            data.ctrl[actors] = np.clip(torque, *model.actuator_ctrlrange[actors].T)
+            controller.apply(data, tick * H)
         remaining = ticks[index] - tick if index < len(ticks) else end_tick - tick
         steps = min(4 - tick % 4, int(remaining), end_tick - tick)
         for _ in range(steps):
             mj.mj_step(model, data)
+            evidence.inspect(data, tick)
             tick += 1
             object_path[tick] = data.qpos[adr:adr + 3]
     mj.mj_kinematics(model, data)
@@ -123,20 +78,23 @@ def _record(scene, model, ticks, end_tick, world_index):
     radius = float(np.max(np.linalg.norm(model.geom_pos[geoms], axis=1) + model.geom_rbound[geoms]))
     minimum, maximum = object_path.min(axis=0), object_path.max(axis=0)
     limits = ((-.30, .75), (-.34, .34))
-    if (not np.isfinite(object_path).all()
-            or any(minimum[i] - radius < lo or maximum[i] + radius > hi for i, (lo, hi) in enumerate(limits))):
-        raise RuntimeError(f'{scene.key}: workpiece leaves the overview table, centre range {minimum} to {maximum}')
+    table_ok = np.isfinite(object_path).all() and all(
+        minimum[i] - radius >= lo and maximum[i] + radius <= hi for i, (lo, hi) in enumerate(limits))
     tool = pose_rows[:, model.body('tool').id, :, 3]
-    stats = dict(model_key=scene.key, mjcf_sha256=scene.source_sha256,
+    mj.mj_forward(model, data)
+    stats = dict(task=controller.setup, interaction=evidence.result(data), model_key=scene.key, mjcf_sha256=scene.source_sha256,
                  body_names=[model.body(i).name for i in range(model.nbody)],
                  actuated_joints=list(scene.robot_joint_names), actuator_names=list(scene.actuator_names),
                  end_time_s=float(data.time), tool_axis_travel_m=np.ptp(tool, axis=0).tolist(),
-                 object_axis_travel_m=(maximum - minimum).tolist(), cycle_s=cycle_s,
+                 object_axis_travel_m=(maximum - minimum).tolist(),
                  workpiece_bounds=dict(table_xy_m=limits, enclosing_radius_m=radius, checked_states=end_tick + 1,
                                        centre_min_m=minimum.tolist(), centre_max_m=maximum.tolist()),
                  observed_contact_warnings=[int(w.number) for w in data.warning])
-    if max(stats['tool_axis_travel_m']) < .01 and end_tick >= 2000:
-        raise RuntimeError(f'{scene.key}: less than 1 cm tool travel')
+    stats['interaction']['stayed_on_set'] = bool(table_ok)
+    tail_xy = object_path[-min(end_tick+1, int(round(1./H))+1):, :2]
+    stats['interaction']['last_second_max_xy_drift_m'] = float(np.linalg.norm(tail_xy-tail_xy[0], axis=1).max())
+    stats['interaction']['passed'] &= bool(table_ok and max(stats['tool_axis_travel_m']) >= .01
+                                          and not any(stats['observed_contact_warnings']))
     return pose_rows, times, final, stats
 
 
@@ -167,15 +125,19 @@ def record_motion(directory, keys, fps=30, seconds=30):
     for key in keys:
         scene = catalog[key]
         models[key] = _model(scene)
-        trajectory, clock, final, stats = _record(scene, models[key], ticks, end, WORLD_KEYS.index(key))
+        trajectory, clock, final, stats = _record(scene, models[key], ticks, end)
         if times is not None and not np.array_equal(times, clock):
             raise RuntimeError('world clocks differ')
         times = clock
         rows[key] = arrays[f'rows_{key}'] = trajectory
         arrays[f'endpoint_{key}'] = final
         evidence.append(dict(world=key, **stats))
+    failures = {row['model_key']: row['interaction'] for row in evidence if not row['interaction']['passed']}
+    if failures:
+        (directory/'failed-interactions.json').write_text(json.dumps(failures, indent=2), encoding='utf-8')
+        raise RuntimeError('task contact or final-state verification failed: ' + ', '.join(failures))
     np.savez_compressed(archive, ticks=ticks, times=times, **arrays)
-    report = dict(format='studio-motion-v1', backend='MuJoCo CPU mj_step', mujoco_version=mj.__version__,
+    report = dict(format='studio-motion-v2', backend='MuJoCo CPU mj_step', mujoco_version=mj.__version__,
                   control='joint PD with gravity/bias compensation through the original motors, 4 ms hold',
                   fps=fps, seconds=seconds, frames=len(ticks), step_s=H, end_tick=end, worlds=evidence,
                   archive_sha256=sha256(archive.read_bytes()).hexdigest())
@@ -188,7 +150,7 @@ def load_motion(directory):
     directory = Path(directory)
     archive = directory / 'motion.npz'
     report = json.loads((directory / 'motion.json').read_text(encoding='utf-8'))
-    if report['format'] != 'studio-motion-v1' or sha256(archive.read_bytes()).hexdigest() != report['archive_sha256']:
+    if report['format'] not in ('studio-motion-v1', 'studio-motion-v2') or sha256(archive.read_bytes()).hexdigest() != report['archive_sha256']:
         raise ValueError('different motion format or archive checksum')
     catalog = dict(zip(WORLD_KEYS, manipulation_scenes(), strict=True))
     models, rows = {}, {}
@@ -201,7 +163,11 @@ def load_motion(directory):
         for entry in report['worlds']:
             key = entry['world']
             scene = catalog[key]
-            model = _model(scene)
+            model = _model(scene, contact_demonstration=report['format'] == 'studio-motion-v2')
+            expected_source = studio_grasp_mjcf(scene) if scene.finger_geom_names else scene.mjcf
+            if report['format'] == 'studio-motion-v2' and scene.finger_geom_names:
+                if entry['task']['studio_mjcf_sha256'] != sha256(expected_source.encode()).hexdigest():
+                    raise ValueError('studio jaw geometry differs from recorded contact geometry')
             if (key in models or scene.source_sha256 != entry['mjcf_sha256'] or scene.key != entry['model_key']
                     or entry['body_names'] != [model.body(i).name for i in range(model.nbody)]):
                 raise ValueError('duplicate world, changed source scene or body order')

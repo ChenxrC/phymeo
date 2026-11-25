@@ -55,7 +55,7 @@ def _rgb_image(frame, size):
 class StudioMovieWriter:
     """All ten MP4s share one input packet, timestamp, and lossless set of crop locations."""
 
-    def __init__(self, directory, keys, names, *, overview_size, camera_size, fps=30):
+    def __init__(self, directory, keys, names, *, overview_size, camera_size, fps=30, contact_tasks=False):
         if type(fps) is not int or fps <= 0:
             raise ValueError('fps must be a positive integer')
         self.root = Path(directory)
@@ -66,19 +66,26 @@ class StudioMovieWriter:
         self.camera_size = _size(camera_size)
         ow, oh = self.overview_size
         w, h = self.camera_size
-        gutter, strip = 8, max(36, 2 * (w // 24))
+        gutter, title_height = 8, max(36, 2 * (w // 24))
+        strip = title_height + (2 * (title_height // 4) if contact_tasks else 0)
         board_w, board_h = 4*w + 5*gutter, 2*(h+strip) + 3*gutter
         self.atlas = Image.new('RGB', (max(ow, board_w), oh + board_h), '#19282b')
         draw = ImageDraw.Draw(self.atlas)
-        title_font = _font(max(14, strip//2), bold=True)
-        minor_font = _font(max(12, strip*2//5))
+        title_font = _font(max(14, title_height//2), bold=True)
+        minor_font = _font(max(12, title_height*2//5))
         self.origins = []
         for i, key in enumerate(self.keys):
             col, row = i%4, i//4
             x, top = gutter + col*(w+gutter), oh + gutter + row*(h + strip + gutter)
             label = OBJECTS.get(names[key], names[key].replace('-', ' ').capitalize())
-            draw.text((x+6, top+strip//2), label, fill='#f4f3ef', font=title_font, anchor='lm')
-            draw.text((x+w-6, top+strip//2), f'World {key}', fill='#c6d9d7', font=minor_font, anchor='rm')
+            title_y = top + (strip//3 if contact_tasks else strip//2)
+            draw.text((x+6, title_y), label, fill='#f4f3ef', font=title_font, anchor='lm')
+            draw.text((x+w-6, title_y), f'World {key}', fill='#c6d9d7', font=minor_font, anchor='rm')
+            if contact_tasks:
+                pushing = names[key].startswith('pusht-')
+                action = 'Push into the amber T outline' if pushing else 'Pick up and place'
+                ink = '#ffd37e' if pushing else '#c4e5dd'
+                draw.text((x+6, top+strip*3//4), action, fill=ink, font=minor_font, anchor='lm')
             self.origins.append((x, top+strip))
 
         # Convert the RGB atlas once. The overview and eight single-camera movies

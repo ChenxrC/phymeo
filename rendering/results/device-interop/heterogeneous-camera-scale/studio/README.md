@@ -1,6 +1,6 @@
 # 八世界机械臂摄影棚
 
-**30 秒录像**　[一个镜头看八个工位](films/overview.mp4) · [八台独立相机同步播放](films/multiview.mp4) · [逐工位视频与说明](films/README.md)
+**抓放与推 T，30 秒录像**　[八路同步近景](contact-films/multiview.mp4) · [一个镜头看八个工位](contact-films/overview.mp4) · [逐工位视频与接触记录](contact-films/README.md)
 
 ![球形工件固定机位的诊断光与摄影棚布光](same-frame.png)
 

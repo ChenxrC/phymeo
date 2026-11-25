@@ -1,7 +1,6 @@
 """One photographic room for eight independent manipulation worlds, in metres.
 
-Only the visual placement changes. Each original body pose and the instance's
-body-local pose retain their orientations and physical scale.
+Rigid stage transforms place independent worlds on the set at their physical scale.
 """
 from dataclasses import dataclass, replace
 from hashlib import sha256
@@ -17,7 +16,7 @@ from galaxea_r1.finish_details import _store
 from phymeo_rendering.assets import Material, Mesh, TexturedMaterial
 from phymeo_rendering.cameras import Camera
 from phymeo_rendering.mesh_data import _local_path, load_mesh
-from phymeo_rendering.scene import FrameKey, Instance, NodePose, Pose, SceneFrame, VisualScene
+from phymeo_rendering.scene import FrameKey, Instance, NodePose, Pose, SceneFrame, VisualScene, compose_pose
 
 
 _LEFT, _RIGHT = -.30, .75
@@ -93,7 +92,7 @@ def _shared_tables(directory):
     return top, trim.mesh(directory,'compact-edge'), frame.mesh(directory,'bench-underframe')
 
 
-def _room(directory, assets, keys, offsets):
+def _room(directory, assets, keys, placements):
     floor, plaster, storage, handles = (_Surface() for _ in range(4))
     floor.quad(((-8.,-7.,_FLOOR),(8.,-7.,_FLOOR),(8.,5.,_FLOOR),(-8.,5.,_FLOOR)), ((0.,0.,1.),)*4)
     plaster.block((-6.,2.49,_FLOOR), (6.,2.55,3.4))
@@ -115,8 +114,9 @@ def _room(directory, assets, keys, offsets):
     segments = ((0,2,1,2),(1,1,1,2),(1,0,1,1),(0,0,1,0),(0,0,0,1),(0,1,0,2),(0,1,1,1))
     digits = ('abcdef','bc','abdeg','abcdg','bcfg','acdfg','acdefg','abc','abcdefg','abcdfg')
     for key in keys:
-        ox, oy, _ = offsets[key]
-        left, front = ox+_LEFT+.026, oy+_FRONT+.018
+        corners = [compose_pose(placements[key],Pose((x,y,0.))).position_m
+                   for x,y in product((_LEFT,_RIGHT),(_FRONT,_BACK))]
+        left, front = min(p[0] for p in corners)+.026, min(p[1] for p in corners)+.018
         plates.block((left,front,.0004),(left+.146,front+.055,.0018))
         label = str(key)
         x = left + (.146-(len(label)*.023-.005))*.5
@@ -140,6 +140,7 @@ class EightStudio:
     instance_ids: dict
     source_scenes: dict
     moving_nodes: dict
+    placements: dict
 
     def frame(self, local_frames, frame_key=None, time_s=None):
         if set(local_frames) != set(self.keys):
@@ -162,13 +163,12 @@ class EightStudio:
             time_s = first.time_s
         nodes = [NodePose(_ROOM, Pose())]
         for key, f in zip(self.keys, frames):
-            offset = self.offsets[key]
-            nodes.append(NodePose(f'bay-{key}/fixed',Pose(offset)))
+            placement = self.placements[key]
+            nodes.append(NodePose(f'bay-{key}/fixed',placement))
             local = {n.node_id:n.world_pose for n in f.nodes}
             for name in self.moving_nodes[key]:
                 pose = local[name]
-                xyz = tuple(a+b for a,b in zip(offset, pose.position_m))
-                nodes.append(NodePose(f'bay-{key}/{name}',replace(pose, position_m=xyz)))
+                nodes.append(NodePose(f'bay-{key}/{name}',compose_pose(placement,pose)))
         return SceneFrame(frame_key, time_s, tuple(nodes))
 
     def camera(self, frame_key, width=1920, height=1080):
@@ -177,7 +177,7 @@ class EightStudio:
         pose = look_at((.57,-7.,5.2), (0.,0.,-.11), (0.,0.,1.))
         # Fit both rows and all front feet to the requested aspect ratio. The
         # more distant camera keeps scale similar across the two rows.
-        bounds = [np.array(xyz)+offset for offset in self.offsets.values() for xyz in
+        bounds = [compose_pose(stage, Pose(xyz)).position_m for stage in self.placements.values() for xyz in
                   product((_LEFT,_RIGHT),(_FRONT,_BACK),(_FLOOR,.30))]
         transform = pose_matrix(pose)
         local = (np.asarray(bounds)-transform[:3,3]) @ transform[:3,:3]
@@ -186,7 +186,7 @@ class EightStudio:
         return Camera('eight-studio',frame_key,pose,width,height,focal,focal,width/2,height/2,.02,20.)
 
 
-def build_eight_studio(scenes, node_bodies, models, directory):
+def build_eight_studio(scenes, node_bodies, models, directory, *, end_on=()):
     """Assemble eight styled P4 scenes in insertion order, front row first."""
     keys = tuple(scenes)
     if len(keys)!=8 or set(keys)!=set(node_bodies) or set(keys)!=set(models):
@@ -197,7 +197,7 @@ def build_eight_studio(scenes, node_bodies, models, directory):
     directory.mkdir(parents=True,exist_ok=True)
     top, trim, frame = _shared_tables(directory)
     assets = _Assets()
-    offsets, ids, moving = {}, {}, {}
+    offsets, ids, moving, placements = {}, {}, {}, {}
     material_trim = Material('aluminium',(.42,.46,.45),.58,.42)
     material_frame = Material('underframe',(.092,.145,.153),.27,.42)
     for index, key in enumerate(keys):
@@ -206,13 +206,23 @@ def build_eight_studio(scenes, node_bodies, models, directory):
         finishes = {m.id:m for m in scene.materials}
         local_names = {model.geom(i).name for i in range(model.ngeom)}
         offsets[key] = ((index%4-1.5)*1.18-(_LEFT+_RIGHT)*.5, (index//4-.5)*1.19, 0.)
+        if key in end_on:
+            # Point the jaw opening toward the overview camera so both fingers
+            # and the round workpiece between them are visible during the lift.
+            center = (_LEFT+_RIGHT)*.5
+            x,y,z = offsets[key]
+            offsets[key] = (x+center,y+center,z)
+            placements[key] = Pose(offsets[key], (0.,0.,-2**-.5,2**-.5))
+        else:
+            placements[key] = Pose(offsets[key])
         ids[key], moving[key] = {}, []
         included = set()
         for item in scene.instances:
             name = item.mesh_id
-            if name not in local_names and name not in _PEDESTAL:
+            if name in local_names or name in _PEDESTAL:
+                included.add(name)
+            elif not name.startswith(('studio-target-', 'studio-tool-')):
                 continue
-            included.add(name)
             mesh = meshes[name]
             if name == 'support':
                 mesh = top
@@ -227,10 +237,10 @@ def build_eight_studio(scenes, node_bodies, models, directory):
             raise ValueError(f'world {key} is missing authored manipulation or pedestal geometry')
         assets.add(trim, material_trim, static)
         assets.add(frame, material_frame, static)
-    _room(directory, assets, keys, offsets)
+    _room(directory, assets, keys, placements)
     # Include source order, semantic layout version, original scene identities
     # and complete mesh content fingerprints in the combined registration key.
-    manifest = repr(([(key,scenes[key].key,offsets[key]) for key in keys],tuple(assets.meshes)))
+    manifest = repr(([(key,scenes[key].key,placements[key]) for key in keys],tuple(assets.meshes)))
     name = 'eight-studio-v1:'+sha256(manifest.encode()).hexdigest()[:24]
     scene = VisualScene(name, tuple(assets.meshes.values()), tuple(assets.materials.values()), tuple(assets.instances))
-    return EightStudio(scene, keys, offsets, ids, {key:scenes[key].key for key in keys}, moving)
+    return EightStudio(scene, keys, offsets, ids, {key:scenes[key].key for key in keys}, moving, placements)

@@ -1,5 +1,7 @@
 # 八个机械臂工位同期录像
 
+[新版八工位录像](../contact-films/README.md) 拍摄带载抓放及按桌面轮廓对齐 T 形工件的过程。
+
 [播放总览](overview.mp4) · [播放八个独立机位的同步拼版](multiview.mp4)
 
 ![总览相机在第 15 秒看到的八个工位](overview-0450.jpg)

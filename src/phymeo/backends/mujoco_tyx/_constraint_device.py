@@ -59,7 +59,7 @@ class TyxConstraintDevice(TyxDevice):
                 self.extended_contacts = _normal_extended_geometry.extended_contacts
             self.ngeom, self.npair, self.nslot = plan.ngeom, plan.npair, plan.nslot
             self.width = max(8, plan.nv)
-            with self.tx.use_runtime(self.runtime):
+            with self.runtime_scope():
                 # The complete final-route manifest was reserved by the base.
                 # Only this extension's remaining allocations are materialized.
                 for entry in self.allocation_manifest.entries:
@@ -71,7 +71,8 @@ class TyxConstraintDevice(TyxDevice):
             raise
 
     def _assemble_rows(self, old):
-        self.assemble[old](
+        self.launch_kernel(
+            self.assemble[old],
             self.nworld,
             self.plan.nv,
             self.nslot,
@@ -101,7 +102,6 @@ class TyxConstraintDevice(TyxDevice):
             self.contact_jacobian,
             self.constraint_counts,
             self.status,
-            mode=self.mode,
         )
         self.counts["completed_kernels"] += 1
 
@@ -113,7 +113,8 @@ class TyxConstraintDevice(TyxDevice):
         geometry_args = [self.nworld, self.nbody, self.plan.nv]
         if self.plan.base.kind == 3:
             geometry_args.append(len(self.plan.joint_ids))
-        self.geometry[old](
+        self.launch_kernel(
+            self.geometry[old],
             *geometry_args,
             self.parents,
             self.ranges,
@@ -130,10 +131,10 @@ class TyxConstraintDevice(TyxDevice):
             self.work,
             self.work_rotation,
             self.status,
-            mode=self.mode,
         )
         self.counts["completed_kernels"] += 1
-        self.mechanics[old](
+        self.launch_kernel(
+            self.mechanics[old],
             self.nworld,
             self.nbody,
             self.plan.nv,
@@ -168,13 +169,13 @@ class TyxConstraintDevice(TyxDevice):
             self.actuator,
             self.work,
             self.status,
-            mode=self.mode,
         )
         self.counts["completed_kernels"] += 1
         _actuator_device.advance(self, old, new)
         if assemble_contacts:
             if self.extended_contacts is not None:
-                self.extended_contacts(
+                self.launch_kernel(
+                    self.extended_contacts,
                     self.nworld,
                     self.ngeom,
                     self.npair,
@@ -189,10 +190,10 @@ class TyxConstraintDevice(TyxDevice):
                     self.raw_contacts,
                     self.extended_work,
                     self.status,
-                    mode=self.mode,
                 )
                 self.counts["completed_kernels"] += 1
-            self.contacts[old](
+            self.launch_kernel(
+                self.contacts[old],
                 self.nworld,
                 self.plan.nv,
                 self.ngeom,
@@ -215,7 +216,6 @@ class TyxConstraintDevice(TyxDevice):
                 self.raw_contacts,
                 self.geometry_diagnostics,
                 self.status,
-                mode=self.mode,
             )
             self.counts["completed_kernels"] += 1
             self._assemble_rows(old)
@@ -223,7 +223,8 @@ class TyxConstraintDevice(TyxDevice):
             self._assemble_rows(old)
 
     def _solve_rows(self, mass, applied):
-        self.constraint_solve(
+        self.launch_kernel(
+            self.constraint_solve,
             self.nworld,
             self.plan.nv,
             self.capacities[1],
@@ -254,7 +255,6 @@ class TyxConstraintDevice(TyxDevice):
             self.physical_acc,
             self.solver_diagnostics,
             self.status,
-            mode=self.mode,
         )
         self.counts["completed_kernels"] += 1
 
@@ -262,20 +262,22 @@ class TyxConstraintDevice(TyxDevice):
         # Shared native tail retains physical M acceleration. The live mode
         # consumes the common velocity; the old mode solves M+hD as before.
         # Both integrate native q/clock once; constraint/rows are disposable.
-        solve_args = [self.nworld, self.plan.nv]
+        live_velocity = bool(getattr(self.plan, "area_friction_laws", ()))
         if self.plan.base.kind == 2:
-            solve_args.extend((self.plan.nq, len(self.plan.joint_ids)))
-        solve_args.append(self.h)
-        if self.plan.base.kind == 2:
-            solve_args.append(self.joints)
-        integrator = self.solve[old]
-        if getattr(self.plan, "area_friction_laws", ()):
-            if self.plan.base.kind == 3:
+            joint_count = len(self.plan.joint_ids)
+            solve_args = (self.nworld, self.plan.nv, self.plan.nq, joint_count, self.h, self.joints)
+            integrator = self.native_integrators[old]
+            tail = (int(live_velocity),)
+        else:
+            solve_args = (self.nworld, self.plan.nv, self.h)
+            tail = (self.plan.nq, len(self.plan.joint_ids), self.joints)
+            integrator = self.solve[old]
+            if live_velocity:
                 from ._floating_kernels import solve_live, solve_live_other
-            else:
-                from ._tree_kernels import solve_live, solve_live_other
-            integrator = (solve_live, solve_live_other)[old]
-        integrator(
+
+                integrator = (solve_live, solve_live_other)[old]
+        self.launch_kernel(
+            integrator,
             *solve_args,
             self.vectors,
             self.mass,
@@ -296,16 +298,7 @@ class TyxConstraintDevice(TyxDevice):
             self.constraint,
             self.rows,
             self.status,
-            *(
-                (
-                    self.plan.nq,
-                    len(self.plan.joint_ids),
-                    self.joints,
-                )
-                if self.plan.base.kind == 3
-                else ()
-            ),
-            mode=self.mode,
+            *tail,
         )
         self.counts["completed_kernels"] += 1
 
@@ -396,7 +389,7 @@ class TyxConstraintDevice(TyxDevice):
         if self._trial_scope is not None:
             raise RuntimeError("cannot advance during native row trials")
         old, new = self.active, 1 - self.active
-        with self.tx.use_runtime(self.runtime):
+        with self.runtime_scope():
             live_friction = bool(getattr(self.plan, "area_friction_laws", ()))
             resident_native = bool(getattr(self.plan, "resident_native_contacts", False))
             mixed_support = live_friction and (self.plan.damped_contact_dofs > 0 or resident_native)
@@ -452,7 +445,8 @@ class TyxConstraintDevice(TyxDevice):
                         response_mass = self.area_response_mass
                 self._solve_rows(response_mass, self.applied)
             if not live_friction or mixed_support:
-                self.decode(
+                self.launch_kernel(
+                    self.decode,
                     self.nworld,
                     self.plan.nv,
                     *self.capacities,
@@ -464,7 +458,6 @@ class TyxConstraintDevice(TyxDevice):
                     self.efc_data,
                     self.contact_wrench,
                     self.status,
-                    mode=self.mode,
                 )
                 self.counts["completed_kernels"] += 1
             self._integrate_candidate(old, new)
@@ -507,7 +500,7 @@ class TyxConstraintDevice(TyxDevice):
             from ._area_friction_device import download
 
             return download(self, result)
-        with self.tx.use_runtime(self.runtime):
+        with self.runtime_scope():
             for name, buffer in (
                 ("normal_rows", self.normal_rows),
                 ("normal_jacobian", self.normal_jacobian),

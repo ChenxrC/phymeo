@@ -648,6 +648,7 @@ def _solve_native(
 # Both modes share the native coordinate tail; q and clock advance once.
 _native_other = tx.kernel(_solve_native)
 _native = tx.kernel(_solve_native)
+native_integrators = (_native, _native_other)
 
 
 def solve(*args, **launch):

@@ -4,6 +4,7 @@ Preregistered in mujoco-tyx-t4-cases.md. Authoring does not execute this module.
 """
 
 import itertools
+import os
 
 import numpy as np
 import pytest
@@ -124,13 +125,14 @@ def mixed_xml(*, dim=6, mass=1.0, h=0.001):
     return _xml(body, dim=dim, h=h)
 
 
-def branch_xml(dim=6):
+def branch_xml(dim=6, *, shape="capsule"):
+    geom = {"capsule": 'type="capsule" size=".1 .1"', "sphere": 'type="sphere" size=".1"'}[shape]
     body = '<body name="ancestor">'
     for i, (x, mass) in enumerate(((-0.099, 1.0), (0.099, 0.6))):
         body += f'''<body name="hinge{i}" pos="{x} 0 .2"><joint name="r{i}" axis="0 1 0"/>
           {_inertial(0.2)}<body name="tip{i}" pos="0 0 -.18">
           <joint name="p{i}" type="slide" axis="1 0 0"/>{_inertial(mass, True)}
-          <geom name="shape{i}" type="capsule" size=".1 .1" pos="0 0 .02"/>
+          <geom name="shape{i}" {geom} pos="0 0 .02"/>
           </body></body>'''
     return _xml(body + "</body>", dim=dim, static="", gravity="0 0 0")
 
@@ -776,7 +778,13 @@ def test_native_minmu_authored_zero_is_not_condim1(mode, tmp_path):
         assert len(after.last_step.constraints) == 4
 
 
-@pytest.mark.parametrize("mode", MODES)
+@pytest.mark.parametrize(
+    "mode",
+    (*MODES, pytest.param("musa", marks=(
+        pytest.mark.musa,
+        pytest.mark.skipif(os.environ.get("PHYMEO_TEST_MUSA") != "1", reason="requires a MUSA GPU"),
+    ))),
+)
 @pytest.mark.parametrize("axis,speed", [(0, -0.4), (0, 0.4), (1, -0.4), (1, 0.4)])
 def test_both_signed_sliding_directions(mode, axis, speed, tmp_path):
     import json

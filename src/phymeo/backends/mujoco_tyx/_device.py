@@ -45,29 +45,15 @@ class TyxDevice:
         )
         self._prepare_allocations(plan, self.nworld, nbody, capacities, resource_budget)
         try:
+            self._open_runtime(cache_root)
             if mode == "musa":
-                from ..tyx_musa import MusaRuntime
-                from ..tyx_musa.compiler import MusaKernel
                 from . import _entry_kernels
 
-                self.runtime = MusaRuntime()
-            else:
-                self.runtime = tx.Runtime(
-                    backend="cuda" if mode == "cuda" else "cpu", cache_root=cache_root
-                )
-            self.resources.set_runtime(self.runtime)
-            if mode == "musa":
-                arch = self.runtime.report()["arch"]
-                self.kernels = tuple(
-                    MusaKernel(kernel, cache_root=cache_root, arch=arch) for kernel in self.kernels
-                )
-                self.musa_entry_state = MusaKernel(
-                    _entry_kernels.state, cache_root=cache_root, arch=arch
-                )
+                # Preserve construction-time validation for the original slider route.
+                for kernel in (*self.kernels, _entry_kernels.state):
+                    self._musa_kernel(kernel)
                 if plan.pair is not None:
-                    self.musa_entry_legacy = MusaKernel(
-                        _entry_kernels.legacy, cache_root=cache_root, arch=arch
-                    )
+                    self._musa_kernel(_entry_kernels.legacy)
             with self.runtime_scope():
                 for name in (
                     "matrices",
@@ -258,13 +244,40 @@ class TyxDevice:
         self.counts["downloaded_bytes"] += result.nbytes
         return result
 
+    def _open_runtime(self, cache_root):
+        if self.mode == "musa":
+            from ..tyx_musa import MusaRuntime
+
+            self.runtime = MusaRuntime()
+        else:
+            self.runtime = self.tx.Runtime(
+                backend="cuda" if self.mode == "cuda" else "cpu", cache_root=cache_root
+            )
+        self.resources.set_runtime(self.runtime)
+        if self.mode == "musa":
+            self._musa_arch = self.runtime.report()["arch"]
+            self._musa_cache_root = cache_root
+            self._musa_kernels = {}
+
+    def _musa_kernel(self, kernel):
+        from ..tyx_musa.compiler import MusaKernel
+
+        # TYX decorates the same function twice for its ping-pong bank handles.
+        # Its frontend fingerprint includes the typed body and inline dependencies.
+        key = (kernel.name, kernel.cache_fingerprint, kernel.gpu_schedule)
+        if key not in self._musa_kernels:
+            self._musa_kernels[key] = MusaKernel(
+                kernel, cache_root=self._musa_cache_root, arch=self._musa_arch
+            )
+        return self._musa_kernels[key]
+
     def runtime_scope(self):
         # MUSA owns an explicit stream. TYX interpret and CUDA use the current runtime.
         return nullcontext() if self.mode == "musa" else self.tx.use_runtime(self.runtime)
 
     def launch_kernel(self, kernel, *args):
         if self.mode == "musa":
-            self.runtime.launch(kernel, *args)
+            self.runtime.launch(self._musa_kernel(kernel), *args)
         else:
             kernel(*args, mode=self.mode)
 

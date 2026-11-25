@@ -130,7 +130,7 @@ def prepare_entry(device):
     na = _na(plan)
     with device.runtime_scope():
         device.launch_kernel(
-            device.musa_entry_state if device.mode == "musa" else kernels.state,
+            kernels.state,
             device.nworld,
             max(8, int(plan.nq)),
             max(8, int(plan.nv)),
@@ -155,7 +155,8 @@ def prepare_entry(device):
                 # Preserve native geometry in its existing seven-field ABI.
                 # Area staging follows in the same inactive bank and does not
                 # synthesize or clear these native contact records.
-                kernels.constraint(
+                device.launch_kernel(
+                    kernels.constraint,
                     device.nworld,
                     int(plan.nslot),
                     int(plan.ngeom),
@@ -172,7 +173,6 @@ def prepare_entry(device):
                     device.entry_contact_ids[new],
                     device.entry_contact_data[new],
                     device.status,
-                    mode=device.mode,
                 )
                 device.counts["completed_kernels"] += 1
             stage_entry(device, new)
@@ -186,7 +186,7 @@ def prepare_entry(device):
         )
         if route == "legacy":
             device.launch_kernel(
-                device.musa_entry_legacy if device.mode == "musa" else kernels.legacy,
+                kernels.legacy,
                 device.nworld,
                 cap,
                 device.rows,
@@ -196,7 +196,8 @@ def prepare_entry(device):
                 *outputs,
             )
         elif route == "normal":
-            kernels.normal(
+            device.launch_kernel(
+                kernels.normal,
                 device.nworld,
                 len(plan.slot_ids),
                 len(plan.geom_ids),
@@ -205,10 +206,10 @@ def prepare_entry(device):
                 device.geom_ids,
                 device.normal_rows,
                 *outputs,
-                mode=device.mode,
             )
         elif route == "constraint":
-            kernels.constraint(
+            device.launch_kernel(
+                kernels.constraint,
                 device.nworld,
                 int(plan.nslot),
                 int(plan.ngeom),
@@ -222,14 +223,14 @@ def prepare_entry(device):
                 device.contact_map,
                 device.contact_wrench,
                 *outputs,
-                mode=device.mode,
             )
         if route != "none":
             device.counts["completed_kernels"] += 1
         if hasattr(plan, "area_pair_names"):
             from ._area_entry_kernels import stage
 
-            stage(
+            device.launch_kernel(
+                stage,
                 device.nworld,
                 max(1, device.capacities[1]),
                 len(plan.area_pair_names),
@@ -247,7 +248,6 @@ def prepare_entry(device):
                 device.area_data[new],
                 device.area_measure_words[new],
                 device.status,
-                mode=device.mode,
             )
             device.counts["completed_kernels"] += 1
     return new

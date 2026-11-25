@@ -1,6 +1,6 @@
-# 在摩尔线程 GPU 上运行 Phymeo 滑块动力学
+# 在摩尔线程 GPU 上运行 Phymeo 关节动力学与接触
 
-`MuJoCoRuntime(..., mode="musa")` 使用 CPU MuJoCo 编译模型，然后由 Phymeo 在 MUSA 设备上推进状态。当前入口支持一个无限位移动关节，可以自由运动，也可以让一个球形碰撞体与一个静态平面产生无摩擦法向接触（有效 `condim=1`）。同批世界共用模型，各自保存初态、控制和接触状态。
+`MuJoCoRuntime(..., mode="musa")` 使用 CPU MuJoCo 编译模型，然后由摩尔线程 GPU 执行 Phymeo 的 Tyx 内核。全移动关节模型可走恒质量路径。固定基座、由移动或转动关节构成的树也可运行基本几何体的金字塔接触求解，接触维数支持 `condim=1`（法向）和 `condim=3`（法向及两个切向）。同批世界共用模型，各自保存初态、控制和接触状态。
 
 ## 运行
 
@@ -12,6 +12,9 @@ export PATH="$MUSA_HOME/bin:$PATH"
 export LD_LIBRARY_PATH="$MUSA_HOME/lib:$MUSA_HOME/lib64:${LD_LIBRARY_PATH:-}"
 python -m pip install -e '.[mujoco]' -r requirements/tyx.txt 'pytest>=8,<10'
 PHYMEO_TEST_MUSA=1 python -m pytest -v --require-tyx tests/test_mujoco_tyx_musa.py
+PHYMEO_TEST_MUSA=1 python -m pytest -v --require-tyx tests/test_mujoco_tyx_musa_friction.py
+PHYMEO_TEST_MUSA=1 python -m pytest -v --require-tyx \
+  tests/test_mujoco_tyx_constraints.py::test_both_signed_sliding_directions -k musa
 ```
 
 下面是可直接运行的最小模型。两个世界共用同一模型，控制和状态分别保存。
@@ -39,7 +42,7 @@ with MuJoCoRuntime(model, mode="musa", world_keys=(4, 91)) as sim:
     print(sim.musa_device_report())
 ```
 
-CPU 完成 MJCF 编译。Phymeo 复用现有 Tyx 动力学内核的中间表示，按设备报告的架构用 MCC 编译。GPU 保存当前状态和候选状态，成功读回并检查整批候选结果后才切换。控制目前从主机上传。要读取此次运动实际使用的接触力，取 `sim.integration_snapshot()[world].last_step.contacts`，其中 `wrench_contact_frame[0]` 是步首求出的法向力（N）。显式 `sim.snapshot()[world].contacts` 则会在 CPU 上按步末姿态重新计算接触。多关节、摩擦和训练张量互操作需要后续单独验证。该入口与 Vulkan 渲染的设备选择各自独立。
+CPU 完成 MJCF 编译。Phymeo 复用现有 Tyx 动力学内核的中间表示，按设备报告的架构用 MCC 编译。GPU 保存当前状态和候选状态，成功读回并检查整批候选结果后才切换。控制目前从主机上传。要读取此次运动实际使用的接触力，取 `sim.integration_snapshot()[world].last_step.contacts`，其中 `wrench_contact_frame[0]` 是步首求出的法向力（N）。显式 `sim.snapshot()[world].contacts` 则会在 CPU 上按步末姿态重新计算接触。训练张量互操作仍待验证。该入口与 Vulkan 渲染的设备选择各自独立。
 
 ## S4000 实测
 
@@ -94,4 +97,21 @@ with MuJoCoRuntime(model, mode="musa", world_keys=tuple(starts), initial_states=
 
 两条轨迹的 GPU 对 CPU 最大绝对差分别为位置 6.25 × 10⁻⁹ m 以内、速度 4.60 × 10⁻⁷ m/s 以内、法向力 9.47 × 10⁻⁵ N 以内。约 0.234 mm 的静止压入也出现在 CPU 参考中，是这组软接触参数共同给出的承载变形。理论重力载荷为 4.905 N。
 
-本批在 S4000 上整批发射并完成 720 次内核。抽查接触转换和末帧时，直接读取 GPU 已接受缓冲中的几何 ID、接触数和法向力。接触容量设为零、仅一个世界落在接触区时，整批返回容量错误，两个世界均保留上次状态。测试还覆盖了摩擦模型拒绝、无接触回归及原 Tyx 解释路径，合计 7 项通过。
+这组落地试验在 S4000 上整批发射并完成 720 次内核。抽查接触转换和末帧时，直接读取 GPU 已接受缓冲中的几何 ID、接触数和法向力。接触容量设为零、仅一个世界落在接触区时，整批返回容量错误，两个世界均保留上次状态。
+
+## 侧推、滑动与连杆间反作用
+
+同一台 S4000 的摩擦试验使用一个可沿 X、Z 运动的 1 kg 球。两个世界先承载 120 ms，然后分别施加恒定侧向力 80 ms。每个世界又用同一组参数跑一次纯法向对照。摩擦组的有效接触维数为 3，摩擦系数为 0.6。对照将有效维数设为 1，确保切向力为零。两组均在每个 1 ms 步与独立 CPU MuJoCo 连续轨迹比对位置、速度、接触力与关节反力。
+
+| 水平外力 | 有摩擦位移 | 纯法向位移 | 有摩擦末速度 | 末 20 步平均水平接触力 |
+| ---: | ---: | ---: | ---: | ---: |
+| 2.4525 N | 0.347 mm | 7.946 mm | 0.00496 m/s | −2.452 N |
+| 11.772 N | 18.943 mm | 38.141 mm | 0.47049 m/s | −6.027 N |
+
+小载荷由摩擦基本平衡，软接触仍有微滑。大载荷下的切向力达到约 6.03 N 的摩擦上限，物体持续滑动。两组摩擦功分别为 −0.000827 J 和 −0.109823 J。混合求解每批每步提交并完成九次设备内核调用，两个世界共享这九次调用。测试在两个状态缓冲都使用过后检查设备分配数和编译缓存，直到末步均保持稳定。
+
+有摩擦的两个世界共提供 400 份步记录。GPU 对 CPU 的最大绝对差为位置 3.35 × 10⁻⁹ m、速度 1.14 × 10⁻⁷ m/s、接触坐标系力分量 1.53 × 10⁻⁵ N。统计覆盖落稳与侧推全程。
+
+另一项测试使用两条各含转动和移动关节的分支，让两个可动球形末端相碰。四个自由度连续推进 16 步，两侧关节均收到反作用，完整状态和接触载荷按步与 CPU 对照。容量测试在一个世界接触、另一个世界分离时，将最多四条摩擦约束行限制为三条，确认整批拒绝且两边都保留上一状态。
+
+这里实测的几何组合为球–平面和球–球。固定基座入口仍排除关节限位、关节干摩擦和扩展接触几何。浮动基座、扭转或滚动接触摩擦（`condim=4/6`）及整机 G1 步态尚未在 MUSA 开放。

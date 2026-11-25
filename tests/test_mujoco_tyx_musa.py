@@ -408,13 +408,15 @@ def test_contact_capacity_rejects_both_worlds_before_publication(tmp_path):
             np.testing.assert_array_equal(state.v, before[key].v)
 
 
-def test_frictional_contact_model_is_rejected_before_device_allocation(monkeypatch):
-    from phymeo.backends._mujoco_tyx_runtime import MuJoCoTyxUnsupported
-    from phymeo.backends.mujoco_tyx import _device
+@pytest.mark.parametrize(
+    "xml", [source(condim=4), source(free=True, condim=3)], ids=("torsional", "floating")
+)
+def test_unported_mixed_models_are_rejected_before_device_allocation(monkeypatch, xml):
+    from phymeo.backends._mujoco_tyx_runtime import MuJoCoTyxRuntime, MuJoCoTyxUnsupported
 
     def forbidden(*args, **kwargs):
         pytest.fail("unsupported model reached device allocation")
 
-    monkeypatch.setattr(_device.TyxDevice, "__init__", forbidden)
+    monkeypatch.setattr(MuJoCoTyxRuntime, "_build_device", forbidden)
     with pytest.raises(MuJoCoTyxUnsupported, match="musa-domain"):
-        MuJoCoRuntime(compile_source(source(condim=3)), mode="musa")
+        MuJoCoRuntime(compile_source(xml), mode="musa")

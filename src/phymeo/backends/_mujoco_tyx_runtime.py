@@ -197,11 +197,42 @@ class MuJoCoTyxStepReceipt:
     constraints: tuple = ()
 
 
+def _require_musa_plan(plan, model, mj):
+    from .mujoco_tyx import MuJoCoTyxIssue
+    from .mujoco_tyx._constraint_model import TyxConstraintModel
+    from .mujoco_tyx._model import TyxModel
+    from .mujoco_tyx._tree_model import TyxTreeModel
+
+    if type(plan) is TyxModel and plan.kind == 0 and not np.any(model.jnt_limited):
+        # compile_model has already checked the all-prismatic layout, fixed
+        # mass matrix, and at most one plane/sphere normal pair.
+        return
+    if (
+        type(plan) is TyxConstraintModel
+        and type(plan.base) is TyxTreeModel
+        and plan.base.kind == 2
+        and np.all(np.isin(model.jnt_type, (mj.mjtJoint.mjJNT_SLIDE, mj.mjtJoint.mjJNT_HINGE)))
+        and not (plan.extended_contacts or plan.nlimit or plan.nfriction)
+        and plan.npair
+        and np.all(np.isin(plan.pair_condim[: plan.npair], (1, 3)))
+    ):
+        return
+    raise MuJoCoTyxUnsupported(
+        (
+            MuJoCoTyxIssue(
+                "musa-domain",
+                "MUSA admits the unrestricted prismatic solver or a fixed-base scalar-joint "
+                "tree with basic primitive pyramidal contacts (condim 1/3), without joint rows",
+            ),
+        )
+    )
+
+
 class MuJoCoTyxRuntime(MuJoCoRuntime):
     """Own TYX interpret, CUDA or MUSA execution and atomic publication for sparse worlds.
 
-    MUSA admits one unrestricted slide on the constant-mass route, optionally
-    with one frictionless sphere against a static plane.
+    MUSA executes the unrestricted prismatic route and the fixed-base scalar
+    tree's basic primitive contact route with native pyramidal condim 1/3.
 
     Floating domain: one native free root and 0..29 hinge/slide joints, full
     root/joint coupling, origin world linear and local angular velocities.
@@ -282,27 +313,7 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
         else:
             self._plan = compile_model(self._mj, self._model)
         if mode == "musa":
-            from .mujoco_tyx import MuJoCoTyxIssue
-            from .mujoco_tyx._model import TyxModel
-
-            # This lowerer admits at most one static-plane/mobile-sphere pair
-            # and requires its mixed MuJoCo contact dimension to be one.
-            if not (
-                type(self._plan) is TyxModel
-                and self._plan.kind == 0
-                and self._plan.nq == self._plan.nv == self._model.njnt == 1
-                and self._model.jnt_type[0] == self._mj.mjtJoint.mjJNT_SLIDE
-                and not self._model.jnt_limited[0]
-            ):
-                raise MuJoCoTyxUnsupported(
-                    (
-                        MuJoCoTyxIssue(
-                            "musa-domain",
-                            "MUSA requires one unrestricted slide with at most one "
-                            "condim=1 plane/sphere pair",
-                        ),
-                    )
-                )
+            _require_musa_plan(self._plan, self._model, self._mj)
         if getattr(self._plan, "constraint_contact", False):
             if self._contact_capacity > 128 or self._constraint_capacity > 512:
                 raise ValueError("T4 contact/constraint capacities cannot exceed 128/512")
@@ -387,13 +398,14 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
             device_control_host_audit="exact-channels-on-submission",
             g1_supported=False,
         )
-        if mode == "musa":
+        if mode == "musa" and not getattr(self._plan, "constraint_contact", False):
             has_contact_pair = self._plan.pair is not None
+            family = "single-slide" if self._plan.nv == 1 else "prismatic"
             info.update(
                 domain=(
-                    "single-slide-plane-sphere-normal-v1"
+                    f"{family}-plane-sphere-normal-v1"
                     if has_contact_pair
-                    else "single-slide-no-contact-v1"
+                    else f"{family}-no-contact-v1"
                 ),
                 contact_law=LAW if has_contact_pair else "none",
                 contact_dimensions=(1,) if has_contact_pair else (),
@@ -445,6 +457,15 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                 # Compatibility alias: model-domain support, not a trajectory claim.
                 g1_supported=self._plan.kind == 3,
             )
+            if mode == "musa":
+                dimensions = self._plan.pair_condim[: self._plan.npair]
+                info.update(
+                    contact_dimensions=tuple(sorted(set(map(int, dimensions)))),
+                    limits="unsupported",
+                    friction="pyramidal-condim1-3-only",
+                    device_controls=False,
+                    device_control_host_audit=None,
+                )
             self._capabilities = MappingProxyType(info)
 
         if hasattr(self._plan, "activation"):

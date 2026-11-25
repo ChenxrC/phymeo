@@ -2,6 +2,18 @@
 
 这组实验分别训练重物搬运和 PushT。每台机械臂有六个或七个受限力矩驱动的转动关节。每个场景共用一个自由刚体、一张工作台与一套动力学求解器。策略从左右腕 RGB 和自身关节观测产生动作。位置、接触力、目标误差由独立评分器读取。[预登记目标和成功条件](s4000-bimanual-wrist-rl-plan.md)
 
+| 任务 | 已验证的策略包 | 两种构型实际轨迹的 36 秒录像 |
+| --- | --- | --- |
+| 6 kg 侧缘箱，抬起后运输和放置 | [搬运 CEM](../../artifacts/mtt-bimanual-20261126/carry-policy.zip) · [带视觉神经网络的搬运模型](../../artifacts/mtt-bimanual-20261126/carry-neural-policy.zip) | [搬运 CEM 回放](../../artifacts/mtt-bimanual-20261126/carry-studio.mp4) |
+| 9 kg T 件，平移并对准目标朝向 | [PushT CEM](../../artifacts/mtt-bimanual-20261126/push-t-policy.zip) · [视觉神经网络实验包](../../artifacts/mtt-bimanual-20261126/push-t-neural-policy.zip) | [PushT CEM 回放](../../artifacts/mtt-bimanual-20261126/push-t-studio.mp4) |
+
+在已装好 Phymeo、MuJoCo、Tyx MUSA 与 Vulkan 渲染库的 S4000 环境中，将任一 CEM 包解压，在解压目录运行以下命令。将 `PHYMEO_RENDER_LIBRARY` 指向该机实际构建的 `libphymeo_native.so`。模型包内附精确版本的控制、观测、场景生成源码和训练检查点。新回合的 XML、真实状态轨迹和结果写入 `my-replay`。
+
+```bash
+python bimanual_policy_replay.py --policy . --source-dir ./sources --seed 55001 55002 \
+    --out ./my-replay --library "$PHYMEO_RENDER_LIBRARY" --device-index 0
+```
+
 ## 在设备上运行
 
 安装与渲染分支相同版本的 Phymeo、MuJoCo 3.3.7、固定版 Tyx 和 Phymeo Rendering。指定 S4000 对应的 Vulkan ICD，并将包含着色器资源的本机渲染库路径传给 `--library`。训练画面为左右各 96 × 96 的 RGB。录像从真实状态轨迹再次渲染，可使用更高分辨率和更多面积灯采样。[MUSA 安装与动力学验证](mujoco-tyx-musa-slider.md)
@@ -85,6 +97,8 @@ python examples/bimanual_musa_train.py --task carry --stage train --mode musa \
 | 仅网络的腕图遮黑，原视觉控制器仍能看到 | 8/8 | 4/8 |
 
 搬运网络在这八次共改变了 1,264 个决策，PushT 网络改变了 1,204 个。搬运能从训练后的模型完成任务，成功率与原 CEM 相同。PushT 的这次网络训练降低了留出成功数。两项的遮挡对照均支持整套策略依赖实时视觉。单独遮黑神经分支后的成功数保持不变，尚无该分支独立提供必需视觉信息的证据。[搬运新留出](../../artifacts/mtt-bimanual-20261126/carry-spsa-holdout.json) · [PushT 新留出](../../artifacts/mtt-bimanual-20261126/push-spsa-holdout.json)
+
+在四个另留的校准种子 64001–64004 上，把训练后网络的输出依次缩放至 0、0.25、0.5、1 倍，按成功数、平均回报、较小幅度的顺序选定，再冻结并打开 66011–66018 八个新种子。搬运选择 0 倍，在新组完成 8/8。PushT 选择 0.5 倍（校准 3/4），在新组完成 5/8；同组原 CEM 为 6/8，同幅度的初始化网络为 7/8。减小残差仍未带来可复现的胜率优势。[搬运选择与新留出](../../artifacts/mtt-bimanual-20261126/carry-selected-holdout.json) · [PushT 选择与新留出](../../artifacts/mtt-bimanual-20261126/push-selected-holdout.json)
 
 ## 交换两条机械臂后还能否完成同一个目标
 

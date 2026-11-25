@@ -16,7 +16,9 @@ import time
 
 import numpy as np
 
-from bimanual_musa_env import ACTION_INCREMENT, BimanualBatchEnv, PAD_RADIUS, SIDES, TASKS, TIMESTEP, TOOL_PROFILES
+from bimanual_musa_env import (
+    ACTION_INCREMENT, BimanualBatchEnv, LOAD_PROFILES, PAD_RADIUS, SIDES, STANCES, TASKS, TIMESTEP, TOOL_PROFILES,
+)
 
 
 HOLDOUT = (43001, 43002, 43003, 43004)
@@ -160,14 +162,15 @@ def _summarize(trace, final, side, full_protocol, weight, initial_xyz, probe):
 
 
 def run_trial(task, seed, probe, *, mode, cache_root=None, seconds=EPISODE_SECONDS, action_repeat=5,
-              tool_profile="single-pad"):
+              tool_profile="single-pad", load_profile="standard", stance="original"):
     if probe not in PROBES or seconds <= 0. or not np.isfinite(seconds):
         raise ValueError("invalid probe or duration")
     ticks = int(np.ceil(seconds/(TIMESTEP*action_repeat)))
     keys = (0, 1)
     started = time.perf_counter()
     with BimanualBatchEnv(task, seed, world_keys=keys, mode=mode, cache_root=cache_root,
-                          horizon=ticks, action_repeat=action_repeat, tool_profile=tool_profile) as env:
+                          horizon=ticks, action_repeat=action_repeat, tool_profile=tool_profile,
+                          load_profile=load_profile, stance=stance) as env:
         states = env.reset(active_arms=dict(zip(keys, SIDES, strict=True)))
         actors = {k: Comparator(env.worlds[k], k) for k in keys}
         traces, final = {k: [] for k in keys}, {}
@@ -206,7 +209,9 @@ def run_trial(task, seed, probe, *, mode, cache_root=None, seconds=EPISODE_SECON
                 break
         result = {"task": task, "seed": seed, "probe": probe, "mode": mode, "backend": final[0]["backend"],
                   "arm_dofs": env.scene.arm_dofs, "xml_sha256": env.scene.xml_sha256,
-                  "mass_kg": env.scene.mass, "tool_profile": tool_profile, "gravity_m_s2": 9.81,
+                  "mass_kg": env.scene.mass, "tool_profile": tool_profile, "load_profile": load_profile,
+                  "stance": stance,
+                  "gravity_m_s2": 9.81,
                   "payload_joint": "payload_free",
                   "timestep_s": TIMESTEP, "action_repeat": action_repeat, "requested_seconds": seconds,
                   "initial_xyz_m": env.scene.start_xyz, "goal_xy_m": env.scene.goal_xy,
@@ -403,6 +408,8 @@ def main():
     p.add_argument("--probes", choices=PROBES, nargs="+", default=PROBES)
     p.add_argument("--mode", choices=("cpu", "musa"))
     p.add_argument("--tool-profile", choices=TOOL_PROFILES, default="single-pad")
+    p.add_argument("--load-profile", choices=LOAD_PROFILES, default="standard")
+    p.add_argument("--stance", choices=STANCES, default="original")
     p.add_argument("--seconds", type=float, default=EPISODE_SECONDS)
     p.add_argument("--action-repeat", type=int, default=5)
     p.add_argument("--cache-root", type=Path)
@@ -418,6 +425,10 @@ def main():
         return
     if args.mode is None:
         p.error("--mode is required for simulation")
+    if args.load_profile == "side-lip" and any(task != "carry" for task in args.tasks):
+        p.error("--load-profile side-lip requires --tasks carry")
+    if args.stance == "bent-elbow" and any(task != "carry" for task in args.tasks):
+        p.error("--stance bent-elbow requires --tasks carry")
     report = {"schema": "bimanual-independent-single-arm-v1", "cases": [],
               "saturation_window_s": [.65, 1.55], "default_episode_s": EPISODE_SECONDS}
     for task in args.tasks:
@@ -425,7 +436,8 @@ def main():
             for probe in args.probes:
                 case = run_trial(task, seed, probe, mode=args.mode, cache_root=args.cache_root,
                                  seconds=args.seconds, action_repeat=args.action_repeat,
-                                 tool_profile=args.tool_profile)
+                                 tool_profile=args.tool_profile, load_profile=args.load_profile,
+                                 stance=args.stance)
                 report["cases"].append(case)
                 _save(args.output, report)
                 print(task, seed, probe, {side: a["summary"] for side, a in case["arms"].items()}, flush=True)

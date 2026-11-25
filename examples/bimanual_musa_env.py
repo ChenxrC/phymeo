@@ -25,6 +25,9 @@ ACTION_INCREMENT = 0.045
 PAD_RADIUS = 0.026
 TWIN_PAD_HALF_SPAN = 0.032
 TOOL_PROFILES = ("single-pad", "twin-pad")
+LOAD_PROFILES = ("standard", "side-lip")
+STANCES = ("original", "bent-elbow")
+BENT_ELBOW_RAD = .52
 GOAL_DWELL_S = 0.10
 
 
@@ -56,12 +59,14 @@ class BimanualScene:
     boxes: tuple
     xml_sha256: str
     tool_profile: str = "single-pad"
+    load_profile: str = "standard"
     object_body: str = "payload"
     wrist_sites: tuple = ("left_wrist_camera", "right_wrist_camera")
     timestep: float = TIMESTEP
+    stance: str = "original"
 
 
-def _arm(world, motors, side, count, pad, focus, rng, task, tool_profile):
+def _arm(world, motors, side, count, pad, focus, rng, task, tool_profile, stance):
     sign = 1 if side == "left" else -1
     # Link vectors form a bent shoulder / elbow at zero joint coordinates.
     # The seed changes both major link lengths without moving either initial tool.
@@ -78,6 +83,13 @@ def _arm(world, motors, side, count, pad, focus, rng, task, tool_profile):
     if count == 7:
         parts.insert(3, ("1 0 0", (.035, -sign*.008, -.024), .16, 8, 1.65))
     start = np.asarray(pad) - np.sum([part[1] for part in parts], axis=0)
+    if stance == "bent-elbow":
+        # The two nonzero pitches have inverse rotations. Only the segments
+        # after the elbow and before the distal pitch change world orientation.
+        inside = np.sum([part[1] for part in parts[2:count-2]], axis=0)
+        x, y, z = inside
+        c, s = np.cos(BENT_ELBOW_RAD), np.sin(BENT_ELBOW_RAD)
+        start += inside - (c*x+s*z, y, -s*x+c*z)
     parent, origin = world, start
     joints = []
     color = ".24 .40 .61 1" if sign > 0 else ".63 .69 .73 1"
@@ -139,12 +151,17 @@ def _markers(world, goal_xy, yaw, boxes):
                        rgba=".04 .83 .60 1", contype="0", conaffinity="0")
 
 
-def make_scene(task, seed=0, arm_dofs=None, *, tool_profile="single-pad"):
+def make_scene(task, seed=0, arm_dofs=None, *, tool_profile="single-pad", load_profile="standard",
+               stance="original"):
     """Build a source-bound scene. Its two wrist sites look along local -Z."""
     if task not in TASKS:
         raise ValueError(f"task must be one of {TASKS}")
     if tool_profile not in TOOL_PROFILES:
         raise ValueError(f"tool_profile must be one of {TOOL_PROFILES}")
+    if load_profile not in LOAD_PROFILES or (load_profile == "side-lip" and task != "carry"):
+        raise ValueError("side-lip is a carry-only load profile; use standard for push_t")
+    if stance not in STANCES or (stance == "bent-elbow" and task != "carry"):
+        raise ValueError("bent-elbow is a carry-only stance; use original for push_t")
     if not isinstance(seed, (int, np.integer)) or seed < 0:
         raise ValueError("seed must be a nonnegative integer")
     seed = int(seed)
@@ -161,6 +178,11 @@ def make_scene(task, seed=0, arm_dofs=None, *, tool_profile="single-pad"):
     else:
         mass = 9.0
         boxes = (((0., 0., 0.), (.028, .13, .028)), ((.106, 0., 0.), (.078, .033, .028)))
+    goal_boxes = boxes
+    if load_profile == "side-lip":
+        # Body-local (+/-126 mm, +41 mm) in y/z. The 32 mm ledges meet
+        # the side walls without volume overlap, top flush and bottom at 82 mm.
+        boxes += tuple(((0., sign*.126, .041), (.060, .016, .009)) for sign in (1, -1))
     start_xyz = (*map(float, start_xy), boxes[0][1][2])
     root = Element("mujoco", model=f"bimanual_{task}_{seed}")
     SubElement(root, "compiler", angle="radian", autolimits="true")
@@ -179,7 +201,7 @@ def make_scene(task, seed=0, arm_dofs=None, *, tool_profile="single-pad"):
                    size=_numbers(half), mass=str(mass*volumes[i]/volumes.sum()),
                    rgba=".85 .20 .055 1", contype="2", conaffinity="5",
                    friction=".52 .005 .0001")
-    _markers(world, goal, yaw, boxes)
+    _markers(world, goal, yaw, goal_boxes)
     motors = SubElement(root, "actuator")
     arms = []
     for side, count, sign in zip(SIDES, dofs, (1, -1), strict=True):
@@ -188,10 +210,20 @@ def make_scene(task, seed=0, arm_dofs=None, *, tool_profile="single-pad"):
         else:
             pad_offset = (-.028 - PAD_RADIUS - .008, sign*.082, .001)
         arms.append(_arm(world, motors, side, count, np.asarray(start_xyz) + pad_offset,
-                         start_xyz, rng, task, tool_profile))
+                         start_xyz, rng, task, tool_profile, stance))
+    if stance == "bent-elbow":
+        # MJCF joint order is the free payload, followed by the two serial arms.
+        initial_q = [*start_xyz, 1., 0., 0., 0.]
+        for count in dofs:
+            angles = np.zeros(count)
+            angles[2], angles[count-2] = BENT_ELBOW_RAD, -BENT_ELBOW_RAD
+            initial_q.extend(angles)
+        SubElement(SubElement(root, "keyframe"), "key", name="bent-elbow-start",
+                   qpos=_numbers(initial_q))
     xml = tostring(root, encoding="unicode")
     return BimanualScene(task, seed, xml, dofs, tuple(arms), start_xyz, goal, yaw, mass,
-                         boxes, hashlib.sha256(xml.encode()).hexdigest(), tool_profile=tool_profile)
+                         boxes, hashlib.sha256(xml.encode()).hexdigest(), tool_profile=tool_profile,
+                         load_profile=load_profile, stance=stance)
 
 
 class BimanualTask:
@@ -221,6 +253,9 @@ class BimanualTask:
         self.pad_slot = {geom: i for i, geom in enumerate(self.pad_geoms)}
         self.floor = model.geom("table").id
         self.payload_geoms = {model.geom(f"payload_{i}").id for i in range(len(scene.boxes))}
+        self.lip_geoms = ({model.geom("payload_1").id, model.geom("payload_2").id}
+                          if scene.load_profile == "side-lip" else set())
+        self.lip_upward_normal_impulse = np.zeros(2)
         self.root_q = int(model.jnt_qposadr[model.joint("payload_free").id])
         self.root_v = int(model.jnt_dofadr[model.joint("payload_free").id])
         self.hold_ticks = 0
@@ -250,7 +285,8 @@ class BimanualTask:
     def initial_state(self):
         # Park a disabled arm outside the reachable workpiece corridor; leave
         # its native passive dynamics enabled and all its motors unpowered.
-        q = self.model.qpos0.copy()
+        q = (self.model.key("bent-elbow-start").qpos.copy() if self.scene.stance == "bent-elbow"
+             else self.model.qpos0.copy())
         for s, side in enumerate(SIDES):
             if self.active_arms not in ("both", side):
                 address = self.model.jnt_qposadr[self.model.joint(f"{side}_j0").id]
@@ -311,6 +347,7 @@ class BimanualTask:
         normal, up = np.zeros(2), np.zeros(2)
         wrist_force = np.zeros((2, 3))
         payload_wrench = np.zeros((2, 6))
+        lip_normal_z = np.zeros(2)
         pad_channel = np.zeros(len(self.pad_geoms))
         floor_up = 0.
         for contact in contacts:
@@ -341,7 +378,9 @@ class BimanualTask:
                 normal[i] += wrench[0]
                 up[i] += vertical
                 pad_channel[self.pad_slot[other]] += wrench[0]
-        return normal, up, float(floor_up), wrist_force, pad_channel, payload_wrench
+                if a in self.lip_geoms or b in self.lip_geoms:
+                    lip_normal_z[i] += sign*wrench[0]*np.asarray(contact.frame).reshape(3, 3)[0,2]
+        return normal, up, float(floor_up), wrist_force, pad_channel, payload_wrench, lip_normal_z
 
     def evaluate(self, q, v, contacts, *, advance=True):
         sc = self.scene
@@ -353,7 +392,7 @@ class BimanualTask:
         tilt = np.arccos(np.clip(rot[2, 2], -1., 1.))
         orientation_error = np.arccos(np.clip((np.trace(rot)-1.)*.5, -1., 1.))
         goal_error = np.linalg.norm(pos[:2]-sc.goal_xy)
-        normal, up, floor_up, wrist_force, pad_channel, payload_wrench = self._loads(contacts)
+        normal, up, floor_up, wrist_force, pad_channel, payload_wrench, lip_normal_z = self._loads(contacts)
         weight = sc.mass*9.81
         iv = self.root_v
         omega_local = v[iv+3:iv+6]
@@ -365,6 +404,7 @@ class BimanualTask:
         supported = floor_up >= .8*weight
         slow = speed <= .035 and spin <= .25
         if advance:
+            self.lip_upward_normal_impulse += np.maximum(0., lip_normal_z)*TIMESTEP
             self.max_clearance = max(self.max_clearance, float(clearance))
             if airborne:
                 if self.flight_start_xy is None:
@@ -404,6 +444,8 @@ class BimanualTask:
             "pad_normal_n": normal.tolist(), "pad_vertical_n": up.tolist(),
             "wrist_force_world_n": wrist_force.tolist(),
             "individual_pad_payload_normal_n": pad_channel.tolist(),
+            "lip_contact_normal_world_z_n": lip_normal_z.tolist(),
+            "positive_lip_normal_z_impulse_ns": self.lip_upward_normal_impulse.tolist(),
             "pad_payload_wrench_about_world_origin": payload_wrench.tolist(),
             "peak_pad_normal_n": self.max_pad_normal.tolist(),
             "peak_pad_vertical_n": self.max_pad_up.tolist(),
@@ -432,7 +474,8 @@ class BimanualBatchEnv:
     """
 
     def __init__(self, task, seed=0, *, world_keys=(0,), arm_dofs=None, mode="cpu",
-                 cache_root=None, action_repeat=5, horizon=200, tool_profile="single-pad"):
+                 cache_root=None, action_repeat=5, horizon=200, tool_profile="single-pad",
+                 load_profile="standard", stance="original"):
         if mode not in ("cpu", "musa", "cuda", "interpret"):
             raise ValueError("unsupported physics mode")
         self.world_keys = tuple(world_keys)
@@ -445,7 +488,10 @@ class BimanualBatchEnv:
         self.mode, self.cache_root = mode, cache_root
         self.action_repeat, self.horizon = action_repeat, horizon
         self.tool_profile = tool_profile
-        self.scene = make_scene(task, seed, arm_dofs, tool_profile=tool_profile)
+        self.load_profile = load_profile
+        self.stance = stance
+        self.scene = make_scene(task, seed, arm_dofs, tool_profile=tool_profile,
+                                load_profile=load_profile, stance=stance)
         self.compilation = compile_mujoco_xml(self.scene.xml, require_asset=False)
         self.model = self.compilation.mj_model
         self.runtime = None
@@ -462,6 +508,7 @@ class BimanualBatchEnv:
         return dict(
             metrics, task=self.scene.task, seed=self.scene.seed, arm_dofs=self.scene.arm_dofs,
             active_arms=self._active[key], world=int(key), mode=self.mode, tool_profile=self.tool_profile,
+            load_profile=self.load_profile, stance=self.stance,
             backend=self.runtime.capabilities["backend"], tick=int(state.tick), time_s=float(state.time),
             steps=self.decisions, xml_sha256=self.scene.xml_sha256, action_repeat=self.action_repeat,
             contact_phase=receipt.contact_phase if receipt is not None else "no-step-yet",
@@ -478,7 +525,8 @@ class BimanualBatchEnv:
         if set(selections) != set(self.world_keys):
             raise ValueError("active_arms mapping must match world_keys")
         if seed != self.scene.seed:
-            scene = make_scene(self.task_name, seed, self.arm_dofs, tool_profile=self.tool_profile)
+            scene = make_scene(self.task_name, seed, self.arm_dofs, tool_profile=self.tool_profile,
+                               load_profile=self.load_profile, stance=self.stance)
             compilation = compile_mujoco_xml(scene.xml, require_asset=False)
             self.close()
             self.scene, self.compilation = scene, compilation

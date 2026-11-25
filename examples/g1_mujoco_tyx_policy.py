@@ -20,7 +20,6 @@ from xml.etree import ElementTree as ET
 
 import mujoco as mj
 import numpy as np
-import onnxruntime as ort
 import yaml
 
 from phymeo.backends.mujoco_runtime import MuJoCoControl, MuJoCoInitialState, MuJoCoRuntime
@@ -282,20 +281,24 @@ class GyroObservation:
 
 
 class Protocol:
-    def __init__(self, model, assets, *, observation_protocol=IMU_SITE_PROTOCOL):
+    def __init__(self, model, assets, *, observation_protocol=IMU_SITE_PROTOCOL, stand_only=False):
         self.model = model
         self.config = yaml.safe_load((assets / "deploy.yaml").read_text(encoding="utf-8"))
-        with np.load(assets / "dance1_subject2.npz", allow_pickle=False) as archive:
-            self.motion = {key: archive[key].copy() for key in archive.files}
-        self.session = ort.InferenceSession(
-            str(assets / "policy.onnx"), providers=["CPUExecutionProvider"]
-        )
-        if self.session.get_inputs()[0].shape != [1, 154]:
-            raise ValueError("policy input is not the original 154-vector")
-        if self.session.get_outputs()[0].shape != [1, 29]:
-            raise ValueError("policy output is not the original 29-vector")
-        if self.session.get_providers() != ["CPUExecutionProvider"]:
-            raise ValueError("this harness declares CPU ONNX inference only")
+        self.motion = None
+        if not stand_only:
+            import onnxruntime as ort
+
+            with np.load(assets / "dance1_subject2.npz", allow_pickle=False) as archive:
+                self.motion = {key: archive[key].copy() for key in archive.files}
+            self.session = ort.InferenceSession(
+                str(assets / "policy.onnx"), providers=["CPUExecutionProvider"]
+            )
+            if self.session.get_inputs()[0].shape != [1, 154]:
+                raise ValueError("policy input is not the original 154-vector")
+            if self.session.get_outputs()[0].shape != [1, 29]:
+                raise ValueError("policy output is not the original 29-vector")
+            if self.session.get_providers() != ["CPUExecutionProvider"]:
+                raise ValueError("this harness declares CPU ONNX inference only")
         self.joints = model.actuator_trnid[:, 0].astype(int)
         self.qa = model.jnt_qposadr[self.joints].astype(int)
         self.va = model.jnt_dofadr[self.joints].astype(int)
@@ -335,11 +338,12 @@ class Protocol:
         self.weight = self.mass * float(-model.opt.gravity[2])
         if not np.array_equal(model.opt.gravity, (0.0, 0.0, -9.81)):
             raise ValueError("the source gravity was changed")
-        self.q0, self.v0 = self.initial(0)
-        self.alignment = (
-            yaw(torso(self.q0[3:7], self.q0[self.qa]))
-            @ yaw(rotation(self.motion["body_quat_w"][0, 0])).T
-        )
+        if not stand_only:
+            self.q0, self.v0 = self.initial(0)
+            self.alignment = (
+                yaw(torso(self.q0[3:7], self.q0[self.qa]))
+                @ yaw(rotation(self.motion["body_quat_w"][0, 0])).T
+            )
 
     def initial(self, frame=None):
         q, v = self.model.qpos0.copy(), np.zeros(self.model.nv)
@@ -357,7 +361,7 @@ class Protocol:
         return min(int(round(time * 50)), len(self.motion["joint_pos"]) - 1)
 
     def metrics(self, q, v, time, stand=False):
-        frame = self.frame(time)
+        frame = 0 if stand and self.motion is None else self.frame(time)
         reference = self.default if stand else self.motion["joint_pos"][frame]
         root_ref = (
             self.model.qpos0[:3]

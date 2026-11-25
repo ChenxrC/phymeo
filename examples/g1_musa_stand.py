@@ -14,7 +14,10 @@ import g1_mujoco_tyx_policy as g1
 import mujoco as mj
 import numpy as np
 import prepare_g1_stand_assets as assets_spec
-from _g1_stand_balance import CAPTURE_GAIN, HEEL_M, LOAD_THRESHOLD_N, SIDE_M, TOE_M, AnkleBalance
+from _g1_stand_balance import (
+    CAPTURE_GAIN, HEEL_M, HIP_KD_NM_S_PER_RAD, HIP_KP_NM_PER_RAD, HIP_MOTOR_FRACTION,
+    LOAD_THRESHOLD_N, SIDE_M, TOE_M, AnkleBalance, HipAnkleBalance,
+)
 
 from phymeo.backends.mujoco_tyx import _kernels
 
@@ -78,9 +81,10 @@ def run(args, journal):
         )
         gpu_balance = cpu_balance = None
         previous_gpu_load = previous_cpu_load = None
-        if args.controller == "balance":
-            gpu_balance = AnkleBalance(protocol, state.q)
-            cpu_balance = AnkleBalance(protocol, cpu.qpos)
+        if args.controller in ("balance", "hip-ankle"):
+            law = HipAnkleBalance if args.controller == "hip-ankle" else AnkleBalance
+            gpu_balance = law(protocol, state.q)
+            cpu_balance = law(protocol, cpu.qpos)
             journal.write(
                 "balance_law",
                 capture_gain=CAPTURE_GAIN,
@@ -92,6 +96,12 @@ def run(args, journal):
                 joint_order=[["left_pitch", "left_roll"], ["right_pitch", "right_roll"]],
                 observer="per-lane MuJoCo kinematics and subtree COM Jacobian on the current input",
                 support_feedback="previously completed step's input-phase contact load",
+                **({
+                    "hip_kp_nm_per_rad": HIP_KP_NM_PER_RAD,
+                    "hip_kd_nm_s_per_rad": HIP_KD_NM_S_PER_RAD,
+                    "hip_control_range_fraction": HIP_MOTOR_FRACTION,
+                    "hip_observer": "pelvis vertical axis and world angular velocity, initial upright target",
+                } if args.controller == "hip-ankle" else {}),
             )
         feet = g1.endpoint_foot_centers(protocol, state.q)
         for stats in (gpu_stats, cpu_stats):
@@ -255,9 +265,9 @@ def main():
     parser.add_argument("--cache-root", type=Path)
     parser.add_argument(
         "--controller",
-        choices=("pd", "balance"),
+        choices=("pd", "balance", "hip-ankle"),
         default="pd",
-        help="original joint PD, or PD plus load-gated capture-point ankle feedback",
+        help="joint PD, capture-point ankle feedback, or additional pelvis tilt feedback at the hips",
     )
     parser.add_argument("--output", type=Path, required=True, help="new .jsonl or .jsonl.gz path")
     parser.add_argument(

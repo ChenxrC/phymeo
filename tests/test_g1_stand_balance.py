@@ -168,3 +168,53 @@ def test_standing_motor_commands_respect_contact_gear_limits_and_other_joints(ba
     np.testing.assert_allclose(observed["allocated_vertical_n"], [0.0, protocol.weight])
     np.testing.assert_array_equal(single["ctrl"][[1, 2, 4]], cmd[[1, 2, 4]])
     assert single["ctrl"][3] == pytest.approx(-0.5)
+
+
+def test_pelvis_feedback_ignores_spin_and_uses_signed_tilt_and_velocity(balance):
+    ref = np.array([0., 0., 1.])
+    angle = .18
+    up = np.array([np.sin(angle), 0., np.cos(angle)])
+    err, rate, moment = balance.pelvic_tilt_feedback(ref, up, .8 * up + [0., -.25, 0.])
+    np.testing.assert_allclose(err, [0., angle, 0.], atol=1e-12)
+    np.testing.assert_allclose(rate, [0., -.25, 0.], atol=1e-12)
+    np.testing.assert_allclose(moment, [0., 160. * angle - 30. * .25, 0.], atol=1e-12)
+    _, _, yaw = balance.pelvic_tilt_feedback(ref, ref, [0., 0., 4.])
+    np.testing.assert_array_equal(yaw, np.zeros(3))
+
+
+def test_hips_require_previous_support_and_obey_signed_motor_allowance(balance):
+    names, trees, motors = [], [], []
+    for side, y in (("left", .1), ("right", -.1)):
+        chain = []
+        for joint, axis in (("hip_pitch", "0 1 0"), ("hip_roll", "1 0 0"),
+                            ("ankle_pitch", "0 1 0"), ("ankle_roll", "1 0 0")):
+            name = f"{side}_{joint}_joint"
+            names.append(name)
+            pos = (0., y, -.08) if not chain else (0., 0., -.1)
+            chain.append(f'<body pos="{" ".join(map(str, pos))}"><joint name="{name}" axis="{axis}"/>'
+                         '<geom type="sphere" size=".025" mass=".6"/>')
+            gear = -1 if side == "right" and joint == "hip_pitch" else 1
+            motors.append(f'<motor joint="{name}" gear="{gear}" ctrllimited="true" ctrlrange="-20 20"/>')
+        trees.append("".join(chain) + f'<geom type="sphere" size=".035" name="{side}_pad"/>'
+                     + "</body>" * len(chain))
+    model = mj.MjModel.from_xml_string(
+        '<mujoco><worldbody><body name="pelvis" pos="0 0 .7"><freejoint/>'
+        '<geom type="box" size=".1 .1 .12" mass="12"/>'
+        + "".join(trees) + '</body></worldbody><actuator>' + "".join(motors) + '</actuator></mujoco>'
+    )
+    protocol = SimpleNamespace(model=model, root=model.body("pelvis").id, names=names,
+                               weight=float(9.81 * model.body_mass.sum()),
+                               foot_geoms={model.geom("left_pad").id: 0, model.geom("right_pad").id: 1})
+    q, v = model.qpos0.copy(), np.zeros(model.nv)
+    controller = balance.HipAnkleBalance(protocol, q)
+    q[3:7] = [np.cos(.1), 0., np.sin(.1), 0.]
+    raw = np.zeros(model.nu)
+    proposal = dict(ctrl=raw.copy(), unclamped_ctrl=raw.copy(), saturated=raw.astype(bool))
+    unloaded, _ = controller.correct(proposal, q, v, None)
+    np.testing.assert_array_equal(unloaded["ctrl"], raw)
+    bilateral, obs = controller.correct(proposal, q, v, [protocol.weight / 2] * 2)
+    np.testing.assert_allclose(obs["hip_applied_joint_delta_nm"], [[7., 0.], [7., 0.]], atol=1e-12)
+    assert bilateral["ctrl"][names.index("right_hip_pitch_joint")] == pytest.approx(-7.)
+    _, single = controller.correct(proposal, q, v, [0., protocol.weight])
+    np.testing.assert_allclose(single["hip_applied_joint_delta_nm"][0], 0.)
+    np.testing.assert_array_equal(proposal["unclamped_ctrl"], raw)

@@ -16,6 +16,9 @@ HEEL_M = 0.04
 TOE_M = 0.09
 SIDE_M = 0.015
 LOAD_THRESHOLD_N = 1.0
+HIP_KP_NM_PER_RAD = 160.0
+HIP_KD_NM_S_PER_RAD = 30.0
+HIP_MOTOR_FRACTION = .35
 
 
 def capture_point_target(com_m, velocity_m_s, support_height_m, initial_xy_m, gravity_m_s2):
@@ -177,4 +180,74 @@ class AnkleBalance:
             "applied_joint_delta_nm": applied,
             "ankle_ctrl_limits": limits.copy(),
         }
+        return corrected, obs
+
+
+def pelvic_tilt_feedback(initial_up, current_up, angular_velocity_world):
+    """Return pelvis tilt rotation, tilt rate and requested reaction on the legs."""
+    sine_axis = np.cross(initial_up, current_up)
+    sine = np.linalg.norm(sine_axis)
+    cosine = np.clip(np.dot(initial_up, current_up), -1., 1.)
+    if sine < 1e-12 and cosine < 0:
+        raise ValueError("an inverted pelvis is outside the quiet-standing controller")
+    error = sine_axis * (np.arctan2(sine, cosine) / sine) if sine > 0 else sine_axis
+    # Rotation about the body's own up vector cannot change its tilt. Discard
+    # torque about the initial upright axis as well: yaw is left to the joint PD.
+    velocity = np.asarray(angular_velocity_world)
+    tilt_rate = velocity - np.dot(velocity, current_up) * current_up
+    tilt_rate -= np.dot(tilt_rate, initial_up) * initial_up
+    return error, tilt_rate, HIP_KP_NM_PER_RAD * error + HIP_KD_NM_S_PER_RAD * tilt_rate
+
+
+class HipAnkleBalance(AnkleBalance):
+    """Use the original ankle strategy and react against the loaded thighs to right the pelvis."""
+
+    def __init__(self, protocol, initial_q):
+        super().__init__(protocol, initial_q)
+        self.hip_motors = np.array([
+            [protocol.names.index(f"{side}_hip_{axis}_joint") for axis in ("pitch", "roll")]
+            for side in ("left", "right")
+        ])
+        self.hip_joints = self.model.actuator_trnid[self.hip_motors, 0]
+        self.hip_gear = self.model.actuator_gear[self.hip_motors, 0]
+        limits = self.model.actuator_ctrlrange[self.hip_motors]
+        if (
+            np.any(self.model.actuator_trntype[self.hip_motors] != mj.mjtTrn.mjTRN_JOINT)
+            or np.any(self.model.jnt_type[self.hip_joints] != mj.mjtJoint.mjJNT_HINGE)
+            or np.any(self.hip_gear == 0)
+            or not np.all(self.model.actuator_ctrllimited[self.hip_motors])
+            or np.any(limits[:, :, 0] >= 0)
+            or np.any(limits[:, :, 1] <= 0)
+        ):
+            raise ValueError("hip balance requires four direct bidirectional torque-limited hinges")
+        self.initial_up = self.data.xmat[self.root].reshape(3, 3)[:, 2].copy()
+        self.rotation_jacobian = np.zeros((3, self.model.nv))
+
+    def correct(self, proposal, q, v, previous_foot_vertical_n):
+        corrected, obs = super().correct(proposal, q, v, previous_foot_vertical_n)
+        up = self.data.xmat[self.root].reshape(3, 3)[:, 2]
+        mj.mj_jacBody(self.model, self.data, None, self.rotation_jacobian, self.root)
+        omega = self.rotation_jacobian @ v
+        error, rate, desired = pelvic_tilt_feedback(self.initial_up, up, omega)
+        # A motor acting +Y on the thigh reacts -Y on a forward-leaning pelvis.
+        # Scale continuously by the last accepted support force / robot weight.
+        fractions = obs["allocated_vertical_n"] / self.weight
+        torques = (self.data.xaxis[self.hip_joints] @ desired) * fractions[:, None]
+        motors = self.hip_motors
+        limits = self.model.actuator_ctrlrange[motors]
+        admitted = np.clip(torques / self.hip_gear, HIP_MOTOR_FRACTION * limits[:, :, 0],
+                           HIP_MOTOR_FRACTION * limits[:, :, 1])
+        ctrl, raw = corrected["ctrl"], corrected["unclamped_ctrl"]
+        baseline = ctrl[motors].copy()
+        raw[motors] += admitted
+        ctrl[motors] = np.clip(raw[motors], limits[:, :, 0], limits[:, :, 1])
+        corrected["saturated"] = raw != ctrl
+        obs.update(
+            pelvis_up_world=up.copy(), pelvis_initial_up_world=self.initial_up.copy(),
+            pelvis_omega_world_rad_s=omega, pelvis_tilt_vector_rad=error,
+            pelvis_tilt_rate_world_rad_s=rate, desired_leg_moment_world_nm=desired,
+            hip_support_weight_fractions=fractions, hip_requested_joint_delta_nm=torques,
+            hip_budgeted_joint_delta_nm=admitted * self.hip_gear,
+            hip_applied_joint_delta_nm=(ctrl[motors] - baseline) * self.hip_gear,
+        )
         return corrected, obs

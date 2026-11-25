@@ -201,7 +201,7 @@ def analyze_run(model, journal, *, model_sha256):
                     h is None
                     or prior is not None
                     or balance_law is not None
-                    or controller != "balance"
+                    or controller not in ("balance", "hip-ankle")
                 ):
                     raise ValueError(
                         "expected a single balance_law after balance sources and before initial"
@@ -210,7 +210,7 @@ def analyze_run(model, journal, *, model_sha256):
             elif event == "initial":
                 if h is None or prior is not None:
                     raise ValueError("unexpected initial record")
-                if controller == "balance" and balance_law is None:
+                if controller in ("balance", "hip-ankle") and balance_law is None:
                     raise ValueError("balance initial state is missing its balance_law")
                 initial_state = {
                     "q": _array(record["q"], (model.nq,), "initial qpos").tolist(),

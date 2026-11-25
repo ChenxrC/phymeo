@@ -5,17 +5,11 @@
   const state = {
     scene: null, wanted: null, shown: null, frontier: 0, serial: 0, busy: false,
     playing: false, timer: 0, scrubTimer: 0, failed: false, cameras: [], cameraKeys: [],
+    after: null, notice: "", failures: 0, metadataFailures: 0, transfer: null,
   };
   const ui = {
     play: $("playback"), previous: $("prev-frame"), next: $("next-frame"), seek: $("seek"),
     number: $("frame-number"), status: $("play-state"), picture: $("picture"), message: $("stage-message"),
-  };
-  const channelIds = new Set(["rgb", "depth", "id"]);
-  const chineseChannels = {rgb: "RGB", depth: "深度", id: "实例 ID"};
-  const defaultNotes = {
-    rgb: "相机彩色画面",
-    depth: "前向深度，近处为白色，远处为深灰，无命中为黑色。",
-    id: "实例使用固定伪彩，同一场景中相同 ID 跨机位同色，背景为黑色。",
   };
   const iconNamespace = "http://www.w3.org/2000/svg";
 
@@ -41,11 +35,11 @@
   }
 
   function validateScene(data) {
-    if (!data || !["replay", "live"].includes(data.mode) || typeof data.title !== "string" ||
+    if (!data || !["replay", "live", "observe"].includes(data.mode) || typeof data.title !== "string" ||
         !data.title.trim() || !Number.isFinite(data.fps) || data.fps <= 0) {
       throw new Error("服务返回的场景信息不完整。");
     }
-    if (!(data.frame_count === null && data.mode === "live") &&
+    if (!(data.frame_count === null && data.mode !== "replay") &&
         (!Number.isSafeInteger(data.frame_count) || data.frame_count < 1)) {
       throw new Error("服务返回的帧数无效。");
     }
@@ -54,26 +48,35 @@
       throw new Error("服务返回的当前帧无效。");
     }
     keyedList(data.cameras, "机位");
-    if (!keyedList(data.channels, "通道").some((item) => channelIds.has(item.id))) {
-      throw new Error("场景没有可显示的图像通道。");
-    }
+    keyedList(data.channels, "通道");
     return data;
   }
 
-  const isLive = () => state.scene?.mode === "live" || state.scene?.seekable === false;
+  const observing = () => state.scene?.mode === "observe";
+  const isLive = () => state.scene?.mode === "live";
   const lastFrame = () => state.scene?.frame_count == null ? Infinity : state.scene.frame_count - 1;
-  const isOverview = (c) => /overview|global|总览|全景/i.test(c.id + " " + c.label);
-  const isWrist = (c) => /wrist|腕部|腕相机/i.test(c.id + " " + c.label);
   const cameraById = (id) => state.cameras.find((c) => c.id === id);
+  const channelById = (id) => state.scene.channels.find((ch) => ch.id === id);
   const sameView = (a, b) => a && b && a.camera === b.camera && a.channel === b.channel && a.frame === b.frame;
-  const cameraType = (c) => isOverview(c) ? "overview" : isWrist(c) ? "wrist" : "camera";
+
+  function filterCameras() {
+    const query = $("camera-search").value.trim().toLocaleLowerCase();
+    let visible = 0;
+    for (const button of $("camera-list").children) {
+      const camera = cameraById(button.dataset.camera);
+      button.hidden = !(camera.label + " " + camera.id).toLocaleLowerCase().includes(query);
+      if (!button.hidden) visible++;
+    }
+    $("no-cameras").hidden = visible !== 0;
+  }
 
   function buildChoices() {
-    const cameras = state.scene.cameras;
-    const overview = cameras.find(isOverview);
-    state.cameras = overview ? [overview, ...cameras.filter((c) => c !== overview)] : [...cameras];
-    state.cameraKeys = [...state.cameras.filter((c) => !isWrist(c)), ...state.cameras.filter(isWrist)].slice(0, 9);
+    state.cameras = state.scene.cameras;
+    state.cameraKeys = state.cameras.slice(0, 9);
     $("camera-count").textContent = state.cameras.length;
+    $("search-box").hidden = state.cameras.length < 8;
+    $("camera-search").value = "";
+    $("no-cameras").hidden = true;
     const cameraButtons = state.cameras.map((camera) => {
       const button = document.createElement("button");
       button.type = "button";
@@ -81,7 +84,7 @@
       button.dataset.camera = camera.id;
       const label = document.createElement("span");
       label.textContent = camera.label;
-      button.append(icon(cameraType(camera)), label);
+      button.append(icon("camera"), label);
       const shortcut = state.cameraKeys.indexOf(camera);
       if (shortcut >= 0) {
         const key = document.createElement("kbd");
@@ -95,13 +98,13 @@
       return button;
     });
     $("camera-list").replaceChildren(...cameraButtons);
-    const channels = state.scene.channels.filter((c) => channelIds.has(c.id));
+    const channels = state.scene.channels;
     $("channels").replaceChildren(...channels.map((ch) => {
       const button = document.createElement("button");
       button.type = "button";
       button.className = "channel";
       button.dataset.channel = ch.id;
-      button.textContent = chineseChannels[ch.id];
+      button.textContent = ch.label;
       button.title = ch.description || ch.label;
       button.addEventListener("click", () => choose({channel: ch.id}));
       return button;
@@ -114,7 +117,15 @@
       span.textContent = String(value);
       return span;
     }));
-    $("track").hidden = isLive();
+    const observe = observing();
+    document.body.classList.toggle("observer", observe);
+    $("transport-title").textContent = observe ? "实时监看" : "时间轴";
+    $("observe-note").hidden = !observe;
+    $("frame-entry").hidden = observe;
+    $("shortcut-step").hidden = observe;
+    $("shortcut-play").textContent = observe ? "冻结或跟随画面" : "播放或暂停";
+    $("track").hidden = isLive() || observe;
+    ui.previous.hidden = ui.next.hidden = observe;
     ui.number.readOnly = isLive();
     ui.number.title = isLive() ? "实时状态按步前进" : "输入从 0 开始的帧号，然后按 Enter";
     $("frame-limit").textContent = count === null ? "" : "/ " + (count-1);
@@ -125,32 +136,42 @@
   function transportState() {
     const want = state.wanted;
     if (!want) return;
+    const observe = observing();
+    const frozen = observe && !state.playing;
+    document.body.classList.toggle("frozen", frozen);
     const ready = !!state.shown && !state.failed;
     const atEnd = want.frame >= lastFrame();
     const liveAdvance = isLive() && (state.busy || want.frame > state.frontier);
-    ui.previous.disabled = !ready || isLive() || want.frame <= 0;
-    ui.next.disabled = !ready || atEnd || liveAdvance;
-    ui.play.disabled = !ready || (atEnd && (isLive() || lastFrame() === 0) && !state.playing);
-    ui.seek.disabled = isLive() || lastFrame() === 0;
-    ui.seek.value = want.frame;
-    ui.seek.setAttribute("aria-valuetext", "第 " + want.frame + " 帧");
+    ui.previous.disabled = observe || !ready || isLive() || want.frame <= 0;
+    ui.next.disabled = observe || !ready || atEnd || liveAdvance;
+    ui.play.disabled = observe ? false : !ready || (atEnd && (isLive() || lastFrame() === 0) && !state.playing);
+    ui.seek.disabled = observe || isLive() || lastFrame() === 0;
+    if (!observe) {
+      ui.seek.value = want.frame;
+      ui.seek.setAttribute("aria-valuetext", "第 " + want.frame + " 帧");
+    }
     ui.number.disabled = !ready;
-    if (document.activeElement !== ui.number) ui.number.value = String(want.frame);
-    const playText = state.playing ? "暂停" : "播放";
+    if (!observe && document.activeElement !== ui.number) ui.number.value = String(want.frame);
+    const playText = observe ? (frozen ? "恢复跟随" : "冻结画面") : (state.playing ? "暂停" : "播放");
     ui.play.querySelector("span").textContent = playText;
-    ui.play.querySelector("use").setAttribute("href", state.playing ? "#pause" : "#play");
+    ui.play.querySelector("use").setAttribute("href", state.playing ? "#pause" : observe ? "#signal" : "#play");
     ui.play.title = playText + " (空格)";
     ui.play.setAttribute("aria-label", playText);
     ui.status.hidden = false;
-    ui.status.classList.toggle("playing", state.playing);
-    ui.status.classList.toggle("error", state.failed);
-    ui.status.textContent = state.failed ? "读取失败" : state.playing ? "播放中" :
+    ui.status.classList.toggle("playing", state.playing && !state.failed && !state.failures);
+    ui.status.classList.toggle("error", state.failed || !!state.failures);
+    ui.status.textContent = state.failed ? "读取失败" : observe ?
+      (frozen ? "画面已冻结" : state.failures ? "正在重连" : "实时跟随") : state.playing ? "播放中" :
       !sameView(want, state.shown) ? "正在取帧" : "已暂停";
+    if (observe) $("observe-note").textContent = frozen ? "当前画面已冻结，恢复跟随后可切换视图。" :
+      state.notice || "跟随仿真发布的最新画面";
     for (const button of $("camera-list").children) {
       button.setAttribute("aria-pressed", String(button.dataset.camera === want.camera));
+      button.disabled = frozen;
     }
     for (const button of $("channels").children) {
       button.setAttribute("aria-pressed", String(button.dataset.channel === want.channel));
+      button.disabled = frozen;
     }
     const camera = cameraById(want.camera);
     $("camera-title").textContent = camera.label;
@@ -160,36 +181,42 @@
   function stage(title, detail = "", failed = false) {
     ui.message.hidden = false;
     ui.message.classList.toggle("failed", failed);
-    $("stage-title").textContent = title;
-    $("stage-detail").textContent = detail;
+    if ($("stage-title").textContent !== title) $("stage-title").textContent = title;
+    if ($("stage-detail").textContent !== detail) $("stage-detail").textContent = detail;
     $("retry").hidden = !failed;
   }
 
   function progress() {
     const view = state.shown;
     const want = state.wanted;
+    const observe = observing();
     if (!view || view.camera !== want.camera || view.channel !== want.channel) {
       ui.picture.hidden = true;
       $("captured-frame").textContent = "等待画面";
       $("sim-time").textContent = "—";
       $("render-ms").textContent = "—";
       $("channel-note").textContent = "";
-      stage("正在读取画面", cameraById(want.camera).label + "，帧 " + want.frame);
+      $("source-size").hidden = true;
+      if (observe) {
+        stage(!state.playing ? "监看已冻结" : state.failures ? "等待连接恢复" : "等待仿真画面",
+          !state.playing ? "恢复跟随后将显示最新帧。" : state.notice || cameraById(want.camera).label);
+      } else stage("正在读取画面", cameraById(want.camera).label + "，帧 " + want.frame);
     } else {
       // Hold the last complete image during a seek, with its own frame and timing.
       ui.picture.hidden = false;
       ui.message.hidden = true;
-      $("captured-frame").textContent = sameView(want, view) ? "当前帧 " + view.frame :
+      $("captured-frame").textContent = observe || sameView(want, view) ? "当前帧 " + view.frame :
         "显示帧 " + view.frame + "，正在读取 " + want.frame;
+      $("source-size").hidden = false;
+      $("source-size").textContent = ui.picture.naturalWidth + " × " + ui.picture.naturalHeight;
       $("sim-time").textContent = view.time.toFixed(3) + " s";
       $("render-ms").textContent = view.ms.toFixed(1) + " ms";
       const spec = state.scene.channels.find((ch) => ch.id === view.channel);
       const camera = cameraById(view.camera);
       const range = camera.depth_range_m;
-      $("channel-note").textContent = view.channel === "depth" && Array.isArray(range) &&
-        range.length === 2 && range.every(Number.isFinite) ?
-        "前向深度 " + range[0] + "–" + range[1] + " m，近白远灰，未命中为黑" :
-        spec.description || defaultNotes[view.channel];
+      const calibrated = view.channel === "depth" && Array.isArray(range) && range.length === 2 && range.every(Number.isFinite);
+      $("channel-note").textContent = (calibrated ? range[0] + "–" + range[1] + " m　" : "") +
+        (spec.description || spec.label);
     }
     transportState();
   }
@@ -203,6 +230,7 @@
     state.failed = true;
     stop();
     ui.picture.hidden = true;
+    $("source-size").hidden = true;
     $("captured-frame").textContent = "画面未发布";
     $("sim-time").textContent = "—";
     $("render-ms").textContent = "—";
@@ -244,9 +272,16 @@
     }, Math.max(0, 1000 / state.scene.fps - elapsed));
   }
 
+  function pollAfter(delay) {
+    clearTimeout(state.timer);
+    if (state.playing && !document.hidden) state.timer = setTimeout(() => { void pump(); }, delay);
+  }
+
   async function pump() {
     if (state.busy || !state.wanted || state.failed || state.scrubTimer) return;
-    if (sameView(state.wanted, state.shown)) {
+    const observe = observing();
+    if (observe && (!state.playing || document.hidden)) return;
+    if (!observe && sameView(state.wanted, state.shown)) {
       progress();
       schedulePlay(0);
       return;
@@ -255,25 +290,49 @@
     const revision = state.serial;
     const start = performance.now();
     let url;
+    let delay = 0;
+    let retryable = false;
+    const controller = new AbortController();
+    state.transfer = controller;
+    const deadline = observe ? setTimeout(() => controller.abort(), 30000) : 0;
     state.busy = true;
     transportState();
     try {
       const query = new URLSearchParams(request);
-      const response = await fetch("/api/frame?" + query, {cache: "no-store"});
-      if (!response.ok) throw await responseError(response);
+      if (observe && state.after !== null) query.set("after", String(state.after));
+      retryable = true;
+      const response = await fetch("/api/frame?" + query, {cache: "no-store", signal: controller.signal});
+      if (observe && response.status === 204) {
+        if (revision === state.serial) {
+          state.notice = state.shown && state.after !== null ? "等待仿真发布下一帧" : "该视图尚未发布画面。";
+          state.failures = 0;
+          progress();
+        }
+        delay = state.after === null ? 650 : 350;
+        return;
+      }
+      if (!response.ok) {
+        retryable = response.status === 429 || response.status === 408 || response.status >= 500;
+        throw await responseError(response);
+      }
+      retryable = false;
       if (response.headers.get("Content-Type")?.split(";")[0].trim().toLowerCase() !== "image/png") {
         throw new Error("服务返回的画面格式有误。");
       }
       const index = readNumber(response.headers, "X-Frame-Index");
       const time = readNumber(response.headers, "X-Sim-Time-S");
       const ms = readNumber(response.headers, "X-Render-Ms");
-      if (index !== request.frame || response.headers.get("X-Camera-Id") !== request.camera ||
+      if (!Number.isSafeInteger(index) || (!observe && index !== request.frame) ||
+          (observe && query.has("after") && index <= Number(query.get("after"))) ||
+          response.headers.get("X-Camera-Id") !== request.camera ||
           response.headers.get("X-Channel-Id") !== request.channel) {
         throw new Error("返回画面的帧号、机位或通道与请求不符，请重试。");
       }
       if (isLive()) state.frontier = Math.max(state.frontier, index);
       // Drain even a stale response before requesting the most recent view.
+      retryable = true;
       const blob = await response.blob();
+      retryable = false;
       if (revision !== state.serial) return;
       url = URL.createObjectURL(blob);
       const decoded = new Image();
@@ -281,22 +340,38 @@
       await decoded.decode();
       if (revision !== state.serial) return;
       const previous = state.shown;
-      state.shown = {...request, time, ms, url};
+      state.shown = {...request, frame: index, time, ms, url};
+      if (observe) {
+        state.after = index;
+        state.failures = 0;
+        state.notice = "";
+      }
       decoded.id = "picture";
-      decoded.alt = cameraById(request.camera).label + "，" + chineseChannels[request.channel] + "，帧 " + index;
+      decoded.alt = cameraById(request.camera).label + "，" + channelById(request.channel).label + "，帧 " + index;
       ui.picture.replaceWith(decoded);
       ui.picture = decoded;
       url = null;
       if (previous?.url) URL.revokeObjectURL(previous.url);
       progress();
     } catch (error) {
-      if (revision === state.serial) fail(error);
+      if (revision === state.serial) {
+        if (observe && retryable) {
+          state.failures++;
+          delay = Math.min(5000, 350 * 2 ** Math.min(state.failures-1, 4));
+          state.notice = "暂时无法接收画面，" + (delay/1000).toFixed(1) + " 秒后重试。";
+          state.after = null;
+          progress();
+        } else fail(error);
+      }
     } finally {
+      clearTimeout(deadline);
+      state.transfer = null;
       if (url) URL.revokeObjectURL(url);
       state.busy = false;
       transportState();
       if (!state.failed) {
         if (revision !== state.serial) void pump();
+        else if (observe) pollAfter(delay || Math.max(15, 1000/state.scene.fps - (performance.now()-start)));
         else schedulePlay(performance.now() - start);
       }
     }
@@ -304,6 +379,22 @@
 
   function choose(change, delay = 0) {
     if (!state.scene) return;
+    if (observing()) {
+      if (!state.playing) return;
+      const next = {...state.wanted, ...change, frame: "latest"};
+      if (!sameView(next, state.wanted) || state.failed) {
+        state.serial++;
+        state.after = null;
+        state.notice = "";
+        state.failures = 0;
+      }
+      state.wanted = next;
+      state.failed = false;
+      clearTimeout(state.timer);
+      progress();
+      void pump();
+      return;
+    }
     const desired = {...state.wanted, ...change};
     if (isLive()) desired.frame = Math.max(state.frontier, Math.min(state.frontier+1, desired.frame));
     desired.frame = Math.max(0, Math.min(lastFrame(), desired.frame));
@@ -320,6 +411,11 @@
   }
 
   function chooseCamera(id) {
+    if (observing() && !state.playing) return;
+    if ($("camera-search").value && [...$("camera-list").children].some((row) => row.dataset.camera === id && row.hidden)) {
+      $("camera-search").value = "";
+      filterCameras();
+    }
     $("camera-toggle").setAttribute("aria-expanded", "false");
     document.querySelector(".camera-rack").classList.remove("expanded");
     choose({camera: id});
@@ -333,6 +429,21 @@
 
   function playPause() {
     if (ui.play.disabled) return;
+    if (observing()) {
+      state.serial++;
+      state.playing = !state.playing;
+      state.failed = false;
+      state.failures = 0;
+      state.notice = "";
+      state.after = null;
+      clearTimeout(state.timer);
+      if (!state.playing && state.shown) {
+        state.wanted = {camera: state.shown.camera, channel: state.shown.channel, frame: "latest"};
+      }
+      progress();
+      if (state.playing) void pump();
+      return;
+    }
     if (state.playing) { stop(); transportState(); return; }
     state.playing = true;
     if (state.wanted.frame >= lastFrame() && !isLive()) choose({frame: 0});
@@ -344,14 +455,26 @@
   async function loadScene() {
     if (loading || state.busy) return;
     loading = true;
+    clearTimeout(state.timer);
     stage("正在连接场景");
+    let retryable = true;
+    const controller = new AbortController();
+    const deadline = setTimeout(() => controller.abort(), 20000);
     try {
-      const response = await fetch("/api/scene", {cache: "no-store"});
-      if (!response.ok) throw await responseError(response);
+      const response = await fetch("/api/scene", {cache: "no-store", signal: controller.signal});
+      if (!response.ok) {
+        retryable = response.status === 429 || response.status >= 500;
+        throw await responseError(response);
+      }
+      retryable = false;
       const data = validateScene(await response.json());
       const prior = state.wanted;
       state.scene = data;
       state.failed = false;
+      state.playing = data.mode === "observe";
+      state.after = null;
+      state.failures = state.metadataFailures = 0;
+      state.notice = "";
       const oldUrl = state.shown?.url;
       state.shown = null;
       ui.picture.hidden = true;
@@ -359,19 +482,27 @@
       if (oldUrl) URL.revokeObjectURL(oldUrl);
       state.frontier = data.current_frame ?? 0;
       $("title").textContent = data.title;
-      document.title = data.title + " | Phymeo 渲染工作台";
-      $("mode").textContent = data.mode === "live" ? "实时仿真" : "轨迹回放";
-      $("mode").classList.toggle("live", data.mode === "live");
+      document.title = data.title + " | Phymeo 仿真监看";
+      $("mode").textContent = {live: "实时步进", observe: "仿真观察", replay: "轨迹回放"}[data.mode];
+      $("mode").classList.toggle("live", data.mode !== "replay");
       $("mode").hidden = false;
       buildChoices();
-      const channel = data.channels.some((c) => c.id === prior?.channel) ? prior.channel :
-        (data.channels.find((c) => c.id === "rgb") || data.channels.find((c) => channelIds.has(c.id))).id;
+      const channel = data.channels.some((c) => c.id === prior?.channel) ? prior.channel : data.channels[0].id;
       const camera = cameraById(prior?.camera)?.id ?? state.cameras[0].id;
-      state.wanted = {camera, frame: isLive() ? state.frontier : prior?.frame ?? state.frontier, channel};
+      state.wanted = {camera, frame: observing() ? "latest" : isLive() ? state.frontier :
+        Number.isSafeInteger(prior?.frame) ? prior.frame : state.frontier, channel};
       choose({});
-    } catch (error) { fail(error); } finally { loading = false; }
+    } catch (error) {
+      fail(error);
+      if (retryable) {
+        const delay = Math.min(8000, 1000 * 2 ** Math.min(state.metadataFailures++, 3));
+        if (!document.hidden) state.timer = setTimeout(() => { void loadScene(); }, delay);
+        stage("正在重连场景", "等待渲染服务响应。", true);
+      }
+    } finally { clearTimeout(deadline); loading = false; }
   }
 
+  $("camera-search").addEventListener("input", filterCameras);
   ui.play.addEventListener("click", playPause);
   ui.previous.addEventListener("click", () => step(-1));
   ui.next.addEventListener("click", () => step(1));
@@ -428,7 +559,19 @@
     }
   });
   document.addEventListener("visibilitychange", () => {
-    if (document.hidden && state.playing) { stop(); transportState(); }
+    if (observing()) {
+      state.serial++;
+      state.after = null;
+      clearTimeout(state.timer);
+      if (document.hidden) state.transfer?.abort();
+      else if (state.playing) void pump();
+    } else if (document.hidden && state.playing) {
+      stop(); transportState();
+    }
+    if (!state.scene && state.metadataFailures) {
+      clearTimeout(state.timer);
+      if (!document.hidden) void loadScene();
+    }
   });
   void loadScene();
 })();

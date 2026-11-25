@@ -28,6 +28,31 @@ with closing(renderer.open_scene(scene)) as session:
 
 ### 训练与测试相机查看器
 
+**旁观已有仿真。** 在训练或测试进程中创建 `LiveSceneViewer`，在已有物理循环中发布被接受的 `SceneFrame`。用浏览器打开该进程输出的本机地址，即可跟随最新画面。打开第二个标签页、在一个标签页冻结画面、切换相机或关闭网页，均由物理循环继续决定仿真进度。场景名、机位和可用通道由数据源提供。
+
+```python
+from phymeo_rendering import LiveSceneViewer, StudioRenderer
+from phymeo_rendering.outputs import Channel
+
+# scene 是已有的 VisualScene。两个回调分别根据当前 SceneFrame 返回标定 Camera。
+with LiveSceneViewer(
+    scene,
+    cameras={"wide": wide_camera, "tool": tool_camera},
+    camera_labels={"wide": "全景", "tool": "工具相机"},
+    channels=(Channel.RGB, Channel.FORWARD_DEPTH, Channel.INSTANCE_ID),
+    renderer_factory=lambda: StudioRenderer(library_path=library, device_index=gpu),
+    title="操作策略验证",
+) as monitor:
+    print(monitor.url, flush=True)
+    for frame in accepted_scene_frames():
+        monitor.publish(frame)
+```
+
+这里的 `accepted_scene_frames()` 代表调用方已有的仿真循环。在物理线程采样位姿并构造不可变帧，镜头回调从传入的该帧计算外参。渲染线程只在浏览器请求图像时捕获所选机位和通道。较慢的浏览器可以跳过中间发布，适合在线检查；完整训练记录仍由采集端保存。每个发布进程有自己的 URL，在其他机器上查看时可通过 SSH 将服务的本机端口转发到相同的本地端口。
+
+[启动后台仿真监看示例](examples/open_simulation_monitor.cmd) 演示如何接入两个不同的 MuJoCo 物理场景。它们复用同一网页和原生渲染路径。[完整发布循环](examples/view_background_simulation.py) · [公共 API](src/phymeo_rendering/live_viewer.py)
+
+**回放与手动单步。**
 Windows 下双击 [启动查看器](examples/open_training_viewer.cmd) 可在本机浏览器查看八工位回放。这个入口使用本项目已有的 Python 3.13 环境、Vulkan 库和回放资产。在终端运行同一脚本并附加 `--scene panda` 可查看双 Panda 的总览与两个腕部镜头，`--scene eight-live` 可查看现场推进的八个物理环境。用 Ctrl+C 关闭启动窗口中的服务。其他设备可用环境变量 `PHYVIEW_DEVICE`、`PHYVIEW_LIBRARY` 选择显卡和原生库，也可直接运行 [Python 入口](examples/view_training.py)。
 
 默认暂停在总览。数字 0 返回总览，1–8 切换已注册的近景，空格播放或暂停，左右方向键单步。回放可拖动时间轴或输入帧号，现场仿真只支持当前帧和向前单步。RGB、深度、实例 ID 都从选中镜头按需采集。深度使用镜头固定的米制范围映射到灰度，实例使用稳定的颜色编码。训练代码通过原生 `Capture` 读取数值平面。页面上的采集时间包含位姿更新与原生读回，首次切入工位还包含打开该渲染场景的时间。

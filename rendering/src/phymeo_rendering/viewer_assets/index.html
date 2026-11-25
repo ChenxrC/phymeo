@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
-  <title>Phymeo 渲染工作台</title>
+  <title>Phymeo 仿真监看</title>
   <link rel="stylesheet" href="/viewer.css">
   <script src="/viewer.js" defer></script>
 </head>
@@ -23,10 +23,12 @@
     <symbol id="close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
     <symbol id="chevron" viewBox="0 0 24 24"><path d="m8 10 4 4 4-4"/></symbol>
     <symbol id="screen" viewBox="0 0 24 24"><rect x="2.8" y="4" width="18.4" height="13.5" rx="2"/><path d="M9 21h6m-3-3v3"/></symbol>
+    <symbol id="search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></symbol>
+    <symbol id="signal" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2.1" fill="currentColor" stroke="none"/><path d="M7.9 7.8a6 6 0 0 0 0 8.4m8.2-8.4a6 6 0 0 1 0 8.4M4.8 4.8a10.2 10.2 0 0 0 0 14.4m14.4-14.4a10.2 10.2 0 0 1 0 14.4"/></symbol>
   </svg>
   <header class="topbar">
     <div class="brand"><svg class="brand-mark" viewBox="0 0 42 42" aria-hidden="true"><rect width="42" height="42" rx="11" fill="#3356b8"/><g fill="none" stroke="#fbfbff" stroke-linejoin="round" stroke-linecap="round"><path d="m9.5 16.2 11.6-6.6 11.2 6.4-11.5 6.6-11.3-6.4Z" stroke-width="1.8"/><path d="M10 21.3 20.9 28l11-6.6M10.5 26.4 20.9 32.7l10.6-6.4" stroke-width="1.8"/></g></svg><span>Phymeo</span></div>
-    <span class="product">渲染工作台</span>
+    <span class="product">仿真监看</span>
     <div class="top-actions"><span class="mode" id="mode" hidden></span>
       <button type="button" id="help" class="icon-button" title="键盘快捷键" aria-label="键盘快捷键"><svg class="icon"><use href="#keyboard"/></svg></button>
     </div>
@@ -36,7 +38,9 @@
     <div class="workspace">
       <aside class="camera-rack" aria-label="场景机位">
         <div class="rack-head"><h2>机位</h2><span id="camera-count"></span><button id="camera-toggle" class="rack-toggle" type="button" aria-controls="camera-list" aria-expanded="false"><span id="mobile-camera">选择机位</span><svg class="icon"><use href="#chevron"/></svg></button></div>
+        <label id="search-box" class="search-box" hidden><svg class="icon" aria-hidden="true"><use href="#search"/></svg><input type="search" id="camera-search" aria-label="搜索机位" placeholder="搜索机位" autocomplete="off"></label>
         <nav id="camera-list" aria-label="选择机位"></nav>
+        <p id="no-cameras" class="no-cameras" role="status" hidden>没有匹配的机位</p>
       </aside>
       <div class="desk">
         <section class="monitor" id="monitor" aria-label="渲染画面">
@@ -50,10 +54,10 @@
             <img id="picture" alt="" hidden>
             <div id="stage-message" class="stage-message" role="status"><span class="wait-ring" aria-hidden="true"></span><strong id="stage-title">正在连接场景</strong><span id="stage-detail"></span><button type="button" id="retry" hidden>重试</button></div>
           </div>
-          <div class="image-meta"><span class="meta-frame" id="captured-frame">尚未显示画面</span><span id="channel-note"></span></div>
+          <div class="image-meta"><div class="capture-spec"><span class="meta-frame" id="captured-frame">尚未显示画面</span><span id="source-size" hidden></span></div><span id="channel-note"></span></div>
         </section>
         <section class="transport" aria-label="帧播放控制">
-          <div class="transport-heading"><h2>时间轴</h2><div class="telemetry"><span>仿真时间 <b id="sim-time">—</b></span><span title="位姿更新、当前相机采集与读回，不含 PNG 编码和网络传输">采集耗时 <b id="render-ms">—</b></span></div></div>
+          <div class="transport-heading"><h2 id="transport-title">时间轴</h2><div class="telemetry"><span>仿真时间 <b id="sim-time">—</b></span><span title="位姿更新、当前相机采集与读回，不含 PNG 编码和网络传输">采集耗时 <b id="render-ms">—</b></span></div></div>
           <div class="track" id="track"><input id="seek" type="range" min="0" max="0" step="1" value="0" disabled aria-label="选择帧"><div class="ruler" id="ruler" aria-hidden="true"></div></div>
           <div class="transport-row">
             <div class="transport-buttons">
@@ -61,7 +65,8 @@
               <button type="button" id="playback" class="playback" title="播放 (空格)" disabled><svg class="icon"><use href="#play"/></svg><span>播放</span></button>
               <button type="button" id="next-frame" class="icon-button" title="下一帧 (→)" aria-label="下一帧" disabled><svg class="icon"><use href="#next"/></svg></button>
             </div>
-            <label class="frame-entry" for="frame-number">帧号 <input id="frame-number" type="number" min="0" value="0" step="1" inputmode="numeric" autocomplete="off" disabled><span id="frame-limit"></span></label>
+            <p id="observe-note" hidden>跟随仿真发布的最新画面</p>
+            <label class="frame-entry" id="frame-entry" for="frame-number">帧号 <input id="frame-number" type="number" min="0" value="0" step="1" inputmode="numeric" autocomplete="off" disabled><span id="frame-limit"></span></label>
           </div>
         </section>
       </div>
@@ -69,7 +74,7 @@
   </main>
   <dialog id="shortcuts" aria-labelledby="shortcuts-title">
     <div class="dialog-head"><h2 id="shortcuts-title">键盘快捷键</h2><button type="button" id="close-dialog" class="icon-button" aria-label="关闭"><svg class="icon"><use href="#close"/></svg></button></div>
-    <dl><div><dt>切换机位</dt><dd><kbd>0</kbd> ～ <kbd>8</kbd></dd></div><div><dt>逐帧查看</dt><dd><kbd>←</kbd> <kbd>→</kbd></dd></div><div><dt>播放或暂停</dt><dd><kbd>空格</kbd></dd></div><div><dt>关闭此窗口</dt><dd><kbd>Esc</kbd></dd></div></dl>
+    <dl><div><dt>切换机位</dt><dd><kbd>0</kbd> ～ <kbd>8</kbd></dd></div><div id="shortcut-step"><dt>逐帧查看</dt><dd><kbd>←</kbd> <kbd>→</kbd></dd></div><div><dt id="shortcut-play">播放或暂停</dt><dd><kbd>空格</kbd></dd></div><div><dt>关闭此窗口</dt><dd><kbd>Esc</kbd></dd></div></dl>
   </dialog>
 </body>
 </html>

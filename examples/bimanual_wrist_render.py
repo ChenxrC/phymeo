@@ -29,15 +29,20 @@ from phymeo_rendering.studio import StudioLighting
 
 WRIST_SITES = ("left_wrist_camera", "right_wrist_camera")
 WRIST_FOV_DEG = 78.0
+LEGACY_MARKER_LAYOUT = "split-floor-v1"
+REAR_MARKER_LAYOUT = "rear-goal-triad-v2"
+MARKER_LAYOUT_VERSION = "surveyed-goal-triad-v3"
 
 
-def marker_layout(task):
+def marker_layout(task, version=MARKER_LAYOUT_VERSION):
     """Printed sticker centres in metres in the payload body or task_goal site frame.
 
     rgb is linear material reflectance. hue_deg describes the intended display
     colour. Only the coloured disc has radius_m; the white rim adds 3 mm.
     The same manufactured part geometry is used for every seed of its task.
     """
+    if version not in (LEGACY_MARKER_LAYOUT, REAR_MARKER_LAYOUT, MARKER_LAYOUT_VERSION):
+        raise ValueError(f"unknown wrist marker layout {version!r}")
     palette = (
         ("obj-magenta", (.88, .003, .82), 302),
         ("obj-yellow", (.93, .82, .003), 57),
@@ -49,18 +54,31 @@ def marker_layout(task):
         ("goal-rose", (.90, .004, .205), 330),
     )
     if task == "carry":
+        # Three floor decals register the deposit fixture in the two inward-
+        # facing wrist cameras. The two trailing decals straddle the approach,
+        # and the leading decal is beyond the footprint of the deposited box.
         centers = ((-.035, .078, .0503), (-.035, -.078, .0503),
                    (.034, -.055, .0503), (.034, .055, .0503), (-.0603, 0., .004),
-                   (-.026, .139, 0.), (-.026, -.139, 0.), (-.085, 0., 0.))
+                   (-.230, .180, 0.), (-.235, -.110, 0.), (.110, -.012, 0.))
+        if version == REAR_MARKER_LAYOUT:
+            centers = centers[:5] + ((-.213, -.054, 0.), (-.217, .066, 0.), (-.252, -.007, 0.))
+        elif version == MARKER_LAYOUT_VERSION:
+            # A fixed, asymmetric table target beyond the deposit footprint.
+            # These sites were selected by ray testing the full robot and tote
+            # geometry across both arm configurations and installation stances.
+            centers = centers[:5] + ((.180, -.055, 0.), (.240, .110, 0.), (.255, -.100, 0.))
     elif task == "push_t":
         centers = ((0., .092, .0283), (0., -.092, .0283),
                    (.145, -.011, .0283), (.061, .012, .0283), (-.0283, .007, .003),
                    (-.053, .095, 0.), (-.053, -.095, 0.), (.057, .064, 0.))
     else:
         raise ValueError(f"no fiducial installation for {task!r}")
+    goal_radius = ({LEGACY_MARKER_LAYOUT: .027, REAR_MARKER_LAYOUT: .016,
+                    MARKER_LAYOUT_VERSION: .023}[version] if task == "carry" else .014)
     return tuple(dict(id=name, role="object" if i < 5 else "goal", xyz=xyz,
                       normal=(-1., 0., 0.) if i == 4 else (0., 0., 1.),
-                      radius_m=.013 if i < 5 else .014, rgb=rgb, hue_deg=hue)
+                 radius_m=.013 if i < 5 else goal_radius,
+                 rgb=rgb, hue_deg=hue)
                  for i, ((name, rgb, hue), xyz) in enumerate(zip(palette, centers, strict=True)))
 
 
@@ -211,10 +229,10 @@ def _sticker_mesh(cache, radius, rim):
     return Mesh(digest, path.as_uri())
 
 
-def _attach_markers(model, cache, scene):
+def _attach_markers(model, cache, scene, version):
     model_name = bytes(model.names).split(b"\0", 1)[0].decode("utf-8")
     task = model_name.removeprefix("bimanual_").rsplit("_", 1)[0]
-    markers = marker_layout(task)
+    markers = marker_layout(task, version)
     payload = int(model.body("payload").id)
     goal = int(model.site("task_goal").id)
     goal_body = int(model.site_bodyid[goal])
@@ -252,7 +270,7 @@ class BimanualWristRenderer:
     """Resident RGB cameras. qpos is the visual input only, never a policy feature."""
 
     def __init__(self, model, cache_dir, *, library_path=None, size=(96, 96),
-                 device_index=None, panel_samples=4, fiducials=False):
+                 device_index=None, panel_samples=4, fiducials=False, marker_version=MARKER_LAYOUT_VERSION):
         self.model = model
         self.data = mj.MjData(model)
         self.site_ids = tuple(int(model.site(name).id) for name in WRIST_SITES)
@@ -262,7 +280,7 @@ class BimanualWristRenderer:
         self.fiducials = fiducials
         self.marker_specs = ()
         if fiducials:
-            self.scene, extra_names, self.marker_specs = _attach_markers(model, cache, self.scene)
+            self.scene, extra_names, self.marker_specs = _attach_markers(model, cache, self.scene, marker_version)
             self.visual_names.update(extra_names)
         self.bodies = tuple(sorted({b for _, b, _ in self.bindings}))
         self.subject = tuple(i for i, _, _ in self.bindings if model.geom_type[i] != mj.mjtGeom.mjGEOM_PLANE)
@@ -485,6 +503,7 @@ def _episode_result(path, trace, model, model_sha, digest, ticks, times, q, rewa
     if type(marked) is not bool:
         raise ValueError("receipt fiducials must identify whether the wrist images used printed markers")
     return dict(task=task, seed=seed, success=row["success"], physics=row["physics"], fiducials=marked,
+                marker_layout_version=row.get("marker_layout_version", LEGACY_MARKER_LAYOUT),
                 active_arms=row["job"]["arms"], policy_rgb_masked=row["job"]["black"],
                 receipt_sha256=_digest(path), trajectory_binding=verification)
 
@@ -533,6 +552,7 @@ def record(args):
             raise ValueError("requested marker layout differs from the recorded policy's wrist scene")
         fiducials = outcome["fiducials"]
     fiducials = bool(fiducials)
+    marker_version = outcome["marker_layout_version"] if outcome else MARKER_LAYOUT_VERSION
     elapsed = times - times[0]
     last_presentation = max(1, math.ceil(float(elapsed[-1]) * args.fps / speed - 1e-9))
     clock = speed * np.arange(last_presentation + 1) / args.fps
@@ -551,7 +571,8 @@ def record(args):
                "-colorspace", "bt709", "-color_primaries", "bt709", "-color_trc", "iec61966-2-1",
                "-movflags", "+faststart", str(tmp)]
     with BimanualWristRenderer(model, args.cache_dir, library_path=args.library,
-                               device_index=args.device_index, panel_samples=16, fiducials=fiducials) as renderer:
+                               device_index=args.device_index, panel_samples=16, fiducials=fiducials,
+                               marker_version=marker_version) as renderer:
         renderer.fit_overview(q)
         device = renderer.device_report
         # stderr inherits the terminal, so a full diagnostic pipe cannot deadlock the writer.
@@ -592,7 +613,7 @@ def record(args):
         presentation_source_indices=chosen.tolist(), captures=frames, device=device,
         lighting="two area sources, neutral environment, metallic-roughness",
         area_samples_per_light=16, display="pbr-neutral", wrist_vertical_fov_deg=WRIST_FOV_DEG,
-        fiducials=fiducials, marker_layout=renderer.marker_specs,
+        fiducials=fiducials, marker_layout=renderer.marker_specs, marker_layout_version=marker_version,
     )
     report.write_text(json.dumps(manifest, indent=2, allow_nan=False), encoding="utf-8")
     return output, poster, report

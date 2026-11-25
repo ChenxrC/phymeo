@@ -24,7 +24,9 @@ with closing(renderer.open_scene(scene)) as session:
     image = session.capture(frame, CaptureRequest(camera, RenderPath.RASTER, (Channel.RGB,)))
 ```
 
-[家庭餐厅资产展示示例](examples/film_home_showcase.py)演示如何覆盖每灯采样数。它从本地家居资产包按类别编号选前十类，各取编号最小的 GLB，在同一场景内运镜 30 秒，以每灯 64 采样输出视频。传入 `--assets`、`--cache`、`--output`、`--library` 与 `--device-index` 可复现。加 `--preview` 可先检查餐桌、杯具和玄关的构图。
+[家庭餐厅资产展示示例](examples/film_home_showcase.py)从本地家居资产包按编号选前十类，各取编号最小的 GLB，在同一间餐厅内运镜 30 秒。影片以 2880×1620 渲染，每灯采样 64 次，开启 4× MSAA，再在线性显示光空间按面积缩到 1440×810。摄影窗景与扫描材质用作布景；焦点随镜头从餐厅全景移到餐桌和玄关，利用渲染深度计算景深。
+
+在装有 NumPy、Pillow 和 OpenCV（`cv2`）的 Python 环境中运行，并将带 libx264 的 FFmpeg 和 ffprobe 放入 PATH。传入 `--assets`、`--cache`、`--output`、`--library` 和 `--device-index` 可复现。加 `--preview` 可输出同机位静帧、轮廓误差和景深参考；加 `--motion-check` 可先录一秒餐桌特写，检查运镜中的稳定性。三个模式可分别指定输出目录。
 
 高采样影片可用 `StudioRenderer(library_path=library_path, panel_samples=64)`。`size=(宽, 高)` 设置相机默认尺寸，`studio=` 接受自定义灯光。已有标定相机可以直接传给 `CaptureRequest`，保留其尺寸、焦距和主点。`area_light_grid=8` 同样选择每盏灯 64 个样点。[公共接口](src/phymeo_rendering/photography.py)
 

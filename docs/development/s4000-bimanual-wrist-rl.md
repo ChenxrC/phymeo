@@ -113,3 +113,9 @@ python examples/bimanual_musa_train.py --task carry --stage train --mode musa \
 PushT 原策略在完整交叉中为 **12/16**。两个构型都能朝两个方向完成任务，仍有四次没有达到规定的终态。每个压缩包均包含 16 个实际回合、源场景、轨迹以及逐步实测记录。[搬运构型汇总](../../artifacts/mtt-bimanual-20261126/carry-crossed-layouts.json) · [搬运完整记录](../../artifacts/mtt-bimanual-20261126/carry-crossed-evidence.tgz) · [PushT 构型汇总](../../artifacts/mtt-bimanual-20261126/push-crossed-layouts.json) · [PushT 完整记录](../../artifacts/mtt-bimanual-20261126/push-crossed-evidence.tgz)
 
 对两个成功搬运回合再问一个静力问题：在实际离台且两腕均有载荷的每个决策姿态，给定腕边与箱侧缘的接触几何、摩擦和原电机限矩，能否平衡 58.86 N 重力，同时保持水平合力与重心力矩为零？两回合分别有 112、113 个合格姿态，双臂在全部 225 个都能静托。在其中 83、81 个姿态，任何一只腕单独都不能静托，两个回合合计 **164/225**。另外 61 个姿态中至少有一侧具备理想静力平衡解。该结果描述已记录的姿态与力矩约束；实际单臂动态尝试另有四次有效对照。[43001 离台姿态](../../artifacts/mtt-bimanual-20261126/carry-capacity-43001.json) · [43002 离台姿态](../../artifacts/mtt-bimanual-20261126/carry-capacity-43002.json)
+
+## 限力工具装到真正的转动关节腕座后
+
+给每个手腕加一个真实滑动关节和 28 N 限力电机。把杆、套筒和全部臂节都纳入工件与台面的碰撞候选，才能查明推力究竟经过哪个零件。S4000 上新增的胶囊–盒体测试覆盖法向、带摩擦接触和不同世界的接触启闭，与 CPU MuJoCo 核对；三项原生测试通过，耗时 38.60 秒。[S4000 测试输出](../../artifacts/mtt-bimanual-20261126/capsule-box-s4000-pytest.txt)
+
+在种子 701，把已训练的 PushT 策略直接迁移到这套工具，双臂、仅左推、仅右推均运行了 2,880 个动力学步。双臂使工件移动最多 92.91 mm，但末端偏航仍差 14.95°。两枚顶头先后触桌，随后左右套筒直接顶到工件，接触峰值为 166.02 N 和 185.07 N。虽然两个滑杆电机始终在 28 N 内，套筒这条传力路径绕开了滑杆。单独启用左、右推杆时工件分别移动了 61.18 mm 和 56.05 mm。该轮三个条件均未通过限力工具的整步验收。[实际碰撞、力和终态](../../artifacts/mtt-bimanual-20261126/rated-articulated-03.json)

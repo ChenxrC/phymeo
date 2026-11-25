@@ -233,18 +233,28 @@ def _require_musa_plan(plan, model, mj):
     base = plan.base if type(plan) is TyxConstraintModel else plan
     scalar = np.isin(model.jnt_type, (mj.mjtJoint.mjJNT_SLIDE, mj.mjtJoint.mjJNT_HINGE))
     fixed = type(base) is TyxTreeModel and base.kind == 2 and np.all(scalar)
-    floating = (
+    single_free = (
         type(base) is TyxFloatingModel
         and base.kind == 3
         and len(base.free_root_bodies) == 1
         and np.all(scalar | (model.jnt_type == mj.mjtJoint.mjJNT_FREE))
-        and np.all(model.body_rootid[model.jnt_bodyid] == base.free_root_bodies[0])
+    )
+    joint_roots = model.body_rootid[model.jnt_bodyid]
+    floating = single_free and np.all(joint_roots == base.free_root_bodies[0])
+    # A free payload has exactly one joint in its tree. The existing native
+    # joint-address forest evaluates the fixed-base arms in the same solve.
+    payload_with_arms = (
+        single_free
+        and type(plan) is TyxConstraintModel
+        and plan.npair > 0
+        and 2 <= len(np.unique(joint_roots)) <= 3
+        and np.count_nonzero(joint_roots == base.free_root_bodies[0]) == 1
     )
     if floating and plan is base:
         return
     if (
         type(plan) is TyxConstraintModel
-        and (fixed or floating)
+        and (fixed or floating or payload_with_arms)
         and (plan.npair or plan.nlimit or plan.nfriction)
         and _musa_t4_pairs_supported(plan, model, mj)
     ):
@@ -254,7 +264,8 @@ def _require_musa_plan(plan, model, mj):
             MuJoCoTyxIssue(
                 "musa-domain",
                 "MUSA admits the unrestricted prismatic solver, a single free-root scalar "
-                "tree without contact, or fixed/single-free-root scalar trees with T4 "
+                "tree without contact, or T4 contact between a free rigid payload and up to "
+                "two fixed-base scalar trees, or fixed/single-free-root scalar trees with T4 "
                 "hinge/slide limits, DOF dry friction, basic condim 1/3 contacts, or "
                 "plane/sphere/capsule pairs with condim 1/3/6",
             ),
@@ -644,7 +655,9 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                 max_generalized_positions=36 if mode == "musa" else 45,
             )
             if mode == "musa":
-                info["articulation_root_scope"] = "single-free-root"
+                info["articulation_root_scope"] = (
+                    "single-free-root" if len(tree_roots) == 1 else "free-payload-with-fixed-arms"
+                )
             if len(tree_roots) > 1:
                 info["domain"] = info["domain"].replace("free-root-", "forest-")
                 info["g1_supported"] = False

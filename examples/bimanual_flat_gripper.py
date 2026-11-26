@@ -231,8 +231,10 @@ def _run(trainer,args,weights,seed,style):
 
     suffixes = NAMES if style=="four-contact" else ("a","b")
     stem = args.out/f"{seed}-{style}"
+    layout = getattr(args, "arm_layout", None)
+    dofs = {"6x7": (6, 7), "7x6": (7, 6)}[layout] if layout else trainer._dofs(seed)
     with ExitStack() as stack:
-        env = stack.enter_context(BimanualBatchEnv("carry",seed,world_keys=(0,),arm_dofs=trainer._dofs(seed),
+        env = stack.enter_context(BimanualBatchEnv("carry",seed,world_keys=(0,),arm_dofs=dofs,
                     mode=args.mode,cache_root=args.cache_dir,action_repeat=args.action_repeat,horizon=args.horizon,
                     stance="bent-elbow",load_profile="standard",tool_profile="twin-pad"))
         original_sha = env.scene.xml_sha256
@@ -266,11 +268,19 @@ def _run(trainer,args,weights,seed,style):
                     pad = model.geom("left_pad_a").id
                     self.pad_radius = float(tcp-model.geom_pos[pad,1]+model.geom_size[pad,0])
             actor.fiducial = PatchControl("carry",actor.dt)
+            if args.control == "firm-grip":
+                # Only the normal pressure target in the flat-box carry law uses
+                # this gain. Keep all four-contact geometry and actuator limits.
+                actor.gains[0] *= 39. / 31.
         if args.command_xy:
             from _bimanual_goal_conditioned import bind_goal_xy, _scene_command
             bind_goal_xy(actor,_scene_command(model))
-        alignment = _FaceAlignment() if args.control=="face-alignment" and style=="four-contact" else None
-        effective_control = "face-alignment" if alignment is not None else "original"
+        effective_control = args.control if style == "four-contact" else "original"
+        alignment = _FaceAlignment() if effective_control != "original" else None
+        guard = None
+        if effective_control == "stable-grasp":
+            from _bimanual_stable_grasp import make_controller
+            guard = make_controller(actor, effective_control)
         start = env.runtime.musa_device_report() if args.mode=="musa" else None
         states = [info["qpos"].copy()]
         ticks,times = [int(info["tick"])],[float(info["time_s"])]
@@ -291,6 +301,8 @@ def _run(trainer,args,weights,seed,style):
             action = actor.act(obs,image,wrist_force_world_n=info["wrist_force_world_n"])
             if alignment is not None:
                 action = alignment.correct(actor,obs,action)
+            if guard is not None:
+                action = guard.correct(actor,obs,action)
             action = np.where(command_mask.ravel(),action,0.)
             obs,reward,terminated,truncated,info = env.step_torque({0:action})[0]
             applied = np.asarray(info["applied_ctrl"],float)
@@ -361,12 +373,14 @@ def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--out",type=Path,required=True)
     p.add_argument("--seed",type=int,nargs="+",default=[701])
+    p.add_argument("--arm-layout", choices=("6x7", "7x6"),
+                   help="fix left/right joint counts independently of the object and goal seed")
     p.add_argument("--compare",action="store_true")
     p.add_argument("--arms",choices=("both","left","right"),default="both",
                    help="active motors; the environment parks the other arm and retains its passive dynamics")
     p.add_argument("--black-rgb","--black-wrists",action="store_true",
                    help="render both actual wrist images, then give the policy two all-black frames")
-    p.add_argument("--control",choices=("original","face-alignment"),default="original",
+    p.add_argument("--control",choices=("original","face-alignment","firm-grip","stable-grasp"),default="original",
                    help="four-contact wrist controller; the two-pad comparator always uses the original controller")
     p.add_argument("--command-xy",action="store_true",help="use the same explicit XY in both jaws' comparison")
     p.add_argument("--base",type=Path,help="transfer a verified bilateral fiducial carry policy; default is the untrained prior")
@@ -415,6 +429,9 @@ def main(argv=None):
     if args.command_xy:
         import _bimanual_goal_conditioned as command_adapter
         report["command_adapter_sha256"] = _sha(Path(command_adapter.__file__).read_bytes())
+    if args.control == "stable-grasp":
+        import _bimanual_stable_grasp as stable_module
+        report["control_module_sha256"] = _sha(Path(stable_module.__file__).read_bytes())
     for seed in args.seed:
         for style in (("four-contact","twin-pad") if args.compare else ("four-contact",)):
             report["episodes"].append(_run(trainer,args,weights,seed,style))

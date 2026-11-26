@@ -105,6 +105,31 @@ def _layout(shape, dtype):
     return shape, dtype, nbytes
 
 
+def _torch_musa():
+    """Lazy optional dependency: Tyx itself does not need a Torch installation."""
+    try:
+        import torch
+        import torch_musa
+    except ImportError as exc:
+        raise MusaError("Torch device interchange requires torch and torch_musa") from exc
+    return torch, torch_musa
+
+
+def _torch_dtype(torch, dtype):
+    result = getattr(torch, dtype.name, None)
+    if not isinstance(result, torch.dtype):
+        raise TypeError(f"Torch has no matching dtype for {dtype}")
+    return result
+
+
+def _torch_stream(backend, device, stream):
+    if stream is None:
+        stream = backend.current_stream(device)
+    if not isinstance(stream, backend.Stream) or stream.device != device:
+        raise ValueError("expected a torch_musa stream on the same MUSA device")
+    return stream
+
+
 class MusaArray:
     """A contiguous device allocation. Its creating runtime controls its lifetime."""
 
@@ -170,6 +195,54 @@ class MusaArray:
         self._runtime._copy(self, result, upload=False)
         return result
 
+    def copy_from_torch(self, tensor, *, stream=None):
+        """Copy a matching contiguous MUSA tensor into this array in device memory.
+
+        The supplied (or current Torch) stream must order all previous writes to
+        tensor. The native copy is complete when this method returns; other
+        streams must not modify the source concurrently. No autograd edge is made.
+        """
+        self._runtime._copy_torch(self, tensor, stream=stream, from_torch=True)
+
+    def copy_to_torch(self, out, *, stream=None):
+        """Fill an existing MUSA tensor. Its stream must order prior uses of out.
+
+        This synchronous device copy allows reuse by any stream after return.
+        Writing a grad-requiring tensor is rejected.
+        """
+        self._runtime._copy_torch(self, out, stream=stream, from_torch=False)
+        return out
+
+    def to_torch(self, *, stream=None):
+        """Return a new Torch-owned MUSA tensor independent of this allocation."""
+        torch, backend = _torch_musa()
+        device = torch.device("musa", self.device_index)
+        chosen = _torch_stream(backend, device, stream)
+        with self._runtime._lock:
+            self._runtime._require_array(self)
+            # A cached allocation may have outstanding operations on its own
+            # allocator stream. Allocate on the same stream that we will await.
+            with backend.stream(chosen):
+                result = torch.empty(self.shape, dtype=_torch_dtype(torch, self.dtype), device=device)
+            return self.copy_to_torch(result, stream=chosen)
+
+    def copy_from_device(self, source):
+        """Copy from another matching array owned by the same Tyx MUSA runtime."""
+        runtime = self._runtime
+        with runtime._operation():
+            runtime._require_array(self)
+            if not isinstance(source, MusaArray) or source._runtime is not runtime:
+                raise ValueError("source must be owned by the same MUSA runtime")
+            runtime._require_array(source)
+            if self.shape != source.shape or self.dtype != source.dtype:
+                raise ValueError("device arrays must have identical shapes and dtypes")
+            if self is source:
+                if runtime._in_flight:
+                    runtime.synchronize()
+                return
+            runtime._copy_device_bytes(self._pointer, source._pointer, self.nbytes,
+                                       "tyx_to_tyx_bytes", (self, source))
+
     def close(self):
         self._runtime._free(self)
 
@@ -203,6 +276,8 @@ class MusaRuntime:
         self._buffers = set()
         self._in_flight = {}
         self._pending_host_copy = None
+        self._pending_device_copy = None
+        self._memcpy_async = None
         self._stream = ct.c_void_p()
         self._counts = dict(
             device_allocations=0,
@@ -210,6 +285,11 @@ class MusaRuntime:
             freed_bytes=0,
             uploaded_bytes=0,
             downloaded_bytes=0,
+            device_to_device_bytes=0,
+            torch_to_tyx_bytes=0,
+            tyx_to_torch_bytes=0,
+            tyx_to_tyx_bytes=0,
+            torch_stream_synchronizations=0,
             launched_kernels=0,
             completed_kernels=0,
             stream_synchronizations=0,
@@ -365,6 +445,7 @@ class MusaRuntime:
         self._counts["stream_synchronizations"] += 1
         self._counts["completed_kernels"] = self._counts["launched_kernels"]
         self._in_flight.clear()
+        self._pending_device_copy = None
 
     def _finish_host_copy(self):
         if self._pending_host_copy is not None:
@@ -373,7 +454,7 @@ class MusaRuntime:
 
     def _drain_for_release(self):
         self._finish_host_copy()
-        if self._in_flight:
+        if self._in_flight or self._pending_device_copy is not None:
             self._sync()
 
     def synchronize(self):
@@ -415,6 +496,62 @@ class MusaRuntime:
             except MusaError as exc:
                 self._failure = str(exc)
                 raise
+
+    def _copy_device_bytes(self, dst, src, nbytes, counter, owners):
+        """The caller holds the runtime lock and has selected this device."""
+        if not nbytes:
+            return
+        if not dst or not src or abs(dst - src) < nbytes:
+            raise ValueError("device copy requires distinct, nonoverlapping storage")
+        if self._memcpy_async is None:
+            self._memcpy_async = _bind(
+                self._lib, "musaMemcpyAsync", ct.c_int, ct.c_void_p, ct.c_void_p,
+                ct.c_size_t, ct.c_int, ct.c_void_p,
+            )
+        # musa_runtime_api.h: musaMemcpyDeviceToDevice=3. The owned stream
+        # orders this copy after all earlier Tyx kernels on that same stream.
+        self._pending_device_copy = owners
+        try:
+            self._call(self._memcpy_async, dst, src, nbytes, 3, self._stream)
+            self._sync()
+        except BaseException as exc:
+            # The native call may have submitted work before reporting an
+            # error. Hold both owners until close drains or quarantines it.
+            self._failure = str(exc) or type(exc).__name__
+            raise
+        self._counts["device_to_device_bytes"] += nbytes
+        self._counts[counter] += nbytes
+
+    def _copy_torch(self, buffer, tensor, *, stream, from_torch):
+        torch, backend = _torch_musa()
+        with self._operation():
+            self._require_array(buffer)
+            device = torch.device("musa", self.device_index)
+            if not isinstance(tensor, torch.Tensor) or tensor.device != device:
+                raise ValueError("expected a Torch tensor on the same MUSA device")
+            if tensor.dtype != _torch_dtype(torch, buffer.dtype) or tuple(tensor.shape) != buffer.shape:
+                raise ValueError("Torch tensor must have the same shape and dtype as the MUSA array")
+            if (tensor.layout != torch.strided or not tensor.is_contiguous()
+                    or tensor.is_conj() or tensor.is_neg()):
+                raise ValueError("Torch tensor must have contiguous strided storage and physical values")
+            if not from_torch and tensor.requires_grad:
+                raise ValueError("the destination tensor must not require gradients")
+            chosen = _torch_stream(backend, device, stream)
+            if not buffer.nbytes:
+                return
+            address = tensor.data_ptr()  # already accounts for any contiguous slice's storage offset
+            chosen.synchronize()
+            self._counts["torch_stream_synchronizations"] += 1
+            if from_torch:
+                self._copy_device_bytes(buffer._pointer, address, buffer.nbytes,
+                                        "torch_to_tyx_bytes", (tensor, buffer))
+            else:
+                # Inform autograd about a native write, including writes through
+                # a detached alias of a saved tensor. Increment before enqueue
+                # because a failing native submission may still touch the bytes.
+                torch.autograd.graph.increment_version(tensor)
+                self._copy_device_bytes(address, buffer._pointer, buffer.nbytes,
+                                        "tyx_to_torch_bytes", (buffer, tensor))
 
     def launch(self, compiled, *args):
         """Enqueue a MusaKernel compiled from Tyx on this runtime's device and stream."""

@@ -223,6 +223,10 @@ class TyxDevice:
         return result
 
     def _put(self, buffer, value):
+        if self.mode == "musa" and value is buffer:
+            # The exclusive training session has already populated this exact
+            # allocation on the solver device and ordered the producer stream.
+            return
         if self.mode == "interpret":
             np.copyto(buffer, value)
         elif self.mode == "cuda" and isinstance(value, self.tx.CudaArray):

@@ -12,7 +12,7 @@ import copy
 import hashlib
 import json
 from collections.abc import Mapping
-from contextlib import nullcontext
+from contextlib import contextmanager, nullcontext
 from dataclasses import dataclass
 from numbers import Integral
 from types import MappingProxyType
@@ -451,7 +451,11 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
             g1_supported=False,
         )
         if mode == "musa":
-            info.update(device_controls=False, device_control_host_audit=None)
+            info.update(
+                device_controls=False,
+                device_control_host_audit=None,
+                resident_motor_training=("exclusive-musa-qv-ctrl-v1" if self._model.nu and not self._model.na else False),
+            )
         if mode == "musa" and self._plan.kind == 0:
             has_contact_pair = self._plan.pair is not None
             family = "single-slide" if self._plan.nv == 1 else "prismatic"
@@ -900,12 +904,39 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
 
     def _check_open(self):
         super()._check_open()
+        if getattr(self, "_musa_resident_owner", None) is not None:
+            raise RuntimeError("runtime is exclusively owned by its MUSA resident session")
         if (
             getattr(self, "_preparing_batch", False)
             or getattr(self, "_prepared_step", None) is not None
             or getattr(self, "_prepared_controls", None) is not None
         ):
             raise RuntimeError("runtime is reserved by an unpublished batch transaction")
+
+    @contextmanager
+    def musa_resident(self):
+        """Take exclusive ownership of a MUSA solver for batched motor training.
+
+        The session starts at the current accepted state, with zero control and
+        zero external loads. The device state then becomes authoritative. On
+        leaving the context the runtime closes, including its device buffers.
+        Use the regular step/snapshot API on a separate owner for full receipts.
+        """
+        from .mujoco_musa_resident import MusaResidentSession
+
+        with self._lock:
+            self._check_open()
+            if self._mode != "musa" or self._model.na or self._model.nu < 1:
+                raise ValueError("resident motor training requires an actuated MUSA model without activation state")
+            session = MusaResidentSession(self)
+            self._musa_resident_owner = session
+        try:
+            session._start()
+            yield session
+        finally:
+            with self._lock:
+                self._musa_resident_owner = None
+                self.close()
 
     def _prepare_controls_locked(self, mapping):
         with self._lock:
@@ -1855,6 +1886,8 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
 
     def close(self):
         with self._lock:
+            if getattr(self, "_musa_resident_owner", None) is not None:
+                raise RuntimeError("leave the exclusive MUSA resident session before closing")
             if (
                 getattr(self, "_preparing_batch", False)
                 or getattr(self, "_prepared_step", None) is not None

@@ -34,3 +34,16 @@ def pack(
 
 
 pack = tx.kernel(pack)
+
+
+@tx.kernel
+def check_resident_ctrl(
+    count: tx.i32, nu: tx.i32, controls: tx.ndarray(tx.f32, 2), status: tx.ndarray(tx.i32, 1)
+):
+    for w in tx.range(count):
+        if status[w] == 0:
+            for i in range(nu):
+                # Clipping at an actuator limit can otherwise hide a NaN/Inf
+                # supplied by an external policy. Preserve solver error codes.
+                if not tx.isfinite(controls[w, i]):
+                    status[w] = 9

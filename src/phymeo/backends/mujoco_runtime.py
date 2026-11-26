@@ -384,6 +384,10 @@ class MuJoCoRuntime:
         """Borrowed source/coordinate record, never the runtime's owned model."""
         return self._compilation
 
+    def musa_resident(self):
+        """Transfer a TYX MUSA runtime into an exclusive resident training session."""
+        raise ValueError("musa_resident requires a TYX runtime opened with mode='musa'")
+
     def _check_open(self):
         if self._closed:
             raise RuntimeError("MuJoCo runtime is closed")

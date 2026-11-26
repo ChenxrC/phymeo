@@ -102,11 +102,10 @@ def _box_faces(half, *, plane=False):
     return np.array(points), np.array(normals), triangles
 
 
-def _round_faces(kind, size):
+def _round_faces(kind, size, *, sectors=32, hemi=8):
     # Ring normals are analytic. A pole has a single vertex; the cylinder caps
     # have independent normals so the highlights stay faithful to the primitive.
     radius, half = float(size[0]), float(size[1])
-    sectors, hemi = 32, 8
     angle = np.arange(sectors) * (2 * np.pi / sectors)
     circle = np.column_stack((np.cos(angle), np.sin(angle)))
     points, normals, triangles = [], [], []

@@ -113,11 +113,13 @@ def test_moving_capsule_tip_and_box_against_native(dimension, tmp_path, monkeypa
         assert completed == end["launched_kernels"] - start["launched_kernels"] >= 4
 
 
-def test_box_tool_box_payload_still_rejected_before_allocation(monkeypatch):
+def test_box_tool_box_payload_condim6_rejected_before_allocation(monkeypatch):
     def forbidden(*args, **kwargs):
-        pytest.fail("box-box reached MUSA device allocation")
+        pytest.fail("box-box condim 6 reached MUSA device allocation")
 
-    asset = compile_mujoco_xml(_source(3, box_tool=True), require_asset=False)
+    # Normal/pyramidal box faces now have their own native-wrench regression;
+    # rolling/torsional box contact remains outside the MUSA admission scope.
+    asset = compile_mujoco_xml(_source(6, box_tool=True), require_asset=False)
     monkeypatch.setattr(MuJoCoTyxRuntime, "_build_device", forbidden)
     with pytest.raises(MuJoCoTyxUnsupported, match="musa-domain"):
         MuJoCoRuntime(asset, mode="musa")

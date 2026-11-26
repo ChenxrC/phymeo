@@ -99,14 +99,20 @@ class GraspInsertController:
     exactly; only the two jaws are replaced. Equal efforts do not assert equal
     arm trajectories under different physical loads.
     """
-    def __init__(self, scene, model, *, open_jaw=False):
+    def __init__(self, scene, model, *, open_jaw=False, policy=None):
         import mujoco as mj
+        from _panda_pickup_policy import PickupPolicy
         if type(open_jaw) is not bool:
             raise TypeError("open_jaw must be bool")
+        if policy is not None and not isinstance(policy, PickupPolicy):
+            raise TypeError("policy must be a PickupPolicy or None")
         if (model.nq, model.nv, model.nu) != (23, 22, 16):
             raise ValueError("expected two seven-axis arms, two driven fingers, one free part")
         self.mj, self.scene, self.model = mj, scene, model
         self.open_jaw = open_jaw
+        self.policy = policy
+        self._pickup_observation = None
+        self._pickup_rotation_changed = False
         self.q0 = initial_qpos(scene, model)
         self.data, self.ik_data = mj.MjData(model), mj.MjData(model)
         self.sites = {n: model.site(n).id for n in (
@@ -154,6 +160,33 @@ class GraspInsertController:
         self._reference_mode = None
         self._release_tcp = None
 
+    def _bind_pickup_observation(self, time_s):
+        """Latch once at the first actual input at/after settle, never reset metadata.
+
+        The nominal TCP-to-tip relationship remains an assumption, not a weld
+        or a measured successful grasp. Insertion still observes the actual tip.
+        """
+        from _panda_pickup_policy import observed_yaw_delta
+
+        observed = self._pose("part_grasp_center")
+        target = self.policy.target(self.start_part, observed)
+        self.grasp_xyz = target[:3, 3].copy()
+        self.grasp_rotation = target[:3, :3].copy()
+        self.hover_xyz = self.grasp_xyz + np.array([0., 0., .075])
+        self.lift_xyz = self.grasp_xyz + np.array([0., 0., .09])
+        self._pickup_rotation_changed = not np.array_equal(self.grasp_rotation, self.start_part[:3, :3])
+        self._pickup_observation = dict(
+            time_s=float(time_s), scheduled_settle_end_s=PHASES[0][2],
+            source="actual-input-q/site-part_grasp_center",
+            nominal_grasp_world=self.start_part.tolist(),
+            observed_part_grasp_world=observed.tolist(),
+            selected_grasp_world=target.tolist(),
+            observed_xy_delta_m=(observed[:2, 3]-self.start_part[:2, 3]).tolist(),
+            observed_yaw_delta_rad=observed_yaw_delta(self.start_part, observed),
+            assumed_tip_from_tcp=self.tip_from_grasp.tolist(),
+            grasp_success_asserted=False,
+        )
+
     def _update(self, q, v):
         self.data.qpos[:] = q
         self.data.qvel[:] = v
@@ -191,6 +224,12 @@ class GraspInsertController:
             xyz = (1-a)*self.grasp_xyz+a*self.lift_xyz
         elif phase == "transfer":
             xyz = (1-a)*self.lift_xyz+a*self.preinsert_tcp[:3, 3]
+            if self._pickup_rotation_changed:
+                # Return the grabbed part to the original board-relative
+                # orientation before insertion; do not keep pickup yaw at the
+                # hole or snap it at the transfer/insert boundary.
+                delta = _rotation_vector(self.mj, self.preinsert_tcp[:3, :3] @ self.grasp_rotation.T)
+                rotation = _rotation_exp(a*delta) @ self.grasp_rotation
         elif phase in ("insert", "seat"):
             depth = ((1-a)*self.preinsert_depth+a*self.seated_depth) if phase == "insert" else self.seated_depth
             t = self._nominal_insert(self.board_home, depth)
@@ -247,6 +286,8 @@ class GraspInsertController:
             raise ValueError("cannot switch reference mode partway through a trial")
         self._reference_mode = mode
         self._update(q, v)
+        if self.policy is not None and self._pickup_observation is None and phase != "settle":
+            self._bind_pickup_observation(time_s)
         tcp, tip, board = self._pose("right_grasp_center"), self._pose("assembly_pin_tip"), self._pose("assembly_hole")
         target, depth_target = self._scheduled_target(phase, u)
         if phase in ("release", "clear", "complete"):
@@ -328,6 +369,12 @@ class GraspInsertController:
             finger_saturated_count=int(np.count_nonzero(requested[14:] != ctrl[14:])),
             physical_success=None,external_wrench_applied=False,
         )
+        if self.policy is not None:
+            # Return fresh plain containers: callers may serialize a receipt
+            # without gaining mutable access to the frozen observation.
+            import copy
+            diag["pickup_policy"] = self.policy.to_checkpoint()
+            diag["pickup_observation"] = copy.deepcopy(self._pickup_observation)
         self._last_time = float(time_s)
         ctrl.setflags(write=False)
         return ControlStep(ctrl, phase, diag)

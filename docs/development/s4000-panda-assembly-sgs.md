@@ -56,3 +56,20 @@ python examples/panda_assembly_replay.py --backend vulkan --library build/floor/
   --episode runs/screw/scene.xml runs/screw/holdout-1.npz \
   --playback-rate 0.15 --out runs/movie
 ```
+
+## 高清工作室回放
+
+两段运动来自上述 S4000 测试。两台机器人的厂家 CAD 共用 57 份网格，各有 59 个外观分件。每帧将外壳、手指和装配件接到已记录的连杆或自由件位姿。哑光白漆、金属工具与蓝色板件各自设置粗糙度。工作室使用车间 HDR 和两盏矩形柔光灯，每灯 64 个采样。两个镜头分别以 1440 × 1368 渲染，开启 4× MSAA，再合成 1920 × 1080 影片。[厂家几何与许可证](../../rendering/assets/panda/README.md)
+
+全景保留整个装夹结构。由于原支杆圆头覆盖孔中心，近景明确标注“隐去支杆”，以展示真实的孔壁和销尖。图像中的读数取自同一时刻实测工件相对板的深度、转角和进给。两章都展示留出组中的成功回合，成功率见上表。[原始与新版同帧对照](../../artifacts/s4000-panda-assembly-sgs-20261126/studio-finish/before-after.jpg) · [中文高清影片](../../artifacts/s4000-panda-assembly-sgs-20261126/studio-finish/assembly-studio.mp4)
+
+本片由本机 RTX 4060 Laptop GPU 的 Phymeo Vulkan 渲染器完成。两个输入轨迹的 SHA-256 与原片记录一致。每帧校验原采样序号、仿真时间、尖端位置、转角及相对进给，每章首、中、末帧另检查实例 ID 可见像素。FFmpeg 解码验证得到 H.264、424 帧、30 fps、14.133 秒。[摄影记录](../../artifacts/s4000-panda-assembly-sgs-20261126/studio-finish/studio.json) · [控制差距和分步验收](panda-assembly-control-roadmap.md)
+
+在能导入 MuJoCo 与本仓库渲染包的环境中运行。原回放清单决定章节顺序和帧时钟。需要支持工作室布光的 `phymeo_native` 库及同目录的配套着色器。可加 `--font` 指定中文字体，或用 `--stills-only` 做首中末帧检查。
+
+```bash
+python examples/panda_assembly_studio.py --reference runs/movie/replay.json \
+  --episode runs/pin/scene.xml runs/pin/holdout-1.npz \
+  --episode runs/screw/scene.xml runs/screw/holdout-1.npz \
+  --library /path/to/phymeo_native.dll --out runs/assembly-studio
+```

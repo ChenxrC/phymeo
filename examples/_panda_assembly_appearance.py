@@ -127,7 +127,10 @@ def build_appearance(model, cache_dir, *, asset_dir=None, smooth_shells=True):
 
     skipped = []
     finish = dict(assembly_pin="pin",assembly_pin_adapter="holder",board_carrier="holder",
-                  spindle_orientation_marker="index",assembly_table_visual="worktop")
+                  spindle_orientation_marker="index",assembly_table_visual="worktop",
+                  right_left_pad="foot",right_right_pad="foot",part_handle="pin",
+                  part_shoulder="pin",pickup_rail_left="steel",pickup_rail_right="steel",
+                  pickup_base="frame",board_edge_clamp="holder")
     for g in range(model.ngeom):
         geom = model.geom(g)
         name = geom.name or f"geom-{g}"

@@ -1,0 +1,17 @@
+cmake_minimum_required(VERSION 3.20)
+project(phymeo_instanced_floor LANGUAGES CXX)
+find_package(Vulkan REQUIRED)
+find_program(GLSLANG_VALIDATOR NAMES glslangValidator glslang REQUIRED)
+add_library(phymeo_floor SHARED floor.cpp)
+target_compile_features(phymeo_floor PRIVATE cxx_std_17)
+target_link_libraries(phymeo_floor PRIVATE Vulkan::Vulkan ${CMAKE_DL_LIBS})
+set_target_properties(phymeo_floor PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
+foreach(shader floor.vert floor.frag floor_shadow.vert)
+  set(out "${CMAKE_CURRENT_BINARY_DIR}/${shader}.spv")
+  add_custom_command(OUTPUT "${out}" COMMAND "${GLSLANG_VALIDATOR}"
+    -V --target-env vulkan1.1 "${CMAKE_CURRENT_SOURCE_DIR}/${shader}" -o "${out}"
+    DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/${shader}" "${CMAKE_CURRENT_SOURCE_DIR}/floor_light.glsl" VERBATIM)
+  list(APPEND outputs "${out}")
+endforeach()
+add_custom_target(floor_shaders ALL DEPENDS ${outputs})
+add_dependencies(phymeo_floor floor_shaders)

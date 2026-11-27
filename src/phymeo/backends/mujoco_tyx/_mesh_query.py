@@ -346,6 +346,7 @@ class MeshQueryWorkspace:
                         )
                 self._runtime.sync()
             self.stats["queries"] += 1
+            self._poses = (positions, rotations)
             return MeshQueryResult(self, self._generation, tuple(map(int, counts[:-1])))
 
     def _read(self, result):
@@ -392,8 +393,12 @@ class MeshQueryWorkspace:
                 try:
                     yield MappingProxyType(
                         {
-                            name: b[name]
-                            for name in ("geom_ids", "body_ids", "counts", "pairs", *WIRE)
+                            "positions": self._poses[0],
+                            "rotations": self._poses[1],
+                            **{
+                                name: b[name]
+                                for name in ("geom_ids", "body_ids", "counts", "pairs", *WIRE)
+                            },
                         }
                     )
                 finally:

@@ -85,3 +85,11 @@ MuJoCo-Warp 0.0.2 constraint.py; CPU semantics take precedence where they differ
 Phymeo supplies an independent TYX primal-face box-QP solver and stable active
 row compaction. It preserves the full physical mass coupling and separately
 integrates implicit Euler damping. No native CPU/Warp solver executes per step.
+
+Instantaneous rigid terms (_rigid_*): the transform, FREE/HINGE/SLIDE,
+quaternion, COM Jacobian, physical mass and gravity/Coriolis semantics follow
+MuJoCo 3.3.7 engine_core_smooth.c and engine_util_spatial.c (Copyright 2021
+DeepMind Technologies Limited), and the world-coordinate RNE/CRB rewrite in
+_floating_kernels.py above. Phymeo provides an independent compensated FP32
+transform-node implementation and bounded device workspace. This component
+does not admit equality, actuation, passive forces or integrator semantics.

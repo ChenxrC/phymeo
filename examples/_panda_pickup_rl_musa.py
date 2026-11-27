@@ -8,9 +8,9 @@ import numpy as np
 import torch
 
 from _panda_pickup_loads import PickupLoads
-from _panda_pickup_rl_actor import pickup_features
+from _panda_pickup_rl_actor import pickup_features, rollout_action
 from _panda_pickup_rl_evaluate import CONTACT_SOURCE, ResidentPickupTrace, _check_motor_model
-from _panda_pickup_rl_reward import PickupRLReward, ResidentPickupLoads
+from _panda_pickup_rl_reward import PickupFunnel, PickupRLReward, ResidentPickupLoads
 from _panda_ppo_reach import ReachTask, _angle, _mm
 from panda_pickup_from_reach import DT, KD, KP, sha
 from panda_pickup_musa_compare import handoff_reset
@@ -89,6 +89,8 @@ def run_musa(domain, policy, *, decisions=160, repeat=8, mode="train", trace=Fal
     if trace_dir is not None:
         trace_dir.mkdir(parents=True, exist_ok=False)
     records = {k: [] for k in ("obs", "raw", "logp", "value", "reward")} if mode == "train" else {}
+    funnel = PickupFunnel(worlds, device, loads.weight_n, DT)
+    previous = None
     returns = torch.zeros(worlds, dtype=torch.float32, device=device)
     with MuJoCoRuntime(compiled, mode="musa", initial_states=initial, world_keys=keys, cache_root=cache,
                        contact_capacity=64, constraint_capacity=256) as runtime, runtime.musa_resident() as bank:
@@ -120,13 +122,7 @@ def run_musa(domain, policy, *, decisions=160, repeat=8, mode="train", trace=Fal
         for decision in range(decisions):
             features = pickup_features(torch, poses, q[:, :23], target, origin[:, 2])
             obs = policy.observation(features, v[:, :22])
-            if mode == "prior":
-                action = policy.prior_action(obs[:, :21])
-            else:
-                action, raw, logp, value = policy.sample(obs, deterministic=mode == "candidate")
-                if mode == "train":
-                    for k, x in (("obs", obs), ("raw", raw), ("logp", logp), ("value", value)):
-                        records[k].append(x)
+            action, previous = rollout_action(policy, obs, mode, records, previous)
             target[:, :14] += .02 * action[:, :14]
             target[:, 14:] = .0175 * (action[:, 14:] + 1.)
             target = torch.maximum(low, torch.minimum(high, target))
@@ -142,7 +138,8 @@ def run_musa(domain, policy, *, decisions=160, repeat=8, mode="train", trace=Fal
                 buffers["ctrl"].copy_from_torch(ctrl)
                 buffers = bank.step()
                 normal, vertical = reader.read()
-                step_reward, _ = reward_fn.step(normal, vertical, part, wrist, local, angle)
+                step_reward, info = reward_fn.step(normal, vertical, part, wrist, local, angle)
+                funnel.update(info)
                 decision_reward += step_reward
                 if recorder is not None:
                     recorder.append(decision*repeat + substep, clock, q[:, :23], v[:, :22], ctrl, target, action,
@@ -175,7 +172,7 @@ def run_musa(domain, policy, *, decisions=160, repeat=8, mode="train", trace=Fal
                    scored_success_worlds=sum(s["success"] for s in scores) if scores else None,
                    contact_source=CONTACT_SOURCE, policy_device=str(device), device_name=name,
                    model_sha256=hashlib.sha256(domain.xml.encode()).hexdigest(),
-                   frozen_model_sha256=digest, transport=counters)
+                   frozen_model_sha256=digest, transport=counters, funnel=funnel.summary())
     if trace_dir is not None:
         files = []
         for w, trace_arrays in enumerate(traces):

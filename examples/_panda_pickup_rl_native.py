@@ -7,7 +7,8 @@ import numpy as np
 import torch
 
 from _panda_pickup_loads import PickupLoads
-from _panda_pickup_rl_reward import PickupRLReward
+from _panda_pickup_rl_actor import rollout_action
+from _panda_pickup_rl_reward import PickupFunnel, PickupRLReward
 from panda_pickup_from_reach import DT, PickupFeatures, apply_action, effort, sha
 
 
@@ -63,6 +64,8 @@ def run_native(domain, policy, *, decisions=160, repeat=8, mode="train", trace=F
     bias = [s.bias.copy() for s in starts]
     reward_fn = PickupRLReward(torch, loads.weight_n, DT, up=loads.up, device="cpu")
     reward_fn.reset(np.stack(origin))
+    funnel = PickupFunnel(worlds, "cpu", loads.weight_n, DT)
+    previous = None
     records = {key: [] for key in ("obs", "raw", "logp", "value", "reward")} if mode == "train" else {}
     kept = {}  # Allocate only the evaluator's channels unless full traces were requested.
     required = {"time_s", "contact_solver_code", "qpos", "qvel", "ctrl", "finger_opening_m", "part_xyz",
@@ -73,13 +76,7 @@ def run_native(domain, policy, *, decisions=160, repeat=8, mode="train", trace=F
             mj.mj_kinematics(model, d)
         features = np.stack([f.observe(d, t) for f, d, t in zip(observers, data, target, strict=True)])
         obs = policy.observation(features, np.stack([d.qvel for d in data]))
-        if mode == "prior":
-            action = policy.prior_action(obs[:, :21])
-        else:
-            action, raw, logp, value = policy.sample(obs, deterministic=(mode == "candidate"))
-            if mode == "train":
-                for k, x in (("obs", obs), ("raw", raw), ("logp", logp), ("value", value)):
-                    records[k].append(x)
+        action, previous = rollout_action(policy, obs, mode, records, previous)
         action = action.numpy()
         target = [apply_action(model, target[w], action[w]) for w in range(worlds)]
         decision_reward = torch.zeros_like(episode_return)
@@ -104,7 +101,8 @@ def run_native(domain, policy, *, decisions=160, repeat=8, mode="train", trace=F
                         kept[key][w, tick] = value
             channels = [np.stack([row[key] for row in rows]) for key in
                         ("normal_n", "up_n", "part_xyz", "wrist_xyz", "part_in_hand_m")]
-            step_reward, _ = reward_fn.step(*channels, np.asarray(orientation))
+            step_reward, info = reward_fn.step(*channels, np.asarray(orientation))
+            funnel.update(info)
             decision_reward += step_reward
         episode_return += decision_reward
         if mode == "train":
@@ -128,7 +126,7 @@ def run_native(domain, policy, *, decisions=160, repeat=8, mode="train", trace=F
                    policy_transitions=decisions * worlds, mean_return=float(episode_return.mean()),
                    returns=episode_return.tolist(), reward_success_worlds=int(reward_fn.succeeded.sum()),
                    scored_success_worlds=sum(s["success"] for s in scores) if scores else None,
-                   contact_source="native_mujoco_cpu", policy_device="cpu")
+                   contact_source="native_mujoco_cpu", policy_device="cpu", funnel=funnel.summary())
     if trace_dir is not None:
         summary["trace_files"] = files
     elif trace:

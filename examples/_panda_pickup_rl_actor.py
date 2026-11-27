@@ -14,6 +14,7 @@ from _panda_pickup_student import PickupStudent
 
 PRIOR_SHA256 = "4c8f50d08495017c7bd52715ccbe913e64fde9bbcfffde8ad453914dae8a835a"
 SCHEMA = "dual-panda-pickup-residual-ppo-v1"
+EXPLORATION_SCHEMA = "dual-panda-pickup-residual-ppo-v2"
 CONTRACT = dict(
     prior_sha256=PRIOR_SHA256, features="published pickup-v1 21 values followed by native qvel[0:22]",
     velocity_scale=[2.] * 14 + [.20] * 2 + [.30] * 3 + [2.] * 3,
@@ -59,10 +60,30 @@ def _network(output):
 
 class ResidualPickupActorCritic(nn.Module):
     """All buffers, policy operations and value estimation follow the selected device."""
-    def __init__(self, student):
+    def __init__(self, student, *, arm_std=None, finger_std=None, arm_rho=0.):
         super().__init__()
         if student.mean.shape != (21,):
             raise ValueError("Expected the 21-feature pickup RBF")
+        if type(arm_rho) not in (int, float) or arm_rho not in (0., .8):
+            raise ValueError("arm_rho must be 0 or 0.8")
+        self.arm_rho = float(arm_rho)
+        self.exploration = None
+        self.log_std_min = -5.
+        if arm_std is not None or finger_std is not None or self.arm_rho:
+            self.log_std_min = -8.
+            for value in (arm_std, finger_std):
+                if value is not None and (type(value) not in (int, float) or
+                                          not math.exp(self.log_std_min) <= value <= math.exp(.5)):
+                    raise ValueError("starting std must be finite and within the exploration scale bounds")
+            self.exploration = dict(
+                arm_std=arm_std, finger_std=finger_std, arm_rho=self.arm_rho,
+                initial_sigma=([arm_std]*14 if arm_std is not None else [.035]*7+[.10]*7)
+                              + [finger_std if finger_std is not None else .20]*2,
+                log_std_bounds=[self.log_std_min, .5], learn_log_std=True,
+                first_draw="N(mu(obs), sigma^2) independently per joint",
+                following_arms="N((1-rho)*mu(obs)+rho*previous_raw, (1-rho^2)*sigma^2)",
+                following_fingers="N(mu(obs), sigma^2) independently",
+                evaluation="conditional mean recursively; reset history at episode start")
         for name in ("mean", "inverse_scale", "centers", "weights"):
             self.register_buffer("prior_" + name, torch.tensor(getattr(student, name), dtype=torch.float32),
                                  persistent=False)
@@ -74,14 +95,16 @@ class ResidualPickupActorCritic(nn.Module):
         nn.init.zeros_(self.actor[-1].bias)
         # Raw residual amplitude before the headroom transform. Both jaws
         # explore independently even when the prior commands fully open.
-        self.log_std = nn.Parameter(torch.tensor([.035]*7 + [.10]*7 + [.20]*2).log())
+        initial_sigma = self.exploration["initial_sigma"] if self.exploration else [.035]*7 + [.10]*7 + [.20]*2
+        self.log_std = nn.Parameter(torch.tensor(initial_sigma, dtype=torch.float32).log())
 
     @classmethod
-    def from_student(cls, path, device):
+    def from_student(cls, path, device, *, arm_std=None, finger_std=None, arm_rho=0.):
         payload = Path(path).read_bytes()
         if hashlib.sha256(payload).hexdigest() != PRIOR_SHA256:
             raise ValueError("Pickup PPO requires the published frozen RBF weights")
-        return cls(PickupStudent.load(io.BytesIO(payload))).to(device)
+        return cls(PickupStudent.load(io.BytesIO(payload)), arm_std=arm_std, finger_std=finger_std,
+                   arm_rho=arm_rho).to(device)
 
     def observation(self, features21, qvel22):
         x, v = (torch.as_tensor(a, device=self.prior_mean.device, dtype=self.prior_mean.dtype)
@@ -117,10 +140,25 @@ class ResidualPickupActorCritic(nn.Module):
         _, x = self._inputs(obs)
         return self.critic(x).squeeze(-1)
 
-    def _distribution(self, obs):
+    def _distribution(self, obs, prev_raw=None, has_prev=None):
         z, x = self._inputs(obs)
         prior = self._rbf(z).clamp(-1.+1e-6, 1.-1e-6)
-        return prior, self.actor(x), self.log_std.clamp(-5., .5), self.critic(x).squeeze(-1)
+        mean = self.actor(x)
+        log_std = self.log_std.clamp(self.log_std_min, .5)
+        if (prev_raw is None) != (has_prev is None):
+            raise ValueError("supply both previous raw residual and history mask")
+        if self.arm_rho and prev_raw is not None:
+            if (prev_raw.shape != mean.shape or has_prev.shape != mean.shape[:-1]
+                    or prev_raw.dtype != mean.dtype or has_prev.dtype != torch.bool
+                    or prev_raw.device != mean.device or has_prev.device != mean.device):
+                raise ValueError("expected matching previous raw residuals and boolean history mask")
+            mask = has_prev.unsqueeze(-1)
+            previous = prev_raw[..., :14].detach()
+            arm_mean = torch.where(mask, (1.-self.arm_rho)*mean[..., :14] + self.arm_rho*previous, mean[..., :14])
+            mean = torch.cat((arm_mean, mean[..., 14:]), dim=-1)
+            arm_scale = log_std[:14] + mask.to(mean.dtype) * (.5*math.log1p(-self.arm_rho**2))
+            log_std = torch.cat((arm_scale, log_std[14:].expand_as(mean[..., 14:])), dim=-1)
+        return prior, mean, log_std, self.critic(x).squeeze(-1)
 
     @staticmethod
     def _transport(prior, raw, mean, log_std):
@@ -130,27 +168,42 @@ class ResidualPickupActorCritic(nn.Module):
         log_jacobian = scale.log() + 2.*(math.log(2.)-raw-F.softplus(-2.*raw))
         return action, (base-log_jacobian).sum(-1)
 
-    def sample(self, obs, deterministic=False):
-        prior, mean, log_std, value = self._distribution(obs)
+    def sample(self, obs, deterministic=False, *, prev_raw=None, has_prev=None):
+        prior, mean, log_std, value = self._distribution(obs, prev_raw, has_prev)
         raw = mean if deterministic else mean + log_std.exp()*torch.randn_like(mean)
         action, logp = self._transport(prior, raw, mean, log_std)
         return action, raw, logp, value
 
-    def evaluate(self, obs, raw):
-        prior, mean, log_std, value = self._distribution(obs)
+    def evaluate(self, obs, raw, *, prev_raw=None, has_prev=None):
+        if self.arm_rho and prev_raw is None:
+            raise ValueError("correlated PPO evaluation requires stored previous_raw and has_prev conditioning")
+        prior, mean, log_std, value = self._distribution(obs, prev_raw, has_prev)
         _, logp = self._transport(prior, raw.detach(), mean, log_std)
-        gaussian_entropy = (log_std + .5*math.log(2.*math.pi*math.e)).sum().expand_as(value)
+        gaussian_entropy = (log_std + .5*math.log(2.*math.pi*math.e)).sum(dim=-1).expand_as(value)
         return logp, gaussian_entropy, value
 
     def checkpoint(self):
-        return dict(schema=SCHEMA, contract=copy.deepcopy(CONTRACT),
+        contract = copy.deepcopy(CONTRACT)
+        if self.exploration:
+            contract["exploration"] = copy.deepcopy(self.exploration)
+        return dict(schema=EXPLORATION_SCHEMA if self.exploration else SCHEMA, contract=contract,
                     state={k: v.detach().cpu().clone() for k, v in self.state_dict().items()})
 
     @classmethod
     def from_checkpoint(cls, payload, student_path, device):
-        if payload.get("schema") != SCHEMA or payload.get("contract") != CONTRACT:
+        if not isinstance(payload.get("contract"), dict):
+            raise ValueError("Pickup PPO checkpoint contract must be a mapping")
+        contract = payload["contract"].copy()
+        has_exploration = "exploration" in contract
+        config = contract.pop("exploration", None)
+        if (contract != CONTRACT or payload.get("schema") != (EXPLORATION_SCHEMA if has_exploration else SCHEMA)
+                or (has_exploration and (not isinstance(config, dict)
+                                            or not {"arm_std", "finger_std", "arm_rho"} <= config.keys()))):
             raise ValueError("Pickup PPO checkpoint observation, prior or action contract differs")
-        policy = cls.from_student(student_path, device)
+        args = {k: config[k] for k in ("arm_std", "finger_std", "arm_rho")} if config is not None else {}
+        policy = cls.from_student(student_path, device, **args)
+        if config != policy.exploration:
+            raise ValueError("Pickup PPO checkpoint exploration contract differs")
         template = policy.state_dict()
         state = payload["state"]
         if state.keys() != template.keys() or any(
@@ -159,3 +212,18 @@ class ResidualPickupActorCritic(nn.Module):
             raise ValueError("Pickup PPO checkpoint state differs from the declared architecture")
         policy.load_state_dict(state, strict=True)
         return policy
+
+
+def rollout_action(policy, obs, mode, records, previous):
+    """Select physical motor actions and record the same conditioning later used by PPO."""
+    if mode == "prior":
+        return policy.prior_action(obs[:, :21]), None
+    history = {}
+    if policy.arm_rho:
+        history["prev_raw"] = obs.new_zeros((len(obs), 16)) if previous is None else previous.detach()
+        history["has_prev"] = torch.full((len(obs),), previous is not None, dtype=torch.bool, device=obs.device)
+    action, raw, logp, value = policy.sample(obs, deterministic=mode == "candidate", **history)
+    if mode == "train":
+        for k, x in dict(obs=obs, raw=raw, logp=logp, value=value, **history).items():
+            records.setdefault(k, []).append(x.detach())
+    return action, raw.detach()

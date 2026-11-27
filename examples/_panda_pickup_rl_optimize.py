@@ -23,6 +23,19 @@ def update_policy(torch, actor, optimizer, records, *, epochs=3, minibatch=256, 
         raise ValueError("all rollout tensors must share the residual actor's device and dtype")
     if not bool(torch.stack([torch.isfinite(x).all() for x in arrays]).all()):
         raise ValueError("nonfinite PPO rollout")
+    conditional = "prev_raw" in records or "has_prev" in records
+    if conditional:
+        if not {"prev_raw", "has_prev"}.issubset(records):
+            raise ValueError("both previous raw actions and their validity mask are required")
+        prev, valid = records["prev_raw"].detach(), records["has_prev"].detach()
+        if (prev.shape != raw.shape or valid.shape != rewards.shape or valid.dtype != torch.bool
+                or prev.dtype != raw.dtype or prev.device != raw.device or valid.device != raw.device
+                or not torch.isfinite(prev).all() or valid[0].any() or not valid[1:].all()
+                or not torch.equal(prev[1:], raw[:-1])):
+            raise ValueError("conditional history differs from the ordered finite-episode rollout")
+        prev, valid = prev.flatten(0, 1), valid.flatten()
+    elif getattr(actor, "arm_rho", 0.) != 0.:
+        raise ValueError("correlated pickup policy requires its rollout conditioning records")
 
     gamma, lam = .99, .95
     with torch.no_grad():
@@ -32,6 +45,10 @@ def update_policy(torch, actor, optimizer, records, *, epochs=3, minibatch=256, 
         if not bool(torch.isfinite(adv).all() & torch.isfinite(returns).all()):
             raise ValueError("nonfinite terminal GAE")
     obs, raw, old_logp = obs.flatten(0, 1), raw.flatten(0, 1), old_logp.flatten()
+    def evaluate(ids):
+        if conditional:
+            return actor.evaluate(obs[ids], raw[ids], prev_raw=prev[ids], has_prev=valid[ids])
+        return actor.evaluate(obs[ids], raw[ids])
     n = len(adv)
     trainable = {k: p for k, p in actor.named_parameters() if p.requires_grad}
     saved = {k: p.detach().clone() for k, p in trainable.items()}
@@ -41,7 +58,7 @@ def update_policy(torch, actor, optimizer, records, *, epochs=3, minibatch=256, 
     for _ in range(epochs):
         perm = torch.randperm(n, device=parameter.device)
         for ids in perm.split(minibatch):
-            logp, entropy, value = actor.evaluate(obs[ids], raw[ids])
+            logp, entropy, value = evaluate(ids)
             log_ratio = logp - old_logp[ids]
             ratio = log_ratio.exp()
             bounded = ratio.clamp(1. - clip, 1. + clip)
@@ -66,7 +83,7 @@ def update_policy(torch, actor, optimizer, records, *, epochs=3, minibatch=256, 
         final = torch.zeros_like(totals[:2])
         for start in range(0, n, minibatch):
             batch = slice(start, min(start + minibatch, n))
-            logp, _, _ = actor.evaluate(obs[batch], raw[batch])
+            logp, _, _ = evaluate(batch)
             log_ratio = logp - old_logp[batch]
             ratio = log_ratio.exp()
             final[0] += (ratio - 1. - log_ratio).clamp_min(0.).sum()

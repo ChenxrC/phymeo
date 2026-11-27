@@ -124,6 +124,47 @@ class ResidentPickupLoads:
         return self.force.view(-1, 5, 3, 3)
 
 
+class PickupFunnel:
+    """Accumulate measured milestones per world and read them on the host at episode end."""
+    events = ("bilateral_handle", "grip", "loading", "slipped", "lift_25mm", "carried", "success")
+    peaks = ("peak_handle_min_normal_n", "peak_pad_up_n", "peak_height_m", "peak_loaded_rise_m",
+             "peak_grip_slip_m", "longest_loaded_dwell_s")
+
+    def __init__(self, worlds, device, weight_n, dt):
+        import torch
+
+        self.torch = torch
+        self.minimum_normal = MIN_NORMAL_WEIGHT * weight_n
+        self.dt = dt
+        self.ever = torch.zeros((worlds, len(self.events)), device=device, dtype=torch.bool)
+        self.maximum = torch.full((worlds, len(self.peaks)), -float("inf"), device=device, dtype=torch.float32)
+
+    def update(self, info):
+        torch = self.torch
+        reached = torch.stack((info["handle_min_normal_n"] >= self.minimum_normal, info["grip"], info["loading"],
+                               info["slipped"], info["height_m"] >= LIFT_M, info["carried"], info["success"]), dim=-1)
+        self.ever.logical_or_(reached)
+        # Relative slip is meaningful only while a near-fork bilateral
+        # acquisition supplies a measured part-in-hand reference.
+        grip_slip = torch.where(info["grip"], info["slip_m"], 0.)
+        loaded_rise = torch.where(info["loading"], info["height_m"].clamp_min(0.), 0.)
+        measured = torch.stack((info["handle_min_normal_n"], info["pad_up_n"], info["height_m"], loaded_rise,
+                                grip_slip, info["dwell_intervals"].to(torch.float32)*self.dt), dim=-1)
+        self.maximum = torch.maximum(self.maximum, measured)
+
+    def summary(self):
+        ever, maximum = self.ever.cpu().numpy(), self.maximum.cpu().numpy()
+        per_world = []
+        for i, (flags, peaks) in enumerate(zip(ever, maximum, strict=True)):
+            metrics = dict(zip(self.peaks, map(float, peaks), strict=True))
+            if not flags[self.events.index("grip")]:
+                metrics["peak_grip_slip_m"] = None
+            if not flags[self.events.index("loading")]:
+                metrics["peak_loaded_rise_m"] = None
+            per_world.append(dict(world=i, ever=dict(zip(self.events, map(bool, flags), strict=True)), **metrics))
+        return dict(worlds_ever=dict(zip(self.events, map(int, ever.sum(axis=0)), strict=True)), per_world=per_world)
+
+
 class PickupRLReward:
     """One batch of episodes on CPU or MUSA; reset all world rows together.
 

@@ -95,7 +95,8 @@ This is an experimental acceleration interface, not an engine `step` API.
 
 ## Validation and remaining integration
 
-The shared convex kernels were checked with 172 CUDA tests. After later
+The shared convex kernels were checked with a 172-test suite requiring actual
+CUDA execution for its device cases (host preflight tests are included). After later
 interface/solver edits, the final targeted geometry/response/dynamics suite
 passed 20 tests; the unchanged shared-kernel coverage is retained. Fixtures
 include original thin pairs and two originally nonconverging coupled worlds.

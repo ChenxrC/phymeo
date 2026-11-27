@@ -108,6 +108,29 @@ def initial_baseline(torch, path, trained_checkpoint):
         model_sha256=baseline["contract"]["model_sha256"], frozen_model_sha256=frozen)
 
 
+def apply_reach_seed(torch, actor, path, parent_path, parent, frozen_model):
+    seed = torch.load(path, map_location="cpu", weights_only=True)
+    validate_checkpoint_data(torch, seed)
+    parent_hash = _sha(parent_path)
+    if (type(seed) is not dict or seed.get("schema") != "panda-reach-imitation-seed-v1"
+            or parent["contract"].get("task") != "reach" or seed.get("contract") != parent["contract"]
+            or seed.get("parent_checkpoint_sha256") != parent_hash
+            or seed.get("frozen_model_sha256") != frozen_model or parent.get("frozen_model_sha256") != frozen_model):
+        raise ValueError("imitation seed does not match this reach checkpoint, model and training split")
+    parameters = seed.get("actor")
+    template = actor.state_dict()
+    if type(parameters) is not dict or parameters.keys() != template.keys():
+        raise ValueError("imitation actor architecture differs")
+    for key, base in template.items():
+        value = parameters[key]
+        if (not isinstance(value, torch.Tensor) or value.shape != base.shape or value.dtype != base.dtype
+                or not torch.isfinite(value).all().item()):
+            raise ValueError(f"invalid imitation actor parameter {key}")
+    actor.load_state_dict(parameters)
+    return dict(seed_sha256=_sha(path), parent_checkpoint_sha256=parent_hash,
+                optimizer="fresh Adam for PPO", critic="restored from parent", parent_update=parent["completed_update"])
+
+
 def model_digest(model):
     """Freeze the physical model, not mutable simulator data or control state."""
     digest = hashlib.sha256()
@@ -435,6 +458,26 @@ def physical_initial_states(scene, args):
             dict(qpos=q, qvel=v, model_sha256=scene.xml_sha256))
 
 
+def _check_fp32_gae_returns(rewards, values, bootstrap, saved_returns, gamma, lam):
+    """Independently repeat each eager FP32 operation, including its rounding."""
+    for x in (rewards, values, bootstrap, saved_returns):
+        if x.dtype != np.float32 or not np.isfinite(x).all():
+            raise ValueError("expected finite recorded FP32 PPO arrays")
+    if (rewards.ndim != 2 or values.shape != rewards.shape or bootstrap.shape != rewards.shape[1:]
+            or saved_returns.size != rewards.size or rewards.size == 0):
+        raise ValueError("inconsistent GAE rollout shapes")
+    after = bootstrap
+    carry = np.zeros_like(after)
+    result = np.empty_like(rewards)
+    for i in range(len(rewards) - 1, -1, -1):
+        delta = (rewards[i] + np.float32(gamma) * after) - values[i]
+        carry = delta + np.float32(gamma * lam) * carry
+        result[i] = carry + values[i]
+        after = values[i]
+    np.testing.assert_array_equal(saved_returns.reshape(result.shape), result, err_msg="FP32 return replay")
+    return result
+
+
 def audit_checkpoint(path, output):
     """CPU-only independent forward replay of both saved policy parameter sets."""
     import torch
@@ -495,17 +538,22 @@ def audit_checkpoint(path, output):
             next_value = values[i]
         expected_returns = advantage+values
         gpu_returns = data["returns"].reshape(expected_returns.shape)
-        np.testing.assert_allclose(gpu_returns, expected_returns, rtol=3e-5, atol=3e-5)
+        fp32_returns = _check_fp32_gae_returns(data["reward"], data["value"], data["bootstrap"], gpu_returns,
+                                               checkpoint["contract"]["gamma"], checkpoint["contract"]["gae_lambda"])
+        # This term depends only on the two independent CPU recurrences from
+        # the recorded inputs. The device must match the FP32 result exactly.
+        cpu_rounding = np.abs(fp32_returns.astype(np.float64) - expected_returns)
         physical_return_error = np.abs(gpu_returns-(physical_advantage+values))
         return_tolerance = 3e-5+3e-5*np.abs(expected_returns)
-        if np.any(physical_return_error > reward_error_bound+return_tolerance):
-            raise ValueError("physical return error exceeds propagated reward differences and GAE tolerance")
+        if np.any(physical_return_error > reward_error_bound+cpu_rounding+return_tolerance):
+            raise ValueError("physical return error exceeds independent reward, rounding and GAE tolerance")
         flat = advantage.ravel()
         np.testing.assert_allclose(data["advantages"], (flat-flat.mean())/(flat.std()+1e-8), rtol=5e-5, atol=5e-5)
         physical_flat = physical_advantage.ravel()
         np.testing.assert_allclose(data["advantages"], (physical_flat-physical_flat.mean())/(physical_flat.std()+1e-8),
                                    rtol=5e-5, atol=5e-5)
-        replay_errors = dict(max_successor_reward=float(np.max(np.abs(recorded_reward-expected_reward))),
+        replay_errors = dict(fp32_recorded_return_mismatches=0, max_cpu_fp32_fp64_return=float(cpu_rounding.max()),
+                             max_successor_reward=float(np.max(np.abs(recorded_reward-expected_reward))),
                              max_recorded_reward_return=float(np.max(np.abs(gpu_returns-expected_returns))),
                              max_physical_return=float(physical_return_error.max()),
                              max_propagated_reward_difference=float(reward_error_bound.max()))
@@ -533,6 +581,12 @@ def audit_checkpoint(path, output):
 
 
 def run(args):
+    if args.actor_warm_start is not None and (args.stage != "train" or args.task != "reach" or args.checkpoint is None):
+        raise ValueError("--actor-warm-start requires reach training and its source --checkpoint")
+    if args.warm_actor_lr_factor is not None and (args.actor_warm_start is None or not 0 < args.warm_actor_lr_factor <= 1):
+        raise ValueError("--warm-actor-lr-factor requires an imitation seed and a factor in (0,1]")
+    if args.comparison_checkpoint is not None and (args.stage != "evaluate" or args.baseline_checkpoint is not None):
+        raise ValueError("--comparison-checkpoint applies only to evaluate with one comparator")
     if args.baseline_checkpoint is not None and args.stage != "evaluate":
         raise ValueError("--baseline-checkpoint applies only to independent evaluate")
     if args.stage == "audit":
@@ -574,7 +628,7 @@ def run(args):
                                           script_sha256=_sha(__file__), physical_task_success=None))
     actor, critic = networks(torch, device, contract["observation_size"])
     optimizer = torch.optim.Adam(list(actor.parameters())+list(critic.parameters()), lr=args.learning_rate)
-    checkpoint, start_update = None, 0
+    checkpoint, start_update, warm_start = None, 0, None
     if args.checkpoint is not None:
         checkpoint = load_checkpoint(torch, args.checkpoint)
         bound_contract = copy.deepcopy(checkpoint.get("contract"))
@@ -590,17 +644,39 @@ def run(args):
             raise ValueError("held-out evaluate must not reuse the training physical reset")
         actor.load_state_dict(checkpoint["actor"])
         critic.load_state_dict(checkpoint["critic"])
-        optimizer.load_state_dict(checkpoint["optimizer"])
+        warm_start = checkpoint.get("warm_start")
+        if args.actor_warm_start is not None:
+            warm_start = apply_reach_seed(torch, actor, args.actor_warm_start, args.checkpoint, checkpoint, frozen_model)
+            if args.warm_actor_lr_factor is not None:
+                warm_start["actor_lr_factor"] = args.warm_actor_lr_factor
+        if warm_start and "actor_lr_factor" in warm_start:
+            factor = warm_start["actor_lr_factor"]
+            if type(factor) not in (float, int) or not 0 < factor <= 1:
+                raise ValueError("invalid stored actor learning-rate factor")
+            optimizer = torch.optim.Adam([dict(params=actor.parameters(), lr=args.learning_rate*factor),
+                                          dict(params=critic.parameters())], lr=args.learning_rate)
+        if args.actor_warm_start is None:
+            optimizer.load_state_dict(checkpoint["optimizer"])
         start_update = int(checkpoint["next_update"])
     if args.stage == "evaluate" and checkpoint is None:
         raise ValueError("evaluate requires --checkpoint")
     baseline_state, baseline_receipt = None, None
     if args.baseline_checkpoint is not None:
         baseline_state, baseline_receipt = initial_baseline(torch, args.baseline_checkpoint, checkpoint)
+    if args.comparison_checkpoint is not None:
+        other = load_checkpoint(torch, args.comparison_checkpoint)
+        if (other["contract"] != checkpoint["contract"] or other["frozen_model_sha256"] != frozen_model
+                or checkpoint["frozen_model_sha256"] != frozen_model or not torch.equal(other["goal"], checkpoint["goal"])):
+            raise ValueError("comparison checkpoint training sources differ")
+        baseline_state = other["actor"]
+        baseline_receipt = dict(checkpoint_sha256=_sha(args.comparison_checkpoint), source_update=other["completed_update"],
+                                actor_field="actor", role="previous trained policy")
     keys = tuple(range(args.worlds))
     summary = dict(schema=SCHEMA, status="running", stage=args.stage, contract=contract, updates=[],
                    claim=f"real physical {args.task} PPO qualification; not learned grasp/insertion",
                    initial_states_file=initial_path.name, initial_states_sha256=_sha(initial_path))
+    if warm_start is not None:
+        summary["warm_start"] = warm_start
     bank, task, rows = None, None, None
     try:
         with MuJoCoRuntime(source, mode="musa", world_keys=keys,
@@ -627,7 +703,7 @@ def run(args):
                         training_reset_sha256=checkpoint["contract"]["physical_reset_sha256"],
                         evaluation_reset_sha256=reset_sha,
                         policy_roles=dict(before=("checkpoint last-update-before, not an untrained policy" if baseline_state is None else
-                                                  "bound update-00000 pre-update initial policy"),
+                                          baseline_receipt["role"]),
                                           after="loaded checkpoint policy", motors_off="loaded policy with all physical motors zero"),
                         baseline_source=baseline_receipt,
                         goals=task.goal.detach().cpu().tolist(),
@@ -713,6 +789,8 @@ def run(args):
                                      goal=task.goal.cpu(), action_probe=probe, rollout_sha256=trace_sha,
                                      rollout_file=trace_path.name, frozen_model_sha256=frozen_model,
                                      physical_resume="next update begins with real whole-batch reset, not arbitrary mid-step restore")
+                        if warm_start is not None:
+                            saved["warm_start"] = warm_start
                         checkpoint_path = args.out / f"{label}.pt"
                         validate_checkpoint_data(torch, saved)
                         torch.save(saved, checkpoint_path)
@@ -766,6 +844,9 @@ def parser():
     p.add_argument("--task", choices=("joint-track", "reach"), default="joint-track")
     p.add_argument("--out", type=Path, required=True)
     p.add_argument("--checkpoint", type=Path)
+    p.add_argument("--actor-warm-start", type=Path, help="teacher-distilled actor bound to the source reach checkpoint")
+    p.add_argument("--warm-actor-lr-factor", type=float, help="relative PPO learning rate for the seeded actor, stored for continuation")
+    p.add_argument("--comparison-checkpoint", type=Path, help="evaluate against the actor of a named, compatible prior checkpoint")
     p.add_argument("--baseline-checkpoint", type=Path,
                    help="evaluate against same-training update-00000.pt action_probe.before_actor instead of last-update-before")
     p.add_argument("--cache", type=Path)

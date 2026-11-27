@@ -34,6 +34,20 @@ def test_gae_bootstraps_actual_truncated_successor_without_cross_reset():
     np.testing.assert_allclose(returns.numpy().ravel(), [3.2, 2.2], atol=1e-6)
 
 
+def test_recorded_gae_audit_checks_fp32_rounding_and_rejects_one_ulp():
+    reward = torch.tensor([[1., 3.]], dtype=torch.float32)
+    value = torch.tensor([[2.**25, 0.]], dtype=torch.float32)
+    bootstrap = torch.zeros(2)
+    _, saved = module.generalized_advantage(torch, reward, value, bootstrap)
+    args = reward.numpy(), value.numpy(), bootstrap.numpy()
+    checked = module._check_fp32_gae_returns(*args, saved.numpy(), .99, .95)
+    assert checked.tolist() == [[0., 3.]]  # The exact real-valued first return is 1.
+    altered = saved.numpy().copy()
+    altered[0, 1] = np.nextafter(altered[0, 1], np.float32(4.))
+    with pytest.raises(AssertionError, match="FP32 return replay"):
+        module._check_fp32_gae_returns(*args, altered, .99, .95)
+
+
 def test_gaussian_ratio_uses_saved_raw_action_not_resampled_action():
     raw, mean, log_std = torch.tensor([[.2, -.3]]), torch.zeros(1, 2), torch.zeros(1, 2)
     logp = module.log_probability(torch, raw, mean, log_std)
@@ -164,3 +178,28 @@ def test_checkpoint_loading_is_weights_only_and_rejects_nonbasic_payload(tmp_pat
         module.load_checkpoint(torch, path)
     with pytest.raises(TypeError, match="basic types and tensors"):
         module.validate_checkpoint_data(torch, {"nonbasic": Path("also-rejected-before-saving")})
+
+
+def test_imitation_seed_binds_model_parent_and_training_split_before_replacing_weights(tmp_path):
+    parent_path = tmp_path / "parent.pt"
+    parent_path.write_bytes(b"frozen parent")
+    model = "a" * 64
+    parent = dict(contract=dict(task="reach", physical_reset_sha256="b" * 64),
+                  frozen_model_sha256=model, completed_update=125)
+    actor, _ = module.networks(torch, "cpu", 98)
+    original = {k: v.clone() for k, v in actor.state_dict().items()}
+    trained = {k: v + .125 for k, v in original.items()}
+    seed = dict(schema="panda-reach-imitation-seed-v1", actor=trained, contract=parent["contract"],
+                frozen_model_sha256=model, parent_checkpoint_sha256=module._sha(parent_path))
+    path = tmp_path / "actor-seed.pt"
+    for changed in (dict(parent_checkpoint_sha256="c"*64), dict(frozen_model_sha256="c"*64),
+                    dict(contract=dict(task="reach", physical_reset_sha256="c"*64)),
+                    dict(actor=dict(trained, log_std=torch.full_like(trained["log_std"], float("nan"))))):
+        torch.save(dict(seed, **changed), path)
+        with pytest.raises(ValueError):
+            module.apply_reach_seed(torch, actor, path, parent_path, parent, model)
+        assert all(torch.equal(original[k], v) for k, v in actor.state_dict().items())
+    torch.save(seed, path)
+    receipt = module.apply_reach_seed(torch, actor, path, parent_path, parent, model)
+    assert receipt["seed_sha256"] == module._sha(path)
+    assert all(torch.equal(trained[k], v) for k, v in actor.state_dict().items())

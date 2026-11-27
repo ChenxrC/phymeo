@@ -53,7 +53,7 @@ class MusaResidentSession:
     solvers also expose ``entry_bias`` [world,max(8,nv)] at the *input* pose.
     Each step/reset invalidates all previous views. Callers may retain owned
     Torch copies and may hold a control for multiple steps. No external loads,
-    per-step FK mirrors, contact receipts or Torch autograd through physics.
+    per-step FK mirrors or Torch autograd through physics.
 
     The solver synchronizes before each all-world commit. The automatic D2H
     is one int32 status per world. Reset copies the saved session-entry pose,
@@ -104,6 +104,27 @@ class MusaResidentSession:
             if self._bias_valid and hasattr(d, "bias"):
                 views["entry_bias"] = _BankView(self, d.bias)
             return views
+
+    def contact_buffers(self):
+        """Read the most recently accepted mixed-constraint solve at its input pose.
+
+        The leading count masks inactive contact rows. The map selects the
+        compiled slot supplying the geom IDs and frame. Wrenches act on geom2
+        in that frame. Device views expire on the next step or reset.
+        """
+        with self._owner._lock:
+            self._check()
+            if not self._bias_valid:
+                raise RuntimeError("resident contact observations require an accepted step")
+            d = self._device
+            if not hasattr(d, "contact_wrench") or getattr(d.plan, "area_friction_laws", ()):
+                raise NotImplementedError("resident contact observations require native mixed constraint rows")
+            if not hasattr(self, "_contact_slots"):
+                ids = np.asarray(d.plan.slot_ids[:d.plan.nslot], dtype=np.int32)
+                self._contact_slots = np.frombuffer(ids.tobytes(), dtype=np.int32).reshape(ids.shape)
+            return dict(counts=_BankView(self, d.constraint_counts), contact_map=_BankView(self, d.contact_map),
+                        contact_wrench=_BankView(self, d.contact_wrench), normal_rows=_BankView(self, d.normal_rows),
+                        slot_ids=self._contact_slots)
 
     def step(self):
         """Attempt one compiled physical timestep for every world, then publish atomically."""

@@ -17,8 +17,6 @@ def mechanics(
     ancestor: tx.ndarray(tx.i32, 2),
     inertia: tx.ndarray(tx.f32, 3),
     weight: tx.ndarray(tx.f32, 1),
-    armature: tx.ndarray(tx.f32, 1),
-    gravity: tx.ndarray(tx.f32, 1),
     v: tx.ndarray(tx.f32, 2),
     state: tx.ndarray(tx.f32, 4),
     rotation: tx.ndarray(tx.f32, 4),
@@ -31,8 +29,6 @@ def mechanics(
     iw: tx.ndarray(tx.f32, 4),
     force: tx.ndarray(tx.f32, 3),
     scratch: tx.ndarray(tx.f32, 3),
-    mass: tx.ndarray(tx.f32, 3),
-    bias: tx.ndarray(tx.f32, 2),
     sampled_qvel: tx.ndarray(tx.f32, 2),
     status: tx.ndarray(tx.i32, 1),
 ):
@@ -180,33 +176,10 @@ def mechanics(
                     - motion[w, b, 0, k] * scratch[w, 1, j]
                 )
                 motion[w, b, 3, i] = value
-                force[w, b, i] = weight[b] * (value - gravity[i])
+                # Gravity is projected separately with retained low lanes.
+                force[w, b, i] = weight[b] * value
                 force[w, b, i + 3] = (
                     scratch[w, 3, i]
                     + motion[w, b, 0, j] * scratch[w, 2, k]
                     - motion[w, b, 0, k] * scratch[w, 2, j]
                 )
-        for i in range(nv):
-            value = 0.0
-            for b in range(1, nb):
-                for k in range(6):
-                    value = value + jac[w, b, k, i] * force[w, b, k]
-            bias[w, i] = value
-            if not tx.isfinite(value):
-                status[w] = 1
-            for j in range(i, nv):
-                value = 0.0
-                if i == j:
-                    value = armature[i]
-                for b in range(1, nb):
-                    for k in range(3):
-                        value = value + weight[b] * jac[w, b, k, i] * jac[w, b, k, j]
-                        for axis in range(3):
-                            value = (
-                                value
-                                + jac[w, b, k + 3, i] * iw[w, b, k, axis] * jac[w, b, axis + 3, j]
-                            )
-                mass[w, i, j] = value
-                mass[w, j, i] = value
-                if not tx.isfinite(value):
-                    status[w] = 1

@@ -93,3 +93,17 @@ DeepMind Technologies Limited), and the world-coordinate RNE/CRB rewrite in
 _floating_kernels.py above. Phymeo provides an independent compensated FP32
 transform-node implementation and bounded device workspace. This component
 does not admit equality, actuation, passive forces or integrator semantics.
+
+Instantaneous smooth/scalar terms (_smooth_force_kernels.py,
+_scalar_terms_kernels.py, _smooth_terms.py): fixed-gain scalar-joint
+actuation, clamp ordering, passive scalar springs/damping and COM applied
+wrenches follow MuJoCo 3.3.7 engine_forward.c and engine_passive.c.
+Polynomial joint equality, DOF dry friction and scalar limits follow
+engine_core_constraint.c, Copyright 2021 DeepMind Technologies Limited.
+Phymeo supplies independent bounded TYX CUDA kernels and scoped device
+workspaces; native functions only compile static model fields or serve in
+independent tests. The physical mass solve uses compensated residual
+refinement without an implicit damping diagonal. _rigid_precision_kernels.py
+retains low lanes in COM Jacobians, mass and gravity projection; velocity
+dependent body wrenches retain the FP32 RNE implementation above.
+Neither this component nor its fixed-state tests admit integration/training.

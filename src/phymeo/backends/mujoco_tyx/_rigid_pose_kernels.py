@@ -11,12 +11,14 @@ from ._two_lane import add_hi, add_lo, div_hi, div_lo, mul_hi, mul_lo, sqrt_hi, 
 def poses(
     worlds: tx.i32,
     nodes: tx.i32,
+    nq: tx.i32,
     ids: tx.ndarray(tx.i32, 2),
     local: tx.ndarray(tx.f32, 3),
     joint: tx.ndarray(tx.f32, 3),
     products: tx.ndarray(tx.i32, 3),
     matrix: tx.ndarray(tx.i32, 3),
     q: tx.ndarray(tx.f32, 3),
+    sampled_qpos: tx.ndarray(tx.f32, 3),
     mocap: tx.ndarray(tx.f32, 4),
     state: tx.ndarray(tx.f32, 4),
     rotation: tx.ndarray(tx.f32, 4),
@@ -25,6 +27,9 @@ def poses(
 ):
     for w in tx.range(worlds):
         status[w] = 0
+        for i in range(nq):
+            sampled_qpos[w, i, 0] = q[w, i, 0]
+            sampled_qpos[w, i, 1] = q[w, i, 1]
         for n in range(nodes):
             parent = ids[n, 0]
             kind = ids[n, 1]
@@ -241,6 +246,7 @@ def gather(
     com: tx.ndarray(tx.f32, 3),
     com_low: tx.ndarray(tx.f32, 3),
     axes: tx.ndarray(tx.f32, 3),
+    axes_low: tx.ndarray(tx.f32, 3),
     anchors: tx.ndarray(tx.f32, 4),
 ):
     for w in tx.range(count):
@@ -260,9 +266,26 @@ def gather(
             node = dofs[d, 2]
             for i in range(3):
                 value = 0.0
+                low = 0.0
                 for j in range(3):
-                    value = value + rot[w, node, 3 * i + j, 0] * axes_local[d, j, 0]
+                    mh = mul_hi(
+                        rot[w, node, 3 * i + j, 0],
+                        rot[w, node, 3 * i + j, 1],
+                        axes_local[d, j, 0],
+                        axes_local[d, j, 3],
+                    )
+                    ml = mul_lo(
+                        rot[w, node, 3 * i + j, 0],
+                        rot[w, node, 3 * i + j, 1],
+                        axes_local[d, j, 0],
+                        axes_local[d, j, 3],
+                    )
+                    nh = add_hi(value, low, mh, ml)
+                    nl = add_lo(value, low, mh, ml)
+                    value = nh
+                    low = nl
                 axes[w, d, i] = value
+                axes_low[w, d, i] = low
                 ah = state[w, node, i, 0]
                 al = state[w, node, i, 1]
                 for j in range(3):

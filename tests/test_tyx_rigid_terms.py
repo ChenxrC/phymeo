@@ -66,6 +66,12 @@ def test_moving_tree_pose_mass_coriolis(tyx_mode, tmp_path, angle):
             got[name][0].astype(float) + got[name + "_low"][0], expected, atol=2e-11, rtol=0
         )
     np.testing.assert_allclose(got["body_jac"][0], jac, atol=2e-6, rtol=0)
+    np.testing.assert_allclose(
+        got["body_jac"][0].astype(float) + got["body_jac_low"][0], jac, atol=2e-11, rtol=0
+    )
+    np.testing.assert_allclose(
+        got["mass"][0].astype(float) + got["mass_low"][0], mass, atol=2e-11, rtol=0
+    )
     assert np.all(np.abs(got["mass"][0] - mass) <= 2e-6 * (1 + np.abs(mass)))
     assert np.all(np.abs(got["bias"][0] - d.qfrc_bias) <= 2e-6 * (1 + np.abs(d.qfrc_bias)))
     np.testing.assert_array_equal(got["mass"][0], got["mass"][0].T)
@@ -103,6 +109,14 @@ def test_lifetime_and_resident_state(tyx_mode, tmp_path):
     else:
         work._buffers["qvel"][...] = replacement
     np.testing.assert_array_equal(current.read()["qvel"], d.qvel[None].astype(np.float32))
+    saved_q = current.read()["qpos"]
+    changed_q = saved_q.copy()
+    changed_q[:, 0, 0] += 5
+    if tyx_mode == "cuda":
+        work._buffers["qpos"].copy_from(changed_q)
+    else:
+        work._buffers["qpos"][...] = changed_q
+    np.testing.assert_array_equal(current.read()["qpos"], saved_q)
     with pytest.raises(RuntimeError, match="expired"):
         result.read()
     with pytest.raises(ValueError, match="schema"):

@@ -69,7 +69,7 @@ def compile_rigid_model(mj, model):
     node(-1)
     bodies = np.zeros((nb, 5), np.int32)
     dofs = np.zeros((nv, 3), np.int32)
-    ax = np.zeros((nv, 3, 3), np.float32)
+    ax = np.zeros((nv, 3, 4), np.float32)
     ancestor = np.zeros((nb, nv), np.int32)
     inertia = np.zeros((nb, 3, 3), np.float64)
     for b in range(1, nb):
@@ -113,7 +113,8 @@ def compile_rigid_model(mj, model):
                     bn = node(bn, pos=-anchor)
                 dofs[da] = [int(kind == 1), b, pre]
                 ax[da, :, 0] = axis
-                ax[da, :, 1:] = _split(anchor)
+                ax[da, :, 3] = _split(axis)[:, 1]
+                ax[da, :, 1:3] = _split(anchor)
                 ancestor[b, da] = 1
         bodies[b] = [bn, 0, p, kind, da]
         rotation = np.empty(9, np.float64)
@@ -163,9 +164,13 @@ def compile_rigid_model(mj, model):
         axes_local=ax,
         ancestor=ancestor,
         inertia=inertia.astype(np.float32),
+        inertia_low=_split(inertia)[..., 1],
         weight=np.array(model.body_mass, np.float32),
+        weight_low=_split(model.body_mass)[..., 1],
         armature=np.array(model.dof_armature, np.float32),
+        armature_low=_split(model.dof_armature)[..., 1],
         gravity=np.array(model.opt.gravity, np.float32),
+        gravity_low=_split(model.opt.gravity)[..., 1],
         geom_nodes=geom_nodes,
     )
     for value in static.values():
@@ -196,6 +201,7 @@ class RigidWorkspace:
     """
 
     OUTPUT = (
+        "qpos",
         "positions",
         "positions_low",
         "rotations",
@@ -203,8 +209,11 @@ class RigidWorkspace:
         "com",
         "com_low",
         "body_jac",
+        "body_jac_low",
         "mass",
+        "mass_low",
         "bias",
+        "bias_low",
         "qvel",
     )
 
@@ -217,7 +226,7 @@ class RigidWorkspace:
             raise ValueError("explicit cuda or interpret mode required")
         import tyx as tx
 
-        from . import _rigid_pose_kernels, _rigid_terms_kernels
+        from . import _rigid_pose_kernels, _rigid_precision_kernels, _rigid_terms_kernels
 
         self.model, self.mode = model, mode
         self.worlds = w = _positive(worlds, "worlds", 256)
@@ -236,15 +245,21 @@ class RigidWorkspace:
             com=((w, b, 3), np.float32),
             com_low=((w, b, 3), np.float32),
             axes=((w, d, 3), np.float32),
+            axes_low=((w, d, 3), np.float32),
             anchors=((w, d, 3, 2), np.float32),
             body_jac=((w, b, 6, d), np.float32),
+            body_jac_low=((w, b, 6, d), np.float32),
             motion=((w, b, 4, 3), np.float32),
             iw=((w, b, 3, 3), np.float32),
+            iw_low=((w, b, 3, 3), np.float32),
             force=((w, b, 6), np.float32),
             scratch=((w, 4, 3), np.float32),
             mass=((w, d, d), np.float32),
+            mass_low=((w, d, d), np.float32),
             bias=((w, d), np.float32),
+            bias_low=((w, d), np.float32),
             sampled_qvel=((w, d), np.float32),
+            sampled_qpos=((w, model.nq, 2), np.float32),
             status=((w,), np.int32),
         )
         required = sum(max(1, int(np.prod(s))) * np.dtype(t).itemsize for s, t in layouts.values())
@@ -259,6 +274,7 @@ class RigidWorkspace:
             backend="cuda" if mode == "cuda" else "cpu", cache_root=cache_root
         )
         self._pose, self._terms = _rigid_pose_kernels, _rigid_terms_kernels
+        self._precision = _rigid_precision_kernels
         try:
             with self.runtime.activate():
                 for name, (shape, dtype) in layouts.items():
@@ -341,6 +357,7 @@ class RigidWorkspace:
             self._pose.poses(
                 w,
                 m.nodes,
+                m.nq,
                 *args(
                     "ids",
                     "local",
@@ -348,6 +365,7 @@ class RigidWorkspace:
                     "products",
                     "matrix",
                     "qpos",
+                    "sampled_qpos",
                     "mocap",
                     "state",
                     "rotation",
@@ -375,6 +393,7 @@ class RigidWorkspace:
                     "com",
                     "com_low",
                     "axes",
+                    "axes_low",
                     "anchors",
                 ),
                 mode=self.mode,
@@ -389,8 +408,6 @@ class RigidWorkspace:
                     "ancestor",
                     "inertia",
                     "weight",
-                    "armature",
-                    "gravity",
                     "qvel",
                     "state",
                     "rotation",
@@ -403,14 +420,47 @@ class RigidWorkspace:
                     "iw",
                     "force",
                     "scratch",
-                    "mass",
-                    "bias",
                     "sampled_qvel",
                     "status",
                 ),
                 mode=self.mode,
             )
-            self.stats["launches"] += 3
+            self._precision.precise_terms(
+                w,
+                m.nbody,
+                m.nv,
+                *args(
+                    "bodies",
+                    "dofs",
+                    "ancestor",
+                    "inertia",
+                    "inertia_low",
+                    "weight",
+                    "weight_low",
+                    "armature",
+                    "armature_low",
+                    "gravity",
+                    "gravity_low",
+                    "rotation",
+                    "axes",
+                    "axes_low",
+                    "anchors",
+                    "com",
+                    "com_low",
+                    "force",
+                    "body_jac",
+                    "body_jac_low",
+                    "iw",
+                    "iw_low",
+                    "mass",
+                    "mass_low",
+                    "bias",
+                    "bias_low",
+                    "status",
+                ),
+                mode=self.mode,
+            )
+            self.stats["launches"] += 4
             self.runtime.sync()
             status = self._download("status")
             if np.any(status):
@@ -420,7 +470,9 @@ class RigidWorkspace:
         return RigidResult(self, self._generation)
 
     def _download(self, name):
-        value = self._qvel if name == "qvel" else self._buffers[name]
+        value = (
+            self._buffers["sampled_" + name] if name in ("qpos", "qvel") else self._buffers[name]
+        )
         result = value.to_numpy() if self.mode == "cuda" else value.copy()
         self.stats["downloaded_bytes"] += result.nbytes if self.mode == "cuda" else 0
         return result
@@ -442,7 +494,12 @@ class RigidWorkspace:
             self._borrowed += 1
             try:
                 yield MappingProxyType(
-                    {k: self._qvel if k == "qvel" else self._buffers[k] for k in self.OUTPUT}
+                    {
+                        k: self._buffers["sampled_" + k]
+                        if k in ("qpos", "qvel")
+                        else self._buffers[k]
+                        for k in self.OUTPUT
+                    }
                 )
             finally:
                 try:

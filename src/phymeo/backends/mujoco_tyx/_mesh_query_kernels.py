@@ -10,6 +10,50 @@ def clear_counts(worlds: tx.i32, counts: tx.ndarray(tx.i32, 1)):
 
 
 @tx.kernel
+def validate_response_input(
+    worlds: tx.i32,
+    capacity: tx.i32,
+    tolerance: tx.f32,
+    counts: tx.ndarray(tx.i32, 1),
+    meta: tx.ndarray(tx.i32, 2),
+    gap: tx.ndarray(tx.f32, 2),
+    normal: tx.ndarray(tx.f32, 2),
+    surface: tx.ndarray(tx.f32, 3),
+):
+    for flat in tx.range(worlds * capacity):
+        world = flat // capacity
+        if flat % capacity < counts[world]:
+            invalid = 0
+            if meta[flat, 0] != 1 or meta[flat, 9] != 7:
+                invalid = 1
+            if (
+                not tx.isfinite(gap[flat, 0])
+                or not tx.isfinite(gap[flat, 1])
+                or not tx.isfinite(gap[flat, 2])
+            ):
+                invalid = 1
+            if (
+                gap[flat, 1] > gap[flat, 0]
+                or gap[flat, 0] > gap[flat, 2]
+                or gap[flat, 2] - gap[flat, 1] > tolerance
+            ):
+                invalid = 1
+            square = 0.0
+            closure = 0.0
+            for axis in tx.static_range(3):
+                n = normal[flat, axis]
+                delta = surface[flat, 1, axis] - surface[flat, 0, axis] - gap[flat, 0] * n
+                square = square + n * n
+                closure = closure + delta * delta
+                if not tx.isfinite(n) or not tx.isfinite(delta):
+                    invalid = 1
+            if tx.abs(square - 1.0) > 1e-4 or closure > tolerance * tolerance:
+                invalid = 1
+            if invalid != 0:
+                tx.atomic_add(counts[worlds], 1)
+
+
+@tx.kernel
 def transform_meshes(
     total: tx.i32,
     ngeom: tx.i32,

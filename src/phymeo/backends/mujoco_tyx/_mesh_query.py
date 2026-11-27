@@ -9,8 +9,10 @@ physical accuracy: callers must inspect the returned lower/upper gap bracket.
 This experimental interface is not yet a contact response/learning backend.
 """
 
+from contextlib import contextmanager
 from dataclasses import dataclass
 from threading import RLock
+from types import MappingProxyType
 
 import numpy as np
 
@@ -45,6 +47,14 @@ class MeshQueryResult:
         """Explicit detached diagnostic download, not required by device consumers."""
         return self.workspace._read(self)
 
+    def device_view(self):
+        """Borrow validated device outputs for a synchronous consumer scope.
+
+        The caller must treat arrays as read-only and not retain them beyond
+        the scope. Query/close is prohibited while the scope owns the workspace.
+        """
+        return self.workspace._device_view(self)
+
 
 class MeshQueryWorkspace:
     """One owned, serial query workspace with bounded reusable GPU buffers.
@@ -75,6 +85,7 @@ class MeshQueryWorkspace:
         limit = _positive(memory_limit_bytes, "memory_limit_bytes", 2**63 - 1)
         self.catalog, self.mode = catalog, mode
         self._lock, self._generation, self.closed = RLock(), 0, False
+        self._borrowed = 0
         self._buffers, self._runtime = {}, None
         self.stats = dict(launches=0, uploaded_bytes=0, downloaded_bytes=0, queries=0)
         g, v, p = catalog.ngeom, len(catalog.points), w * c
@@ -84,6 +95,8 @@ class MeshQueryWorkspace:
         if 2 * t * maximum >= 2**31:
             raise ValueError("pair-local support layout exceeds int32")
         static = dict(
+            geom_ids=catalog.geom_ids,
+            body_ids=catalog.body_ids,
             offsets=catalog.offsets,
             local=catalog.points,
             allowed=catalog.pairs,
@@ -130,12 +143,14 @@ class MeshQueryWorkspace:
         import tyx as tx
 
         from .._tyx_convex_query_kernels import make_convex_query_kernels
+        from . import _mesh_feature_refinement
         from . import _mesh_query_kernels as kernels
 
         self._runtime = tx.Runtime(
             backend="cuda" if mode == "cuda" else "cpu", cache_root=cache_root
         )
         self._geometry, self._convex = kernels, make_convex_query_kernels()
+        self._refine = _mesh_feature_refinement.refine
         try:
             with self._runtime.activate():
                 for name, (shape, dtype) in layouts.items():
@@ -165,6 +180,7 @@ class MeshQueryWorkspace:
         """Host pose convenience boundary. Never used as hidden CUDA fallback."""
         with self._lock:
             self._ensure_open()
+            self._ensure_idle()
             self._generation += 1
             for name, source, shape in (
                 ("positions", positions, (self.worlds, self.catalog.ngeom, 3)),
@@ -192,6 +208,7 @@ class MeshQueryWorkspace:
         """
         with self._lock:
             self._ensure_open()
+            self._ensure_idle()
             self._generation += 1
             for value, shape in (
                 (positions, (self.worlds, self.catalog.ngeom, 3)),
@@ -301,6 +318,23 @@ class MeshQueryWorkspace:
                             b["vertex_slots"],
                         )
                         self._launch(
+                            self._refine,
+                            active,
+                            offset,
+                            5e-6,
+                            b["tags"],
+                            b["packed_points"],
+                            b["ids"],
+                            b["frames"],
+                            b["meta"],
+                            b["gap"],
+                            b["normal"],
+                            b["surface"],
+                            b["material_ids"],
+                            b["barycentric"],
+                            b["skin_offset"],
+                        )
+                        self._launch(
                             k.unpack_local_pairs,
                             active,
                             offset,
@@ -332,6 +366,46 @@ class MeshQueryWorkspace:
                 value.setflags(write=False)
             return raw
 
+    @contextmanager
+    def _device_view(self, result):
+        with self._lock:
+            self._ensure_open()
+            self._ensure_idle()
+            if result.workspace is not self or result.generation != self._generation:
+                raise RuntimeError("mesh query result has expired")
+            b = self._buffers
+            with self._runtime.activate():
+                self._launch(
+                    self._geometry.validate_response_input,
+                    self.worlds,
+                    self.capacity,
+                    5e-6,
+                    b["counts"],
+                    b["meta"],
+                    b["gap"],
+                    b["normal"],
+                    b["surface"],
+                )
+                if self._download("counts")[-1]:
+                    raise ValueError("uncertain or invalid geometry cannot enter contact response")
+                self._borrowed += 1
+                try:
+                    yield MappingProxyType(
+                        {
+                            name: b[name]
+                            for name in ("geom_ids", "body_ids", "counts", "pairs", *WIRE)
+                        }
+                    )
+                finally:
+                    try:
+                        self._runtime.sync()
+                    finally:
+                        self._borrowed -= 1
+
+    def _ensure_idle(self):
+        if self._borrowed:
+            raise RuntimeError("device geometry is borrowed by a consumer")
+
     def _ensure_open(self):
         if self.closed:
             raise RuntimeError("mesh query workspace is closed")
@@ -339,6 +413,7 @@ class MeshQueryWorkspace:
     def close(self):
         with self._lock:
             if not self.closed:
+                self._ensure_idle()
                 self.closed = True
                 try:
                     if self._runtime is not None:

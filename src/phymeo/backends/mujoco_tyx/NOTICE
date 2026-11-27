@@ -1,5 +1,16 @@
 MuJoCo algorithms ported to Phymeo TYX
 
+The condim=3 elliptic constitutive operator in _elliptic_contact.py is adapted
+from MuJoCo 3.3.7 src/engine/engine_core_constraint.c::mj_constraintUpdate_impl,
+Copyright 2021 DeepMind Technologies Limited, Apache License 2.0.
+Phymeo changes: explicit device batches, original-parameter compatibility and
+finite-value checks, row eligibility, owned reusable buffers and result lifetimes.
+This operator is not the complete native Newton solver or dynamics integrator.
+The scalar equality/friction-loss/limit and elliptic directional costs in
+_elliptic_dynamics_kernels.py follow the same MuJoCo constitutive source.
+The bounded Newton/bisection algorithm and paired-FP32 state representation are
+independent Phymeo implementations, not native iteration-order equivalence.
+
 This package includes modified algorithms from mujoco-warp v0.0.2,
 Copyright 2025 The Newton Developers, licensed under Apache License 2.0.
 The upstream AUTHORS attribution list and full license are retained here.

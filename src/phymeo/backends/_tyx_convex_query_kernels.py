@@ -7,7 +7,7 @@ all material weights refer to actual original vertex IDs. No response is solved.
 
 import tyx as tx
 
-from ._tyx_convex_support import clamp01, det3, dot3
+from ._tyx_convex_support import clamp01, det3, difference_of_products, dot3
 from ._tyx_convex_support_family import (
     curved_support_x,
     curved_support_y,
@@ -879,8 +879,13 @@ def query_convex_pairs(
                         # an outgoing reducer candidate needs its own next call.
                         if simplex_n > 0 and closest_square > 0.0:
                             distance = tx.sqrt(closest_square)
-                            if distance > 1e-5 or (
-                                distance > 8e-7 and full_surface == 0 and (ka < 2 or kb < 2)
+                            # A positive support plane proves separation even
+                            # inside the old EPA initialization band. Routing
+                            # that case to EPA cannot find an enclosing tetrahedron.
+                            if (
+                                bound > 0.0
+                                or distance > 1e-5
+                                or (distance > 8e-7 and full_surface == 0 and (ka < 2 or kb < 2))
                             ):
                                 if distance - bound <= 8e-7:
                                     status = 1
@@ -973,6 +978,10 @@ def query_convex_pairs(
                                 w2 = 0.0
                                 w3 = 0.0
                                 usable = 1
+                                normal_x = 0.0
+                                normal_y = 0.0
+                                normal_z = 0.0
+                                denominator = 1.0
                                 ee = dot3(ex, ey, ez, ex, ey, ez)
                                 ef = dot3(ex, ey, ez, fx, fy, fz)
                                 ff = dot3(fx, fy, fz, fx, fy, fz)
@@ -991,7 +1000,20 @@ def query_convex_pairs(
                                         w1 = re / ee
                                         w0 = 1.0 - w1
                                 elif count_s == 3:
-                                    denominator = ee * ff - ef * ef
+                                    # The Gram determinant subtracts nearly equal
+                                    # squared lengths for thin triangles. Compute
+                                    # the area and barycentrics geometrically.
+                                    normal_x = difference_of_products(ey, fz, ez, fy)
+                                    normal_y = difference_of_products(ez, fx, ex, fz)
+                                    normal_z = difference_of_products(ex, fy, ey, fx)
+                                    denominator = dot3(
+                                        normal_x,
+                                        normal_y,
+                                        normal_z,
+                                        normal_x,
+                                        normal_y,
+                                        normal_z,
+                                    )
                                     if trace_slot >= 0:
                                         trace_f[trace_slot, iteration, 117 + 20 * (mask - 1)] = (
                                             denominator
@@ -999,8 +1021,28 @@ def query_convex_pairs(
                                     if denominator <= 1e-12 * ee * ff:
                                         usable = 0
                                     else:
-                                        w1 = (re * ff - rf * ef) / denominator
-                                        w2 = (rf * ee - re * ef) / denominator
+                                        w1 = (
+                                            dot3(
+                                                difference_of_products(-y0, fz, -z0, fy),
+                                                difference_of_products(-z0, fx, -x0, fz),
+                                                difference_of_products(-x0, fy, -y0, fx),
+                                                normal_x,
+                                                normal_y,
+                                                normal_z,
+                                            )
+                                            / denominator
+                                        )
+                                        w2 = (
+                                            dot3(
+                                                difference_of_products(ey, -z0, ez, -y0),
+                                                difference_of_products(ez, -x0, ex, -z0),
+                                                difference_of_products(ex, -y0, ey, -x0),
+                                                normal_x,
+                                                normal_y,
+                                                normal_z,
+                                            )
+                                            / denominator
+                                        )
                                         w0 = 1.0 - w1 - w2
                                 elif count_s == 4:
                                     determinant = det3(ex, ey, ez, fx, fy, fz, gx, gy, gz)
@@ -1035,6 +1077,7 @@ def query_convex_pairs(
                                     trace_i[trace_slot, iteration, 48 + 3 * (mask - 1)] = count_s
                                     trace_i[trace_slot, iteration, 49 + 3 * (mask - 1)] = usable
                                 if usable != 0:
+                                    interior = w0 >= 0.0 and w1 >= 0.0 and w2 >= 0.0 and w3 >= 0.0
                                     w0 = tx.max(0.0, w0)
                                     w1 = tx.max(0.0, w1)
                                     w2 = tx.max(0.0, w2)
@@ -1053,6 +1096,39 @@ def query_convex_pairs(
                                     qz = affine_simplex_coordinate(
                                         count_s, z0, ez, fz, gz, w1, w2, w3
                                     )
+                                    if count_s == 2 and interior:
+                                        edge_cross_x = difference_of_products(y0, ez, z0, ey)
+                                        edge_cross_y = difference_of_products(z0, ex, x0, ez)
+                                        edge_cross_z = difference_of_products(x0, ey, y0, ex)
+                                        qx = (
+                                            difference_of_products(
+                                                ey, edge_cross_z, ez, edge_cross_y
+                                            )
+                                            / ee
+                                        )
+                                        qy = (
+                                            difference_of_products(
+                                                ez, edge_cross_x, ex, edge_cross_z
+                                            )
+                                            / ee
+                                        )
+                                        qz = (
+                                            difference_of_products(
+                                                ex, edge_cross_y, ey, edge_cross_x
+                                            )
+                                            / ee
+                                        )
+                                    elif count_s == 3 and interior:
+                                        # Avoid cancellation of long tangential
+                                        # vectors when the closest plane is only
+                                        # micrometres from the origin.
+                                        height = (
+                                            dot3(normal_x, normal_y, normal_z, x0, y0, z0)
+                                            / denominator
+                                        )
+                                        qx = normal_x * height
+                                        qy = normal_y * height
+                                        qz = normal_z * height
                                     square = dot3(qx, qy, qz, qx, qy, qz)
                                     # A smooth support can improve the tangential
                                     # residual while the dominant normal square
@@ -1129,11 +1205,9 @@ def query_convex_pairs(
                             if distance <= 8e-7 or (
                                 distance <= 1e-5 and ((ka >= 2 and kb >= 2) or full_surface != 0)
                             ):
-                                # A tilted shallow overlap can stop just outside the
-                                # origin. Polytopes within 1e-5 go to EPA instead of
-                                # publishing that residual as separation. A round
-                                # core inside that same plane tolerance is contained:
-                                # the leftover is not a surface gap.
+                                # Shallow overlap needs EPA rather than a
+                                # numerically residual separation. Preserve the
+                                # origin band; a reduced band regressed M16 cases.
                                 if full_surface == 0 and (ka < 2 or kb < 2):
                                     status = 3
                                     reason = 3
@@ -1964,10 +2038,38 @@ def query_convex_pairs(
                                                 fy,
                                                 fz,
                                             )
-                                            denominator = ee * ff - ef * ef
+                                            face_x = difference_of_products(ey, fz, ez, fy)
+                                            face_y = difference_of_products(ez, fx, ex, fz)
+                                            face_z = difference_of_products(ex, fy, ey, fx)
+                                            denominator = dot3(
+                                                face_x, face_y, face_z, face_x, face_y, face_z
+                                            )
                                             if denominator > 1e-12 * ee * ff:
-                                                w1 = (re * ff - rf * ef) / denominator
-                                                w2 = (rf * ee - re * ef) / denominator
+                                                rx = depth * dx - x0
+                                                ry = depth * dy - y0
+                                                rz = depth * dz - z0
+                                                w1 = (
+                                                    dot3(
+                                                        difference_of_products(ry, fz, rz, fy),
+                                                        difference_of_products(rz, fx, rx, fz),
+                                                        difference_of_products(rx, fy, ry, fx),
+                                                        face_x,
+                                                        face_y,
+                                                        face_z,
+                                                    )
+                                                    / denominator
+                                                )
+                                                w2 = (
+                                                    dot3(
+                                                        difference_of_products(ey, rz, ez, ry),
+                                                        difference_of_products(ez, rx, ex, rz),
+                                                        difference_of_products(ex, ry, ey, rx),
+                                                        face_x,
+                                                        face_y,
+                                                        face_z,
+                                                    )
+                                                    / denominator
+                                                )
                                                 w0 = 1.0 - w1 - w2
                                                 if w0 >= -1e-6 and w1 >= -1e-6 and w2 >= -1e-6:
                                                     w0 = tx.max(0.0, w0)

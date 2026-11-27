@@ -10,6 +10,25 @@ import tyx as tx
 
 from .._tyx_convex_support import difference_of_products
 from ._mesh_query_kernels import sum_error
+from ._two_lane import add_hi, add_lo, mul_hi, mul_lo
+
+
+@tx.func
+def cross_hi(
+    a: tx.f32, al: tx.f32, b: tx.f32, bl: tx.f32, c: tx.f32, cl: tx.f32, d: tx.f32, dl: tx.f32
+) -> tx.f32:
+    return add_hi(
+        mul_hi(a, al, b, bl), mul_lo(a, al, b, bl), -mul_hi(c, cl, d, dl), -mul_lo(c, cl, d, dl)
+    )
+
+
+@tx.func
+def cross_lo(
+    a: tx.f32, al: tx.f32, b: tx.f32, bl: tx.f32, c: tx.f32, cl: tx.f32, d: tx.f32, dl: tx.f32
+) -> tx.f32:
+    return add_lo(
+        mul_hi(a, al, b, bl), mul_lo(a, al, b, bl), -mul_hi(c, cl, d, dl), -mul_lo(c, cl, d, dl)
+    )
 
 
 @tx.kernel
@@ -26,6 +45,7 @@ def refine_witnesses(
     projections: tx.ndarray(tx.f32, 4),
     active: tx.ndarray(tx.i32, 3),
     vectors: tx.ndarray(tx.f32, 3),
+    vectors_low: tx.ndarray(tx.f32, 3),
     selected: tx.ndarray(tx.i32, 3),
     selected_weights: tx.ndarray(tx.f32, 3),
     receipt: tx.ndarray(tx.i32, 2),
@@ -102,16 +122,34 @@ def refine_witnesses(
                 b = active[lane, 1, 0]
                 b1 = active[lane, 1, 1]
                 for axis in range(3):
-                    vectors[lane, 0, axis] = (points[a1, axis] - points[a, axis]) + (
-                        points_low[a1, axis] - points_low[a, axis]
-                    )
-                    vectors[lane, 1, axis] = (points[b1, axis] - points[b, axis]) + (
-                        points_low[b1, axis] - points_low[b, axis]
-                    )
-                    vectors[lane, 2, axis] = (
-                        (points[b, axis] - points[a, axis])
-                        + (points_low[b, axis] - points_low[a, axis])
-                    ) - gap[out, 0] * normal[out, axis]
+                    for component in range(3):
+                        first_vertex = a1
+                        second_vertex = a
+                        if component == 1:
+                            first_vertex = b1
+                            second_vertex = b
+                        elif component == 2:
+                            first_vertex = b
+                        vh = add_hi(
+                            points[first_vertex, axis],
+                            points_low[first_vertex, axis],
+                            -points[second_vertex, axis],
+                            -points_low[second_vertex, axis],
+                        )
+                        vl = add_lo(
+                            points[first_vertex, axis],
+                            points_low[first_vertex, axis],
+                            -points[second_vertex, axis],
+                            -points_low[second_vertex, axis],
+                        )
+                        if component == 2:
+                            ph = tx.mul_rn(-gap[out, 0], normal[out, axis])
+                            pl = tx.fma(-gap[out, 0], normal[out, axis], -ph)
+                            total = add_hi(vh, vl, ph, pl)
+                            vl = add_lo(vh, vl, ph, pl)
+                            vh = total
+                        vectors[lane, component, axis] = vh
+                        vectors_low[lane, component, axis] = vl
                 denominator = 0.0
                 numerator_u = 0.0
                 numerator_v = 0.0
@@ -149,8 +187,140 @@ def refine_witnesses(
                     unique = 1
                 if denominator > 1e-12 * ee * ff:
                     unique = 1
-                    u = numerator_u / denominator
-                    v = numerator_v / denominator
+                    left = 2
+                    right = 1
+                    if 1 == 2:
+                        left = 0
+                        right = 2
+                    elif 1 == 3:
+                        left = 2
+                        right = 0
+                    nh = 0.0
+                    nl = 0.0
+                    dh = 0.0
+                    dl = 0.0
+                    for axis in range(3):
+                        cross_j = (axis + 1) % 3
+                        cross_k = (axis + 2) % 3
+                        h = cross_hi(
+                            vectors[lane, 0, cross_j],
+                            vectors_low[lane, 0, cross_j],
+                            vectors[lane, 1, cross_k],
+                            vectors_low[lane, 1, cross_k],
+                            vectors[lane, 0, cross_k],
+                            vectors_low[lane, 0, cross_k],
+                            vectors[lane, 1, cross_j],
+                            vectors_low[lane, 1, cross_j],
+                        )
+                        hl = cross_lo(
+                            vectors[lane, 0, cross_j],
+                            vectors_low[lane, 0, cross_j],
+                            vectors[lane, 1, cross_k],
+                            vectors_low[lane, 1, cross_k],
+                            vectors[lane, 0, cross_k],
+                            vectors_low[lane, 0, cross_k],
+                            vectors[lane, 1, cross_j],
+                            vectors_low[lane, 1, cross_j],
+                        )
+                        c = cross_hi(
+                            vectors[lane, left, cross_j],
+                            vectors_low[lane, left, cross_j],
+                            vectors[lane, right, cross_k],
+                            vectors_low[lane, right, cross_k],
+                            vectors[lane, left, cross_k],
+                            vectors_low[lane, left, cross_k],
+                            vectors[lane, right, cross_j],
+                            vectors_low[lane, right, cross_j],
+                        )
+                        cl = cross_lo(
+                            vectors[lane, left, cross_j],
+                            vectors_low[lane, left, cross_j],
+                            vectors[lane, right, cross_k],
+                            vectors_low[lane, right, cross_k],
+                            vectors[lane, left, cross_k],
+                            vectors_low[lane, left, cross_k],
+                            vectors[lane, right, cross_j],
+                            vectors_low[lane, right, cross_j],
+                        )
+                        ph = mul_hi(c, cl, h, hl)
+                        pl = mul_lo(c, cl, h, hl)
+                        new_n = add_hi(nh, nl, ph, pl)
+                        nl = add_lo(nh, nl, ph, pl)
+                        nh = new_n
+                        ph = mul_hi(h, hl, h, hl)
+                        pl = mul_lo(h, hl, h, hl)
+                        new_d = add_hi(dh, dl, ph, pl)
+                        dl = add_lo(dh, dl, ph, pl)
+                        dh = new_d
+                    quotient = nh / dh
+                    u = quotient + (tx.fma(-quotient, dh, nh) + nl - quotient * dl) / dh
+                    left = 2
+                    right = 1
+                    if 3 == 2:
+                        left = 0
+                        right = 2
+                    elif 3 == 3:
+                        left = 2
+                        right = 0
+                    nh = 0.0
+                    nl = 0.0
+                    dh = 0.0
+                    dl = 0.0
+                    for axis in range(3):
+                        cross_j = (axis + 1) % 3
+                        cross_k = (axis + 2) % 3
+                        h = cross_hi(
+                            vectors[lane, 0, cross_j],
+                            vectors_low[lane, 0, cross_j],
+                            vectors[lane, 1, cross_k],
+                            vectors_low[lane, 1, cross_k],
+                            vectors[lane, 0, cross_k],
+                            vectors_low[lane, 0, cross_k],
+                            vectors[lane, 1, cross_j],
+                            vectors_low[lane, 1, cross_j],
+                        )
+                        hl = cross_lo(
+                            vectors[lane, 0, cross_j],
+                            vectors_low[lane, 0, cross_j],
+                            vectors[lane, 1, cross_k],
+                            vectors_low[lane, 1, cross_k],
+                            vectors[lane, 0, cross_k],
+                            vectors_low[lane, 0, cross_k],
+                            vectors[lane, 1, cross_j],
+                            vectors_low[lane, 1, cross_j],
+                        )
+                        c = cross_hi(
+                            vectors[lane, left, cross_j],
+                            vectors_low[lane, left, cross_j],
+                            vectors[lane, right, cross_k],
+                            vectors_low[lane, right, cross_k],
+                            vectors[lane, left, cross_k],
+                            vectors_low[lane, left, cross_k],
+                            vectors[lane, right, cross_j],
+                            vectors_low[lane, right, cross_j],
+                        )
+                        cl = cross_lo(
+                            vectors[lane, left, cross_j],
+                            vectors_low[lane, left, cross_j],
+                            vectors[lane, right, cross_k],
+                            vectors_low[lane, right, cross_k],
+                            vectors[lane, left, cross_k],
+                            vectors_low[lane, left, cross_k],
+                            vectors[lane, right, cross_j],
+                            vectors_low[lane, right, cross_j],
+                        )
+                        ph = mul_hi(c, cl, h, hl)
+                        pl = mul_lo(c, cl, h, hl)
+                        new_n = add_hi(nh, nl, ph, pl)
+                        nl = add_lo(nh, nl, ph, pl)
+                        nh = new_n
+                        ph = mul_hi(h, hl, h, hl)
+                        pl = mul_lo(h, hl, h, hl)
+                        new_d = add_hi(dh, dl, ph, pl)
+                        dl = add_lo(dh, dl, ph, pl)
+                        dh = new_d
+                    quotient = nh / dh
+                    v = quotient + (tx.fma(-quotient, dh, nh) + nl - quotient * dl) / dh
                     if u >= -2e-6 and u <= 1.000002 and v >= -2e-6 and v <= 1.000002:
                         u = tx.min(1.0, tx.max(0.0, u))
                         v = tx.min(1.0, tx.max(0.0, v))
@@ -191,16 +361,36 @@ def refine_witnesses(
                                     q = active[lane, other, j]
                                     r = active[lane, other, k]
                                     for axis in range(3):
-                                        vectors[lane, 0, axis] = (
-                                            points[q, axis] - points[p, axis]
-                                        ) + (points_low[q, axis] - points_low[p, axis])
-                                        vectors[lane, 1, axis] = (
-                                            points[r, axis] - points[p, axis]
-                                        ) + (points_low[r, axis] - points_low[p, axis])
-                                        vectors[lane, 2, axis] = (
-                                            (points[vertex, axis] - points[p, axis])
-                                            + (points_low[vertex, axis] - points_low[p, axis])
-                                        ) + sign * gap[out, 0] * normal[out, axis]
+                                        for component in range(3):
+                                            first_vertex = q
+                                            if component == 1:
+                                                first_vertex = r
+                                            elif component == 2:
+                                                first_vertex = vertex
+                                            vh = add_hi(
+                                                points[first_vertex, axis],
+                                                points_low[first_vertex, axis],
+                                                -points[p, axis],
+                                                -points_low[p, axis],
+                                            )
+                                            vl = add_lo(
+                                                points[first_vertex, axis],
+                                                points_low[first_vertex, axis],
+                                                -points[p, axis],
+                                                -points_low[p, axis],
+                                            )
+                                            if component == 2:
+                                                ph = tx.mul_rn(
+                                                    sign * gap[out, 0], normal[out, axis]
+                                                )
+                                                pl = tx.fma(
+                                                    sign * gap[out, 0], normal[out, axis], -ph
+                                                )
+                                                total = add_hi(vh, vl, ph, pl)
+                                                vl = add_lo(vh, vl, ph, pl)
+                                                vh = total
+                                            vectors[lane, component, axis] = vh
+                                            vectors_low[lane, component, axis] = vl
                                     denominator = 0.0
                                     nu = 0.0
                                     nv = 0.0
@@ -229,8 +419,146 @@ def refine_witnesses(
                                         nu = nu + (cu * h)
                                         nv = nv + (cv * h)
                                     if denominator > 1e-24:
-                                        u = nu / denominator
-                                        v = nv / denominator
+                                        left = 2
+                                        right = 1
+                                        if 1 == 2:
+                                            left = 0
+                                            right = 2
+                                        elif 1 == 3:
+                                            left = 2
+                                            right = 0
+                                        nh = 0.0
+                                        nl = 0.0
+                                        dh = 0.0
+                                        dl = 0.0
+                                        for axis in range(3):
+                                            cross_j = (axis + 1) % 3
+                                            cross_k = (axis + 2) % 3
+                                            h = cross_hi(
+                                                vectors[lane, 0, cross_j],
+                                                vectors_low[lane, 0, cross_j],
+                                                vectors[lane, 1, cross_k],
+                                                vectors_low[lane, 1, cross_k],
+                                                vectors[lane, 0, cross_k],
+                                                vectors_low[lane, 0, cross_k],
+                                                vectors[lane, 1, cross_j],
+                                                vectors_low[lane, 1, cross_j],
+                                            )
+                                            hl = cross_lo(
+                                                vectors[lane, 0, cross_j],
+                                                vectors_low[lane, 0, cross_j],
+                                                vectors[lane, 1, cross_k],
+                                                vectors_low[lane, 1, cross_k],
+                                                vectors[lane, 0, cross_k],
+                                                vectors_low[lane, 0, cross_k],
+                                                vectors[lane, 1, cross_j],
+                                                vectors_low[lane, 1, cross_j],
+                                            )
+                                            c = cross_hi(
+                                                vectors[lane, left, cross_j],
+                                                vectors_low[lane, left, cross_j],
+                                                vectors[lane, right, cross_k],
+                                                vectors_low[lane, right, cross_k],
+                                                vectors[lane, left, cross_k],
+                                                vectors_low[lane, left, cross_k],
+                                                vectors[lane, right, cross_j],
+                                                vectors_low[lane, right, cross_j],
+                                            )
+                                            cl = cross_lo(
+                                                vectors[lane, left, cross_j],
+                                                vectors_low[lane, left, cross_j],
+                                                vectors[lane, right, cross_k],
+                                                vectors_low[lane, right, cross_k],
+                                                vectors[lane, left, cross_k],
+                                                vectors_low[lane, left, cross_k],
+                                                vectors[lane, right, cross_j],
+                                                vectors_low[lane, right, cross_j],
+                                            )
+                                            ph = mul_hi(c, cl, h, hl)
+                                            pl = mul_lo(c, cl, h, hl)
+                                            new_n = add_hi(nh, nl, ph, pl)
+                                            nl = add_lo(nh, nl, ph, pl)
+                                            nh = new_n
+                                            ph = mul_hi(h, hl, h, hl)
+                                            pl = mul_lo(h, hl, h, hl)
+                                            new_d = add_hi(dh, dl, ph, pl)
+                                            dl = add_lo(dh, dl, ph, pl)
+                                            dh = new_d
+                                        quotient = nh / dh
+                                        u = (
+                                            quotient
+                                            + (tx.fma(-quotient, dh, nh) + nl - quotient * dl) / dh
+                                        )
+                                        left = 2
+                                        right = 1
+                                        if 2 == 2:
+                                            left = 0
+                                            right = 2
+                                        elif 2 == 3:
+                                            left = 2
+                                            right = 0
+                                        nh = 0.0
+                                        nl = 0.0
+                                        dh = 0.0
+                                        dl = 0.0
+                                        for axis in range(3):
+                                            cross_j = (axis + 1) % 3
+                                            cross_k = (axis + 2) % 3
+                                            h = cross_hi(
+                                                vectors[lane, 0, cross_j],
+                                                vectors_low[lane, 0, cross_j],
+                                                vectors[lane, 1, cross_k],
+                                                vectors_low[lane, 1, cross_k],
+                                                vectors[lane, 0, cross_k],
+                                                vectors_low[lane, 0, cross_k],
+                                                vectors[lane, 1, cross_j],
+                                                vectors_low[lane, 1, cross_j],
+                                            )
+                                            hl = cross_lo(
+                                                vectors[lane, 0, cross_j],
+                                                vectors_low[lane, 0, cross_j],
+                                                vectors[lane, 1, cross_k],
+                                                vectors_low[lane, 1, cross_k],
+                                                vectors[lane, 0, cross_k],
+                                                vectors_low[lane, 0, cross_k],
+                                                vectors[lane, 1, cross_j],
+                                                vectors_low[lane, 1, cross_j],
+                                            )
+                                            c = cross_hi(
+                                                vectors[lane, left, cross_j],
+                                                vectors_low[lane, left, cross_j],
+                                                vectors[lane, right, cross_k],
+                                                vectors_low[lane, right, cross_k],
+                                                vectors[lane, left, cross_k],
+                                                vectors_low[lane, left, cross_k],
+                                                vectors[lane, right, cross_j],
+                                                vectors_low[lane, right, cross_j],
+                                            )
+                                            cl = cross_lo(
+                                                vectors[lane, left, cross_j],
+                                                vectors_low[lane, left, cross_j],
+                                                vectors[lane, right, cross_k],
+                                                vectors_low[lane, right, cross_k],
+                                                vectors[lane, left, cross_k],
+                                                vectors_low[lane, left, cross_k],
+                                                vectors[lane, right, cross_j],
+                                                vectors_low[lane, right, cross_j],
+                                            )
+                                            ph = mul_hi(c, cl, h, hl)
+                                            pl = mul_lo(c, cl, h, hl)
+                                            new_n = add_hi(nh, nl, ph, pl)
+                                            nl = add_lo(nh, nl, ph, pl)
+                                            nh = new_n
+                                            ph = mul_hi(h, hl, h, hl)
+                                            pl = mul_lo(h, hl, h, hl)
+                                            new_d = add_hi(dh, dl, ph, pl)
+                                            dl = add_lo(dh, dl, ph, pl)
+                                            dh = new_d
+                                        quotient = nh / dh
+                                        v = (
+                                            quotient
+                                            + (tx.fma(-quotient, dh, nh) + nl - quotient * dl) / dh
+                                        )
                                         if u >= -2e-6 and v >= -2e-6 and u + v <= 1.000002:
                                             u = tx.max(0.0, u)
                                             v = tx.max(0.0, v)

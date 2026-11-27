@@ -1,5 +1,11 @@
 # M16 split-pose GPU contact precision
 
+Historical stage report. The subsequent [contact-point and moment-arm
+implementation](m16-tyx-contact-points-2026-11-27.md) resolves the remaining
+fixed-state balance failures and establishes that all 192 discrepant points
+below are unique in the original geometry. The earlier tentative nonuniqueness
+interpretation does not explain those cases.
+
 This experimental component extends `feat/tyx-mesh-manifold`. It does not enable
 the full original-model dynamics compiler, integration, or a learning runner.
 

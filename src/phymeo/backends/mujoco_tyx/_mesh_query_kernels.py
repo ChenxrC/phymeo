@@ -27,6 +27,7 @@ def validate_response_input(
     gap: tx.ndarray(tx.f32, 2),
     normal: tx.ndarray(tx.f32, 2),
     surface: tx.ndarray(tx.f32, 3),
+    surface_low: tx.ndarray(tx.f32, 3),
 ):
     for flat in tx.range(worlds * capacity):
         world = flat // capacity
@@ -55,6 +56,13 @@ def validate_response_input(
                 closure = closure + delta * delta
                 if not tx.isfinite(n) or not tx.isfinite(delta):
                     invalid = 1
+                for side in tx.static_range(2):
+                    low = surface_low[flat, side, axis]
+                    if (
+                        not tx.isfinite(low)
+                        or tx.abs(low) > 1.1920929e-7 * tx.abs(surface[flat, side, axis]) + 1e-38
+                    ):
+                        invalid = 1
             if tx.abs(square - 1.0) > 1e-4 or closure > tolerance * tolerance:
                 invalid = 1
             if invalid != 0:
@@ -210,6 +218,7 @@ def pack_local_pairs(
     tags: tx.ndarray(tx.i32, 2),
     ids: tx.ndarray(tx.i32, 1),
     packed_points: tx.ndarray(tx.f32, 2),
+    packed_points_low: tx.ndarray(tx.f32, 2),
     packed_pairs: tx.ndarray(tx.i32, 2),
     frames: tx.ndarray(tx.f32, 2),
 ):
@@ -258,6 +267,7 @@ def pack_local_pairs(
                     qerror = (tx.fma(-quotient, length, value) + error) / length
                     high_part = tx.add_rn(quotient, qerror)
                     packed_points[begin + i, axis] = high_part
+                    packed_points_low[begin + i, axis] = sum_error(quotient, qerror, high_part)
 
 
 @tx.kernel
@@ -268,6 +278,7 @@ def unpack_local_pairs(
     meta: tx.ndarray(tx.i32, 2),
     gap: tx.ndarray(tx.f32, 2),
     surface: tx.ndarray(tx.f32, 3),
+    surface_low: tx.ndarray(tx.f32, 3),
     skin_offset: tx.ndarray(tx.f32, 3),
 ):
     for lane in tx.range(count):
@@ -278,7 +289,14 @@ def unpack_local_pairs(
         if (meta[out, 9] & 4) != 0:
             for side in tx.static_range(2):
                 for axis in tx.static_range(3):
-                    surface[out, side, axis] = (
-                        frames[lane, axis] + surface[out, side, axis] * length
+                    prod = tx.mul_rn(surface[out, side, axis], length)
+                    low = (
+                        tx.fma(surface[out, side, axis], length, -prod)
+                        + surface_low[out, side, axis] * length
                     )
+                    total = tx.add_rn(frames[lane, axis], prod)
+                    low = low + sum_error(frames[lane, axis], prod, total)
+                    hi = tx.add_rn(total, low)
+                    surface[out, side, axis] = hi
+                    surface_low[out, side, axis] = sum_error(total, low, hi)
                     skin_offset[out, side, axis] = skin_offset[out, side, axis] * length

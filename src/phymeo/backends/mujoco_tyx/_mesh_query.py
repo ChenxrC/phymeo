@@ -108,9 +108,11 @@ class MeshQueryWorkspace:
             zero_rotations_low=np.zeros((w, g, 3, 3), np.float32),
         )
         from ._mesh_feature_precision import compile_features, refine_contact_features
+        from ._mesh_witness_precision import refine_witnesses
 
         static.update(compile_features(catalog))
         self._feature_precision = refine_contact_features
+        self._witness_precision = refine_witnesses
         layouts = {name: (value.shape, value.dtype) for name, value in static.items()}
         layouts.update(
             {
@@ -124,11 +126,20 @@ class MeshQueryWorkspace:
                 "pairs": ((p, 2), np.int32),
                 "packed_pairs": ((p, 2), np.int32),
                 "packed_points": ((2 * t * maximum, 3), np.float32),
+                "packed_points_low": ((2 * t * maximum, 3), np.float32),
                 "ids": ((2 * t * maximum,), np.int32),
                 "tags": ((2 * t, 4), np.int32),
                 "frames": ((t, 4), np.float32),
                 "feature_scratch": ((t, 3, 3, 2), np.float32),
                 "feature_corrected": ((p,), np.int32),
+                "feature_axis": ((p, 3, 2), np.float32),
+                "surface_low": ((p, 2, 3), np.float32),
+                "witness_projections": ((t, 2, 16, 2), np.float32),
+                "witness_active": ((t, 2, 16), np.int32),
+                "witness_vectors": ((t, 3, 3), np.float32),
+                "witness_selected": ((t, 2, 4), np.int32),
+                "witness_weights": ((t, 2, 4), np.float32),
+                "witness_receipt": ((p, 3), np.int32),
                 "shape_rotation": ((2 * t, 3, 3), np.float32),
                 "support_points": ((t, 2, 3), np.float32),
                 "vertices": ((t, 64, 9), np.float32),
@@ -319,6 +330,7 @@ class MeshQueryWorkspace:
                             b["tags"],
                             b["ids"],
                             b["packed_points"],
+                            b["packed_points_low"],
                             b["packed_pairs"],
                             b["frames"],
                         )
@@ -396,6 +408,33 @@ class MeshQueryWorkspace:
                             b["normal"],
                             b["feature_scratch"],
                             b["feature_corrected"],
+                            b["feature_axis"],
+                        )
+                        self._launch(
+                            self._witness_precision,
+                            active,
+                            offset,
+                            b["tags"],
+                            b["packed_points"],
+                            b["packed_points_low"],
+                            b["ids"],
+                            b["frames"],
+                            b["feature_axis"],
+                            b["feature_corrected"],
+                            b["witness_projections"],
+                            b["witness_active"],
+                            b["witness_vectors"],
+                            b["witness_selected"],
+                            b["witness_weights"],
+                            b["witness_receipt"],
+                            b["meta"],
+                            b["gap"],
+                            b["normal"],
+                            b["surface"],
+                            b["surface_low"],
+                            b["material_ids"],
+                            b["barycentric"],
+                            b["skin_offset"],
                         )
                         self._launch(
                             k.unpack_local_pairs,
@@ -405,6 +444,7 @@ class MeshQueryWorkspace:
                             b["meta"],
                             b["gap"],
                             b["surface"],
+                            b["surface_low"],
                             b["skin_offset"],
                         )
                 self._runtime.sync()
@@ -425,7 +465,7 @@ class MeshQueryWorkspace:
             )
             raw = {
                 name: self._download(name)[indices]
-                for name in ("pairs", "feature_corrected", *WIRE)
+                for name in ("pairs", "feature_corrected", "witness_receipt", "surface_low", *WIRE)
             }
             raw["world"] = raw["pairs"][:, 0] // self.catalog.ngeom
             raw["geom_ids"] = self.catalog.geom_ids[raw["pairs"] % self.catalog.ngeom]
@@ -452,6 +492,7 @@ class MeshQueryWorkspace:
                     b["gap"],
                     b["normal"],
                     b["surface"],
+                    b["surface_low"],
                 )
                 if self._download("counts")[-1]:
                     raise ValueError("uncertain or invalid geometry cannot enter contact response")
@@ -465,7 +506,14 @@ class MeshQueryWorkspace:
                             "rotations_low": self._poses[3],
                             **{
                                 name: b[name]
-                                for name in ("geom_ids", "body_ids", "counts", "pairs", *WIRE)
+                                for name in (
+                                    "geom_ids",
+                                    "body_ids",
+                                    "counts",
+                                    "pairs",
+                                    "surface_low",
+                                    *WIRE,
+                                )
                             },
                         }
                     )

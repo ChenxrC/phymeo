@@ -83,10 +83,14 @@ def refine_contact_features(
     normal: tx.ndarray(tx.f32, 2),
     scratch: tx.ndarray(tx.f32, 4),
     corrected: tx.ndarray(tx.i32, 1),
+    feature_axis: tx.ndarray(tx.f32, 3),
 ):
     for lane in tx.range(count):
         out = first + lane
         corrected[out] = 0
+        for axis in range(3):
+            feature_axis[out, axis, 0] = 0.0
+            feature_axis[out, axis, 1] = 0.0
         if meta[out, 0] == 1 and gap[out, 0] < 0.0:
             ga = pairs[out, 0] % ngeom
             gb = pairs[out, 1] % ngeom
@@ -275,6 +279,13 @@ def refine_contact_features(
                                     best_y = direction * scratch[lane, 2, 1, 0] / length
                                     best_z = direction * scratch[lane, 2, 2, 0] / length
                                     best_gap = value
+                                    for axis in range(3):
+                                        feature_axis[out, axis, 0] = (
+                                            direction * scratch[lane, 2, axis, 0]
+                                        )
+                                        feature_axis[out, axis, 1] = (
+                                            direction * scratch[lane, 2, axis, 1]
+                                        )
                                     found = 1
                 corrected[out] = 0
                 if found == 1:

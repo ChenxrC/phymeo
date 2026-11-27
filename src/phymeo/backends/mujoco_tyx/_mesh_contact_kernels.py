@@ -4,6 +4,8 @@
 
 import tyx as tx
 
+from ._mesh_query_kernels import sum_error
+
 
 @tx.kernel
 def prepare_boxes(
@@ -45,10 +47,12 @@ def compact_contacts(
     gap: tx.ndarray(tx.f32, 2),
     normal: tx.ndarray(tx.f32, 2),
     surface: tx.ndarray(tx.f32, 3),
+    surface_low: tx.ndarray(tx.f32, 3),
     box_slot_pairs: tx.ndarray(tx.i32, 2),
     raw_boxes: tx.ndarray(tx.f32, 3),
     pairs: tx.ndarray(tx.i32, 2),
     geometry: tx.ndarray(tx.f32, 2),
+    point_low: tx.ndarray(tx.f32, 2),
     counts: tx.ndarray(tx.i32, 1),
     status: tx.ndarray(tx.i32, 1),
 ):
@@ -65,7 +69,15 @@ def compact_contacts(
                     pairs[dst, 1] = b
                     geometry[dst, 0] = gap[src, 0]
                     for k in range(3):
-                        geometry[dst, 1 + k] = 0.5 * (surface[src, 0, k] + surface[src, 1, k])
+                        a_hi = 0.5 * surface[src, 0, k]
+                        b_hi = 0.5 * surface[src, 1, k]
+                        total = tx.add_rn(a_hi, b_hi)
+                        low = sum_error(a_hi, b_hi, total) + 0.5 * (
+                            surface_low[src, 0, k] + surface_low[src, 1, k]
+                        )
+                        hi = tx.add_rn(total, low)
+                        geometry[dst, 1 + k] = hi
+                        point_low[dst, k] = sum_error(total, low, hi)
                         geometry[dst, 4 + k] = normal[src, k]
                 n = n + 1
         for i in range(boxslots):
@@ -76,6 +88,8 @@ def compact_contacts(
                     pairs[dst, 1] = box_slot_pairs[i, 1]
                     for k in range(7):
                         geometry[dst, k] = raw_boxes[w, i, 1 + k]
+                    for k in range(3):
+                        point_low[dst, k] = 0.0
                 n = n + 1
         counts[w] = tx.min(n, cap)
         if n > cap:
@@ -122,6 +136,7 @@ def assemble_contacts(
     params: tx.ndarray(tx.f32, 2),
     pairs: tx.ndarray(tx.i32, 2),
     geometry: tx.ndarray(tx.f32, 2),
+    point_low: tx.ndarray(tx.f32, 2),
     com: tx.ndarray(tx.f32, 3),
     bj: tx.ndarray(tx.f32, 4),
     qvel: tx.ndarray(tx.f32, 2),
@@ -243,13 +258,17 @@ def assemble_contacts(
                         axis2 = (k + 2) % 3
                         va = (
                             bj[w, ba, k, col]
-                            + bj[w, ba, 3 + j, col] * (geometry[r, 1 + axis2] - com[w, ba, axis2])
-                            - bj[w, ba, 3 + axis2, col] * (geometry[r, 1 + j] - com[w, ba, j])
+                            + bj[w, ba, 3 + j, col]
+                            * ((geometry[r, 1 + axis2] - com[w, ba, axis2]) + point_low[r, axis2])
+                            - bj[w, ba, 3 + axis2, col]
+                            * ((geometry[r, 1 + j] - com[w, ba, j]) + point_low[r, j])
                         )
                         vb = (
                             bj[w, bb, k, col]
-                            + bj[w, bb, 3 + j, col] * (geometry[r, 1 + axis2] - com[w, bb, axis2])
-                            - bj[w, bb, 3 + axis2, col] * (geometry[r, 1 + j] - com[w, bb, j])
+                            + bj[w, bb, 3 + j, col]
+                            * ((geometry[r, 1 + axis2] - com[w, bb, axis2]) + point_low[r, axis2])
+                            - bj[w, bb, 3 + axis2, col]
+                            * ((geometry[r, 1 + j] - com[w, bb, j]) + point_low[r, j])
                         )
                         value = value + frame[r, row, k] * (vb - va)
                     jac[r, row, col] = value

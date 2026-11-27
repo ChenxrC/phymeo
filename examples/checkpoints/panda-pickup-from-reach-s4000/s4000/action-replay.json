@@ -1,0 +1,24 @@
+{
+  "schema": "pickup-weight-replay-v1",
+  "student_sha256": "4c8f50d08495017c7bd52715ccbe913e64fde9bbcfffde8ad453914dae8a835a",
+  "device_summary_sha256": "701110e811fbc7b45c1a45038fdeee5cd8ece5adc593f8cf1a27dd3d4185e48e",
+  "worlds": {
+    "0": {
+      "decisions": 160,
+      "scalar_motor_actions": 2560,
+      "max_abs_observation_delta": 5.403663627667754e-16,
+      "max_abs_action_delta": 0.0,
+      "held_substep_commands_match": true,
+      "motor_targets_reconstructed": true
+    },
+    "6": {
+      "decisions": 160,
+      "scalar_motor_actions": 2560,
+      "max_abs_observation_delta": 6.088879400678593e-16,
+      "max_abs_action_delta": 0.0,
+      "held_substep_commands_match": true,
+      "motor_targets_reconstructed": true
+    }
+  },
+  "first_action_range_across_worlds": 0.6116141676902771
+}

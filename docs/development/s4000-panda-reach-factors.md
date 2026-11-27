@@ -1,5 +1,7 @@
 # 双 Panda 接近时的首次碰撞与交叉测试
 
+[下一阶段的双指闭合、抬销与承载验证](s4000-panda-learned-pickup.md)
+
 本批沿用 [上轮发布的状态策略](s4000-panda-guided-reach.md)，考察右指何时首次碰到自由工件，以及偏航和跨轨偏置分别如何影响接近。所有策略仍通过原电机驱动两臂与双指。每次运行 128 次决策、1,024 个物理子步，共 2.048 秒。
 
 **交付结果**　S4000 上的第 127 号候选在五组共 60 个评估起点全部完成驻留，59 个保持到终点，全部轨迹的销漂移均在 10 mm 内。唯一的严格数值审计超差是一项板位移特征。候选单独发布，默认仍为第 126 号策略。[候选权重](../../examples/checkpoints/panda-reach-factors-s4000/candidate.pt) · [配对结果和误差明细](../../examples/checkpoints/panda-reach-factors-s4000/results.json)

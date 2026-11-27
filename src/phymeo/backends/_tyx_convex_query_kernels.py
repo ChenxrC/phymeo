@@ -15,6 +15,7 @@ from ._tyx_convex_support_family import (
     support_ball_depth_width,
     support_ball_normal_bound,
 )
+from .mujoco_tyx._two_lane import add_hi, add_lo, div_hi, div_lo, mul_hi, mul_lo
 
 
 @tx.func
@@ -924,6 +925,7 @@ def query_convex_pairs(
                         # Enumerate the finite simplex's nonempty faces. Gram solves
                         # are at most 3x3; no approximate support point is fabricated.
                         best_square = 1e30
+                        best_square_low = 0.0
                         best_count = 0
                         for mask in range(1, 16):
                             # TYX has no shift operator. simplex_n is at most 4,
@@ -1129,13 +1131,151 @@ def query_convex_pairs(
                                         qx = normal_x * height
                                         qy = normal_y * height
                                         qz = normal_z * height
+                                    qxl = 0.0
+                                    qyl = 0.0
+                                    qzl = 0.0
+                                    if (
+                                        full_surface == 0
+                                        and interior
+                                        and (count_s == 2 or count_s == 3)
+                                    ):
+                                        # The closest face can improve the squared distance by
+                                        # less than one FP32 ULP. Rounded edge/plane projections
+                                        # can reverse that ordering and repeatedly discard a
+                                        # new support point. Retain both lanes through the
+                                        # projection and norm comparison. Existing copy scratch
+                                        # is idle until simplex compaction below.
+                                        for axis in tx.static_range(3):
+                                            v0 = vertices[lane, i0, axis]
+                                            v1 = vertices[lane, i1, axis]
+                                            v2 = vertices[lane, i2, axis]
+                                            simplex_copy[lane, 1, axis] = add_hi(v1, 0.0, -v0, 0.0)
+                                            simplex_copy[lane, 1, axis + 3] = add_lo(
+                                                v1, 0.0, -v0, 0.0
+                                            )
+                                            simplex_copy[lane, 2, axis] = add_hi(v2, 0.0, -v0, 0.0)
+                                            simplex_copy[lane, 2, axis + 3] = add_lo(
+                                                v2, 0.0, -v0, 0.0
+                                            )
+                                        direction_row = 1
+                                        if count_s == 3:
+                                            direction_row = 3
+                                            for axis in tx.static_range(3):
+                                                aj = (axis + 1) % 3
+                                                ak = (axis + 2) % 3
+                                                ph = mul_hi(
+                                                    simplex_copy[lane, 1, aj],
+                                                    simplex_copy[lane, 1, aj + 3],
+                                                    simplex_copy[lane, 2, ak],
+                                                    simplex_copy[lane, 2, ak + 3],
+                                                )
+                                                pl = mul_lo(
+                                                    simplex_copy[lane, 1, aj],
+                                                    simplex_copy[lane, 1, aj + 3],
+                                                    simplex_copy[lane, 2, ak],
+                                                    simplex_copy[lane, 2, ak + 3],
+                                                )
+                                                rh = mul_hi(
+                                                    simplex_copy[lane, 1, ak],
+                                                    simplex_copy[lane, 1, ak + 3],
+                                                    simplex_copy[lane, 2, aj],
+                                                    simplex_copy[lane, 2, aj + 3],
+                                                )
+                                                rl = mul_lo(
+                                                    simplex_copy[lane, 1, ak],
+                                                    simplex_copy[lane, 1, ak + 3],
+                                                    simplex_copy[lane, 2, aj],
+                                                    simplex_copy[lane, 2, aj + 3],
+                                                )
+                                                simplex_copy[lane, 3, axis] = add_hi(
+                                                    ph, pl, -rh, -rl
+                                                )
+                                                simplex_copy[lane, 3, axis + 3] = add_lo(
+                                                    ph, pl, -rh, -rl
+                                                )
+                                        numerator_hi = 0.0
+                                        numerator_low = 0.0
+                                        denominator_hi = 0.0
+                                        denominator_low = 0.0
+                                        for axis in tx.static_range(3):
+                                            eh = simplex_copy[lane, direction_row, axis]
+                                            el = simplex_copy[lane, direction_row, axis + 3]
+                                            ph = mul_hi(vertices[lane, i0, axis], 0.0, eh, el)
+                                            pl = mul_lo(vertices[lane, i0, axis], 0.0, eh, el)
+                                            nh = add_hi(numerator_hi, numerator_low, ph, pl)
+                                            nl = add_lo(numerator_hi, numerator_low, ph, pl)
+                                            numerator_hi = nh
+                                            numerator_low = nl
+                                            ph = mul_hi(eh, el, eh, el)
+                                            pl = mul_lo(eh, el, eh, el)
+                                            nh = add_hi(denominator_hi, denominator_low, ph, pl)
+                                            nl = add_lo(denominator_hi, denominator_low, ph, pl)
+                                            denominator_hi = nh
+                                            denominator_low = nl
+                                        alpha_hi = div_hi(
+                                            numerator_hi,
+                                            numerator_low,
+                                            denominator_hi,
+                                            denominator_low,
+                                        )
+                                        alpha_low = div_lo(
+                                            numerator_hi,
+                                            numerator_low,
+                                            denominator_hi,
+                                            denominator_low,
+                                        )
+                                        for axis in tx.static_range(3):
+                                            ph = mul_hi(
+                                                alpha_hi,
+                                                alpha_low,
+                                                simplex_copy[lane, direction_row, axis],
+                                                simplex_copy[lane, direction_row, axis + 3],
+                                            )
+                                            pl = mul_lo(
+                                                alpha_hi,
+                                                alpha_low,
+                                                simplex_copy[lane, direction_row, axis],
+                                                simplex_copy[lane, direction_row, axis + 3],
+                                            )
+                                            if count_s == 2:
+                                                nh = add_hi(vertices[lane, i0, axis], 0.0, -ph, -pl)
+                                                nl = add_lo(vertices[lane, i0, axis], 0.0, -ph, -pl)
+                                                ph = nh
+                                                pl = nl
+                                            simplex_copy[lane, 0, axis] = ph
+                                            simplex_copy[lane, 0, axis + 3] = pl
+                                        qx = simplex_copy[lane, 0, 0]
+                                        qy = simplex_copy[lane, 0, 1]
+                                        qz = simplex_copy[lane, 0, 2]
+                                        qxl = simplex_copy[lane, 0, 3]
+                                        qyl = simplex_copy[lane, 0, 4]
+                                        qzl = simplex_copy[lane, 0, 5]
                                     square = dot3(qx, qy, qz, qx, qy, qz)
+                                    square_low = 0.0
+                                    if full_surface == 0:
+                                        ph = mul_hi(qx, qxl, qx, qxl)
+                                        pl = mul_lo(qx, qxl, qx, qxl)
+                                        rh = mul_hi(qy, qyl, qy, qyl)
+                                        rl = mul_lo(qy, qyl, qy, qyl)
+                                        nh = add_hi(ph, pl, rh, rl)
+                                        nl = add_lo(ph, pl, rh, rl)
+                                        rh = mul_hi(qz, qzl, qz, qzl)
+                                        rl = mul_lo(qz, qzl, qz, qzl)
+                                        square = add_hi(nh, nl, rh, rl)
+                                        square_low = add_lo(nh, nl, rh, rl)
                                     # A smooth support can improve the tangential
                                     # residual while the dominant normal square
                                     # rounds to the same FP32 value. Compare the
                                     # difference of squares without subtracting
                                     # two already-rounded squared norms on that tie.
                                     better = square < best_square
+                                    if full_surface == 0:
+                                        better = (
+                                            add_hi(
+                                                square, square_low, -best_square, -best_square_low
+                                            )
+                                            < 0.0
+                                        )
                                     if full_surface != 0 and square == best_square:
                                         better = (
                                             dot3(
@@ -1176,6 +1316,7 @@ def query_convex_pairs(
                                             )
                                     if better:
                                         best_square = square
+                                        best_square_low = square_low
                                         best_count = count_s
                                         if trace_slot >= 0:
                                             trace_i[trace_slot, iteration, 7] = count_s

@@ -107,3 +107,13 @@ refinement without an implicit damping diagonal. _rigid_precision_kernels.py
 retains low lanes in COM Jacobians, mass and gravity projection; velocity
 dependent body wrenches retain the FP32 RNE implementation above.
 Neither this component nor its fixed-state tests admit integration/training.
+
+Experimental IMPLICITFAST (_implicitfast.py, _implicitfast_kernels.py):
+velocity derivative, modified mass, semi-implicit advance and quaternion
+integration semantics follow MuJoCo 3.3.7 engine_forward.c,
+engine_util_spatial.c (Copyright 2021 DeepMind Technologies Limited) and
+engine_derivative.c (Copyright 2022 DeepMind Technologies Limited).
+Phymeo implements compensated FP32 kernels, a bounded local quaternion series,
+actual force assembly and a process-local prepare/commit workspace. It does not
+port native sparse factorization, iterative warmstart or persistent recovery.
+The integrator component is not a whole-engine or learning admission.

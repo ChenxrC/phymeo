@@ -473,16 +473,42 @@ def audit_checkpoint(path, output):
                                      controls.reshape(count*repeat, 1, worlds, 16), data["effort_limit"])
             np.testing.assert_array_equal(data["substep_qualified"], every_step["qualified"].reshape(count, repeat, worlds))
         np.testing.assert_allclose(data["reward"], expected_reward, rtol=2e-5, atol=2e-5)
-        advantage = np.empty_like(expected_reward)
-        carry, next_value = np.zeros_like(data["bootstrap"], dtype=float), data["bootstrap"]
+        recorded_reward = data["reward"].astype(np.float64)
+        values = data["value"].astype(np.float64)
+        advantage = np.empty_like(recorded_reward)
+        physical_advantage = np.empty_like(recorded_reward)
+        reward_error_bound = np.empty_like(recorded_reward)
+        next_value = data["bootstrap"].astype(np.float64)
+        carry = np.zeros_like(next_value)
+        physical_carry = np.zeros_like(next_value)
+        error_carry = np.zeros_like(next_value)
         for i in range(len(expected_reward)-1, -1, -1):
-            carry = expected_reward[i]+.99*next_value-data["value"][i]+.99*.95*carry
+            carry = recorded_reward[i]+.99*next_value-values[i]+.99*.95*carry
+            physical_carry = expected_reward[i]+.99*next_value-values[i]+.99*.95*physical_carry
+            # Both recurrences use the same saved critic values and bootstrap.
+            # Propagate measured CPU/GPU reward differences along the actual
+            # horizon, after checking each physical reward independently.
+            error_carry = np.abs(recorded_reward[i]-expected_reward[i])+.99*.95*error_carry
             advantage[i] = carry
-            next_value = data["value"][i]
-        expected_returns = (advantage+data["value"]).ravel()
-        np.testing.assert_allclose(data["returns"], expected_returns, rtol=3e-5, atol=3e-5)
+            physical_advantage[i] = physical_carry
+            reward_error_bound[i] = error_carry
+            next_value = values[i]
+        expected_returns = advantage+values
+        gpu_returns = data["returns"].reshape(expected_returns.shape)
+        np.testing.assert_allclose(gpu_returns, expected_returns, rtol=3e-5, atol=3e-5)
+        physical_return_error = np.abs(gpu_returns-(physical_advantage+values))
+        return_tolerance = 3e-5+3e-5*np.abs(expected_returns)
+        if np.any(physical_return_error > reward_error_bound+return_tolerance):
+            raise ValueError("physical return error exceeds propagated reward differences and GAE tolerance")
         flat = advantage.ravel()
         np.testing.assert_allclose(data["advantages"], (flat-flat.mean())/(flat.std()+1e-8), rtol=5e-5, atol=5e-5)
+        physical_flat = physical_advantage.ravel()
+        np.testing.assert_allclose(data["advantages"], (physical_flat-physical_flat.mean())/(physical_flat.std()+1e-8),
+                                   rtol=5e-5, atol=5e-5)
+        replay_errors = dict(max_successor_reward=float(np.max(np.abs(recorded_reward-expected_reward))),
+                             max_recorded_reward_return=float(np.max(np.abs(gpu_returns-expected_returns))),
+                             max_physical_return=float(physical_return_error.max()),
+                             max_propagated_reward_difference=float(reward_error_bound.max()))
         if not np.isfinite(data["optimizer_metrics"]).all() or not np.any(data["optimizer_metrics"][:, 3] > 0.):
             raise ValueError("no finite nonzero optimizer gradient evidence")
     probe = checkpoint["action_probe"]
@@ -500,7 +526,7 @@ def audit_checkpoint(path, output):
     if any(not torch.equal(checkpoint["actor"][k], probe["after_actor"][k]) for k in checkpoint["actor"]):
         raise ValueError("checkpoint actor differs from the post-update probe")
     result = dict(schema="panda-state-ppo-cpu-audit-v1", checkpoint_sha256=_sha(path),
-                  comparisons=results, successor_reward_and_gae_verified=True,
+                  comparisons=results, successor_reward_and_gae_verified=True, replay_errors=replay_errors,
                   scope="CPU forward/weights and saved successor reward/GAE; no CPU physical re-simulation")
     _write(output, result)
     return result

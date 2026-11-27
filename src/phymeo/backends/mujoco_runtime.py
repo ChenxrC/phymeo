@@ -20,7 +20,7 @@ https://github.com/google-deepmind/mujoco_warp/blob/v0.0.2/pyproject.toml
 """
 
 import copy
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from importlib import import_module
 from numbers import Integral
@@ -154,7 +154,7 @@ class MuJoCoStepReceipt:
     output_time: float
     h: float
     control: MuJoCoControl
-    contacts: tuple
+    contacts: Sequence
     qacc: np.ndarray
     qfrc_actuator: np.ndarray
     qfrc_constraint: np.ndarray
@@ -188,7 +188,7 @@ class MuJoCoState:
     xfrc_applied: np.ndarray
     sensordata: np.ndarray
     energy: np.ndarray
-    contacts: tuple
+    contacts: Sequence
     contact_time: float
     held_control: MuJoCoControl
     last_step: MuJoCoStepReceipt | None
@@ -245,10 +245,17 @@ class MuJoCoRuntime:
     post-mj_step constraint readings separately. Integrator-dependent stage
     time is intentionally unspecified (None), with the input/output interval
     retained. Reading snapshots never modifies the next step's warm start.
+
+    CPU contact_storage='columns' opts into leased read-only numeric slabs.
+    Default 'records' retains the tuple API. A bounded recorder should consume
+    .arrays directly and retain views until writing completes; individual row
+    access is lazy. Pool capacity errors follow the existing publication rules.
     """
 
     def __new__(cls, compilation, *, mode="cpu", implementation=None, **options):
         if cls is MuJoCoRuntime:
+            if mode != "cpu" and options.get("contact_storage", "records") != "records":
+                raise ValueError("pooled contact columns are currently CPU-only")
             if mode in {"cuda", "interpret", "musa"}:
                 selected = "tyx" if implementation is None else implementation
                 if selected == "tyx":
@@ -267,7 +274,16 @@ class MuJoCoRuntime:
         return object.__new__(cls)
 
     def __init__(
-        self, compilation, *, world_keys=(0,), initial_states=None, mode="cpu", implementation=None
+        self,
+        compilation,
+        *,
+        world_keys=(0,),
+        initial_states=None,
+        mode="cpu",
+        implementation=None,
+        contact_storage="records",
+        contact_pool_bytes=128 * 1024**2,
+        contact_block_rows=4096,
     ):
         if mode != "cpu" or implementation not in (None, "native"):
             raise NotImplementedError(
@@ -281,6 +297,26 @@ class MuJoCoRuntime:
         if not isinstance(model, mj.MjModel):
             raise TypeError("fresh_native_model must return a native MuJoCo MjModel")
         self._initialize(compilation, model, world_keys, initial_states, mj)
+        self._configure_contacts(contact_storage, contact_pool_bytes, contact_block_rows)
+
+    def _configure_contacts(self, storage, max_bytes, block_rows):
+        if storage not in ("records", "columns"):
+            raise ValueError("contact_storage must be 'records' or 'columns'")
+        if storage == "columns":
+            from .mujoco_contact_pool import MuJoCoContactPool
+
+            self._contact_pool = MuJoCoContactPool(max_bytes=max_bytes, block_rows=block_rows)
+
+    def _capture_contacts(self, data):
+        if self._contact_pool is not None:
+            return self._contact_pool.capture_native(self._mj, self._model, data)
+        return _contacts(self._mj, self._model, data)
+
+    @property
+    def contact_pool_stats(self):
+        """Persistent numeric slab accounting, or None for the default record API."""
+        with self._lock:
+            return None if self._contact_pool is None else self._contact_pool.stats
 
     @classmethod
     def from_source(cls, path, *, world_keys=(0,), initial_states=None, mode="cpu", **options):
@@ -312,6 +348,7 @@ class MuJoCoRuntime:
 
     def _initialize(self, compilation, model, keys, initial_states, mj):
         self._lock = RLock()
+        self._contact_pool = None
         self._closed = False
         self._poisoned = False
         self._compilation = compilation
@@ -517,7 +554,7 @@ class MuJoCoRuntime:
                         output_time=float(candidate.time),
                         h=self._timestep,
                         control=control,
-                        contacts=_contacts(self._mj, self._model, candidate),
+                        contacts=self._capture_contacts(candidate),
                         qacc=_frozen(candidate.qacc),
                         qfrc_actuator=_frozen(candidate.qfrc_actuator),
                         qfrc_constraint=_frozen(candidate.qfrc_constraint),
@@ -569,7 +606,7 @@ class MuJoCoRuntime:
                     xfrc_applied=_frozen(committed.xfrc_applied),
                     sensordata=_frozen(endpoint.sensordata),
                     energy=_frozen(endpoint.energy),
-                    contacts=_contacts(self._mj, self._model, endpoint),
+                    contacts=self._capture_contacts(endpoint),
                     contact_time=float(committed.time),
                     held_control=self._controls[key],
                     last_step=self._receipts[key],
@@ -611,6 +648,10 @@ class MuJoCoRuntime:
                 {key: self._initial[key] for key in selected},
                 self._mj,
             )
+            if self._contact_pool is not None:
+                clone._configure_contacts(
+                    "columns", self._contact_pool.max_bytes, self._contact_pool.block_rows
+                )
             signature = self._mj.mjtState.mjSTATE_INTEGRATION
             for key in selected:
                 state = np.empty(self._mj.mj_stateSize(self._model, signature), dtype=np.float64)
@@ -630,6 +671,8 @@ class MuJoCoRuntime:
             self._initial.clear()
             self._controls.clear()
             self._receipts.clear()
+            if self._contact_pool is not None:
+                self._contact_pool.close()
             self._model = None
             self._compilation = None
 

@@ -118,9 +118,103 @@ Do not mechanically remove `deepcopy` from optimizer rollback, checkpoints, or
 mutable configuration isolation. `SuccessHistory` serialization, for example,
 primarily handles scalar and tuple fields and has different costs.
 
-The runtime still materializes individual contacts and freezes their arrays;
+The default runtime path still materializes individual contacts and freezes their arrays;
 `step` and `snapshot` still copy native state and preserve distinct contact
 phases. These are remaining performance costs, not newly proven faults. The
 captured immutable source array and per-instance runtime locks do not establish
 a shared-mutable-array race. Similar access-violation codes in other backends
 must not be treated as evidence of the same root cause.
+
+## Direct native columns and reusable storage (CPU, opt-in)
+
+The default `contact_storage="records"` behavior above remains unchanged. For a
+high-frequency recorder, enable native column capture instead:
+
+```python
+from phymeo.backends.mujoco_runtime import MuJoCoRuntime
+from phymeo.backends.mujoco_contact_pool import retained_contact_bytes
+
+runtime = MuJoCoRuntime(
+    compilation,
+    world_keys=(0,),
+    contact_storage="columns",
+    contact_pool_bytes=128 * 1024**2,
+    contact_block_rows=4096,
+)
+runtime.step(runtime.timestep)
+state = runtime.snapshot()[0]
+solver, endpoint = state.last_step.contacts, state.contacts
+chunks = (solver, endpoint)
+queue_charge = retained_contact_bytes(chunks)
+# Submit each chunk's .arrays directly to a bounded writer, together with
+# world/tick, input/output times, and each original contact phase label.
+# Retain chunks/arrays until the writer is done. Do not concatenate them merely
+# to produce a single archive; independent .npy members can represent chunks.
+```
+
+This path copies batched native fields straight into reusable column slabs. It
+does not first construct one Python contact and eight frozen arrays per row.
+`mj_contactForce` still fills the actual six-component wrench for every contact.
+No native contact pointer is exported. All 19 fields, int64/float64 representation,
+inactive Hessian bit patterns, finite-array checks, and solver/endpoint semantics
+are retained. Scalar validation remains the caller's responsibility, as in the
+default runtime. Step/snapshot still copy native `MjData`; this change does not
+remove integration isolation or change the solver, controls, or physics.
+
+Each published array is read-only. NumPy retains an exporter that owns a slab
+lease: slices, `np.asarray`, ndarray views and `memoryview` keep it alive even
+after the packet is discarded. A slab is reusable only after every such export
+is released. Captures use nonoverlapping rows within a slab. Reset and close do
+not invalidate retained records; clones get independent pools. Private storage
+and exporters must not be modified. This is an ownership contract, not protection
+against deliberate private-attribute or raw-pointer writes.
+
+`packet[i]` lazily reconstructs a typed contact for compatibility. Hot code should
+read columns, for example `packet.arrays["distance"]`, rather than iterate rows.
+`packet.detach()` makes independent immutable bytes-backed columns when a record
+must outlive the pool's practical retention budget; it deliberately copies.
+
+The pool cap covers allocated numeric slab capacity, including pinned and free
+slabs. It is not an RSS limit; native state, Python objects, short-lived vector
+validation/index arrays and compression buffers are separate. The allocator
+grows on demand within this cap, reuses released slabs, and never truncates rows.
+`retained_contact_bytes(chunks)` counts unique pinned allocations including unused
+slab rows, suitable for conservative queue admission. Charge non-contact arrays
+and metadata as well. A full pool raises `ContactPoolCapacityError`; in a runtime
+step this follows the existing `PhysicsStepFailure` publication contract.
+Bound the producer's retained chunk window and apply writer backpressure before
+starting more work. There is no automatic replay or eviction of live records.
+
+The new CPU mode is explicit; GPU adapters are not silently redirected or
+qualified by these checks. Avoid recursively serializing the packet with
+`dataclasses.asdict`: consume its numeric arrays and a separate metadata envelope.
+
+### Direct-column validation
+
+22 new ownership/schema/publication checks and 39 related CPU/runtime/export
+checks passed. The one previously documented baseline exception-type test was
+excluded; no GPU qualification is claimed.
+
+One paired diagnostic compared default records followed by `contacts_to_columns`
+with direct pooled columns. Both used the same original M16 scene, eight worlds,
+four threads, four zero-action decisions, the same chunk archive writer, and
+1,280 world physics steps per variant. Neither sampled a policy or updated PPO.
+Each archive contained 1,651,868 contacts. All 19 fields, phase labels, state
+records and physical decision results matched byte-for-byte across variants;
+both supervised processes exited normally without an access violation.
+
+The sum of four batch **wall** intervals (physics, capture, packing and durable
+writer commit, excluding subsequent verification reads) was 211.79 s for records
+and 36.30 s for pooled columns: 5.83x on this single fixed diagnostic. Including
+initialization, verification reads and closure, elapsed time was 250.24 s versus
+63.66 s. These are not statistical benchmarks, policy-training throughput, or
+evidence that the original native fault is repaired. Both used the Python debug
+allocator and the same compression settings.
+
+Pools allocated 160 slabs across eight worlds and reused released slabs during
+the run. Per-world peak numeric capacity was about 44.1–54.5 MiB against a
+128 MiB cap. Writer admission peaked at two records / 109.5 MiB against its
+two-record / 256 MiB limits. The writer charge counts pinned slab capacity,
+including unused rows, and is not total process memory. Reusable capacity costs
+some headroom in exchange for avoiding repeated payload allocation. Short
+zero-action diagnostics do not establish random-policy or long-run stability.

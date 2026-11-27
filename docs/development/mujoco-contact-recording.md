@@ -86,3 +86,41 @@ before claiming long-running stability or end-to-end training speedup.
 
 Run the new checks with `pytest tests/test_mujoco_recording.py`. The native
 lifetime check requires the pinned optional MuJoCo dependency.
+
+## Integration validation and commonality
+
+A subsequent fixed four-worker recording check processed 557,278 captured contact
+rows across eight worlds. The new exporter, a bounded archival writer, and the
+reader preserved every field byte-for-byte. The legacy `asdict` path also completed
+that check without an access violation. Thus this is not a deterministic crash
+reproduction or proof of a native-memory repair.
+
+For this schema, the legacy conversion makes eight additional ndarray deep-copy
+calls (544 array payload bytes) per contact. That implies 4,458,224 such calls in
+the fixed workload. The exporter bypasses recursive deep-copy dispatch; it still
+allocates and copies its output columns. Export-only thread timings are not
+end-to-end policy-training throughput.
+
+One separate native diagnostic used the original 1,939-geometry / 1,930-mesh M16
+scene, eight independent worlds, four worker threads, and four fixed zero-action
+decisions: 1,280 world integration steps, or 0.16 simulated seconds per world.
+All 1,651,868 captured contacts retained their solver/endpoint phase and all 19
+fields through archival readback. No access violation or physical limit failure
+occurred, and the child exited normally under first-chance fault supervision.
+The diagnostic used the CPython debug allocator, not full native page-heap or
+ASAN instrumentation. It neither sampled a policy nor performed PPO, replayed
+the failed policy trajectory, or established long-run reliability. Project scene
+fixtures and detailed run evidence are maintained outside this repository.
+
+The general issue is repeated serialization of already detached array-backed
+records. Lower-volume control receipts can exhibit the same copying pattern.
+Do not mechanically remove `deepcopy` from optimizer rollback, checkpoints, or
+mutable configuration isolation. `SuccessHistory` serialization, for example,
+primarily handles scalar and tuple fields and has different costs.
+
+The runtime still materializes individual contacts and freezes their arrays;
+`step` and `snapshot` still copy native state and preserve distinct contact
+phases. These are remaining performance costs, not newly proven faults. The
+captured immutable source array and per-instance runtime locks do not establish
+a shared-mutable-array race. Similar access-violation codes in other backends
+must not be treated as evidence of the same root cause.

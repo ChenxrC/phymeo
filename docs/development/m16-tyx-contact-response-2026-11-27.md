@@ -33,6 +33,12 @@ support/SAT check is 8.7446e-8 m. All original native contact pairs remain in
 the candidate set. This is a finite saved-pose result, not arbitrary-trajectory
 coverage or a proof that all convex pairs converge.
 
+The raw `mj_geomDistance` comparison still contains 1,584 differences above
+5 micrometres, including native zero-return cases with independently certified
+positive separation. They are retained, not relabelled as native agreement.
+The certification uses original-vertex geometric bounds and witnesses; it is
+not yet proof of equivalent native contact-manifold generation.
+
 `MeshQueryResult.device_view()` lends existing GPU arrays in a context manager.
 It validates publication and witnesses before lending; it refuses unresolved
 geometry, expired results, overwrites and close while borrowed. Only the small

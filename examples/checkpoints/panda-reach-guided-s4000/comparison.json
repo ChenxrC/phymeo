@@ -1,0 +1,2616 @@
+{
+  "schema": "s4000-guided-reach-v1",
+  "evidence_archive_sha256": "7a6043eb639f906a0200e37ae4d3652429cfad76d2e82fdabbced781ca0a2f4d",
+  "blind_reset_sha256": "b2882081ca00cecd041ba8a3e795b8dbde8d1492ce2b227824592ac5306c3ced",
+  "fresh_reset_sha256": "fd480a5aa4b5826eae8dba000fd67468b7885955da25561ee5ec69b77616803c",
+  "routes": {
+    "direct": {
+      "status": "completed",
+      "parent_checkpoint_sha256": "518d0d1dfb472584832272edecaadceafc72b7bc8a1e503baa985c0d0b607635",
+      "training_reset_sha256": "c6484c7f3d86e5deb067505c2bf3635260b7c4ee44b6d85386bd3328f889041c",
+      "training": [
+        {
+          "mode": "teacher",
+          "dwell_success": 1,
+          "final_qualified": 0,
+          "final_distance_mean_m": 0.48405962720668566,
+          "peak_final_pin_drift_m": 0.6738553643226624,
+          "worlds_with_final_drift_gt_10mm": 11,
+          "final_waypoint_stage_by_world": null
+        },
+        {
+          "mode": "mixed",
+          "dwell_success": 0,
+          "final_qualified": 0,
+          "final_distance_mean_m": 0.5324042684709033,
+          "peak_final_pin_drift_m": 0.6536186933517456,
+          "worlds_with_final_drift_gt_10mm": 12,
+          "final_waypoint_stage_by_world": null
+        },
+        {
+          "mode": "learner_labeled",
+          "dwell_success": 2,
+          "final_qualified": 0,
+          "final_distance_mean_m": 0.44535278746237356,
+          "peak_final_pin_drift_m": 0.6739993691444397,
+          "worlds_with_final_drift_gt_10mm": 10,
+          "final_waypoint_stage_by_world": null
+        },
+        {
+          "mode": "learner_final",
+          "dwell_success": 1,
+          "final_qualified": 0,
+          "final_distance_mean_m": 0.46138133977850276,
+          "peak_final_pin_drift_m": 0.6625843048095703,
+          "worlds_with_final_drift_gt_10mm": 10,
+          "final_waypoint_stage_by_world": null
+        }
+      ],
+      "evaluation": {
+        "blind": {
+          "trace_sha256": "1922e2b3ec55bc06d0db0177672ad7c6466cb2176fcffd15df5efc4ec34ba982",
+          "baseline_sha256": "518d0d1dfb472584832272edecaadceafc72b7bc8a1e503baa985c0d0b607635",
+          "roles": {
+            "before": {
+              "success": 0,
+              "final_pass": 0,
+              "mean_return": 72.51224517822266,
+              "mean_final_distance_m": 0.09291493644485559,
+              "mean_closest_distance_m": 0.06781185572314284,
+              "mean_final_angle_rad": 0.4406118754168982,
+              "mean_peak_pin_drift_m": 6.230989593323989E-05,
+              "distance_pass_worlds": 0,
+              "final_pin_drift_pass_worlds": 12,
+              "mean_final_pin_drift_m": 1.0529533756046272E-06,
+              "median_final_distance_m": 0.09185477450031393,
+              "successful_without_excess_pin_motion": 0,
+              "worlds_with_any_drift_gt_10mm": 0,
+              "max_pin_drift_any_world_m": 6.425382650641911E-05,
+              "per_world": [
+                {
+                  "world": 0,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.1266419365488056,
+                  "peak_pin_drift_m": 6.0335990829300806E-05
+                },
+                {
+                  "world": 1,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.12504448827574113,
+                  "peak_pin_drift_m": 6.0335990829300806E-05
+                },
+                {
+                  "world": 2,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.12454341220089521,
+                  "peak_pin_drift_m": 6.0335990829300806E-05
+                },
+                {
+                  "world": 3,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.10923624091955962,
+                  "peak_pin_drift_m": 6.425382650641911E-05
+                },
+                {
+                  "world": 4,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.11077645905979491,
+                  "peak_pin_drift_m": 6.425382650641911E-05
+                },
+                {
+                  "world": 5,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.1105874067028294,
+                  "peak_pin_drift_m": 6.425382650641911E-05
+                },
+                {
+                  "world": 6,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.07346651597317663,
+                  "peak_pin_drift_m": 6.425382650641911E-05
+                },
+                {
+                  "world": 7,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.071996489095308,
+                  "peak_pin_drift_m": 6.425382650641911E-05
+                },
+                {
+                  "world": 8,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.07447330808106824,
+                  "peak_pin_drift_m": 6.425382650641911E-05
+                },
+                {
+                  "world": 9,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.06252123237083516,
+                  "peak_pin_drift_m": 6.0395939890820535E-05
+                },
+                {
+                  "world": 10,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.06235478082775236,
+                  "peak_pin_drift_m": 6.0395939890820535E-05
+                },
+                {
+                  "world": 11,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.06333696728250059,
+                  "peak_pin_drift_m": 6.0395939890820535E-05
+                }
+              ]
+            },
+            "after": {
+              "success": 2,
+              "final_pass": 0,
+              "mean_return": -11891.7578125,
+              "mean_final_distance_m": 0.3673591133493943,
+              "mean_closest_distance_m": 0.034088160587974876,
+              "mean_final_angle_rad": 1.5478680887643883,
+              "mean_peak_pin_drift_m": 0.3247049848569487,
+              "distance_pass_worlds": 5,
+              "final_pin_drift_pass_worlds": 4,
+              "mean_final_pin_drift_m": 0.32339225664904564,
+              "median_final_distance_m": 0.35731259114681135,
+              "successful_without_excess_pin_motion": 2,
+              "worlds_with_any_drift_gt_10mm": 8,
+              "max_pin_drift_any_world_m": 0.6868900568861683,
+              "per_world": [
+                {
+                  "world": 0,
+                  "dwell_s": 0.17200000000000001,
+                  "final_pass": false,
+                  "final_distance_m": 0.023542230157850497,
+                  "peak_pin_drift_m": 0.005766520824210934
+                },
+                {
+                  "world": 1,
+                  "dwell_s": 0.14400000000000002,
+                  "final_pass": false,
+                  "final_distance_m": 0.04325456951130859,
+                  "peak_pin_drift_m": 6.0335990829300806E-05
+                },
+                {
+                  "world": 2,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.08689543132407543,
+                  "peak_pin_drift_m": 0.01124733863755699
+                },
+                {
+                  "world": 3,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.6616697013219497,
+                  "peak_pin_drift_m": 0.6263434735777349
+                },
+                {
+                  "world": 4,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.6690289353479617,
+                  "peak_pin_drift_m": 0.6281934305361422
+                },
+                {
+                  "world": 5,
+                  "dwell_s": 0.036000000000000004,
+                  "final_pass": false,
+                  "final_distance_m": 0.04386807864207577,
+                  "peak_pin_drift_m": 6.425382650641911E-05
+                },
+                {
+                  "world": 6,
+                  "dwell_s": 0.062,
+                  "final_pass": false,
+                  "final_distance_m": 0.03748894377289417,
+                  "peak_pin_drift_m": 0.007043528215944156
+                },
+                {
+                  "world": 7,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.8314601105884174,
+                  "peak_pin_drift_m": 0.6253899234101367
+                },
+                {
+                  "world": 8,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.04858863508799243,
+                  "peak_pin_drift_m": 0.013738193306901866
+                },
+                {
+                  "world": 9,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.6881039405796692,
+                  "peak_pin_drift_m": 0.6868900568861683
+                },
+                {
+                  "world": 10,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.6466790328889892,
+                  "peak_pin_drift_m": 0.6503073950295588
+                },
+                {
+                  "world": 11,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.6277297509695473,
+                  "peak_pin_drift_m": 0.6414153680416932
+                }
+              ]
+            },
+            "motors_off": {
+              "success": 0,
+              "final_pass": 0,
+              "mean_return": -97063.21875,
+              "mean_final_distance_m": 0.7306862722839383,
+              "mean_closest_distance_m": 0.14198105988260354,
+              "mean_final_angle_rad": 2.3252767695052854,
+              "mean_peak_pin_drift_m": 6.230989593323989E-05,
+              "distance_pass_worlds": 0,
+              "final_pin_drift_pass_worlds": 12,
+              "mean_final_pin_drift_m": 1.0531713704012779E-06,
+              "median_final_distance_m": 0.7361138922121064,
+              "successful_without_excess_pin_motion": 0,
+              "worlds_with_any_drift_gt_10mm": 0,
+              "max_pin_drift_any_world_m": 6.425382650641911E-05,
+              "per_world": [
+                {
+                  "world": 0,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.6720000202266065,
+                  "peak_pin_drift_m": 6.0335990829300806E-05
+                },
+                {
+                  "world": 1,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.7262938160595587,
+                  "peak_pin_drift_m": 6.0335990829300806E-05
+                },
+                {
+                  "world": 2,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.7216351358486208,
+                  "peak_pin_drift_m": 6.0335990829300806E-05
+                },
+                {
+                  "world": 3,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.7871691269774336,
+                  "peak_pin_drift_m": 6.425382650641911E-05
+                },
+                {
+                  "world": 4,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.7122973640468342,
+                  "peak_pin_drift_m": 6.425382650641911E-05
+                },
+                {
+                  "world": 5,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.7877981981348304,
+                  "peak_pin_drift_m": 6.425382650641911E-05
+                },
+                {
+                  "world": 6,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.7498744254197374,
+                  "peak_pin_drift_m": 6.425382650641911E-05
+                },
+                {
+                  "world": 7,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.8042698942390007,
+                  "peak_pin_drift_m": 6.425382650641911E-05
+                },
+                {
+                  "world": 8,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.747878624610699,
+                  "peak_pin_drift_m": 6.425382650641911E-05
+                },
+                {
+                  "world": 9,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.6614403396543342,
+                  "peak_pin_drift_m": 6.0395939890820535E-05
+                },
+                {
+                  "world": 10,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.7459339683646541,
+                  "peak_pin_drift_m": 6.0395939890820535E-05
+                },
+                {
+                  "world": 11,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.6516443538249514,
+                  "peak_pin_drift_m": 6.0395939890820535E-05
+                }
+              ]
+            }
+          }
+        },
+        "regression": {
+          "trace_sha256": "096787bcbd07145098f8d86d70dcee003f757844303b264e0f0185b3da8071bd",
+          "baseline_sha256": "518d0d1dfb472584832272edecaadceafc72b7bc8a1e503baa985c0d0b607635",
+          "roles": {
+            "before": {
+              "success": 0,
+              "final_pass": 0,
+              "mean_return": 72.08610534667969,
+              "mean_final_distance_m": 0.09318942218999349,
+              "mean_closest_distance_m": 0.0681990453953241,
+              "mean_final_angle_rad": 0.4354144275246005,
+              "mean_peak_pin_drift_m": 6.195226905242874E-05,
+              "distance_pass_worlds": 0,
+              "final_pin_drift_pass_worlds": 12,
+              "mean_final_pin_drift_m": 1.32567500863055E-06,
+              "median_final_distance_m": 0.09730323808884823,
+              "successful_without_excess_pin_motion": 0,
+              "worlds_with_any_drift_gt_10mm": 0,
+              "max_pin_drift_any_world_m": 6.312131881713867E-05,
+              "per_world": [
+                {
+                  "world": 0,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.12400171268051202,
+                  "peak_pin_drift_m": 6.234658842832259E-05
+                },
+                {
+                  "world": 1,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.11436215463421248,
+                  "peak_pin_drift_m": 6.312131881713867E-05
+                },
+                {
+                  "world": 2,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.08084527420968379,
+                  "peak_pin_drift_m": 6.027607193643117E-05
+                },
+                {
+                  "world": 3,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.05554772231729014,
+                  "peak_pin_drift_m": 6.206509702782251E-05
+                },
+                {
+                  "world": 4,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.12034108833645905,
+                  "peak_pin_drift_m": 6.234658842832259E-05
+                },
+                {
+                  "world": 5,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.1176179466530175,
+                  "peak_pin_drift_m": 6.312131881713867E-05
+                },
+                {
+                  "world": 6,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.0805675204328458,
+                  "peak_pin_drift_m": 6.027607193643117E-05
+                },
+                {
+                  "world": 7,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.05427612194252873,
+                  "peak_pin_drift_m": 6.206509702782251E-05
+                },
+                {
+                  "world": 8,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.12166080800993301,
+                  "peak_pin_drift_m": 6.234658842832259E-05
+                },
+                {
+                  "world": 9,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.11376120196801268,
+                  "peak_pin_drift_m": 6.312131881713867E-05
+                },
+                {
+                  "world": 10,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.07989186682567095,
+                  "peak_pin_drift_m": 6.027607193643117E-05
+                },
+                {
+                  "world": 11,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.05539964826975559,
+                  "peak_pin_drift_m": 6.206509702782251E-05
+                }
+              ]
+            },
+            "after": {
+              "success": 3,
+              "final_pass": 0,
+              "mean_return": -14482.1796875,
+              "mean_final_distance_m": 0.3908998392683849,
+              "mean_closest_distance_m": 0.04052758310606112,
+              "mean_final_angle_rad": 1.3205697274517865,
+              "mean_peak_pin_drift_m": 0.3772050031049416,
+              "distance_pass_worlds": 4,
+              "final_pin_drift_pass_worlds": 4,
+              "mean_final_pin_drift_m": 0.3735815752518614,
+              "median_final_distance_m": 0.6193616765106909,
+              "successful_without_excess_pin_motion": 3,
+              "worlds_with_any_drift_gt_10mm": 8,
+              "max_pin_drift_any_world_m": 0.6593748537939608,
+              "per_world": [
+                {
+                  "world": 0,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.05653903304423257,
+                  "peak_pin_drift_m": 0.02490669799509656
+                },
+                {
+                  "world": 1,
+                  "dwell_s": 0.258,
+                  "final_pass": false,
+                  "final_distance_m": 0.05801503790309379,
+                  "peak_pin_drift_m": 0.0010120538886456186
+                },
+                {
+                  "world": 2,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.655496822886348,
+                  "peak_pin_drift_m": 0.6593748537939608
+                },
+                {
+                  "world": 3,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.6303863898197453,
+                  "peak_pin_drift_m": 0.636346123671412
+                },
+                {
+                  "world": 4,
+                  "dwell_s": 0.326,
+                  "final_pass": false,
+                  "final_distance_m": 0.031382353731820155,
+                  "peak_pin_drift_m": 0.007065341582770378
+                },
+                {
+                  "world": 5,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.6105491655257591,
+                  "peak_pin_drift_m": 0.6196719734971304
+                },
+                {
+                  "world": 6,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.632876385487371,
+                  "peak_pin_drift_m": 0.6479609013841912
+                },
+                {
+                  "world": 7,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.6394324981122047,
+                  "peak_pin_drift_m": 0.6418009567397055
+                },
+                {
+                  "world": 8,
+                  "dwell_s": 0.524,
+                  "final_pass": false,
+                  "final_distance_m": 0.0330615793004,
+                  "peak_pin_drift_m": 0.00011004200055884483
+                },
+                {
+                  "world": 9,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.046088157029614496,
+                  "peak_pin_drift_m": 0.004555190417587318
+                },
+                {
+                  "world": 10,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.6687964608844074,
+                  "peak_pin_drift_m": 0.6449630791652353
+                },
+                {
+                  "world": 11,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.6281741874956225,
+                  "peak_pin_drift_m": 0.638692823123005
+                }
+              ]
+            },
+            "motors_off": {
+              "success": 0,
+              "final_pass": 0,
+              "mean_return": -99016.1875,
+              "mean_final_distance_m": 0.6865663025497183,
+              "mean_closest_distance_m": 0.14736023067164256,
+              "mean_final_angle_rad": 2.578292077645816,
+              "mean_peak_pin_drift_m": 6.195226905242874E-05,
+              "distance_pass_worlds": 0,
+              "final_pin_drift_pass_worlds": 12,
+              "mean_final_pin_drift_m": 1.3361468677717754E-06,
+              "median_final_distance_m": 0.6672798623963446,
+              "successful_without_excess_pin_motion": 0,
+              "worlds_with_any_drift_gt_10mm": 0,
+              "max_pin_drift_any_world_m": 6.312131881713867E-05,
+              "per_world": [
+                {
+                  "world": 0,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.7184970244213378,
+                  "peak_pin_drift_m": 6.234658842832259E-05
+                },
+                {
+                  "world": 1,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.7230717668043302,
+                  "peak_pin_drift_m": 6.312131881713867E-05
+                },
+                {
+                  "world": 2,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.6635007421271181,
+                  "peak_pin_drift_m": 6.027607193643117E-05
+                },
+                {
+                  "world": 3,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.6576736917380389,
+                  "peak_pin_drift_m": 6.206509702782251E-05
+                },
+                {
+                  "world": 4,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.6559136455008094,
+                  "peak_pin_drift_m": 6.234658842832259E-05
+                },
+                {
+                  "world": 5,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.7342512475532286,
+                  "peak_pin_drift_m": 6.312131881713867E-05
+                },
+                {
+                  "world": 6,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.6554437944970722,
+                  "peak_pin_drift_m": 6.027607193643117E-05
+                },
+                {
+                  "world": 7,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.6710589826655712,
+                  "peak_pin_drift_m": 6.206509702782251E-05
+                },
+                {
+                  "world": 8,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.6566557454347055,
+                  "peak_pin_drift_m": 6.234658842832259E-05
+                },
+                {
+                  "world": 9,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.748660325128809,
+                  "peak_pin_drift_m": 6.312131881713867E-05
+                },
+                {
+                  "world": 10,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.6622594036009447,
+                  "peak_pin_drift_m": 6.027607193643117E-05
+                },
+                {
+                  "world": 11,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.6918092611246538,
+                  "peak_pin_drift_m": 6.206509702782251E-05
+                }
+              ]
+            }
+          }
+        }
+      },
+      "learner_device": {
+        "actor": [
+          "musa:0"
+        ],
+        "critic": [
+          "musa:0"
+        ],
+        "rollout": "musa:0",
+        "gae": "musa:0",
+        "adam_moments": [
+          "musa:0"
+        ],
+        "adam_counters": [
+          "cpu"
+        ]
+      },
+      "distill_source_sha256": "84e1ec2520e3459dbf9c9982566f914f3b1dc8e6cba686fe3d5198b09ece5b66",
+      "teacher_source_sha256": "b82ac00fed47bf1fd7ed5fd0c2a1fa1462d564c0157748db165ff0452c92d28f",
+      "model_sha256": "130264683cc037ed3c2b36a01d2ec2fa1a4d8e21742fa280775cdb639ad50663",
+      "transitions_per_update": 1536,
+      "training_ppo_physical_steps_per_world": 1416,
+      "warm_start": {
+        "seed_sha256": "568f56ed16544d8f0d029dc83a29af67e4d075cb33690a216804eed993bd66f3",
+        "parent_checkpoint_sha256": "518d0d1dfb472584832272edecaadceafc72b7bc8a1e503baa985c0d0b607635",
+        "optimizer": "fresh Adam for PPO",
+        "critic": "restored from parent",
+        "parent_update": 125
+      },
+      "physical_selection": null,
+      "ppo_action_delta": 0.09644615650177002,
+      "ppo_probe_sent": true,
+      "checkpoint_sha256": "030cd419bd45111de11250c4451f1b585aa406245a8adc650a8f14477bceaf62",
+      "rollout_sha256": "b793fb82e7e0c1e904d8b212044413cce2bc4b2be8d8a785db2bfc78222fe3fe",
+      "audit": {
+        "schema": "panda-state-ppo-cpu-audit-v1",
+        "checkpoint_sha256": "030cd419bd45111de11250c4451f1b585aa406245a8adc650a8f14477bceaf62",
+        "comparisons": {
+          "before": {
+            "max_action_difference": 4.544854164123535E-07
+          },
+          "after": {
+            "max_action_difference": 4.023313522338867E-07
+          }
+        },
+        "successor_reward_and_gae_verified": true,
+        "replay_errors": {
+          "max_successor_reward": 0.00010689938648056341,
+          "max_recorded_reward_return": 0.0030326808300742414,
+          "max_physical_return": 0.0033150857443615678,
+          "max_propagated_reward_difference": 0.0010464826095803368
+        },
+        "scope": "CPU forward/weights and saved successor reward/GAE; no CPU physical re-simulation"
+      }
+    },
+    "axial": {
+      "status": "completed",
+      "parent_checkpoint_sha256": "518d0d1dfb472584832272edecaadceafc72b7bc8a1e503baa985c0d0b607635",
+      "training_reset_sha256": "c6484c7f3d86e5deb067505c2bf3635260b7c4ee44b6d85386bd3328f889041c",
+      "training": [
+        {
+          "mode": "teacher",
+          "dwell_success": 12,
+          "final_qualified": 12,
+          "final_distance_mean_m": 1.5536440107174105E-05,
+          "peak_final_pin_drift_m": 1.7058575849659974E-06,
+          "worlds_with_final_drift_gt_10mm": 0,
+          "final_waypoint_stage_by_world": [
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3
+          ]
+        },
+        {
+          "mode": "mixed",
+          "dwell_success": 12,
+          "final_qualified": 12,
+          "final_distance_mean_m": 0.0002219384577983874,
+          "peak_final_pin_drift_m": 1.7058575849659974E-06,
+          "worlds_with_final_drift_gt_10mm": 0,
+          "final_waypoint_stage_by_world": [
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3
+          ]
+        },
+        {
+          "mode": "learner_labeled",
+          "dwell_success": 12,
+          "final_qualified": 1,
+          "final_distance_mean_m": 0.03967873325260977,
+          "peak_final_pin_drift_m": 1.7058575849659974E-06,
+          "worlds_with_final_drift_gt_10mm": 0,
+          "final_waypoint_stage_by_world": [
+            0,
+            0,
+            0,
+            1,
+            1,
+            3,
+            0,
+            0,
+            0,
+            3,
+            0,
+            3
+          ]
+        },
+        {
+          "mode": "learner_final",
+          "dwell_success": 0,
+          "final_qualified": 0,
+          "final_distance_mean_m": 0.17040540743619204,
+          "peak_final_pin_drift_m": 0.6474736332893372,
+          "worlds_with_final_drift_gt_10mm": 5,
+          "final_waypoint_stage_by_world": null
+        }
+      ],
+      "evaluation": {
+        "blind": {
+          "trace_sha256": "f5893bd02e2acaec04c303e91e0de04313376b5c80b9c82001d540e549d1c85c",
+          "baseline_sha256": "518d0d1dfb472584832272edecaadceafc72b7bc8a1e503baa985c0d0b607635",
+          "roles": {
+            "before": {
+              "success": 0,
+              "final_pass": 0,
+              "mean_return": 72.51224517822266,
+              "mean_final_distance_m": 0.09291493644485559,
+              "mean_closest_distance_m": 0.06781185572314284,
+              "mean_final_angle_rad": 0.4406118754168982,
+              "mean_peak_pin_drift_m": 6.230989593323989E-05,
+              "distance_pass_worlds": 0,
+              "final_pin_drift_pass_worlds": 12,
+              "mean_final_pin_drift_m": 1.0529533756046272E-06,
+              "median_final_distance_m": 0.09185477450031393,
+              "successful_without_excess_pin_motion": 0,
+              "worlds_with_any_drift_gt_10mm": 0,
+              "max_pin_drift_any_world_m": 6.425382650641911E-05,
+              "per_world": [
+                {
+                  "world": 0,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.1266419365488056,
+                  "peak_pin_drift_m": 6.0335990829300806E-05
+                },
+                {
+                  "world": 1,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.12504448827574113,
+                  "peak_pin_drift_m": 6.0335990829300806E-05
+                },
+                {
+                  "world": 2,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.12454341220089521,
+                  "peak_pin_drift_m": 6.0335990829300806E-05
+                },
+                {
+                  "world": 3,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.10923624091955962,
+                  "peak_pin_drift_m": 6.425382650641911E-05
+                },
+                {
+                  "world": 4,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.11077645905979491,
+                  "peak_pin_drift_m": 6.425382650641911E-05
+                },
+                {
+                  "world": 5,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.1105874067028294,
+                  "peak_pin_drift_m": 6.425382650641911E-05
+                },
+                {
+                  "world": 6,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.07346651597317663,
+                  "peak_pin_drift_m": 6.425382650641911E-05
+                },
+                {
+                  "world": 7,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.071996489095308,
+                  "peak_pin_drift_m": 6.425382650641911E-05
+                },
+                {
+                  "world": 8,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.07447330808106824,
+                  "peak_pin_drift_m": 6.425382650641911E-05
+                },
+                {
+                  "world": 9,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.06252123237083516,
+                  "peak_pin_drift_m": 6.0395939890820535E-05
+                },
+                {
+                  "world": 10,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.06235478082775236,
+                  "peak_pin_drift_m": 6.0395939890820535E-05
+                },
+                {
+                  "world": 11,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.06333696728250059,
+                  "peak_pin_drift_m": 6.0395939890820535E-05
+                }
+              ]
+            },
+            "after": {
+              "success": 1,
+              "final_pass": 0,
+              "mean_return": -888.8819580078125,
+              "mean_final_distance_m": 0.18632075704395346,
+              "mean_closest_distance_m": 0.025795565794309545,
+              "mean_final_angle_rad": 1.4131281920700625,
+              "mean_peak_pin_drift_m": 0.16524915224454692,
+              "distance_pass_worlds": 6,
+              "final_pin_drift_pass_worlds": 6,
+              "mean_final_pin_drift_m": 0.1650411548145738,
+              "median_final_distance_m": 0.059604893275794324,
+              "successful_without_excess_pin_motion": 1,
+              "worlds_with_any_drift_gt_10mm": 6,
+              "max_pin_drift_any_world_m": 0.61718323800289,
+              "per_world": [
+                {
+                  "world": 0,
+                  "dwell_s": 0.084,
+                  "final_pass": false,
+                  "final_distance_m": 0.06050187606709449,
+                  "peak_pin_drift_m": 0.15740258268894075
+                },
+                {
+                  "world": 1,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.5462987885564964,
+                  "peak_pin_drift_m": 0.4125274740268412
+                },
+                {
+                  "world": 2,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.16610893457484094,
+                  "peak_pin_drift_m": 0.31577937647917126
+                },
+                {
+                  "world": 3,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.022697177163039935,
+                  "peak_pin_drift_m": 0.008860642599048712
+                },
+                {
+                  "world": 4,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.2612865876747851,
+                  "peak_pin_drift_m": 0.37322713235967314
+                },
+                {
+                  "world": 5,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.05870791048449415,
+                  "peak_pin_drift_m": 0.005550902904106327
+                },
+                {
+                  "world": 6,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.046115564528539266,
+                  "peak_pin_drift_m": 0.0026120754215161863
+                },
+                {
+                  "world": 7,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.09636202343058783,
+                  "peak_pin_drift_m": 0.0896652146327033
+                },
+                {
+                  "world": 8,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.8826459687464147,
+                  "peak_pin_drift_m": 0.61718323800289
+                },
+                {
+                  "world": 9,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.03142035345875008,
+                  "peak_pin_drift_m": 6.0395939890820535E-05
+                },
+                {
+                  "world": 10,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.04265181205207182,
+                  "peak_pin_drift_m": 6.0395939890820535E-05
+                },
+                {
+                  "world": 11,
+                  "dwell_s": 0.596,
+                  "final_pass": false,
+                  "final_distance_m": 0.021052087790326746,
+                  "peak_pin_drift_m": 6.0395939890820535E-05
+                }
+              ]
+            },
+            "motors_off": {
+              "success": 0,
+              "final_pass": 0,
+              "mean_return": -97063.21875,
+              "mean_final_distance_m": 0.7306862722839383,
+              "mean_closest_distance_m": 0.14198105988260354,
+              "mean_final_angle_rad": 2.3252767695052854,
+              "mean_peak_pin_drift_m": 6.230989593323989E-05,
+              "distance_pass_worlds": 0,
+              "final_pin_drift_pass_worlds": 12,
+              "mean_final_pin_drift_m": 1.0531713704012779E-06,
+              "median_final_distance_m": 0.7361138922121064,
+              "successful_without_excess_pin_motion": 0,
+              "worlds_with_any_drift_gt_10mm": 0,
+              "max_pin_drift_any_world_m": 6.425382650641911E-05,
+              "per_world": [
+                {
+                  "world": 0,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.6720000202266065,
+                  "peak_pin_drift_m": 6.0335990829300806E-05
+                },
+                {
+                  "world": 1,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.7262938160595587,
+                  "peak_pin_drift_m": 6.0335990829300806E-05
+                },
+                {
+                  "world": 2,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.7216351358486208,
+                  "peak_pin_drift_m": 6.0335990829300806E-05
+                },
+                {
+                  "world": 3,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.7871691269774336,
+                  "peak_pin_drift_m": 6.425382650641911E-05
+                },
+                {
+                  "world": 4,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.7122973640468342,
+                  "peak_pin_drift_m": 6.425382650641911E-05
+                },
+                {
+                  "world": 5,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.7877981981348304,
+                  "peak_pin_drift_m": 6.425382650641911E-05
+                },
+                {
+                  "world": 6,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.7498744254197374,
+                  "peak_pin_drift_m": 6.425382650641911E-05
+                },
+                {
+                  "world": 7,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.8042698942390007,
+                  "peak_pin_drift_m": 6.425382650641911E-05
+                },
+                {
+                  "world": 8,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.747878624610699,
+                  "peak_pin_drift_m": 6.425382650641911E-05
+                },
+                {
+                  "world": 9,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.6614403396543342,
+                  "peak_pin_drift_m": 6.0395939890820535E-05
+                },
+                {
+                  "world": 10,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.7459339683646541,
+                  "peak_pin_drift_m": 6.0395939890820535E-05
+                },
+                {
+                  "world": 11,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.6516443538249514,
+                  "peak_pin_drift_m": 6.0395939890820535E-05
+                }
+              ]
+            }
+          }
+        },
+        "regression": {
+          "trace_sha256": "a2d073990fd2484ca3cbb54ddbdd574b2bc7e6832d73040b564725b58f208887",
+          "baseline_sha256": "518d0d1dfb472584832272edecaadceafc72b7bc8a1e503baa985c0d0b607635",
+          "roles": {
+            "before": {
+              "success": 0,
+              "final_pass": 0,
+              "mean_return": 72.08610534667969,
+              "mean_final_distance_m": 0.09318942218999349,
+              "mean_closest_distance_m": 0.0681990453953241,
+              "mean_final_angle_rad": 0.4354144275246005,
+              "mean_peak_pin_drift_m": 6.195226905242874E-05,
+              "distance_pass_worlds": 0,
+              "final_pin_drift_pass_worlds": 12,
+              "mean_final_pin_drift_m": 1.32567500863055E-06,
+              "median_final_distance_m": 0.09730323808884823,
+              "successful_without_excess_pin_motion": 0,
+              "worlds_with_any_drift_gt_10mm": 0,
+              "max_pin_drift_any_world_m": 6.312131881713867E-05,
+              "per_world": [
+                {
+                  "world": 0,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.12400171268051202,
+                  "peak_pin_drift_m": 6.234658842832259E-05
+                },
+                {
+                  "world": 1,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.11436215463421248,
+                  "peak_pin_drift_m": 6.312131881713867E-05
+                },
+                {
+                  "world": 2,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.08084527420968379,
+                  "peak_pin_drift_m": 6.027607193643117E-05
+                },
+                {
+                  "world": 3,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.05554772231729014,
+                  "peak_pin_drift_m": 6.206509702782251E-05
+                },
+                {
+                  "world": 4,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.12034108833645905,
+                  "peak_pin_drift_m": 6.234658842832259E-05
+                },
+                {
+                  "world": 5,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.1176179466530175,
+                  "peak_pin_drift_m": 6.312131881713867E-05
+                },
+                {
+                  "world": 6,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.0805675204328458,
+                  "peak_pin_drift_m": 6.027607193643117E-05
+                },
+                {
+                  "world": 7,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.05427612194252873,
+                  "peak_pin_drift_m": 6.206509702782251E-05
+                },
+                {
+                  "world": 8,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.12166080800993301,
+                  "peak_pin_drift_m": 6.234658842832259E-05
+                },
+                {
+                  "world": 9,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.11376120196801268,
+                  "peak_pin_drift_m": 6.312131881713867E-05
+                },
+                {
+                  "world": 10,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.07989186682567095,
+                  "peak_pin_drift_m": 6.027607193643117E-05
+                },
+                {
+                  "world": 11,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.05539964826975559,
+                  "peak_pin_drift_m": 6.206509702782251E-05
+                }
+              ]
+            },
+            "after": {
+              "success": 0,
+              "final_pass": 0,
+              "mean_return": -1292.288818359375,
+              "mean_final_distance_m": 0.27233797747102584,
+              "mean_closest_distance_m": 0.02502419677311814,
+              "mean_final_angle_rad": 1.0452507096434036,
+              "mean_peak_pin_drift_m": 0.23729554308861353,
+              "distance_pass_worlds": 6,
+              "final_pin_drift_pass_worlds": 5,
+              "mean_final_pin_drift_m": 0.23662086567242727,
+              "median_final_distance_m": 0.044285262879651836,
+              "successful_without_excess_pin_motion": 0,
+              "worlds_with_any_drift_gt_10mm": 7,
+              "max_pin_drift_any_world_m": 0.6922752115908872,
+              "per_world": [
+                {
+                  "world": 0,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.016581516915733868,
+                  "peak_pin_drift_m": 0.07725085590775117
+                },
+                {
+                  "world": 1,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.5963391667736506,
+                  "peak_pin_drift_m": 0.6922752115908872
+                },
+                {
+                  "world": 2,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.030196604187845946,
+                  "peak_pin_drift_m": 0.003449631533383025
+                },
+                {
+                  "world": 3,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.04979714230187064,
+                  "peak_pin_drift_m": 6.206509702782251E-05
+                },
+                {
+                  "world": 4,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.023876494346906824,
+                  "peak_pin_drift_m": 0.0071049642697724
+                },
+                {
+                  "world": 5,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.5812990571250051,
+                  "peak_pin_drift_m": 0.6650828396583165
+                },
+                {
+                  "world": 6,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.8233678790745794,
+                  "peak_pin_drift_m": 0.6288359496167707
+                },
+                {
+                  "world": 7,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.03877338345743303,
+                  "peak_pin_drift_m": 6.206509702782251E-05
+                },
+                {
+                  "world": 8,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.0850381918643343,
+                  "peak_pin_drift_m": 0.052936427078425136
+                },
+                {
+                  "world": 9,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.01610979564523316,
+                  "peak_pin_drift_m": 0.03713491243494424
+                },
+                {
+                  "world": 10,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.9763519331431186,
+                  "peak_pin_drift_m": 0.6832895296820288
+                },
+                {
+                  "world": 11,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.030324564816599193,
+                  "peak_pin_drift_m": 6.206509702782251E-05
+                }
+              ]
+            },
+            "motors_off": {
+              "success": 0,
+              "final_pass": 0,
+              "mean_return": -99016.1875,
+              "mean_final_distance_m": 0.6865663025497183,
+              "mean_closest_distance_m": 0.14736023067164256,
+              "mean_final_angle_rad": 2.578292077645816,
+              "mean_peak_pin_drift_m": 6.195226905242874E-05,
+              "distance_pass_worlds": 0,
+              "final_pin_drift_pass_worlds": 12,
+              "mean_final_pin_drift_m": 1.3361468677717754E-06,
+              "median_final_distance_m": 0.6672798623963446,
+              "successful_without_excess_pin_motion": 0,
+              "worlds_with_any_drift_gt_10mm": 0,
+              "max_pin_drift_any_world_m": 6.312131881713867E-05,
+              "per_world": [
+                {
+                  "world": 0,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.7184970244213378,
+                  "peak_pin_drift_m": 6.234658842832259E-05
+                },
+                {
+                  "world": 1,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.7230717668043302,
+                  "peak_pin_drift_m": 6.312131881713867E-05
+                },
+                {
+                  "world": 2,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.6635007421271181,
+                  "peak_pin_drift_m": 6.027607193643117E-05
+                },
+                {
+                  "world": 3,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.6576736917380389,
+                  "peak_pin_drift_m": 6.206509702782251E-05
+                },
+                {
+                  "world": 4,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.6559136455008094,
+                  "peak_pin_drift_m": 6.234658842832259E-05
+                },
+                {
+                  "world": 5,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.7342512475532286,
+                  "peak_pin_drift_m": 6.312131881713867E-05
+                },
+                {
+                  "world": 6,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.6554437944970722,
+                  "peak_pin_drift_m": 6.027607193643117E-05
+                },
+                {
+                  "world": 7,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.6710589826655712,
+                  "peak_pin_drift_m": 6.206509702782251E-05
+                },
+                {
+                  "world": 8,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.6566557454347055,
+                  "peak_pin_drift_m": 6.234658842832259E-05
+                },
+                {
+                  "world": 9,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.748660325128809,
+                  "peak_pin_drift_m": 6.312131881713867E-05
+                },
+                {
+                  "world": 10,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.6622594036009447,
+                  "peak_pin_drift_m": 6.027607193643117E-05
+                },
+                {
+                  "world": 11,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.6918092611246538,
+                  "peak_pin_drift_m": 6.206509702782251E-05
+                }
+              ]
+            }
+          }
+        }
+      },
+      "learner_device": {
+        "actor": [
+          "musa:0"
+        ],
+        "critic": [
+          "musa:0"
+        ],
+        "rollout": "musa:0",
+        "gae": "musa:0",
+        "adam_moments": [
+          "musa:0"
+        ],
+        "adam_counters": [
+          "cpu"
+        ]
+      },
+      "distill_source_sha256": "0cd793066f2a5b10a394387a51d60ddc901d19c8a8cb6cf637550ab2ab3a41ac",
+      "teacher_source_sha256": "45f466fa49f9d5bb1d01e840ea0fce7f0b931a1fa9593ff348eceab918c41f15",
+      "model_sha256": "130264683cc037ed3c2b36a01d2ec2fa1a4d8e21742fa280775cdb639ad50663",
+      "transitions_per_update": 1536,
+      "training_ppo_physical_steps_per_world": 1416,
+      "warm_start": {
+        "seed_sha256": "7b07b4eb4b8bc6b297e4148cccec299501af57f80bedabccf3fcf6f92fc9421c",
+        "parent_checkpoint_sha256": "518d0d1dfb472584832272edecaadceafc72b7bc8a1e503baa985c0d0b607635",
+        "optimizer": "fresh Adam for PPO",
+        "critic": "restored from parent",
+        "parent_update": 125
+      },
+      "physical_selection": null,
+      "ppo_action_delta": 0.16778656840324402,
+      "ppo_probe_sent": true,
+      "checkpoint_sha256": "941e07ee19f39c16dbc32dfbfcee50905fd52760865cbae0c93781dec64f8490",
+      "rollout_sha256": "4bae0e4d38b730d4fe51a48e3b63caca7d0047edfa89ff8344a18ed03b0d151c",
+      "audit": {
+        "schema": "panda-state-ppo-cpu-audit-v1",
+        "checkpoint_sha256": "941e07ee19f39c16dbc32dfbfcee50905fd52760865cbae0c93781dec64f8490",
+        "comparisons": {
+          "before": {
+            "max_action_difference": 3.129243850708008E-07
+          },
+          "after": {
+            "max_action_difference": 5.066394805908203E-07
+          }
+        },
+        "successor_reward_and_gae_verified": true,
+        "replay_errors": {
+          "max_successor_reward": 0.00021419053803128918,
+          "max_recorded_reward_return": 0.0004628972894806793,
+          "max_physical_return": 0.0004243530281655694,
+          "max_propagated_reward_difference": 0.0006172577082655688
+        },
+        "scope": "CPU forward/weights and saved successor reward/GAE; no CPU physical re-simulation"
+      }
+    },
+    "recovery": {
+      "status": "completed",
+      "parent_checkpoint_sha256": "518d0d1dfb472584832272edecaadceafc72b7bc8a1e503baa985c0d0b607635",
+      "training_reset_sha256": "c6484c7f3d86e5deb067505c2bf3635260b7c4ee44b6d85386bd3328f889041c",
+      "training": [
+        {
+          "mode": "teacher",
+          "dwell_success": 12,
+          "final_qualified": 12,
+          "final_distance_mean_m": 0.005061960817935566,
+          "peak_final_pin_drift_m": 1.7058575849659974E-06,
+          "worlds_with_final_drift_gt_10mm": 0,
+          "final_waypoint_stage_by_world": [
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3
+          ]
+        },
+        {
+          "mode": "mixed",
+          "dwell_success": 12,
+          "final_qualified": 12,
+          "final_distance_mean_m": 0.005947199145642419,
+          "peak_final_pin_drift_m": 1.7058575849659974E-06,
+          "worlds_with_final_drift_gt_10mm": 0,
+          "final_waypoint_stage_by_world": [
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3
+          ]
+        },
+        {
+          "mode": "learner_labeled",
+          "dwell_success": 12,
+          "final_qualified": 7,
+          "final_distance_mean_m": 0.01902888265127937,
+          "peak_final_pin_drift_m": 1.7058575849659974E-06,
+          "worlds_with_final_drift_gt_10mm": 0,
+          "final_waypoint_stage_by_world": [
+            3,
+            3,
+            3,
+            3,
+            0,
+            0,
+            3,
+            3,
+            3,
+            3,
+            1,
+            3
+          ]
+        },
+        {
+          "mode": "learner_final",
+          "dwell_success": 1,
+          "final_qualified": 0,
+          "final_distance_mean_m": 0.046717589565863214,
+          "peak_final_pin_drift_m": 0.006790118757635355,
+          "worlds_with_final_drift_gt_10mm": 0,
+          "final_waypoint_stage_by_world": null
+        }
+      ],
+      "evaluation": {
+        "fresh": {
+          "trace_sha256": "1bb3d6edc8d363b0982667d0733635e421540b5cc30e5d2838fb4b7ef5d1a8b3",
+          "baseline_sha256": "518d0d1dfb472584832272edecaadceafc72b7bc8a1e503baa985c0d0b607635",
+          "roles": {
+            "before": {
+              "success": 0,
+              "final_pass": 0,
+              "mean_return": 74.35902404785156,
+              "mean_final_distance_m": 0.09196465258615612,
+              "mean_closest_distance_m": 0.06720215128416086,
+              "mean_final_angle_rad": 0.3981267354026709,
+              "mean_peak_pin_drift_m": 6.269310686545337E-05,
+              "distance_pass_worlds": 0,
+              "final_pin_drift_pass_worlds": 12,
+              "mean_final_pin_drift_m": 1.0101957456468344E-06,
+              "median_final_distance_m": 0.0917466505988484,
+              "successful_without_excess_pin_motion": 0,
+              "worlds_with_any_drift_gt_10mm": 0,
+              "max_pin_drift_any_world_m": 6.42538070678711E-05,
+              "per_world": [
+                {
+                  "world": 0,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.1184943851808166,
+                  "peak_pin_drift_m": 6.42538070678711E-05
+                },
+                {
+                  "world": 1,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.11838081016265309,
+                  "peak_pin_drift_m": 6.42538070678711E-05
+                },
+                {
+                  "world": 2,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.11791106748665725,
+                  "peak_pin_drift_m": 6.42538070678711E-05
+                },
+                {
+                  "world": 3,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.0997706199603641,
+                  "peak_pin_drift_m": 6.139278773543893E-05
+                },
+                {
+                  "world": 4,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.10174415609535209,
+                  "peak_pin_drift_m": 6.139278773543893E-05
+                },
+                {
+                  "world": 5,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.10057842371787842,
+                  "peak_pin_drift_m": 6.139278773543893E-05
+                },
+                {
+                  "world": 6,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.0837226812373327,
+                  "peak_pin_drift_m": 6.318093444449063E-05
+                },
+                {
+                  "world": 7,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.08369606522973251,
+                  "peak_pin_drift_m": 6.318093444449063E-05
+                },
+                {
+                  "world": 8,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.08337339828660277,
+                  "peak_pin_drift_m": 6.318093444449063E-05
+                },
+                {
+                  "world": 9,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.06681802235195088,
+                  "peak_pin_drift_m": 6.19448982140128E-05
+                },
+                {
+                  "world": 10,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.06476288860963214,
+                  "peak_pin_drift_m": 6.19448982140128E-05
+                },
+                {
+                  "world": 11,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.06432331271490091,
+                  "peak_pin_drift_m": 6.19448982140128E-05
+                }
+              ]
+            },
+            "after": {
+              "success": 9,
+              "final_pass": 8,
+              "mean_return": -2121.103271484375,
+              "mean_final_distance_m": 0.17420549326524337,
+              "mean_closest_distance_m": 0.014030918435240194,
+              "mean_final_angle_rad": 0.362086270854813,
+              "mean_peak_pin_drift_m": 0.10402749081848177,
+              "distance_pass_worlds": 9,
+              "final_pin_drift_pass_worlds": 10,
+              "mean_final_pin_drift_m": 0.10360364565280128,
+              "median_final_distance_m": 0.014472478379441649,
+              "successful_without_excess_pin_motion": 9,
+              "worlds_with_any_drift_gt_10mm": 2,
+              "max_pin_drift_any_world_m": 0.6252393736712751,
+              "per_world": [
+                {
+                  "world": 0,
+                  "dwell_s": 0.3,
+                  "final_pass": false,
+                  "final_distance_m": 0.02456927187860098,
+                  "peak_pin_drift_m": 6.42538070678711E-05
+                },
+                {
+                  "world": 1,
+                  "dwell_s": 0.972,
+                  "final_pass": true,
+                  "final_distance_m": 0.010911884541483176,
+                  "peak_pin_drift_m": 6.42538070678711E-05
+                },
+                {
+                  "world": 2,
+                  "dwell_s": 0.916,
+                  "final_pass": true,
+                  "final_distance_m": 0.005424113288797449,
+                  "peak_pin_drift_m": 6.42538070678711E-05
+                },
+                {
+                  "world": 3,
+                  "dwell_s": 1.236,
+                  "final_pass": true,
+                  "final_distance_m": 0.01472942496846715,
+                  "peak_pin_drift_m": 6.139278773543893E-05
+                },
+                {
+                  "world": 4,
+                  "dwell_s": 1.262,
+                  "final_pass": true,
+                  "final_distance_m": 0.017027755518181215,
+                  "peak_pin_drift_m": 6.139278773543893E-05
+                },
+                {
+                  "world": 5,
+                  "dwell_s": 1.186,
+                  "final_pass": true,
+                  "final_distance_m": 0.011151103085597804,
+                  "peak_pin_drift_m": 6.139278773543893E-05
+                },
+                {
+                  "world": 6,
+                  "dwell_s": 1.288,
+                  "final_pass": true,
+                  "final_distance_m": 0.01421553179041615,
+                  "peak_pin_drift_m": 6.318093444449063E-05
+                },
+                {
+                  "world": 7,
+                  "dwell_s": 1.11,
+                  "final_pass": true,
+                  "final_distance_m": 0.007304385369402271,
+                  "peak_pin_drift_m": 6.318093444449063E-05
+                },
+                {
+                  "world": 8,
+                  "dwell_s": 1.092,
+                  "final_pass": true,
+                  "final_distance_m": 0.004695292074353124,
+                  "peak_pin_drift_m": 6.318093444449063E-05
+                },
+                {
+                  "world": 9,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.8840404134576271,
+                  "peak_pin_drift_m": 0.6224620886645486
+                },
+                {
+                  "world": 10,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.977443379952961,
+                  "peak_pin_drift_m": 0.6252393736712751
+                },
+                {
+                  "world": 11,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.11895336325703287,
+                  "peak_pin_drift_m": 6.19448982140128E-05
+                }
+              ]
+            },
+            "motors_off": {
+              "success": 0,
+              "final_pass": 0,
+              "mean_return": -96505.78125,
+              "mean_final_distance_m": 0.7048664975254524,
+              "mean_closest_distance_m": 0.14569267118512014,
+              "mean_final_angle_rad": 2.444406489502249,
+              "mean_peak_pin_drift_m": 6.269310686545337E-05,
+              "distance_pass_worlds": 0,
+              "final_pin_drift_pass_worlds": 12,
+              "mean_final_pin_drift_m": 9.876490367929347E-07,
+              "median_final_distance_m": 0.6971941226308332,
+              "successful_without_excess_pin_motion": 0,
+              "worlds_with_any_drift_gt_10mm": 0,
+              "max_pin_drift_any_world_m": 6.42538070678711E-05,
+              "per_world": [
+                {
+                  "world": 0,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.6544145006514612,
+                  "peak_pin_drift_m": 6.42538070678711E-05
+                },
+                {
+                  "world": 1,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.7851639629130077,
+                  "peak_pin_drift_m": 6.42538070678711E-05
+                },
+                {
+                  "world": 2,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.7441762890134346,
+                  "peak_pin_drift_m": 6.42538070678711E-05
+                },
+                {
+                  "world": 3,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.7102658725037263,
+                  "peak_pin_drift_m": 6.139278773543893E-05
+                },
+                {
+                  "world": 4,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.6484026997345231,
+                  "peak_pin_drift_m": 6.139278773543893E-05
+                },
+                {
+                  "world": 5,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.6554033378058993,
+                  "peak_pin_drift_m": 6.139278773543893E-05
+                },
+                {
+                  "world": 6,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.679021390088587,
+                  "peak_pin_drift_m": 6.318093444449063E-05
+                },
+                {
+                  "world": 7,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.6985132518189278,
+                  "peak_pin_drift_m": 6.318093444449063E-05
+                },
+                {
+                  "world": 8,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.7840844149583162,
+                  "peak_pin_drift_m": 6.318093444449063E-05
+                },
+                {
+                  "world": 9,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.7096094554445855,
+                  "peak_pin_drift_m": 6.19448982140128E-05
+                },
+                {
+                  "world": 10,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.6934678019302206,
+                  "peak_pin_drift_m": 6.19448982140128E-05
+                },
+                {
+                  "world": 11,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.6958749934427387,
+                  "peak_pin_drift_m": 6.19448982140128E-05
+                }
+              ]
+            }
+          }
+        },
+        "blind": {
+          "trace_sha256": "f0e5de363032690f044cac71e948b5dc854292b9f963e7f52e92cf2126c419ea",
+          "baseline_sha256": "518d0d1dfb472584832272edecaadceafc72b7bc8a1e503baa985c0d0b607635",
+          "roles": {
+            "before": {
+              "success": 0,
+              "final_pass": 0,
+              "mean_return": 72.51224517822266,
+              "mean_final_distance_m": 0.09291493644485559,
+              "mean_closest_distance_m": 0.06781185572314284,
+              "mean_final_angle_rad": 0.4406118754168982,
+              "mean_peak_pin_drift_m": 6.230989593323989E-05,
+              "distance_pass_worlds": 0,
+              "final_pin_drift_pass_worlds": 12,
+              "mean_final_pin_drift_m": 1.0529533756046272E-06,
+              "median_final_distance_m": 0.09185477450031393,
+              "successful_without_excess_pin_motion": 0,
+              "worlds_with_any_drift_gt_10mm": 0,
+              "max_pin_drift_any_world_m": 6.425382650641911E-05,
+              "per_world": [
+                {
+                  "world": 0,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.1266419365488056,
+                  "peak_pin_drift_m": 6.0335990829300806E-05
+                },
+                {
+                  "world": 1,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.12504448827574113,
+                  "peak_pin_drift_m": 6.0335990829300806E-05
+                },
+                {
+                  "world": 2,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.12454341220089521,
+                  "peak_pin_drift_m": 6.0335990829300806E-05
+                },
+                {
+                  "world": 3,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.10923624091955962,
+                  "peak_pin_drift_m": 6.425382650641911E-05
+                },
+                {
+                  "world": 4,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.11077645905979491,
+                  "peak_pin_drift_m": 6.425382650641911E-05
+                },
+                {
+                  "world": 5,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.1105874067028294,
+                  "peak_pin_drift_m": 6.425382650641911E-05
+                },
+                {
+                  "world": 6,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.07346651597317663,
+                  "peak_pin_drift_m": 6.425382650641911E-05
+                },
+                {
+                  "world": 7,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.071996489095308,
+                  "peak_pin_drift_m": 6.425382650641911E-05
+                },
+                {
+                  "world": 8,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.07447330808106824,
+                  "peak_pin_drift_m": 6.425382650641911E-05
+                },
+                {
+                  "world": 9,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.06252123237083516,
+                  "peak_pin_drift_m": 6.0395939890820535E-05
+                },
+                {
+                  "world": 10,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.06235478082775236,
+                  "peak_pin_drift_m": 6.0395939890820535E-05
+                },
+                {
+                  "world": 11,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.06333696728250059,
+                  "peak_pin_drift_m": 6.0395939890820535E-05
+                }
+              ]
+            },
+            "after": {
+              "success": 11,
+              "final_pass": 7,
+              "mean_return": 94.2725830078125,
+              "mean_final_distance_m": 0.018114582765398766,
+              "mean_closest_distance_m": 0.008567898573439934,
+              "mean_final_angle_rad": 0.1891823338723192,
+              "mean_peak_pin_drift_m": 0.0023479014357349753,
+              "distance_pass_worlds": 11,
+              "final_pin_drift_pass_worlds": 11,
+              "mean_final_pin_drift_m": 0.0021486695705530703,
+              "median_final_distance_m": 0.0163231089360927,
+              "successful_without_excess_pin_motion": 10,
+              "worlds_with_any_drift_gt_10mm": 1,
+              "max_pin_drift_any_world_m": 0.026163774867560715,
+              "per_world": [
+                {
+                  "world": 0,
+                  "dwell_s": 0.868,
+                  "final_pass": true,
+                  "final_distance_m": 0.00959545494635796,
+                  "peak_pin_drift_m": 6.0335990829300806E-05
+                },
+                {
+                  "world": 1,
+                  "dwell_s": 0.85,
+                  "final_pass": true,
+                  "final_distance_m": 0.007159332571067389,
+                  "peak_pin_drift_m": 6.0335990829300806E-05
+                },
+                {
+                  "world": 2,
+                  "dwell_s": 0.352,
+                  "final_pass": true,
+                  "final_distance_m": 0.01622755845718694,
+                  "peak_pin_drift_m": 6.0335990829300806E-05
+                },
+                {
+                  "world": 3,
+                  "dwell_s": 0.332,
+                  "final_pass": false,
+                  "final_distance_m": 0.031535695177913894,
+                  "peak_pin_drift_m": 6.425382650641911E-05
+                },
+                {
+                  "world": 4,
+                  "dwell_s": 1.05,
+                  "final_pass": true,
+                  "final_distance_m": 0.007521741905296338,
+                  "peak_pin_drift_m": 6.425382650641911E-05
+                },
+                {
+                  "world": 5,
+                  "dwell_s": 1.11,
+                  "final_pass": true,
+                  "final_distance_m": 0.009529358734322852,
+                  "peak_pin_drift_m": 6.425382650641911E-05
+                },
+                {
+                  "world": 6,
+                  "dwell_s": 1.07,
+                  "final_pass": true,
+                  "final_distance_m": 0.00966068167645914,
+                  "peak_pin_drift_m": 6.425382650641911E-05
+                },
+                {
+                  "world": 7,
+                  "dwell_s": 1.1,
+                  "final_pass": false,
+                  "final_distance_m": 0.023527215906826344,
+                  "peak_pin_drift_m": 6.425382650641911E-05
+                },
+                {
+                  "world": 8,
+                  "dwell_s": 1.166,
+                  "final_pass": true,
+                  "final_distance_m": 0.019374539551493052,
+                  "peak_pin_drift_m": 6.425382650641911E-05
+                },
+                {
+                  "world": 9,
+                  "dwell_s": 0.244,
+                  "final_pass": false,
+                  "final_distance_m": 0.01641865941499846,
+                  "peak_pin_drift_m": 0.026163774867560715
+                },
+                {
+                  "world": 10,
+                  "dwell_s": 0.126,
+                  "final_pass": false,
+                  "final_distance_m": 0.025993989234061148,
+                  "peak_pin_drift_m": 0.00018211866684320277
+                },
+                {
+                  "world": 11,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.040830765608801695,
+                  "peak_pin_drift_m": 0.0012623927628893682
+                }
+              ]
+            },
+            "motors_off": {
+              "success": 0,
+              "final_pass": 0,
+              "mean_return": -97063.21875,
+              "mean_final_distance_m": 0.7306862722839383,
+              "mean_closest_distance_m": 0.14198105988260354,
+              "mean_final_angle_rad": 2.3252767695052854,
+              "mean_peak_pin_drift_m": 6.230989593323989E-05,
+              "distance_pass_worlds": 0,
+              "final_pin_drift_pass_worlds": 12,
+              "mean_final_pin_drift_m": 1.0531713704012779E-06,
+              "median_final_distance_m": 0.7361138922121064,
+              "successful_without_excess_pin_motion": 0,
+              "worlds_with_any_drift_gt_10mm": 0,
+              "max_pin_drift_any_world_m": 6.425382650641911E-05,
+              "per_world": [
+                {
+                  "world": 0,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.6720000202266065,
+                  "peak_pin_drift_m": 6.0335990829300806E-05
+                },
+                {
+                  "world": 1,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.7262938160595587,
+                  "peak_pin_drift_m": 6.0335990829300806E-05
+                },
+                {
+                  "world": 2,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.7216351358486208,
+                  "peak_pin_drift_m": 6.0335990829300806E-05
+                },
+                {
+                  "world": 3,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.7871691269774336,
+                  "peak_pin_drift_m": 6.425382650641911E-05
+                },
+                {
+                  "world": 4,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.7122973640468342,
+                  "peak_pin_drift_m": 6.425382650641911E-05
+                },
+                {
+                  "world": 5,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.7877981981348304,
+                  "peak_pin_drift_m": 6.425382650641911E-05
+                },
+                {
+                  "world": 6,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.7498744254197374,
+                  "peak_pin_drift_m": 6.425382650641911E-05
+                },
+                {
+                  "world": 7,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.8042698942390007,
+                  "peak_pin_drift_m": 6.425382650641911E-05
+                },
+                {
+                  "world": 8,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.747878624610699,
+                  "peak_pin_drift_m": 6.425382650641911E-05
+                },
+                {
+                  "world": 9,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.6614403396543342,
+                  "peak_pin_drift_m": 6.0395939890820535E-05
+                },
+                {
+                  "world": 10,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.7459339683646541,
+                  "peak_pin_drift_m": 6.0395939890820535E-05
+                },
+                {
+                  "world": 11,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.6516443538249514,
+                  "peak_pin_drift_m": 6.0395939890820535E-05
+                }
+              ]
+            }
+          }
+        },
+        "regression": {
+          "trace_sha256": "e6aec791852ae5780c816e91cedfbf606c333d4068259fa66f829b5ead529151",
+          "baseline_sha256": "518d0d1dfb472584832272edecaadceafc72b7bc8a1e503baa985c0d0b607635",
+          "roles": {
+            "before": {
+              "success": 0,
+              "final_pass": 0,
+              "mean_return": 72.08610534667969,
+              "mean_final_distance_m": 0.09318942218999349,
+              "mean_closest_distance_m": 0.0681990453953241,
+              "mean_final_angle_rad": 0.4354144275246005,
+              "mean_peak_pin_drift_m": 6.195226905242874E-05,
+              "distance_pass_worlds": 0,
+              "final_pin_drift_pass_worlds": 12,
+              "mean_final_pin_drift_m": 1.32567500863055E-06,
+              "median_final_distance_m": 0.09730323808884823,
+              "successful_without_excess_pin_motion": 0,
+              "worlds_with_any_drift_gt_10mm": 0,
+              "max_pin_drift_any_world_m": 6.312131881713867E-05,
+              "per_world": [
+                {
+                  "world": 0,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.12400171268051202,
+                  "peak_pin_drift_m": 6.234658842832259E-05
+                },
+                {
+                  "world": 1,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.11436215463421248,
+                  "peak_pin_drift_m": 6.312131881713867E-05
+                },
+                {
+                  "world": 2,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.08084527420968379,
+                  "peak_pin_drift_m": 6.027607193643117E-05
+                },
+                {
+                  "world": 3,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.05554772231729014,
+                  "peak_pin_drift_m": 6.206509702782251E-05
+                },
+                {
+                  "world": 4,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.12034108833645905,
+                  "peak_pin_drift_m": 6.234658842832259E-05
+                },
+                {
+                  "world": 5,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.1176179466530175,
+                  "peak_pin_drift_m": 6.312131881713867E-05
+                },
+                {
+                  "world": 6,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.0805675204328458,
+                  "peak_pin_drift_m": 6.027607193643117E-05
+                },
+                {
+                  "world": 7,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.05427612194252873,
+                  "peak_pin_drift_m": 6.206509702782251E-05
+                },
+                {
+                  "world": 8,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.12166080800993301,
+                  "peak_pin_drift_m": 6.234658842832259E-05
+                },
+                {
+                  "world": 9,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.11376120196801268,
+                  "peak_pin_drift_m": 6.312131881713867E-05
+                },
+                {
+                  "world": 10,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.07989186682567095,
+                  "peak_pin_drift_m": 6.027607193643117E-05
+                },
+                {
+                  "world": 11,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.05539964826975559,
+                  "peak_pin_drift_m": 6.206509702782251E-05
+                }
+              ]
+            },
+            "after": {
+              "success": 7,
+              "final_pass": 5,
+              "mean_return": -141.37356567382812,
+              "mean_final_distance_m": 0.09651855483398981,
+              "mean_closest_distance_m": 0.02169258912807492,
+              "mean_final_angle_rad": 0.22377602431511268,
+              "mean_peak_pin_drift_m": 0.052452845987730035,
+              "distance_pass_worlds": 7,
+              "final_pin_drift_pass_worlds": 11,
+              "mean_final_pin_drift_m": 0.05173250403613047,
+              "median_final_distance_m": 0.024451687617753425,
+              "successful_without_excess_pin_motion": 7,
+              "worlds_with_any_drift_gt_10mm": 1,
+              "max_pin_drift_any_world_m": 0.6224591508602328,
+              "per_world": [
+                {
+                  "world": 0,
+                  "dwell_s": 0.28200000000000003,
+                  "final_pass": false,
+                  "final_distance_m": 0.021377830911297222,
+                  "peak_pin_drift_m": 6.234658842832259E-05
+                },
+                {
+                  "world": 1,
+                  "dwell_s": 1.06,
+                  "final_pass": true,
+                  "final_distance_m": 0.010468784484771588,
+                  "peak_pin_drift_m": 6.312131881713867E-05
+                },
+                {
+                  "world": 2,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.8245147466465764,
+                  "peak_pin_drift_m": 0.6224591508602328
+                },
+                {
+                  "world": 3,
+                  "dwell_s": 1.346,
+                  "final_pass": true,
+                  "final_distance_m": 0.010953116522701234,
+                  "peak_pin_drift_m": 6.206509702782251E-05
+                },
+                {
+                  "world": 4,
+                  "dwell_s": 0.934,
+                  "final_pass": true,
+                  "final_distance_m": 0.011325839060198361,
+                  "peak_pin_drift_m": 6.234658842832259E-05
+                },
+                {
+                  "world": 5,
+                  "dwell_s": 1.1,
+                  "final_pass": true,
+                  "final_distance_m": 0.00969298470637597,
+                  "peak_pin_drift_m": 6.312131881713867E-05
+                },
+                {
+                  "world": 6,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.04775226895770393,
+                  "peak_pin_drift_m": 0.001596983120016498
+                },
+                {
+                  "world": 7,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.07911915996617487,
+                  "peak_pin_drift_m": 6.206509702782251E-05
+                },
+                {
+                  "world": 8,
+                  "dwell_s": 0.222,
+                  "final_pass": false,
+                  "final_distance_m": 0.027525544324209627,
+                  "peak_pin_drift_m": 6.234658842832259E-05
+                },
+                {
+                  "world": 9,
+                  "dwell_s": 0.974,
+                  "final_pass": true,
+                  "final_distance_m": 0.006189156261351899,
+                  "peak_pin_drift_m": 6.312131881713867E-05
+                },
+                {
+                  "world": 10,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.04450263975297416,
+                  "peak_pin_drift_m": 0.004815418859691347
+                },
+                {
+                  "world": 11,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.06480058641354228,
+                  "peak_pin_drift_m": 6.206509702782251E-05
+                }
+              ]
+            },
+            "motors_off": {
+              "success": 0,
+              "final_pass": 0,
+              "mean_return": -99016.1875,
+              "mean_final_distance_m": 0.6865663025497183,
+              "mean_closest_distance_m": 0.14736023067164256,
+              "mean_final_angle_rad": 2.578292077645816,
+              "mean_peak_pin_drift_m": 6.195226905242874E-05,
+              "distance_pass_worlds": 0,
+              "final_pin_drift_pass_worlds": 12,
+              "mean_final_pin_drift_m": 1.3361468677717754E-06,
+              "median_final_distance_m": 0.6672798623963446,
+              "successful_without_excess_pin_motion": 0,
+              "worlds_with_any_drift_gt_10mm": 0,
+              "max_pin_drift_any_world_m": 6.312131881713867E-05,
+              "per_world": [
+                {
+                  "world": 0,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.7184970244213378,
+                  "peak_pin_drift_m": 6.234658842832259E-05
+                },
+                {
+                  "world": 1,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.7230717668043302,
+                  "peak_pin_drift_m": 6.312131881713867E-05
+                },
+                {
+                  "world": 2,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.6635007421271181,
+                  "peak_pin_drift_m": 6.027607193643117E-05
+                },
+                {
+                  "world": 3,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.6576736917380389,
+                  "peak_pin_drift_m": 6.206509702782251E-05
+                },
+                {
+                  "world": 4,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.6559136455008094,
+                  "peak_pin_drift_m": 6.234658842832259E-05
+                },
+                {
+                  "world": 5,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.7342512475532286,
+                  "peak_pin_drift_m": 6.312131881713867E-05
+                },
+                {
+                  "world": 6,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.6554437944970722,
+                  "peak_pin_drift_m": 6.027607193643117E-05
+                },
+                {
+                  "world": 7,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.6710589826655712,
+                  "peak_pin_drift_m": 6.206509702782251E-05
+                },
+                {
+                  "world": 8,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.6566557454347055,
+                  "peak_pin_drift_m": 6.234658842832259E-05
+                },
+                {
+                  "world": 9,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.748660325128809,
+                  "peak_pin_drift_m": 6.312131881713867E-05
+                },
+                {
+                  "world": 10,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.6622594036009447,
+                  "peak_pin_drift_m": 6.027607193643117E-05
+                },
+                {
+                  "world": 11,
+                  "dwell_s": 0.0,
+                  "final_pass": false,
+                  "final_distance_m": 0.6918092611246538,
+                  "peak_pin_drift_m": 6.206509702782251E-05
+                }
+              ]
+            }
+          }
+        }
+      },
+      "learner_device": {
+        "actor": [
+          "musa:0"
+        ],
+        "critic": [
+          "musa:0"
+        ],
+        "rollout": "musa:0",
+        "gae": "musa:0",
+        "adam_moments": [
+          "musa:0"
+        ],
+        "adam_counters": [
+          "cpu"
+        ]
+      },
+      "distill_source_sha256": "0e6722f9178e8fa2f4eb5b9974fda65f42cb5a67d8fdc6a30dfed1f325c59919",
+      "teacher_source_sha256": "ca2409ad20550146c4a1407c27e602a815bf7c0b0cd6e5e61d43eb692754bf8e",
+      "model_sha256": "130264683cc037ed3c2b36a01d2ec2fa1a4d8e21742fa280775cdb639ad50663",
+      "transitions_per_update": 1536,
+      "training_ppo_physical_steps_per_world": 1416,
+      "warm_start": {
+        "seed_sha256": "79d2bdfb39a7104555fb723caa641672d894fe2b2d32ccdb21e3b7d65aa9bd6b",
+        "parent_checkpoint_sha256": "518d0d1dfb472584832272edecaadceafc72b7bc8a1e503baa985c0d0b607635",
+        "optimizer": "fresh Adam for PPO",
+        "critic": "restored from parent",
+        "parent_update": 125,
+        "actor_lr_factor": 0.01
+      },
+      "physical_selection": {
+        "reset_scope": "original physical training reset bank",
+        "pin_limit_m": 0.01,
+        "rule": [
+          "fewest worlds exceeding pin displacement limit at any accepted physics substep",
+          "most worlds reaching qualified dwell",
+          "most worlds jointly qualified at the final state",
+          "lowest mean final hand-to-pin distance",
+          "prefer learner_final on exact tie"
+        ],
+        "candidates": {
+          "learner_labeled": {
+            "mode": "learner_labeled",
+            "expert_weight": 0.0,
+            "pin_excursion_worlds": 0,
+            "final_displaced_pin_worlds": 0,
+            "dwell_qualified_worlds": 12,
+            "final_qualified_worlds": 7,
+            "mean_final_distance_m": 0.01902888265127937,
+            "ascending_score": [
+              0,
+              -12,
+              -7,
+              0.01902888265127937
+            ]
+          },
+          "learner_final": {
+            "mode": "learner_final",
+            "expert_weight": 0.0,
+            "pin_excursion_worlds": 0,
+            "final_displaced_pin_worlds": 0,
+            "dwell_qualified_worlds": 1,
+            "final_qualified_worlds": 0,
+            "mean_final_distance_m": 0.046717589565863214,
+            "ascending_score": [
+              0,
+              -1,
+              0,
+              0.046717589565863214
+            ]
+          }
+        },
+        "selected_mode": "learner_labeled",
+        "selected_score": [
+          0,
+          -12,
+          -7,
+          0.01902888265127937
+        ]
+      },
+      "ppo_action_delta": 0.007825076580047607,
+      "ppo_probe_sent": true,
+      "checkpoint_sha256": "90e1573cfa40eaa2bf9a20a64efadadb7d1c56d640491b1c80ac4340b7da8a2a",
+      "rollout_sha256": "92dd09ecd2b3df4bb02890e85028ffa50bf8c689f13874ea964b1ea74976092c",
+      "audit": {
+        "schema": "panda-state-ppo-cpu-audit-v1",
+        "checkpoint_sha256": "90e1573cfa40eaa2bf9a20a64efadadb7d1c56d640491b1c80ac4340b7da8a2a",
+        "comparisons": {
+          "before": {
+            "max_action_difference": 3.427267074584961E-07
+          },
+          "after": {
+            "max_action_difference": 3.5762786865234375E-07
+          }
+        },
+        "successor_reward_and_gae_verified": true,
+        "replay_errors": {
+          "fp32_recorded_return_mismatches": 0,
+          "max_cpu_fp32_fp64_return": 0.0033210990814040997,
+          "max_successor_reward": 0.00031320279060764733,
+          "max_recorded_reward_return": 0.0033210990814040997,
+          "max_physical_return": 0.005247067810159933,
+          "max_propagated_reward_difference": 0.002098928755835192
+        },
+        "scope": "CPU forward/weights and saved successor reward/GAE; no CPU physical re-simulation"
+      }
+    }
+  }
+}

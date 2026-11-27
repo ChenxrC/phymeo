@@ -105,8 +105,8 @@ def rollout(torch, task, actor, targets, steps, expert_weight, reset_q, reset_v,
 
 
 def physical_score(metrics, pin_limit):
-    if metrics["mode"] not in ("learner_labeled", "learner_final") or metrics["expert_weight"] != 0.:
-        raise ValueError("Actor selection requires a zero-teacher-action learner rollout")
+    if metrics["mode"] not in ("learner_labeled", "learner_final", "parent") or metrics["expert_weight"] != 0.:
+        raise ValueError("Actor selection requires a zero-teacher-action policy rollout")
     final = metrics["final"]
     peak = np.asarray(metrics["peak_pin_displacement_m_by_world"])
     distance = np.asarray(final["distance_m"])
@@ -153,6 +153,41 @@ def fit(torch, actor, optimizer, data, epochs, batch):
                 epochs=epochs, fit_seconds=perf_counter() - started)
 
 
+def extended_training_bank(train, scene, model, original_arrays, reset_sha, out):
+    from panda_reach_crossed_resets import generate_bank
+
+    extra_dir = out / "train-extra"
+    q, v, extra = generate_bank(scene, model, "train-extra", extra_dir)
+    qpos, qvel = (np.concatenate((original_arrays[k], new), axis=0)
+                  for k, new in (("qpos", q), ("qvel", v)))
+    if any(np.all(original_arrays["qpos"] == row, axis=1).any() for row in q):
+        raise ValueError("A generated train-extra pose duplicates a parent reset")
+    path = out / "demonstration-states.npz"
+    np.savez_compressed(path, qpos=qpos, qvel=qvel, model_sha256=scene.xml_sha256)
+    # The immutable 12-world PPO contract remains bound to the parent. The
+    # larger namespace only configures the resident demonstration session.
+    demonstration = argparse.Namespace(**vars(train))
+    demonstration.worlds, demonstration.reset_npz = len(qpos), path
+    initial, digest, arrays = ppo.physical_initial_states(scene, demonstration)
+    np.testing.assert_array_equal(arrays["qpos"], qpos)
+    np.testing.assert_array_equal(arrays["qvel"], qvel)
+    receipt = dict(
+        schema="panda-reach-extended-demonstration-bank-v1", ppo_worlds=train.worlds,
+        demonstration_worlds=demonstration.worlds, model_sha256=scene.xml_sha256,
+        physical_reset_sha256=digest, file=path.name, file_sha256=ppo._sha(path),
+        parent=dict(worlds=train.worlds, file=str(train.reset_npz.resolve()),
+                    file_sha256=ppo._sha(train.reset_npz), physical_reset_sha256=reset_sha),
+        extra=dict(split=extra["split"], worlds=len(q), seed=extra["seed"], levels=extra["levels"],
+                   generator_sha256=ppo._sha(Path(__file__).with_name("panda_reach_crossed_resets.py")),
+                   file="train-extra/initial-states.npz", file_sha256=extra["file_sha256"],
+                   metadata_file="train-extra/metadata.json", metadata_sha256=ppo._sha(extra_dir / "metadata.json"),
+                   physical_reset_sha256=extra["physical_reset_sha256"], qpos=q.tolist(), qvel=v.tolist()),
+        world_mapping=[dict(world=i, bank="parent", bank_row=i) for i in range(train.worlds)] +
+                      [dict(world=train.worlds + row["world"], bank="train-extra", bank_row=row["world"],
+                            cell=row["cell"], replicate=row["replicate"]) for row in extra["worlds"]])
+    return demonstration, initial, arrays, receipt
+
+
 def run(args):
     from _panda_grasp_insert_scene import build_scene
     from _panda_ppo_reach import ReachTask
@@ -172,8 +207,11 @@ def run(args):
         raise ValueError("Expected a completed reach PPO update")
     train = argparse.Namespace(**original)
     train.stage, train.reset_npz = "train", args.reset_npz
-    if not 1 <= args.minimum_teacher_worlds <= train.worlds:
-        raise ValueError(f"--minimum-teacher-worlds must be between 1 and {train.worlds}")
+    if args.include_crossed_training and train.worlds != 12:
+        raise ValueError("Extended demonstrations require the original 12-world parent contract")
+    training_worlds = 24 if args.include_crossed_training else train.worlds
+    if not 1 <= args.minimum_teacher_worlds <= training_worlds:
+        raise ValueError(f"--minimum-teacher-worlds must be between 1 and {training_worlds}")
     if train.observation_size != 98 or train.action_size != 16 or train.action_repeat != 8:
         raise ValueError("Expected the original 98D reach input, 16 motors, and eight physics substeps")
     torch.manual_seed(args.seed)
@@ -191,6 +229,10 @@ def run(args):
                     reach_source_sha256=ppo._sha(Path(__file__).with_name("_panda_ppo_reach.py")))
     if contract != original or frozen != parent["frozen_model_sha256"]:
         raise ValueError("Physical model, observation, action, or PPO contract differs from the parent checkpoint")
+    extended = None
+    if args.include_crossed_training:
+        args.out.mkdir(parents=True, exist_ok=False)
+        train, initial, arrays, extended = extended_training_bank(train, scene, model, arrays, reset_sha, args.out)
     if args.teacher_path in ("axial", "axial-recovery"):
         from _panda_reach_teacher import build_waypoints
         targets_np = np.asarray(build_waypoints(model, arrays["qpos"].copy()))
@@ -207,7 +249,8 @@ def run(args):
     actor.load_state_dict(parent["actor"])
     # Only the deterministic mean network receives imitation gradients.
     optimizer = torch.optim.Adam(actor.body.parameters(), lr=args.fit_lr)
-    args.out.mkdir(parents=True, exist_ok=False)
+    if extended is None:
+        args.out.mkdir(parents=True, exist_ok=False)
     summary = dict(status="running", device=name, parent_checkpoint_sha256=source_sha, source_update=parent["completed_update"],
                    physical_reset_sha256=reset_sha, reset_npz_sha256=ppo._sha(args.reset_npz),
                    frozen_model_sha256=frozen, contract=contract, seed=args.seed,
@@ -219,21 +262,31 @@ def run(args):
                    scope="Physical reach diagnostics on the original PPO training reset bank")
     data = []
     candidates = {}
+    modes = [("teacher", 1.), ("mixed", .35), ("learner_labeled", 0.), ("learner_final", 0.)]
+    if extended is not None:
+        summary.update(scope="Physical reach diagnostics on the parent and generated train-extra resets",
+                       demonstration_training=extended)
     if args.select_physical_seed:
         summary["physical_selection"] = dict(
             reset_scope="original physical training reset bank", pin_limit_m=reach.contract["success"]["max_pin_displacement_m"],
             rule=["fewest worlds exceeding pin displacement limit at any accepted physics substep",
                   "most worlds reaching qualified dwell", "most worlds jointly qualified at the final state",
                   "lowest mean final hand-to-pin distance", "prefer learner_final on exact tie"], candidates={})
+        if extended is not None:
+            selection = summary["physical_selection"]
+            selection.update(reset_scope=summary["scope"], physical_reset_sha256=extended["physical_reset_sha256"])
+            selection["rule"][-1] = "retain parent on exact tie, then prefer learner_final among learners"
+            modes.append(("parent", 0.))
     try:
         with MuJoCoRuntime(source, mode="musa", world_keys=tuple(range(train.worlds)), initial_states=initial,
                            cache_root=args.cache, contact_capacity=64, constraint_capacity=256) as runtime:
             with runtime.musa_resident() as bank:
                 task = ppo.DeviceTask(torch, device, bank, model, scene.initial_qpos, train, reach=reach)
-                for mode, weight in (("teacher", 1.), ("mixed", .35), ("learner_labeled", 0.),
-                                     ("learner_final", 0.)):
-                    training = mode != "learner_final"
-                    candidate = args.select_physical_seed and mode in ("learner_labeled", "learner_final")
+                for mode, weight in modes:
+                    if mode == "parent":
+                        actor.load_state_dict(parent["actor"])
+                    training = mode in ("teacher", "mixed", "learner_labeled")
+                    candidate = args.select_physical_seed and mode in ("learner_labeled", "learner_final", "parent")
                     batch, metrics = rollout(torch, task, actor, targets if training else None,
                                              args.steps, weight, reset_q, reset_v, teacher_path=args.teacher_path,
                                              collect_labels=training and not args.teacher_only,
@@ -269,13 +322,22 @@ def run(args):
         if args.select_physical_seed:
             selection = summary["physical_selection"]
             scores = selection["candidates"]
-            chosen = min(("learner_final", "learner_labeled"), key=lambda mode: scores[mode]["ascending_score"])
+            order = ("learner_final", "learner_labeled") if extended is None else ("parent", "learner_final", "learner_labeled")
+            chosen = min(order, key=lambda mode: scores[mode]["ascending_score"])
             selection.update(selected_mode=chosen, selected_score=scores[chosen]["ascending_score"])
+            if chosen == "parent":
+                summary.update(status="completed", actor_seed=None,
+                               promotion="parent retained; neither learner strictly improved the physical score")
+                return summary
             actor_state = candidates[chosen]
         else:
             actor_state = ppo._cpu_state(actor)
         seed = dict(schema=SEED_SCHEMA, actor=actor_state, contract=original,
                     frozen_model_sha256=frozen, parent_checkpoint_sha256=source_sha)
+        if extended is not None:
+            seed["demonstration_training"] = extended
+            if args.select_physical_seed:
+                seed["physical_selection"] = summary["physical_selection"]
         ppo.validate_checkpoint_data(torch, seed)
         path = args.out / "actor-seed.pt"
         torch.save(seed, path)
@@ -295,6 +357,8 @@ def parser():
     p.add_argument("--out", type=Path, required=True)
     p.add_argument("--cache", type=Path)
     p.add_argument("--urdf", type=Path)
+    p.add_argument("--include-crossed-training", action="store_true",
+                   help="include twelve generated train-extra resets during imitation and policy selection")
     p.add_argument("--teacher-path", choices=("direct", "axial", "axial-recovery"), default="direct")
     p.add_argument("--select-physical-seed", action="store_true",
                    help="choose between the two zero-teacher-weight actors on the original training bank")

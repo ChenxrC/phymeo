@@ -370,7 +370,7 @@ def paired_physics(torch, task, before_actor, after_actor, steps, output, label)
                                   ("motors_off", after_actor, False)):
         obs = task.reset()
         q, v = [task.q.clone()], [task.v.clone()]
-        actions, rewards, controls, substeps, qualified_steps = [], [], [], [], []
+        actions, rewards, controls, substeps, substep_velocities, qualified_steps = [], [], [], [], [], []
         with torch.no_grad():
             for _ in range(steps):
                 mean, _ = actor(obs)
@@ -380,6 +380,7 @@ def paired_physics(torch, task, before_actor, after_actor, steps, output, label)
                 actions.append(action); rewards.append(reward); controls.append(control)
                 if task.reach is not None:
                     substeps.append(task.substep_qpos)
+                    substep_velocities.append(task.substep_qvel)
                     qualified_steps.append(task.substep_qualified)
         traces[name] = dict(qpos=torch.stack(q), qvel=torch.stack(v), action=torch.stack(actions),
                             reward=torch.stack(rewards), controls=torch.stack(controls), goal=task.goal.clone())
@@ -388,6 +389,7 @@ def paired_physics(torch, task, before_actor, after_actor, steps, output, label)
             traces[name]["reach_max_qualified_dwell_s"] = task.reach_max_dwell.clone()
             traces[name]["reach_max_qualified_dwell_steps"] = task.reach_max_dwell_steps.clone()
             traces[name]["substep_qpos"] = torch.stack(substeps)
+            traces[name]["substep_qvel"] = torch.stack(substep_velocities)
             traces[name]["substep_qualified"] = torch.stack(qualified_steps)
         if not bool(task.finite.cpu()):
             raise RuntimeError(f"nonfinite {name} paired physical trajectory")

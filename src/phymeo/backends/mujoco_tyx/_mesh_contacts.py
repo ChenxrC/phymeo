@@ -38,6 +38,8 @@ class MeshContactWorkspace:
     state readback in assemble_device; only world status is read to admit a
     result loan. Results expire on the next attempt, even if that attempt fails.
     Arrays borrowed from a result must not be retained/mutated beyond its scope.
+    Motion may additionally supply both com_low and body_jac_low from the same
+    rigid epoch. Omitting both uses zero low lanes, including after buffer reuse.
     """
 
     OUTPUTS = (
@@ -57,6 +59,7 @@ class MeshContactWorkspace:
         "status",
     )
     MOTION = ("com", "body_jac", "qvel")
+    PRECISION = ("com_low", "body_jac_low")
 
     def __init__(
         self,
@@ -167,7 +170,9 @@ class MeshContactWorkspace:
                 "law": ((c, 10), F),
                 "status": ((w,), INT),
                 "com": ((w, self.nbody, 3), F),
+                "com_low": ((w, self.nbody, 3), F),
                 "body_jac": ((w, self.nbody, 6, n), F),
+                "body_jac_low": ((w, self.nbody, 6, n), F),
                 "qvel": ((w, n), F),
                 "box_motion": ((w, nb, 1, 3), F),
                 "box_rotation": ((w, nb, 3, 3), F),
@@ -214,7 +219,7 @@ class MeshContactWorkspace:
             self._check()
             self._idle()
             self._generation += 1
-            if set(motion) != set(self.MOTION):
+            if set(motion) not in (set(self.MOTION), set(self.MOTION + self.PRECISION)):
                 raise ValueError("exact motion schema required")
             for name, v in motion.items():
                 shape, dtype = self.layouts[name]
@@ -224,7 +229,7 @@ class MeshContactWorkspace:
                     self._buffers[name].copy_from(v)
                 else:
                     self._buffers[name][...] = v
-            return self.assemble_device(query, {name: self._buffers[name] for name in self.MOTION})
+            return self.assemble_device(query, {name: self._buffers[name] for name in motion})
 
     def assemble_device(self, query, motion):
         with self._lock:
@@ -237,7 +242,7 @@ class MeshContactWorkspace:
                 or query.workspace.worlds != self.worlds
             ):
                 raise ValueError("same catalog/worlds/device mode required")
-            if set(motion) != set(self.MOTION):
+            if set(motion) not in (set(self.MOTION), set(self.MOTION + self.PRECISION)):
                 raise ValueError("exact motion schema required")
             for name, v in motion.items():
                 shape, dtype = self.layouts[name]
@@ -311,13 +316,15 @@ class MeshContactWorkspace:
                     self.worlds,
                     self.nbody,
                     self.nv,
-                    *args("com", "body_jac", "qvel", "status"),
+                    int("com_low" in motion),
+                    *args("com", "com_low", "body_jac", "body_jac_low", "qvel", "status"),
                     mode=self.mode,
                 )
                 k.assemble_contacts(
                     self.worlds * self.capacity,
                     self.capacity,
                     self.nv,
+                    int("com_low" in motion),
                     self.h,
                     self.impratio,
                     *self.constants,
@@ -329,7 +336,9 @@ class MeshContactWorkspace:
                         "geometry",
                         "point_low",
                         "com",
+                        "com_low",
                         "body_jac",
+                        "body_jac_low",
                         "qvel",
                         "frame",
                         "jac",

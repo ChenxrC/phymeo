@@ -5,6 +5,7 @@
 import tyx as tx
 
 from ._mesh_query_kernels import sum_error
+from ._two_lane import add_hi, add_lo, mul_hi, mul_lo
 
 
 @tx.kernel
@@ -101,8 +102,11 @@ def check_motion(
     worlds: tx.i32,
     nb: tx.i32,
     nv: tx.i32,
+    precision: tx.i32,
     com: tx.ndarray(tx.f32, 3),
+    com_low: tx.ndarray(tx.f32, 3),
     bj: tx.ndarray(tx.f32, 4),
+    bj_low: tx.ndarray(tx.f32, 4),
     qvel: tx.ndarray(tx.f32, 2),
     status: tx.ndarray(tx.i32, 1),
 ):
@@ -111,9 +115,13 @@ def check_motion(
             for i in range(3):
                 if not tx.isfinite(com[w, b, i]):
                     status[w] = 2
+                if precision == 1 and not tx.isfinite(com_low[w, b, i]):
+                    status[w] = 2
             for i in range(6):
                 for j in range(nv):
                     if not tx.isfinite(bj[w, b, i, j]):
+                        status[w] = 2
+                    if precision == 1 and not tx.isfinite(bj_low[w, b, i, j]):
                         status[w] = 2
         for j in range(nv):
             if not tx.isfinite(qvel[w, j]):
@@ -125,6 +133,7 @@ def assemble_contacts(
     total: tx.i32,
     cap: tx.i32,
     nv: tx.i32,
+    precision: tx.i32,
     h: tx.f32,
     impratio: tx.f32,
     minimum: tx.f32,
@@ -138,7 +147,9 @@ def assemble_contacts(
     geometry: tx.ndarray(tx.f32, 2),
     point_low: tx.ndarray(tx.f32, 2),
     com: tx.ndarray(tx.f32, 3),
+    com_low: tx.ndarray(tx.f32, 3),
     bj: tx.ndarray(tx.f32, 4),
+    bj_low: tx.ndarray(tx.f32, 4),
     qvel: tx.ndarray(tx.f32, 2),
     frame: tx.ndarray(tx.f32, 3),
     jac: tx.ndarray(tx.f32, 3),
@@ -251,30 +262,81 @@ def assemble_contacts(
             law[r, 9] = B
             for row in range(3):
                 vel = 0.0
+                vel_low = 0.0
                 for col in range(nv):
                     value = 0.0
+                    value_low = 0.0
                     for k in range(3):
                         j = (k + 1) % 3
                         axis2 = (k + 2) % 3
-                        va = (
-                            bj[w, ba, k, col]
-                            + bj[w, ba, 3 + j, col]
-                            * ((geometry[r, 1 + axis2] - com[w, ba, axis2]) + point_low[r, axis2])
-                            - bj[w, ba, 3 + axis2, col]
-                            * ((geometry[r, 1 + j] - com[w, ba, j]) + point_low[r, j])
-                        )
-                        vb = (
-                            bj[w, bb, k, col]
-                            + bj[w, bb, 3 + j, col]
-                            * ((geometry[r, 1 + axis2] - com[w, bb, axis2]) + point_low[r, axis2])
-                            - bj[w, bb, 3 + axis2, col]
-                            * ((geometry[r, 1 + j] - com[w, bb, j]) + point_low[r, j])
-                        )
-                        value = value + frame[r, row, k] * (vb - va)
+                        relative = 0.0
+                        relative_low = 0.0
+                        for side in tx.static_range(2):
+                            body = ba
+                            sign = -1.0
+                            if side == 1:
+                                body = bb
+                                sign = 1.0
+                            velocity = bj[w, body, k, col]
+                            velocity_low = 0.0
+                            if precision == 1:
+                                velocity_low = bj_low[w, body, k, col]
+                            for term in tx.static_range(2):
+                                angular = j
+                                offset = axis2
+                                direction = 1.0
+                                if term == 1:
+                                    angular = axis2
+                                    offset = j
+                                    direction = -1.0
+                                cl = 0.0
+                                jl = 0.0
+                                if precision == 1:
+                                    cl = com_low[w, body, offset]
+                                    jl = bj_low[w, body, 3 + angular, col]
+                                dh = add_hi(
+                                    geometry[r, 1 + offset],
+                                    point_low[r, offset],
+                                    -com[w, body, offset],
+                                    -cl,
+                                )
+                                dl = add_lo(
+                                    geometry[r, 1 + offset],
+                                    point_low[r, offset],
+                                    -com[w, body, offset],
+                                    -cl,
+                                )
+                                ph = mul_hi(bj[w, body, 3 + angular, col], jl, dh, dl)
+                                pl = mul_lo(bj[w, body, 3 + angular, col], jl, dh, dl)
+                                nh = add_hi(velocity, velocity_low, direction * ph, direction * pl)
+                                nl = add_lo(velocity, velocity_low, direction * ph, direction * pl)
+                                velocity = nh
+                                velocity_low = nl
+                            nh = add_hi(
+                                relative, relative_low, sign * velocity, sign * velocity_low
+                            )
+                            nl = add_lo(
+                                relative, relative_low, sign * velocity, sign * velocity_low
+                            )
+                            relative = nh
+                            relative_low = nl
+                        ph = mul_hi(frame[r, row, k], 0.0, relative, relative_low)
+                        pl = mul_lo(frame[r, row, k], 0.0, relative, relative_low)
+                        nh = add_hi(value, value_low, ph, pl)
+                        nl = add_lo(value, value_low, ph, pl)
+                        value = nh
+                        value_low = nl
                     jac[r, row, col] = value
-                    vel = vel + value * qvel[w, col]
+                    # Use the published Jacobian consistently in J*v and in
+                    # the solver; retaining extra J bits only here changes law.
+                    ph = mul_hi(value, 0.0, qvel[w, col], 0.0)
+                    pl = mul_lo(value, 0.0, qvel[w, col], 0.0)
+                    nh = add_hi(vel, vel_low, ph, pl)
+                    nl = add_lo(vel, vel_low, ph, pl)
+                    vel = nh
+                    vel_low = nl
                 rr = rt
-                ref = -B * vel
+                ref = mul_hi(-B, 0.0, vel, vel_low)
                 if row == 0:
                     rr = r0
                     ref = ref - K * imp * geometry[r, 0]

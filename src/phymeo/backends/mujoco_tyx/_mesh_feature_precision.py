@@ -91,7 +91,7 @@ def refine_contact_features(
         for axis in range(3):
             feature_axis[out, axis, 0] = 0.0
             feature_axis[out, axis, 1] = 0.0
-        if meta[out, 0] == 1 and gap[out, 0] < 0.0:
+        if meta[out, 0] == 1 and gap[out, 0] <= 0.0:
             ga = pairs[out, 0] % ngeom
             gb = pairs[out, 1] % ngeom
             world = pairs[out, 0] // ngeom
@@ -268,11 +268,12 @@ def refine_contact_features(
                                 value = (
                                     hi + (sum_error(bmin_hi, -amax_hi, hi) + bmin_lo - amax_lo)
                                 ) / (frames[lane, 3] * length)
-                                # No epsilon activation: only an intersecting support
-                                # interval may replace an already intersecting query.
+                                # Retain the signed support interval. A positive
+                                # separating axis can disprove a rounded overlap;
+                                # filtering it out would preserve a false contact.
+                                # This changes no contact margin or tolerance.
                                 if (
-                                    value < 0.0
-                                    and value > best_gap
+                                    value > best_gap
                                     and tx.abs(value - gap[out, 0]) * frames[lane, 3] <= 5e-6
                                 ):
                                     best_x = direction * scratch[lane, 2, 0, 0] / length

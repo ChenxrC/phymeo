@@ -3,6 +3,14 @@
 import tyx as tx
 
 
+@tx.func
+def sum_error(a: tx.f32, b: tx.f32, total: tx.f32) -> tx.f32:
+    return tx.add_rn(
+        tx.sub_rn(a, tx.sub_rn(total, tx.sub_rn(total, a))),
+        tx.sub_rn(b, tx.sub_rn(total, a)),
+    )
+
+
 @tx.kernel
 def clear_counts(worlds: tx.i32, counts: tx.ndarray(tx.i32, 1)):
     for i in tx.range(worlds + 1):
@@ -63,6 +71,8 @@ def transform_meshes(
     local: tx.ndarray(tx.f32, 2),
     positions: tx.ndarray(tx.f32, 3),
     rotations: tx.ndarray(tx.f32, 4),
+    positions_low: tx.ndarray(tx.f32, 3),
+    rotations_low: tx.ndarray(tx.f32, 4),
     points: tx.ndarray(tx.f32, 2),
     bounds: tx.ndarray(tx.f32, 2),
     counts: tx.ndarray(tx.i32, 1),
@@ -74,8 +84,21 @@ def transform_meshes(
         for axis in tx.static_range(3):
             if not tx.isfinite(positions[world, geom, axis]):
                 valid = 0
+            plow = positions_low[world, geom, axis]
+            if (
+                not tx.isfinite(plow)
+                or tx.abs(plow) > 1.1920929e-7 * tx.abs(positions[world, geom, axis]) + 1e-38
+            ):
+                valid = 0
             for column in tx.static_range(3):
                 if not tx.isfinite(rotations[world, geom, axis, column]):
+                    valid = 0
+                rlow = rotations_low[world, geom, axis, column]
+                if (
+                    not tx.isfinite(rlow)
+                    or tx.abs(rlow)
+                    > 1.1920929e-7 * tx.abs(rotations[world, geom, axis, column]) + 1e-38
+                ):
                     valid = 0
                 gram = 0.0
                 for row in tx.static_range(3):
@@ -112,8 +135,16 @@ def transform_meshes(
             high = -3.402823e38
             for vertex in range(offsets[geom], offsets[geom + 1]):
                 value = positions[world, geom, axis]
+                error = positions_low[world, geom, axis]
                 for column in tx.static_range(3):
-                    value = value + rotations[world, geom, axis, column] * local[vertex, column]
+                    rh = rotations[world, geom, axis, column]
+                    vl = local[vertex, column]
+                    prod = tx.mul_rn(rh, vl)
+                    perr = tx.fma(rh, vl, -prod) + rotations_low[world, geom, axis, column] * vl
+                    total_value = tx.add_rn(value, prod)
+                    error = error + sum_error(value, prod, total_value) + perr
+                    value = total_value
+                value = tx.add_rn(value, error)
                 points[world * nvertex + vertex, axis] = value
                 if not tx.isfinite(value):
                     valid = 0
@@ -169,7 +200,11 @@ def pack_local_pairs(
     nvertex: tx.i32,
     max_vertices: tx.i32,
     offsets: tx.ndarray(tx.i32, 1),
-    points: tx.ndarray(tx.f32, 2),
+    local: tx.ndarray(tx.f32, 2),
+    positions: tx.ndarray(tx.f32, 3),
+    rotations: tx.ndarray(tx.f32, 4),
+    positions_low: tx.ndarray(tx.f32, 3),
+    rotations_low: tx.ndarray(tx.f32, 4),
     bounds: tx.ndarray(tx.f32, 2),
     pairs: tx.ndarray(tx.i32, 2),
     tags: tx.ndarray(tx.i32, 2),
@@ -185,7 +220,7 @@ def pack_local_pairs(
         for axis in tx.static_range(3):
             low = tx.min(bounds[a, axis], bounds[b, axis])
             high = tx.max(bounds[a, axis + 3], bounds[b, axis + 3])
-            frames[lane, axis] = low
+            frames[lane, axis] = 0.5 * low + 0.5 * high
             length = tx.max(length, high - low)
         # Broad-phase padding ensures positive length for every valid source.
         frames[lane, 3] = length
@@ -207,9 +242,22 @@ def pack_local_pairs(
                 source = world * nvertex + offsets[geom] + i
                 ids[begin + i] = source
                 for axis in tx.static_range(3):
-                    packed_points[begin + i, axis] = (
-                        points[source, axis] - frames[lane, axis]
-                    ) / length
+                    origin = -frames[lane, axis]
+                    ph = positions[world, geom, axis]
+                    value = tx.add_rn(ph, origin)
+                    error = positions_low[world, geom, axis] + sum_error(ph, origin, value)
+                    for column in tx.static_range(3):
+                        rh = rotations[world, geom, axis, column]
+                        vl = local[offsets[geom] + i, column]
+                        prod = tx.mul_rn(rh, vl)
+                        perr = tx.fma(rh, vl, -prod) + rotations_low[world, geom, axis, column] * vl
+                        total_value = tx.add_rn(value, prod)
+                        error = error + sum_error(value, prod, total_value) + perr
+                        value = total_value
+                    quotient = value / length
+                    qerror = (tx.fma(-quotient, length, value) + error) / length
+                    high_part = tx.add_rn(quotient, qerror)
+                    packed_points[begin + i, axis] = high_part
 
 
 @tx.kernel

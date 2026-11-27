@@ -104,12 +104,20 @@ class MeshQueryWorkspace:
             radius=np.zeros(2 * t, np.float32),
             precision=np.zeros(2 * t, np.int32),
             dimensions=np.zeros((2 * t, 3), np.float32),
+            zero_positions_low=np.zeros((w, g, 3), np.float32),
+            zero_rotations_low=np.zeros((w, g, 3, 3), np.float32),
         )
+        from ._mesh_feature_precision import compile_features, refine_contact_features
+
+        static.update(compile_features(catalog))
+        self._feature_precision = refine_contact_features
         layouts = {name: (value.shape, value.dtype) for name, value in static.items()}
         layouts.update(
             {
                 "positions": ((w, g, 3), np.float32),
                 "rotations": ((w, g, 3, 3), np.float32),
+                "positions_low": ((w, g, 3), np.float32),
+                "rotations_low": ((w, g, 3, 3), np.float32),
                 "points": ((w * v, 3), np.float32),
                 "bounds": ((w * g, 6), np.float32),
                 "counts": ((w + 1,), np.int32),
@@ -119,6 +127,8 @@ class MeshQueryWorkspace:
                 "ids": ((2 * t * maximum,), np.int32),
                 "tags": ((2 * t, 4), np.int32),
                 "frames": ((t, 4), np.float32),
+                "feature_scratch": ((t, 3, 3, 2), np.float32),
+                "feature_corrected": ((p,), np.int32),
                 "shape_rotation": ((2 * t, 3, 3), np.float32),
                 "support_points": ((t, 2, 3), np.float32),
                 "vertices": ((t, 64, 9), np.float32),
@@ -177,7 +187,11 @@ class MeshQueryWorkspace:
         return result
 
     def query(self, positions, rotations):
-        """Host pose convenience boundary. Never used as hidden CUDA fallback."""
+        """Explicit host upload, splitting original poses into high/low FP32.
+
+        Device hot paths must preserve and supply their own low components.
+        This split cannot recover precision already lost by an FP32 producer.
+        """
         with self._lock:
             self._ensure_open()
             self._ensure_idle()
@@ -189,17 +203,28 @@ class MeshQueryWorkspace:
                 value = np.asarray(source)
                 if value.shape != shape or not np.isfinite(value).all():
                     raise ValueError(f"{name} requires finite shape {shape}")
-                value = np.ascontiguousarray(value, dtype=np.float32)
-                if not np.isfinite(value).all():
+                if value.dtype.kind not in "fi":
+                    raise ValueError("real numeric poses required")
+                original = np.asarray(value, dtype=np.float64)
+                value = np.ascontiguousarray(original, dtype=np.float32)
+                low = np.ascontiguousarray(original - value.astype(np.float64), dtype=np.float32)
+                if not np.isfinite(value).all() or not np.isfinite(low).all():
                     raise ValueError(f"{name} overflows FP32")
                 if self.mode == "cuda":
                     self._buffers[name].copy_from(value)
-                    self.stats["uploaded_bytes"] += value.nbytes
+                    self._buffers[name + "_low"].copy_from(low)
+                    self.stats["uploaded_bytes"] += value.nbytes + low.nbytes
                 else:
                     self._buffers[name][...] = value
-            return self.query_device(self._buffers["positions"], self._buffers["rotations"])
+                    self._buffers[name + "_low"][...] = low
+            return self.query_device(
+                self._buffers["positions"],
+                self._buffers["rotations"],
+                positions_low=self._buffers["positions_low"],
+                rotations_low=self._buffers["rotations_low"],
+            )
 
-    def query_device(self, positions, rotations):
+    def query_device(self, positions, rotations, *, positions_low=None, rotations_low=None):
         """Borrow same-device TYX poses without state readback or copying.
 
         Caller retains buffers and synchronizes any external producer before
@@ -210,9 +235,16 @@ class MeshQueryWorkspace:
             self._ensure_open()
             self._ensure_idle()
             self._generation += 1
+            if (positions_low is None) != (rotations_low is None):
+                raise ValueError("both pose low components must be supplied together")
+            if positions_low is None:
+                positions_low = self._buffers["zero_positions_low"]
+                rotations_low = self._buffers["zero_rotations_low"]
             for value, shape in (
                 (positions, (self.worlds, self.catalog.ngeom, 3)),
                 (rotations, (self.worlds, self.catalog.ngeom, 3, 3)),
+                (positions_low, (self.worlds, self.catalog.ngeom, 3)),
+                (rotations_low, (self.worlds, self.catalog.ngeom, 3, 3)),
             ):
                 if self.mode == "cuda":
                     import tyx as tx
@@ -236,6 +268,8 @@ class MeshQueryWorkspace:
                     b["local"],
                     positions,
                     rotations,
+                    positions_low,
+                    rotations_low,
                     b["points"],
                     b["bounds"],
                     b["counts"],
@@ -275,7 +309,11 @@ class MeshQueryWorkspace:
                             len(cat.points),
                             self._max_vertices,
                             b["offsets"],
-                            b["points"],
+                            b["local"],
+                            positions,
+                            rotations,
+                            positions_low,
+                            rotations_low,
                             b["bounds"],
                             b["pairs"],
                             b["tags"],
@@ -335,6 +373,31 @@ class MeshQueryWorkspace:
                             b["skin_offset"],
                         )
                         self._launch(
+                            self._feature_precision,
+                            active,
+                            offset,
+                            cat.ngeom,
+                            b["offsets"],
+                            b["local"],
+                            positions,
+                            rotations,
+                            positions_low,
+                            rotations_low,
+                            b["edge_offsets"],
+                            b["face_offsets"],
+                            b["edge_axes"],
+                            b["edge_axes_low"],
+                            b["face_axes"],
+                            b["face_axes_low"],
+                            b["pairs"],
+                            b["frames"],
+                            b["meta"],
+                            b["gap"],
+                            b["normal"],
+                            b["feature_scratch"],
+                            b["feature_corrected"],
+                        )
+                        self._launch(
                             k.unpack_local_pairs,
                             active,
                             offset,
@@ -346,7 +409,7 @@ class MeshQueryWorkspace:
                         )
                 self._runtime.sync()
             self.stats["queries"] += 1
-            self._poses = (positions, rotations)
+            self._poses = (positions, rotations, positions_low, rotations_low)
             return MeshQueryResult(self, self._generation, tuple(map(int, counts[:-1])))
 
     def _read(self, result):
@@ -360,7 +423,10 @@ class MeshQueryWorkspace:
                     for w, n in enumerate(result.counts)
                 ]
             )
-            raw = {name: self._download(name)[indices] for name in ("pairs", *WIRE)}
+            raw = {
+                name: self._download(name)[indices]
+                for name in ("pairs", "feature_corrected", *WIRE)
+            }
             raw["world"] = raw["pairs"][:, 0] // self.catalog.ngeom
             raw["geom_ids"] = self.catalog.geom_ids[raw["pairs"] % self.catalog.ngeom]
             for value in raw.values():
@@ -395,6 +461,8 @@ class MeshQueryWorkspace:
                         {
                             "positions": self._poses[0],
                             "rotations": self._poses[1],
+                            "positions_low": self._poses[2],
+                            "rotations_low": self._poses[3],
                             **{
                                 name: b[name]
                                 for name in ("geom_ids", "body_ids", "counts", "pairs", *WIRE)
